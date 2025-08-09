@@ -1,0 +1,226 @@
+<!DOCTYPE html>
+<!-- Copyright (C) 2025 iolaire mcfadden. -->
+<!-- This program is free software: you can redistribute it and/or modify it under the terms of the GNU Affero General Public License as published by the Free Software Foundation, either version 3 of the License, or (at your option) any later version. -->
+<!-- THE SOFTWARE IS PROVIDED "AS IS", WITHOUT WARRANTY OF ANY KIND, EXPRESS OR IMPLIED, INCLUDING BUT NOT LIMITED TO THE WARRANTIES OF MERCHANTABILITY, FITNESS FOR A PARTICULAR PURPOSE AND NONINFRINGEMENT. IN NO EVENT SHALL THE AUTHORS OR COPYRIGHT HOLDERS BE LIABLE FOR ANY CLAIM, DAMAGES OR OTHER LIABILITY, WHETHER IN AN ACTION OF CONTRACT, TORT OR OTHERWISE, ARISING FROM, OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE SOFTWARE. -->
+
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <meta name="csrf-token" content="{{ csrf_token() }}">
+    <title>{% block title %}Vedfolnir{% endblock %}</title>
+    
+    <!-- Preconnect to external resources -->
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    
+    <!-- Modern font -->
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&display=swap" rel="stylesheet">
+    
+    <!-- Bootstrap and icons with fallback -->
+    <link href="{{ url_for('static', filename='css/bootstrap-fallback.css') }}" rel="stylesheet">
+    <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/css/bootstrap.min.css" rel="stylesheet" onerror="this.remove()">
+    <link href="https://cdn.jsdelivr.net/npm/bootstrap-icons@1.10.0/font/bootstrap-icons.css" rel="stylesheet" onerror="this.remove()">
+    
+    <!-- Custom styles -->
+    <link href="{{ url_for('static', filename='css/style.css') }}" rel="stylesheet">
+    <link href="{{ url_for('static', filename='css/platform_styles.css') }}" rel="stylesheet">
+    <link href="{{ url_for('static', filename='css/fixes.css') }}" rel="stylesheet">
+    
+    <!-- Favicon -->
+    {% include 'includes/favicon_meta.html' %}
+    
+    {% block head %}{% endblock %}
+</head>
+<body>
+    <!-- Skip to content link for accessibility -->
+    <a href="#main-content" class="skip-to-content">Skip to main content</a>
+    
+    <nav class="navbar navbar-expand-lg navbar-dark bg-dark">
+        <div class="container">
+            <a class="navbar-brand d-flex align-items-center" href="{{ url_for('index') }}" aria-label="Vedfolnir - Go to dashboard">
+                <img src="{{ url_for('static', filename='images/Logo.png') }}" 
+                     alt="Vedfolnir Logo" 
+                     class="navbar-logo me-2"
+                     height="32"
+                     onerror="this.style.display='none'">
+                <span class="navbar-brand-text">Vedfolnir</span>
+            </a>
+            <button class="navbar-toggler" type="button" data-bs-toggle="collapse" data-bs-target="#navbarNav" aria-controls="navbarNav" aria-expanded="false" aria-label="Toggle navigation">
+                <span class="navbar-toggler-icon"></span>
+            </button>
+            <div class="collapse navbar-collapse" id="navbarNav">
+                <ul class="navbar-nav me-auto">
+                    <li class="nav-item">
+                        <a class="nav-link" href="{{ url_for('index') }}">Dashboard</a>
+                    </li>
+                    {% if current_user.is_authenticated %}
+                        <li class="nav-item dropdown">
+                            <a class="nav-link dropdown-toggle" href="#" id="reviewDropdown" role="button" data-bs-toggle="dropdown" aria-expanded="false">
+                                Review
+                            </a>
+                            <ul class="dropdown-menu" aria-labelledby="reviewDropdown">
+                                <li><a class="dropdown-item" href="{{ url_for('review_list') }}">
+                                    <i class="bi bi-image"></i> Individual Images
+                                </a></li>
+                                <li><a class="dropdown-item" href="{{ url_for('batch_review') }}">
+                                    <i class="bi bi-grid-3x3"></i> Batch Review
+                                </a></li>
+                            </ul>
+                        </li>
+                        <li class="nav-item dropdown">
+                            <a class="nav-link dropdown-toggle" href="#" id="platformsDropdown" role="button" data-bs-toggle="dropdown" aria-expanded="false">
+                                Platforms{% if current_platform %}: {{ current_platform.name }}{% endif %}
+                            </a>
+                            <ul class="dropdown-menu platform-dropdown" aria-labelledby="platformsDropdown">
+                                {% if current_platform %}
+                                <li><h6 class="dropdown-header">
+                                    <i class="bi bi-server"></i> Current Platform
+                                </h6></li>
+                                <li><span class="dropdown-item-text">
+                                    <strong>{{ current_platform.name }}</strong><br>
+                                    <small class="text-muted">
+                                        {{ current_platform.platform_type|title }} - {{ current_platform.instance_url|replace('https://', '')|replace('http://', '') }}
+                                        {% if current_platform.username %}<br>@{{ current_platform.username }}{% endif %}
+                                    </small>
+                                </span></li>
+                                
+                                {% if user_platforms|length > 1 %}
+                                <li><hr class="dropdown-divider"></li>
+                                <li><h6 class="dropdown-header">
+                                    <i class="bi bi-arrow-repeat"></i> Switch Platform
+                                </h6></li>
+                                {% for platform in user_platforms %}
+                                    {% if platform.id != current_platform.id %}
+                                    <li>
+                                        <a class="dropdown-item platform-switch-item" href="#" onclick="quickSwitchPlatform({{ platform.id }}, '{{ platform.name }}')">
+                                            <i class="bi bi-{{ 'mastodon' if platform.platform_type == 'mastodon' else 'image' }}"></i>
+                                            {{ platform.name }}
+                                            {% if platform.is_default %}
+                                            <span class="badge bg-primary ms-1">Default</span>
+                                            {% endif %}
+                                            <br><small class="text-muted">{{ platform.platform_type|title }}</small>
+                                        </a>
+                                    </li>
+                                    {% endif %}
+                                {% endfor %}
+                                {% endif %}
+                                
+                                <li><hr class="dropdown-divider"></li>
+                                {% else %}
+                                <li><h6 class="dropdown-header">
+                                    <i class="bi bi-exclamation-triangle text-warning"></i> No Platform Configured
+                                </h6></li>
+                                <li><span class="dropdown-item-text text-muted">
+                                    You need to configure a platform connection to use this feature.
+                                </span></li>
+                                <li><hr class="dropdown-divider"></li>
+                                {% endif %}
+                                <li><a class="dropdown-item" href="{{ url_for('platform_management') }}">
+                                    <i class="bi bi-gear"></i> Manage Platforms
+                                </a></li>
+                            </ul>
+                        </li>
+                        {% if current_platform %}
+                        <li class="nav-item">
+                            <a class="nav-link" href="{{ url_for('caption_generation') }}">
+                                Generate Captions
+                            </a>
+                        </li>
+                        {% endif %}
+                        {% if current_user.has_permission(UserRole.ADMIN) %}
+                            <li class="nav-item dropdown">
+                                <a class="nav-link dropdown-toggle" href="#" id="adminDropdown" role="button" data-bs-toggle="dropdown" aria-expanded="false">
+                                    Admin
+                                </a>
+                                <ul class="dropdown-menu" aria-labelledby="adminDropdown">
+                                    <li><a class="dropdown-item" href="{{ url_for('admin_monitoring_dashboard') }}">
+                                        <i class="bi bi-speedometer2"></i> Monitoring Dashboard
+                                    </a></li>
+                                    <li><a class="dropdown-item" href="{{ url_for('health_dashboard') }}">
+                                        <i class="bi bi-heart-pulse"></i> System Health
+                                    </a></li>
+                                    <li><hr class="dropdown-divider"></li>
+                                    <li><a class="dropdown-item" href="{{ url_for('user_management') }}">
+                                        <i class="bi bi-people"></i> User Management
+                                    </a></li>
+                                    <li><a class="dropdown-item" href="{{ url_for('admin_cleanup') }}">
+                                        <i class="bi bi-trash"></i> Data Cleanup
+                                    </a></li>
+                                    <li><hr class="dropdown-divider"></li>
+                                    <li><h6 class="dropdown-header">{{ current_user.username }} ({{ current_user.role.value }})</h6></li>
+                                    {% if current_platform %}
+                                    <li><span class="dropdown-item-text text-muted">Platform: {{ current_platform.name }}</span></li>
+                                    {% endif %}
+                                    <li><a class="dropdown-item" href="{{ url_for('profile') }}">
+                                        <i class="bi bi-person me-2"></i>Profile
+                                    </a></li>
+                                    <li><a class="dropdown-item" href="{{ url_for('logout') }}">
+                                        <i class="bi bi-box-arrow-right me-2"></i>Logout
+                                    </a></li>
+                                    <li><a class="dropdown-item" href="{{ url_for('logout_all') }}">
+                                        <i class="bi bi-power me-2"></i>Logout All Devices
+                                    </a></li>
+                                </ul>
+                            </li>
+                        {% endif %}
+                    {% endif %}
+                </ul>
+                <ul class="navbar-nav">
+                    {% if current_user.is_authenticated %}
+
+                        
+
+                    {% else %}
+                        <li class="nav-item">
+                            <a class="nav-link" href="{{ url_for('login') }}">Login</a>
+                        </li>
+                    {% endif %}
+                </ul>
+            </div>
+        </div>
+    </nav>
+
+    <div class="container mt-4" id="main-content">
+        {% with messages = get_flashed_messages(with_categories=true) %}
+            {% if messages %}
+                {% for category, message in messages %}
+                    <div class="alert alert-{{ 'danger' if category == 'error' else 'success' if category == 'success' else 'info' }} alert-dismissible fade show" role="alert">
+                        {{ message }}
+                        <button type="button" class="btn-close" data-bs-dismiss="alert"></button>
+                    </div>
+                {% endfor %}
+            {% endif %}
+        {% endwith %}
+
+        {% block content %}{% endblock %}
+    </div>
+
+    <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.1.3/dist/js/bootstrap.bundle.min.js" onerror="console.warn('Bootstrap JS failed to load from CDN')"></script>
+    <script src="{{ url_for('static', filename='js/app.js') }}"></script>
+    <script src="{{ url_for('static', filename='js/navigation.js') }}"></script>
+    
+    <!-- Fallback for Bootstrap JS functionality -->
+    <script>
+        // Simple dropdown fallback if Bootstrap JS fails
+        if (typeof bootstrap === 'undefined') {
+            document.addEventListener('click', function(e) {
+                if (e.target.matches('[data-bs-toggle="dropdown"]')) {
+                    e.preventDefault();
+                    const menu = e.target.nextElementSibling;
+                    if (menu && menu.classList.contains('dropdown-menu')) {
+                        menu.classList.toggle('show');
+                    }
+                }
+                // Close dropdowns when clicking outside
+                document.querySelectorAll('.dropdown-menu.show').forEach(menu => {
+                    if (!menu.parentElement.contains(e.target)) {
+                        menu.classList.remove('show');
+                    }
+                });
+            });
+        }
+    </script>
+    {% block scripts %}{% endblock %}
+</body>
+</html>

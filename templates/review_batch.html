@@ -1,0 +1,571 @@
+<!-- Copyright (C) 2025 iolaire mcfadden. -->
+<!-- This program is free software: you can redistribute it and/or modify it under the terms of the GNU Affero General Public License as published by the Free Software Foundation, either version 3 of the License, or (at your option) any later version. -->
+<!-- THE SOFTWARE IS PROVIDED "AS IS", WITHOUT WARRANTY OF ANY KIND, EXPRESS OR IMPLIED, INCLUDING BUT NOT LIMITED TO THE WARRANTIES OF MERCHANTABILITY, FITNESS FOR A PARTICULAR PURPOSE AND NONINFRINGEMENT. IN NO EVENT SHALL THE AUTHORS OR COPYRIGHT HOLDERS BE LIABLE FOR ANY CLAIM, DAMAGES OR OTHER LIABILITY, WHETHER IN AN ACTION OF CONTRACT, TORT OR OTHERWISE, ARISING FROM, OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE SOFTWARE. -->
+{% extends "base.html" %}
+
+{% block title %}Review Batch {{ batch_data.batch_info.batch_id[:8] }}... - Vedfolnir{% endblock %}
+
+{% block content %}
+<div class="d-flex justify-content-between align-items-center mb-4">
+    <div>
+        <h1>Review Batch</h1>
+        <nav aria-label="breadcrumb">
+            <ol class="breadcrumb">
+                <li class="breadcrumb-item"><a href="{{ url_for('review_batches') }}">Review Batches</a></li>
+                <li class="breadcrumb-item active" aria-current="page">{{ batch_data.batch_info.batch_id[:8] }}...</li>
+            </ol>
+        </nav>
+    </div>
+    <div>
+        <a href="{{ url_for('review_batches') }}" class="btn btn-outline-secondary">
+            <i class="bi bi-arrow-left"></i> Back to Batches
+        </a>
+    </div>
+</div>
+
+<!-- Batch Statistics -->
+{% if batch_stats %}
+<div class="card mb-4">
+    <div class="card-header">
+        <h5 class="mb-0">
+            <i class="bi bi-bar-chart"></i> Batch Statistics
+        </h5>
+    </div>
+    <div class="card-body">
+        <div class="row">
+            <div class="col-md-2">
+                <div class="text-center">
+                    <div class="h4 mb-0 text-primary">{{ batch_stats.total_images }}</div>
+                    <small class="text-muted">Total Images</small>
+                </div>
+            </div>
+            <div class="col-md-2">
+                <div class="text-center">
+                    <div class="h4 mb-0 text-warning">{{ batch_stats.status_counts.pending or 0 }}</div>
+                    <small class="text-muted">Pending</small>
+                </div>
+            </div>
+            <div class="col-md-2">
+                <div class="text-center">
+                    <div class="h4 mb-0 text-success">{{ batch_stats.status_counts.approved or 0 }}</div>
+                    <small class="text-muted">Approved</small>
+                </div>
+            </div>
+            <div class="col-md-2">
+                <div class="text-center">
+                    <div class="h4 mb-0 text-danger">{{ batch_stats.status_counts.rejected or 0 }}</div>
+                    <small class="text-muted">Rejected</small>
+                </div>
+            </div>
+            <div class="col-md-2">
+                <div class="text-center">
+                    <div class="h4 mb-0 text-info">{{ batch_stats.average_quality_score }}</div>
+                    <small class="text-muted">Avg Quality</small>
+                </div>
+            </div>
+            <div class="col-md-2">
+                <div class="text-center">
+                    <div class="h4 mb-0 text-secondary">{{ "%.1f"|format(batch_stats.generation_time) }}s</div>
+                    <small class="text-muted">Gen Time</small>
+                </div>
+            </div>
+        </div>
+        
+        {% if batch_stats.special_review_count > 0 %}
+        <div class="alert alert-warning mt-3" role="alert">
+            <i class="bi bi-exclamation-triangle"></i>
+            {{ batch_stats.special_review_count }} images need special review attention
+        </div>
+        {% endif %}
+    </div>
+</div>
+{% endif %}
+
+<!-- Filter and Sort Controls -->
+<div class="card mb-4">
+    <div class="card-body">
+        <form method="GET" class="row align-items-end">
+    {{ csrf_token() }}
+            <div class="col-md-2">
+                <label for="status" class="form-label">Status Filter:</label>
+                <select name="status" id="status" class="form-select" onchange="this.form.submit()">
+                    <option value="">All Statuses</option>
+                    {% for status in processing_statuses %}
+                    <option value="{{ status.value }}" {{ 'selected' if status_filter == status.value else '' }}>
+                        {{ status.value.title() }}
+                    </option>
+                    {% endfor %}
+                </select>
+            </div>
+            <div class="col-md-2">
+                <label for="sort_by" class="form-label">Sort By:</label>
+                <select name="sort_by" id="sort_by" class="form-select" onchange="this.form.submit()">
+                    <option value="created_at" {{ 'selected' if sort_by == 'created_at' else '' }}>Created Date</option>
+                    <option value="updated_at" {{ 'selected' if sort_by == 'updated_at' else '' }}>Updated Date</option>
+                    <option value="caption_quality_score" {{ 'selected' if sort_by == 'caption_quality_score' else '' }}>Quality Score</option>
+                </select>
+            </div>
+            <div class="col-md-2">
+                <label for="sort_order" class="form-label">Order:</label>
+                <select name="sort_order" id="sort_order" class="form-select" onchange="this.form.submit()">
+                    <option value="desc" {{ 'selected' if sort_order == 'desc' else '' }}>Descending</option>
+                    <option value="asc" {{ 'selected' if sort_order == 'asc' else '' }}>Ascending</option>
+                </select>
+            </div>
+            <div class="col-md-3">
+                <label for="per_page" class="form-label">Per Page:</label>
+                <select name="per_page" id="per_page" class="form-select" onchange="this.form.submit()">
+                    <option value="10" {{ 'selected' if batch_data.per_page == 10 else '' }}>10</option>
+                    <option value="20" {{ 'selected' if batch_data.per_page == 20 else '' }}>20</option>
+                    <option value="50" {{ 'selected' if batch_data.per_page == 50 else '' }}>50</option>
+                </select>
+            </div>
+            <div class="col-md-3">
+                <!-- Bulk Actions -->
+                <div class="btn-group w-100" role="group">
+                    <button type="button" class="btn btn-outline-success" id="bulkApproveSelected">
+                        <i class="bi bi-check-all"></i> Approve Selected
+                    </button>
+                    <button type="button" class="btn btn-outline-danger" id="bulkRejectSelected">
+                        <i class="bi bi-x-circle"></i> Reject Selected
+                    </button>
+                </div>
+            </div>
+        </form>
+    </div>
+</div>
+
+<!-- Images Grid -->
+{% if batch_data.images %}
+<div class="row" id="imagesGrid">
+    {% for image in batch_data.images %}
+    <div class="col-md-6 col-lg-4 mb-4">
+        <div class="card h-100 image-card" data-image-id="{{ image.id }}">
+            <!-- Selection Checkbox -->
+            <div class="position-absolute top-0 start-0 m-2" style="z-index: 10;">
+                <input type="checkbox" class="form-check-input image-select" 
+                       value="{{ image.id }}" id="select-{{ image.id }}">
+            </div>
+            
+            <!-- Status Badge -->
+            <div class="position-absolute top-0 end-0 m-2" style="z-index: 10;">
+                {% set status_class = 'bg-warning' if image.status == 'pending' else 'bg-success' if image.status == 'approved' else 'bg-danger' %}
+                <span class="badge {{ status_class }}">{{ image.status.title() }}</span>
+            </div>
+            
+            <!-- Image -->
+            <div class="position-relative">
+                <img src="{{ url_for('serve_image', filename=image.local_path.split('/')[-1]) }}" 
+                     class="card-img-top" style="height: 200px; object-fit: cover;" 
+                     alt="Image {{ image.id }}">
+                
+                <!-- Quality Score Overlay -->
+                {% if image.caption_quality_score %}
+                <div class="position-absolute bottom-0 start-0 m-2">
+                    {% set quality_class = 'bg-danger' if image.caption_quality_score < 40 else 'bg-warning' if image.caption_quality_score < 70 else 'bg-success' %}
+                    <span class="badge {{ quality_class }}">{{ image.caption_quality_score }}%</span>
+                </div>
+                {% endif %}
+                
+                <!-- Special Review Flag -->
+                {% if image.needs_special_review %}
+                <div class="position-absolute bottom-0 end-0 m-2">
+                    <span class="badge bg-warning" title="Needs special review">
+                        <i class="bi bi-exclamation-triangle"></i>
+                    </span>
+                </div>
+                {% endif %}
+            </div>
+            
+            <div class="card-body">
+                <!-- Generated Caption -->
+                <div class="mb-3">
+                    <h6 class="card-subtitle mb-2 text-muted">Generated Caption:</h6>
+                    <p class="card-text small">{{ image.generated_caption or 'No caption generated' }}</p>
+                </div>
+                
+                <!-- Inline Caption Editor -->
+                {% if image.status == 'pending' %}
+                <div class="mb-3">
+                    <label for="caption-{{ image.id }}" class="form-label">
+                        <strong>Edit Caption:</strong>
+                    </label>
+                    <textarea class="form-control caption-editor" 
+                              id="caption-{{ image.id }}" 
+                              data-image-id="{{ image.id }}"
+                              rows="3">{{ image.reviewed_caption or image.generated_caption or '' }}</textarea>
+                    <div class="form-text">
+                        <span class="char-count" data-target="caption-{{ image.id }}">0</span>/1000 characters
+                    </div>
+                </div>
+                {% elif image.reviewed_caption %}
+                <div class="mb-3">
+                    <h6 class="card-subtitle mb-2 text-muted">Reviewed Caption:</h6>
+                    <p class="card-text small">{{ image.reviewed_caption }}</p>
+                </div>
+                {% endif %}
+                
+                <!-- Post Info -->
+                {% if image.post %}
+                <div class="mb-2">
+                    <small class="text-muted">
+                        <i class="bi bi-link-45deg"></i>
+                        <a href="{{ image.post.post_url }}" target="_blank" rel="noopener">
+                            Post {{ image.post.post_id[:20] }}...
+                        </a>
+                    </small>
+                </div>
+                {% endif %}
+                
+                <!-- Reviewer Notes -->
+                {% if image.reviewer_notes %}
+                <div class="mb-2">
+                    <small class="text-muted">
+                        <strong>Notes:</strong> {{ image.reviewer_notes }}
+                    </small>
+                </div>
+                {% endif %}
+            </div>
+            
+            <!-- Action Buttons -->
+            {% if image.status == 'pending' %}
+            <div class="card-footer">
+                <div class="btn-group w-100" role="group">
+                    <button type="button" class="btn btn-success btn-sm approve-btn" 
+                            data-image-id="{{ image.id }}">
+                        <i class="bi bi-check"></i> Approve
+                    </button>
+                    <button type="button" class="btn btn-danger btn-sm reject-btn" 
+                            data-image-id="{{ image.id }}">
+                        <i class="bi bi-x"></i> Reject
+                    </button>
+                    <button type="button" class="btn btn-outline-primary btn-sm save-btn" 
+                            data-image-id="{{ image.id }}">
+                        <i class="bi bi-save"></i> Save
+                    </button>
+                </div>
+            </div>
+            {% endif %}
+        </div>
+    </div>
+    {% endfor %}
+</div>
+
+<!-- Pagination -->
+{% if batch_data.total_pages > 1 %}
+<nav aria-label="Batch images pagination">
+    <ul class="pagination justify-content-center">
+        {% if batch_data.has_prev %}
+        <li class="page-item">
+            <a class="page-link" href="{{ url_for('review_batch', batch_id=batch_data.batch_info.batch_id, 
+                                                  page=batch_data.page-1, status=status_filter, 
+                                                  sort_by=sort_by, sort_order=sort_order, per_page=batch_data.per_page) }}">
+                Previous
+            </a>
+        </li>
+        {% endif %}
+        
+        {% for page_num in range(1, batch_data.total_pages + 1) %}
+            {% if page_num <= 10 %}
+            <li class="page-item {% if page_num == batch_data.page %}active{% endif %}">
+                <a class="page-link" href="{{ url_for('review_batch', batch_id=batch_data.batch_info.batch_id, 
+                                                      page=page_num, status=status_filter, 
+                                                      sort_by=sort_by, sort_order=sort_order, per_page=batch_data.per_page) }}">
+                    {{ page_num }}
+                </a>
+            </li>
+            {% endif %}
+        {% endfor %}
+        
+        {% if batch_data.has_next %}
+        <li class="page-item">
+            <a class="page-link" href="{{ url_for('review_batch', batch_id=batch_data.batch_info.batch_id, 
+                                                  page=batch_data.page+1, status=status_filter, 
+                                                  sort_by=sort_by, sort_order=sort_order, per_page=batch_data.per_page) }}">
+                Next
+            </a>
+        </li>
+        {% endif %}
+    </ul>
+</nav>
+{% endif %}
+
+{% else %}
+<div class="text-center py-5">
+    <div class="mb-4">
+        <i class="bi bi-images display-1 text-muted"></i>
+    </div>
+    <h3 class="text-muted">No Images Found</h3>
+    <p class="text-muted">No images found in this batch with the current filters.</p>
+    <a href="{{ url_for('review_batch', batch_id=batch_data.batch_info.batch_id) }}" class="btn btn-primary">
+        Clear Filters
+    </a>
+</div>
+{% endif %}
+
+<script>
+document.addEventListener('DOMContentLoaded', function() {
+    const batchId = '{{ batch_data.batch_info.batch_id }}';
+    
+    // Character count for caption editors
+    document.querySelectorAll('.caption-editor').forEach(textarea => {
+        const charCount = document.querySelector(`[data-target="${textarea.id}"]`);
+        
+        function updateCharCount() {
+            const count = textarea.value.length;
+            charCount.textContent = count;
+            charCount.className = count > 1000 ? 'text-danger' : 'text-muted';
+        }
+        
+        textarea.addEventListener('input', updateCharCount);
+        updateCharCount();
+    });
+    
+    // Individual image actions
+    document.querySelectorAll('.approve-btn').forEach(btn => {
+        btn.addEventListener('click', async function() {
+            const imageId = this.dataset.imageId;
+            await updateImageStatus(imageId, 'approve', this);
+        });
+    });
+    
+    document.querySelectorAll('.reject-btn').forEach(btn => {
+        btn.addEventListener('click', async function() {
+            const imageId = this.dataset.imageId;
+            await updateImageStatus(imageId, 'reject', this);
+        });
+    });
+    
+    document.querySelectorAll('.save-btn').forEach(btn => {
+        btn.addEventListener('click', async function() {
+            const imageId = this.dataset.imageId;
+            await saveImageCaption(imageId, this);
+        });
+    });
+    
+    // Bulk actions
+    document.getElementById('bulkApproveSelected').addEventListener('click', function() {
+        performBulkAction('approve');
+    });
+    
+    document.getElementById('bulkRejectSelected').addEventListener('click', function() {
+        performBulkAction('reject');
+    });
+    
+    // Select all checkbox functionality
+    const selectAllCheckbox = document.createElement('input');
+    selectAllCheckbox.type = 'checkbox';
+    selectAllCheckbox.className = 'form-check-input';
+    selectAllCheckbox.id = 'selectAll';
+    
+    // Add select all to the bulk actions area
+    const bulkActionsContainer = document.querySelector('.col-md-3:last-child');
+    if (bulkActionsContainer) {
+        const selectAllContainer = document.createElement('div');
+        selectAllContainer.className = 'form-check mb-2';
+        selectAllContainer.innerHTML = `
+            <input type="checkbox" class="form-check-input" id="selectAll">
+            <label class="form-check-label" for="selectAll">Select All</label>
+        `;
+        bulkActionsContainer.insertBefore(selectAllContainer, bulkActionsContainer.firstChild);
+        
+        document.getElementById('selectAll').addEventListener('change', function() {
+            document.querySelectorAll('.image-select').forEach(checkbox => {
+                checkbox.checked = this.checked;
+            });
+        });
+    }
+    
+    async function updateImageStatus(imageId, action, button) {
+        const originalText = button.innerHTML;
+        button.disabled = true;
+        button.innerHTML = '<span class="spinner-border spinner-border-sm" role="status" aria-hidden="true"></span>';
+        
+        try {
+            const captionTextarea = document.getElementById(`caption-${imageId}`);
+            const caption = captionTextarea ? captionTextarea.value.trim() : '';
+            
+            const response = await fetch(`/api/update_caption/${imageId}`, {
+                method: 'POST',
+                headers: {
+                    'Content-Type': 'application/json',
+                    'X-CSRFToken': document.querySelector('meta[name="csrf-token"]')?.getAttribute('content') || ''
+                },
+                body: JSON.stringify({
+                    caption: caption,
+                    action: action
+                })
+            });
+            
+            const result = await response.json();
+            
+            if (response.ok && result.success) {
+                // Update the card to reflect new status
+                const card = button.closest('.image-card');
+                const statusBadge = card.querySelector('.badge');
+                const cardFooter = card.querySelector('.card-footer');
+                
+                if (action === 'approve') {
+                    statusBadge.className = 'badge bg-success';
+                    statusBadge.textContent = 'Approved';
+                } else if (action === 'reject') {
+                    statusBadge.className = 'badge bg-danger';
+                    statusBadge.textContent = 'Rejected';
+                }
+                
+                // Remove action buttons
+                if (cardFooter) {
+                    cardFooter.remove();
+                }
+                
+                showToast(`Image ${action}d successfully`, 'success');
+                
+                // Reload page after a delay to update statistics
+                setTimeout(() => {
+                    window.location.reload();
+                }, 1500);
+                
+            } else {
+                showToast(`Error: ${result.error || 'Failed to update image'}`, 'error');
+            }
+            
+        } catch (error) {
+            console.error('Update error:', error);
+            showToast('Error: Failed to connect to server', 'error');
+        } finally {
+            button.disabled = false;
+            button.innerHTML = originalText;
+        }
+    }
+    
+    async function saveImageCaption(imageId, button) {
+        const originalText = button.innerHTML;
+        button.disabled = true;
+        button.innerHTML = '<span class="spinner-border spinner-border-sm" role="status" aria-hidden="true"></span>';
+        
+        try {
+            const captionTextarea = document.getElementById(`caption-${imageId}`);
+            const caption = captionTextarea.value.trim();
+            
+            if (!caption) {
+                showToast('Caption cannot be empty', 'error');
+                return;
+            }
+            
+            const response = await fetch(`/api/review/batch/image/${imageId}/caption`, {
+                method: 'PUT',
+                headers: {
+                    'Content-Type': 'application/json',
+                    'X-CSRFToken': document.querySelector('meta[name="csrf-token"]')?.getAttribute('content') || ''
+                },
+                body: JSON.stringify({
+                    caption: caption,
+                    batch_id: batchId
+                })
+            });
+            
+            const result = await response.json();
+            
+            if (response.ok && result.success) {
+                showToast('Caption saved successfully', 'success');
+            } else {
+                showToast(`Error: ${result.error || 'Failed to save caption'}`, 'error');
+            }
+            
+        } catch (error) {
+            console.error('Save error:', error);
+            showToast('Error: Failed to connect to server', 'error');
+        } finally {
+            button.disabled = false;
+            button.innerHTML = originalText;
+        }
+    }
+    
+    async function performBulkAction(action) {
+        const selectedImages = Array.from(document.querySelectorAll('.image-select:checked')).map(cb => parseInt(cb.value));
+        
+        if (selectedImages.length === 0) {
+            showToast('Please select at least one image', 'error');
+            return;
+        }
+        
+        const actionText = action === 'approve' ? 'approve' : 'reject';
+        if (!confirm(`Are you sure you want to ${actionText} ${selectedImages.length} selected images?`)) {
+            return;
+        }
+        
+        try {
+            const endpoint = action === 'approve' ? 'bulk_approve' : 'bulk_reject';
+            const response = await fetch(`/api/review/batch/${batchId}/${endpoint}`, {
+                method: 'POST',
+                headers: {
+                    'Content-Type': 'application/json',
+                    'X-CSRFToken': document.querySelector('meta[name="csrf-token"]')?.getAttribute('content') || ''
+                },
+                body: JSON.stringify({
+                    image_ids: selectedImages
+                })
+            });
+            
+            const result = await response.json();
+            
+            if (response.ok && result.success) {
+                const count = result[`${action}d_count`] || selectedImages.length;
+                showToast(`Successfully ${actionText}d ${count} images`, 'success');
+                
+                // Reload page to show updated status
+                setTimeout(() => {
+                    window.location.reload();
+                }, 1500);
+                
+            } else {
+                showToast(`Error: ${result.error || 'Failed to perform bulk action'}`, 'error');
+            }
+            
+        } catch (error) {
+            console.error('Bulk action error:', error);
+            showToast('Error: Failed to connect to server', 'error');
+        }
+    }
+    
+    function showToast(message, type) {
+        // Create toast container if it doesn't exist
+        let toastContainer = document.querySelector('.toast-container');
+        if (!toastContainer) {
+            toastContainer = document.createElement('div');
+            toastContainer.className = 'toast-container position-fixed bottom-0 end-0 p-3';
+            toastContainer.style.zIndex = '1055';
+            document.body.appendChild(toastContainer);
+        }
+        
+        // Create toast
+        const toastId = 'toast-' + Date.now();
+        const bgClass = type === 'success' ? 'bg-success' : 'bg-danger';
+        
+        const toastHtml = `
+            <div id="${toastId}" class="toast align-items-center text-white ${bgClass} border-0" role="alert" aria-live="assertive" aria-atomic="true">
+                <div class="d-flex">
+                    <div class="toast-body">
+                        ${message}
+                    </div>
+                    <button type="button" class="btn-close btn-close-white me-2 m-auto" data-bs-dismiss="toast" aria-label="Close"></button>
+                </div>
+            </div>
+        `;
+        
+        toastContainer.insertAdjacentHTML('beforeend', toastHtml);
+        
+        // Show toast
+        const toastElement = document.getElementById(toastId);
+        const toast = new bootstrap.Toast(toastElement, { delay: 5000 });
+        toast.show();
+        
+        // Remove toast element after it's hidden
+        toastElement.addEventListener('hidden.bs.toast', () => {
+            toastElement.remove();
+        });
+    }
+});
+</script>
+
+{% endblock %}

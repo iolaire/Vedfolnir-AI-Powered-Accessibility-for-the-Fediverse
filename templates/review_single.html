@@ -1,0 +1,442 @@
+<!-- Copyright (C) 2025 iolaire mcfadden. -->
+<!-- This program is free software: you can redistribute it and/or modify it under the terms of the GNU Affero General Public License as published by the Free Software Foundation, either version 3 of the License, or (at your option) any later version. -->
+<!-- THE SOFTWARE IS PROVIDED "AS IS", WITHOUT WARRANTY OF ANY KIND, EXPRESS OR IMPLIED, INCLUDING BUT NOT LIMITED TO THE WARRANTIES OF MERCHANTABILITY, FITNESS FOR A PARTICULAR PURPOSE AND NONINFRINGEMENT. IN NO EVENT SHALL THE AUTHORS OR COPYRIGHT HOLDERS BE LIABLE FOR ANY CLAIM, DAMAGES OR OTHER LIABILITY, WHETHER IN AN ACTION OF CONTRACT, TORT OR OTHERWISE, ARISING FROM, OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE SOFTWARE. -->
+{% extends "base.html" %}
+
+{% block title %}Review Image {{ image.id }} - Vedfolnir{% endblock %}
+
+{% block head %}
+{{ super() }}
+<script src="{{ url_for('static', filename='js/image-zoom.js') }}"></script>
+{% endblock %}
+
+{% block content %}
+<!-- Keyboard shortcuts help -->
+<div class="alert alert-info alert-dismissible fade show mb-3" role="alert">
+    <h5><i class="bi bi-keyboard"></i> Keyboard Shortcuts</h5>
+    <div class="row">
+        <div class="col-md-4">
+            <strong>Alt+A</strong>: Approve caption<br>
+            <strong>Alt+R</strong>: Reject caption
+        </div>
+        <div class="col-md-4">
+            <strong>Alt+S</strong>: Save for later<br>
+            <strong>Alt+P</strong>: Approve & Post
+        </div>
+        <div class="col-md-4">
+            <strong>Alt+Z</strong>: Zoom in<br>
+            <strong>Alt+X</strong>: Zoom out<br>
+            <strong>Alt+C</strong>: Reset zoom
+        </div>
+    </div>
+    <button type="button" class="btn-close" data-bs-dismiss="alert" aria-label="Close"></button>
+</div>
+<div class="row">
+    <div class="col-md-6">
+        <div class="card">
+            <div class="image-container position-relative">
+                <div class="image-zoom-controls position-absolute top-0 end-0 m-2 bg-dark bg-opacity-50 rounded p-1">
+                    <button type="button" class="btn btn-sm btn-light zoom-in" title="Zoom In">
+                        <i class="bi bi-zoom-in"></i>
+                    </button>
+                    <button type="button" class="btn btn-sm btn-light zoom-out" title="Zoom Out">
+                        <i class="bi bi-zoom-out"></i>
+                    </button>
+                    <button type="button" class="btn btn-sm btn-light zoom-reset" title="Reset Zoom">
+                        <i class="bi bi-arrows-fullscreen"></i>
+                    </button>
+                </div>
+                <div class="image-zoom-wrapper overflow-hidden" style="cursor: move;">
+                    <img src="{{ url_for('serve_image', filename=image.local_path.split('/')[-1]) }}" 
+                         class="card-img-top image-zoomable" alt="Image {{ image.id }}">
+                </div>
+            </div>
+            <div class="card-body">
+                <h5 class="card-title">Image Details</h5>
+                <p><strong>URL:</strong> <a href="{{ image.image_url }}" target="_blank" rel="noopener">{{ image.image_url[:50] }}...</a></p>
+                <p><strong>Post:</strong> <a href="{{ image.post.post_url }}" target="_blank" rel="noopener">{{ image.post.post_id[:30] }}...</a></p>
+                <p><strong>Created:</strong> {{ image.created_at.strftime('%Y-%m-%d %H:%M') }}</p>
+                <p><strong>Media Type:</strong> {{ image.media_type or 'Unknown' }}</p>
+                <p><strong>Image Category:</strong> <span class="badge bg-info">general</span></p>
+                
+                {% if image.caption_quality_score is not none %}
+                <div class="mt-3">
+                    <h6>Caption Quality Assessment</h6>
+                    <div class="progress mb-2">
+                        {% set quality_class = 'bg-danger' if image.caption_quality_score < 40 else 'bg-warning' if image.caption_quality_score < 70 else 'bg-success' %}
+                        <div class="progress-bar {{ quality_class }}" role="progressbar" style="width: {{ image.caption_quality_score }}%" 
+                             aria-valuenow="{{ image.caption_quality_score }}" aria-valuemin="0" aria-valuemax="100">
+                            {{ image.caption_quality_score }}%
+                        </div>
+                    </div>
+                    
+                    <div class="row mb-2">
+                        <div class="col-md-4">
+                            <div class="card h-100">
+                                <div class="card-body p-2">
+                                    <h6 class="card-subtitle mb-1">Length</h6>
+                                    <p class="mb-0 small">{{ image.generated_caption|length }}/{{ caption_max_length }} characters</p>
+                                    {% if image.generated_caption|length < 50 %}
+                                        <span class="badge bg-danger">Too short</span>
+                                    {% elif image.generated_caption|length > 240 %}
+                                        <span class="badge bg-warning">Near limit</span>
+                                    {% else %}
+                                        <span class="badge bg-success">Good length</span>
+                                    {% endif %}
+                                </div>
+                            </div>
+                        </div>
+                        <div class="col-md-4">
+                            <div class="card h-100">
+                                <div class="card-body p-2">
+                                    <h6 class="card-subtitle mb-1">Detail</h6>
+                                    {% set word_count = image.generated_caption.split()|length %}
+                                    <p class="mb-0 small">{{ word_count }} words</p>
+                                    {% if word_count < 10 %}
+                                        <span class="badge bg-danger">Low detail</span>
+                                    {% elif word_count > 30 %}
+                                        <span class="badge bg-success">High detail</span>
+                                    {% else %}
+                                        <span class="badge bg-info">Medium detail</span>
+                                    {% endif %}
+                                </div>
+                            </div>
+                        </div>
+                        <div class="col-md-4">
+                            <div class="card h-100">
+                                <div class="card-body p-2">
+                                    <h6 class="card-subtitle mb-1">Category</h6>
+                                    <p class="mb-0 small">general</p>
+                                    <span class="badge bg-info">general</span>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                    
+                    {% if image.needs_special_review %}
+                    <div class="alert alert-warning" role="alert">
+                        <i class="bi bi-exclamation-triangle-fill"></i> This caption needs special review
+                    </div>
+                    {% endif %}
+                    
+                    {% if image.reviewer_notes %}
+                    <div class="border rounded p-2 bg-light">
+                        <small class="text-muted">{{ image.reviewer_notes|nl2br }}</small>
+                    </div>
+                    {% endif %}
+                </div>
+                {% endif %}
+                
+                {% if image.prompt_used %}
+                <div class="mt-2">
+                    <p><strong>Prompt Used:</strong></p>
+                    <div class="border rounded p-2 bg-light">
+                        <small class="text-muted">{{ image.prompt_used }}</small>
+                    </div>
+                </div>
+                {% endif %}
+            </div>
+        </div>
+    </div>
+    <div class="col-md-6">
+        <div class="card">
+            <div class="card-header">
+                <h5>Review Caption</h5>
+            </div>
+            <div class="card-body">
+                <form method="POST">
+    {{ csrf_token() }}
+                    {{ form.hidden_tag() }}
+                    
+                    <div class="mb-3">
+                        <div class="d-flex justify-content-between align-items-center">
+                            {{ form.caption.label(class="form-label mb-0") }}
+                            <button type="button" id="regenerate-caption" class="btn btn-sm btn-outline-primary" data-image-id="{{ image.id }}">
+                                <i class="bi bi-arrow-clockwise"></i> Regenerate Caption
+                            </button>
+                        </div>
+                        
+                        <!-- Side-by-side comparison -->
+                        <div class="row mb-2">
+                            <div class="col-md-6">
+                                <div class="form-text mb-1"><strong>Generated Caption:</strong></div>
+                                <div class="border rounded p-2 bg-light mb-2" style="min-height: 80px; max-height: 120px; overflow-y: auto;">
+                                    {{ image.generated_caption or 'No caption generated' }}
+                                </div>
+                                <button type="button" id="use-generated" class="btn btn-sm btn-outline-secondary">
+                                    <i class="bi bi-arrow-right-square"></i> Use Generated
+                                </button>
+                            </div>
+                            <div class="col-md-6">
+                                <div class="form-text mb-1"><strong>Your Edited Caption:</strong></div>
+                                {{ form.caption(class="form-control", id="caption-field", style="min-height: 80px;") }}
+                                <div class="form-text d-flex justify-content-between">
+                                    <span><span id="char-count">0</span>/{{ caption_max_length }} characters</span>
+                                    <span id="regenerate-status" class="text-muted"></span>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                    
+                    <div class="mb-3">
+                        {{ form.action.label(class="form-label") }}
+                        {{ form.action(class="form-select") }}
+                    </div>
+                    
+                    <div class="mb-3">
+                        {{ form.notes.label(class="form-label") }}
+                        {{ form.notes(class="form-control") }}
+                    </div>
+                    
+                    <div class="d-grid gap-2">
+                        {{ form.submit(class="btn btn-primary", title="Submit (Alt+Enter)") }}
+                        {% if image.image_post_id %}
+                        <button type="button" id="approve-and-post" class="btn btn-success mt-2" title="Approve & Post (Alt+P)">
+                            <i class="bi bi-check-circle"></i> Approve & Post
+                        </button>
+                        {% endif %}
+                    </div>
+                </form>
+            </div>
+        </div>
+    </div>
+</div>
+
+<script>
+// Make current platform available to JavaScript
+window.current_platform = {{ current_platform | tojson if current_platform else 'null' }};
+
+document.addEventListener('DOMContentLoaded', function() {
+    const captionField = document.getElementById('caption-field');
+    const charCount = document.getElementById('char-count');
+    const regenerateBtn = document.getElementById('regenerate-caption');
+    const regenerateStatus = document.getElementById('regenerate-status');
+    const useGeneratedBtn = document.getElementById('use-generated');
+    const actionSelect = document.querySelector('select[name="action"]');
+    const submitBtn = document.querySelector('button[type="submit"]');
+    const approvePostBtn = document.getElementById('approve-and-post');
+    const form = document.querySelector('form');
+    
+    // Initialize tooltips
+    const tooltipTriggerList = [].slice.call(document.querySelectorAll('[title]'));
+    tooltipTriggerList.map(function (tooltipTriggerEl) {
+        return new bootstrap.Tooltip(tooltipTriggerEl);
+    });
+    
+    // Get the generated caption text
+    const generatedCaption = document.querySelector('.col-md-6 .border.rounded.p-2.bg-light').textContent.trim();
+    
+    function updateCharCount() {
+        const count = captionField.value.length;
+        charCount.textContent = count;
+        charCount.className = count > {{ caption_max_length }} ? 'text-danger' : 'text-muted';
+    }
+    
+    captionField.addEventListener('input', updateCharCount);
+    updateCharCount();
+    
+    // Use generated caption button
+    if (useGeneratedBtn) {
+        useGeneratedBtn.addEventListener('click', function() {
+            captionField.value = generatedCaption;
+            updateCharCount();
+            captionField.focus();
+        });
+    }
+    
+    // Keyboard shortcuts
+    document.addEventListener('keydown', function(e) {
+        // Skip if user is typing in a text field
+        if (e.target.tagName === 'TEXTAREA' || e.target.tagName === 'INPUT') {
+            return;
+        }
+        
+        // Alt key shortcuts
+        if (e.altKey) {
+            switch (e.key.toLowerCase()) {
+                case 'a': // Alt+A: Approve
+                    e.preventDefault();
+                    if (actionSelect) {
+                        actionSelect.value = 'approve';
+                        actionSelect.dispatchEvent(new Event('change'));
+                        submitBtn.click();
+                    }
+                    break;
+                case 'r': // Alt+R: Reject
+                    e.preventDefault();
+                    if (actionSelect) {
+                        actionSelect.value = 'reject';
+                        actionSelect.dispatchEvent(new Event('change'));
+                        submitBtn.click();
+                    }
+                    break;
+                case 's': // Alt+S: Save for later
+                    e.preventDefault();
+                    if (actionSelect) {
+                        actionSelect.value = 'edit';
+                        actionSelect.dispatchEvent(new Event('change'));
+                        submitBtn.click();
+                    }
+                    break;
+                case 'p': // Alt+P: Approve & Post
+                    e.preventDefault();
+                    if (approvePostBtn) {
+                        approvePostBtn.click();
+                    }
+                    break;
+                case 'z': // Alt+Z: Zoom in
+                    e.preventDefault();
+                    document.querySelector('.zoom-in')?.click();
+                    break;
+                case 'x': // Alt+X: Zoom out
+                    e.preventDefault();
+                    document.querySelector('.zoom-out')?.click();
+                    break;
+                case 'c': // Alt+C: Reset zoom
+                    e.preventDefault();
+                    document.querySelector('.zoom-reset')?.click();
+                    break;
+            }
+        }
+    });
+    
+    // Regenerate caption functionality
+    if (regenerateBtn) {
+        regenerateBtn.addEventListener('click', async function() {
+            const imageId = this.dataset.imageId;
+            
+            // Disable button and show loading state
+            regenerateBtn.disabled = true;
+            regenerateBtn.innerHTML = '<span class="spinner-border spinner-border-sm" role="status" aria-hidden="true"></span> Generating...';
+            regenerateStatus.textContent = 'Generating new caption...';
+            
+            try {
+                const response = await fetch(`/api/regenerate_caption/${imageId}`, {
+                    method: 'POST',
+                    headers: {
+                        'Content-Type': 'application/json',
+                    }
+                });
+                
+                const result = await response.json();
+                
+                if (response.ok && result.success) {
+                    // Update caption field with new caption
+                    captionField.value = result.caption;
+                    updateCharCount();
+                    
+                    // Update category badge if available
+                    if (result.category) {
+                        const categoryBadge = document.querySelector('.badge.bg-info');
+                        if (categoryBadge) {
+                            categoryBadge.textContent = result.category;
+                        }
+                        
+                        // Reload the page to show updated prompt information
+                        setTimeout(() => {
+                            window.location.reload();
+                        }, 1000);
+                    }
+                    
+                    regenerateStatus.textContent = 'Caption regenerated successfully!';
+                    regenerateStatus.className = 'text-success';
+                } else {
+                    regenerateStatus.textContent = `Error: ${result.error || 'Failed to regenerate caption'}`;
+                    regenerateStatus.className = 'text-danger';
+                }
+            } catch (error) {
+                console.error('Error regenerating caption:', error);
+                regenerateStatus.textContent = 'Error: Failed to connect to server';
+                regenerateStatus.className = 'text-danger';
+            } finally {
+                // Reset button state
+                regenerateBtn.disabled = false;
+                regenerateBtn.innerHTML = '<i class="bi bi-arrow-clockwise"></i> Regenerate Caption';
+                
+                // Clear status message after 5 seconds
+                setTimeout(() => {
+                    if (regenerateStatus.className.includes('text-success')) {
+                        regenerateStatus.textContent = '';
+                    }
+                }, 5000);
+            }
+        });
+    }
+    
+    // Approve and post functionality
+    if (approvePostBtn) {
+        approvePostBtn.addEventListener('click', async function() {
+            const imageId = regenerateBtn.dataset.imageId;
+            const caption = captionField.value.trim();
+            
+            if (!caption) {
+                alert('Please enter a caption before approving and posting.');
+                return;
+            }
+            
+            // Disable button and show loading state
+            approvePostBtn.disabled = true;
+            approvePostBtn.innerHTML = '<span class="spinner-border spinner-border-sm" role="status" aria-hidden="true"></span> Posting...';
+            
+            try {
+                const response = await fetch(`/api/update_caption/${imageId}`, {
+                    method: 'POST',
+                    headers: {
+                        'Content-Type': 'application/json',
+                    },
+                    body: JSON.stringify({
+                        caption: caption,
+                        action: 'approve'
+                    })
+                });
+                
+                const result = await response.json();
+                
+                if (response.ok && result.success) {
+                    // Show success message with platform-aware text
+                    const platformType = window.current_platform ? window.current_platform.platform_type : 'platform';
+                    const platformName = platformType.charAt(0).toUpperCase() + platformType.slice(1);
+                    const message = result.posted ? 
+                        `Caption approved and posted to ${platformName} successfully!` : 
+                        'Caption approved successfully!';
+                    
+                    // Create toast notification
+                    const toastContainer = document.createElement('div');
+                    toastContainer.className = 'position-fixed bottom-0 end-0 p-3';
+                    toastContainer.style.zIndex = '5';
+                    
+                    toastContainer.innerHTML = `
+                        <div class="toast align-items-center text-white bg-success border-0" role="alert" aria-live="assertive" aria-atomic="true">
+                            <div class="d-flex">
+                                <div class="toast-body">
+                                    ${message}
+                                </div>
+                                <button type="button" class="btn-close btn-close-white me-2 m-auto" data-bs-dismiss="toast" aria-label="Close"></button>
+                            </div>
+                        </div>
+                    `;
+                    
+                    document.body.appendChild(toastContainer);
+                    const toast = new bootstrap.Toast(toastContainer.querySelector('.toast'));
+                    toast.show();
+                    
+                    // Redirect to next image after a delay
+                    setTimeout(() => {
+                        window.location.href = '/review';
+                    }, 2000);
+                } else {
+                    alert(`Error: ${result.error || 'Failed to update caption'}`);
+                }
+            } catch (error) {
+                console.error('Error updating caption:', error);
+                alert('Error: Failed to connect to server');
+            } finally {
+                // Reset button state
+                approvePostBtn.disabled = false;
+                approvePostBtn.innerHTML = '<i class="bi bi-check-circle"></i> Approve & Post';
+            }
+        });
+    }
+});
+</script>
+{% endblock %}

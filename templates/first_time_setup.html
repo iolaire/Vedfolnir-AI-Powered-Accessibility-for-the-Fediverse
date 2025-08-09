@@ -1,0 +1,459 @@
+<!-- Copyright (C) 2025 iolaire mcfadden. -->
+<!-- This program is free software: you can redistribute it and/or modify it under the terms of the GNU Affero General Public License as published by the Free Software Foundation, either version 3 of the License, or (at your option) any later version. -->
+<!-- THE SOFTWARE IS PROVIDED "AS IS", WITHOUT WARRANTY OF ANY KIND, EXPRESS OR IMPLIED, INCLUDING BUT NOT LIMITED TO THE WARRANTIES OF MERCHANTABILITY, FITNESS FOR A PARTICULAR PURPOSE AND NONINFRINGEMENT. IN NO EVENT SHALL THE AUTHORS OR COPYRIGHT HOLDERS BE LIABLE FOR ANY CLAIM, DAMAGES OR OTHER LIABILITY, WHETHER IN AN ACTION OF CONTRACT, TORT OR OTHERWISE, ARISING FROM, OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE SOFTWARE. -->
+{% extends "base.html" %}
+
+{% block title %}First Time Setup - Vedfolnir{% endblock %}
+
+{% block content %}
+<div class="container-fluid py-4">
+    <div class="row justify-content-center">
+        <div class="col-lg-8 col-xl-6">
+            <!-- Welcome Header -->
+            <div class="text-center mb-5">
+                <div class="mb-3">
+                    <span style="font-size: 4rem;">🚀</span>
+                </div>
+                <h1 class="display-5 fw-bold text-primary mb-3">Welcome to Vedfolnir!</h1>
+                <p class="lead text-muted">Let's get you set up with your first platform connection</p>
+            </div>
+
+            <!-- Setup Steps -->
+            <div class="card shadow-sm border-0 mb-4">
+                <div class="card-body p-4">
+                    <h3 class="card-title mb-4">
+                        <i class="bi bi-list-check text-primary me-2"></i>
+                        Setup Steps
+                    </h3>
+                    
+                    <div class="row">
+                        <div class="col-md-6 mb-3">
+                            <div class="d-flex align-items-start">
+                                <div class="flex-shrink-0">
+                                    <div class="bg-primary text-white rounded-circle d-flex align-items-center justify-content-center" style="width: 32px; height: 32px;">
+                                        <small class="fw-bold">1</small>
+                                    </div>
+                                </div>
+                                <div class="flex-grow-1 ms-3">
+                                    <h6 class="mb-1">Choose Platform</h6>
+                                    <small class="text-muted">Select Pixelfed or Mastodon</small>
+                                </div>
+                            </div>
+                        </div>
+                        
+                        <div class="col-md-6 mb-3">
+                            <div class="d-flex align-items-start">
+                                <div class="flex-shrink-0">
+                                    <div class="bg-primary text-white rounded-circle d-flex align-items-center justify-content-center" style="width: 32px; height: 32px;">
+                                        <small class="fw-bold">2</small>
+                                    </div>
+                                </div>
+                                <div class="flex-grow-1 ms-3">
+                                    <h6 class="mb-1">Get Access Token</h6>
+                                    <small class="text-muted">Create app in your instance</small>
+                                </div>
+                            </div>
+                        </div>
+                        
+                        <div class="col-md-6 mb-3">
+                            <div class="d-flex align-items-start">
+                                <div class="flex-shrink-0">
+                                    <div class="bg-primary text-white rounded-circle d-flex align-items-center justify-content-center" style="width: 32px; height: 32px;">
+                                        <small class="fw-bold">3</small>
+                                    </div>
+                                </div>
+                                <div class="flex-grow-1 ms-3">
+                                    <h6 class="mb-1">Add Connection</h6>
+                                    <small class="text-muted">Configure your platform</small>
+                                </div>
+                            </div>
+                        </div>
+                        
+                        <div class="col-md-6 mb-3">
+                            <div class="d-flex align-items-start">
+                                <div class="flex-shrink-0">
+                                    <div class="bg-primary text-white rounded-circle d-flex align-items-center justify-content-center" style="width: 32px; height: 32px;">
+                                        <small class="fw-bold">4</small>
+                                    </div>
+                                </div>
+                                <div class="flex-grow-1 ms-3">
+                                    <h6 class="mb-1">Start Using</h6>
+                                    <small class="text-muted">Begin processing images</small>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Platform Selection -->
+            <div class="card shadow-sm border-0 mb-4">
+                <div class="card-body p-4">
+                    <h3 class="card-title mb-4">
+                        <i class="bi bi-cloud text-primary me-2"></i>
+                        Choose Your Platform
+                    </h3>
+                    
+                    <div class="row g-3">
+                        <!-- Pixelfed Option -->
+                        <div class="col-md-6">
+                            <div class="card h-100 border-2 platform-option" data-platform="pixelfed">
+                                <div class="card-body text-center p-4">
+                                    <div class="mb-3">
+                                        <i class="bi bi-camera text-primary" style="font-size: 2.5rem;"></i>
+                                    </div>
+                                    <h5 class="card-title">Pixelfed</h5>
+                                    <p class="card-text text-muted small">
+                                        Photo sharing platform focused on visual content
+                                    </p>
+                                    <div class="mt-3">
+                                        <span class="badge bg-success-subtle text-success">Simple Setup</span>
+                                        <span class="badge bg-info-subtle text-info">Photo Focused</span>
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
+                        
+                        <!-- Mastodon Option -->
+                        <div class="col-md-6">
+                            <div class="card h-100 border-2 platform-option" data-platform="mastodon">
+                                <div class="card-body text-center p-4">
+                                    <div class="mb-3">
+                                        <i class="bi bi-chat-dots text-primary" style="font-size: 2.5rem;"></i>
+                                    </div>
+                                    <h5 class="card-title">Mastodon</h5>
+                                    <p class="card-text text-muted small">
+                                        Decentralized social network with media support
+                                    </p>
+                                    <div class="mt-3">
+                                        <span class="badge bg-success-subtle text-success">Simple Setup</span>
+                                        <span class="badge bg-info-subtle text-info">Social Network</span>
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Setup Instructions -->
+            <div class="card shadow-sm border-0 mb-4" id="setup-instructions" style="display: none;">
+                <div class="card-body p-4">
+                    <h3 class="card-title mb-4">
+                        <i class="bi bi-gear text-primary me-2"></i>
+                        Setup Instructions
+                    </h3>
+                    
+                    <!-- Pixelfed Instructions -->
+                    <div id="pixelfed-instructions" class="platform-instructions" style="display: none;">
+                        <div class="alert alert-info">
+                            <i class="bi bi-info-circle me-2"></i>
+                            <strong>Pixelfed Setup:</strong> You only need an access token to get started.
+                        </div>
+                        
+                        <ol class="list-group list-group-numbered">
+                            <li class="list-group-item">
+                                <strong>Go to your Pixelfed instance</strong><br>
+                                <small class="text-muted">Navigate to Settings → Applications</small>
+                            </li>
+                            <li class="list-group-item">
+                                <strong>Create a new application</strong><br>
+                                <small class="text-muted">Name: "Vedfolnir", Scopes: read + write</small>
+                            </li>
+                            <li class="list-group-item">
+                                <strong>Copy your access token</strong><br>
+                                <small class="text-muted">You'll need this for the form below</small>
+                            </li>
+                        </ol>
+                    </div>
+                    
+                    <!-- Mastodon Instructions -->
+                    <div id="mastodon-instructions" class="platform-instructions" style="display: none;">
+                        <div class="alert alert-info">
+                            <i class="bi bi-info-circle me-2"></i>
+                            <strong>Mastodon Setup:</strong> You only need an access token to get started.
+                        </div>
+                        
+                        <ol class="list-group list-group-numbered">
+                            <li class="list-group-item">
+                                <strong>Go to your Mastodon instance</strong><br>
+                                <small class="text-muted">Navigate to Preferences → Development</small>
+                            </li>
+                            <li class="list-group-item">
+                                <strong>Create a new application</strong><br>
+                                <small class="text-muted">Name: "Vedfolnir", Scopes: read + write</small>
+                            </li>
+                            <li class="list-group-item">
+                                <strong>Copy your access token</strong><br>
+                                <small class="text-muted">You'll need this for the form below</small>
+                            </li>
+                        </ol>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Platform Form -->
+            <div class="card shadow-sm border-0 mb-4" id="platform-form" style="display: none;">
+                <div class="card-body p-4">
+                    <h3 class="card-title mb-4">
+                        <i class="bi bi-plus-circle text-primary me-2"></i>
+                        Add Platform Connection
+                    </h3>
+                    
+                    <form id="addPlatformForm">
+    {{ csrf_token() }}
+                        <div class="row">
+                            <div class="col-md-6 mb-3">
+                                <label for="platformName" class="form-label">Connection Name</label>
+                                <input type="text" class="form-control" id="platformName" name="name" required
+                                       placeholder="My Pixelfed Account">
+                                <div class="form-text">A friendly name for this connection</div>
+                            </div>
+                            
+                            <div class="col-md-6 mb-3">
+                                <label for="instanceUrl" class="form-label">Instance URL</label>
+                                <input type="url" class="form-control" id="instanceUrl" name="instance_url" required
+                                       placeholder="https://pixelfed.social">
+                                <div class="form-text">Your platform instance URL</div>
+                            </div>
+                        </div>
+                        
+                        <div class="row">
+                            <div class="col-md-6 mb-3">
+                                <label for="username" class="form-label">Username (Optional)</label>
+                                <input type="text" class="form-control" id="username" name="username"
+                                       placeholder="your_username">
+                                <div class="form-text">Your username on the platform</div>
+                            </div>
+                            
+                            <div class="col-md-6 mb-3">
+                                <label for="accessToken" class="form-label">Access Token</label>
+                                <input type="password" class="form-control" id="accessToken" name="access_token" required
+                                       placeholder="Your access token">
+                                <div class="form-text">The access token from your application</div>
+                            </div>
+                        </div>
+                        
+                        <input type="hidden" id="platformType" name="platform_type" value="">
+                        
+                        <div class="d-flex justify-content-between align-items-center">
+                            <button type="button" class="btn btn-outline-secondary" id="backButton">
+                                <i class="bi bi-arrow-left me-2"></i>Back
+                            </button>
+                            <button type="submit" class="btn btn-primary">
+                                <i class="bi bi-check-circle me-2"></i>Add Connection & Continue
+                            </button>
+                        </div>
+                    </form>
+                </div>
+            </div>
+
+            <!-- Skip Option -->
+            <div class="text-center">
+                <p class="text-muted small">
+                    Need help? Check the 
+                    <a href="#" class="text-decoration-none" data-bs-toggle="modal" data-bs-target="#helpModal">
+                        setup documentation
+                    </a>
+                </p>
+            </div>
+        </div>
+    </div>
+</div>
+
+<!-- Help Modal -->
+<div class="modal fade" id="helpModal" tabindex="-1">
+    <div class="modal-dialog modal-lg">
+        <div class="modal-content">
+            <div class="modal-header">
+                <h5 class="modal-title">Setup Help</h5>
+                <button type="button" class="btn-close" data-bs-dismiss="modal"></button>
+            </div>
+            <div class="modal-body">
+                <p>For detailed setup instructions, please refer to the README documentation or contact your system administrator.</p>
+                <p>The Vedfolnir helps you automatically generate and manage alt text for images on ActivityPub platforms.</p>
+            </div>
+        </div>
+    </div>
+</div>
+{% endblock %}
+
+{% block scripts %}
+<style>
+.platform-option {
+    cursor: pointer;
+    transition: all 0.3s ease;
+}
+
+.platform-option:hover {
+    border-color: var(--bs-primary) !important;
+    transform: translateY(-2px);
+    box-shadow: 0 4px 12px rgba(0,0,0,0.1);
+}
+
+.platform-option.selected {
+    border-color: var(--bs-primary) !important;
+    background-color: var(--bs-primary-bg-subtle);
+}
+
+.list-group-numbered {
+    counter-reset: section;
+}
+
+.list-group-numbered .list-group-item {
+    border: 1px solid var(--bs-border-color);
+    margin-bottom: 0.5rem;
+    border-radius: 0.375rem;
+}
+
+.list-group-numbered .list-group-item::before {
+    counter-increment: section;
+    content: counter(section);
+    position: absolute;
+    left: -2.5rem;
+    top: 50%;
+    transform: translateY(-50%);
+    background: var(--bs-primary);
+    color: white;
+    width: 1.5rem;
+    height: 1.5rem;
+    border-radius: 50%;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    font-size: 0.75rem;
+    font-weight: bold;
+}
+</style>
+
+<script>
+document.addEventListener('DOMContentLoaded', function() {
+    const platformOptions = document.querySelectorAll('.platform-option');
+    const setupInstructions = document.getElementById('setup-instructions');
+    const platformForm = document.getElementById('platform-form');
+    const platformTypeInput = document.getElementById('platformType');
+    const backButton = document.getElementById('backButton');
+    const addPlatformForm = document.getElementById('addPlatformForm');
+    
+    // Platform selection
+    platformOptions.forEach(option => {
+        option.addEventListener('click', function() {
+            // Remove selected class from all options
+            platformOptions.forEach(opt => opt.classList.remove('selected'));
+            
+            // Add selected class to clicked option
+            this.classList.add('selected');
+            
+            const platform = this.dataset.platform;
+            platformTypeInput.value = platform;
+            
+            // Show instructions for selected platform
+            document.querySelectorAll('.platform-instructions').forEach(inst => {
+                inst.style.display = 'none';
+            });
+            document.getElementById(platform + '-instructions').style.display = 'block';
+            
+            // Show setup instructions and form
+            setupInstructions.style.display = 'block';
+            platformForm.style.display = 'block';
+            
+            // Update form placeholders based on platform
+            updateFormPlaceholders(platform);
+            
+            // Smooth scroll to instructions
+            setupInstructions.scrollIntoView({ behavior: 'smooth' });
+        });
+    });
+    
+    // Back button
+    backButton.addEventListener('click', function() {
+        // Hide instructions and form
+        setupInstructions.style.display = 'none';
+        platformForm.style.display = 'none';
+        
+        // Remove selected class from all options
+        platformOptions.forEach(opt => opt.classList.remove('selected'));
+        
+        // Scroll back to platform selection
+        document.querySelector('.card').scrollIntoView({ behavior: 'smooth' });
+    });
+    
+    // Form submission
+    addPlatformForm.addEventListener('submit', function(e) {
+        e.preventDefault();
+        
+        const formData = new FormData(this);
+        const data = Object.fromEntries(formData.entries());
+        
+        // Show loading state
+        const submitBtn = this.querySelector('button[type="submit"]');
+        const originalText = submitBtn.innerHTML;
+        submitBtn.innerHTML = '<i class="bi bi-hourglass-split me-2"></i>Adding Connection...';
+        submitBtn.disabled = true;
+        
+        // Submit to API
+        fetch('/api/add_platform', {
+            method: 'POST',
+            headers: {
+                'Content-Type': 'application/json',
+            },
+            body: JSON.stringify(data)
+        })
+        .then(response => response.json())
+        .then(data => {
+            if (data.success) {
+                // Show success message
+                showAlert('success', 'Platform connection added successfully! Redirecting to dashboard...');
+                
+                // Redirect to dashboard after short delay
+                setTimeout(() => {
+                    window.location.href = '/';
+                }, 2000);
+            } else {
+                showAlert('danger', 'Error: ' + data.error);
+                submitBtn.innerHTML = originalText;
+                submitBtn.disabled = false;
+            }
+        })
+        .catch(error => {
+            showAlert('danger', 'Network error: ' + error.message);
+            submitBtn.innerHTML = originalText;
+            submitBtn.disabled = false;
+        });
+    });
+    
+    function updateFormPlaceholders(platform) {
+        const nameInput = document.getElementById('platformName');
+        const instanceInput = document.getElementById('instanceUrl');
+        
+        if (platform === 'pixelfed') {
+            nameInput.placeholder = 'My Pixelfed Account';
+            instanceInput.placeholder = 'https://pixelfed.social';
+        } else if (platform === 'mastodon') {
+            nameInput.placeholder = 'My Mastodon Account';
+            instanceInput.placeholder = 'https://mastodon.social';
+        }
+    }
+    
+    function showAlert(type, message) {
+        const alertDiv = document.createElement('div');
+        alertDiv.className = `alert alert-${type} alert-dismissible fade show`;
+        alertDiv.innerHTML = `
+            ${message}
+            <button type="button" class="btn-close" data-bs-dismiss="alert"></button>
+        `;
+        
+        // Insert at top of form
+        const form = document.getElementById('platform-form');
+        form.insertBefore(alertDiv, form.firstChild);
+        
+        // Auto-dismiss after 5 seconds for success messages
+        if (type === 'success') {
+            setTimeout(() => {
+                alertDiv.remove();
+            }, 5000);
+        }
+    }
+});
+</script>
+{% endblock %}

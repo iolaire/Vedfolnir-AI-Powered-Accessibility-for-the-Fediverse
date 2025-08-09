@@ -1,0 +1,312 @@
+<!-- Copyright (C) 2025 iolaire mcfadden. -->
+<!-- This program is free software: you can redistribute it and/or modify it under the terms of the GNU Affero General Public License as published by the Free Software Foundation, either version 3 of the License, or (at your option) any later version. -->
+<!-- THE SOFTWARE IS PROVIDED "AS IS", WITHOUT WARRANTY OF ANY KIND, EXPRESS OR IMPLIED, INCLUDING BUT NOT LIMITED TO THE WARRANTIES OF MERCHANTABILITY, FITNESS FOR A PARTICULAR PURPOSE AND NONINFRINGEMENT. IN NO EVENT SHALL THE AUTHORS OR COPYRIGHT HOLDERS BE LIABLE FOR ANY CLAIM, DAMAGES OR OTHER LIABILITY, WHETHER IN AN ACTION OF CONTRACT, TORT OR OTHERWISE, ARISING FROM, OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE SOFTWARE. -->
+{% extends "base.html" %}
+
+{% block title %}Dashboard - Vedfolnir{% endblock %}
+
+{% block content %}
+<!-- Header Section -->
+<div class="row mb-4">
+    <div class="col-12">
+        <div class="d-flex justify-content-between align-items-center">
+            <div>
+                <h1 class="display-6 fw-bold mb-2">Dashboard</h1>
+                <p class="lead text-muted mb-0">Automated alt text generation and review system</p>
+            </div>
+            <div class="d-flex gap-2">
+                <button class="btn btn-outline-primary" onclick="location.reload()">
+                    <i class="bi bi-arrow-clockwise"></i> Refresh
+                </button>
+                {% if current_user.has_permission(UserRole.ADMIN) %}
+                <a href="{{ url_for('health_dashboard') }}" class="btn btn-outline-secondary">
+                    <i class="bi bi-heart-pulse"></i> System Health
+                </a>
+                {% endif %}
+            </div>
+        </div>
+    </div>
+</div>
+
+<!-- Platform Context Banner -->
+{% if current_platform %}
+<div class="row mb-4">
+    <div class="col-12">
+        <div class="alert alert-info d-flex align-items-center">
+            <i class="bi bi-{{ 'mastodon' if current_platform.platform_type == 'mastodon' else 'image' }} fs-4 me-3"></i>
+            <div class="flex-grow-1">
+                <strong>Current Platform:</strong> {{ current_platform.name }} 
+                <span class="badge bg-primary ms-2">{{ current_platform.platform_type|title }}</span>
+                {% if current_platform.is_default %}
+                <span class="badge bg-success ms-1">Default</span>
+                {% endif %}
+                <br>
+                <small class="text-muted">
+                    {{ current_platform.instance_url }}
+                    {% if current_platform.username %} - @{{ current_platform.username }}{% endif %}
+                </small>
+            </div>
+            <div>
+                <a href="{{ url_for('platform_management') }}" class="btn btn-sm btn-outline-primary">
+                    <i class="bi bi-gear"></i> Manage
+                </a>
+            </div>
+        </div>
+    </div>
+</div>
+{% else %}
+<div class="row mb-4">
+    <div class="col-12">
+        <div class="alert alert-warning d-flex align-items-center">
+            <i class="bi bi-exclamation-triangle fs-4 me-3"></i>
+            <div class="flex-grow-1">
+                <strong>No Platform Selected</strong><br>
+                <small>Please configure a platform connection to view data.</small>
+            </div>
+            <div>
+                <a href="{{ url_for('platform_management') }}" class="btn btn-sm btn-warning">
+                    <i class="bi bi-plus-circle"></i> Add Platform
+                </a>
+            </div>
+        </div>
+    </div>
+</div>
+{% endif %}
+
+<!-- Stats Cards -->
+<div class="row g-4 mb-5">
+    <div class="col-lg-3 col-md-6">
+        <div class="card stats-card h-100">
+            <div class="card-body text-center">
+                <div class="d-flex align-items-center justify-content-center mb-3">
+                    <i class="bi bi-file-earmark-text fs-1 opacity-75"></i>
+                </div>
+                <h5 class="card-title">
+                    Total Posts
+                    {% if current_platform %}
+                    <br><small class="text-muted">on {{ current_platform.name }}</small>
+                    {% endif %}
+                </h5>
+                <h2 class="mb-0">{{ "{:,}".format(stats.total_posts or 0) }}</h2>
+            </div>
+        </div>
+    </div>
+    <div class="col-lg-3 col-md-6">
+        <div class="card stats-card h-100" style="background: linear-gradient(135deg, #059669 0%, #047857 100%);">
+            <div class="card-body text-center">
+                <div class="d-flex align-items-center justify-content-center mb-3">
+                    <i class="bi bi-image fs-1 opacity-75"></i>
+                </div>
+                <h5 class="card-title">
+                    Total Images
+                    {% if current_platform %}
+                    <br><small class="text-muted opacity-75">on {{ current_platform.name }}</small>
+                    {% endif %}
+                </h5>
+                <h2 class="mb-0">{{ "{:,}".format(stats.total_images or 0) }}</h2>
+            </div>
+        </div>
+    </div>
+    <div class="col-lg-3 col-md-6">
+        <div class="card stats-card h-100" style="background: linear-gradient(135deg, #d97706 0%, #b45309 100%);">
+            <div class="card-body text-center">
+                <div class="d-flex align-items-center justify-content-center mb-3">
+                    <i class="bi bi-clock-history fs-1 opacity-75"></i>
+                </div>
+                <h5 class="card-title">Pending Review</h5>
+                <h2 class="mb-0">{{ "{:,}".format(stats.pending_review or 0) }}</h2>
+            </div>
+        </div>
+    </div>
+    <div class="col-lg-3 col-md-6">
+        <div class="card stats-card h-100" style="background: linear-gradient(135deg, #0891b2 0%, #0e7490 100%);">
+            <div class="card-body text-center">
+                <div class="d-flex align-items-center justify-content-center mb-3">
+                    <i class="bi bi-check-circle fs-1 opacity-75"></i>
+                </div>
+                <h5 class="card-title">Posted</h5>
+                <h2 class="mb-0">{{ "{:,}".format(stats.posted or 0) }}</h2>
+            </div>
+        </div>
+    </div>
+</div>
+
+<!-- Main Content Grid -->
+<div class="row g-4">
+    <!-- Quick Actions -->
+    <div class="col-lg-8">
+        <div class="card h-100">
+            <div class="card-header d-flex align-items-center">
+                <i class="bi bi-lightning-charge me-2 text-primary"></i>
+                <h5 class="mb-0">Quick Actions</h5>
+            </div>
+            <div class="card-body">
+                <div class="row g-3">
+                    <div class="col-md-6">
+                        <a href="{{ url_for('review_list') }}" class="btn btn-primary btn-lg w-100 d-flex align-items-center justify-content-center">
+                            <i class="bi bi-eye me-2"></i>
+                            Review Images
+                        </a>
+                    </div>
+                    <div class="col-md-6">
+                        <a href="{{ url_for('batch_review') }}" class="btn btn-outline-primary btn-lg w-100 d-flex align-items-center justify-content-center">
+                            <i class="bi bi-grid-3x3 me-2"></i>
+                            Batch Review
+                        </a>
+                    </div>
+                    <div class="col-md-6">
+                        <a href="{{ url_for('post_approved') }}" class="btn btn-success btn-lg w-100 d-flex align-items-center justify-content-center">
+                            <i class="bi bi-cloud-upload me-2"></i>
+                            Post Approved
+                        </a>
+                    </div>
+                    {% if current_user.has_permission(UserRole.ADMIN) %}
+                    <div class="col-md-6">
+                        <a href="{{ url_for('admin_cleanup') }}" class="btn btn-outline-secondary btn-lg w-100 d-flex align-items-center justify-content-center">
+                            <i class="bi bi-trash me-2"></i>
+                            Data Cleanup
+                        </a>
+                    </div>
+                    {% endif %}
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Status Overview -->
+    <div class="col-lg-4">
+        <div class="card h-100">
+            <div class="card-header d-flex align-items-center">
+                <i class="bi bi-pie-chart me-2 text-primary"></i>
+                <h5 class="mb-0">Status Overview</h5>
+            </div>
+            <div class="card-body">
+                <div class="d-flex flex-column gap-3">
+                    <div class="d-flex justify-content-between align-items-center">
+                        <div class="d-flex align-items-center">
+                            <div class="bg-warning rounded-circle me-3" style="width: 12px; height: 12px;"></div>
+                            <span>Pending Review</span>
+                        </div>
+                        <span class="badge bg-warning">{{ stats.pending_review or 0 }}</span>
+                    </div>
+                    <div class="d-flex justify-content-between align-items-center">
+                        <div class="d-flex align-items-center">
+                            <div class="bg-success rounded-circle me-3" style="width: 12px; height: 12px;"></div>
+                            <span>Approved</span>
+                        </div>
+                        <span class="badge bg-success">{{ stats.approved or 0 }}</span>
+                    </div>
+                    <div class="d-flex justify-content-between align-items-center">
+                        <div class="d-flex align-items-center">
+                            <div class="bg-info rounded-circle me-3" style="width: 12px; height: 12px;"></div>
+                            <span>Posted</span>
+                        </div>
+                        <span class="badge bg-info">{{ stats.posted or 0 }}</span>
+                    </div>
+                    <div class="d-flex justify-content-between align-items-center">
+                        <div class="d-flex align-items-center">
+                            <div class="bg-danger rounded-circle me-3" style="width: 12px; height: 12px;"></div>
+                            <span>Rejected</span>
+                        </div>
+                        <span class="badge bg-danger">{{ stats.rejected or 0 }}</span>
+                    </div>
+                </div>
+                
+                {% if stats.total_images and stats.total_images > 0 %}
+                <div class="mt-4">
+                    <div class="small text-muted mb-2">Processing Progress</div>
+                    {% set processed = (stats.approved or 0) + (stats.posted or 0) + (stats.rejected or 0) %}
+                    {% set progress_percent = ((processed / stats.total_images) * 100) | round(1) %}
+                    <div class="progress" style="height: 8px;">
+                        <div class="progress-bar bg-success" role="progressbar" 
+                             style="width: {{ progress_percent }}%" 
+                             aria-valuenow="{{ progress_percent }}" 
+                             aria-valuemin="0" 
+                             aria-valuemax="100">
+                        </div>
+                    </div>
+                    <div class="small text-muted mt-1">{{ progress_percent }}% processed</div>
+                </div>
+                {% endif %}
+            </div>
+        </div>
+    </div>
+</div>
+
+<!-- Recent Activity (if we have data) -->
+{% if current_user.has_permission(UserRole.ADMIN) %}
+<div class="row mt-4">
+    <div class="col-12">
+        <div class="card">
+            <div class="card-header d-flex align-items-center justify-content-between">
+                <div class="d-flex align-items-center">
+                    <i class="bi bi-activity me-2 text-primary"></i>
+                    <h5 class="mb-0">System Status</h5>
+                </div>
+                <a href="{{ url_for('health_dashboard') }}" class="btn btn-sm btn-outline-primary">
+                    View Details <i class="bi bi-arrow-right"></i>
+                </a>
+            </div>
+            <div class="card-body">
+                <div class="row text-center">
+                    <div class="col-md-3">
+                        <div class="d-flex align-items-center justify-content-center">
+                            <i class="bi bi-database text-success me-2"></i>
+                            <span class="text-success fw-medium">Database Online</span>
+                        </div>
+                    </div>
+                    <div class="col-md-3">
+                        <div class="d-flex align-items-center justify-content-center">
+                            <i class="bi bi-robot text-success me-2"></i>
+                            <span class="text-success fw-medium">AI Service Ready</span>
+                        </div>
+                    </div>
+                    <div class="col-md-3">
+                        <div class="d-flex align-items-center justify-content-center">
+                            <i class="bi bi-cloud text-success me-2"></i>
+                            <span class="text-success fw-medium">API Connected</span>
+                        </div>
+                    </div>
+                    <div class="col-md-3">
+                        <div class="d-flex align-items-center justify-content-center">
+                            <i class="bi bi-hdd text-success me-2"></i>
+                            <span class="text-success fw-medium">Storage OK</span>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+{% endif %}
+
+<script>
+// Auto-refresh stats every 30 seconds
+setInterval(function() {
+    // Only refresh if user is active (to save resources)
+    if (document.visibilityState === 'visible') {
+        fetch(window.location.href)
+            .then(response => response.text())
+            .then(html => {
+                // Update only the stats cards to avoid disrupting user interaction
+                const parser = new DOMParser();
+                const newDoc = parser.parseFromString(html, 'text/html');
+                const newStats = newDoc.querySelectorAll('.stats-card h2');
+                const currentStats = document.querySelectorAll('.stats-card h2');
+                
+                newStats.forEach((newStat, index) => {
+                    if (currentStats[index] && newStat.textContent !== currentStats[index].textContent) {
+                        currentStats[index].textContent = newStat.textContent;
+                        // Add a subtle animation to indicate update
+                        currentStats[index].style.transform = 'scale(1.1)';
+                        setTimeout(() => {
+                            currentStats[index].style.transform = 'scale(1)';
+                        }, 200);
+                    }
+                });
+            })
+            .catch(error => console.log('Stats refresh failed:', error));
+    }
+}, 30000);
+</script>
+{% endblock %}

@@ -1,0 +1,179 @@
+/* Copyright (C) 2025 iolaire mcfadden. */
+/* This program is free software: you can redistribute it and/or modify it under the terms of the GNU Affero General Public License as published by the Free Software Foundation, either version 3 of the License, or (at your option) any later version. */
+/* THE SOFTWARE IS PROVIDED "AS IS", WITHOUT WARRANTY OF ANY KIND, EXPRESS OR IMPLIED, INCLUDING BUT NOT LIMITED TO THE WARRANTIES OF MERCHANTABILITY, FITNESS FOR A PARTICULAR PURPOSE AND NONINFRINGEMENT. IN NO EVENT SHALL THE AUTHORS OR COPYRIGHT HOLDERS BE LIABLE FOR ANY CLAIM, DAMAGES OR OTHER LIABILITY, WHETHER IN AN ACTION OF CONTRACT, TORT OR OTHERWISE, ARISING FROM, OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE SOFTWARE. */
+/* Platform-specific styling for navigation and UI elements */
+
+/* Platform Selector in Navigation */
+.platform-selector {
+    background: rgba(255, 255, 255, 0.1);
+    border-radius: 0.375rem;
+    transition: all 0.2s ease;
+}
+
+.platform-selector:hover {
+    background: rgba(255, 255, 255, 0.2);
+}
+
+.platform-name {
+    font-weight: 500;
+    margin-left: 0.25rem;
+}
+
+/* Platform Dropdown Styling */
+.platform-dropdown {
+    min-width: 280px;
+    box-shadow: 0 0.5rem 1rem rgba(0, 0, 0, 0.15);
+}
+
+.platform-dropdown .dropdown-header {
+    color: #6c757d;
+    font-size: 0.875rem;
+    font-weight: 600;
+    padding: 0.5rem 1rem 0.25rem;
+}
+
+.platform-dropdown .dropdown-item-text {
+    padding: 0.5rem 1rem;
+    white-space: normal;
+    line-height: 1.4;
+}
+
+.platform-switch-item {
+    padding: 0.5rem 1rem;
+    transition: background-color 0.15s ease-in-out;
+}
+
+.platform-switch-item:hover {
+    background-color: #f8f9fa;
+}
+
+.platform-switch-item i {
+    width: 1.25rem;
+    margin-right: 0.5rem;
+}
+
+/* Platform Status Indicators */
+.platform-status-online {
+    color: #198754;
+}
+
+.platform-status-offline {
+    color: #dc3545;
+}
+
+.platform-status-unknown {
+    color: #6c757d;
+}
+
+/* Platform Type Icons */
+.platform-icon-pixelfed {
+    color: #ff6b35;
+}
+
+.platform-icon-mastodon {
+    color: #563acc;
+}
+
+/* Platform Cards (for management interface) */
+.platform-connection-card {
+    transition: all 0.2s ease;
+    border: 1px solid #dee2e6;
+}
+
+.platform-connection-card:hover {
+    box-shadow: 0 0.125rem 0.25rem rgba(0, 0, 0, 0.075);
+    transform: translateY(-1px);
+}
+
+.platform-connection-card.border-primary {
+    border-color: #0d6efd !important;
+    box-shadow: 0 0 0 0.2rem rgba(13, 110, 253, 0.25);
+}
+
+/* Platform Badges */
+.badge.platform-badge {
+    font-size: 0.75rem;
+    padding: 0.25rem 0.5rem;
+}
+
+.badge.platform-pixelfed {
+    background-color: #ff6b35;
+    color: white;
+}
+
+.badge.platform-mastodon {
+    background-color: #563acc;
+    color: white;
+}
+
+/* Responsive adjustments */
+@media (max-width: 768px) {
+    .platform-dropdown {
+        min-width: 250px;
+    }
+    
+    .platform-name {
+        display: none;
+    }
+    
+    .platform-selector {
+        padding: 0.375rem 0.5rem;
+    }
+}
+
+@media (max-width: 576px) {
+    .platform-dropdown {
+        min-width: 200px;
+        left: -100px !important;
+    }
+}
+
+/* Loading states for platform switching */
+.platform-switching {
+    opacity: 0.6;
+    pointer-events: none;
+}
+
+.platform-switching::after {
+    content: "";
+    position: absolute;
+    top: 50%;
+    left: 50%;
+    width: 1rem;
+    height: 1rem;
+    margin: -0.5rem 0 0 -0.5rem;
+    border: 2px solid #f3f3f3;
+    border-top: 2px solid #007bff;
+    border-radius: 50%;
+    animation: spin 1s linear infinite;
+}
+
+@keyframes spin {
+    0% { transform: rotate(0deg); }
+    100% { transform: rotate(360deg); }
+}
+
+/* Platform context indicators */
+.platform-context-indicator {
+    position: relative;
+}
+
+.platform-context-indicator::before {
+    content: "";
+    position: absolute;
+    top: -2px;
+    right: -2px;
+    width: 8px;
+    height: 8px;
+    border-radius: 50%;
+    background-color: #198754;
+    border: 2px solid white;
+}
+
+.platform-context-indicator.inactive::before {
+    background-color: #6c757d;
+}
+
+.platform-context-indicator.error::before {
+    background-color: #dc3545;
+}

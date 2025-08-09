@@ -1,0 +1,90 @@
+// Fix for the Approve & Post button in batch review
+
+document.addEventListener('DOMContentLoaded', function() {
+    // Find all Approve & Post buttons
+    const approvePostButtons = document.querySelectorAll('.btn-approve-post');
+    
+    // Add click event listeners to each button
+    approvePostButtons.forEach(button => {
+        console.log(`Found Approve & Post button for image ID: ${button.dataset.imageId}`);
+        
+        button.addEventListener('click', async function() {
+            const imageId = this.dataset.imageId;
+            const batchItem = this.closest('.batch-item');
+            const textarea = batchItem.querySelector('textarea');
+            const caption = textarea.value.trim();
+            
+            if (!caption) {
+                alert('Please enter a caption before approving and posting.');
+                return;
+            }
+            
+            // Disable button and show loading state
+            this.disabled = true;
+            this.innerHTML = '<span class="spinner-border spinner-border-sm" role="status" aria-hidden="true"></span> Posting...';
+            
+            try {
+                // Send the request to update and post the caption
+                const response = await fetch(`/api/update_caption/${imageId}`, {
+                    method: 'POST',
+                    headers: {
+                        'Content-Type': 'application/json',
+                    },
+                    body: JSON.stringify({
+                        caption: caption,
+                        action: 'approve'
+                    })
+                });
+                
+                const result = await response.json();
+                
+                if (response.ok && result.success) {
+                    // Show success message
+                    let message = 'Caption approved successfully!';
+                    if (result.posted) {
+                        message += ' Caption has been posted to Pixelfed.';
+                    }
+                    
+                    // Update UI to show posted status
+                    batchItem.classList.remove('rejected', 'skipped');
+                    batchItem.classList.add('approved', 'posted');
+                    batchItem.style.opacity = '0.5';
+                    batchItem.querySelector('.batch-actions').innerHTML = '<span class="badge bg-success">Posted to Pixelfed</span>';
+                    
+                    // Show toast message if available
+                    if (window.vedfolnir && window.vedfolnir.showToast) {
+                        window.vedfolnir.showToast(message, 'success');
+                    } else {
+                        alert(message);
+                    }
+                } else {
+                    // Show error message
+                    const errorMsg = `Error: ${result.error || 'Failed to update caption'}`;
+                    
+                    if (window.vedfolnir && window.vedfolnir.showToast) {
+                        window.vedfolnir.showToast(errorMsg, 'danger');
+                    } else {
+                        alert(errorMsg);
+                    }
+                    
+                    // Reset button state
+                    this.disabled = false;
+                    this.innerHTML = '<i class="bi bi-cloud-upload"></i> Approve & Post';
+                }
+            } catch (error) {
+                console.error('Error updating caption:', error);
+                
+                // Show error message
+                if (window.vedfolnir && window.vedfolnir.showToast) {
+                    window.vedfolnir.showToast('Error: Failed to connect to server', 'danger');
+                } else {
+                    alert('Error: Failed to connect to server');
+                }
+                
+                // Reset button state
+                this.disabled = false;
+                this.innerHTML = '<i class="bi bi-cloud-upload"></i> Approve & Post';
+            }
+        });
+    });
+});

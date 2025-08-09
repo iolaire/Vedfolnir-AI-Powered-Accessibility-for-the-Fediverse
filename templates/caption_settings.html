@@ -1,0 +1,479 @@
+<!-- Copyright (C) 2025 iolaire mcfadden. -->
+<!-- This program is free software: you can redistribute it and/or modify it under the terms of the GNU Affero General Public License as published by the Free Software Foundation, either version 3 of the License, or (at your option) any later version. -->
+<!-- THE SOFTWARE IS PROVIDED "AS IS", WITHOUT WARRANTY OF ANY KIND, EXPRESS OR IMPLIED, INCLUDING BUT NOT LIMITED TO THE WARRANTIES OF MERCHANTABILITY, FITNESS FOR A PARTICULAR PURPOSE AND NONINFRINGEMENT. IN NO EVENT SHALL THE AUTHORS OR COPYRIGHT HOLDERS BE LIABLE FOR ANY CLAIM, DAMAGES OR OTHER LIABILITY, WHETHER IN AN ACTION OF CONTRACT, TORT OR OTHERWISE, ARISING FROM, OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE SOFTWARE. -->
+{% extends "base.html" %}
+
+{% block title %}Caption Settings - Vedfolnir{% endblock %}
+
+{% block head %}
+<style>
+    .settings-form {
+        background-color: #f8f9fa;
+        padding: 25px;
+        border-radius: 8px;
+        margin-bottom: 20px;
+    }
+    
+    .form-row {
+        display: flex;
+        gap: 20px;
+        margin-bottom: 20px;
+    }
+    
+    .form-row .form-group {
+        flex: 1;
+    }
+    
+    .character-count {
+        font-size: 0.8em;
+        color: #6c757d;
+        float: right;
+        margin-top: 5px;
+    }
+    
+    .settings-preview {
+        background-color: #e9ecef;
+        padding: 15px;
+        border-radius: 5px;
+        margin-top: 15px;
+    }
+    
+    .help-text {
+        font-size: 0.9em;
+        color: #6c757d;
+        margin-top: 5px;
+    }
+    
+    .validation-feedback {
+        display: block;
+        width: 100%;
+        margin-top: 0.25rem;
+        font-size: 0.875em;
+    }
+    
+    .is-invalid {
+        border-color: #dc3545;
+    }
+    
+    .is-valid {
+        border-color: #28a745;
+    }
+    
+    @media (max-width: 768px) {
+        .form-row {
+            flex-direction: column;
+            gap: 0;
+        }
+    }
+</style>
+{% endblock %}
+
+{% block content %}
+<div class="container mt-4">
+    <div class="row justify-content-center">
+        <div class="col-lg-8">
+            <div class="d-flex justify-content-between align-items-center mb-4">
+                <h1><i class="bi bi-gear"></i> Caption Generation Settings</h1>
+                <a href="{{ url_for('caption_generation') }}" class="btn btn-outline-secondary">
+                    <i class="bi bi-arrow-left"></i> Back to Generation
+                </a>
+            </div>
+            
+            {% if current_platform %}
+            <div class="alert alert-info">
+                <i class="bi bi-info-circle"></i>
+                <strong>Platform:</strong> {{ current_platform.name }} 
+                ({{ current_platform.platform_type|title }})
+                {% if current_platform.username %}
+                - @{{ current_platform.username }}
+                {% endif %}
+                <br>
+                <small>These settings will be saved for this platform only.</small>
+            </div>
+            {% endif %}
+            
+            <div class="card">
+                <div class="card-header">
+                    <h5><i class="bi bi-sliders"></i> Generation Settings</h5>
+                </div>
+                <div class="card-body">
+                    <form method="POST" action="{{ url_for('save_caption_settings') }}" id="settings-form">
+                        {{ form.hidden_tag() }}
+                        
+                        <div class="settings-form">
+                            <h6><i class="bi bi-list-ol"></i> Processing Limits</h6>
+                            
+                            <div class="form-row">
+                                <div class="form-group">
+                                    {{ form.max_posts_per_run.label(class="form-label") }}
+                                    {{ form.max_posts_per_run(class="form-control", id="max_posts_per_run") }}
+                                    <div class="help-text">
+                                        Maximum number of posts to process in a single generation run.
+                                        Higher values process more content but take longer.
+                                    </div>
+                                    <div class="invalid-feedback" id="max_posts_per_run_feedback"></div>
+                                </div>
+                                
+                                <div class="form-group">
+                                    {{ form.processing_delay.label(class="form-label") }}
+                                    {{ form.processing_delay(class="form-control", step="0.1", id="processing_delay") }}
+                                    <div class="help-text">
+                                        Delay between processing posts (in seconds).
+                                        Higher values reduce server load but increase total time.
+                                    </div>
+                                    <div class="invalid-feedback" id="processing_delay_feedback"></div>
+                                </div>
+                            </div>
+                            
+                            <h6><i class="bi bi-text-paragraph"></i> Caption Length Settings</h6>
+                            
+                            <div class="form-row">
+                                <div class="form-group">
+                                    {{ form.max_caption_length.label(class="form-label") }}
+                                    {{ form.max_caption_length(class="form-control", id="max_caption_length") }}
+                                    <div class="help-text">
+                                        Maximum allowed length for generated captions.
+                                        Captions longer than this will be truncated.
+                                    </div>
+                                    <div class="invalid-feedback" id="max_caption_length_feedback"></div>
+                                </div>
+                            </div>
+                            
+                            <div class="form-row">
+                                <div class="form-group">
+                                    {{ form.optimal_min_length.label(class="form-label") }}
+                                    {{ form.optimal_min_length(class="form-control", id="optimal_min_length") }}
+                                    <div class="help-text">
+                                        Minimum length for optimal captions.
+                                        The AI will try to generate captions at least this long.
+                                    </div>
+                                    <div class="invalid-feedback" id="optimal_min_length_feedback"></div>
+                                </div>
+                                
+                                <div class="form-group">
+                                    {{ form.optimal_max_length.label(class="form-label") }}
+                                    {{ form.optimal_max_length(class="form-control", id="optimal_max_length") }}
+                                    <div class="help-text">
+                                        Maximum length for optimal captions.
+                                        The AI will try to keep captions under this length.
+                                    </div>
+                                    <div class="invalid-feedback" id="optimal_max_length_feedback"></div>
+                                </div>
+                            </div>
+                            
+                            <h6><i class="bi bi-arrow-repeat"></i> Processing Options</h6>
+                            
+                            <div class="form-group">
+                                <div class="form-check">
+                                    {{ form.reprocess_existing(class="form-check-input", id="reprocess_existing") }}
+                                    {{ form.reprocess_existing.label(class="form-check-label") }}
+                                </div>
+                                <div class="help-text">
+                                    When enabled, the system will regenerate captions for images that already have captions.
+                                    When disabled, only images without captions will be processed.
+                                </div>
+                            </div>
+                            
+                            <!-- Settings Preview -->
+                            <div class="settings-preview" id="settings-preview">
+                                <h6><i class="bi bi-eye"></i> Settings Preview</h6>
+                                <div class="row">
+                                    <div class="col-md-6">
+                                        <small>
+                                            <strong>Processing:</strong> Up to <span id="preview-max-posts">50</span> posts
+                                            with <span id="preview-delay">1.0</span>s delay
+                                        </small>
+                                    </div>
+                                    <div class="col-md-6">
+                                        <small>
+                                            <strong>Caption Length:</strong> <span id="preview-min-length">80</span>-<span id="preview-max-length">200</span> chars
+                                            (max <span id="preview-absolute-max">500</span>)
+                                        </small>
+                                    </div>
+                                </div>
+                                <div class="row mt-2">
+                                    <div class="col-12">
+                                        <small>
+                                            <strong>Reprocess Existing:</strong> 
+                                            <span id="preview-reprocess">No</span>
+                                        </small>
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
+                        
+                        <div class="d-flex justify-content-between">
+                            <button type="button" class="btn btn-outline-secondary" onclick="resetToDefaults()">
+                                <i class="bi bi-arrow-counterclockwise"></i> Reset to Defaults
+                            </button>
+                            <div>
+                                <button type="button" class="btn btn-outline-primary me-2" onclick="validateSettings()">
+                                    <i class="bi bi-check-circle"></i> Validate Settings
+                                </button>
+                                {{ form.submit(class="btn btn-primary") }}
+                            </div>
+                        </div>
+                    </form>
+                </div>
+            </div>
+            
+            <!-- Help Section -->
+            <div class="card mt-4">
+                <div class="card-header">
+                    <h5><i class="bi bi-question-circle"></i> Settings Help</h5>
+                </div>
+                <div class="card-body">
+                    <div class="row">
+                        <div class="col-md-6">
+                            <h6>Processing Settings</h6>
+                            <ul class="list-unstyled">
+                                <li><strong>Max Posts Per Run:</strong> Controls how many posts are processed in one session. Higher values process more content but take longer.</li>
+                                <li><strong>Processing Delay:</strong> Adds a pause between processing posts to reduce server load and avoid rate limits.</li>
+                            </ul>
+                        </div>
+                        <div class="col-md-6">
+                            <h6>Caption Length Settings</h6>
+                            <ul class="list-unstyled">
+                                <li><strong>Max Caption Length:</strong> Hard limit for caption length. Longer captions will be truncated.</li>
+                                <li><strong>Optimal Min/Max Length:</strong> Target range for caption length. The AI will try to generate captions within this range.</li>
+                                <li><strong>Reprocess Existing:</strong> Whether to regenerate captions for images that already have them.</li>
+                            </ul>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+
+<script>
+// Real-time validation and preview updates
+document.addEventListener('DOMContentLoaded', function() {
+    const form = document.getElementById('settings-form');
+    const inputs = form.querySelectorAll('input[type="number"], input[type="text"]');
+    const checkboxes = form.querySelectorAll('input[type="checkbox"]');
+    
+    // Update preview when inputs change
+    inputs.forEach(input => {
+        input.addEventListener('input', updatePreview);
+        input.addEventListener('blur', validateField);
+    });
+    
+    checkboxes.forEach(checkbox => {
+        checkbox.addEventListener('change', updatePreview);
+    });
+    
+    // Load current settings via API
+    loadCurrentSettings();
+    
+    // Initial preview update
+    updatePreview();
+});
+
+function loadCurrentSettings() {
+    fetch('/api/caption_settings')
+        .then(response => response.json())
+        .then(data => {
+            if (data.success && data.settings) {
+                const settings = data.settings;
+                
+                // Update form fields with current settings
+                document.getElementById('max_posts_per_run').value = settings.max_posts_per_run || 50;
+                document.getElementById('processing_delay').value = settings.processing_delay || 1.0;
+                document.getElementById('max_caption_length').value = settings.max_caption_length || 500;
+                document.getElementById('optimal_min_length').value = settings.optimal_min_length || 80;
+                document.getElementById('optimal_max_length').value = settings.optimal_max_length || 200;
+                document.getElementById('reprocess_existing').checked = settings.reprocess_existing || false;
+                
+                // Update preview
+                updatePreview();
+                
+                // Show success message
+                showAlert('Settings loaded successfully', 'success');
+            }
+        })
+        .catch(error => {
+            console.error('Error loading settings:', error);
+            showAlert('Failed to load current settings', 'warning');
+        });
+}
+
+function updatePreview() {
+    const maxPosts = document.getElementById('max_posts_per_run').value || 50;
+    const delay = document.getElementById('processing_delay').value || 1.0;
+    const minLength = document.getElementById('optimal_min_length').value || 80;
+    const maxLength = document.getElementById('optimal_max_length').value || 200;
+    const absoluteMax = document.getElementById('max_caption_length').value || 500;
+    const reprocess = document.getElementById('reprocess_existing').checked;
+    
+    document.getElementById('preview-max-posts').textContent = maxPosts;
+    document.getElementById('preview-delay').textContent = delay;
+    document.getElementById('preview-min-length').textContent = minLength;
+    document.getElementById('preview-max-length').textContent = maxLength;
+    document.getElementById('preview-absolute-max').textContent = absoluteMax;
+    document.getElementById('preview-reprocess').textContent = reprocess ? 'Yes' : 'No';
+}
+
+function validateField(event) {
+    const field = event.target;
+    const value = parseInt(field.value) || parseFloat(field.value);
+    const fieldName = field.id;
+    let isValid = true;
+    let message = '';
+    
+    // Field-specific validation
+    switch(fieldName) {
+        case 'max_posts_per_run':
+            if (value < 1 || value > 100) {
+                isValid = false;
+                message = 'Must be between 1 and 100';
+            }
+            break;
+            
+        case 'processing_delay':
+            if (value < 0 || value > 10) {
+                isValid = false;
+                message = 'Must be between 0 and 10 seconds';
+            }
+            break;
+            
+        case 'max_caption_length':
+            if (value < 50 || value > 1000) {
+                isValid = false;
+                message = 'Must be between 50 and 1000 characters';
+            }
+            break;
+            
+        case 'optimal_min_length':
+            if (value < 20 || value > 200) {
+                isValid = false;
+                message = 'Must be between 20 and 200 characters';
+            }
+            break;
+            
+        case 'optimal_max_length':
+            if (value < 100 || value > 500) {
+                isValid = false;
+                message = 'Must be between 100 and 500 characters';
+            }
+            break;
+    }
+    
+    // Cross-field validation
+    if (fieldName === 'optimal_min_length' || fieldName === 'optimal_max_length') {
+        const minLength = parseInt(document.getElementById('optimal_min_length').value) || 80;
+        const maxLength = parseInt(document.getElementById('optimal_max_length').value) || 200;
+        
+        if (minLength >= maxLength) {
+            isValid = false;
+            message = 'Optimal min length must be less than optimal max length';
+        }
+    }
+    
+    if (fieldName === 'optimal_max_length' || fieldName === 'max_caption_length') {
+        const optimalMax = parseInt(document.getElementById('optimal_max_length').value) || 200;
+        const absoluteMax = parseInt(document.getElementById('max_caption_length').value) || 500;
+        
+        if (optimalMax > absoluteMax) {
+            isValid = false;
+            message = 'Optimal max length cannot exceed maximum caption length';
+        }
+    }
+    
+    // Update field appearance
+    const feedbackElement = document.getElementById(fieldName + '_feedback');
+    if (isValid) {
+        field.classList.remove('is-invalid');
+        field.classList.add('is-valid');
+        if (feedbackElement) {
+            feedbackElement.textContent = '';
+        }
+    } else {
+        field.classList.remove('is-valid');
+        field.classList.add('is-invalid');
+        if (feedbackElement) {
+            feedbackElement.textContent = message;
+        }
+    }
+    
+    return isValid;
+}
+
+function validateSettings() {
+    const form = document.getElementById('settings-form');
+    
+    // Collect current form values
+    const settings = {
+        max_posts_per_run: parseInt(document.getElementById('max_posts_per_run').value),
+        processing_delay: parseFloat(document.getElementById('processing_delay').value),
+        max_caption_length: parseInt(document.getElementById('max_caption_length').value),
+        optimal_min_length: parseInt(document.getElementById('optimal_min_length').value),
+        optimal_max_length: parseInt(document.getElementById('optimal_max_length').value),
+        reprocess_existing: document.getElementById('reprocess_existing').checked
+    };
+    
+    // Validate via API
+    fetch('/api/validate_caption_settings', {
+        method: 'POST',
+        headers: {
+            'Content-Type': 'application/json',
+            'X-CSRFToken': document.querySelector('input[name="csrf_token"]').value
+        },
+        body: JSON.stringify(settings)
+    })
+    .then(response => response.json())
+    .then(data => {
+        if (data.success && data.valid) {
+            showAlert('All settings are valid!', 'success');
+        } else if (data.errors) {
+            showAlert('Validation errors: ' + data.errors.join(', '), 'danger');
+        } else {
+            showAlert('Validation failed', 'danger');
+        }
+    })
+    .catch(error => {
+        console.error('Validation error:', error);
+        showAlert('Failed to validate settings', 'danger');
+    });
+}
+
+function resetToDefaults() {
+    if (confirm('Are you sure you want to reset all settings to their default values?')) {
+        document.getElementById('max_posts_per_run').value = 50;
+        document.getElementById('processing_delay').value = 1.0;
+        document.getElementById('max_caption_length').value = 500;
+        document.getElementById('optimal_min_length').value = 80;
+        document.getElementById('optimal_max_length').value = 200;
+        document.getElementById('reprocess_existing').checked = false;
+        
+        // Clear validation states
+        const inputs = document.querySelectorAll('input');
+        inputs.forEach(input => {
+            input.classList.remove('is-valid', 'is-invalid');
+        });
+        
+        updatePreview();
+        showAlert('Settings reset to defaults.', 'info');
+    }
+}
+
+function showAlert(message, type) {
+    const alertDiv = document.createElement('div');
+    alertDiv.className = `alert alert-${type} alert-dismissible fade show`;
+    alertDiv.innerHTML = `
+        ${message}
+        <button type="button" class="btn-close" data-bs-dismiss="alert"></button>
+    `;
+    
+    const container = document.querySelector('.container');
+    container.insertBefore(alertDiv, container.firstChild);
+    
+    // Auto-dismiss after 5 seconds
+    setTimeout(() => {
+        if (alertDiv.parentNode) {
+            alertDiv.remove();
+        }
+    }, 5000);
+}
+</script>
+{% endblock %}

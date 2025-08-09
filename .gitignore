@@ -1,0 +1,142 @@
+# Python
+__pycache__/
+*.py[cod]
+*$py.class
+*.so
+.Python
+build/
+develop-eggs/
+dist/
+downloads/
+eggs/
+.eggs/
+lib/
+lib64/
+parts/
+sdist/
+var/
+wheels/
+*.egg-info/
+.installed.cfg
+*.egg
+MANIFEST
+
+# Virtual environments
+venv/
+env/
+ENV/
+env.bak/
+venv.bak/
+.venv/
+
+# Environment variables
+.env
+.env.local
+.env.development.local
+.env.test.local
+.env.production.local
+.env.backup.*
+.env.*.deprecated
+
+# Storage directories
+storage/
+logs/
+
+# Database files
+*.db
+*.sqlite
+*.sqlite3
+*.db-journal
+
+# Database backups
+*_backup_*.db
+
+# Log files
+*.log
+*.log.*
+webapp_*.log
+simple_test.log
+
+# Flask instance folder
+instance/
+
+# Flask session files
+flask_session/
+
+# Security and audit files
+security_audit_report.json
+success_criteria_results.json
+
+# Cookies and session data
+cookies.txt
+
+# IDE
+.vscode/
+.idea/
+*.swp
+*.swo
+*~
+
+# OS
+.DS_Store
+.DS_Store?
+._*
+.Spotlight-V100
+.Trashes
+ehthumbs.db
+Thumbs.db
+
+# Process files
+*.pid
+
+
+
+# Test coverage
+.coverage
+.pytest_cache/
+coverage.xml
+*.cover
+.hypothesis/
+
+# Jupyter Notebook
+.ipynb_checkpoints
+
+# pyenv
+.python-version
+
+# Alembic
+# Keep alembic.ini but ignore version files if they contain sensitive data
+# migrations/versions/*.py  # Uncomment if versions contain sensitive data
+
+# Node.js (if using any frontend build tools)
+node_modules/
+npm-debug.log*
+yarn-debug.log*
+yarn-error.log*
+
+# SSL certificates
+*.pem
+*.key
+*.crt
+*.cert
+
+# Backup files
+*.bak
+*.backup
+
+# Development and testing artifacts
+.pytest_cache/
+.tox/
+.coverage
+htmlcov/
+
+# Documentation build
+docs/_build/
+docs/summary/
+
+# Database migrations
+migrations/
+
+# Local configuration overrides
+config_local.py
+local_settings.py

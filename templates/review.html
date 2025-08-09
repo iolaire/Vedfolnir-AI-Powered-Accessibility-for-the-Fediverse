@@ -1,0 +1,159 @@
+<!-- Copyright (C) 2025 iolaire mcfadden. -->
+<!-- This program is free software: you can redistribute it and/or modify it under the terms of the GNU Affero General Public License as published by the Free Software Foundation, either version 3 of the License, or (at your option) any later version. -->
+<!-- THE SOFTWARE IS PROVIDED "AS IS", WITHOUT WARRANTY OF ANY KIND, EXPRESS OR IMPLIED, INCLUDING BUT NOT LIMITED TO THE WARRANTIES OF MERCHANTABILITY, FITNESS FOR A PARTICULAR PURPOSE AND NONINFRINGEMENT. IN NO EVENT SHALL THE AUTHORS OR COPYRIGHT HOLDERS BE LIABLE FOR ANY CLAIM, DAMAGES OR OTHER LIABILITY, WHETHER IN AN ACTION OF CONTRACT, TORT OR OTHERWISE, ARISING FROM, OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE SOFTWARE. -->
+{% extends "base.html" %}
+
+{% block title %}Review Images - Vedfolnir{% endblock %}
+
+{% block content %}
+<div class="d-flex justify-content-between align-items-center mb-4">
+    <h1>Review Images</h1>
+    <div>
+        <span class="badge bg-secondary">Page {{ page }} of {{ (total // per_page) + 1 }}</span>
+        <span class="badge bg-info">{{ total }} total images</span>
+    </div>
+</div>
+
+<!-- Platform Filter Controls -->
+{% if user_platforms and user_platforms|length > 1 %}
+<div class="card mb-4">
+    <div class="card-body">
+        <div class="row align-items-center">
+            <div class="col-md-8">
+                <h6 class="mb-2">Platform Filter:</h6>
+                <div class="btn-group" role="group" aria-label="Platform filter">
+                    <a href="{{ url_for('review_list', page=1) }}" 
+                       class="btn btn-sm {{ 'btn-primary' if not selected_platform or selected_platform == current_platform.id|string else 'btn-outline-primary' }}">
+                        {% if current_platform %}
+                        <i class="bi bi-{{ 'mastodon' if current_platform.platform_type == 'mastodon' else 'image' }}"></i>
+                        {{ current_platform.name }}
+                        {% else %}
+                        Current
+                        {% endif %}
+                    </a>
+                    <a href="{{ url_for('review_list', platform='all', page=1) }}" 
+                       class="btn btn-sm {{ 'btn-primary' if selected_platform == 'all' else 'btn-outline-primary' }}">
+                        <i class="bi bi-globe"></i> All Platforms
+                    </a>
+                    {% for platform in user_platforms %}
+                        {% if platform.id != current_platform.id %}
+                        <a href="{{ url_for('review_list', platform=platform.id, page=1) }}" 
+                           class="btn btn-sm {{ 'btn-primary' if selected_platform == platform.id|string else 'btn-outline-primary' }}">
+                            <i class="bi bi-{{ 'mastodon' if platform.platform_type == 'mastodon' else 'image' }}"></i>
+                            {{ platform.name }}
+                        </a>
+                        {% endif %}
+                    {% endfor %}
+                </div>
+            </div>
+            <div class="col-md-4 text-end">
+                {% if selected_platform == 'all' %}
+                <small class="text-muted">Showing images from all platforms</small>
+                {% elif selected_platform and selected_platform != current_platform.id|string %}
+                {% set selected_platform_obj = user_platforms|selectattr('id', 'equalto', selected_platform|int)|first %}
+                {% if selected_platform_obj %}
+                <small class="text-muted">Showing images from {{ selected_platform_obj.name }}</small>
+                {% endif %}
+                {% else %}
+                <small class="text-muted">Showing images from current platform</small>
+                {% endif %}
+            </div>
+        </div>
+    </div>
+</div>
+{% endif %}
+
+{% if images %}
+<div class="row">
+    {% for image in images %}
+    <div class="col-md-4 mb-4">
+        <div class="card h-100">
+            <!-- Platform indicator badge -->
+            <div class="position-relative">
+                <img src="{{ url_for('serve_image', filename=image.local_path.split('/')[-1]) }}" 
+                     class="card-img-top" style="height: 200px; object-fit: cover;" 
+                     alt="Image {{ image.id }}">
+                <div class="position-absolute top-0 end-0 m-2">
+                    {% if image.platform_connection %}
+                    <span class="badge bg-{{ 'primary' if image.platform_connection.platform_type == 'mastodon' else 'info' }} platform-badge">
+                        <i class="bi bi-{{ 'mastodon' if image.platform_connection.platform_type == 'mastodon' else 'image' }}"></i>
+                        {{ image.platform_connection.platform_type|title }}
+                    </span>
+                    {% elif image.platform_type %}
+                    <span class="badge bg-secondary platform-badge">
+                        <i class="bi bi-{{ 'mastodon' if image.platform_type == 'mastodon' else 'image' }}"></i>
+                        {{ image.platform_type|title }}
+                    </span>
+                    {% endif %}
+                </div>
+            </div>
+            <div class="card-body">
+                <h6 class="card-title">
+                    Post: <a href="{{ image.post.post_url }}" target="_blank" rel="noopener">{{ image.post.post_id[:20] }}...</a>
+                </h6>
+                
+                <!-- Platform information -->
+                <div class="mb-2">
+                    {% if image.platform_connection %}
+                    <small class="text-muted">
+                        <i class="bi bi-server"></i> {{ image.platform_connection.name }}
+                        {% if image.platform_connection.username %}
+                        <br><i class="bi bi-person"></i> @{{ image.platform_connection.username }}
+                        {% endif %}
+                    </small>
+                    {% elif image.instance_url %}
+                    <small class="text-muted">
+                        <i class="bi bi-globe"></i> {{ image.instance_url|replace('https://', '')|replace('http://', '') }}
+                    </small>
+                    {% endif %}
+                </div>
+                
+                <p class="card-text">
+                    <strong>Generated Caption:</strong><br>
+                    <small class="text-muted">{{ image.generated_caption or 'No caption generated' }}</small>
+                </p>
+                <p class="card-text">
+                    <small class="text-muted">
+                        Created: {{ image.created_at.strftime('%Y-%m-%d %H:%M') }}
+                    </small>
+                </p>
+            </div>
+            <div class="card-footer">
+                <a href="{{ url_for('review_single', image_id=image.id) }}" 
+                   class="btn btn-primary btn-sm">Review</a>
+            </div>
+        </div>
+    </div>
+    {% endfor %}
+</div>
+
+<!-- Pagination -->
+<nav aria-label="Page navigation">
+    <ul class="pagination justify-content-center">
+        {% if has_prev %}
+            <li class="page-item">
+                <a class="page-link" href="{{ url_for('review_list', page=page-1, platform=selected_platform) }}">Previous</a>
+            </li>
+        {% endif %}
+        
+        {% for page_num in range(1, (total // per_page) + 2) %}
+            {% if page_num <= 10 %}
+                <li class="page-item {% if page_num == page %}active{% endif %}">
+                    <a class="page-link" href="{{ url_for('review_list', page=page_num) }}">{{ page_num }}</a>
+                </li>
+            {% endif %}
+        {% endfor %}
+        
+        {% if has_next %}
+            <li class="page-item">
+                <a class="page-link" href="{{ url_for('review_list', page=page+1, platform=selected_platform) }}">Next</a>
+            </li>
+        {% endif %}
+    </ul>
+</nav>
+{% else %}
+<div class="alert alert-info" role="alert">
+    No images pending review.
+</div>
+{% endif %}
+{% endblock %}

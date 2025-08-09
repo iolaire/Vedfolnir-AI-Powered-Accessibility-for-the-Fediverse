@@ -1,0 +1,355 @@
+<!-- Copyright (C) 2025 iolaire mcfadden. -->
+<!-- This program is free software: you can redistribute it and/or modify it under the terms of the GNU Affero General Public License as published by the Free Software Foundation, either version 3 of the License, or (at your option) any later version. -->
+<!-- THE SOFTWARE IS PROVIDED "AS IS", WITHOUT WARRANTY OF ANY KIND, EXPRESS OR IMPLIED, INCLUDING BUT NOT LIMITED TO THE WARRANTIES OF MERCHANTABILITY, FITNESS FOR A PARTICULAR PURPOSE AND NONINFRINGEMENT. IN NO EVENT SHALL THE AUTHORS OR COPYRIGHT HOLDERS BE LIABLE FOR ANY CLAIM, DAMAGES OR OTHER LIABILITY, WHETHER IN AN ACTION OF CONTRACT, TORT OR OTHERWISE, ARISING FROM, OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE SOFTWARE. -->
+{% extends "base.html" %}
+
+{% block title %}Data Cleanup - Vedfolnir{% endblock %}
+
+{% block content %}
+<div class="container mt-4">
+    <h1>Data Cleanup</h1>
+    
+    <div class="alert alert-info">
+        <p>This interface allows you to clean up old data from the database. Use with caution!</p>
+        <p>All operations can be run in "dry run" mode to see what would be deleted without actually deleting anything.</p>
+
+    </div>
+    
+    {% with messages = get_flashed_messages(with_categories=true) %}
+        {% if messages %}
+            {% for category, message in messages %}
+                <div class="alert alert-{{ 'danger' if category == 'danger' else 'success' if category == 'success' else 'info' if category == 'info' else 'warning' }} alert-dismissible fade show" role="alert">
+                    {{ message }}
+                    <button type="button" class="btn-close" data-bs-dismiss="alert" aria-label="Close"></button>
+                </div>
+            {% endfor %}
+        {% endif %}
+    {% endwith %}
+    
+    <!-- Platform Context -->
+    {% if current_platform %}
+    <div class="alert alert-info mb-4">
+        <div class="d-flex align-items-center">
+            <i class="bi bi-{{ 'mastodon' if current_platform.platform_type == 'mastodon' else 'image' }} fs-4 me-3"></i>
+            <div class="flex-grow-1">
+                <strong>Current Platform Context:</strong> {{ current_platform.name }}
+                <span class="badge bg-primary ms-2">{{ current_platform.platform_type|title }}</span>
+                <br>
+                <small class="text-muted">Statistics and operations are filtered to this platform</small>
+            </div>
+            <div>
+                <a href="{{ url_for('platform_management') }}" class="btn btn-sm btn-outline-primary">
+                    <i class="bi bi-arrow-repeat"></i> Switch Platform
+                </a>
+            </div>
+        </div>
+    </div>
+    {% else %}
+    <div class="alert alert-warning mb-4">
+        <div class="d-flex align-items-center">
+            <i class="bi bi-exclamation-triangle fs-4 me-3"></i>
+            <div class="flex-grow-1">
+                <strong>No Platform Selected</strong><br>
+                <small>Showing global statistics across all platforms</small>
+            </div>
+            <div>
+                <a href="{{ url_for('platform_management') }}" class="btn btn-sm btn-warning">
+                    <i class="bi bi-plus-circle"></i> Select Platform
+                </a>
+            </div>
+        </div>
+    </div>
+    {% endif %}
+
+    <div class="card mb-4">
+        <div class="card-header">
+            <h2 class="h5 mb-0">
+                Current Data Statistics
+                {% if current_platform %}
+                <small class="text-muted">- {{ current_platform.name }}</small>
+                {% else %}
+                <small class="text-muted">- All Platforms</small>
+                {% endif %}
+            </h2>
+        </div>
+        <div class="card-body">
+            <div class="row">
+                <div class="col-md-6">
+                    <ul class="list-group">
+                        <li class="list-group-item d-flex justify-content-between align-items-center">
+                            Total Posts
+                            <span class="badge bg-primary rounded-pill">{{ stats.total_posts }}</span>
+                        </li>
+                        <li class="list-group-item d-flex justify-content-between align-items-center">
+                            Total Images
+                            <span class="badge bg-primary rounded-pill">{{ stats.total_images }}</span>
+                        </li>
+                        <li class="list-group-item d-flex justify-content-between align-items-center">
+                            Processing Runs
+                            <span class="badge bg-primary rounded-pill">{{ stats.processing_runs }}</span>
+                        </li>
+                    </ul>
+                </div>
+                <div class="col-md-6">
+                    <ul class="list-group">
+                        <li class="list-group-item d-flex justify-content-between align-items-center">
+                            Pending Review
+                            <span class="badge bg-warning rounded-pill">{{ stats.pending_review }}</span>
+                        </li>
+                        <li class="list-group-item d-flex justify-content-between align-items-center">
+                            Approved
+                            <span class="badge bg-success rounded-pill">{{ stats.approved }}</span>
+                        </li>
+                        <li class="list-group-item d-flex justify-content-between align-items-center">
+                            Posted
+                            <span class="badge bg-info rounded-pill">{{ stats.posted }}</span>
+                        </li>
+                        <li class="list-group-item d-flex justify-content-between align-items-center">
+                            Rejected
+                            <span class="badge bg-danger rounded-pill">{{ stats.rejected }}</span>
+                        </li>
+                    </ul>
+                </div>
+            </div>
+        </div>
+    </div>
+    
+    <div class="card mb-4">
+        <div class="card-header">
+            <h2 class="h5 mb-0">Archive Processing Runs</h2>
+        </div>
+        <div class="card-body">
+            <form action="{{ url_for('admin_cleanup_runs') }}" method="post">
+    {{ csrf_token() }}
+                <div class="mb-3">
+                    <label for="runs_days" class="form-label">Archive runs older than (days)</label>
+                    <input type="number" class="form-control" id="runs_days" name="days" value="{{ retention.processing_runs }}" min="1" max="365">
+                </div>
+                <div class="form-check mb-3">
+                    <input class="form-check-input" type="checkbox" id="runs_dry_run" name="dry_run" checked>
+                    <label class="form-check-label" for="runs_dry_run">
+                        Dry run (don't actually delete anything)
+                    </label>
+                </div>
+                <button type="submit" class="btn btn-primary">Archive Runs</button>
+            </form>
+        </div>
+    </div>
+    
+    <div class="card mb-4">
+        <div class="card-header">
+            <h2 class="h5 mb-0">Clean Up Orphan Processing Runs</h2>
+        </div>
+        <div class="card-body">
+            <p class="text-muted">Remove processing runs that are stuck, abandoned, or have no associated platform connection.</p>
+            <form action="{{ url_for('admin_cleanup_orphan_runs') }}" method="post">
+    {{ csrf_token() }}
+                <div class="mb-3">
+                    <label for="orphan_hours" class="form-label">Clean up runs older than (hours)</label>
+                    <input type="number" class="form-control" id="orphan_hours" name="hours" value="24" min="0.1" max="168" step="0.1">
+                    <div class="form-text">Runs that have been "running" for longer than this will be considered orphaned. You can use decimals (e.g., 0.5 = 30 minutes)</div>
+                </div>
+                <div class="form-check mb-3">
+                    <input class="form-check-input" type="checkbox" id="orphan_dry_run" name="dry_run" value="true" checked>
+                    <label class="form-check-label" for="orphan_dry_run">
+                        Dry run (don't actually delete anything)
+                    </label>
+                </div>
+                <div class="alert alert-info">
+                    <i class="bi bi-info-circle"></i> This will clean up:
+                    <ul class="mb-0 mt-2">
+                        <li>Processing runs stuck in "running" status for more than the specified hours</li>
+                        <li>Processing runs with deleted platform connections</li>
+                    </ul>
+                </div>
+                <button type="submit" class="btn btn-warning">Clean Up Orphan Runs</button>
+            </form>
+        </div>
+    </div>
+    
+    <div class="card mb-4">
+        <div class="card-header">
+            <h2 class="h5 mb-0">Clean Up Images</h2>
+        </div>
+        <div class="card-body">
+            <form action="{{ url_for('admin_cleanup_images') }}" method="post">
+    {{ csrf_token() }}
+                <div class="mb-3">
+                    <label for="image_status" class="form-label">Image Status</label>
+                    <select class="form-select" id="image_status" name="status">
+                        <option value="rejected" selected>Rejected</option>
+                        <option value="posted">Posted</option>
+                        <option value="error">Error</option>
+                    </select>
+                </div>
+                <div class="mb-3">
+                    <label for="images_days" class="form-label">Clean up images older than (days)</label>
+                    <input type="number" class="form-control" id="images_days" name="days" value="{{ retention.rejected_images }}" min="1" max="365">
+                </div>
+                <div class="form-check mb-3">
+                    <input class="form-check-input" type="checkbox" id="images_dry_run" name="dry_run" checked>
+                    <label class="form-check-label" for="images_dry_run">
+                        Dry run (don't actually delete anything)
+                    </label>
+                </div>
+                <button type="submit" class="btn btn-primary">Clean Up Images</button>
+            </form>
+        </div>
+    </div>
+    
+    <div class="card mb-4">
+        <div class="card-header">
+            <h2 class="h5 mb-0">Clean Up Orphaned Posts</h2>
+        </div>
+        <div class="card-body">
+            <form action="{{ url_for('admin_cleanup_posts') }}" method="post">
+    {{ csrf_token() }}
+                <div class="form-check mb-3">
+                    <input class="form-check-input" type="checkbox" id="posts_dry_run" name="dry_run" checked>
+                    <label class="form-check-label" for="posts_dry_run">
+                        Dry run (don't actually delete anything)
+                    </label>
+                </div>
+                <button type="submit" class="btn btn-primary">Clean Up Orphaned Posts</button>
+            </form>
+        </div>
+    </div>
+    
+    <div class="card mb-4">
+        <div class="card-header">
+            <h2 class="h5 mb-0">Clean Up User Data</h2>
+        </div>
+        <div class="card-body">
+            <form action="{{ url_for('admin_cleanup_user') }}" method="post">
+    {{ csrf_token() }}
+                <div class="mb-3">
+                    <label for="user_id" class="form-label">Select User</label>
+                    <select class="form-select" id="user_id" name="user_id" required>
+                        <option value="" selected disabled>-- Select a user --</option>
+                        {% for user in users %}
+                        <option value="{{ user.user_id }}">{{ user.user_id }} ({{ user.post_count }} posts, {{ user.image_count }} images)</option>
+                        {% endfor %}
+                    </select>
+                </div>
+                <div class="form-check mb-3">
+                    <input class="form-check-input" type="checkbox" id="user_dry_run" name="dry_run" checked>
+                    <label class="form-check-label" for="user_dry_run">
+                        Dry run (don't actually delete anything)
+                    </label>
+                </div>
+                <div class="alert alert-warning">
+                    <i class="bi bi-exclamation-triangle-fill"></i> Warning: This will delete all posts, images, and processing runs for the selected user.
+                </div>
+                <button type="submit" class="btn btn-warning">Clean Up User Data</button>
+            </form>
+        </div>
+    </div>
+    
+    <div class="card mb-4">
+        <div class="card-header">
+            <h2 class="h5 mb-0">Full Cleanup</h2>
+        </div>
+        <div class="card-body">
+            <div class="alert alert-warning">
+                <strong>Full Cleanup includes:</strong>
+                <ul class="mb-0 mt-2">
+                    <li><strong>Database:</strong> Archives old processing runs, cleans up orphan processing runs, cleans up old images (rejected, posted, error), removes orphaned posts</li>
+                    <li><strong>Storage:</strong> Deletes all files in the storage/images directory</li>
+                    <li><strong>Logs:</strong> Clears/truncates log files</li>
+                </ul>
+            </div>
+            <form action="{{ url_for('admin_cleanup_all') }}" method="post">
+    {{ csrf_token() }}
+                <div class="form-check mb-3">
+                    <input class="form-check-input" type="checkbox" id="all_dry_run" name="dry_run" checked>
+                    <label class="form-check-label" for="all_dry_run">
+                        Dry run (don't actually delete anything)
+                    </label>
+                </div>
+                <button type="submit" class="btn btn-danger">Run Full Cleanup</button>
+            </form>
+        </div>
+    </div>
+</div>
+{% endblock %}
+
+{% block scripts %}
+<script>
+document.addEventListener('DOMContentLoaded', function() {
+    // Add confirmation dialogs for cleanup operations
+    const forms = document.querySelectorAll('form[action*="cleanup"]');
+    
+    forms.forEach(form => {
+        // Add click handler to button instead of form submit handler
+        const submitBtn = form.querySelector('button[type="submit"]');
+        if (submitBtn) {
+            submitBtn.addEventListener('click', function(e) {
+                e.preventDefault(); // Prevent default form submission
+                
+                // Check if form is valid first
+                if (!form.checkValidity()) {
+                    form.reportValidity(); // Show validation messages
+                    return;
+                }
+                
+                const isDryRun = form.querySelector('input[name="dry_run"]')?.checked;
+                const actionName = form.action.split('/').pop().replace('admin_cleanup_', '').replace('_', ' ');
+                
+                // Special handling for user cleanup
+                const userSelect = form.querySelector('select[name="user_id"]');
+                if (userSelect && !userSelect.value) {
+                    alert('Please select a user first.');
+                    return;
+                }
+                
+                let message = `Are you sure you want to ${actionName}?`;
+                if (userSelect && userSelect.value) {
+                    const selectedOption = userSelect.options[userSelect.selectedIndex];
+                    message += `\n\nSelected user: ${selectedOption.text}`;
+                }
+                
+                if (!isDryRun) {
+                    message += '\n\nWARNING: This will permanently delete data!';
+                } else {
+                    message += '\n\nThis is a dry run - no data will be deleted.';
+                }
+                
+                if (!confirm(message)) {
+                    return;
+                }
+                
+                // Show loading state
+                this.disabled = true;
+                this.innerHTML = '<span class="spinner-border spinner-border-sm me-2"></span>Processing...';
+                
+                // Submit the form programmatically
+                form.submit();
+            });
+        }
+        
+        // Store original button text for the loading state
+        if (submitBtn) {
+            submitBtn.setAttribute('data-original-text', submitBtn.innerHTML);
+        }
+    });
+    
+
+    
+    // Update retention values when status changes
+    const statusSelect = document.getElementById('image_status');
+    const daysInput = document.getElementById('images_days');
+    
+    if (statusSelect && daysInput) {
+        statusSelect.addEventListener('change', function() {
+            const retention = {
+                'rejected': {{ retention.rejected_images }},
+                'posted': {{ retention.posted_images }},
+                'error': {{ retention.error_images }}
+            };
+            
+            daysInput.value = retention[this.value] || 30;
+        });
+    }
+});
+</script>
+{% endblock %}

@@ -1,0 +1,607 @@
+<!-- Copyright (C) 2025 iolaire mcfadden. -->
+<!-- This program is free software: you can redistribute it and/or modify it under the terms of the GNU Affero General Public License as published by the Free Software Foundation, either version 3 of the License, or (at your option) any later version. -->
+<!-- THE SOFTWARE IS PROVIDED "AS IS", WITHOUT WARRANTY OF ANY KIND, EXPRESS OR IMPLIED, INCLUDING BUT NOT LIMITED TO THE WARRANTIES OF MERCHANTABILITY, FITNESS FOR A PARTICULAR PURPOSE AND NONINFRINGEMENT. IN NO EVENT SHALL THE AUTHORS OR COPYRIGHT HOLDERS BE LIABLE FOR ANY CLAIM, DAMAGES OR OTHER LIABILITY, WHETHER IN AN ACTION OF CONTRACT, TORT OR OTHERWISE, ARISING FROM, OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE SOFTWARE. -->
+{% extends "base.html" %}
+
+{% block title %}Admin Monitoring - Vedfolnir{% endblock %}
+
+{% block head %}
+<style>
+    .metric-card {
+        transition: transform 0.2s;
+    }
+    .metric-card:hover {
+        transform: translateY(-2px);
+    }
+    .resource-bar {
+        height: 8px;
+        border-radius: 4px;
+    }
+    .task-status-badge {
+        font-size: 0.75em;
+    }
+    .auto-refresh {
+        animation: spin 1s linear infinite;
+    }
+    @keyframes spin {
+        0% { transform: rotate(0deg); }
+        100% { transform: rotate(360deg); }
+    }
+</style>
+{% endblock %}
+
+{% block content %}
+<div class="d-flex justify-content-between align-items-center mb-4">
+    <h1><i class="bi bi-speedometer2"></i> Administrative Monitoring</h1>
+    <div>
+        <button class="btn btn-outline-primary" id="refreshBtn">
+            <i class="bi bi-arrow-clockwise" id="refreshIcon"></i> Refresh
+        </button>
+        <div class="form-check form-switch d-inline-block ms-3">
+            <input class="form-check-input" type="checkbox" id="autoRefresh">
+            <label class="form-check-label" for="autoRefresh">Auto Refresh</label>
+        </div>
+    </div>
+</div>
+
+<!-- System Overview -->
+<div class="row mb-4">
+    <div class="col-md-3">
+        <div class="card metric-card h-100">
+            <div class="card-body text-center">
+                <div class="h2 mb-0 text-primary" id="activeTasks">{{ system_overview.active_tasks or 0 }}</div>
+                <small class="text-muted">Active Tasks</small>
+            </div>
+        </div>
+    </div>
+    <div class="col-md-3">
+        <div class="card metric-card h-100">
+            <div class="card-body text-center">
+                <div class="h2 mb-0 text-info" id="recentTasks">{{ system_overview.recent_tasks or 0 }}</div>
+                <small class="text-muted">Tasks (24h)</small>
+            </div>
+        </div>
+    </div>
+    <div class="col-md-3">
+        <div class="card metric-card h-100">
+            <div class="card-body text-center">
+                <div class="h2 mb-0 text-success" id="activeUsers">{{ system_overview.active_users or 0 }}</div>
+                <small class="text-muted">Active Users</small>
+            </div>
+        </div>
+    </div>
+    <div class="col-md-3">
+        <div class="card metric-card h-100">
+            <div class="card-body text-center">
+                <div class="h2 mb-0 text-warning" id="queueLength">
+                    {{ system_overview.queue_stats.queue_stats.queued_tasks if system_overview.queue_stats and system_overview.queue_stats.queue_stats else 0 }}
+                </div>
+                <small class="text-muted">Queued Tasks</small>
+            </div>
+        </div>
+    </div>
+</div>
+
+<!-- System Resources -->
+{% if system_overview.system_resources %}
+<div class="card mb-4">
+    <div class="card-header">
+        <h5><i class="bi bi-cpu"></i> System Resources</h5>
+    </div>
+    <div class="card-body">
+        <div class="row">
+            <div class="col-md-3">
+                <div class="mb-2">
+                    <div class="d-flex justify-content-between">
+                        <small>CPU Usage</small>
+                        <small id="cpuPercent">{{ system_overview.system_resources.cpu_percent or 0 }}%</small>
+                    </div>
+                    <div class="progress resource-bar">
+                        <div class="progress-bar" id="cpuBar" style="width: {{ system_overview.system_resources.cpu_percent or 0 }}%"></div>
+                    </div>
+                </div>
+            </div>
+            <div class="col-md-3">
+                <div class="mb-2">
+                    <div class="d-flex justify-content-between">
+                        <small>Memory Usage</small>
+                        <small id="memoryPercent">{{ system_overview.system_resources.memory_percent or 0 }}%</small>
+                    </div>
+                    <div class="progress resource-bar">
+                        <div class="progress-bar bg-info" id="memoryBar" style="width: {{ system_overview.system_resources.memory_percent or 0 }}%"></div>
+                    </div>
+                </div>
+            </div>
+            <div class="col-md-3">
+                <div class="mb-2">
+                    <div class="d-flex justify-content-between">
+                        <small>Disk Usage</small>
+                        <small id="diskPercent">{{ system_overview.system_resources.disk_percent or 0 }}%</small>
+                    </div>
+                    <div class="progress resource-bar">
+                        <div class="progress-bar bg-warning" id="diskBar" style="width: {{ system_overview.system_resources.disk_percent or 0 }}%"></div>
+                    </div>
+                </div>
+            </div>
+            <div class="col-md-3">
+                <div class="text-center">
+                    <div class="h6 mb-0" id="loadAvg">
+                        {{ "%.2f"|format(system_overview.system_resources.load_1min) if system_overview.system_resources.load_1min else 'N/A' }}
+                    </div>
+                    <small class="text-muted">Load Average</small>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+{% endif %}
+
+<!-- Performance Metrics -->
+{% if performance_metrics %}
+<div class="card mb-4">
+    <div class="card-header">
+        <h5><i class="bi bi-graph-up"></i> Performance Metrics (7 days)</h5>
+    </div>
+    <div class="card-body">
+        <div class="row">
+            <div class="col-md-2">
+                <div class="text-center">
+                    <div class="h4 mb-0 text-success">{{ performance_metrics.total_completed_tasks }}</div>
+                    <small class="text-muted">Completed</small>
+                </div>
+            </div>
+            <div class="col-md-2">
+                <div class="text-center">
+                    <div class="h4 mb-0 text-danger">{{ performance_metrics.total_failed_tasks }}</div>
+                    <small class="text-muted">Failed</small>
+                </div>
+            </div>
+            <div class="col-md-2">
+                <div class="text-center">
+                    <div class="h4 mb-0 text-primary">{{ performance_metrics.success_rate }}%</div>
+                    <small class="text-muted">Success Rate</small>
+                </div>
+            </div>
+            <div class="col-md-2">
+                <div class="text-center">
+                    <div class="h4 mb-0 text-info">{{ performance_metrics.total_captions_generated }}</div>
+                    <small class="text-muted">Captions</small>
+                </div>
+            </div>
+            <div class="col-md-2">
+                <div class="text-center">
+                    <div class="h4 mb-0 text-warning">{{ "%.1f"|format(performance_metrics.avg_task_time_seconds) }}s</div>
+                    <small class="text-muted">Avg Time</small>
+                </div>
+            </div>
+            <div class="col-md-2">
+                <div class="text-center">
+                    <div class="h4 mb-0 text-secondary">{{ "%.1f"|format(performance_metrics.images_per_second) }}</div>
+                    <small class="text-muted">Images/sec</small>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+{% endif %}
+
+<!-- Active Tasks -->
+<div class="row">
+    <div class="col-lg-8">
+        <div class="card">
+            <div class="card-header d-flex justify-content-between align-items-center">
+                <h5><i class="bi bi-clock-history"></i> Active Tasks</h5>
+                <button class="btn btn-outline-danger btn-sm" id="cancelAllBtn" style="display: none;">
+                    <i class="bi bi-x-circle"></i> Cancel All
+                </button>
+            </div>
+            <div class="card-body">
+                <div id="activeTasksList">
+                    {% if active_tasks %}
+                    {% for task in active_tasks %}
+                    <div class="d-flex justify-content-between align-items-center border-bottom py-2 task-item" data-task-id="{{ task.id }}">
+                        <div>
+                            <strong>{{ task.id[:8] }}...</strong>
+                            <span class="badge task-status-badge bg-{{ 'primary' if task.status == 'running' else 'secondary' }}">
+                                {{ task.status|title }}
+                            </span>
+                            <br>
+                            <small class="text-muted">
+                                {{ task.username }} • {{ task.platform_name }} • {{ task.current_step or 'Initializing' }}
+                            </small>
+                        </div>
+                        <div class="text-end">
+                            <div class="progress mb-1" style="width: 100px; height: 6px;">
+                                <div class="progress-bar" style="width: {{ task.progress_percent }}%"></div>
+                            </div>
+                            <small class="text-muted">{{ task.progress_percent }}%</small>
+                            <button class="btn btn-outline-danger btn-sm ms-2 cancel-task-btn" data-task-id="{{ task.id }}">
+                                <i class="bi bi-x"></i>
+                            </button>
+                        </div>
+                    </div>
+                    {% endfor %}
+                    {% else %}
+                    <p class="text-muted text-center py-3">No active tasks</p>
+                    {% endif %}
+                </div>
+            </div>
+        </div>
+    </div>
+    
+    <div class="col-lg-4">
+        <!-- System Controls -->
+        <div class="card mb-3">
+            <div class="card-header">
+                <h5><i class="bi bi-gear"></i> System Controls</h5>
+            </div>
+            <div class="card-body">
+                <div class="d-grid gap-2">
+                    <button class="btn btn-outline-warning" id="cleanupTasksBtn">
+                        <i class="bi bi-trash"></i> Cleanup Old Tasks
+                    </button>
+                    <button class="btn btn-outline-info" id="viewUserActivityBtn">
+                        <i class="bi bi-people"></i> User Activity
+                    </button>
+                    <button class="btn btn-outline-secondary" id="systemLimitsBtn">
+                        <i class="bi bi-sliders"></i> System Limits
+                    </button>
+                </div>
+            </div>
+        </div>
+        
+        <!-- Quick Stats -->
+        <div class="card">
+            <div class="card-header">
+                <h5><i class="bi bi-info-circle"></i> System Info</h5>
+            </div>
+            <div class="card-body">
+                {% if system_limits %}
+                <div class="row text-center">
+                    <div class="col-6 mb-2">
+                        <div class="h6 mb-0">{{ system_limits.max_concurrent_tasks }}</div>
+                        <small class="text-muted">Max Tasks</small>
+                    </div>
+                    <div class="col-6 mb-2">
+                        <div class="h6 mb-0">{{ system_limits.task_timeout_minutes }}m</div>
+                        <small class="text-muted">Timeout</small>
+                    </div>
+                    <div class="col-6">
+                        <div class="h6 mb-0">{{ system_limits.max_images_per_task }}</div>
+                        <small class="text-muted">Max Images</small>
+                    </div>
+                    <div class="col-6">
+                        <div class="h6 mb-0">{{ system_limits.cleanup_interval_hours }}h</div>
+                        <small class="text-muted">Cleanup</small>
+                    </div>
+                </div>
+                {% endif %}
+            </div>
+        </div>
+    </div>
+</div>
+
+<!-- Task Cancellation Modal -->
+<div class="modal fade" id="cancelTaskModal" tabindex="-1">
+    <div class="modal-dialog">
+        <div class="modal-content">
+            <div class="modal-header">
+                <h5 class="modal-title">Cancel Task</h5>
+                <button type="button" class="btn-close" data-bs-dismiss="modal"></button>
+            </div>
+            <div class="modal-body">
+                <p>Are you sure you want to cancel this task?</p>
+                <div class="mb-3">
+                    <label for="cancelReason" class="form-label">Reason (optional):</label>
+                    <textarea class="form-control" id="cancelReason" rows="2" placeholder="Enter reason for cancellation..."></textarea>
+                </div>
+            </div>
+            <div class="modal-footer">
+                <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Close</button>
+                <button type="button" class="btn btn-danger" id="confirmCancelTask">Cancel Task</button>
+            </div>
+        </div>
+    </div>
+</div>
+
+<!-- Cleanup Tasks Modal -->
+<div class="modal fade" id="cleanupModal" tabindex="-1">
+    <div class="modal-dialog">
+        <div class="modal-content">
+            <div class="modal-header">
+                <h5 class="modal-title">Cleanup Old Tasks</h5>
+                <button type="button" class="btn-close" data-bs-dismiss="modal"></button>
+            </div>
+            <div class="modal-body">
+                <div class="mb-3">
+                    <label for="cleanupDays" class="form-label">Delete tasks older than:</label>
+                    <select class="form-select" id="cleanupDays">
+                        <option value="7">7 days</option>
+                        <option value="14">14 days</option>
+                        <option value="30" selected>30 days</option>
+                        <option value="90">90 days</option>
+                    </select>
+                </div>
+                <div class="form-check">
+                    <input class="form-check-input" type="checkbox" id="dryRun" checked>
+                    <label class="form-check-label" for="dryRun">
+                        Dry run (preview only)
+                    </label>
+                </div>
+            </div>
+            <div class="modal-footer">
+                <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Close</button>
+                <button type="button" class="btn btn-warning" id="confirmCleanup">Run Cleanup</button>
+            </div>
+        </div>
+    </div>
+</div>
+
+<script>
+let autoRefreshInterval = null;
+let currentTaskToCancel = null;
+
+document.addEventListener('DOMContentLoaded', function() {
+    // Auto refresh toggle
+    const autoRefreshCheckbox = document.getElementById('autoRefresh');
+    const refreshBtn = document.getElementById('refreshBtn');
+    const refreshIcon = document.getElementById('refreshIcon');
+    
+    autoRefreshCheckbox.addEventListener('change', function() {
+        if (this.checked) {
+            autoRefreshInterval = setInterval(refreshData, 10000); // 10 seconds
+        } else {
+            if (autoRefreshInterval) {
+                clearInterval(autoRefreshInterval);
+                autoRefreshInterval = null;
+            }
+        }
+    });
+    
+    // Manual refresh
+    refreshBtn.addEventListener('click', refreshData);
+    
+    // Task cancellation
+    document.addEventListener('click', function(e) {
+        if (e.target.closest('.cancel-task-btn')) {
+            const taskId = e.target.closest('.cancel-task-btn').dataset.taskId;
+            currentTaskToCancel = taskId;
+            new bootstrap.Modal(document.getElementById('cancelTaskModal')).show();
+        }
+    });
+    
+    // Confirm task cancellation
+    document.getElementById('confirmCancelTask').addEventListener('click', function() {
+        if (currentTaskToCancel) {
+            cancelTask(currentTaskToCancel);
+        }
+    });
+    
+    // Cleanup tasks
+    document.getElementById('cleanupTasksBtn').addEventListener('click', function() {
+        new bootstrap.Modal(document.getElementById('cleanupModal')).show();
+    });
+    
+    document.getElementById('confirmCleanup').addEventListener('click', function() {
+        const days = parseInt(document.getElementById('cleanupDays').value);
+        const dryRun = document.getElementById('dryRun').checked;
+        cleanupTasks(days, dryRun);
+    });
+    
+    // User activity
+    document.getElementById('viewUserActivityBtn').addEventListener('click', function() {
+        loadUserActivity();
+    });
+});
+
+async function refreshData() {
+    const refreshIcon = document.getElementById('refreshIcon');
+    refreshIcon.classList.add('auto-refresh');
+    
+    try {
+        // Refresh system overview
+        const overviewResponse = await fetch('/api/admin/system_overview');
+        const overviewData = await overviewResponse.json();
+        
+        if (overviewData.success) {
+            updateSystemOverview(overviewData.overview);
+        }
+        
+        // Refresh active tasks
+        const tasksResponse = await fetch('/api/admin/active_tasks');
+        const tasksData = await tasksResponse.json();
+        
+        if (tasksData.success) {
+            updateActiveTasks(tasksData.tasks);
+        }
+        
+    } catch (error) {
+        console.error('Error refreshing data:', error);
+        showToast('Error refreshing data', 'error');
+    } finally {
+        refreshIcon.classList.remove('auto-refresh');
+    }
+}
+
+function updateSystemOverview(overview) {
+    document.getElementById('activeTasks').textContent = overview.active_tasks || 0;
+    document.getElementById('recentTasks').textContent = overview.recent_tasks || 0;
+    document.getElementById('activeUsers').textContent = overview.active_users || 0;
+    
+    if (overview.queue_stats && overview.queue_stats.queue_stats) {
+        document.getElementById('queueLength').textContent = overview.queue_stats.queue_stats.queued_tasks || 0;
+    }
+    
+    // Update system resources
+    if (overview.system_resources) {
+        const resources = overview.system_resources;
+        
+        document.getElementById('cpuPercent').textContent = resources.cpu_percent + '%';
+        document.getElementById('cpuBar').style.width = resources.cpu_percent + '%';
+        
+        document.getElementById('memoryPercent').textContent = resources.memory_percent + '%';
+        document.getElementById('memoryBar').style.width = resources.memory_percent + '%';
+        
+        document.getElementById('diskPercent').textContent = resources.disk_percent + '%';
+        document.getElementById('diskBar').style.width = resources.disk_percent + '%';
+        
+        if (resources.load_1min !== null) {
+            document.getElementById('loadAvg').textContent = resources.load_1min.toFixed(2);
+        }
+    }
+}
+
+function updateActiveTasks(tasks) {
+    const container = document.getElementById('activeTasksList');
+    
+    if (tasks.length === 0) {
+        container.innerHTML = '<p class="text-muted text-center py-3">No active tasks</p>';
+        document.getElementById('cancelAllBtn').style.display = 'none';
+        return;
+    }
+    
+    document.getElementById('cancelAllBtn').style.display = 'block';
+    
+    container.innerHTML = tasks.map(task => `
+        <div class="d-flex justify-content-between align-items-center border-bottom py-2 task-item" data-task-id="${task.id}">
+            <div>
+                <strong>${task.id.substring(0, 8)}...</strong>
+                <span class="badge task-status-badge bg-${task.status === 'running' ? 'primary' : 'secondary'}">
+                    ${task.status.charAt(0).toUpperCase() + task.status.slice(1)}
+                </span>
+                <br>
+                <small class="text-muted">
+                    ${task.username} • ${task.platform_name} • ${task.current_step || 'Initializing'}
+                </small>
+            </div>
+            <div class="text-end">
+                <div class="progress mb-1" style="width: 100px; height: 6px;">
+                    <div class="progress-bar" style="width: ${task.progress_percent}%"></div>
+                </div>
+                <small class="text-muted">${task.progress_percent}%</small>
+                <button class="btn btn-outline-danger btn-sm ms-2 cancel-task-btn" data-task-id="${task.id}">
+                    <i class="bi bi-x"></i>
+                </button>
+            </div>
+        </div>
+    `).join('');
+}
+
+async function cancelTask(taskId) {
+    const reason = document.getElementById('cancelReason').value.trim();
+    
+    try {
+        const response = await fetch(`/api/admin/cancel_task/${taskId}`, {
+            method: 'POST',
+            headers: {
+                'Content-Type': 'application/json',
+                'X-CSRFToken': document.querySelector('meta[name="csrf-token"]')?.getAttribute('content') || ''
+            },
+            body: JSON.stringify({ reason })
+        });
+        
+        const result = await response.json();
+        
+        if (result.success) {
+            showToast(result.message, 'success');
+            refreshData();
+        } else {
+            showToast(result.error, 'error');
+        }
+        
+    } catch (error) {
+        console.error('Error cancelling task:', error);
+        showToast('Error cancelling task', 'error');
+    } finally {
+        bootstrap.Modal.getInstance(document.getElementById('cancelTaskModal')).hide();
+        document.getElementById('cancelReason').value = '';
+        currentTaskToCancel = null;
+    }
+}
+
+async function cleanupTasks(days, dryRun) {
+    try {
+        const response = await fetch('/api/admin/cleanup_tasks', {
+            method: 'POST',
+            headers: {
+                'Content-Type': 'application/json',
+                'X-CSRFToken': document.querySelector('meta[name="csrf-token"]')?.getAttribute('content') || ''
+            },
+            body: JSON.stringify({ days, dry_run: dryRun })
+        });
+        
+        const result = await response.json();
+        
+        if (result.success) {
+            showToast(result.message, 'success');
+        } else {
+            showToast(result.error, 'error');
+        }
+        
+    } catch (error) {
+        console.error('Error cleaning up tasks:', error);
+        showToast('Error cleaning up tasks', 'error');
+    } finally {
+        bootstrap.Modal.getInstance(document.getElementById('cleanupModal')).hide();
+    }
+}
+
+async function loadUserActivity() {
+    try {
+        const response = await fetch('/api/admin/user_activity?days=7');
+        const data = await response.json();
+        
+        if (data.success) {
+            // This would open a modal or navigate to a user activity page
+            console.log('User activity:', data.activity);
+            showToast('User activity loaded (check console)', 'info');
+        } else {
+            showToast('Error loading user activity', 'error');
+        }
+        
+    } catch (error) {
+        console.error('Error loading user activity:', error);
+        showToast('Error loading user activity', 'error');
+    }
+}
+
+function showToast(message, type) {
+    // Create toast container if it doesn't exist
+    let toastContainer = document.querySelector('.toast-container');
+    if (!toastContainer) {
+        toastContainer = document.createElement('div');
+        toastContainer.className = 'toast-container position-fixed bottom-0 end-0 p-3';
+        toastContainer.style.zIndex = '1055';
+        document.body.appendChild(toastContainer);
+    }
+    
+    // Create toast
+    const toastId = 'toast-' + Date.now();
+    const bgClass = type === 'success' ? 'bg-success' : type === 'error' ? 'bg-danger' : 'bg-info';
+    
+    const toastHtml = `
+        <div id="${toastId}" class="toast align-items-center text-white ${bgClass} border-0" role="alert" aria-live="assertive" aria-atomic="true">
+            <div class="d-flex">
+                <div class="toast-body">
+                    ${message}
+                </div>
+                <button type="button" class="btn-close btn-close-white me-2 m-auto" data-bs-dismiss="toast" aria-label="Close"></button>
+            </div>
+        </div>
+    `;
+    
+    toastContainer.insertAdjacentHTML('beforeend', toastHtml);
+    
+    // Show toast
+    const toastElement = document.getElementById(toastId);
+    const toast = new bootstrap.Toast(toastElement, { delay: 5000 });
+    toast.show();
+    
+    // Remove toast element after it's hidden
+    toastElement.addEventListener('hidden.bs.toast', () => {
+        toastElement.remove();
+    });
+}
+</script>
+
+{% endblock %}

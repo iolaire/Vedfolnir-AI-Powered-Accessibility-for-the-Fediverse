@@ -1,0 +1,313 @@
+<!-- Copyright (C) 2025 iolaire mcfadden. -->
+<!-- This program is free software: you can redistribute it and/or modify it under the terms of the GNU Affero General Public License as published by the Free Software Foundation, either version 3 of the License, or (at your option) any later version. -->
+<!-- THE SOFTWARE IS PROVIDED "AS IS", WITHOUT WARRANTY OF ANY KIND, EXPRESS OR IMPLIED, INCLUDING BUT NOT LIMITED TO THE WARRANTIES OF MERCHANTABILITY, FITNESS FOR A PARTICULAR PURPOSE AND NONINFRINGEMENT. IN NO EVENT SHALL THE AUTHORS OR COPYRIGHT HOLDERS BE LIABLE FOR ANY CLAIM, DAMAGES OR OTHER LIABILITY, WHETHER IN AN ACTION OF CONTRACT, TORT OR OTHERWISE, ARISING FROM, OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE SOFTWARE. -->
+{% extends "base.html" %}
+
+{% block title %}Review Batches - Vedfolnir{% endblock %}
+
+{% block content %}
+<div class="d-flex justify-content-between align-items-center mb-4">
+    <h1>Caption Review Batches</h1>
+    <div>
+        <a href="{{ url_for('caption_generation') }}" class="btn btn-primary">
+            <i class="bi bi-plus-circle"></i> Generate New Captions
+        </a>
+    </div>
+</div>
+
+<!-- Filter Controls -->
+<div class="card mb-4">
+    <div class="card-body">
+        <form method="GET" class="row align-items-end">
+    {{ csrf_token() }}
+            <div class="col-md-3">
+                <label for="days_back" class="form-label">Show batches from last:</label>
+                <select name="days_back" id="days_back" class="form-select" onchange="this.form.submit()">
+                    <option value="1" {{ 'selected' if days_back == 1 else '' }}>1 day</option>
+                    <option value="3" {{ 'selected' if days_back == 3 else '' }}>3 days</option>
+                    <option value="7" {{ 'selected' if days_back == 7 else '' }}>7 days</option>
+                    <option value="14" {{ 'selected' if days_back == 14 else '' }}>14 days</option>
+                    <option value="30" {{ 'selected' if days_back == 30 else '' }}>30 days</option>
+                </select>
+            </div>
+            <div class="col-md-9 text-end">
+                <small class="text-muted">
+                    <i class="bi bi-info-circle"></i> 
+                    Batches are created from completed caption generation tasks
+                </small>
+            </div>
+        </form>
+    </div>
+</div>
+
+{% if batches %}
+<div class="row">
+    {% for batch in batches %}
+    <div class="col-md-6 col-lg-4 mb-4">
+        <div class="card h-100">
+            <div class="card-header d-flex justify-content-between align-items-center">
+                <h6 class="mb-0">
+                    <i class="bi bi-collection"></i> 
+                    Batch {{ batch.batch_id[:8] }}...
+                </h6>
+                <small class="text-muted">
+                    {{ batch.generation_timestamp[:19].replace('T', ' ') if batch.generation_timestamp else 'Unknown' }}
+                </small>
+            </div>
+            <div class="card-body">
+                <div class="row mb-3">
+                    <div class="col-6">
+                        <div class="text-center">
+                            <div class="h4 mb-0 text-primary">{{ batch.total_images }}</div>
+                            <small class="text-muted">Total Images</small>
+                        </div>
+                    </div>
+                    <div class="col-6">
+                        <div class="text-center">
+                            <div class="h4 mb-0 text-warning">{{ batch.pending_images }}</div>
+                            <small class="text-muted">Pending Review</small>
+                        </div>
+                    </div>
+                </div>
+                
+                <!-- Progress Bar -->
+                {% set progress_percent = ((batch.total_images - batch.pending_images) / batch.total_images * 100) if batch.total_images > 0 else 0 %}
+                <div class="mb-3">
+                    <div class="d-flex justify-content-between align-items-center mb-1">
+                        <small class="text-muted">Review Progress</small>
+                        <small class="text-muted">{{ "%.0f"|format(progress_percent) }}%</small>
+                    </div>
+                    <div class="progress">
+                        <div class="progress-bar" role="progressbar" 
+                             style="width: {{ progress_percent }}%" 
+                             aria-valuenow="{{ progress_percent }}" 
+                             aria-valuemin="0" 
+                             aria-valuemax="100">
+                        </div>
+                    </div>
+                </div>
+                
+                <!-- Generation Stats -->
+                <div class="row text-center mb-3">
+                    <div class="col-6">
+                        <small class="text-muted d-block">Generated</small>
+                        <strong>{{ batch.captions_generated }}</strong>
+                    </div>
+                    <div class="col-6">
+                        <small class="text-muted d-block">Time</small>
+                        <strong>{{ "%.1f"|format(batch.processing_time) }}s</strong>
+                    </div>
+                </div>
+                
+                <!-- Status Summary -->
+                <div class="mb-3">
+                    <small class="text-muted d-block mb-1">Status Summary:</small>
+                    <div class="d-flex justify-content-between">
+                        <span class="badge bg-warning">{{ batch.pending_images }} Pending</span>
+                        <span class="badge bg-success">{{ batch.reviewed_images }} Reviewed</span>
+                    </div>
+                </div>
+            </div>
+            <div class="card-footer">
+                <div class="d-grid gap-2">
+                    <a href="{{ url_for('review_batch', batch_id=batch.batch_id) }}" 
+                       class="btn btn-primary btn-sm">
+                        <i class="bi bi-eye"></i> Review Batch
+                    </a>
+                    {% if batch.pending_images > 0 %}
+                    <div class="btn-group" role="group">
+                        <button type="button" class="btn btn-outline-success btn-sm bulk-approve-btn" 
+                                data-batch-id="{{ batch.batch_id }}" 
+                                data-total="{{ batch.pending_images }}">
+                            <i class="bi bi-check-all"></i> Approve All
+                        </button>
+                        <button type="button" class="btn btn-outline-danger btn-sm bulk-reject-btn" 
+                                data-batch-id="{{ batch.batch_id }}" 
+                                data-total="{{ batch.pending_images }}">
+                            <i class="bi bi-x-circle"></i> Reject All
+                        </button>
+                    </div>
+                    {% endif %}
+                </div>
+            </div>
+        </div>
+    </div>
+    {% endfor %}
+</div>
+
+<!-- Bulk Action Confirmation Modal -->
+<div class="modal fade" id="bulkActionModal" tabindex="-1" aria-labelledby="bulkActionModalLabel" aria-hidden="true">
+    <div class="modal-dialog">
+        <div class="modal-content">
+            <div class="modal-header">
+                <h5 class="modal-title" id="bulkActionModalLabel">Confirm Bulk Action</h5>
+                <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
+            </div>
+            <div class="modal-body">
+                <p id="bulkActionMessage"></p>
+                <div class="mb-3">
+                    <label for="bulkActionNotes" class="form-label">Notes (optional):</label>
+                    <textarea class="form-control" id="bulkActionNotes" rows="3" 
+                              placeholder="Add notes for this bulk action..."></textarea>
+                </div>
+            </div>
+            <div class="modal-footer">
+                <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Cancel</button>
+                <button type="button" class="btn" id="confirmBulkAction">Confirm</button>
+            </div>
+        </div>
+    </div>
+</div>
+
+{% else %}
+<div class="text-center py-5">
+    <div class="mb-4">
+        <i class="bi bi-collection display-1 text-muted"></i>
+    </div>
+    <h3 class="text-muted">No Caption Batches Found</h3>
+    <p class="text-muted mb-4">
+        No caption generation batches found in the last {{ days_back }} days.<br>
+        Generate some captions to create review batches.
+    </p>
+    <a href="{{ url_for('caption_generation') }}" class="btn btn-primary">
+        <i class="bi bi-plus-circle"></i> Generate Captions
+    </a>
+</div>
+{% endif %}
+
+<script>
+document.addEventListener('DOMContentLoaded', function() {
+    const bulkActionModal = new bootstrap.Modal(document.getElementById('bulkActionModal'));
+    const bulkActionMessage = document.getElementById('bulkActionMessage');
+    const bulkActionNotes = document.getElementById('bulkActionNotes');
+    const confirmBulkAction = document.getElementById('confirmBulkAction');
+    
+    let currentBatchId = null;
+    let currentAction = null;
+    let currentTotal = 0;
+    
+    // Handle bulk approve buttons
+    document.querySelectorAll('.bulk-approve-btn').forEach(btn => {
+        btn.addEventListener('click', function() {
+            currentBatchId = this.dataset.batchId;
+            currentAction = 'approve';
+            currentTotal = parseInt(this.dataset.total);
+            
+            bulkActionMessage.textContent = `Are you sure you want to approve all ${currentTotal} pending images in this batch?`;
+            confirmBulkAction.textContent = 'Approve All';
+            confirmBulkAction.className = 'btn btn-success';
+            bulkActionNotes.value = '';
+            
+            bulkActionModal.show();
+        });
+    });
+    
+    // Handle bulk reject buttons
+    document.querySelectorAll('.bulk-reject-btn').forEach(btn => {
+        btn.addEventListener('click', function() {
+            currentBatchId = this.dataset.batchId;
+            currentAction = 'reject';
+            currentTotal = parseInt(this.dataset.total);
+            
+            bulkActionMessage.textContent = `Are you sure you want to reject all ${currentTotal} pending images in this batch?`;
+            confirmBulkAction.textContent = 'Reject All';
+            confirmBulkAction.className = 'btn btn-danger';
+            bulkActionNotes.value = '';
+            
+            bulkActionModal.show();
+        });
+    });
+    
+    // Handle bulk action confirmation
+    confirmBulkAction.addEventListener('click', async function() {
+        if (!currentBatchId || !currentAction) return;
+        
+        const originalText = this.textContent;
+        this.disabled = true;
+        this.innerHTML = '<span class="spinner-border spinner-border-sm" role="status" aria-hidden="true"></span> Processing...';
+        
+        try {
+            const endpoint = currentAction === 'approve' ? 'bulk_approve' : 'bulk_reject';
+            const response = await fetch(`/api/review/batch/${currentBatchId}/${endpoint}`, {
+                method: 'POST',
+                headers: {
+                    'Content-Type': 'application/json',
+                    'X-CSRFToken': document.querySelector('meta[name="csrf-token"]')?.getAttribute('content') || ''
+                },
+                body: JSON.stringify({
+                    reviewer_notes: bulkActionNotes.value.trim() || null
+                })
+            });
+            
+            const result = await response.json();
+            
+            if (response.ok && result.success) {
+                // Show success message
+                const actionText = currentAction === 'approve' ? 'approved' : 'rejected';
+                const count = result[`${currentAction}d_count`] || currentTotal;
+                
+                // Create toast notification
+                showToast(`Successfully ${actionText} ${count} images`, 'success');
+                
+                // Reload page to show updated counts
+                setTimeout(() => {
+                    window.location.reload();
+                }, 1500);
+                
+            } else {
+                showToast(`Error: ${result.error || 'Failed to perform bulk action'}`, 'error');
+            }
+            
+        } catch (error) {
+            console.error('Bulk action error:', error);
+            showToast('Error: Failed to connect to server', 'error');
+        } finally {
+            this.disabled = false;
+            this.textContent = originalText;
+            bulkActionModal.hide();
+        }
+    });
+    
+    function showToast(message, type) {
+        // Create toast container if it doesn't exist
+        let toastContainer = document.querySelector('.toast-container');
+        if (!toastContainer) {
+            toastContainer = document.createElement('div');
+            toastContainer.className = 'toast-container position-fixed bottom-0 end-0 p-3';
+            toastContainer.style.zIndex = '1055';
+            document.body.appendChild(toastContainer);
+        }
+        
+        // Create toast
+        const toastId = 'toast-' + Date.now();
+        const bgClass = type === 'success' ? 'bg-success' : 'bg-danger';
+        
+        const toastHtml = `
+            <div id="${toastId}" class="toast align-items-center text-white ${bgClass} border-0" role="alert" aria-live="assertive" aria-atomic="true">
+                <div class="d-flex">
+                    <div class="toast-body">
+                        ${message}
+                    </div>
+                    <button type="button" class="btn-close btn-close-white me-2 m-auto" data-bs-dismiss="toast" aria-label="Close"></button>
+                </div>
+            </div>
+        `;
+        
+        toastContainer.insertAdjacentHTML('beforeend', toastHtml);
+        
+        // Show toast
+        const toastElement = document.getElementById(toastId);
+        const toast = new bootstrap.Toast(toastElement, { delay: 5000 });
+        toast.show();
+        
+        // Remove toast element after it's hidden
+        toastElement.addEventListener('hidden.bs.toast', () => {
+            toastElement.remove();
+        });
+    }
+});
+</script>
+
+
+
+{% endblock %}

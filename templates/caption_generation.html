@@ -1,0 +1,615 @@
+<!-- Copyright (C) 2025 iolaire mcfadden. -->
+<!-- This program is free software: you can redistribute it and/or modify it under the terms of the GNU Affero General Public License as published by the Free Software Foundation, either version 3 of the License, or (at your option) any later version. -->
+<!-- THE SOFTWARE IS PROVIDED "AS IS", WITHOUT WARRANTY OF ANY KIND, EXPRESS OR IMPLIED, INCLUDING BUT NOT LIMITED TO THE WARRANTIES OF MERCHANTABILITY, FITNESS FOR A PARTICULAR PURPOSE AND NONINFRINGEMENT. IN NO EVENT SHALL THE AUTHORS OR COPYRIGHT HOLDERS BE LIABLE FOR ANY CLAIM, DAMAGES OR OTHER LIABILITY, WHETHER IN AN ACTION OF CONTRACT, TORT OR OTHERWISE, ARISING FROM, OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE SOFTWARE. -->
+{% extends "base.html" %}
+
+{% block title %}Generate Captions - Vedfolnir{% endblock %}
+
+{% block head %}
+<style>
+    .progress-container {
+        display: none;
+        margin-top: 20px;
+    }
+    
+    .task-status {
+        padding: 15px;
+        border-radius: 8px;
+        margin-bottom: 20px;
+    }
+    
+    .task-status.queued {
+        background-color: #fff3cd;
+        border: 1px solid #ffeaa7;
+        color: #856404;
+    }
+    
+    .task-status.running {
+        background-color: #d1ecf1;
+        border: 1px solid #bee5eb;
+        color: #0c5460;
+    }
+    
+    .task-status.completed {
+        background-color: #d4edda;
+        border: 1px solid #c3e6cb;
+        color: #155724;
+    }
+    
+    .task-status.failed {
+        background-color: #f8d7da;
+        border: 1px solid #f5c6cb;
+        color: #721c24;
+    }
+    
+    .task-status.cancelled {
+        background-color: #e2e3e5;
+        border: 1px solid #d6d8db;
+        color: #383d41;
+    }
+    
+    .settings-form {
+        background-color: #f8f9fa;
+        padding: 20px;
+        border-radius: 8px;
+        margin-bottom: 20px;
+    }
+    
+    .task-history {
+        max-height: 400px;
+        overflow-y: auto;
+    }
+    
+    .task-item {
+        padding: 10px;
+        border: 1px solid #dee2e6;
+        border-radius: 5px;
+        margin-bottom: 10px;
+        background-color: white;
+    }
+    
+    .task-item:last-child {
+        margin-bottom: 0;
+    }
+    
+    .progress-details {
+        font-size: 0.9em;
+        color: #6c757d;
+        margin-top: 5px;
+    }
+    
+    .character-count {
+        font-size: 0.8em;
+        color: #6c757d;
+        float: right;
+    }
+    
+    .form-row {
+        display: flex;
+        gap: 15px;
+        margin-bottom: 15px;
+    }
+    
+    .form-row .form-group {
+        flex: 1;
+    }
+    
+    @media (max-width: 768px) {
+        .form-row {
+            flex-direction: column;
+            gap: 0;
+        }
+    }
+</style>
+{% endblock %}
+
+{% block content %}
+<div class="container mt-4">
+    <div class="row">
+        <div class="col-12">
+            <div class="d-flex justify-content-between align-items-center mb-4">
+                <h1><i class="bi bi-robot"></i> Generate Captions</h1>
+                <div>
+                    <a href="{{ url_for('caption_settings') }}" class="btn btn-outline-secondary">
+                        <i class="bi bi-gear"></i> Settings
+                    </a>
+                </div>
+            </div>
+            
+            {% if current_platform %}
+            <div class="alert alert-info">
+                <i class="bi bi-info-circle"></i>
+                <strong>Current Platform:</strong> {{ current_platform.name }} 
+                ({{ current_platform.platform_type|title }})
+                {% if current_platform.username %}
+                - @{{ current_platform.username }}
+                {% endif %}
+            </div>
+            {% endif %}
+        </div>
+    </div>
+    
+    <div class="row">
+        <div class="col-lg-8">
+            <!-- Active Task Status -->
+            {% if active_task %}
+            <div class="task-status {{ active_task.status.value }}" id="active-task-status">
+                <div class="d-flex justify-content-between align-items-start">
+                    <div>
+                        <h5>
+                            <i class="bi bi-clock-history"></i>
+                            Active Task: {{ active_task.id[:8] }}...
+                        </h5>
+                        <p class="mb-1">
+                            <strong>Status:</strong> 
+                            <span class="text-capitalize">{{ active_task.status.value }}</span>
+                        </p>
+                        <p class="mb-1">
+                            <strong>Current Step:</strong> 
+                            <span id="current-step">{{ active_task.current_step or 'Initializing' }}</span>
+                        </p>
+                        <div class="progress mt-2" style="height: 20px;">
+                            <div class="progress-bar" id="progress-bar" 
+                                 role="progressbar" 
+                                 style="width: {{ active_task.progress_percent or 0 }}%"
+                                 aria-valuenow="{{ active_task.progress_percent or 0 }}" 
+                                 aria-valuemin="0" 
+                                 aria-valuemax="100">
+                                <span id="progress-text">{{ active_task.progress_percent or 0 }}%</span>
+                            </div>
+                        </div>
+                        <div class="progress-details" id="progress-details">
+                            Started: {{ active_task.created_at.strftime('%Y-%m-%d %H:%M:%S') if active_task.created_at else 'Unknown' }}
+                        </div>
+                    </div>
+                    <div>
+                        {% if active_task.status.value in ['queued', 'running'] %}
+                        <button type="button" class="btn btn-danger btn-sm" onclick="cancelTask('{{ active_task.id }}')">
+                            <i class="bi bi-x-circle"></i> Cancel
+                        </button>
+                        {% endif %}
+                    </div>
+                </div>
+            </div>
+            {% endif %}
+            
+            <!-- Caption Generation Form -->
+            <div class="card">
+                <div class="card-header">
+                    <h5><i class="bi bi-play-circle"></i> Start Caption Generation</h5>
+                </div>
+                <div class="card-body">
+                    {% if active_task and active_task.status.value in ['queued', 'running'] %}
+                    <div class="alert alert-warning">
+                        <i class="bi bi-exclamation-triangle"></i>
+                        You already have an active caption generation task. Please wait for it to complete or cancel it before starting a new one.
+                    </div>
+                    {% else %}
+                    <form id="caption-generation-form" method="POST" action="{{ url_for('start_caption_generation') }}">
+                        {{ form.hidden_tag() }}
+                        
+                        <div class="settings-form">
+                            <h6><i class="bi bi-sliders"></i> Generation Settings</h6>
+                            
+                            <div class="form-row">
+                                <div class="form-group">
+                                    {{ form.max_posts_per_run.label(class="form-label") }}
+                                    {{ form.max_posts_per_run(class="form-control") }}
+                                    <div class="form-text">Maximum number of posts to process in this run</div>
+                                </div>
+                                
+                                <div class="form-group">
+                                    {{ form.processing_delay.label(class="form-label") }}
+                                    {{ form.processing_delay(class="form-control", step="0.1") }}
+                                    <div class="form-text">Delay between processing posts (seconds)</div>
+                                </div>
+                            </div>
+                            
+                            <div class="form-row">
+                                <div class="form-group">
+                                    {{ form.max_caption_length.label(class="form-label") }}
+                                    {{ form.max_caption_length(class="form-control") }}
+                                    <div class="form-text">Maximum length for generated captions</div>
+                                </div>
+                                
+                                <div class="form-group">
+                                    {{ form.optimal_min_length.label(class="form-label") }}
+                                    {{ form.optimal_min_length(class="form-control") }}
+                                    <div class="form-text">Minimum optimal caption length</div>
+                                </div>
+                            </div>
+                            
+                            <div class="form-row">
+                                <div class="form-group">
+                                    {{ form.optimal_max_length.label(class="form-label") }}
+                                    {{ form.optimal_max_length(class="form-control") }}
+                                    <div class="form-text">Maximum optimal caption length</div>
+                                </div>
+                                
+                                <div class="form-group d-flex align-items-center">
+                                    <div class="form-check">
+                                        {{ form.reprocess_existing(class="form-check-input") }}
+                                        {{ form.reprocess_existing.label(class="form-check-label") }}
+                                    </div>
+                                    <div class="form-text ms-2">Reprocess images that already have captions</div>
+                                </div>
+                            </div>
+                        </div>
+                        
+                        <div class="d-grid">
+                            {{ form.submit(class="btn btn-primary btn-lg", id="start-generation-btn") }}
+                        </div>
+                    </form>
+                    {% endif %}
+                </div>
+            </div>
+        </div>
+        
+        <div class="col-lg-4">
+            <!-- Task History -->
+            <div class="card">
+                <div class="card-header">
+                    <h5><i class="bi bi-clock-history"></i> Recent Tasks</h5>
+                </div>
+                <div class="card-body">
+                    {% if task_history %}
+                    <div class="task-history">
+                        {% for task in task_history %}
+                        <div class="task-item">
+                            <div class="d-flex justify-content-between align-items-start">
+                                <div>
+                                    <strong>{{ task.task_id[:8] }}...</strong>
+                                    <span class="badge bg-{{ 'success' if task.status == 'completed' else 'danger' if task.status == 'failed' else 'warning' if task.status == 'cancelled' else 'primary' }}">
+                                        {{ task.status|title }}
+                                    </span>
+                                </div>
+                                <small class="text-muted">
+                                    {{ task.created_at[:19] if task.created_at else 'Unknown' }}
+                                </small>
+                            </div>
+                            
+                            {% if task.results %}
+                            <div class="mt-2">
+                                <small class="text-muted">
+                                    <i class="bi bi-check-circle"></i> {{ task.results.captions_generated }} captions generated
+                                    <br>
+                                    <i class="bi bi-images"></i> {{ task.results.images_processed }} images processed
+                                    {% if task.results.errors_count > 0 %}
+                                    <br>
+                                    <i class="bi bi-exclamation-triangle text-warning"></i> {{ task.results.errors_count }} errors
+                                    {% endif %}
+                                </small>
+                            </div>
+                            {% endif %}
+                            
+                            {% if task.error_message %}
+                            <div class="mt-2">
+                                <small class="text-danger">
+                                    <i class="bi bi-exclamation-circle"></i> {{ task.error_message[:100] }}{% if task.error_message|length > 100 %}...{% endif %}
+                                </small>
+                            </div>
+                            {% endif %}
+                        </div>
+                        {% endfor %}
+                    </div>
+                    {% else %}
+                    <p class="text-muted">No recent tasks found.</p>
+                    {% endif %}
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+
+<!-- AJAX polling for real-time updates -->
+<script>
+let currentTaskId = {{ active_task.id|tojson if active_task else 'null' }};
+
+// Initialize progress monitoring using AJAX polling (like admin monitoring)
+function initializeProgressMonitoring() {
+    if (!currentTaskId) {
+        console.log('No active task, skipping progress monitoring');
+        return;
+    }
+    
+    console.log('Starting progress monitoring for task:', currentTaskId);
+    
+    // Start polling for progress updates
+    startProgressPolling();
+}
+
+let progressPollingInterval = null;
+
+function startProgressPolling() {
+    // Clear any existing interval
+    if (progressPollingInterval) {
+        clearInterval(progressPollingInterval);
+    }
+    
+    // Poll every 2 seconds for progress updates
+    progressPollingInterval = setInterval(async () => {
+        if (!currentTaskId) {
+            stopProgressPolling();
+            return;
+        }
+        
+        try {
+            const response = await fetch(`/api/caption_generation/status/${currentTaskId}`);
+            const data = await response.json();
+            
+            if (data.success && data.status) {
+                updateProgressFromStatus(data.status);
+                
+                // Check if task is completed
+                if (data.status.status === 'completed') {
+                    handleTaskCompletion(data.status);
+                    stopProgressPolling();
+                } else if (data.status.status === 'failed') {
+                    handleTaskError(data.status);
+                    stopProgressPolling();
+                } else if (data.status.status === 'cancelled') {
+                    handleTaskCancellation(data.status);
+                    stopProgressPolling();
+                }
+            } else {
+                console.log('No status data available for task:', currentTaskId);
+            }
+        } catch (error) {
+            console.error('Error polling for progress:', error);
+        }
+    }, 2000); // Poll every 2 seconds
+}
+
+function stopProgressPolling() {
+    if (progressPollingInterval) {
+        clearInterval(progressPollingInterval);
+        progressPollingInterval = null;
+        console.log('Stopped progress polling');
+    }
+}
+
+function updateProgressFromStatus(status) {
+    const progressData = {
+        task_id: status.task_id,
+        progress_percent: status.progress_percent || 0,
+        current_step: status.current_step || 'Processing',
+        details: status.progress_details || {}
+    };
+    
+    updateProgress(progressData);
+}
+
+// Update progress display
+function updateProgress(data) {
+    if (data.task_id && data.task_id !== currentTaskId) return;
+    
+    const progressBar = document.getElementById('progress-bar');
+    const progressText = document.getElementById('progress-text');
+    const currentStep = document.getElementById('current-step');
+    const progressDetails = document.getElementById('progress-details');
+    
+    if (progressBar) {
+        progressBar.style.width = data.progress_percent + '%';
+        progressBar.setAttribute('aria-valuenow', data.progress_percent);
+    }
+    
+    if (progressText) {
+        progressText.textContent = data.progress_percent + '%';
+    }
+    
+    if (currentStep) {
+        currentStep.textContent = data.current_step || 'Processing';
+    }
+    
+    if (progressDetails && data.details) {
+        let detailsText = '';
+        if (data.details.current_post && data.details.total_posts) {
+            detailsText += `Post ${data.details.current_post} of ${data.details.total_posts}`;
+        }
+        if (data.details.images_processed) {
+            detailsText += ` • ${data.details.images_processed} images processed`;
+        }
+        if (detailsText) {
+            progressDetails.innerHTML = detailsText;
+        }
+    }
+}
+
+// Handle task completion
+function handleTaskCompletion(status) {
+    if (status.task_id !== currentTaskId) return;
+    
+    const statusDiv = document.getElementById('active-task-status');
+    if (statusDiv) {
+        statusDiv.className = 'task-status completed';
+        
+        const currentStep = document.getElementById('current-step');
+        if (currentStep) {
+            currentStep.textContent = 'Completed';
+        }
+        
+        const progressBar = document.getElementById('progress-bar');
+        if (progressBar) {
+            progressBar.style.width = '100%';
+            progressBar.className = 'progress-bar bg-success';
+        }
+        
+        const progressText = document.getElementById('progress-text');
+        if (progressText) {
+            progressText.textContent = '100%';
+        }
+    }
+    
+    showAlert('Caption generation completed successfully! Redirecting to review...', 'success');
+    
+    // Redirect to review batches after completion
+    setTimeout(() => {
+        window.location.href = '/review/batches';
+    }, 2000);
+}
+
+// Handle task error
+function handleTaskError(status) {
+    if (status.task_id !== currentTaskId) return;
+    
+    const statusDiv = document.getElementById('active-task-status');
+    if (statusDiv) {
+        statusDiv.className = 'task-status failed';
+        
+        const currentStep = document.getElementById('current-step');
+        if (currentStep) {
+            currentStep.textContent = 'Failed';
+        }
+    }
+    
+    showAlert('Caption generation failed: ' + (status.error_message || 'Unknown error'), 'danger');
+}
+
+// Handle task cancellation
+function handleTaskCancellation(status) {
+    if (status.task_id !== currentTaskId) return;
+    
+    const statusDiv = document.getElementById('active-task-status');
+    if (statusDiv) {
+        statusDiv.className = 'task-status cancelled';
+        
+        const currentStep = document.getElementById('current-step');
+        if (currentStep) {
+            currentStep.textContent = 'Cancelled';
+        }
+    }
+    
+    showAlert('Caption generation was cancelled.', 'warning');
+    
+    // Refresh page after a short delay
+    setTimeout(() => {
+        window.location.reload();
+    }, 1500);
+}
+
+// Start caption generation
+const captionForm = document.getElementById('caption-generation-form');
+if (captionForm) {
+    captionForm.addEventListener('submit', function(e) {
+    e.preventDefault();
+    
+    const formData = new FormData(this);
+    const submitBtn = document.getElementById('start-generation-btn');
+    
+    // Disable submit button
+    submitBtn.disabled = true;
+    submitBtn.innerHTML = '<i class="bi bi-hourglass-split"></i> Starting...';
+    
+    // Get CSRF token from meta tag
+    const csrfToken = document.querySelector('meta[name="csrf-token"]')?.getAttribute('content');
+    
+    fetch(this.action, {
+        method: 'POST',
+        body: formData,
+        headers: {
+            'X-Requested-With': 'XMLHttpRequest',
+            'X-CSRFToken': csrfToken || ''
+        }
+    })
+    .then(response => response.json())
+    .then(data => {
+        if (data.success) {
+            currentTaskId = data.task_id;
+            showAlert(data.message, 'success');
+            
+            // Progress monitoring will start automatically when page reloads
+            
+            // Refresh page to show active task
+            setTimeout(() => {
+                window.location.reload();
+            }, 1000);
+        } else {
+            showAlert(data.error, 'danger');
+            submitBtn.disabled = false;
+            submitBtn.innerHTML = '<i class="bi bi-play-circle"></i> Start Caption Generation';
+        }
+    })
+    .catch(error => {
+        console.error('Error:', error);
+        showAlert('An error occurred while starting caption generation.', 'danger');
+        submitBtn.disabled = false;
+        submitBtn.innerHTML = '<i class="bi bi-play-circle"></i> Start Caption Generation';
+    });
+    });
+}
+
+// Cancel task
+function cancelTask(taskId) {
+    if (!confirm('Are you sure you want to cancel this caption generation task?')) {
+        return;
+    }
+    
+    const csrfToken = document.querySelector('meta[name="csrf-token"]')?.getAttribute('content') || '';
+    
+    fetch(`/api/caption_generation/cancel/${taskId}`, {
+        method: 'POST',
+        headers: {
+            'Content-Type': 'application/json',
+            'X-CSRFToken': csrfToken
+        }
+    })
+    .then(response => response.json())
+    .then(data => {
+        if (data.success) {
+            showAlert(data.message, 'success');
+        } else {
+            showAlert(data.error, 'danger');
+        }
+    })
+    .catch(error => {
+        console.error('Error:', error);
+        showAlert('An error occurred while cancelling the task.', 'danger');
+    });
+}
+
+// Show alert message
+function showAlert(message, type) {
+    const alertDiv = document.createElement('div');
+    alertDiv.className = `alert alert-${type} alert-dismissible fade show`;
+    alertDiv.innerHTML = `
+        ${message}
+        <button type="button" class="btn-close" data-bs-dismiss="alert"></button>
+    `;
+    
+    const container = document.querySelector('.container');
+    container.insertBefore(alertDiv, container.firstChild);
+    
+    // Auto-dismiss after 5 seconds
+    setTimeout(() => {
+        if (alertDiv.parentNode) {
+            alertDiv.remove();
+        }
+    }, 5000);
+}
+
+// Cleanup function to stop progress polling
+function cleanupProgressMonitoring() {
+    stopProgressPolling();
+}
+
+// Initialize when page loads
+document.addEventListener('DOMContentLoaded', function() {
+    initializeProgressMonitoring();
+});
+
+// Cleanup when page unloads
+window.addEventListener('beforeunload', function() {
+    cleanupProgressMonitoring();
+});
+
+// Cleanup when page becomes hidden (mobile/tab switching)
+document.addEventListener('visibilitychange', function() {
+    if (document.hidden) {
+        cleanupProgressMonitoring();
+    } else if (currentTaskId && !progressPollingInterval) {
+        // Restart monitoring when page becomes visible again
+        initializeProgressMonitoring();
+    }
+});
+</script>
+{% endblock %}

@@ -1,0 +1,180 @@
+<!-- Copyright (C) 2025 iolaire mcfadden. -->
+<!-- This program is free software: you can redistribute it and/or modify it under the terms of the GNU Affero General Public License as published by the Free Software Foundation, either version 3 of the License, or (at your option) any later version. -->
+<!-- THE SOFTWARE IS PROVIDED "AS IS", WITHOUT WARRANTY OF ANY KIND, EXPRESS OR IMPLIED, INCLUDING BUT NOT LIMITED TO THE WARRANTIES OF MERCHANTABILITY, FITNESS FOR A PARTICULAR PURPOSE AND NONINFRINGEMENT. IN NO EVENT SHALL THE AUTHORS OR COPYRIGHT HOLDERS BE LIABLE FOR ANY CLAIM, DAMAGES OR OTHER LIABILITY, WHETHER IN AN ACTION OF CONTRACT, TORT OR OTHERWISE, ARISING FROM, OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE SOFTWARE. -->
+{% extends "base.html" %}
+
+{% block title %}Login - Vedfolnir{% endblock %}
+
+{% block content %}
+<div class="min-vh-100 d-flex align-items-center justify-content-center py-5">
+    <div class="container">
+        <div class="row justify-content-center">
+            <div class="col-lg-5 col-md-7">
+                <div class="card shadow-lg border-0">
+                    <div class="card-body p-5">
+                        <!-- Logo and Title -->
+                        <div class="text-center mb-4">
+                            <div class="mb-3">
+                                <span style="font-size: 3rem;">🤖</span>
+                            </div>
+                            <h2 class="fw-bold text-primary mb-2">Vedfolnir</h2>
+                            <p class="text-muted">Sign in to your account</p>
+                        </div>
+
+                        <!-- Login Form -->
+                        <form method="POST" action="{{ url_for('login') }}">
+                            {{ form.hidden_tag() }}
+                            
+                            <div class="mb-4">
+                                <label for="username" class="form-label">
+                                    <i class="bi bi-person me-2"></i>Username
+                                </label>
+                                <div class="input-group">
+                                    <span class="input-group-text bg-light border-end-0">
+                                        <i class="bi bi-person text-muted"></i>
+                                    </span>
+                                    {{ form.username(class="form-control border-start-0 ps-0", id="username", placeholder="Enter your username") }}
+                                </div>
+                                {% if form.username.errors %}
+                                    <div class="text-danger mt-1">
+                                        {% for error in form.username.errors %}
+                                            <small>{{ error }}</small>
+                                        {% endfor %}
+                                    </div>
+                                {% endif %}
+                            </div>
+
+                            <div class="mb-4">
+                                <label for="password" class="form-label">
+                                    <i class="bi bi-lock me-2"></i>Password
+                                </label>
+                                <div class="input-group">
+                                    <span class="input-group-text bg-light border-end-0">
+                                        <i class="bi bi-lock text-muted"></i>
+                                    </span>
+                                    {{ form.password(class="form-control border-start-0 ps-0", id="password", placeholder="Enter your password") }}
+                                    <button class="btn btn-outline-secondary border-start-0" type="button" id="togglePassword">
+                                        <i class="bi bi-eye" id="togglePasswordIcon"></i>
+                                    </button>
+                                </div>
+                                {% if form.password.errors %}
+                                    <div class="text-danger mt-1">
+                                        {% for error in form.password.errors %}
+                                            <small>{{ error }}</small>
+                                        {% endfor %}
+                                    </div>
+                                {% endif %}
+                            </div>
+
+                            <div class="mb-4">
+                                <div class="form-check">
+                                    {{ form.remember(class="form-check-input", id="remember") }}
+                                    <label class="form-check-label" for="remember">
+                                        Remember me for 30 days
+                                    </label>
+                                </div>
+                            </div>
+
+                            <div class="d-grid">
+                                {{ form.submit(class="btn btn-primary btn-lg") }}
+                            </div>
+                        </form>
+
+                        <!-- Additional Info -->
+                        <div class="text-center mt-4">
+                            <small class="text-muted">
+                                <i class="bi bi-shield-check me-1"></i>
+                                Secure login with session management
+                            </small>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- Help Text -->
+                <div class="text-center mt-4">
+                    <small class="text-muted">
+                        Need help? Contact your system administrator
+                    </small>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+{% endblock %}
+
+{% block scripts %}
+<style>
+/* Login page specific styles */
+body {
+    background: linear-gradient(135deg, #667eea 0%, #764ba2 100%) !important;
+    min-height: 100vh;
+}
+
+.card {
+    backdrop-filter: blur(10px);
+    background-color: rgba(255, 255, 255, 0.95) !important;
+}
+
+.input-group-text {
+    background-color: transparent;
+}
+
+.form-control:focus {
+    box-shadow: none;
+    border-color: #2563eb;
+}
+
+.btn-primary {
+    background: linear-gradient(135deg, #2563eb 0%, #1d4ed8 100%) !important;
+    border: none !important;
+    padding: 0.75rem 1.5rem;
+    font-weight: 600;
+}
+
+.btn-primary:hover {
+    background: linear-gradient(135deg, #1d4ed8 0%, #1e40af 100%) !important;
+    transform: translateY(-2px);
+    box-shadow: 0 8px 25px rgba(37, 99, 235, 0.3);
+}
+
+/* Floating animation for the robot emoji */
+@keyframes float {
+    0%, 100% { transform: translateY(0px); }
+    50% { transform: translateY(-10px); }
+}
+
+.card-body span {
+    animation: float 3s ease-in-out infinite;
+    display: inline-block;
+}
+</style>
+
+<script>
+document.addEventListener('DOMContentLoaded', function() {
+    // Password visibility toggle
+    const togglePassword = document.getElementById('togglePassword');
+    if (togglePassword) {
+        togglePassword.addEventListener('click', function() {
+            const password = document.getElementById('password');
+            const icon = document.getElementById('togglePasswordIcon');
+            
+            if (password.type === 'password') {
+                password.type = 'text';
+                icon.classList.remove('bi-eye');
+                icon.classList.add('bi-eye-slash');
+            } else {
+                password.type = 'password';
+                icon.classList.remove('bi-eye-slash');
+                icon.classList.add('bi-eye');
+            }
+        });
+    }
+
+    // Auto-focus username field
+    const usernameField = document.getElementById('username');
+    if (usernameField) {
+        usernameField.focus();
+    }
+});
+</script>
+{% endblock %}

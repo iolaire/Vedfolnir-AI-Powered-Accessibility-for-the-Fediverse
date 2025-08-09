@@ -1,0 +1,441 @@
+<!-- Copyright (C) 2025 iolaire mcfadden. -->
+<!-- This program is free software: you can redistribute it and/or modify it under the terms of the GNU Affero General Public License as published by the Free Software Foundation, either version 3 of the License, or (at your option) any later version. -->
+<!-- THE SOFTWARE IS PROVIDED "AS IS", WITHOUT WARRANTY OF ANY KIND, EXPRESS OR IMPLIED, INCLUDING BUT NOT LIMITED TO THE WARRANTIES OF MERCHANTABILITY, FITNESS FOR A PARTICULAR PURPOSE AND NONINFRINGEMENT. IN NO EVENT SHALL THE AUTHORS OR COPYRIGHT HOLDERS BE LIABLE FOR ANY CLAIM, DAMAGES OR OTHER LIABILITY, WHETHER IN AN ACTION OF CONTRACT, TORT OR OTHERWISE, ARISING FROM, OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE SOFTWARE. -->
+{% extends "base.html" %}
+
+{% block title %}Batch Review - Vedfolnir{% endblock %}
+
+{% block head %}
+{{ super() }}
+<script src="{{ url_for('static', filename='js/image-zoom.js') }}"></script>
+<style>
+    .filter-panel {
+        background-color: #f8f9fa;
+        border-radius: 0.25rem;
+        padding: 1rem;
+        margin-bottom: 1rem;
+    }
+    .pagination-container {
+        display: flex;
+        justify-content: center;
+        margin-top: 1.5rem;
+        margin-bottom: 1rem;
+    }
+    .bulk-actions {
+        background-color: #f0f0f0;
+        border-radius: 0.25rem;
+        padding: 0.75rem;
+        margin-bottom: 1rem;
+    }
+    .bulk-actions-title {
+        font-weight: bold;
+        margin-bottom: 0.5rem;
+    }
+    .filter-badge {
+        margin-right: 0.5rem;
+        margin-bottom: 0.5rem;
+    }
+    .active-filters {
+        margin-bottom: 1rem;
+    }
+    .batch-item {
+        transition: background-color 0.2s ease;
+    }
+    .batch-item:has(.bulk-select-checkbox:checked) {
+        background-color: #e9f5ff;
+        border-color: #0d6efd !important;
+    }
+    .approved {
+        background-color: #d4edda;
+        border-color: #28a745 !important;
+    }
+    .rejected {
+        background-color: #f8d7da;
+        border-color: #dc3545 !important;
+    }
+    .skipped {
+        background-color: #e2e3e5;
+        border-color: #6c757d !important;
+    }
+</style>
+{% endblock %}
+
+{% block content %}
+<!-- Keyboard shortcuts help -->
+<div class="alert alert-info alert-dismissible fade show mb-3" role="alert">
+    <h5><i class="bi bi-keyboard"></i> Keyboard Shortcuts</h5>
+    <div class="row">
+        <div class="col-md-4">
+            <strong>Alt+A</strong>: Approve current item<br>
+            <strong>Alt+R</strong>: Reject current item
+        </div>
+        <div class="col-md-4">
+            <strong>Alt+S</strong>: Skip current item<br>
+            <strong>Alt+P</strong>: Approve & Post current item
+        </div>
+        <div class="col-md-4">
+            <strong>Alt+Z</strong>: Zoom in<br>
+            <strong>Alt+X</strong>: Zoom out<br>
+            <strong>Alt+C</strong>: Reset zoom
+        </div>
+    </div>
+    <button type="button" class="btn-close" data-bs-dismiss="alert" aria-label="Close"></button>
+</div>
+
+<div class="d-flex justify-content-between align-items-center mb-3">
+    <h1>Batch Review</h1>
+    <div>
+        <span class="badge bg-info">{{ pagination.total_count if pagination else images|length }} total images</span>
+        <button id="batch-submit" class="btn btn-success ms-2" disabled>Submit All Reviews</button>
+        <button id="filter-toggle" class="btn btn-outline-secondary ms-2">
+            <i class="bi bi-funnel"></i> Filters
+        </button>
+    </div>
+</div>
+
+<!-- Filter panel -->
+<div id="filter-panel" class="filter-panel mb-3" style="display: none;">
+    <form id="filter-form" method="GET" action="{{ url_for('batch_review') }}">
+    {{ csrf_token() }}
+        <div class="row g-3">
+            <div class="col-md-3">
+                <label for="category" class="form-label">Image Category</label>
+                <select class="form-select" id="category" name="category">
+                    <option value="">All Categories</option>
+                    {% if filters and filters.available_categories %}
+                        {% for cat in filters.available_categories %}
+                            <option value="{{ cat }}" {% if filters.category == cat %}selected{% endif %}>{{ cat }}</option>
+                        {% endfor %}
+                    {% endif %}
+                </select>
+            </div>
+            <div class="col-md-3">
+                <label for="quality_score" class="form-label">Quality Score</label>
+                <select class="form-select" id="quality_score" name="quality_score">
+                    <option value="">Any Quality</option>
+                    <option value="50" {% if filters and filters.quality_score == '50' %}selected{% endif %}>Below 50%</option>
+                    <option value="70" {% if filters and filters.quality_score == '70' %}selected{% endif %}>Below 70%</option>
+                    <option value="90" {% if filters and filters.quality_score == '90' %}selected{% endif %}>Below 90%</option>
+                </select>
+            </div>
+            <div class="col-md-3">
+                <label for="needs_review" class="form-label">Special Review</label>
+                <select class="form-select" id="needs_review" name="needs_review">
+                    <option value="">All Images</option>
+                    <option value="yes" {% if filters and filters.needs_review == 'yes' %}selected{% endif %}>Needs Review</option>
+                </select>
+            </div>
+            <div class="col-md-3">
+                <label for="sort_by" class="form-label">Sort By</label>
+                <div class="input-group">
+                    <select class="form-select" id="sort_by" name="sort_by">
+                        <option value="created_at" {% if not filters or filters.sort_by == 'created_at' %}selected{% endif %}>Date Added</option>
+                        <option value="quality_score" {% if filters and filters.sort_by == 'quality_score' %}selected{% endif %}>Quality Score</option>
+                        <option value="category" {% if filters and filters.sort_by == 'category' %}selected{% endif %}>Category</option>
+                    </select>
+                    <select class="form-select" id="sort_order" name="sort_order">
+                        <option value="desc" {% if not filters or filters.sort_order == 'desc' %}selected{% endif %}>Descending</option>
+                        <option value="asc" {% if filters and filters.sort_order == 'asc' %}selected{% endif %}>Ascending</option>
+                    </select>
+                </div>
+            </div>
+        </div>
+        <div class="row mt-3">
+            <div class="col-md-3">
+                <label for="per_page" class="form-label">Items Per Page</label>
+                <select class="form-select" id="per_page" name="per_page">
+                    <option value="5" {% if pagination and pagination.per_page == 5 %}selected{% endif %}>5</option>
+                    <option value="10" {% if not pagination or pagination.per_page == 10 %}selected{% endif %}>10</option>
+                    <option value="20" {% if pagination and pagination.per_page == 20 %}selected{% endif %}>20</option>
+                    <option value="50" {% if pagination and pagination.per_page == 50 %}selected{% endif %}>50</option>
+                </select>
+            </div>
+            <div class="col-md-3">
+                <label for="post_id" class="form-label">Post ID</label>
+                <input type="text" class="form-control" id="post_id" name="post_id" placeholder="Filter by post ID" 
+                       value="{{ filters.post_id if filters and filters.post_id else '' }}">
+            </div>
+            <div class="col-md-6 d-flex align-items-end">
+                <button type="submit" class="btn btn-primary me-2">Apply Filters</button>
+                <a href="{{ url_for('batch_review') }}" class="btn btn-outline-secondary">Clear Filters</a>
+            </div>
+        </div>
+    </form>
+</div>
+
+<!-- Active filters display -->
+{% if filters and (filters.category or filters.quality_score or filters.needs_review or filters.post_id) %}
+<div class="active-filters">
+    <small class="text-muted">Active filters:</small>
+    {% if filters.category %}
+        <span class="badge bg-secondary filter-badge">
+            Category: {{ filters.category }}
+            <a href="{{ url_for('batch_review', category=None, quality_score=filters.quality_score, needs_review=filters.needs_review, post_id=filters.post_id, sort_by=filters.sort_by, sort_order=filters.sort_order, per_page=pagination.per_page) }}" class="text-white text-decoration-none">×</a>
+        </span>
+    {% endif %}
+    {% if filters.quality_score %}
+        <span class="badge bg-secondary filter-badge">
+            Quality: Below {{ filters.quality_score }}%
+            <a href="{{ url_for('batch_review', category=filters.category, quality_score=None, needs_review=filters.needs_review, post_id=filters.post_id, sort_by=filters.sort_by, sort_order=filters.sort_order, per_page=pagination.per_page) }}" class="text-white text-decoration-none">×</a>
+        </span>
+    {% endif %}
+    {% if filters.needs_review == 'yes' %}
+        <span class="badge bg-secondary filter-badge">
+            Needs Special Review
+            <a href="{{ url_for('batch_review', category=filters.category, quality_score=filters.quality_score, needs_review=None, post_id=filters.post_id, sort_by=filters.sort_by, sort_order=filters.sort_order, per_page=pagination.per_page) }}" class="text-white text-decoration-none">×</a>
+        </span>
+    {% endif %}
+    {% if filters.post_id %}
+        <span class="badge bg-secondary filter-badge">
+            Post ID: {{ filters.post_id }}
+            <a href="{{ url_for('batch_review', category=filters.category, quality_score=filters.quality_score, needs_review=filters.needs_review, post_id=None, sort_by=filters.sort_by, sort_order=filters.sort_order, per_page=pagination.per_page) }}" class="text-white text-decoration-none">×</a>
+        </span>
+    {% endif %}
+</div>
+{% endif %}
+
+<!-- Bulk actions panel -->
+<div class="bulk-actions mb-3">
+    <div class="bulk-actions-title">Bulk Actions</div>
+    <div class="row">
+        <div class="col-md-6">
+            <div class="btn-group" role="group">
+                <button id="bulk-select-all" class="btn btn-sm btn-outline-secondary">Select All</button>
+                <button id="bulk-select-none" class="btn btn-sm btn-outline-secondary">Deselect All</button>
+                <button id="bulk-select-toggle" class="btn btn-sm btn-outline-secondary">Toggle Selection</button>
+            </div>
+        </div>
+        <div class="col-md-6">
+            <div class="btn-group" role="group">
+                <button id="bulk-approve" class="btn btn-sm btn-success" disabled>Approve Selected</button>
+                <button id="bulk-reject" class="btn btn-sm btn-danger" disabled>Reject Selected</button>
+                <button id="bulk-skip" class="btn btn-sm btn-secondary" disabled>Skip Selected</button>
+            </div>
+        </div>
+    </div>
+    <div class="mt-2">
+        <span id="selection-count" class="badge bg-primary">0 items selected</span>
+    </div>
+</div>
+
+{% if images %}
+<div id="batch-review-form">
+    {% for image in images %}
+    <div class="batch-item mb-4 p-3 border rounded position-relative" data-image-id="{{ image.id }}">
+        <!-- Bulk selection checkbox -->
+        <div class="position-absolute" style="top: 10px; left: 10px; z-index: 10;">
+            <input type="checkbox" class="form-check-input bulk-select-checkbox" style="transform: scale(1.5);">
+        </div>
+        <div class="row">
+            <div class="col-md-3">
+                <div class="image-container batch-image-container">
+                    <div class="image-zoom-controls position-absolute top-0 end-0 m-1 bg-dark bg-opacity-50 rounded p-1">
+                        <button type="button" class="btn btn-sm btn-light zoom-in" title="Zoom In">
+                            <i class="bi bi-zoom-in"></i>
+                        </button>
+                        <button type="button" class="btn btn-sm btn-light zoom-out" title="Zoom Out">
+                            <i class="bi bi-zoom-out"></i>
+                        </button>
+                        <button type="button" class="btn btn-sm btn-light zoom-reset" title="Reset Zoom">
+                            <i class="bi bi-arrows-fullscreen"></i>
+                        </button>
+                    </div>
+                    <div class="image-zoom-wrapper overflow-hidden" style="cursor: move;">
+                        <img src="{{ url_for('serve_image', filename=image.local_path.split('/')[-1]) }}" 
+                             class="image-zoomable" alt="Image {{ image.id }}">
+                    </div>
+                </div>
+            </div>
+            <div class="col-md-9">
+                <div class="d-flex justify-content-between align-items-start mb-2">
+                    <h6>Post: <a href="{{ image.post.post_url }}" target="_blank" rel="noopener">{{ image.post.post_id[:20] }}...</a></h6>
+                    <!-- Platform badge -->
+                    {% if image.platform_connection %}
+                    <span class="badge bg-{{ 'primary' if image.platform_connection.platform_type == 'mastodon' else 'info' }} platform-badge">
+                        <i class="bi bi-{{ 'mastodon' if image.platform_connection.platform_type == 'mastodon' else 'image' }}"></i>
+                        {{ image.platform_connection.name }}
+                    </span>
+                    {% elif image.platform_type %}
+                    <span class="badge bg-secondary platform-badge">
+                        <i class="bi bi-{{ 'mastodon' if image.platform_type == 'mastodon' else 'image' }}"></i>
+                        {{ image.platform_type|title }}
+                    </span>
+                    {% endif %}
+                </div>
+                
+                <!-- Platform details -->
+                {% if image.platform_connection %}
+                <div class="mb-2">
+                    <small class="text-muted">
+                        <i class="bi bi-server"></i> {{ image.platform_connection.instance_url|replace('https://', '')|replace('http://', '') }}
+                        {% if image.platform_connection.username %}
+                        | <i class="bi bi-person"></i> @{{ image.platform_connection.username }}
+                        {% endif %}
+                    </small>
+                </div>
+                {% elif image.instance_url %}
+                <div class="mb-2">
+                    <small class="text-muted">
+                        <i class="bi bi-globe"></i> {{ image.instance_url|replace('https://', '')|replace('http://', '') }}
+                    </small>
+                </div>
+                {% endif %}
+                
+                <div class="mb-1">
+                    <span class="badge bg-info">general</span>
+                    {% if image.caption_quality_score is not none %}
+                        {% set quality_class = 'bg-danger' if image.caption_quality_score < 40 else 'bg-warning' if image.caption_quality_score < 70 else 'bg-success' %}
+                        <span class="badge {{ quality_class }}">Quality: {{ image.caption_quality_score }}%</span>
+                        {% if image.needs_special_review %}
+                            <span class="badge bg-warning">Needs Review</span>
+                        {% endif %}
+                        <button type="button" class="btn btn-sm btn-link p-0 ms-1 quality-details-btn" 
+                                data-bs-toggle="tooltip" data-bs-placement="top" 
+                                title="Click for quality details">
+                            <i class="bi bi-info-circle"></i>
+                        </button>
+                    {% endif %}
+                </div>
+                {% if image.caption_quality_score is not none and image.reviewer_notes %}
+                <div class="quality-details mb-2 d-none">
+                    <div class="card">
+                        <div class="card-body p-2">
+                            <h6 class="card-subtitle mb-1 text-muted">Quality Assessment</h6>
+                            <div class="small">{{ image.reviewer_notes|nl2br }}</div>
+                        </div>
+                    </div>
+                </div>
+                {% endif %}
+                <div class="mb-3">
+                    <div class="d-flex justify-content-between align-items-center">
+                        <label class="form-label mb-0">Caption:</label>
+                        <button type="button" class="btn btn-sm btn-outline-primary btn-regenerate" data-image-id="{{ image.id }}">
+                            <i class="bi bi-arrow-clockwise"></i> Regenerate
+                        </button>
+                    </div>
+                    <textarea class="form-control caption-input" rows="3" maxlength="{{ caption_max_length }}" 
+                              placeholder="Enter alt text description..." required>{{ image.generated_caption or '' }}</textarea>
+                    <div class="char-counter"></div>
+                    <div class="regenerate-status text-muted"></div>
+                </div>
+                <div class="batch-actions mb-2">
+                    <button type="button" class="btn btn-success btn-sm btn-approve">Approve</button>
+                    <button type="button" class="btn btn-danger btn-sm btn-reject">Reject</button>
+                    <button type="button" class="btn btn-secondary btn-sm btn-skip">Skip</button>
+                    {% if image.image_post_id %}
+                    <button type="button" class="btn btn-primary btn-sm btn-approve-post" data-image-id="{{ image.id }}">
+                        <i class="bi bi-cloud-upload"></i> Approve & Post
+                    </button>
+                    {% endif %}
+                </div>
+                <small class="text-muted">Created: {{ image.created_at.strftime('%Y-%m-%d %H:%M') }}</small>
+            </div>
+        </div>
+    </div>
+    {% endfor %}
+</div>
+
+<!-- Pagination -->
+{% if pagination and pagination.total_pages > 1 %}
+<div class="pagination-container">
+    <nav aria-label="Batch review pagination">
+        <ul class="pagination">
+            <li class="page-item {% if not pagination.has_prev %}disabled{% endif %}">
+                <a class="page-link" href="{{ url_for('batch_review', page=pagination.page-1, per_page=pagination.per_page, category=filters.category, quality_score=filters.quality_score, needs_review=filters.needs_review, post_id=filters.post_id, sort_by=filters.sort_by, sort_order=filters.sort_order) }}" aria-label="Previous">
+                    <span aria-hidden="true">&laquo;</span>
+                </a>
+            </li>
+            
+            {% set start_page = [1, pagination.page - 2]|max %}
+            {% set end_page = [pagination.total_pages, pagination.page + 2]|min %}
+            
+            {% if start_page > 1 %}
+                <li class="page-item">
+                    <a class="page-link" href="{{ url_for('batch_review', page=1, per_page=pagination.per_page, category=filters.category, quality_score=filters.quality_score, needs_review=filters.needs_review, post_id=filters.post_id, sort_by=filters.sort_by, sort_order=filters.sort_order) }}">1</a>
+                </li>
+                {% if start_page > 2 %}
+                    <li class="page-item disabled">
+                        <span class="page-link">...</span>
+                    </li>
+                {% endif %}
+            {% endif %}
+            
+            {% for p in range(start_page, end_page + 1) %}
+                <li class="page-item {% if p == pagination.page %}active{% endif %}">
+                    <a class="page-link" href="{{ url_for('batch_review', page=p, per_page=pagination.per_page, category=filters.category, quality_score=filters.quality_score, needs_review=filters.needs_review, post_id=filters.post_id, sort_by=filters.sort_by, sort_order=filters.sort_order) }}">{{ p }}</a>
+                </li>
+            {% endfor %}
+            
+            {% if end_page < pagination.total_pages %}
+                {% if end_page < pagination.total_pages - 1 %}
+                    <li class="page-item disabled">
+                        <span class="page-link">...</span>
+                    </li>
+                {% endif %}
+                <li class="page-item">
+                    <a class="page-link" href="{{ url_for('batch_review', page=pagination.total_pages, per_page=pagination.per_page, category=filters.category, quality_score=filters.quality_score, needs_review=filters.needs_review, post_id=filters.post_id, sort_by=filters.sort_by, sort_order=filters.sort_order) }}">{{ pagination.total_pages }}</a>
+                </li>
+            {% endif %}
+            
+            <li class="page-item {% if not pagination.has_next %}disabled{% endif %}">
+                <a class="page-link" href="{{ url_for('batch_review', page=pagination.page+1, per_page=pagination.per_page, category=filters.category, quality_score=filters.quality_score, needs_review=filters.needs_review, post_id=filters.post_id, sort_by=filters.sort_by, sort_order=filters.sort_order) }}" aria-label="Next">
+                    <span aria-hidden="true">&raquo;</span>
+                </a>
+            </li>
+        </ul>
+    </nav>
+</div>
+{% endif %}
+
+<div class="toast-container position-fixed bottom-0 end-0 p-3"></div>
+{% else %}
+<div class="alert alert-info" role="alert">
+    No images pending batch review.
+</div>
+{% endif %}
+
+<script src="{{ url_for('static', filename='js/review.js') }}"></script>
+<script>
+document.addEventListener('DOMContentLoaded', function() {
+    // Initialize keyboard shortcuts help tooltips
+    const tooltipTriggerList = [].slice.call(document.querySelectorAll('[data-bs-toggle="tooltip"]'));
+    tooltipTriggerList.map(function (tooltipTriggerEl) {
+        return new bootstrap.Tooltip(tooltipTriggerEl);
+    });
+    
+    // Add keyboard shortcut indicators to buttons
+    const approveButtons = document.querySelectorAll('.btn-approve');
+    approveButtons.forEach(btn => {
+        btn.setAttribute('title', 'Approve (Alt+A)');
+        btn.setAttribute('data-bs-toggle', 'tooltip');
+        btn.setAttribute('data-bs-placement', 'top');
+    });
+    
+    const rejectButtons = document.querySelectorAll('.btn-reject');
+    rejectButtons.forEach(btn => {
+        btn.setAttribute('title', 'Reject (Alt+R)');
+        btn.setAttribute('data-bs-toggle', 'tooltip');
+        btn.setAttribute('data-bs-placement', 'top');
+    });
+    
+    const skipButtons = document.querySelectorAll('.btn-skip');
+    skipButtons.forEach(btn => {
+        btn.setAttribute('title', 'Skip (Alt+S)');
+        btn.setAttribute('data-bs-toggle', 'tooltip');
+        btn.setAttribute('data-bs-placement', 'top');
+    });
+    
+    const approvePostButtons = document.querySelectorAll('.btn-approve-post');
+    approvePostButtons.forEach(btn => {
+        btn.setAttribute('title', 'Approve & Post (Alt+P)');
+        btn.setAttribute('data-bs-toggle', 'tooltip');
+        btn.setAttribute('data-bs-placement', 'top');
+    });
+    
+    // Initialize tooltips
+    new bootstrap.Tooltip(document.body, {
+        selector: '[data-bs-toggle="tooltip"]'
+    });
+});
+</script>
+{% endblock %}
