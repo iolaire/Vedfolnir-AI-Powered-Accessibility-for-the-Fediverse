@@ -23,7 +23,7 @@ from models import (
     Image, ProcessingStatus, ProcessingRun
 )
 from web_caption_generation_service import WebCaptionGenerationService
-from security_utils import sanitize_for_log
+from security.core.security_utils import sanitize_for_log
 
 logger = logging.getLogger(__name__)
 

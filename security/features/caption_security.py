@@ -19,7 +19,7 @@ from datetime import datetime, timedelta
 
 from database import DatabaseManager
 from models import CaptionGenerationTask, PlatformConnection, User
-from security_utils import sanitize_for_log
+from security.core.security_utils import sanitize_for_log
 
 logger = logging.getLogger(__name__)
 

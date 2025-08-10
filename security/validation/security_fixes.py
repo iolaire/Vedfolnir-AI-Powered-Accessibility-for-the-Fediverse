@@ -460,8 +460,8 @@ def _validate_json_recursive(data, validator, depth=0):
             # Add import for enhanced validation
             if 'from enhanced_input_validation import' not in content:
                 content = content.replace(
-                    'from security_utils import sanitize_for_log, sanitize_html_input',
-                    'from security_utils import sanitize_for_log, sanitize_html_input\nfrom enhanced_input_validation import enhanced_input_validation, EnhancedInputValidator'
+                    'from security.core.security_utils import sanitize_for_log, sanitize_html_input',
+                    'from security.core.security_utils import sanitize_for_log, sanitize_html_input\nfrom enhanced_input_validation import enhanced_input_validation, EnhancedInputValidator'
                 )
             
             # Add validation decorator to vulnerable endpoints
@@ -840,7 +840,7 @@ def register_secure_error_handlers(app):
             if 'from secure_error_handlers import' not in content:
                 content = content.replace(
                     'from admin_monitoring import AdminMonitoringService',
-                    'from admin_monitoring import AdminMonitoringService\nfrom secure_error_handlers import register_secure_error_handlers'
+                    'from admin_monitoring import AdminMonitoringService\nfrom security.logging.secure_error_handlers import register_secure_error_handlers'
                 )
                 
                 # Add registration after app initialization

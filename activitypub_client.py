@@ -15,7 +15,7 @@ from cryptography.hazmat.primitives.asymmetric import rsa, padding
 from utils import async_retry, RetryConfig, get_retry_stats_summary, get_retry_stats_detailed
 from rate_limiter import get_rate_limiter, extract_endpoint_from_url, rate_limited
 from activitypub_platforms import PlatformAdapterFactory, PlatformAdapterError
-from security_utils import sanitize_for_log
+from security.core.security_utils import sanitize_for_log
 
 logger = logging.getLogger(__name__)
 

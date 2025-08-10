@@ -10,7 +10,7 @@ and handle platform switching, session cleanup, and security validation.
 
 from logging import getLogger
 import uuid
-from security_utils import sanitize_for_log
+from security.core.security_utils import sanitize_for_log
 from datetime import datetime, timedelta, timezone
 from typing import Optional, Dict, Any, Tuple
 from flask import session, request, g

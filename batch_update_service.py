@@ -10,7 +10,7 @@ from config import Config
 from database import DatabaseManager
 from activitypub_client import ActivityPubClient
 from models import ProcessingStatus, Image
-from security_utils import sanitize_for_log
+from security.core.security_utils import sanitize_for_log
 
 logger = getLogger(__name__)
 

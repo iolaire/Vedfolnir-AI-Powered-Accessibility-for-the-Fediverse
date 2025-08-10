@@ -23,7 +23,7 @@ from models import (
 from task_queue_manager import TaskQueueManager
 from progress_tracker import ProgressTracker
 from platform_aware_caption_adapter import PlatformAwareCaptionAdapter
-from security_utils import sanitize_for_log
+from security.core.security_utils import sanitize_for_log
 from error_recovery_manager import error_recovery_manager, handle_caption_error
 
 logger = logging.getLogger(__name__)

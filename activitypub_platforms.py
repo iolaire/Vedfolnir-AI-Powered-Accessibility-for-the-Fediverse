@@ -11,7 +11,7 @@ import abc
 from typing import Dict, List, Any, Optional
 import httpx
 from urllib.parse import urlparse
-from security_utils import sanitize_for_log
+from security.core.security_utils import sanitize_for_log
 
 logger = getLogger(__name__)
 

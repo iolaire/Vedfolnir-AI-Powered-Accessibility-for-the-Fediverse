@@ -196,12 +196,12 @@ class ImageProcessor:
                     os.remove(optimized_path)
                 return None
             
-            from security_utils import sanitize_for_log
+            from security.core.security_utils import sanitize_for_log
             logger.info(f"Downloaded and stored image: {sanitize_for_log(url)} -> {sanitize_for_log(optimized_path)}")
             return optimized_path
             
         except Exception as e:
-            from security_utils import sanitize_for_log
+            from security.core.security_utils import sanitize_for_log
             logger.error(f"Failed to download/store image {sanitize_for_log(url)}: {sanitize_for_log(str(e))}")
             return None
     

@@ -15,7 +15,7 @@ from typing import Optional, Dict, Any, Callable, List
 from datetime import datetime, timezone, timedelta
 from dataclasses import dataclass
 
-from security_utils import sanitize_for_log
+from security.core.security_utils import sanitize_for_log
 
 logger = logging.getLogger(__name__)
 

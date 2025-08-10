@@ -18,7 +18,7 @@ from progress_tracker import ProgressTracker, ProgressStatus
 from task_queue_manager import TaskQueueManager
 from database import DatabaseManager
 from models import CaptionGenerationTask
-from security_utils import sanitize_for_log
+from security.core.security_utils import sanitize_for_log
 
 logger = logging.getLogger(__name__)
 

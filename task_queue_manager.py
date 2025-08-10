@@ -17,7 +17,7 @@ from sqlalchemy.orm import Session
 
 from database import DatabaseManager
 from models import CaptionGenerationTask, TaskStatus, User, UserRole, PlatformConnection
-from security_utils import sanitize_for_log
+from security.core.security_utils import sanitize_for_log
 
 logger = logging.getLogger(__name__)
 
@@ -48,7 +48,7 @@ class TaskQueueManager:
             try:
                 # Generate secure task ID if not already set
                 if not task.id:
-                    from caption_security import CaptionSecurityManager
+                    from security.features.caption_security import CaptionSecurityManager
                     security_manager = CaptionSecurityManager(self.db_manager)
                     task.id = security_manager.generate_secure_task_id()
                 

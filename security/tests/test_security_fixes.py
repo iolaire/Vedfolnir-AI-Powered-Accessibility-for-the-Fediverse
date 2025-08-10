@@ -79,7 +79,7 @@ class TestSecurityFixes(unittest.TestCase):
     def test_secure_error_handling(self):
         """Test secure error handling"""
         try:
-            from secure_error_handler import SecureErrorHandler
+            from security.logging.secure_error_handlers import SecureErrorHandler
             
             # Test error handling
             test_error = Exception("Sensitive database error with password=secret123")
@@ -101,7 +101,7 @@ class TestSecurityFixes(unittest.TestCase):
     def test_secure_logging(self):
         """Test secure logging implementation"""
         try:
-            from secure_logging import SecureLogger
+            from security.logging.secure_logging import SecureLogger
             
             # Test message sanitization
             sensitive_message = "User login failed for token=abc123 and password=secret"

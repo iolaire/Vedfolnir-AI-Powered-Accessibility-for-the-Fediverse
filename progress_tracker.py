@@ -18,7 +18,7 @@ from sqlalchemy.exc import SQLAlchemyError
 
 from database import DatabaseManager
 from models import CaptionGenerationTask, TaskStatus, GenerationResults
-from security_utils import sanitize_for_log
+from security.core.security_utils import sanitize_for_log
 
 logger = logging.getLogger(__name__)
 

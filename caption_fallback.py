@@ -5,7 +5,7 @@ from logging import getLogger
 import os
 from typing import Dict, List, Optional, Tuple, Any
 from dataclasses import dataclass
-from security_utils import sanitize_for_log
+from security.core.security_utils import sanitize_for_log
 
 logger = getLogger(__name__)
 

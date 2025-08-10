@@ -14,7 +14,7 @@ from sqlalchemy.pool import QueuePool
 from models import Base, Post, Image, ProcessingRun, ProcessingStatus, UserRole, User, PlatformConnection, UserSession
 from config import Config
 from platform_context import PlatformContextManager, PlatformContextError
-from security_utils import sanitize_for_log
+from security.core.security_utils import sanitize_for_log
 
 logger = getLogger(__name__)
 

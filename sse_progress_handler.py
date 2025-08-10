@@ -22,7 +22,7 @@ from datetime import datetime, timedelta
 from database import DatabaseManager
 from progress_tracker import ProgressTracker
 from task_queue_manager import TaskQueueManager
-from security_utils import sanitize_for_log
+from security.core.security_utils import sanitize_for_log
 
 logger = logging.getLogger(__name__)
 

@@ -9,7 +9,7 @@ This file contains only the modified PixelfedPlatform class with pagination supp
 import logging
 from typing import Dict, List, Any, Optional
 import httpx
-from security_utils import sanitize_for_log
+from security.core.security_utils import sanitize_for_log
 
 logger = logging.getLogger(__name__)
 

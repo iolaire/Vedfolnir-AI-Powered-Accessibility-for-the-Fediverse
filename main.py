@@ -258,7 +258,7 @@ class Vedfolnir:
             
             # Check if caption generator is available
             if caption_generator is None:
-                from security_utils import sanitize_for_log
+                from security.core.security_utils import sanitize_for_log
                 logger.warning(f"Skipping image processing for post {sanitize_for_log(post_id)} - no caption generator available")
                 return
             

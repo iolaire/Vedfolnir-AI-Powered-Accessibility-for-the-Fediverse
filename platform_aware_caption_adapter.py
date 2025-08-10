@@ -20,7 +20,7 @@ from activitypub_client import ActivityPubClient
 from image_processor import ImageProcessor
 from ollama_caption_generator import OllamaCaptionGenerator
 from config import Config
-from security_utils import sanitize_for_log
+from security.core.security_utils import sanitize_for_log
 
 logger = logging.getLogger(__name__)
 

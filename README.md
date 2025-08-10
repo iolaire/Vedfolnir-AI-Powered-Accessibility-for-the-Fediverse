@@ -1,7 +1,7 @@
 # Vedfolnir
 
 [![Security Status](https://img.shields.io/badge/Security-100%25-green)](docs/summary/SECURITY_AUDIT_SUMMARY.md)
-[![Test Coverage](https://img.shields.io/badge/Test%20Coverage-187%25-brightgreen)](docs/summary/TEST_COVERAGE_REPORT.md)
+[![Test Coverage](https://img.shields.io/badge/Test%20Coverage-176.5%25-brightgreen)](docs/summary/TEST_COVERAGE_REPORT.md)
 [![Python](https://img.shields.io/badge/Python-3.8%2B-blue)](https://python.org)
 [![Flask](https://img.shields.io/badge/Flask-2.0%2B-lightgrey)](https://flask.palletsprojects.com/)
 
@@ -13,7 +13,7 @@ An accessibility-focused tool that automatically generates and manages alt text 
 - **AI-Powered Caption Generation**: Uses Ollama with LLaVA model for intelligent image description
 - **Multi-Platform Support**: Works with Pixelfed, Mastodon, and other ActivityPub platforms
 - **Web-Based Interface**: Complete web application for managing captions and reviewing content
-- **Real-Time Progress Tracking**: WebSocket-based progress updates for caption generation
+- **Real-Time Progress Tracking**: Server-Sent Events (SSE) based progress updates for caption generation
 - **Human Review Workflow**: Comprehensive review interface for approving and editing captions
 
 ### Security & Enterprise Features
@@ -58,21 +58,14 @@ An accessibility-focused tool that automatically generates and manages alt text 
    pip install -r requirements.txt
    ```
 
-3. **Set up environment variables**:
-   ```bash
-   cp .env.example .env
-   # Edit .env with your configuration
-   ```
-
-4. **Configure sensitive environment variables**:
+3. **Configure environment and create admin user**:
    
-   ⚠️ **Security Notice**: Some sensitive settings must be configured as environment variables for security and should never be stored in configuration files.
+   ⚠️ **Security Notice**: Sensitive settings including admin credentials are configured as environment variables for security and should never be stored in configuration files.
    
    **Quick Setup (Recommended):**
    ```bash
-   # Use the automated setup script
+   # Use the automated setup script - this handles both environment setup and admin user creation
    python3 scripts/setup/generate_env_secrets.py
-   source .env.local
    
    # Verify the setup
    python3 scripts/setup/verify_env_setup.py
@@ -80,40 +73,36 @@ An accessibility-focused tool that automatically generates and manages alt text 
    
    **Manual Setup:**
    ```bash
-   # Generate and set these environment variables:
-   # - FLASK_SECRET_KEY
-   # - AUTH_ADMIN_USERNAME  
-   # - AUTH_ADMIN_EMAIL
-   # - AUTH_ADMIN_PASSWORD
-   # - PLATFORM_ENCRYPTION_KEY
+   # Copy the template and edit with your configuration
+   cp .env.example .env
+   # Edit .env with your configuration including:
+   # - FLASK_SECRET_KEY (generate with: python3 -c "import secrets; print(secrets.token_urlsafe(32))")
+   # - PLATFORM_ENCRYPTION_KEY (generate with: python3 -c "from cryptography.fernet import Fernet; print(Fernet.generate_key().decode())")
+   
+   # Then create admin user manually
+   python scripts/setup/init_admin_user.py
    ```
    
    **📖 [Complete Security Setup Guide →](docs/security/environment-setup.md)**
 
-5. **Initialize the database**:
-   ```bash
-   python -c "from database import DatabaseManager; from config import Config; DatabaseManager(Config()).create_tables()"
-   ```
-
-5. **Create an admin user**:
-   ```bash
-   python scripts/setup/init_admin_user.py
-   ```
-
-6. **Start the application**:
+4. **Start the application**:
    ```bash
    python web_app.py
    ```
+   
+   *Note: Database tables are created automatically on first startup*
 
-7. **Access the web interface**:
+5. **Access the web interface**:
    Open http://localhost:5000 in your browser
 
 ### First-Time Setup
 
-1. Log in with your admin credentials
+1. Log in with the admin credentials you created during setup
 2. Go to Platform Management to add your first platform connection
 3. Test the connection to ensure it's working
 4. Start generating captions through the web interface
+
+**Note**: Admin credentials are created during the environment setup process (step 3) and stored securely in the database, not in configuration files.
 
 ## 🔧 Quick Commands
 
@@ -148,21 +137,22 @@ python scripts/setup/update_admin_user.py
 ## 📖 Documentation
 
 ### User Guides
-- [**Getting Started**](docs/getting-started.md) - Complete setup and usage guide
-- [**Web Interface Guide**](docs/web-interface.md) - How to use the web application
-- [**Platform Setup**](docs/platform-setup.md) - Setting up Pixelfed/Mastodon connections
-- [**Caption Review**](docs/caption-review.md) - Managing and reviewing generated captions
+- [**User Guide**](docs/user_guide.md) - Complete setup and usage guide
+- [**Platform Setup**](docs/platform_setup.md) - Setting up Pixelfed/Mastodon connections
+- [**Multi-Platform Setup**](docs/multi-platform-setup.md) - Managing multiple ActivityPub platforms
+- [**Web Caption Generation**](docs/web-caption-generation/) - Web-based caption generation guide
 
 ### Technical Documentation
-- [**API Documentation**](docs/API.md) - REST API reference
+- [**API Documentation**](docs/api_documentation.md) - REST API reference
 - [**Security Guide**](docs/SECURITY.md) - Security features and best practices
-- [**Deployment Guide**](docs/DEPLOYMENT.md) - Production deployment instructions
-- [**Development Guide**](docs/DEVELOPMENT.md) - Setting up development environment
+- [**Deployment Guide**](docs/deployment.md) - Production deployment instructions
+- [**Testing Guide**](docs/TESTING.md) - Testing framework and procedures
 
 ### Reference
-- [**Configuration Reference**](docs/configuration.md) - All configuration options
-- [**Reset and Cleanup Guide**](docs/maintenance/reset-and-cleanup.md) - Reset app, cleanup data, maintenance
+- [**Database Migrations**](docs/database_migrations.md) - Database schema management
+- [**Batch Updates**](docs/batch_update.md) - Bulk operation documentation
 - [**Troubleshooting**](docs/troubleshooting.md) - Common issues and solutions
+- [**Migration Guide**](docs/migration_guide.md) - Upgrading and migration procedures
 - [**Security Audit Summary**](docs/summary/SECURITY_AUDIT_SUMMARY.md) - Complete security audit results
 - [**Test Coverage Report**](docs/summary/TEST_COVERAGE_REPORT.md) - Comprehensive test coverage analysis
 
@@ -174,11 +164,11 @@ Key configuration options in `.env`:
 
 ```bash
 # Database
-DATABASE_URL=sqlite:///storage/database/alttext.db
+DATABASE_URL=sqlite:///storage/database/vedfolnir.db
 
 # Ollama Configuration
-OLLAMA_BASE_URL=http://localhost:11434
-OLLAMA_MODEL=llava:latest
+OLLAMA_URL=http://localhost:11434
+OLLAMA_MODEL=llava:7b
 
 # Web Application
 FLASK_SECRET_KEY=your-secret-key-here
@@ -191,8 +181,8 @@ RATE_LIMITING_ENABLED=true
 
 # Caption Generation
 CAPTION_MAX_LENGTH=500
-CAPTION_OPTIMAL_MIN_LENGTH=80
-CAPTION_OPTIMAL_MAX_LENGTH=200
+CAPTION_OPTIMAL_MIN_LENGTH=150
+CAPTION_OPTIMAL_MAX_LENGTH=450
 ```
 
 ### Platform Configuration
@@ -206,7 +196,7 @@ Platforms are configured through the web interface:
 
 ## 🧪 Testing
 
-The project has comprehensive test coverage (187%) with 1,884 test methods covering:
+The project has comprehensive test coverage (176.5%) with 1,975 test methods covering:
 
 ### Test Categories
 - **Unit Tests**: Individual component testing
@@ -261,7 +251,7 @@ For detailed security information, see [Security Guide](docs/SECURITY.md).
 - **Security Layer**: Comprehensive security middleware
 - **Session Management**: Platform-aware session handling
 - **Background Processing**: Asynchronous task processing
-- **WebSocket Support**: Real-time progress updates
+- **Real-time Updates**: Server-Sent Events (SSE) for live progress tracking
 
 ### Key Technologies
 - **Backend**: Python 3.8+, Flask, SQLAlchemy
@@ -288,7 +278,7 @@ For detailed security information, see [Security Guide](docs/SECURITY.md).
 
 ## 🤝 Contributing
 
-We welcome contributions! Please see our [Contributing Guide](CONTRIBUTING.md) for details.
+We welcome contributions! Please follow the development setup guide below and submit pull requests for review.
 
 ### Development Setup
 1. Fork the repository
@@ -306,7 +296,7 @@ We welcome contributions! Please see our [Contributing Guide](CONTRIBUTING.md) f
 
 ## 📄 License
 
-This project is licensed under the MIT License - see the [LICENSE](LICENSE) file for details.
+This project is licensed under the GNU Affero General Public License v3.0 - see the [LICENSE](LICENSE) file for details.
 
 ## 🙏 Acknowledgments
 
