@@ -11,7 +11,7 @@ from sqlalchemy import create_engine, event, and_, or_, func
 from sqlalchemy.orm import sessionmaker, scoped_session
 from sqlalchemy.exc import SQLAlchemyError
 from sqlalchemy.pool import QueuePool
-from models import Base, Post, Image, ProcessingRun, ProcessingStatus, UserRole, User, PlatformConnection, UserSession
+from models import Base, Post, Image, ProcessingRun, ProcessingStatus, UserRole, User, PlatformConnection
 from config import Config
 from platform_context import PlatformContextManager, PlatformContextError
 from security.core.security_utils import sanitize_for_log
@@ -78,10 +78,26 @@ class DatabaseManager:
         """Create database tables"""
         try:
             Base.metadata.create_all(self.engine)
-            logger.info("Database tables created successfully")
+            
+            # Create additional indexes for performance
+            self._create_performance_indexes()
+            
+            logger.info("Database tables and indexes created successfully")
         except Exception as e:
             logger.error(f"Error creating database tables: {e}")
             raise
+    
+    def _create_performance_indexes(self):
+        """Create additional indexes for better performance"""
+        try:
+            from sqlalchemy import text
+            with self.engine.connect() as conn:
+                # User sessions indexes removed - using Flask sessions
+                
+                conn.commit()
+                logger.debug("Performance indexes created successfully")
+        except Exception as e:
+            logger.warning(f"Could not create performance indexes: {e}")
     
     def get_session(self):
         """Get database session"""
@@ -1559,93 +1575,7 @@ class DatabaseManager:
         finally:
             session.close()
     
-    def create_user_session(self, user_id: int, session_id: str, 
-                          platform_connection_id: Optional[int] = None) -> Optional[UserSession]:
-        """Create or update user session with platform context"""
-        session = self.get_session()
-        try:
-            # Check if session already exists
-            user_session = session.query(UserSession).filter_by(session_id=session_id).first()
-            
-            if user_session:
-                # Update existing session
-                user_session.user_id = user_id
-                user_session.active_platform_id = platform_connection_id
-                user_session.updated_at = datetime.now(timezone.utc)
-            else:
-                # Create new session
-                user_session = UserSession(
-                    user_id=user_id,
-                    session_id=session_id,
-                    active_platform_id=platform_connection_id
-                )
-                session.add(user_session)
-            
-            session.commit()
-            logger.info(f"Created/updated user session {sanitize_for_log(session_id)} for user {sanitize_for_log(str(user_id))}")
-            return user_session
-            
-        except SQLAlchemyError as e:
-            session.rollback()
-            logger.error(f"Database error in create_user_session: {e}")
-            return None
-        finally:
-            session.close()
-    
-    def get_user_session(self, session_id: str) -> Optional[UserSession]:
-        """Get user session by session ID"""
-        session = self.get_session()
-        try:
-            return session.query(UserSession).filter_by(session_id=session_id).first()
-        except SQLAlchemyError as e:
-            logger.error(f"Database error in get_user_session: {e}")
-            return None
-        finally:
-            session.close()
-    
-    def delete_user_session(self, session_id: str) -> bool:
-        """Delete user session"""
-        session = self.get_session()
-        try:
-            user_session = session.query(UserSession).filter_by(session_id=session_id).first()
-            if user_session:
-                session.delete(user_session)
-                session.commit()
-                logger.info(f"Deleted user session {sanitize_for_log(session_id)}")
-                return True
-            return False
-        except SQLAlchemyError as e:
-            session.rollback()
-            logger.error(f"Database error in delete_user_session: {e}")
-            return False
-        finally:
-            session.close()
-    
-    def cleanup_expired_sessions(self, max_age_hours: int = 24) -> int:
-        """Clean up expired user sessions"""
-        session = self.get_session()
-        try:
-            from datetime import timedelta
-            cutoff_time = datetime.now(timezone.utc) - timedelta(hours=max_age_hours)
-            
-            expired_sessions = session.query(UserSession).filter(
-                UserSession.updated_at < cutoff_time
-            ).all()
-            
-            count = len(expired_sessions)
-            for user_session in expired_sessions:
-                session.delete(user_session)
-            
-            session.commit()
-            logger.info(f"Cleaned up {count} expired user sessions")
-            return count
-            
-        except SQLAlchemyError as e:
-            session.rollback()
-            logger.error(f"Database error in cleanup_expired_sessions: {e}")
-            return 0
-        finally:
-            session.close()
+    # UserSession methods removed - using Flask-based session management
     
     # Data Isolation Validation
     def validate_data_isolation(self, user_id: int) -> Dict[str, Any]:

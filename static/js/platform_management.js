@@ -84,11 +84,11 @@ function handleAddPlatform(event) {
     .then(result => {
         if (result.success) {
             showAlert('success', result.message);
-            // Close modal and refresh page
+            // Close modal and redirect to platform management
             const modal = bootstrap.Modal.getInstance(document.getElementById('addPlatformModal'));
             modal.hide();
             setTimeout(() => {
-                window.location.reload();
+                window.location.href = '/platform_management';
             }, 1000);
         } else {
             showAlert('danger', result.error || 'Failed to add platform connection');

@@ -192,73 +192,24 @@
                 </div>
             </div>
 
-            <!-- Platform Form -->
+            <!-- Add Platform Button -->
             <div class="card shadow-sm border-0 mb-4" id="platform-form" style="display: none;">
-                <div class="card-body p-4">
+                <div class="card-body p-4 text-center">
                     <h3 class="card-title mb-4">
                         <i class="bi bi-plus-circle text-primary me-2"></i>
-                        Add Platform Connection
+                        Ready to Add Your Platform
                     </h3>
                     
-                    <form id="addPlatformForm">
-                        {{ csrf_token() }}
-                        <div class="row">
-                            <div class="col-md-6 mb-3">
-                                <label for="platformName" class="form-label">Connection Name <span class="text-danger">*</span></label>
-                                <input type="text" class="form-control" id="platformName" name="name" required minlength="1"
-                                       maxlength="100" placeholder="My Pixelfed Account">
-                                <div class="form-text">A friendly name for this connection (1-100 characters)</div>
-                                <div class="invalid-feedback"></div>
-                            </div>
-                            
-                            <div class="col-md-6 mb-3">
-                                <label for="instanceUrl" class="form-label">Instance URL <span class="text-danger">*</span></label>
-                                <input type="url" class="form-control" id="instanceUrl" name="instance_url" required
-                                       maxlength="500" placeholder="https://pixelfed.social">
-                                <div class="form-text">The full URL of the instance (e.g., https://pixelfed.social)</div>
-                                <div class="invalid-feedback"></div>
-                            </div>
-                        </div>
-                        
-                        <div class="row">
-                            <div class="col-md-6 mb-3">
-                                <label for="username" class="form-label">Username</label>
-                                <input type="text" class="form-control" id="username" name="username" maxlength="200"
-                                       placeholder="your_username">
-                                <div class="form-text">Your username on this platform (optional)</div>
-                                <div class="invalid-feedback"></div>
-                            </div>
-                            
-                            <div class="col-md-6 mb-3">
-                                <label for="accessToken" class="form-label">Access Token <span class="text-danger">*</span></label>
-                                <input type="password" class="form-control" id="accessToken" name="access_token" required
-                                       minlength="10" placeholder="Your API access token">
-                                <div class="form-text">Your API access token (minimum 10 characters)</div>
-                                <div class="invalid-feedback"></div>
-                            </div>
-                        </div>
-                        
-                        <div class="mb-3">
-                            <div class="form-check">
-                                <input class="form-check-input" type="checkbox" id="testConnection" name="test_connection" checked>
-                                <label class="form-check-label" for="testConnection">
-                                    Test connection before saving
-                                </label>
-                            </div>
-                        </div>
-                        
-                        <input type="hidden" id="platformType" name="platform_type" value="">
-                        
-                        <div class="d-flex justify-content-between align-items-center">
-                            <button type="button" class="btn btn-outline-secondary" id="backButton">
-                                <i class="bi bi-arrow-left me-2"></i>Back
-                            </button>
-                            <button type="submit" class="btn btn-primary">
-                                <span class="spinner-border spinner-border-sm d-none" role="status" aria-hidden="true"></span>
-                                <i class="bi bi-check-circle me-2"></i>Add Connection & Continue
-                            </button>
-                        </div>
-                    </form>
+                    <p class="text-muted mb-4">Now that you've chosen your platform and reviewed the setup instructions, click below to add your connection.</p>
+                    
+                    <div class="d-flex justify-content-between align-items-center">
+                        <button type="button" class="btn btn-outline-secondary" id="backButton">
+                            <i class="bi bi-arrow-left me-2"></i>Back
+                        </button>
+                        <button type="button" class="btn btn-primary" data-bs-toggle="modal" data-bs-target="#addPlatformModal" id="openModalButton">
+                            <i class="bi bi-plus-circle me-2"></i>Add Platform Connection
+                        </button>
+                    </div>
                 </div>
             </div>
 
@@ -290,6 +241,10 @@
         </div>
     </div>
 </div>
+
+{% include 'components/add_platform_modal.html' %}
+
+<script src="{{ url_for('static', filename='js/platform_management.js') }}"></script>
 {% endblock %}
 
 {% block scripts %}
@@ -345,9 +300,11 @@ document.addEventListener('DOMContentLoaded', function() {
     const platformOptions = document.querySelectorAll('.platform-option');
     const setupInstructions = document.getElementById('setup-instructions');
     const platformForm = document.getElementById('platform-form');
-    const platformTypeInput = document.getElementById('platformType');
     const backButton = document.getElementById('backButton');
-    const addPlatformForm = document.getElementById('addPlatformForm');
+    const openModalButton = document.getElementById('openModalButton');
+    let selectedPlatform = null;
+    
+
     
     // Platform selection
     platformOptions.forEach(option => {
@@ -359,7 +316,7 @@ document.addEventListener('DOMContentLoaded', function() {
             this.classList.add('selected');
             
             const platform = this.dataset.platform;
-            platformTypeInput.value = platform;
+            selectedPlatform = platform;
             
             // Show instructions for selected platform
             document.querySelectorAll('.platform-instructions').forEach(inst => {
@@ -370,9 +327,6 @@ document.addEventListener('DOMContentLoaded', function() {
             // Show setup instructions and form
             setupInstructions.style.display = 'block';
             platformForm.style.display = 'block';
-            
-            // Update form placeholders based on platform
-            updateFormPlaceholders(platform);
             
             // Smooth scroll to instructions
             setupInstructions.scrollIntoView({ behavior: 'smooth' });
@@ -392,180 +346,17 @@ document.addEventListener('DOMContentLoaded', function() {
         document.querySelector('.card').scrollIntoView({ behavior: 'smooth' });
     });
     
-    // Form submission
-    addPlatformForm.addEventListener('submit', function(e) {
-        e.preventDefault();
-        
-        const form = e.target;
-        const submitButton = form.querySelector('button[type="submit"]');
-        const formData = new FormData(form);
-
-        // Convert FormData to JSON and validate
-        const data = {};
-        for (let [key, value] of formData.entries()) {
-            if (key !== 'test_connection') {
-                data[key] = value ? value.trim() : '';
+    // Pre-populate modal when opened
+    openModalButton.addEventListener('click', function() {
+        if (selectedPlatform) {
+            const modalPlatformType = document.querySelector('#addPlatformModal #platformType');
+            if (modalPlatformType) {
+                modalPlatformType.value = selectedPlatform;
             }
         }
-        
-        // Explicitly handle test_connection checkbox
-        const testConnectionCheckbox = form.querySelector('#testConnection');
-        data.test_connection = testConnectionCheckbox ? testConnectionCheckbox.checked : false;
-        
-        // Client-side validation
-        const validationErrors = validatePlatformForm(data);
-        if (validationErrors.length > 0) {
-            showAlert('danger', 'Validation errors: ' + validationErrors.join('; '));
-            return;
-        }
-        
-        // Show loading state
-        const spinner = submitButton.querySelector('.spinner-border');
-        const originalText = submitButton.innerHTML;
-        submitButton.disabled = true;
-        spinner.classList.remove('d-none');
-        
-        // Get CSRF token from meta tag
-        const csrfToken = document.querySelector('meta[name="csrf-token"]')?.getAttribute('content');
-        
-        // Submit to API
-        fetch('/api/add_platform', {
-            method: 'POST',
-            headers: {
-                'Content-Type': 'application/json',
-                'X-CSRFToken': csrfToken || ''
-            },
-            body: JSON.stringify(data)
-        })
-        .then(response => response.json())
-        .then(result => {
-            if (result.success) {
-                // Show success message
-                showAlert('success', result.message + ' Redirecting to dashboard...');
-                
-                // Redirect to dashboard after short delay
-                setTimeout(() => {
-                    window.location.href = '/';
-                }, 2000);
-            } else {
-                showAlert('danger', result.error || 'Failed to add platform connection');
-            }
-        })
-        .catch(error => {
-            showAlert('danger', 'Network error occurred while adding platform: ' + (error.message || 'Unknown error'));
-        })
-        .finally(() => {
-            // Hide loading state
-            submitButton.disabled = false;
-            spinner.classList.add('d-none');
-        });
     });
-    
-    function updateFormPlaceholders(platform) {
-        const nameInput = document.getElementById('platformName');
-        const instanceInput = document.getElementById('instanceUrl');
-        
-        if (platform === 'pixelfed') {
-            nameInput.placeholder = 'My Pixelfed Account';
-            instanceInput.placeholder = 'https://pixelfed.social';
-        } else if (platform === 'mastodon') {
-            nameInput.placeholder = 'My Mastodon Account';
-            instanceInput.placeholder = 'https://mastodon.social';
-        }
-    }
-    
-    function validatePlatformForm(data) {
-        const errors = [];
-        
-        // Validate required fields
-        const requiredFields = ['name', 'platform_type', 'instance_url', 'access_token'];
-        for (const field of requiredFields) {
-            if (!data[field]) {
-                errors.push(`${field.replace('_', ' ')} is required`);
-            }
-        }
-        
-        // Validate name length
-        if (data.name && (data.name.length < 1 || data.name.length > 100)) {
-            errors.push('Platform name must be between 1 and 100 characters');
-        }
-        
-        // Validate platform type
-        if (data.platform_type && !['pixelfed', 'mastodon'].includes(data.platform_type.toLowerCase())) {
-            errors.push('Platform type must be either Pixelfed or Mastodon');
-        }
-        
-        // Validate instance URL format
-        if (data.instance_url) {
-            try {
-                const url = new URL(data.instance_url);
-                if (!['http:', 'https:'].includes(url.protocol)) {
-                    errors.push('Instance URL must use HTTP or HTTPS protocol');
-                }
-            } catch (e) {
-                errors.push('Instance URL format is invalid');
-            }
-            
-            if (data.instance_url.length > 500) {
-                errors.push('Instance URL must be less than 500 characters');
-            }
-        }
-        
-        // Validate access token
-        if (data.access_token && data.access_token.length < 10) {
-            errors.push('Access token appears to be too short (minimum 10 characters)');
-        }
-        
-        // Validate username length if provided
-        if (data.username && data.username.length > 200) {
-            errors.push('Username must be less than 200 characters');
-        }
-        
-        return errors;
-    }
-    
-    function showAlert(type, message) {
-        // Sanitize inputs to prevent XSS
-        const sanitizedType = type.replace(/[^a-zA-Z-]/g, '');
-        const sanitizedMessage = document.createTextNode(message).textContent;
-        
-        // Create alert element
-        const alertDiv = document.createElement('div');
-        alertDiv.className = `alert alert-${sanitizedType} alert-dismissible fade show`;
-        
-        // Create message element safely
-        const messageSpan = document.createElement('span');
-        messageSpan.textContent = sanitizedMessage;
-        
-        // Create close button safely
-        const closeButton = document.createElement('button');
-        closeButton.type = 'button';
-        closeButton.className = 'btn-close';
-        closeButton.setAttribute('data-bs-dismiss', 'alert');
-        closeButton.setAttribute('aria-label', 'Close');
-        
-        alertDiv.appendChild(messageSpan);
-        alertDiv.appendChild(closeButton);
-        
-        // Insert at top of form
-        const form = document.getElementById('platform-form');
-        form.insertBefore(alertDiv, form.firstChild);
-        
-        // Scroll to alert
-        alertDiv.scrollIntoView({ behavior: 'smooth' });
-        
-        // Auto-dismiss after 7 seconds
-        setTimeout(() => {
-            if (alertDiv.parentNode) {
-                alertDiv.classList.add('fade');
-                setTimeout(() => {
-                    if (alertDiv.parentNode) {
-                        alertDiv.remove();
-                    }
-                }, 300);
-            }
-        }, 7000);
-    }
+
+
 });
 </script>
 {% endblock %}

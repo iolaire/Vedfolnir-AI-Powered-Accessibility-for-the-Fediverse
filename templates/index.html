@@ -18,7 +18,7 @@
                 <button class="btn btn-outline-primary" onclick="location.reload()">
                     <i class="bi bi-arrow-clockwise"></i> Refresh
                 </button>
-                {% if current_user.has_permission(UserRole.ADMIN) %}
+                {% if current_user_safe and current_user_safe.role == 'admin' %}
                 <a href="{{ url_for('health_dashboard') }}" class="btn btn-outline-secondary">
                     <i class="bi bi-heart-pulse"></i> System Health
                 </a>
@@ -29,21 +29,21 @@
 </div>
 
 <!-- Platform Context Banner -->
-{% if current_platform %}
+{% if active_platform %}
 <div class="row mb-4">
     <div class="col-12">
         <div class="alert alert-info d-flex align-items-center">
-            <i class="bi bi-{{ 'mastodon' if current_platform.platform_type == 'mastodon' else 'image' }} fs-4 me-3"></i>
+            <i class="bi bi-{{ 'mastodon' if active_platform.platform_type == 'mastodon' else 'image' }} fs-4 me-3"></i>
             <div class="flex-grow-1">
-                <strong>Current Platform:</strong> {{ current_platform.name }} 
-                <span class="badge bg-primary ms-2">{{ current_platform.platform_type|title }}</span>
-                {% if current_platform.is_default %}
+                <strong>Current Platform:</strong> {{ active_platform.name }} 
+                <span class="badge bg-primary ms-2">{{ active_platform.platform_type|title }}</span>
+                {% if active_platform.is_default %}
                 <span class="badge bg-success ms-1">Default</span>
                 {% endif %}
                 <br>
                 <small class="text-muted">
-                    {{ current_platform.instance_url }}
-                    {% if current_platform.username %} - @{{ current_platform.username }}{% endif %}
+                    {{ active_platform.instance_url }}
+                    {% if active_platform.username %} - @{{ active_platform.username }}{% endif %}
                 </small>
             </div>
             <div>
@@ -83,8 +83,8 @@
                 </div>
                 <h5 class="card-title">
                     Total Posts
-                    {% if current_platform %}
-                    <br><small class="text-muted">on {{ current_platform.name }}</small>
+                    {% if active_platform %}
+                    <br><small class="text-muted">on {{ active_platform.name }}</small>
                     {% endif %}
                 </h5>
                 <h2 class="mb-0">{{ "{:,}".format(stats.total_posts or 0) }}</h2>
@@ -99,8 +99,8 @@
                 </div>
                 <h5 class="card-title">
                     Total Images
-                    {% if current_platform %}
-                    <br><small class="text-muted opacity-75">on {{ current_platform.name }}</small>
+                    {% if active_platform %}
+                    <br><small class="text-muted opacity-75">on {{ active_platform.name }}</small>
                     {% endif %}
                 </h5>
                 <h2 class="mb-0">{{ "{:,}".format(stats.total_images or 0) }}</h2>
@@ -160,7 +160,7 @@
                             Post Approved
                         </a>
                     </div>
-                    {% if current_user.has_permission(UserRole.ADMIN) %}
+                    {% if current_user_safe and current_user_safe.role == 'admin' %}
                     <div class="col-md-6">
                         <a href="{{ url_for('admin_cleanup') }}" class="btn btn-outline-secondary btn-lg w-100 d-flex align-items-center justify-content-center">
                             <i class="bi bi-trash me-2"></i>
@@ -234,7 +234,7 @@
 </div>
 
 <!-- Recent Activity (if we have data) -->
-{% if current_user.has_permission(UserRole.ADMIN) %}
+{% if current_user_safe and current_user_safe.role == 'admin' %}
 <div class="row mt-4">
     <div class="col-12">
         <div class="card">

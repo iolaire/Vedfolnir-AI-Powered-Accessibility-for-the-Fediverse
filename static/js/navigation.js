@@ -3,9 +3,18 @@
 // THE SOFTWARE IS PROVIDED "AS IS", WITHOUT WARRANTY OF ANY KIND, EXPRESS OR IMPLIED, INCLUDING BUT NOT LIMITED TO THE WARRANTIES OF MERCHANTABILITY, FITNESS FOR A PARTICULAR PURPOSE AND NONINFRINGEMENT. IN NO EVENT SHALL THE AUTHORS OR COPYRIGHT HOLDERS BE LIABLE FOR ANY CLAIM, DAMAGES OR OTHER LIABILITY, WHETHER IN AN ACTION OF CONTRACT, TORT OR OTHERWISE, ARISING FROM, OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE SOFTWARE.
 // Navigation JavaScript for platform switching and context
 
+// Global state for race condition prevention
+let platformSwitchInProgress = false;
+let platformSwitchDebounceTimer = null;
+let originalPlatformState = null;
+
 document.addEventListener('DOMContentLoaded', function() {
     // Initialize platform switching functionality
     initializePlatformSwitching();
+    
+    // Listen for session state changes from other tabs
+    window.addEventListener('sessionStateChanged', handleSessionStateChange);
+    window.addEventListener('platformSwitched', handlePlatformSwitched);
 });
 
 function initializePlatformSwitching() {
@@ -20,6 +29,24 @@ function initializePlatformSwitching() {
 }
 
 function quickSwitchPlatform(platformId, platformName) {
+    // Prevent multiple simultaneous switches with debouncing
+    if (platformSwitchInProgress) {
+        console.log('Platform switch already in progress, ignoring request');
+        return;
+    }
+    
+    // Clear any existing debounce timer
+    if (platformSwitchDebounceTimer) {
+        clearTimeout(platformSwitchDebounceTimer);
+    }
+    
+    // Debounce rapid clicks
+    platformSwitchDebounceTimer = setTimeout(() => {
+        performPlatformSwitch(platformId, platformName);
+    }, 100);
+}
+
+function performPlatformSwitch(platformId, platformName) {
     // Check if we're on the caption generation page and warn about active tasks
     if (window.location.pathname === '/caption_generation') {
         const activeTaskStatus = document.getElementById('active-task-status');
@@ -35,16 +62,23 @@ function quickSwitchPlatform(platformId, platformName) {
         }
     }
     
+    // Set switch in progress flag
+    platformSwitchInProgress = true;
+    
+    // Store original platform state for potential reversion
+    storeOriginalPlatformState();
+    
+    // Optimistically update UI immediately
+    updatePlatformUI(platformId, platformName);
+    
+    // Notify other tabs about the switch
+    if (window.sessionSync) {
+        window.sessionSync.notifyPlatformSwitch(platformId, platformName);
+    }
+    
     // Show loading state on the dropdown toggle
     const platformDropdownToggle = document.getElementById('platformsDropdown');
-    const originalContent = platformDropdownToggle.innerHTML;
-    
-    platformDropdownToggle.innerHTML = `
-        <div class="spinner-border spinner-border-sm" role="status">
-            <span class="visually-hidden">Switching...</span>
-        </div>
-        <span class="ms-2">Switching...</span>
-    `;
+    showPlatformSwitchLoading(platformDropdownToggle);
     
     // Close the dropdown
     const dropdown = bootstrap.Dropdown.getInstance(platformDropdownToggle);
@@ -69,27 +103,45 @@ function quickSwitchPlatform(platformId, platformName) {
             // Show success message briefly
             showNavigationAlert('success', 'Switched to ' + platformName);
             
+            // Sync session state across tabs
+            if (window.sessionSync) {
+                window.sessionSync.syncSessionState();
+            }
+            
             // Reload the page to update all platform context
             setTimeout(() => {
                 window.location.reload();
-            }, 1000);
+            }, 500);
         } else {
-            // Restore original content and show error
-            platformDropdownToggle.innerHTML = originalContent;
-            showNavigationAlert('danger', result.error || 'Failed to switch platform');
+            // Revert optimistic UI update
+            revertPlatformUI();
+            showPlatformError(result.error || 'Failed to switch platform');
         }
     })
     .catch(error => {
-        console.error('Error switching platform:', encodeURIComponent(error.toString()));
+        console.error('Error switching platform:', error);
         
-        // Restore original content and show error
-        platformDropdownToggle.innerHTML = originalContent;
-        showNavigationAlert('danger', 'Network error occurred while switching platform');
+        // Revert optimistic UI update
+        revertPlatformUI();
+        showPlatformError('Network error occurred while switching platform');
+    })
+    .finally(() => {
+        // Reset switch in progress flag
+        platformSwitchInProgress = false;
+        
+        // Restore platform dropdown
+        restorePlatformDropdown();
     });
 }
 
 function showNavigationAlert(type, message) {
-    // Create a temporary alert at the top of the page
+    // Use global error handler if available
+    if (window.errorHandler) {
+        window.errorHandler.showNotification(message, type, 4000);
+        return;
+    }
+    
+    // Fallback to local implementation
     const alertDiv = document.createElement('div');
     alertDiv.className = `alert alert-${type} alert-dismissible fade show position-fixed`;
     alertDiv.style.cssText = `
@@ -160,6 +212,126 @@ function updatePlatformStatusIndicators() {
             }
         }
     });
+}
+
+// Store original platform state for reverting
+function storeOriginalPlatformState() {
+    const platformDropdown = document.getElementById('platformsDropdown');
+    if (platformDropdown && !originalPlatformState) {
+        const platformIcon = platformDropdown.querySelector('.platform-icon');
+        const platformNameEl = platformDropdown.querySelector('.platform-name');
+        originalPlatformState = {
+            icon: platformIcon ? platformIcon.className : '',
+            name: platformNameEl ? platformNameEl.textContent : '',
+            html: platformDropdown.innerHTML
+        };
+    }
+}
+
+function updatePlatformUI(platformId, platformName) {
+    // Update platform dropdown
+    const platformDropdown = document.getElementById('platformsDropdown');
+    if (platformDropdown) {
+        const platformIcon = platformDropdown.querySelector('.platform-icon');
+        const platformNameEl = platformDropdown.querySelector('.platform-name');
+        
+        if (platformIcon && platformNameEl) {
+            // Update icon based on platform type (simplified)
+            platformIcon.className = 'platform-icon bi bi-globe';
+            platformNameEl.textContent = platformName;
+        }
+    }
+    
+    // Update current platform displays
+    const currentPlatformElements = document.querySelectorAll('[data-current-platform]');
+    currentPlatformElements.forEach(element => {
+        element.textContent = platformName;
+        element.setAttribute('data-platform-id', platformId);
+    });
+    
+    console.log(`Optimistically updated UI for platform: ${platformName}`);
+}
+
+function revertPlatformUI() {
+    if (!originalPlatformState) {
+        return;
+    }
+    
+    const platformDropdown = document.getElementById('platformsDropdown');
+    if (platformDropdown) {
+        // Restore the original HTML content
+        platformDropdown.innerHTML = originalPlatformState.html;
+    }
+    
+    console.log('Reverted platform UI to original state');
+    originalPlatformState = null;
+}
+
+function showPlatformSwitchLoading(platformDropdownToggle) {
+    if (platformDropdownToggle) {
+        const loadingContent = `
+            <div class="spinner-border spinner-border-sm" role="status">
+                <span class="visually-hidden">Switching...</span>
+            </div>
+            <span class="ms-2">Switching...</span>
+        `;
+        platformDropdownToggle.innerHTML = loadingContent;
+    }
+}
+
+function restorePlatformDropdown() {
+    // The dropdown will be restored either by revertPlatformUI() on error
+    // or by page reload on success, so no action needed here
+}
+
+function showPlatformError(message) {
+    // Use global error handler if available
+    if (window.errorHandler) {
+        window.errorHandler.showNotification(message, 'danger');
+        return;
+    }
+    
+    // Fallback to local implementation
+    const errorDiv = document.createElement('div');
+    errorDiv.className = 'alert alert-danger alert-dismissible fade show position-fixed';
+    errorDiv.style.cssText = `
+        top: 20px;
+        right: 20px;
+        z-index: 1060;
+        min-width: 300px;
+        box-shadow: 0 0.5rem 1rem rgba(0, 0, 0, 0.15);
+    `;
+    
+    errorDiv.innerHTML = `
+        <i class="bi bi-exclamation-triangle me-2"></i>${message}
+        <button type="button" class="btn-close" data-bs-dismiss="alert"></button>
+    `;
+    
+    document.body.appendChild(errorDiv);
+    
+    // Auto-remove after 5 seconds
+    setTimeout(() => {
+        if (errorDiv.parentNode) {
+            errorDiv.remove();
+        }
+    }, 5000);
+}
+
+// Handle session state changes from other tabs
+function handleSessionStateChange(event) {
+    const sessionState = event.detail;
+    if (sessionState.platform) {
+        updatePlatformUI(sessionState.platform.id, sessionState.platform.name);
+    }
+}
+
+// Handle platform switch events from other tabs
+function handlePlatformSwitched(event) {
+    const switchEvent = event.detail;
+    console.log(`Platform switched in another tab: ${switchEvent.platformName}`);
+    
+    // Update UI to match the switch
+    updatePlatformUI(switchEvent.platformId, switchEvent.platformName);
 }
 
 // Initialize status checking on page load (optional)

@@ -204,7 +204,7 @@
 
 <script>
 // Make current platform available to JavaScript
-window.current_platform = {{ current_platform | tojson if current_platform else 'null' }};
+window.current_platform = {{ active_platform | tojson if active_platform else 'null' }};
 
 document.addEventListener('DOMContentLoaded', function() {
     const captionField = document.getElementById('caption-field');

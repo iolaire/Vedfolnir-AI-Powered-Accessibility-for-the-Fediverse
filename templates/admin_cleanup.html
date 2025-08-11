@@ -27,13 +27,13 @@
     {% endwith %}
     
     <!-- Platform Context -->
-    {% if current_platform %}
+    {% if active_platform %}
     <div class="alert alert-info mb-4">
         <div class="d-flex align-items-center">
-            <i class="bi bi-{{ 'mastodon' if current_platform.platform_type == 'mastodon' else 'image' }} fs-4 me-3"></i>
+            <i class="bi bi-{{ 'mastodon' if active_platform.platform_type == 'mastodon' else 'image' }} fs-4 me-3"></i>
             <div class="flex-grow-1">
-                <strong>Current Platform Context:</strong> {{ current_platform.name }}
-                <span class="badge bg-primary ms-2">{{ current_platform.platform_type|title }}</span>
+                <strong>Current Platform Context:</strong> {{ active_platform.name }}
+                <span class="badge bg-primary ms-2">{{ active_platform.platform_type|title }}</span>
                 <br>
                 <small class="text-muted">Statistics and operations are filtered to this platform</small>
             </div>
@@ -65,8 +65,8 @@
         <div class="card-header">
             <h2 class="h5 mb-0">
                 Current Data Statistics
-                {% if current_platform %}
-                <small class="text-muted">- {{ current_platform.name }}</small>
+                {% if active_platform %}
+                <small class="text-muted">- {{ active_platform.name }}</small>
                 {% else %}
                 <small class="text-muted">- All Platforms</small>
                 {% endif %}

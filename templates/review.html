@@ -23,10 +23,10 @@
                 <h6 class="mb-2">Platform Filter:</h6>
                 <div class="btn-group" role="group" aria-label="Platform filter">
                     <a href="{{ url_for('review_list', page=1) }}" 
-                       class="btn btn-sm {{ 'btn-primary' if not selected_platform or selected_platform == current_platform.id|string else 'btn-outline-primary' }}">
-                        {% if current_platform %}
-                        <i class="bi bi-{{ 'mastodon' if current_platform.platform_type == 'mastodon' else 'image' }}"></i>
-                        {{ current_platform.name }}
+                       class="btn btn-sm {{ 'btn-primary' if not selected_platform or selected_platform == active_platform.id|string else 'btn-outline-primary' }}">
+                        {% if active_platform %}
+                        <i class="bi bi-{{ 'mastodon' if active_platform.platform_type == 'mastodon' else 'image' }}"></i>
+                        {{ active_platform.name }}
                         {% else %}
                         Current
                         {% endif %}
@@ -36,7 +36,7 @@
                         <i class="bi bi-globe"></i> All Platforms
                     </a>
                     {% for platform in user_platforms %}
-                        {% if platform.id != current_platform.id %}
+                        {% if platform.id != active_platform.id %}
                         <a href="{{ url_for('review_list', platform=platform.id, page=1) }}" 
                            class="btn btn-sm {{ 'btn-primary' if selected_platform == platform.id|string else 'btn-outline-primary' }}">
                             <i class="bi bi-{{ 'mastodon' if platform.platform_type == 'mastodon' else 'image' }}"></i>
@@ -49,7 +49,7 @@
             <div class="col-md-4 text-end">
                 {% if selected_platform == 'all' %}
                 <small class="text-muted">Showing images from all platforms</small>
-                {% elif selected_platform and selected_platform != current_platform.id|string %}
+                {% elif selected_platform and selected_platform != active_platform.id|string %}
                 {% set selected_platform_obj = user_platforms|selectattr('id', 'equalto', selected_platform|int)|first %}
                 {% if selected_platform_obj %}
                 <small class="text-muted">Showing images from {{ selected_platform_obj.name }}</small>

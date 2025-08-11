@@ -176,6 +176,39 @@ python run_tests.py --suite all --verbose     # All tests (requires .env)
 - Use `setUp()` and `tearDown()` methods for test initialization and cleanup
 - Mock external dependencies and database connections in tests
 
+**Mock User Management:**
+For tests involving user sessions, authentication, or platform connections, **always use the standardized mock user helpers**:
+
+```python
+# Import the helpers
+from tests.test_helpers import create_test_user_with_platforms, cleanup_test_user
+
+class TestUserFeature(unittest.TestCase):
+    def setUp(self):
+        self.config = Config()
+        self.db_manager = DatabaseManager(self.config)
+        
+        # Create mock user with platforms
+        self.test_user, self.user_helper = create_test_user_with_platforms(
+            self.db_manager, username="test_user", role=UserRole.REVIEWER
+        )
+    
+    def tearDown(self):
+        # Always clean up mock users
+        cleanup_test_user(self.user_helper)
+```
+
+**Standalone Test Scripts:**
+```bash
+# Create mock user for manual testing
+python tests/scripts/create_mock_user.py --username test_reviewer --role reviewer
+
+# Clean up mock users after testing
+python tests/scripts/cleanup_mock_user.py
+```
+
+See `.kiro/steering/testing-guidelines.md` for complete mock user management documentation and `tests/test_helpers/README.md` for API reference.
+
 **Note:** Many tests require environment variables to be set. If you encounter configuration errors, either:
 1. Set up your `.env` file with valid configuration
 2. Run specific test suites that don't require full configuration (like configuration tests)

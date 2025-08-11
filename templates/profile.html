@@ -22,20 +22,20 @@
                                     </div>
                                 </div>
                                 <div>
-                                    <h2 class="mb-1">{{ current_user.username }}</h2>
-                                    <p class="text-muted mb-1">{{ current_user.email }}</p>
+                                    <h2 class="mb-1">{{ current_user_safe.username }}</h2>
+                                    <p class="text-muted mb-1">{{ current_user_safe.email }}</p>
                                     <span
-                                        class="badge bg-{{ 'success' if current_user.role.value == 'admin' else 'primary' }}-subtle text-{{ 'success' if current_user.role.value == 'admin' else 'primary' }}">
-                                        {{ current_user.role.value.title() }}
+                                        class="badge bg-{{ 'success' if current_user_safe.role == 'admin' else 'primary' }}-subtle text-{{ 'success' if current_user_safe.role == 'admin' else 'primary' }}">
+                                        {{ current_user_safe.role.title() }}
                                     </span>
                                 </div>
                             </div>
                         </div>
                         <div class="col-md-4 text-md-end">
                             <p class="text-muted small mb-1">Member since</p>
-                            <p class="fw-semibold">{{ current_user.created_at.strftime('%B %d, %Y') }}</p>
-                            {% if current_user.last_login %}
-                            <p class="text-muted small mb-0">Last login: {{ current_user.last_login.strftime('%Y-%m-%d
+                            <p class="fw-semibold">{{ current_user_safe.created_at.strftime('%B %d, %Y') if current_user_safe.created_at else 'Unknown' }}</p>
+                            {% if current_user_safe.last_login %}
+                            <p class="text-muted small mb-0">Last login: {{ current_user_safe.last_login.strftime('%Y-%m-%d
                                 %H:%M') }}</p>
                             {% endif %}
                         </div>
@@ -54,26 +54,26 @@
                     </h4>
                 </div>
                 <div class="card-body">
-                    {% if current_platform %}
+                    {% if active_platform %}
                     <div class="row align-items-center">
                         <div class="col-md-8">
                             <div class="d-flex align-items-center">
                                 <div class="me-3">
-                                    <i class="bi bi-{{ 'camera' if current_platform.platform_type == 'pixelfed' else 'chat-dots' }} text-primary"
+                                    <i class="bi bi-{{ 'camera' if active_platform.platform_type == 'pixelfed' else 'chat-dots' }} text-primary"
                                         style="font-size: 2rem;"></i>
                                 </div>
                                 <div>
-                                    <h5 class="mb-1">{{ current_platform.name }}</h5>
-                                    <p class="text-muted mb-1">{{ current_platform.platform_type.title() }} • {{
-                                        current_platform.instance_url }}</p>
-                                    {% if current_platform.username %}
-                                    <p class="text-muted small mb-0">@{{ current_platform.username }}</p>
+                                    <h5 class="mb-1">{{ active_platform.name }}</h5>
+                                    <p class="text-muted mb-1">{{ active_platform.platform_type.title() }} • {{
+                                        active_platform.instance_url }}</p>
+                                    {% if active_platform.username %}
+                                    <p class="text-muted small mb-0">@{{ active_platform.username }}</p>
                                     {% endif %}
                                 </div>
                             </div>
                         </div>
                         <div class="col-md-4 text-md-end">
-                            {% if current_platform.is_default %}
+                            {% if active_platform.is_default %}
                             <span class="badge bg-success-subtle text-success mb-2">Default Platform</span><br>
                             {% endif %}
                             <a href="{{ url_for('platform_management') }}" class="btn btn-outline-primary btn-sm">
@@ -83,8 +83,8 @@
                     </div>
 
                     <!-- Platform Statistics -->
-                    {% if platform_stats and current_platform.id in platform_stats %}
-                    {% set stats = platform_stats[current_platform.id] %}
+                    {% if platform_stats and active_platform.id in platform_stats %}
+                    {% set stats = platform_stats[active_platform.id] %}
                     <hr class="my-3">
                     <div class="row text-center">
                         <div class="col-6 col-md-3">
@@ -135,7 +135,7 @@
                     </h4>
                 </div>
                 <div class="card-body">
-                    {% if current_platform %}
+                    {% if active_platform %}
                     <form id="settingsForm">
                         <div class="mb-3">
                             <label for="max_posts_per_run" class="form-label">Max Posts Per Run</label>
@@ -281,7 +281,7 @@
                                     {% endif %}
 
                                     <div class="d-flex gap-2">
-                                        {% if not current_platform or platform.id != current_platform.id %}
+                                        {% if not active_platform or platform.id != active_platform.id %}
                                         <button class="btn btn-outline-primary btn-sm flex-fill"
                                             onclick="switchPlatform({{ platform.id }})">
                                             <i class="bi bi-arrow-right-circle me-1"></i>Switch

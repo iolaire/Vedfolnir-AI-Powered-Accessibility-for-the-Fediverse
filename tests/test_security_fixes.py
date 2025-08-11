@@ -18,7 +18,7 @@ from unittest.mock import patch, MagicMock
 # Add parent directory to path
 sys.path.append(os.path.dirname(os.path.dirname(os.path.abspath(__file__))))
 
-from security_utils import (
+from security.core.security_utils import (
     sanitize_for_log, sanitize_for_html, sanitize_for_sql_like,
     validate_url, validate_username, validate_platform_type,
     safe_int, safe_float, SecurityLogger

@@ -140,3 +140,9 @@ migrations/
 # Local configuration overrides
 config_local.py
 local_settings.py
+
+# Kiro archived specs
+.kiro/specs/archived/
+
+# Test artifacts
+tests/scripts/.last_created_user.txt

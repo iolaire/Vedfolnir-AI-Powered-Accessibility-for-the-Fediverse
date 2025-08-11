@@ -250,7 +250,7 @@ class DataCleanupManager:
     
     def cleanup_user_data(self, user_id, dry_run=False):
         """Clean up all data for a specific user"""
-        from security_utils import sanitize_for_log
+        from security.core.security_utils import sanitize_for_log
         logger.info(f"Cleaning up all data for user: {sanitize_for_log(user_id)}")
         
         # Use parameterized queries to prevent SQL injection
@@ -333,7 +333,7 @@ class DataCleanupManager:
     
     def cleanup_orphan_processing_runs(self, hours=24.0, dry_run=False):
         """Clean up orphan processing runs that are stuck or abandoned"""
-        from security_utils import sanitize_for_log
+        from security.core.security_utils import sanitize_for_log
         if hours < 1:
             logger.info(f"Cleaning up orphan processing runs older than {hours} hours ({hours * 60:.0f} minutes)")
         else:

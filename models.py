@@ -3,10 +3,12 @@
 # THE SOFTWARE IS PROVIDED "AS IS", WITHOUT WARRANTY OF ANY KIND, EXPRESS OR IMPLIED, INCLUDING BUT NOT LIMITED TO THE WARRANTIES OF MERCHANTABILITY, FITNESS FOR A PARTICULAR PURPOSE AND NONINFRINGEMENT. IN NO EVENT SHALL THE AUTHORS OR COPYRIGHT HOLDERS BE LIABLE FOR ANY CLAIM, DAMAGES OR OTHER LIABILITY, WHETHER IN AN ACTION OF CONTRACT, TORT OR OTHERWISE, ARISING FROM, OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE SOFTWARE.
 from datetime import datetime
 from enum import Enum
-from sqlalchemy import Column, Integer, String, Text, DateTime, Boolean, ForeignKey, Enum as SQLEnum, UniqueConstraint, Float
+from sqlalchemy import Column, Integer, String, Text, DateTime, Boolean, ForeignKey, Enum as SQLEnum, UniqueConstraint, Float, Index
 from sqlalchemy.ext.declarative import declarative_base
-from sqlalchemy.orm import relationship
+from sqlalchemy.orm import relationship, backref
+from sqlalchemy.ext.hybrid import hybrid_property
 from sqlalchemy.sql import func
+from sqlalchemy.orm.exc import DetachedInstanceError
 from werkzeug.security import generate_password_hash, check_password_hash
 from cryptography.fernet import Fernet
 import os
@@ -228,9 +230,20 @@ class User(Base):
     created_at = Column(DateTime, default=datetime.utcnow)
     last_login = Column(DateTime)
     
-    # Relationships
-    platform_connections = relationship("PlatformConnection", back_populates="user", cascade="all, delete-orphan")
-    sessions = relationship("UserSession", cascade="all, delete-orphan")
+    # Relationships with explicit loading strategies
+    platform_connections = relationship(
+        "PlatformConnection", 
+        back_populates="user", 
+        cascade="all, delete-orphan",
+        lazy='select',  # Use select loading instead of lazy loading
+        order_by="PlatformConnection.created_at"
+    )
+    sessions = relationship(
+        "UserSession", 
+        back_populates="user", 
+        cascade="all, delete-orphan",
+        lazy='select'  # Use select loading instead of lazy loading
+    )
     
     def set_password(self, password):
         self.password_hash = generate_password_hash(password)
@@ -252,13 +265,33 @@ class User(Base):
         
         return user_level >= required_level
     
+    @hybrid_property
+    def active_platforms(self):
+        """Get active platforms for this user with session safety"""
+        try:
+            return [pc for pc in self.platform_connections if pc.is_active]
+        except Exception:
+            # If relationship access fails, return empty list to avoid DetachedInstanceError
+            return []
+    
+    @hybrid_property
+    def default_platform(self):
+        """Get the default platform for this user with session safety"""
+        try:
+            active_platforms = self.active_platforms
+            default = next((p for p in active_platforms if p.is_default), None)
+            return default or (active_platforms[0] if active_platforms else None)
+        except Exception:
+            # If relationship access fails, return None to avoid DetachedInstanceError
+            return None
+    
     def get_default_platform(self):
-        """Get user's default platform connection"""
-        return next((pc for pc in self.platform_connections if pc.is_default and pc.is_active), None)
+        """Get user's default platform connection (legacy method)"""
+        return self.default_platform
     
     def get_active_platforms(self):
-        """Get all active platform connections for user"""
-        return [pc for pc in self.platform_connections if pc.is_active]
+        """Get all active platform connections for user (legacy method)"""
+        return self.active_platforms
     
     def get_platform_by_type(self, platform_type):
         """Get platform connection by type"""
@@ -281,6 +314,21 @@ class User(Base):
             pc.is_active 
             for pc in self.platform_connections
         )
+    
+    # Flask-Login interface methods
+    def get_id(self):
+        """Return the user ID as a string for Flask-Login"""
+        return str(self.id)
+    
+    @property
+    def is_authenticated(self):
+        """Return True if the user is authenticated"""
+        return True
+    
+    @property
+    def is_anonymous(self):
+        """Return False as this is not an anonymous user"""
+        return False
     
     def __repr__(self):
         return f"<User {self.username}>"
@@ -382,16 +430,40 @@ class PlatformConnection(Base):
     updated_at = Column(DateTime, default=datetime.utcnow, onupdate=datetime.utcnow)
     last_used = Column(DateTime)
     
-    # Relationships
-    user = relationship("User", back_populates="platform_connections")
-    posts = relationship("Post", back_populates="platform_connection")
-    images = relationship("Image", back_populates="platform_connection")
-    processing_runs = relationship("ProcessingRun", back_populates="platform_connection")
+    # Relationships with explicit loading strategies
+    user = relationship(
+        "User", 
+        back_populates="platform_connections",
+        lazy='select'  # Use select loading instead of lazy loading
+    )
+    posts = relationship(
+        "Post", 
+        back_populates="platform_connection",
+        lazy='select'  # Use select loading instead of lazy loading
+    )
+    images = relationship(
+        "Image", 
+        back_populates="platform_connection",
+        lazy='select'  # Use select loading instead of lazy loading
+    )
+    processing_runs = relationship(
+        "ProcessingRun", 
+        back_populates="platform_connection",
+        lazy='select'  # Use select loading instead of lazy loading
+    )
+    user_sessions = relationship(
+        "UserSession", 
+        back_populates="active_platform",
+        lazy='select'  # Use select loading instead of lazy loading
+    )
     
-    # Table constraints
+    # Table constraints and indexes for efficient platform queries
     __table_args__ = (
         UniqueConstraint('user_id', 'name', name='uq_user_platform_name'),
         UniqueConstraint('user_id', 'instance_url', 'username', name='uq_user_instance_username'),
+        Index('ix_platform_user_active', 'user_id', 'is_active'),
+        Index('ix_platform_type_active', 'platform_type', 'is_active'),
+        Index('ix_platform_instance_type', 'instance_url', 'platform_type'),
     )
     
     # Encryption key (should be stored securely in production)
@@ -489,7 +561,11 @@ class PlatformConnection(Base):
             self._client_secret = None
     
     def to_activitypub_config(self):
-        """Convert to ActivityPubConfig for client usage"""
+        """Convert to ActivityPubConfig for client usage (works with detached instances)"""
+        # Check if we have required data
+        if not self.instance_url or not self.platform_type:
+            return None
+            
         try:
             # Import here to avoid circular imports
             from config import ActivityPubConfig, RetryConfig, RateLimitConfig
@@ -507,9 +583,16 @@ class PlatformConnection(Base):
         except ImportError as e:
             logging.error(f"Failed to import config classes: {e}")
             return None
+        except Exception as e:
+            logging.error(f"Failed to create ActivityPub config: {e}")
+            return None
     
     def test_connection(self):
-        """Test the platform connection"""
+        """Test the platform connection (works with detached instances)"""
+        # Check basic requirements first
+        if not self.is_accessible():
+            return False, "Platform connection is not accessible (inactive or missing credentials)"
+        
         try:
             # Import here to avoid circular imports
             from activitypub_client import ActivityPubClient
@@ -544,22 +627,105 @@ class PlatformConnection(Base):
             logging.error(f"Connection test failed: {e}")
             return False, str(e)
     
+    def to_dict(self, include_sensitive=False):
+        """Convert to dictionary for safe serialization without session dependency"""
+        result = {
+            'id': self.id,
+            'name': self.name,
+            'platform_type': self.platform_type,
+            'instance_url': self.instance_url,
+            'username': self.username,
+            'is_active': self.is_active,
+            'is_default': self.is_default,
+            'created_at': self.created_at.isoformat() if self.created_at else None,
+            'updated_at': self.updated_at.isoformat() if self.updated_at else None,
+            'last_used': self.last_used.isoformat() if self.last_used else None
+        }
+        
+        if include_sensitive:
+            # Only include sensitive data when explicitly requested
+            result.update({
+                'has_access_token': bool(self._access_token),
+                'has_client_key': bool(self._client_key),
+                'has_client_secret': bool(self._client_secret)
+            })
+        
+        return result
+    
+    def safe_get_user(self):
+        """Safely get user object, handling detached instances"""
+        try:
+            return self.user
+        except DetachedInstanceError:
+            return None
+        except Exception:
+            return None
+    
+    def safe_get_posts_count(self):
+        """Safely get posts count, handling detached instances"""
+        try:
+            return len(self.posts) if self.posts else 0
+        except DetachedInstanceError:
+            return 0
+        except Exception:
+            return 0
+    
+    def safe_get_images_count(self):
+        """Safely get images count, handling detached instances"""
+        try:
+            return len(self.images) if self.images else 0
+        except DetachedInstanceError:
+            return 0
+        except Exception:
+            return 0
+    
+    def is_accessible(self):
+        """Check if platform connection is accessible (works with detached instances)"""
+        return bool(self.is_active and self._access_token)
+    
+    def get_display_name(self):
+        """Get display name for UI (works with detached instances)"""
+        if self.name:
+            return f"{self.name} ({self.platform_type})"
+        return f"{self.username}@{self.instance_url} ({self.platform_type})"
+    
+    def matches_platform(self, platform_type, instance_url):
+        """Check if this connection matches given platform details (works with detached instances)"""
+        return (self.platform_type == platform_type and 
+                self.instance_url == instance_url)
+    
+    def can_be_default(self):
+        """Check if this connection can be set as default (works with detached instances)"""
+        return self.is_active and bool(self._access_token)
+    
     def __repr__(self):
         return f"<PlatformConnection {self.name} ({self.platform_type})>"
 
+# UserSession model for enhanced session management
 class UserSession(Base):
+    """User session tracking for platform-aware session management"""
     __tablename__ = 'user_sessions'
     
     id = Column(Integer, primary_key=True)
-    user_id = Column(Integer, ForeignKey('users.id'), nullable=False)
-    session_id = Column(String(255), nullable=False, unique=True)
-    active_platform_id = Column(Integer, ForeignKey('platform_connections.id'))
-    created_at = Column(DateTime, default=datetime.utcnow)
-    updated_at = Column(DateTime, default=datetime.utcnow, onupdate=datetime.utcnow)
+    session_id = Column(String(255), unique=True, nullable=False, index=True)
+    user_id = Column(Integer, ForeignKey('users.id'), nullable=False, index=True)
+    active_platform_id = Column(Integer, ForeignKey('platform_connections.id'), nullable=True)
+    created_at = Column(DateTime, default=func.now(), nullable=False)
+    updated_at = Column(DateTime, default=func.now(), onupdate=func.now(), nullable=False, index=True)
+    user_agent = Column(Text, nullable=True)
+    ip_address = Column(String(45), nullable=True)
     
-    # Relationships
-    user = relationship("User", overlaps="sessions")
-    active_platform = relationship("PlatformConnection")
+    # Relationships with explicit loading strategies
+    user = relationship(
+        'User', 
+        back_populates='sessions',
+        lazy='select'  # Use select loading instead of lazy loading
+    )
+    active_platform = relationship(
+        'PlatformConnection', 
+        back_populates='user_sessions',
+        lazy='select'  # Use select loading instead of lazy loading
+    )
     
     def __repr__(self):
         return f"<UserSession {self.session_id} - User {self.user_id}>"

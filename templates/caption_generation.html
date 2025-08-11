@@ -116,13 +116,13 @@
                 </div>
             </div>
             
-            {% if current_platform %}
+            {% if active_platform %}
             <div class="alert alert-info">
                 <i class="bi bi-info-circle"></i>
-                <strong>Current Platform:</strong> {{ current_platform.name }} 
-                ({{ current_platform.platform_type|title }})
-                {% if current_platform.username %}
-                - @{{ current_platform.username }}
+                <strong>Current Platform:</strong> {{ active_platform.name }} 
+                ({{ active_platform.platform_type|title }})
+                {% if active_platform.username %}
+                - @{{ active_platform.username }}
                 {% endif %}
             </div>
             {% endif %}
