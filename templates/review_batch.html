@@ -85,7 +85,6 @@
 <div class="card mb-4">
     <div class="card-body">
         <form method="GET" class="row align-items-end">
-    {{ csrf_token() }}
             <div class="col-md-2">
                 <label for="status" class="form-label">Status Filter:</label>
                 <select name="status" id="status" class="form-select" onchange="this.form.submit()">

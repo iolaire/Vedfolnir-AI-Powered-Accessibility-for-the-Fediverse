@@ -500,16 +500,10 @@ if (captionForm) {
     submitBtn.disabled = true;
     submitBtn.innerHTML = '<i class="bi bi-hourglass-split"></i> Starting...';
     
-    // Get CSRF token from meta tag
-    const csrfToken = document.querySelector('meta[name="csrf-token"]')?.getAttribute('content');
-    
-    fetch(this.action, {
+    // Use secure fetch with automatic CSRF handling
+    window.csrfHandler.secureFetch(this.action, {
         method: 'POST',
-        body: formData,
-        headers: {
-            'X-Requested-With': 'XMLHttpRequest',
-            'X-CSRFToken': csrfToken || ''
-        }
+        body: formData
     })
     .then(response => response.json())
     .then(data => {
@@ -544,13 +538,10 @@ function cancelTask(taskId) {
         return;
     }
     
-    const csrfToken = document.querySelector('meta[name="csrf-token"]')?.getAttribute('content') || '';
-    
-    fetch(`/api/caption_generation/cancel/${taskId}`, {
+    window.csrfHandler.secureFetch(`/api/caption_generation/cancel/${taskId}`, {
         method: 'POST',
         headers: {
-            'Content-Type': 'application/json',
-            'X-CSRFToken': csrfToken
+            'Content-Type': 'application/json'
         }
     })
     .then(response => response.json())

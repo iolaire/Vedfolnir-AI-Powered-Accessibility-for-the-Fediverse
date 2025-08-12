@@ -96,7 +96,6 @@
 <!-- Filter panel -->
 <div id="filter-panel" class="filter-panel mb-3" style="display: none;">
     <form id="filter-form" method="GET" action="{{ url_for('batch_review') }}">
-    {{ csrf_token() }}
         <div class="row g-3">
             <div class="col-md-3">
                 <label for="category" class="form-label">Image Category</label>

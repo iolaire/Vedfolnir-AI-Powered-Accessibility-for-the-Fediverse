@@ -269,6 +269,7 @@
     </div>
 
     <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.1.3/dist/js/bootstrap.bundle.min.js" onerror="console.warn('Bootstrap JS failed to load from CDN')"></script>
+    <script src="{{ url_for('static', filename='js/csrf-handler.js') }}"></script>
     <script src="{{ url_for('static', filename='js/app.js') }}"></script>
     <script src="{{ url_for('static', filename='js/error_handler.js') }}"></script>
     <script src="{{ url_for('static', filename='js/session_sync.js') }}"></script>
@@ -328,16 +329,12 @@
                     item.style.pointerEvents = 'none';
                 });
                 
-                // Get CSRF token
-                const csrfToken = document.querySelector('meta[name="csrf-token"]')?.getAttribute('content');
-                
-                const response = await fetch(`/api/switch_platform/${platformId}`, {
+                // Use secure fetch with automatic CSRF handling
+                const response = await window.csrfHandler.secureFetch(`/api/switch_platform/${platformId}`, {
                     method: 'POST',
                     headers: {
-                        'Content-Type': 'application/json',
-                        'X-CSRFToken': csrfToken
-                    },
-                    credentials: 'same-origin'
+                        'Content-Type': 'application/json'
+                    }
                 });
                 
                 const result = await response.json();

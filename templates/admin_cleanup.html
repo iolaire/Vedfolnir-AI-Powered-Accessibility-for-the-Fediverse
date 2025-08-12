@@ -120,7 +120,7 @@
         </div>
         <div class="card-body">
             <form action="{{ url_for('admin_cleanup_runs') }}" method="post">
-    {{ csrf_token() }}
+                <input type="hidden" name="csrf_token" value="{{ csrf_token() }}"/>
                 <div class="mb-3">
                     <label for="runs_days" class="form-label">Archive runs older than (days)</label>
                     <input type="number" class="form-control" id="runs_days" name="days" value="{{ retention.processing_runs }}" min="1" max="365">
@@ -143,7 +143,7 @@
         <div class="card-body">
             <p class="text-muted">Remove processing runs that are stuck, abandoned, or have no associated platform connection.</p>
             <form action="{{ url_for('admin_cleanup_orphan_runs') }}" method="post">
-    {{ csrf_token() }}
+                <input type="hidden" name="csrf_token" value="{{ csrf_token() }}"/>
                 <div class="mb-3">
                     <label for="orphan_hours" class="form-label">Clean up runs older than (hours)</label>
                     <input type="number" class="form-control" id="orphan_hours" name="hours" value="24" min="0.1" max="168" step="0.1">
@@ -173,7 +173,7 @@
         </div>
         <div class="card-body">
             <form action="{{ url_for('admin_cleanup_images') }}" method="post">
-    {{ csrf_token() }}
+                <input type="hidden" name="csrf_token" value="{{ csrf_token() }}"/>
                 <div class="mb-3">
                     <label for="image_status" class="form-label">Image Status</label>
                     <select class="form-select" id="image_status" name="status">
@@ -203,7 +203,7 @@
         </div>
         <div class="card-body">
             <form action="{{ url_for('admin_cleanup_posts') }}" method="post">
-    {{ csrf_token() }}
+                <input type="hidden" name="csrf_token" value="{{ csrf_token() }}"/>
                 <div class="form-check mb-3">
                     <input class="form-check-input" type="checkbox" id="posts_dry_run" name="dry_run" checked>
                     <label class="form-check-label" for="posts_dry_run">
@@ -221,7 +221,7 @@
         </div>
         <div class="card-body">
             <form action="{{ url_for('admin_cleanup_user') }}" method="post">
-    {{ csrf_token() }}
+                <input type="hidden" name="csrf_token" value="{{ csrf_token() }}"/>
                 <div class="mb-3">
                     <label for="user_id" class="form-label">Select User</label>
                     <select class="form-select" id="user_id" name="user_id" required>
@@ -259,7 +259,7 @@
                 </ul>
             </div>
             <form action="{{ url_for('admin_cleanup_all') }}" method="post">
-    {{ csrf_token() }}
+                <input type="hidden" name="csrf_token" value="{{ csrf_token() }}"
                 <div class="form-check mb-3">
                     <input class="form-check-input" type="checkbox" id="all_dry_run" name="dry_run" checked>
                     <label class="form-check-label" for="all_dry_run">

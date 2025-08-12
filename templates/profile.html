@@ -326,13 +326,10 @@
 {% block scripts %}
 <script>
     function switchPlatform(platformId) {
-        const csrfToken = document.querySelector('meta[name="csrf-token"]').getAttribute('content');
-
-        fetch(`/api/switch_platform/${platformId}`, {
+        window.csrfHandler.secureFetch(`/api/switch_platform/${platformId}`, {
             method: 'POST',
             headers: {
-                'Content-Type': 'application/json',
-                'X-CSRFToken': csrfToken
+                'Content-Type': 'application/json'
             }
         })
             .then(response => response.json())
@@ -359,13 +356,10 @@
         button.innerHTML = '<i class="bi bi-hourglass-split"></i>';
         button.disabled = true;
 
-        const csrfToken = document.querySelector('meta[name="csrf-token"]').getAttribute('content');
-
-        fetch(`/api/test_platform/${platformId}`, {
+        window.csrfHandler.secureFetch(`/api/test_platform/${platformId}`, {
             method: 'POST',
             headers: {
-                'Content-Type': 'application/json',
-                'X-CSRFToken': csrfToken
+                'Content-Type': 'application/json'
             }
         })
             .then(response => response.json())
@@ -390,13 +384,10 @@
             return;
         }
 
-        const csrfToken = document.querySelector('meta[name="csrf-token"]').getAttribute('content');
-
-        fetch(`/api/sessions/${sessionId}`, {
+        window.csrfHandler.secureFetch(`/api/sessions/${sessionId}`, {
             method: 'DELETE',
             headers: {
-                'Content-Type': 'application/json',
-                'X-CSRFToken': csrfToken
+                'Content-Type': 'application/json'
             }
         })
             .then(response => response.json())
@@ -443,12 +434,10 @@
         submitBtn.innerHTML = '<i class="bi bi-hourglass-split me-1"></i>Saving...';
 
         // Get CSRF token
-        const csrfToken = document.querySelector('meta[name="csrf-token"]').getAttribute('content');
-        fetch('/api/update_user_settings', {
+        window.csrfHandler.secureFetch('/api/update_user_settings', {
             method: 'POST',
             headers: {
-                'Content-Type': 'application/json',
-                'X-CSRFToken': csrfToken
+                'Content-Type': 'application/json'
             },
             body: JSON.stringify({
                 max_posts_per_run: maxPostsPerRun

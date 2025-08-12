@@ -74,14 +74,31 @@ app.config['REMEMBER_COOKIE_SAMESITE'] = 'Lax'
 csrf = CSRFProtect()
 csrf.init_app(app)
 
+# Initialize enhanced CSRF token manager
+from security.core.csrf_token_manager import initialize_csrf_token_manager
+csrf_token_manager = initialize_csrf_token_manager(app)
+
+# Initialize CSRF error handler
+from security.core.csrf_error_handler import register_csrf_error_handlers
+csrf_error_handler = register_csrf_error_handlers(app)
+
+# Initialize CSRF middleware
+from security.core.csrf_middleware import initialize_csrf_middleware
+csrf_middleware = initialize_csrf_middleware(app)
+
 # Configure CSRF settings
 app.config['WTF_CSRF_TIME_LIMIT'] = 3600  # 1 hour
 app.config['WTF_CSRF_SSL_STRICT'] = False  # Allow HTTP in development
 app.config['WTF_CSRF_CHECK_DEFAULT'] = True
 
-# Disable CSRF for development if needed
-if app.debug:
+# Enhanced CSRF configuration
+app.config['CSRF_TOKEN_LIFETIME'] = 3600  # 1 hour for our token manager
+app.config['WTF_CSRF_ENABLED'] = True  # Always enable CSRF protection
+
+# Only disable CSRF for specific testing scenarios
+if os.getenv('DISABLE_CSRF_FOR_TESTING', 'false').lower() == 'true':
     app.config['WTF_CSRF_ENABLED'] = False
+    app.logger.warning("CSRF protection disabled for testing - DO NOT USE IN PRODUCTION")
 
 # Security headers middleware
 @app.after_request
@@ -2434,7 +2451,8 @@ def api_add_platform():
         # If this is the first platform, automatically switch to it
         if is_first_platform:
             try:
-                flask_session_id = session.get('_id')
+                from flask import session as flask_session
+                flask_session_id = flask_session.get('_id')
                 success = False
                 if flask_session_id:
                     success = session_manager.update_platform_context(flask_session_id, platform.id)
@@ -2508,7 +2526,8 @@ def api_switch_platform(platform_id):
                 app.logger.error(f"Error handling active caption generation task during platform switch: {sanitize_for_log(str(e))}")
             
             # Update database session platform context using session manager
-            flask_session_id = session.get('_id')
+            from flask import session as flask_session
+            flask_session_id = flask_session.get('_id')
             session_updated = False
             if flask_session_id:
                 session_updated = session_manager.update_platform_context(flask_session_id, platform_id)
@@ -2803,19 +2822,24 @@ def api_session_state():
                     ).first()
                 
                 if default_platform:
+                    # Extract platform data before session closes to avoid DetachedInstanceError
+                    platform_id = default_platform.id
+                    platform_name = default_platform.name
+                    
                     current_platform = {
-                        'id': default_platform.id,
-                        'name': default_platform.name,
+                        'id': platform_id,
+                        'name': platform_name,
                         'type': default_platform.platform_type,
                         'instance_url': default_platform.instance_url,
                         'is_default': default_platform.is_default
                     }
                     
                     # Update database session context
-                    flask_session_id = session.get('_id')
+                    from flask import session as flask_session
+                    flask_session_id = flask_session.get('_id')
                     if flask_session_id:
-                        session_manager.update_platform_context(flask_session_id, default_platform.id)
-                    app.logger.info(f"Updated session context to default platform {default_platform.name}")
+                        session_manager.update_platform_context(flask_session_id, platform_id)
+                    app.logger.info(f"Updated session context to default platform {platform_name}")
             finally:
                 db_session.close()
         
@@ -3967,6 +3991,31 @@ def api_admin_cleanup_tasks():
     except Exception as e:
         app.logger.error(f"Error cleaning up tasks: {sanitize_for_log(str(e))}")
         return jsonify({'success': False, 'error': 'Failed to cleanup tasks'}), 500
+
+@app.route('/api/csrf-token', methods=['GET'])
+@login_required
+@rate_limit(limit=20, window_seconds=60)
+@with_session_error_handling
+def api_get_csrf_token():
+    """Get a fresh CSRF token for AJAX requests"""
+    try:
+        from flask_wtf.csrf import generate_csrf
+        
+        # Generate new CSRF token
+        csrf_token = generate_csrf()
+        
+        return jsonify({
+            'success': True,
+            'csrf_token': csrf_token,
+            'expires_in': 3600  # 1 hour
+        })
+        
+    except Exception as e:
+        app.logger.error(f"Error generating CSRF token: {sanitize_for_log(str(e))}")
+        return jsonify({
+            'success': False,
+            'error': 'Failed to generate CSRF token'
+        }), 500
 
 @app.route('/api/update_user_settings', methods=['POST'])
 @login_required

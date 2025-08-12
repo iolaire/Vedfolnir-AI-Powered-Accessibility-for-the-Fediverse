@@ -1,0 +1,537 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Session Sync Frontend Tests</title>
+    <style>
+        body { font-family: Arial, sans-serif; margin: 20px; }
+        .test-results { margin: 20px 0; }
+        .test-case { margin: 10px 0; padding: 10px; border-left: 4px solid #ccc; }
+        .test-case.pass { border-color: #4CAF50; background-color: #f1f8e9; }
+        .test-case.fail { border-color: #f44336; background-color: #ffebee; }
+        .summary { font-weight: bold; margin: 20px 0; }
+        .error-details { margin-top: 10px; padding: 10px; background-color: #f5f5f5; border-radius: 4px; font-family: monospace; font-size: 12px; }
+        #test-controls { margin-bottom: 20px; }
+        button { padding: 8px 16px; margin-right: 10px; cursor: pointer; }
+    </style>
+</head>
+<body>
+    <h1>Session Sync Frontend Tests</h1>
+    <div id="test-controls">
+        <button onclick="runAllTests()">Run All Tests</button>
+        <button onclick="clearResults()">Clear Results</button>
+    </div>
+    <div id="test-results" class="test-results"></div>
+    <div id="test-summary" class="summary"></div>
+
+    <!-- Mock CSRF token for testing -->
+    <meta name="csrf-token" content="test-csrf-token">
+
+    <!-- Include the SessionSync class -->
+    <script src="../../static/js/session_sync.js"></script>
+
+    <script>
+        // Test framework
+        class TestRunner {
+            constructor() {
+                this.tests = [];
+                this.results = [];
+            }
+
+            addTest(name, testFn, requirements = []) {
+                this.tests.push({ name, testFn, requirements });
+            }
+
+            async runTest(test) {
+                const startTime = performance.now();
+                
+                try {
+                    await test.testFn();
+                    const duration = performance.now() - startTime;
+                    this.results.push({
+                        name: test.name,
+                        status: 'pass',
+                        duration: Math.round(duration * 100) / 100,
+                        requirements: test.requirements
+                    });
+                } catch (error) {
+                    const duration = performance.now() - startTime;
+                    this.results.push({
+                        name: test.name,
+                        status: 'fail',
+                        duration: Math.round(duration * 100) / 100,
+                        error: error.message,
+                        stack: error.stack,
+                        requirements: test.requirements
+                    });
+                }
+            }
+
+            async runAllTests() {
+                this.results = [];
+                const resultsDiv = document.getElementById('test-results');
+                resultsDiv.innerHTML = '<p>Running tests...</p>';
+
+                for (const test of this.tests) {
+                    await this.runTest(test);
+                    this.updateResults();
+                }
+
+                this.showSummary();
+            }
+
+            updateResults() {
+                const resultsDiv = document.getElementById('test-results');
+                resultsDiv.innerHTML = '';
+
+                this.results.forEach(result => {
+                    const testDiv = document.createElement('div');
+                    testDiv.className = `test-case ${result.status}`;
+                    
+                    let html = `
+                        <strong>${result.name}</strong> 
+                        <span style="float: right;">${result.duration}ms</span>
+                        <br>
+                        <small>Requirements: ${result.requirements.join(', ')}</small>
+                    `;
+
+                    if (result.status === 'fail') {
+                        html += `
+                            <div class="error-details">
+                                <strong>Error:</strong> ${result.error}
+                            </div>
+                        `;
+                    }
+
+                    testDiv.innerHTML = html;
+                    resultsDiv.appendChild(testDiv);
+                });
+            }
+
+            showSummary() {
+                const summaryDiv = document.getElementById('test-summary');
+                const passed = this.results.filter(r => r.status === 'pass').length;
+                const failed = this.results.filter(r => r.status === 'fail').length;
+                const total = this.results.length;
+
+                summaryDiv.innerHTML = `
+                    Tests: ${total} | Passed: ${passed} | Failed: ${failed} | 
+                    Success Rate: ${Math.round((passed / total) * 100)}%
+                `;
+            }
+
+            assert(condition, message) {
+                if (!condition) {
+                    throw new Error(message || 'Assertion failed');
+                }
+            }
+
+            assertEqual(actual, expected, message) {
+                if (actual !== expected) {
+                    throw new Error(message || `Expected ${expected}, got ${actual}`);
+                }
+            }
+
+            assertNotNull(value, message) {
+                if (value === null || value === undefined) {
+                    throw new Error(message || 'Expected non-null value');
+                }
+            }
+
+            assertTrue(condition, message) {
+                if (!condition) {
+                    throw new Error(message || 'Expected true');
+                }
+            }
+
+            assertFalse(condition, message) {
+                if (condition) {
+                    throw new Error(message || 'Expected false');
+                }
+            }
+        }
+
+        // Test utilities
+        function sleep(ms) {
+            return new Promise(resolve => setTimeout(resolve, ms));
+        }
+
+        function mockFetch(responses) {
+            const originalFetch = window.fetch;
+            let callCount = 0;
+            
+            window.fetch = async (url, options) => {
+                const response = responses[callCount] || responses[responses.length - 1];
+                callCount++;
+                
+                return {
+                    ok: response.ok !== false,
+                    status: response.status || 200,
+                    headers: {
+                        get: (name) => response.headers?.[name] || 'application/json'
+                    },
+                    json: async () => response.data || {}
+                };
+            };
+            
+            return () => {
+                window.fetch = originalFetch;
+            };
+        }
+
+        function mockLocalStorage() {
+            const storage = {};
+            const listeners = [];
+            
+            const mockStorage = {
+                getItem: (key) => storage[key] || null,
+                setItem: (key, value) => {
+                    const oldValue = storage[key];
+                    storage[key] = value;
+                    
+                    setTimeout(() => {
+                        listeners.forEach(listener => {
+                            listener({
+                                key,
+                                oldValue,
+                                newValue: value,
+                                storageArea: mockStorage
+                            });
+                        });
+                    }, 0);
+                },
+                removeItem: (key) => {
+                    const oldValue = storage[key];
+                    delete storage[key];
+                    
+                    setTimeout(() => {
+                        listeners.forEach(listener => {
+                            listener({
+                                key,
+                                oldValue,
+                                newValue: null,
+                                storageArea: mockStorage
+                            });
+                        });
+                    }, 0);
+                },
+                clear: () => {
+                    Object.keys(storage).forEach(key => delete storage[key]);
+                },
+                addEventListener: (event, listener) => {
+                    if (event === 'storage') {
+                        listeners.push(listener);
+                    }
+                },
+                removeEventListener: (event, listener) => {
+                    if (event === 'storage') {
+                        const index = listeners.indexOf(listener);
+                        if (index > -1) listeners.splice(index, 1);
+                    }
+                }
+            };
+            
+            const originalLocalStorage = window.localStorage;
+            window.localStorage = mockStorage;
+            
+            return () => {
+                window.localStorage = originalLocalStorage;
+            };
+        }
+
+        // Initialize test runner
+        const testRunner = new TestRunner();
+
+        // Test SessionSync class initialization and tab identification (Requirements 2.1, 2.2)
+        testRunner.addTest('SessionSync class initialization', async () => {
+            const sessionSync = new SessionSync();
+            
+            testRunner.assertNotNull(sessionSync, 'SessionSync instance should be created');
+            testRunner.assertNotNull(sessionSync.tabId, 'Tab ID should be generated');
+            testRunner.assertTrue(sessionSync.tabId.startsWith('tab_'), 'Tab ID should have correct prefix');
+            testRunner.assertEqual(sessionSync.storageKey, 'vedfolnir_session_state', 'Storage key should be correct');
+            testRunner.assertFalse(sessionSync.isInitialized, 'Should not be initialized by default');
+        }, ['2.1', '2.2']);
+
+        testRunner.addTest('Tab ID generation uniqueness', async () => {
+            const sessionSync1 = new SessionSync();
+            const sessionSync2 = new SessionSync();
+            
+            testRunner.assertNotNull(sessionSync1.tabId, 'First tab ID should be generated');
+            testRunner.assertNotNull(sessionSync2.tabId, 'Second tab ID should be generated');
+            testRunner.assertTrue(sessionSync1.tabId !== sessionSync2.tabId, 'Tab IDs should be unique');
+        }, ['2.1']);
+
+        // Test cross-tab storage event handling and synchronization (Requirements 2.2, 2.3)
+        testRunner.addTest('Storage event handling setup', async () => {
+            const restoreLocalStorage = mockLocalStorage();
+            
+            try {
+                const sessionSync = new SessionSync();
+                sessionSync.shouldInitializeSync = () => true;
+                
+                sessionSync.init();
+                testRunner.assertTrue(sessionSync.isInitialized, 'SessionSync should be initialized');
+                
+                sessionSync.destroy();
+            } finally {
+                restoreLocalStorage();
+            }
+        }, ['2.2', '2.3']);
+
+        testRunner.addTest('Cross-tab session state synchronization', async () => {
+            const restoreLocalStorage = mockLocalStorage();
+            
+            try {
+                const sessionSync1 = new SessionSync();
+                const sessionSync2 = new SessionSync();
+                
+                sessionSync1.shouldInitializeSync = () => true;
+                sessionSync2.shouldInitializeSync = () => true;
+                
+                let sessionStateReceived = false;
+                let receivedState = null;
+                
+                sessionSync2.applySessionState = (state) => {
+                    sessionStateReceived = true;
+                    receivedState = state;
+                };
+                
+                sessionSync1.init();
+                sessionSync2.init();
+                
+                const testSessionState = {
+                    user: { id: 1, username: 'test' },
+                    platform: { id: 1, name: 'Test Platform' },
+                    tabId: sessionSync1.tabId,
+                    timestamp: Date.now()
+                };
+                
+                localStorage.setItem('vedfolnir_session_state', JSON.stringify(testSessionState));
+                
+                await sleep(50);
+                
+                testRunner.assertTrue(sessionStateReceived, 'Session state should be received by other tab');
+                testRunner.assertNotNull(receivedState, 'Received state should not be null');
+                testRunner.assertEqual(receivedState.user.username, 'test', 'User data should be synchronized');
+                
+                sessionSync1.destroy();
+                sessionSync2.destroy();
+            } finally {
+                restoreLocalStorage();
+            }
+        }, ['2.2', '2.3']);
+
+        // Test session validation and expiration handling (Requirements 2.4, 2.5)
+        testRunner.addTest('Session validation with server', async () => {
+            const restoreFetch = mockFetch([
+                {
+                    ok: true,
+                    status: 200,
+                    data: {
+                        success: true,
+                        user: { id: 1, username: 'test' },
+                        platform: { id: 1, name: 'Test Platform' }
+                    }
+                }
+            ]);
+            
+            try {
+                const sessionSync = new SessionSync();
+                sessionSync.shouldInitializeSync = () => true;
+                
+                await sessionSync.syncSessionState();
+                testRunner.assertTrue(true, 'Session validation should complete successfully');
+            } finally {
+                restoreFetch();
+            }
+        }, ['2.4', '2.5']);
+
+        testRunner.addTest('Session expiration handling', async () => {
+            const restoreFetch = mockFetch([
+                {
+                    ok: false,
+                    status: 401,
+                    data: { error: 'Session expired' }
+                }
+            ]);
+            
+            try {
+                const sessionSync = new SessionSync();
+                sessionSync.shouldInitializeSync = () => true;
+                
+                let sessionExpiredCalled = false;
+                sessionSync.handleSessionExpired = () => {
+                    sessionExpiredCalled = true;
+                };
+                
+                await sessionSync.syncSessionState();
+                testRunner.assertTrue(sessionExpiredCalled, 'Session expiration handler should be called');
+            } finally {
+                restoreFetch();
+            }
+        }, ['2.5']);
+
+        testRunner.addTest('Platform switch event handling', async () => {
+            const restoreLocalStorage = mockLocalStorage();
+            
+            try {
+                const sessionSync1 = new SessionSync();
+                const sessionSync2 = new SessionSync();
+                
+                sessionSync1.shouldInitializeSync = () => true;
+                sessionSync2.shouldInitializeSync = () => true;
+                
+                let platformSwitchReceived = false;
+                let receivedPlatformName = null;
+                
+                sessionSync2.handlePlatformSwitchEvent = (switchEvent) => {
+                    platformSwitchReceived = true;
+                    receivedPlatformName = switchEvent.platformName;
+                };
+                
+                sessionSync1.init();
+                sessionSync2.init();
+                
+                sessionSync1.notifyPlatformSwitch(2, 'New Platform');
+                
+                await sleep(50);
+                
+                testRunner.assertTrue(platformSwitchReceived, 'Platform switch should be received by other tab');
+                testRunner.assertEqual(receivedPlatformName, 'New Platform', 'Platform name should be synchronized');
+                
+                sessionSync1.destroy();
+                sessionSync2.destroy();
+            } finally {
+                restoreLocalStorage();
+            }
+        }, ['2.3', '2.4']);
+
+        testRunner.addTest('Session state change detection', async () => {
+            const sessionSync = new SessionSync();
+            
+            const oldState = {
+                user: { id: 1, username: 'test' },
+                platform: { id: 1, name: 'Platform1' }
+            };
+            
+            const newState = {
+                user: { id: 1, username: 'test' },
+                platform: { id: 2, name: 'Platform2' }
+            };
+            
+            sessionSync.lastSessionState = oldState;
+            
+            const hasChanged = sessionSync.hasSessionStateChanged(newState);
+            testRunner.assertTrue(hasChanged, 'Should detect platform change');
+            
+            const noChangeState = {
+                user: { id: 1, username: 'test' },
+                platform: { id: 1, name: 'Platform1' }
+            };
+            
+            sessionSync.lastSessionState = oldState;
+            const hasNotChanged = sessionSync.hasSessionStateChanged(noChangeState);
+            testRunner.assertFalse(hasNotChanged, 'Should not detect change when state is same');
+        }, ['2.4']);
+
+        testRunner.addTest('Performance metrics tracking', async () => {
+            const sessionSync = new SessionSync();
+            
+            const startTime = performance.now();
+            sessionSync.updatePerformanceMetrics(startTime, true);
+            
+            const metrics = sessionSync.getPerformanceMetrics();
+            
+            testRunner.assertNotNull(metrics, 'Performance metrics should be available');
+            testRunner.assertEqual(metrics.syncCount, 1, 'Sync count should be incremented');
+            testRunner.assertEqual(metrics.syncErrors, 0, 'Error count should be 0 for successful sync');
+            testRunner.assertTrue(metrics.avgSyncTime >= 0, 'Average sync time should be non-negative');
+            testRunner.assertEqual(metrics.tabId, sessionSync.tabId, 'Tab ID should be included in metrics');
+        }, ['2.5']);
+
+        testRunner.addTest('Offline mode detection', async () => {
+            const sessionSync = new SessionSync();
+            
+            const originalOnLine = navigator.onLine;
+            Object.defineProperty(navigator, 'onLine', {
+                writable: true,
+                value: false
+            });
+            
+            try {
+                sessionSync.handleOnlineChange();
+                testRunner.assertFalse(sessionSync.isOnline, 'Should detect offline mode');
+                
+                await sessionSync.syncSessionState();
+                testRunner.assertTrue(true, 'Should handle offline mode gracefully');
+            } finally {
+                Object.defineProperty(navigator, 'onLine', {
+                    writable: true,
+                    value: originalOnLine
+                });
+            }
+        }, ['2.5']);
+
+        testRunner.addTest('Session initialization conditions', async () => {
+            const sessionSync = new SessionSync();
+            
+            const originalPathname = window.location.pathname;
+            
+            try {
+                Object.defineProperty(window.location, 'pathname', {
+                    writable: true,
+                    value: '/login'
+                });
+                
+                testRunner.assertFalse(sessionSync.shouldInitializeSync(), 'Should not initialize on login page');
+                
+                Object.defineProperty(window.location, 'pathname', {
+                    writable: true,
+                    value: '/dashboard'
+                });
+                
+                testRunner.assertTrue(sessionSync.shouldInitializeSync(), 'Should initialize on authenticated page with CSRF token');
+            } finally {
+                Object.defineProperty(window.location, 'pathname', {
+                    writable: true,
+                    value: originalPathname
+                });
+            }
+        }, ['2.1']);
+
+        testRunner.addTest('Debounced sync functionality', async () => {
+            const sessionSync = new SessionSync();
+            
+            let syncCallCount = 0;
+            sessionSync.syncSessionState = async () => {
+                syncCallCount++;
+            };
+            
+            sessionSync.debouncedSync(100);
+            sessionSync.debouncedSync(100);
+            sessionSync.debouncedSync(100);
+            
+            await sleep(150);
+            
+            testRunner.assertEqual(syncCallCount, 1, 'Should only call sync once after debounce delay');
+        }, ['2.5']);
+
+        // Global functions for UI
+        function runAllTests() {
+            testRunner.runAllTests();
+        }
+
+        function clearResults() {
+            document.getElementById('test-results').innerHTML = '';
+            document.getElementById('test-summary').innerHTML = '';
+        }
+
+        // Auto-run tests when page loads
+        window.addEventListener('load', () => {
+            setTimeout(runAllTests, 1000);
+        });
+    </script>
+</body>
+</html>

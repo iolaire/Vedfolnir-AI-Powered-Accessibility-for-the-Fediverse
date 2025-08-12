@@ -145,7 +145,6 @@
             </div>
             <div class="card-body">
                 <form method="POST">
-    {{ csrf_token() }}
                     {{ form.hidden_tag() }}
                     
                     <div class="mb-3">
@@ -311,10 +310,10 @@ document.addEventListener('DOMContentLoaded', function() {
             regenerateStatus.textContent = 'Generating new caption...';
             
             try {
-                const response = await fetch(`/api/regenerate_caption/${imageId}`, {
+                const response = await window.csrfHandler.secureFetch(`/api/regenerate_caption/${imageId}`, {
                     method: 'POST',
                     headers: {
-                        'Content-Type': 'application/json',
+                        'Content-Type': 'application/json'
                     }
                 });
                 
@@ -379,10 +378,10 @@ document.addEventListener('DOMContentLoaded', function() {
             approvePostBtn.innerHTML = '<span class="spinner-border spinner-border-sm" role="status" aria-hidden="true"></span> Posting...';
             
             try {
-                const response = await fetch(`/api/update_caption/${imageId}`, {
+                const response = await window.csrfHandler.secureFetch(`/api/update_caption/${imageId}`, {
                     method: 'POST',
                     headers: {
-                        'Content-Type': 'application/json',
+                        'Content-Type': 'application/json'
                     },
                     body: JSON.stringify({
                         caption: caption,

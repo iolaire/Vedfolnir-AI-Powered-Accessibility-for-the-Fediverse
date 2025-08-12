@@ -1,0 +1,162 @@
+<!-- Copyright (C) 2025 iolaire mcfadden. -->
+<!-- This program is free software: you can redistribute it and/or modify it under the terms of the GNU Affero General Public License as published by the Free Software Foundation, either version 3 of the License, or (at your option) any later version. -->
+<!-- THE SOFTWARE IS PROVIDED "AS IS", WITHOUT WARRANTY OF ANY KIND, EXPRESS OR IMPLIED, INCLUDING BUT NOT LIMITED TO THE WARRANTIES OF MERCHANTABILITY, FITNESS FOR A PARTICULAR PURPOSE AND NONINFRINGEMENT. IN NO EVENT SHALL THE AUTHORS OR COPYRIGHT HOLDERS BE LIABLE FOR ANY CLAIM, DAMAGES OR OTHER LIABILITY, WHETHER IN AN ACTION OF CONTRACT, TORT OR OTHERWISE, ARISING FROM, OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE SOFTWARE. -->
+
+{% extends "base.html" %}
+
+{% block title %}Security Validation Error - Vedfolnir{% endblock %}
+
+{% block content %}
+<div class="container mt-5">
+    <div class="row justify-content-center">
+        <div class="col-lg-8 col-md-10">
+            <div class="card border-warning">
+                <div class="card-header bg-warning text-dark">
+                    <h4 class="mb-0">
+                        <i class="bi bi-shield-exclamation me-2"></i>
+                        Security Validation Error
+                    </h4>
+                </div>
+                <div class="card-body">
+                    <div class="alert alert-warning" role="alert">
+                        <h5 class="alert-heading">
+                            <i class="bi bi-exclamation-triangle me-2"></i>
+                            Action Could Not Be Completed
+                        </h5>
+                        <p class="mb-0">
+                            {{ error_message or "Security validation failed. Please refresh the page and try again." }}
+                        </p>
+                    </div>
+                    
+                    {% if retry_guidance %}
+                    <div class="alert alert-info" role="alert">
+                        <h6 class="alert-heading">
+                            <i class="bi bi-info-circle me-2"></i>
+                            How to Fix This
+                        </h6>
+                        <p class="mb-0">{{ retry_guidance }}</p>
+                    </div>
+                    {% endif %}
+                    
+                    <div class="row mt-4">
+                        <div class="col-md-6">
+                            <h6>What happened?</h6>
+                            <p class="text-muted small">
+                                Your security token has expired or become invalid. This is a normal security measure 
+                                to protect your account from unauthorized actions.
+                            </p>
+                        </div>
+                        <div class="col-md-6">
+                            <h6>What should I do?</h6>
+                            <ul class="text-muted small">
+                                <li>Refresh this page and try your action again</li>
+                                <li>Make sure cookies are enabled in your browser</li>
+                                <li>If the problem persists, try clearing your browser cache</li>
+                            </ul>
+                        </div>
+                    </div>
+                    
+                    <div class="d-flex justify-content-between align-items-center mt-4">
+                        <div class="btn-group" role="group">
+                            <button type="button" class="btn btn-primary" onclick="window.location.reload()">
+                                <i class="bi bi-arrow-clockwise me-2"></i>
+                                Refresh Page
+                            </button>
+                            <button type="button" class="btn btn-outline-secondary" onclick="window.history.back()">
+                                <i class="bi bi-arrow-left me-2"></i>
+                                Go Back
+                            </button>
+                        </div>
+                        
+                        <a href="{{ url_for('index') }}" class="btn btn-outline-primary">
+                            <i class="bi bi-house me-2"></i>
+                            Go to Dashboard
+                        </a>
+                    </div>
+                </div>
+                
+                <div class="card-footer text-muted">
+                    <small>
+                        <i class="bi bi-clock me-1"></i>
+                        Error occurred at {{ moment().format('YYYY-MM-DD HH:mm:ss') if moment else 'unknown time' }}
+                        {% if error_type %}
+                        | Error type: {{ error_type }}
+                        {% endif %}
+                    </small>
+                </div>
+            </div>
+            
+            <!-- Technical Details (for debugging) -->
+            {% if config.DEBUG %}
+            <div class="card mt-3 border-secondary">
+                <div class="card-header bg-secondary text-white">
+                    <h6 class="mb-0">
+                        <i class="bi bi-bug me-2"></i>
+                        Debug Information
+                    </h6>
+                </div>
+                <div class="card-body">
+                    <dl class="row">
+                        <dt class="col-sm-3">Error Type:</dt>
+                        <dd class="col-sm-9"><code>{{ error_type or 'unknown' }}</code></dd>
+                        
+                        <dt class="col-sm-3">Request Method:</dt>
+                        <dd class="col-sm-9"><code>{{ request.method }}</code></dd>
+                        
+                        <dt class="col-sm-3">Endpoint:</dt>
+                        <dd class="col-sm-9"><code>{{ request.endpoint or 'unknown' }}</code></dd>
+                        
+                        <dt class="col-sm-3">User Agent:</dt>
+                        <dd class="col-sm-9"><small>{{ request.headers.get('User-Agent', 'unknown') }}</small></dd>
+                    </dl>
+                </div>
+            </div>
+            {% endif %}
+        </div>
+    </div>
+</div>
+
+<script>
+document.addEventListener('DOMContentLoaded', function() {
+    // Auto-refresh after 30 seconds if user doesn't take action
+    let autoRefreshTimer = setTimeout(function() {
+        if (confirm('Would you like to refresh the page automatically to try again?')) {
+            window.location.reload();
+        }
+    }, 30000);
+    
+    // Cancel auto-refresh if user interacts with the page
+    document.addEventListener('click', function() {
+        clearTimeout(autoRefreshTimer);
+    });
+    
+    // Check if there's preserved form data to restore
+    if (window.csrfHandler && typeof window.csrfHandler.recover_preserved_data === 'function') {
+        try {
+            const preservedData = window.csrfHandler.recover_preserved_data();
+            if (preservedData) {
+                console.log('Form data preserved for recovery:', Object.keys(preservedData));
+                
+                // Show notification about preserved data
+                const alert = document.createElement('div');
+                alert.className = 'alert alert-success alert-dismissible fade show mt-3';
+                alert.innerHTML = `
+                    <i class="bi bi-check-circle me-2"></i>
+                    Your form data has been preserved and will be restored when you try again.
+                    <button type="button" class="btn-close" data-bs-dismiss="alert"></button>
+                `;
+                
+                const container = document.querySelector('.container .row .col-lg-8');
+                if (container) {
+                    container.appendChild(alert);
+                }
+            }
+        } catch (error) {
+            console.debug('No preserved form data available');
+        }
+    }
+});
+</script>
+{% endblock %}
+</content>
+</file>

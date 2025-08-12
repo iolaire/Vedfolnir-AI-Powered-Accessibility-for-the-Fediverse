@@ -3,29 +3,28 @@
 # THE SOFTWARE IS PROVIDED "AS IS", WITHOUT WARRANTY OF ANY KIND, EXPRESS OR IMPLIED, INCLUDING BUT NOT LIMITED TO THE WARRANTIES OF MERCHANTABILITY, FITNESS FOR A PARTICULAR PURPOSE AND NONINFRINGEMENT. IN NO EVENT SHALL THE AUTHORS OR COPYRIGHT HOLDERS BE LIABLE FOR ANY CLAIM, DAMAGES OR OTHER LIABILITY, WHETHER IN AN ACTION OF CONTRACT, TORT OR OTHERWISE, ARISING FROM, OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE SOFTWARE.
 
 """
-CSRF Template Security Scanner
+CSRF Template Scanner
 
-Scans all templates for CSRF vulnerabilities and implementation issues.
-Identifies forms missing CSRF protection, improper token exposure, and
-inconsistent implementation patterns.
+Automated scanner to identify CSRF vulnerabilities across all templates,
+detect token exposure, and validate CSRF implementation compliance.
 """
 
-import os
 import re
-import json
-from typing import List, Dict, Any, Optional, Tuple
-from dataclasses import dataclass, asdict
-from datetime import datetime
-from pathlib import Path
 import logging
+from typing import Dict, List, Set, Optional, Tuple
+from pathlib import Path
+from dataclasses import dataclass
+from bs4 import BeautifulSoup, Comment
+from jinja2 import Environment, meta
 
 logger = logging.getLogger(__name__)
 
 
 @dataclass
-class CSRFVulnerability:
-    """Represents a CSRF security vulnerability"""
-    type: str
+class TemplateSecurityIssue:
+    """Represents a security issue found in a template"""
+    template_path: str
+    issue_type: str
     severity: str  # 'LOW', 'MEDIUM', 'HIGH', 'CRITICAL'
     description: str
     line_number: Optional[int] = None
@@ -34,492 +33,507 @@ class CSRFVulnerability:
 
 
 @dataclass
-class TemplateSecurityAuditResult:
-    """Results of CSRF security audit for a single template"""
+class CSRFAuditResult:
+    """Results of CSRF template audit"""
     template_path: str
+    has_forms: bool
     csrf_protected: bool
-    csrf_method: str  # 'hidden_tag', 'csrf_token', 'meta_only', 'none'
-    vulnerabilities: List[CSRFVulnerability]
-    recommendations: List[str]
+    csrf_method: str  # 'hidden_tag', 'csrf_token', 'none', 'mixed'
+    issues: List[TemplateSecurityIssue]
     compliance_score: float
-    form_count: int
-    post_form_count: int
-    get_form_count: int
-    ajax_endpoints: List[str]
-    last_audited: datetime
-    
-    def to_dict(self) -> Dict[str, Any]:
-        """Convert to dictionary for JSON serialization"""
-        result = asdict(self)
-        result['last_audited'] = self.last_audited.isoformat()
-        result['vulnerabilities'] = [asdict(v) for v in self.vulnerabilities]
-        return result
+    recommendations: List[str]
 
 
 class CSRFTemplateScanner:
-    """Scanner for CSRF security vulnerabilities in templates"""
+    """Scanner for CSRF vulnerabilities in templates"""
     
-    def __init__(self, templates_dir: str = "templates"):
-        """Initialize the CSRF template scanner
-        
-        Args:
-            templates_dir: Directory containing templates to scan
-        """
-        self.templates_dir = Path(templates_dir)
-        self.scan_results: List[TemplateSecurityAuditResult] = []
-        
-        # Patterns for detecting CSRF implementations
+    def __init__(self):
+        """Initialize CSRF template scanner"""
         self.csrf_patterns = {
-            'hidden_tag': re.compile(r'{{\s*form\.hidden_tag\(\)\s*}}', re.IGNORECASE),
-            'csrf_token_direct': re.compile(r'{{\s*csrf_token\(\)\s*}}', re.IGNORECASE),
-            'csrf_meta': re.compile(r'<meta[^>]*name=["\']csrf-token["\'][^>]*>', re.IGNORECASE),
-            'form_post': re.compile(r'<form[^>]*method=["\']post["\'][^>]*>', re.IGNORECASE),
-            'form_get': re.compile(r'<form[^>]*method=["\']get["\'][^>]*>', re.IGNORECASE),
-            'form_any': re.compile(r'<form[^>]*>', re.IGNORECASE),
-            'ajax_csrf': re.compile(r'X-CSRFToken["\']?\s*:', re.IGNORECASE),
-            'csrf_in_js': re.compile(r'csrf[_-]?token', re.IGNORECASE)
+            'hidden_tag': re.compile(r'\{\{\s*\w*_?form\.hidden_tag\(\)\s*\}\}'),
+            'csrf_token': re.compile(r'\{\{\s*csrf_token\(\)\s*\}\}'),
+            'csrf_meta': re.compile(r'name=["\']csrf-token["\']'),
+            'csrf_header': re.compile(r'X-CSRFToken|X-CSRF-Token'),
         }
         
-        # Security violation patterns
-        self.vulnerability_patterns = {
-            'exposed_token': re.compile(r'{{\s*csrf_token\(\)\s*}}(?![^<]*<input[^>]*type=["\']hidden["\'])', re.IGNORECASE),
-            'missing_csrf_post': re.compile(r'<form[^>]*method=["\']post["\'][^>]*>(?!.*{{\s*(?:form\.hidden_tag\(\)|csrf_token\(\))\s*}})', re.IGNORECASE | re.DOTALL),
-            'unnecessary_csrf_get': re.compile(r'<form[^>]*method=["\']get["\'][^>]*>.*?{{\s*(?:form\.hidden_tag\(\)|csrf_token\(\))\s*}}', re.IGNORECASE | re.DOTALL),
-            'csrf_in_comment': re.compile(r'<!--.*?csrf.*?-->', re.IGNORECASE | re.DOTALL),
-            'csrf_in_script_visible': re.compile(r'<script[^>]*>.*?csrf_token\(\).*?</script>', re.IGNORECASE | re.DOTALL)
+        self.exposure_patterns = {
+            'comment': re.compile(r'<!--.*?csrf_token\(\).*?-->', re.DOTALL | re.IGNORECASE),
+            'script': re.compile(r'<script[^>]*>.*?csrf_token\(\).*?</script>', re.DOTALL | re.IGNORECASE),
+            'console': re.compile(r'console\.log.*?csrf_token\(\)', re.IGNORECASE),
+            'alert': re.compile(r'alert.*?csrf_token\(\)', re.IGNORECASE),
+            'visible_div': re.compile(r'<div[^>]*>.*?csrf_token\(\).*?</div>', re.DOTALL | re.IGNORECASE),
+            'visible_span': re.compile(r'<span[^>]*>.*?csrf_token\(\).*?</span>', re.DOTALL | re.IGNORECASE),
+        }
+        
+        self.form_patterns = {
+            'post_form': re.compile(r'<form[^>]*method\s*=\s*["\']post["\'][^>]*>', re.IGNORECASE),
+            'put_form': re.compile(r'<form[^>]*method\s*=\s*["\']put["\'][^>]*>', re.IGNORECASE),
+            'patch_form': re.compile(r'<form[^>]*method\s*=\s*["\']patch["\'][^>]*>', re.IGNORECASE),
+            'delete_form': re.compile(r'<form[^>]*method\s*=\s*["\']delete["\'][^>]*>', re.IGNORECASE),
+            'get_form': re.compile(r'<form[^>]*method\s*=\s*["\']get["\'][^>]*>', re.IGNORECASE),
+            'no_method_form': re.compile(r'<form(?![^>]*method\s*=)[^>]*>', re.IGNORECASE),
+        }
+        
+        self.ajax_patterns = {
+            'fetch_post': re.compile(r'fetch\s*\([^)]*method\s*:\s*["\'](?:POST|PUT|PATCH|DELETE)["\']', re.IGNORECASE),
+            'jquery_ajax': re.compile(r'\.ajax\s*\([^)]*type\s*:\s*["\'](?:POST|PUT|PATCH|DELETE)["\']', re.IGNORECASE),
+            'xhr_post': re.compile(r'XMLHttpRequest.*?open\s*\([^)]*["\'](?:POST|PUT|PATCH|DELETE)["\']', re.IGNORECASE),
         }
     
-    def scan_all_templates(self) -> List[TemplateSecurityAuditResult]:
-        """Scan all templates for CSRF security issues
-        
-        Returns:
-            List of audit results for all templates
-        """
-        logger.info(f"Starting CSRF security scan of templates in {self.templates_dir}")
-        
-        self.scan_results = []
-        template_files = self._find_template_files()
-        
-        for template_file in template_files:
-            try:
-                result = self.scan_template(template_file)
-                self.scan_results.append(result)
-                logger.debug(f"Scanned {template_file}: {result.compliance_score:.2f} compliance score")
-            except Exception as e:
-                logger.error(f"Error scanning template {template_file}: {e}")
-                # Create error result
-                error_result = TemplateSecurityAuditResult(
-                    template_path=str(template_file),
-                    csrf_protected=False,
-                    csrf_method='error',
-                    vulnerabilities=[CSRFVulnerability(
-                        type='scan_error',
-                        severity='HIGH',
-                        description=f"Failed to scan template: {e}"
-                    )],
-                    recommendations=['Fix template syntax errors and rescan'],
-                    compliance_score=0.0,
-                    form_count=0,
-                    post_form_count=0,
-                    get_form_count=0,
-                    ajax_endpoints=[],
-                    last_audited=datetime.now()
-                )
-                self.scan_results.append(error_result)
-        
-        logger.info(f"Completed CSRF security scan: {len(self.scan_results)} templates scanned")
-        return self.scan_results
-    
-    def scan_template(self, template_path: Path) -> TemplateSecurityAuditResult:
-        """Scan a single template for CSRF security issues
+    def scan_template(self, template_path: str) -> CSRFAuditResult:
+        """Scan a single template for CSRF vulnerabilities
         
         Args:
-            template_path: Path to the template file
-            
-        Returns:
-            Audit result for the template
-        """
-        with open(template_path, 'r', encoding='utf-8') as f:
-            content = f.read()
-        
-        # Analyze template content
-        csrf_method = self._detect_csrf_method(content)
-        vulnerabilities = self._detect_vulnerabilities(content, template_path)
-        form_counts = self._count_forms(content)
-        ajax_endpoints = self._detect_ajax_endpoints(content)
-        
-        # Determine if template is CSRF protected
-        csrf_protected = csrf_method in ['hidden_tag', 'csrf_token_direct'] or len(form_counts['post']) == 0
-        
-        # Generate recommendations
-        recommendations = self._generate_recommendations(csrf_method, vulnerabilities, form_counts)
-        
-        # Calculate compliance score
-        compliance_score = self._calculate_compliance_score(csrf_method, vulnerabilities, form_counts)
-        
-        return TemplateSecurityAuditResult(
-            template_path=str(template_path.relative_to(self.templates_dir.parent)),
-            csrf_protected=csrf_protected,
-            csrf_method=csrf_method,
-            vulnerabilities=vulnerabilities,
-            recommendations=recommendations,
-            compliance_score=compliance_score,
-            form_count=len(form_counts['all']),
-            post_form_count=len(form_counts['post']),
-            get_form_count=len(form_counts['get']),
-            ajax_endpoints=ajax_endpoints,
-            last_audited=datetime.now()
-        )
-    
-    def _find_template_files(self) -> List[Path]:
-        """Find all template files to scan
-        
-        Returns:
-            List of template file paths
-        """
-        template_files = []
-        
-        for root, dirs, files in os.walk(self.templates_dir):
-            for file in files:
-                if file.endswith(('.html', '.htm', '.jinja', '.jinja2')):
-                    template_files.append(Path(root) / file)
-        
-        return sorted(template_files)
-    
-    def _detect_csrf_method(self, content: str) -> str:
-        """Detect the CSRF protection method used in template
-        
-        Args:
-            content: Template content
-            
-        Returns:
-            CSRF method used ('hidden_tag', 'csrf_token_direct', 'meta_only', 'none')
-        """
-        if self.csrf_patterns['hidden_tag'].search(content):
-            return 'hidden_tag'
-        elif self.csrf_patterns['csrf_token_direct'].search(content):
-            return 'csrf_token_direct'
-        elif self.csrf_patterns['csrf_meta'].search(content):
-            return 'meta_only'
-        else:
-            return 'none'
-    
-    def _detect_vulnerabilities(self, content: str, template_path: Path) -> List[CSRFVulnerability]:
-        """Detect CSRF vulnerabilities in template content
-        
-        Args:
-            content: Template content
             template_path: Path to template file
             
         Returns:
-            List of detected vulnerabilities
+            CSRFAuditResult with scan results
         """
-        vulnerabilities = []
-        lines = content.split('\n')
+        try:
+            with open(template_path, 'r', encoding='utf-8') as f:
+                content = f.read()
+            
+            # Initialize result
+            result = CSRFAuditResult(
+                template_path=template_path,
+                has_forms=False,
+                csrf_protected=False,
+                csrf_method='none',
+                issues=[],
+                compliance_score=0.0,
+                recommendations=[]
+            )
+            
+            # Analyze template content
+            self._analyze_forms(content, result)
+            self._analyze_csrf_protection(content, result)
+            self._analyze_token_exposure(content, result)
+            self._analyze_ajax_requests(content, result)
+            
+            # Calculate compliance score
+            result.compliance_score = self.calculate_compliance_score(result)
+            
+            # Generate recommendations
+            result.recommendations = self.generate_recommendations(result)
+            
+            return result
+            
+        except Exception as e:
+            logger.error(f"Failed to scan template {template_path}: {e}")
+            return CSRFAuditResult(
+                template_path=template_path,
+                has_forms=False,
+                csrf_protected=False,
+                csrf_method='none',
+                issues=[TemplateSecurityIssue(
+                    template_path=template_path,
+                    issue_type='scan_error',
+                    severity='HIGH',
+                    description=f'Failed to scan template: {e}'
+                )],
+                compliance_score=0.0,
+                recommendations=['Fix template syntax errors']
+            )
+    
+    def _analyze_forms(self, content: str, result: CSRFAuditResult):
+        """Analyze forms in template content"""
+        # Check for various form types
+        state_changing_forms = []
+        get_forms = []
         
-        # Check for exposed CSRF tokens
-        for match in self.vulnerability_patterns['exposed_token'].finditer(content):
-            line_num = content[:match.start()].count('\n') + 1
-            vulnerabilities.append(CSRFVulnerability(
-                type='exposed_csrf_token',
-                severity='HIGH',
-                description='CSRF token is visible in HTML output instead of being in a hidden field',
-                line_number=line_num,
-                code_snippet=lines[line_num - 1].strip() if line_num <= len(lines) else None,
-                recommendation='Use {{ form.hidden_tag() }} instead of {{ csrf_token() }}'
+        for pattern_name, pattern in self.form_patterns.items():
+            matches = pattern.finditer(content)
+            for match in matches:
+                result.has_forms = True
+                
+                if pattern_name in ['post_form', 'put_form', 'patch_form', 'delete_form']:
+                    state_changing_forms.append((match, pattern_name))
+                elif pattern_name == 'get_form':
+                    get_forms.append((match, pattern_name))
+                elif pattern_name == 'no_method_form':
+                    # Forms without method default to GET
+                    get_forms.append((match, 'default_get_form'))
+        
+        # Store form information for later analysis
+        result._state_changing_forms = state_changing_forms
+        result._get_forms = get_forms
+    
+    def _analyze_csrf_protection(self, content: str, result: CSRFAuditResult):
+        """Analyze CSRF protection in template"""
+        if not result.has_forms:
+            return
+        
+        # Check for CSRF protection methods globally
+        has_hidden_tag = bool(self.csrf_patterns['hidden_tag'].search(content))
+        has_csrf_token = bool(self.csrf_patterns['csrf_token'].search(content))
+        has_csrf_meta = bool(self.csrf_patterns['csrf_meta'].search(content))
+        
+        # Determine overall CSRF method
+        if has_hidden_tag and has_csrf_token:
+            result.csrf_method = 'mixed'
+            result.csrf_protected = True
+            result.issues.append(TemplateSecurityIssue(
+                template_path=result.template_path,
+                issue_type='inconsistent_csrf',
+                severity='MEDIUM',
+                description='Template uses both form.hidden_tag() and csrf_token() - inconsistent implementation',
+                recommendation='Use form.hidden_tag() consistently for all forms'
             ))
-        
-        # Check for POST forms missing CSRF protection
-        post_forms = self.csrf_patterns['form_post'].findall(content)
-        csrf_tokens = len(self.csrf_patterns['hidden_tag'].findall(content)) + len(self.csrf_patterns['csrf_token_direct'].findall(content))
-        
-        if len(post_forms) > csrf_tokens:
-            vulnerabilities.append(CSRFVulnerability(
-                type='missing_csrf_protection',
-                severity='CRITICAL',
-                description=f'Found {len(post_forms)} POST forms but only {csrf_tokens} CSRF tokens',
-                recommendation='Add {{ form.hidden_tag() }} to all POST forms'
-            ))
-        
-        # Check for unnecessary CSRF tokens in GET forms
-        for match in self.vulnerability_patterns['unnecessary_csrf_get'].finditer(content):
-            line_num = content[:match.start()].count('\n') + 1
-            vulnerabilities.append(CSRFVulnerability(
-                type='unnecessary_csrf_token',
+        elif has_hidden_tag:
+            result.csrf_method = 'hidden_tag'
+            result.csrf_protected = True
+        elif has_csrf_token:
+            result.csrf_method = 'csrf_token'
+            result.csrf_protected = True
+            result.issues.append(TemplateSecurityIssue(
+                template_path=result.template_path,
+                issue_type='csrf_method',
                 severity='LOW',
-                description='CSRF token found in GET form (unnecessary)',
-                line_number=line_num,
-                recommendation='Remove CSRF token from GET forms as they should be idempotent'
+                description='Template uses csrf_token() instead of recommended form.hidden_tag()',
+                recommendation='Replace csrf_token() with form.hidden_tag() for better security'
             ))
+        else:
+            result.csrf_method = 'none'
+            result.csrf_protected = False
         
-        # Check for CSRF tokens in comments
-        for match in self.vulnerability_patterns['csrf_in_comment'].finditer(content):
-            line_num = content[:match.start()].count('\n') + 1
-            vulnerabilities.append(CSRFVulnerability(
-                type='csrf_in_comment',
-                severity='MEDIUM',
-                description='CSRF token or reference found in HTML comment',
-                line_number=line_num,
-                recommendation='Remove CSRF references from HTML comments'
-            ))
+        # Analyze each form individually for CSRF protection
+        if hasattr(result, '_state_changing_forms'):
+            for form_match, form_type in result._state_changing_forms:
+                form_content = self._extract_form_content(content, form_match)
+                form_has_csrf = self._form_has_csrf_protection(form_content)
+                
+                if not form_has_csrf:
+                    result.issues.append(TemplateSecurityIssue(
+                        template_path=result.template_path,
+                        issue_type='missing_csrf',
+                        severity='CRITICAL',
+                        description=f'{form_type.replace("_", " ").title()} form missing CSRF protection',
+                        line_number=self._get_line_number(content, form_match.start()),
+                        code_snippet=form_match.group(0),
+                        recommendation='Add {{ form.hidden_tag() }} inside the form'
+                    ))
         
-        # Check for visible CSRF tokens in JavaScript
-        for match in self.vulnerability_patterns['csrf_in_script_visible'].finditer(content):
-            line_num = content[:match.start()].count('\n') + 1
-            vulnerabilities.append(CSRFVulnerability(
-                type='csrf_in_visible_script',
-                severity='MEDIUM',
-                description='CSRF token directly embedded in visible JavaScript',
-                line_number=line_num,
-                recommendation='Use meta tag and document.querySelector for CSRF token access'
-            ))
-        
-        return vulnerabilities
+        # Check GET forms for unnecessary CSRF tokens
+        if hasattr(result, '_get_forms'):
+            for form_match, form_type in result._get_forms:
+                form_content = self._extract_form_content(content, form_match)
+                form_has_csrf = self._form_has_csrf_protection(form_content)
+                
+                if form_has_csrf:
+                    result.issues.append(TemplateSecurityIssue(
+                        template_path=result.template_path,
+                        issue_type='unnecessary_csrf',
+                        severity='LOW',
+                        description='GET form has unnecessary CSRF token (GET requests should be idempotent)',
+                        line_number=self._get_line_number(content, form_match.start()),
+                        code_snippet=form_match.group(0),
+                        recommendation='Remove CSRF token from GET forms or change to POST if state-changing'
+                    ))
     
-    def _count_forms(self, content: str) -> Dict[str, List[str]]:
-        """Count different types of forms in template
+    def _analyze_token_exposure(self, content: str, result: CSRFAuditResult):
+        """Analyze potential CSRF token exposure"""
+        for exposure_type, pattern in self.exposure_patterns.items():
+            matches = pattern.finditer(content)
+            for match in matches:
+                # Skip if this is the proper CSRF meta tag (which is secure)
+                if self._is_secure_csrf_meta_tag(match.group(0)):
+                    continue
+                
+                severity = 'HIGH' if exposure_type in ['comment', 'script', 'console'] else 'MEDIUM'
+                
+                result.issues.append(TemplateSecurityIssue(
+                    template_path=result.template_path,
+                    issue_type='token_exposure',
+                    severity=severity,
+                    description=f'CSRF token potentially exposed in {exposure_type.replace("_", " ")}',
+                    line_number=self._get_line_number(content, match.start()),
+                    code_snippet=match.group(0)[:100] + '...' if len(match.group(0)) > 100 else match.group(0),
+                    recommendation='Use meta tag for JavaScript access: <meta name="csrf-token" content="{{ csrf_token() }}">'
+                ))
+    
+    def _analyze_ajax_requests(self, content: str, result: CSRFAuditResult):
+        """Analyze AJAX requests for CSRF protection"""
+        ajax_requests = []
+        
+        for ajax_type, pattern in self.ajax_patterns.items():
+            matches = pattern.finditer(content)
+            for match in matches:
+                ajax_requests.append((match, ajax_type))
+        
+        # Check if AJAX requests have CSRF headers
+        for ajax_match, ajax_type in ajax_requests:
+            # Check context around AJAX request for CSRF header or secure patterns
+            context_start = max(0, ajax_match.start() - 500)
+            context_end = min(len(content), ajax_match.end() + 500)
+            context = content[context_start:context_end]
+            
+            # Check for CSRF protection patterns
+            has_csrf_header = bool(self.csrf_patterns['csrf_header'].search(context))
+            has_secure_fetch = bool(re.search(r'csrfHandler\.secureFetch', context, re.IGNORECASE))
+            has_csrf_token_meta = bool(re.search(r'csrf-token.*getAttribute', context, re.IGNORECASE))
+            
+            # Consider request protected if it has any CSRF protection
+            is_protected = has_csrf_header or has_secure_fetch or has_csrf_token_meta
+            
+            if not is_protected:
+                result.issues.append(TemplateSecurityIssue(
+                    template_path=result.template_path,
+                    issue_type='ajax_csrf_missing',
+                    severity='HIGH',
+                    description=f'AJAX {ajax_type.replace("_", " ")} request missing CSRF header',
+                    line_number=self._get_line_number(content, ajax_match.start()),
+                    code_snippet=ajax_match.group(0),
+                    recommendation='Add X-CSRFToken header with token from meta tag or use window.csrfHandler.secureFetch()'
+                ))
+    
+    def _get_line_number(self, content: str, position: int) -> int:
+        """Get line number for a position in content"""
+        return content[:position].count('\n') + 1
+    
+    def _extract_form_content(self, content: str, form_match) -> str:
+        """Extract the content of a form element
         
         Args:
-            content: Template content
+            content: Full template content
+            form_match: Regex match object for form opening tag
             
         Returns:
-            Dictionary with form counts by type
+            Content between form opening and closing tags
         """
-        return {
-            'all': self.csrf_patterns['form_any'].findall(content),
-            'post': self.csrf_patterns['form_post'].findall(content),
-            'get': self.csrf_patterns['form_get'].findall(content)
-        }
+        form_start = form_match.end()
+        
+        # Find the matching closing </form> tag
+        # This is a simplified approach - in practice, you might want more robust HTML parsing
+        form_depth = 1
+        pos = form_start
+        
+        while pos < len(content) and form_depth > 0:
+            # Look for form tags
+            next_open = content.find('<form', pos)
+            next_close = content.find('</form>', pos)
+            
+            if next_close == -1:
+                # No closing tag found, return rest of content
+                return content[form_start:]
+            
+            if next_open != -1 and next_open < next_close:
+                # Found nested form opening tag
+                form_depth += 1
+                pos = next_open + 5
+            else:
+                # Found closing tag
+                form_depth -= 1
+                if form_depth == 0:
+                    return content[form_start:next_close]
+                pos = next_close + 7
+        
+        # Fallback: return content from form start to end
+        return content[form_start:]
     
-    def _detect_ajax_endpoints(self, content: str) -> List[str]:
-        """Detect AJAX endpoints that might need CSRF protection
+    def _form_has_csrf_protection(self, form_content: str) -> bool:
+        """Check if a form has CSRF protection
         
         Args:
-            content: Template content
+            form_content: Content within form tags
             
         Returns:
-            List of detected AJAX endpoints
+            True if form has CSRF protection, False otherwise
         """
-        ajax_endpoints = []
+        # Check for various CSRF protection patterns within the form
+        has_hidden_tag = bool(self.csrf_patterns['hidden_tag'].search(form_content))
+        has_csrf_token = bool(self.csrf_patterns['csrf_token'].search(form_content))
         
-        # Look for fetch() calls
-        fetch_pattern = re.compile(r'fetch\(["\']([^"\']+)["\']', re.IGNORECASE)
-        for match in fetch_pattern.finditer(content):
-            endpoint = match.group(1)
-            if endpoint.startswith('/'):
-                ajax_endpoints.append(endpoint)
+        # Also check for manual CSRF input fields
+        csrf_input_pattern = re.compile(r'<input[^>]*name=["\']csrf_token["\'][^>]*>', re.IGNORECASE)
+        has_csrf_input = bool(csrf_input_pattern.search(form_content))
         
-        # Look for $.post, $.ajax calls
-        jquery_patterns = [
-            re.compile(r'\$\.post\(["\']([^"\']+)["\']', re.IGNORECASE),
-            re.compile(r'\$\.ajax\([^{]*url:\s*["\']([^"\']+)["\']', re.IGNORECASE)
-        ]
-        
-        for pattern in jquery_patterns:
-            for match in pattern.finditer(content):
-                endpoint = match.group(1)
-                if endpoint.startswith('/'):
-                    ajax_endpoints.append(endpoint)
-        
-        return list(set(ajax_endpoints))  # Remove duplicates
+        return has_hidden_tag or has_csrf_token or has_csrf_input
     
-    def _generate_recommendations(self, csrf_method: str, vulnerabilities: List[CSRFVulnerability], 
-                                form_counts: Dict[str, List[str]]) -> List[str]:
-        """Generate security recommendations for the template
+    def _is_secure_csrf_meta_tag(self, content: str) -> bool:
+        """Check if content is a secure CSRF meta tag
         
         Args:
-            csrf_method: Detected CSRF method
-            vulnerabilities: List of vulnerabilities
-            form_counts: Form counts by type
+            content: Content to check
+            
+        Returns:
+            True if this is a secure CSRF meta tag, False otherwise
+        """
+        # Check if this is the standard CSRF meta tag pattern
+        meta_tag_pattern = re.compile(
+            r'<meta\s+name=["\']csrf-token["\']\s+content=["\'].*?csrf_token\(\).*?["\']',
+            re.IGNORECASE | re.DOTALL
+        )
+        return bool(meta_tag_pattern.search(content))
+    
+    def calculate_compliance_score(self, result: CSRFAuditResult) -> float:
+        """Calculate CSRF compliance score
+        
+        Args:
+            result: CSRF audit result
+            
+        Returns:
+            Compliance score between 0.0 and 1.0
+        """
+        if not result.has_forms:
+            return 1.0  # No forms = no CSRF issues
+        
+        base_score = 1.0
+        
+        # Deduct points for issues
+        for issue in result.issues:
+            if issue.severity == 'CRITICAL':
+                base_score -= 0.4
+            elif issue.severity == 'HIGH':
+                base_score -= 0.2
+            elif issue.severity == 'MEDIUM':
+                base_score -= 0.1
+            elif issue.severity == 'LOW':
+                base_score -= 0.05
+        
+        # Bonus for good practices
+        if result.csrf_protected and result.csrf_method == 'hidden_tag':
+            base_score += 0.1
+        
+        return max(0.0, min(1.0, base_score))
+    
+    def generate_recommendations(self, result: CSRFAuditResult) -> List[str]:
+        """Generate security recommendations
+        
+        Args:
+            result: CSRF audit result
             
         Returns:
             List of recommendations
         """
         recommendations = []
         
-        # Method-specific recommendations
-        if csrf_method == 'none' and len(form_counts['post']) > 0:
-            recommendations.append('Add CSRF protection to POST forms using {{ form.hidden_tag() }}')
-        elif csrf_method == 'csrf_token_direct':
-            recommendations.append('Replace {{ csrf_token() }} with {{ form.hidden_tag() }} to hide tokens')
-        elif csrf_method == 'meta_only' and len(form_counts['post']) > 0:
-            recommendations.append('Add form-based CSRF protection in addition to meta tag')
+        if not result.has_forms:
+            return recommendations
         
-        # Vulnerability-specific recommendations
-        for vuln in vulnerabilities:
-            if vuln.recommendation and vuln.recommendation not in recommendations:
-                recommendations.append(vuln.recommendation)
+        # General recommendations based on issues
+        issue_types = {issue.issue_type for issue in result.issues}
         
-        # General security recommendations
-        if len(form_counts['post']) > 0:
-            recommendations.append('Ensure all POST forms validate CSRF tokens on the server side')
+        if 'missing_csrf' in issue_types:
+            recommendations.append('Add CSRF protection to all state-changing forms using {{ form.hidden_tag() }}')
         
-        if len(form_counts['get']) > 0:
-            recommendations.append('Verify GET forms are idempotent and do not change server state')
+        if 'csrf_method' in issue_types:
+            recommendations.append('Replace csrf_token() with form.hidden_tag() for consistent implementation')
+        
+        if 'inconsistent_csrf' in issue_types:
+            recommendations.append('Use form.hidden_tag() consistently across all forms')
+        
+        if 'token_exposure' in issue_types:
+            recommendations.append('Avoid exposing CSRF tokens in HTML comments or JavaScript console logs')
+            recommendations.append('Use meta tag for JavaScript access: <meta name="csrf-token" content="{{ csrf_token() }}">')
+        
+        if 'ajax_csrf_missing' in issue_types:
+            recommendations.append('Add X-CSRFToken header to all AJAX requests that modify state')
+            recommendations.append('Retrieve CSRF token from meta tag for AJAX requests')
+        
+        if 'unnecessary_csrf' in issue_types:
+            recommendations.append('Remove CSRF tokens from GET forms (GET requests should be idempotent)')
+        
+        # Best practices
+        if result.csrf_protected and not recommendations:
+            recommendations.append('CSRF implementation looks good - maintain current security practices')
         
         return recommendations
     
-    def _calculate_compliance_score(self, csrf_method: str, vulnerabilities: List[CSRFVulnerability], 
-                                  form_counts: Dict[str, List[str]]) -> float:
-        """Calculate security compliance score for the template
+    def scan_all_templates(self, templates_dir: str) -> List[CSRFAuditResult]:
+        """Scan all templates in a directory
         
         Args:
-            csrf_method: Detected CSRF method
-            vulnerabilities: List of vulnerabilities
-            form_counts: Form counts by type
+            templates_dir: Path to templates directory
             
         Returns:
-            Compliance score between 0.0 and 1.0
+            List of CSRF audit results
         """
-        score = 1.0
+        results = []
+        templates_path = Path(templates_dir)
         
-        # Deduct points for vulnerabilities
-        for vuln in vulnerabilities:
-            if vuln.severity == 'CRITICAL':
-                score -= 0.4
-            elif vuln.severity == 'HIGH':
-                score -= 0.2
-            elif vuln.severity == 'MEDIUM':
-                score -= 0.1
-            elif vuln.severity == 'LOW':
-                score -= 0.05
+        if not templates_path.exists():
+            logger.error(f"Templates directory not found: {templates_dir}")
+            return results
         
-        # Deduct points for poor CSRF method
-        if csrf_method == 'none' and len(form_counts['post']) > 0:
-            score -= 0.5
-        elif csrf_method == 'csrf_token_direct':
-            score -= 0.2
-        elif csrf_method == 'meta_only' and len(form_counts['post']) > 0:
-            score -= 0.3
+        # Scan all HTML templates
+        for template_path in templates_path.rglob('*.html'):
+            if template_path.is_file():
+                try:
+                    result = self.scan_template(str(template_path))
+                    results.append(result)
+                except Exception as e:
+                    logger.error(f"Failed to scan template {template_path}: {e}")
         
-        # Ensure score is between 0 and 1
-        return max(0.0, min(1.0, score))
+        return results
     
-    def generate_summary_report(self) -> Dict[str, Any]:
-        """Generate a summary report of all scan results
-        
-        Returns:
-            Summary report dictionary
-        """
-        if not self.scan_results:
-            return {'error': 'No scan results available'}
-        
-        total_templates = len(self.scan_results)
-        protected_templates = sum(1 for r in self.scan_results if r.csrf_protected)
-        
-        # Vulnerability statistics
-        all_vulnerabilities = []
-        for result in self.scan_results:
-            all_vulnerabilities.extend(result.vulnerabilities)
-        
-        vuln_by_severity = {}
-        vuln_by_type = {}
-        
-        for vuln in all_vulnerabilities:
-            vuln_by_severity[vuln.severity] = vuln_by_severity.get(vuln.severity, 0) + 1
-            vuln_by_type[vuln.type] = vuln_by_type.get(vuln.type, 0) + 1
-        
-        # Compliance statistics
-        avg_compliance = sum(r.compliance_score for r in self.scan_results) / total_templates
-        high_compliance = sum(1 for r in self.scan_results if r.compliance_score >= 0.8)
-        
-        # Form statistics
-        total_forms = sum(r.form_count for r in self.scan_results)
-        total_post_forms = sum(r.post_form_count for r in self.scan_results)
-        
-        return {
-            'scan_summary': {
-                'total_templates': total_templates,
-                'protected_templates': protected_templates,
-                'protection_rate': protected_templates / total_templates if total_templates > 0 else 0,
-                'average_compliance_score': avg_compliance,
-                'high_compliance_templates': high_compliance,
-                'scan_timestamp': datetime.now().isoformat()
-            },
-            'vulnerability_summary': {
-                'total_vulnerabilities': len(all_vulnerabilities),
-                'by_severity': vuln_by_severity,
-                'by_type': vuln_by_type
-            },
-            'form_summary': {
-                'total_forms': total_forms,
-                'post_forms': total_post_forms,
-                'get_forms': total_forms - total_post_forms
-            },
-            'csrf_methods': {
-                method: sum(1 for r in self.scan_results if r.csrf_method == method)
-                for method in ['hidden_tag', 'csrf_token_direct', 'meta_only', 'none', 'error']
-            },
-            'top_vulnerabilities': sorted(
-                [(vuln_type, count) for vuln_type, count in vuln_by_type.items()],
-                key=lambda x: x[1],
-                reverse=True
-            )[:5]
-        }
-    
-    def save_results(self, output_file: str) -> None:
-        """Save scan results to JSON file
+    def generate_compliance_report(self, results: List[CSRFAuditResult]) -> Dict:
+        """Generate comprehensive compliance report
         
         Args:
-            output_file: Path to output file
+            results: List of CSRF audit results
+            
+        Returns:
+            Compliance report dictionary
         """
-        results_data = {
-            'scan_metadata': {
-                'scan_timestamp': datetime.now().isoformat(),
-                'templates_directory': str(self.templates_dir),
-                'total_templates_scanned': len(self.scan_results)
+        if not results:
+            return {'error': 'No templates scanned'}
+        
+        # Calculate overall statistics
+        total_templates = len(results)
+        templates_with_forms = len([r for r in results if r.has_forms])
+        protected_templates = len([r for r in results if r.csrf_protected])
+        
+        # Issue statistics
+        all_issues = []
+        for result in results:
+            all_issues.extend(result.issues)
+        
+        issue_counts = {}
+        severity_counts = {'CRITICAL': 0, 'HIGH': 0, 'MEDIUM': 0, 'LOW': 0}
+        
+        for issue in all_issues:
+            issue_counts[issue.issue_type] = issue_counts.get(issue.issue_type, 0) + 1
+            severity_counts[issue.severity] += 1
+        
+        # Compliance scores
+        scores = [r.compliance_score for r in results if r.has_forms]
+        avg_score = sum(scores) / len(scores) if scores else 1.0
+        
+        # Templates by compliance level
+        excellent = len([r for r in results if r.compliance_score >= 0.9])
+        good = len([r for r in results if 0.7 <= r.compliance_score < 0.9])
+        needs_improvement = len([r for r in results if 0.5 <= r.compliance_score < 0.7])
+        poor = len([r for r in results if r.compliance_score < 0.5])
+        
+        return {
+            'summary': {
+                'total_templates': total_templates,
+                'templates_with_forms': templates_with_forms,
+                'csrf_protected_templates': protected_templates,
+                'protection_rate': protected_templates / templates_with_forms if templates_with_forms > 0 else 1.0,
+                'average_compliance_score': avg_score
             },
-            'summary': self.generate_summary_report(),
-            'detailed_results': [result.to_dict() for result in self.scan_results]
+            'issues': {
+                'total_issues': len(all_issues),
+                'by_severity': severity_counts,
+                'by_type': issue_counts
+            },
+            'compliance_levels': {
+                'excellent': excellent,
+                'good': good,
+                'needs_improvement': needs_improvement,
+                'poor': poor
+            },
+            'templates': [
+                {
+                    'path': r.template_path,
+                    'has_forms': r.has_forms,
+                    'csrf_protected': r.csrf_protected,
+                    'csrf_method': r.csrf_method,
+                    'compliance_score': r.compliance_score,
+                    'issue_count': len(r.issues),
+                    'critical_issues': len([i for i in r.issues if i.severity == 'CRITICAL'])
+                }
+                for r in results
+            ]
         }
-        
-        os.makedirs(os.path.dirname(output_file), exist_ok=True)
-        
-        with open(output_file, 'w', encoding='utf-8') as f:
-            json.dump(results_data, f, indent=2, ensure_ascii=False)
-        
-        logger.info(f"CSRF security scan results saved to {output_file}")
-
-
-def main():
-    """Main function for running CSRF template scanner"""
-    import argparse
-    
-    parser = argparse.ArgumentParser(description='CSRF Template Security Scanner')
-    parser.add_argument('--templates-dir', default='templates', 
-                       help='Directory containing templates to scan')
-    parser.add_argument('--output', default='security/reports/csrf_template_audit.json',
-                       help='Output file for scan results')
-    parser.add_argument('--verbose', '-v', action='store_true',
-                       help='Enable verbose logging')
-    
-    args = parser.parse_args()
-    
-    # Configure logging
-    log_level = logging.DEBUG if args.verbose else logging.INFO
-    logging.basicConfig(level=log_level, format='%(asctime)s - %(levelname)s - %(message)s')
-    
-    # Run the scan
-    scanner = CSRFTemplateScanner(args.templates_dir)
-    results = scanner.scan_all_templates()
-    
-    # Save results
-    scanner.save_results(args.output)
-    
-    # Print summary
-    summary = scanner.generate_summary_report()
-    print(f"\nCSRF Template Security Scan Complete!")
-    print(f"Templates scanned: {summary['scan_summary']['total_templates']}")
-    print(f"Protected templates: {summary['scan_summary']['protected_templates']}")
-    print(f"Protection rate: {summary['scan_summary']['protection_rate']:.1%}")
-    print(f"Average compliance score: {summary['scan_summary']['average_compliance_score']:.2f}")
-    print(f"Total vulnerabilities: {summary['vulnerability_summary']['total_vulnerabilities']}")
-    
-    if summary['vulnerability_summary']['total_vulnerabilities'] > 0:
-        print("\nTop vulnerabilities:")
-        for vuln_type, count in summary['top_vulnerabilities']:
-            print(f"  {vuln_type}: {count}")
-
-
-if __name__ == '__main__':
-    main()

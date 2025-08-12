@@ -40,6 +40,9 @@ class SessionManager:
         
         # Initialize monitoring (lazy loading to avoid circular imports)
         self._monitor = None
+        
+        # Initialize security hardening (lazy loading to avoid circular imports)
+        self._security_hardening = None
     
     @contextmanager
     def get_db_session(self):
@@ -182,6 +185,19 @@ class SessionManager:
             db_session.add(user_session)
             db_session.commit()
             
+            # Create session fingerprint and audit event
+            if self.security_hardening:
+                self.security_hardening.create_session_fingerprint()
+                self.security_hardening.create_security_audit_event(
+                    session_id, user_id, 'session_created',
+                    details={'platform_id': platform_connection_id}
+                )
+                
+                # Track session creation activity
+                self.security_hardening.detect_suspicious_session_activity(
+                    session_id, user_id, 'session_create'
+                )
+            
             logger.info(f"Created session {sanitize_for_log(session_id)} for user {sanitize_for_log(str(user_id))} with platform {sanitize_for_log(str(platform_connection_id))}")
             
             return session_id
@@ -316,6 +332,15 @@ class SessionManager:
                 logger.warning(f"Platform {sanitize_for_log(str(platform_connection_id))} not found or not accessible to user {sanitize_for_log(str(user_session.user_id))}")
                 return False
             
+            # Check for suspicious platform switching activity
+            if self.security_hardening:
+                is_suspicious = self.security_hardening.detect_suspicious_session_activity(
+                    session_id, user_session.user_id, 'platform_switch',
+                    {'old_platform_id': user_session.active_platform_id, 'new_platform_id': platform_connection_id}
+                )
+                if is_suspicious:
+                    logger.warning(f"Suspicious platform switching detected for session {sanitize_for_log(session_id)}")
+            
             # Update session
             user_session.active_platform_id = platform_connection_id
             user_session.updated_at = datetime.now(timezone.utc)
@@ -324,6 +349,13 @@ class SessionManager:
             platform.last_used = datetime.now(timezone.utc)
             
             db_session.commit()
+            
+            # Create security audit event
+            if self.security_hardening:
+                self.security_hardening.create_security_audit_event(
+                    session_id, user_session.user_id, 'platform_switch',
+                    details={'platform_id': platform_connection_id, 'platform_name': platform.name}
+                )
             
             logger.info(f"Updated session {sanitize_for_log(session_id)} to use platform {sanitize_for_log(str(platform_connection_id))}")
             return True
@@ -517,6 +549,13 @@ class SessionManager:
             if not self._validate_session_security(session_id, user_id):
                 return False
             
+            # Enhanced security validation with hardening features
+            if self.security_hardening:
+                is_secure, issues = self.security_hardening.validate_session_security(session_id, user_id)
+                if not is_secure:
+                    logger.warning(f"Session security validation failed for {sanitize_for_log(session_id)}: {issues}")
+                    return False
+            
             return True
         except Exception as e:
             logger.error(f"Error validating session: {e}")
@@ -603,8 +642,20 @@ class SessionManager:
             True if successful, False otherwise
         """
         try:
+            # Get session context before cleanup for audit
+            context = self.get_session_context(session_id)
+            user_id = context['user_id'] if context else None
+            
             success = self._cleanup_session(session_id)
             if success:
+                # Create security audit event
+                if self.security_hardening and user_id:
+                    self.security_hardening.create_security_audit_event(
+                        session_id, user_id, 'session_invalidated',
+                        severity="warning",
+                        details={'reason': reason}
+                    )
+                
                 logger.info(f"Session {sanitize_for_log(session_id)} invalidated - reason: {sanitize_for_log(reason)}")
             return success
         except Exception as e:
@@ -893,6 +944,18 @@ class SessionManager:
                 logger.warning("Session monitoring not available")
                 self._monitor = None
         return self._monitor
+    
+    @property
+    def security_hardening(self):
+        """Get session security hardening instance (lazy loading)"""
+        if self._security_hardening is None:
+            try:
+                from security.features.session_security import initialize_session_security
+                self._security_hardening = initialize_session_security(self)
+            except ImportError:
+                logger.warning("Session security hardening not available")
+                self._security_hardening = None
+        return self._security_hardening
     
     def _log_session_operation(self, operation: str, session_id: str, user_id: int, 
                               success: bool = True, details: Optional[Dict[str, Any]] = None):
