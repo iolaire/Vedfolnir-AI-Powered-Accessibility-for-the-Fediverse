@@ -1,0 +1,102 @@
+<!-- Copyright (C) 2025 iolaire mcfadden. -->
+<!-- This program is free software: you can redistribute it and/or modify it under the terms of the GNU Affero General Public License as published by the Free Software Foundation, either version 3 of the License, or (at your option) any later version. -->
+<!-- THE SOFTWARE IS PROVIDED "AS IS", WITHOUT WARRANTY OF ANY KIND, EXPRESS OR IMPLIED, INCLUDING BUT NOT LIMITED TO THE WARRANTIES OF MERCHANTABILITY, FITNESS FOR A PARTICULAR PURPOSE AND NONINFRINGEMENT. IN NO EVENT SHALL THE AUTHORS OR COPYRIGHT HOLDERS BE LIABLE FOR ANY CLAIM, DAMAGES OR OTHER LIABILITY, WHETHER IN AN ACTION OF CONTRACT, TORT OR OTHERWISE, ARISING FROM, OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE SOFTWARE. -->
+
+{% extends "base.html" %}
+
+{% block title %}Session Issue - Vedfolnir{% endblock %}
+
+{% block content %}
+<div class="container mt-5">
+    <div class="row justify-content-center">
+        <div class="col-md-8">
+            <div class="card border-warning">
+                <div class="card-header bg-warning text-dark">
+                    <h4 class="mb-0">
+                        <i class="fas fa-exclamation-triangle me-2"></i>
+                        Session Issue Detected
+                    </h4>
+                </div>
+                <div class="card-body">
+                    <div class="alert alert-warning" role="alert">
+                        <h5 class="alert-heading">What happened?</h5>
+                        <p>We detected an issue with your current session. This can happen when:</p>
+                        <ul>
+                            <li>Your session has expired due to inactivity</li>
+                            <li>There was a temporary database connection issue</li>
+                            <li>Your platform connection needs to be refreshed</li>
+                            <li>The application was recently updated</li>
+                        </ul>
+                    </div>
+                    
+                    <div class="row">
+                        <div class="col-md-6">
+                            <div class="card bg-light">
+                                <div class="card-body">
+                                    <h6 class="card-title">
+                                        <i class="fas fa-sign-in-alt me-2"></i>
+                                        Quick Fix
+                                    </h6>
+                                    <p class="card-text">Log in again to restore your session and continue working.</p>
+                                    <a href="{{ url_for('login') }}" class="btn btn-primary">
+                                        <i class="fas fa-sign-in-alt me-2"></i>
+                                        Log In Again
+                                    </a>
+                                </div>
+                            </div>
+                        </div>
+                        
+                        <div class="col-md-6">
+                            <div class="card bg-light">
+                                <div class="card-body">
+                                    <h6 class="card-title">
+                                        <i class="fas fa-home me-2"></i>
+                                        Alternative
+                                    </h6>
+                                    <p class="card-text">Return to the main page and try your action again.</p>
+                                    <a href="{{ url_for('index') }}" class="btn btn-secondary">
+                                        <i class="fas fa-home me-2"></i>
+                                        Go to Dashboard
+                                    </a>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                    
+                    <div class="mt-4">
+                        <h6>
+                            <i class="fas fa-info-circle me-2"></i>
+                            Need Help?
+                        </h6>
+                        <p class="text-muted">
+                            If you continue to experience session issues, try:
+                        </p>
+                        <ul class="text-muted">
+                            <li>Clearing your browser cache and cookies</li>
+                            <li>Refreshing the page (F5 or Ctrl+R)</li>
+                            <li>Checking your platform connections in settings</li>
+                            <li>Contacting your administrator if the problem persists</li>
+                        </ul>
+                    </div>
+                </div>
+                
+                <div class="card-footer text-muted">
+                    <small>
+                        <i class="fas fa-clock me-1"></i>
+                        Session issue detected at {{ moment().format('YYYY-MM-DD HH:mm:ss') }}
+                    </small>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+
+<script>
+// Auto-redirect to login after 10 seconds if user doesn't take action
+setTimeout(function() {
+    if (confirm('Would you like to be redirected to the login page automatically?')) {
+        window.location.href = "{{ url_for('login') }}";
+    }
+}, 10000);
+</script>
+{% endblock %}

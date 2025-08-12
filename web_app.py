@@ -168,6 +168,20 @@ caption_review_integration = CaptionReviewIntegration(db_manager)
 # Register secure error handlers
 register_secure_error_handlers(app)
 
+# Initialize session error logging
+from session_error_logger import initialize_session_error_logging
+session_error_logger = initialize_session_error_logging(app)
+
+# Initialize and register session error handlers for DetachedInstanceError prevention
+from session_error_handlers import register_session_error_handlers, with_session_error_handling
+from detached_instance_handler import create_global_detached_instance_handler
+
+# Create detached instance handler
+detached_instance_handler = create_global_detached_instance_handler(app, request_session_manager)
+
+# Register comprehensive session error handlers
+register_session_error_handlers(app, request_session_manager, detached_instance_handler)
+
 # Initialize admin monitoring service
 admin_monitoring_service = AdminMonitoringService(db_manager)
 
@@ -456,6 +470,7 @@ class ReviewForm(FlaskForm):
 @app.route('/login', methods=['GET', 'POST'])
 @rate_limit(limit=10, window_seconds=300)  # 10 attempts per 5 minutes
 @validate_input_length()
+@with_session_error_handling
 def login():
     """User login with proper session management to prevent DetachedInstanceError"""
     # Redirect if user is already logged in
@@ -555,6 +570,7 @@ def login():
 
 @app.route('/first_time_setup')
 @login_required
+@with_session_error_handling
 def first_time_setup():
     """First-time platform setup for new users"""
     # Check if user already has platforms - redirect if they do
@@ -628,6 +644,7 @@ def logout_all():
 
 @app.route('/profile')
 @login_required
+@with_session_error_handling
 def profile():
     """User profile with platform preferences"""
     db_session = db_manager.get_session()
@@ -723,6 +740,7 @@ def profile():
 @app.route('/user_management')
 @login_required
 @role_required(UserRole.ADMIN)
+@with_session_error_handling
 def user_management():
     """User management interface"""
     session = db_manager.get_session()
@@ -748,6 +766,7 @@ def user_management():
 @require_secure_connection
 @validate_input_length()
 @enhanced_input_validation
+@with_session_error_handling
 def add_user():
     """Add a new user"""
     form = AddUserForm()
@@ -805,6 +824,7 @@ def add_user():
 @require_secure_connection
 @validate_input_length()
 @enhanced_input_validation
+@with_session_error_handling
 def edit_user():
     """Edit an existing user"""
     form = EditUserForm()
@@ -865,6 +885,7 @@ def edit_user():
 @login_required
 @role_required(UserRole.ADMIN)
 @require_secure_connection
+@with_session_error_handling
 def delete_user():
     """Delete a user"""
     form = DeleteUserForm()
@@ -926,6 +947,7 @@ def health_check():
 @app.route('/health/detailed')
 @login_required
 @role_required(UserRole.ADMIN)
+@with_session_error_handling
 def health_check_detailed():
     """Detailed health check endpoint"""
     try:
@@ -966,6 +988,7 @@ def health_check_detailed():
 @app.route('/health/dashboard')
 @login_required
 @role_required(UserRole.ADMIN)
+@with_session_error_handling
 def health_dashboard():
     """Health dashboard for system administrators"""
     try:
@@ -1004,6 +1027,7 @@ def health_dashboard():
 @app.route('/health/components/<component_name>')
 @login_required
 @role_required(UserRole.ADMIN)
+@with_session_error_handling
 def health_check_component(component_name):
     """Health check for a specific component"""
     try:
@@ -1069,6 +1093,7 @@ def health_check_component(component_name):
 @login_required
 @with_db_session
 @require_platform_context
+@with_session_error_handling
 def index():
     """Main dashboard with platform-aware statistics and session management"""
     try:
@@ -1124,6 +1149,7 @@ def index():
 @app.route('/admin/cleanup')
 @login_required
 @role_required(UserRole.ADMIN)
+@with_session_error_handling
 def admin_cleanup():
     """Admin interface for data cleanup"""
     from scripts.maintenance.data_cleanup import DataCleanupManager
@@ -1162,6 +1188,7 @@ def admin_cleanup():
 @app.route('/admin/cleanup/runs', methods=['POST'])
 @login_required
 @role_required(UserRole.ADMIN)
+@with_session_error_handling
 def admin_cleanup_runs():
     """Archive old processing runs"""
     from scripts.maintenance.data_cleanup import DataCleanupManager
@@ -1189,6 +1216,7 @@ def admin_cleanup_runs():
 @app.route('/admin/cleanup/images', methods=['POST'])
 @login_required
 @role_required(UserRole.ADMIN)
+@with_session_error_handling
 def admin_cleanup_images():
     """Clean up old images"""
     from scripts.maintenance.data_cleanup import DataCleanupManager
@@ -1232,6 +1260,7 @@ def admin_cleanup_images():
 @app.route('/admin/cleanup/posts', methods=['POST'])
 @login_required
 @role_required(UserRole.ADMIN)
+@with_session_error_handling
 def admin_cleanup_posts():
     """Clean up orphaned posts"""
     from scripts.maintenance.data_cleanup import DataCleanupManager
@@ -1255,6 +1284,7 @@ def admin_cleanup_posts():
 @app.route('/admin/cleanup/orphan_runs', methods=['POST'])
 @login_required
 @role_required(UserRole.ADMIN)
+@with_session_error_handling
 def admin_cleanup_orphan_runs():
     """Clean up orphan processing runs"""
     from scripts.maintenance.data_cleanup import DataCleanupManager
@@ -1288,6 +1318,7 @@ def admin_cleanup_orphan_runs():
 @app.route('/admin/cleanup/user', methods=['POST'])
 @login_required
 @role_required(UserRole.ADMIN)
+@with_session_error_handling
 def admin_cleanup_user():
     """Clean up all data for a specific user"""
     from scripts.maintenance.data_cleanup import DataCleanupManager
@@ -1318,6 +1349,7 @@ def admin_cleanup_user():
 @app.route('/admin/cleanup/all', methods=['POST'])
 @login_required
 @role_required(UserRole.ADMIN)
+@with_session_error_handling
 def admin_cleanup_all():
     """Run full cleanup"""
     from scripts.maintenance.data_cleanup import DataCleanupManager
@@ -1349,6 +1381,7 @@ def serve_image(filename):
 @app.route('/review')
 @login_required
 @platform_required
+@with_session_error_handling
 def review_list():
     """List images pending review (platform-aware)"""
     page = request.args.get('page', 1, type=int)
@@ -1451,6 +1484,7 @@ def review_list():
 
 @app.route('/review/<int:image_id>')
 @login_required
+@with_session_error_handling
 def review_single(image_id):
     """Review a single image"""
     session = db_manager.get_session()
@@ -1474,6 +1508,7 @@ def review_single(image_id):
 @app.route('/review/<int:image_id>', methods=['POST'])
 @login_required
 @validate_input_length()
+@with_session_error_handling
 def review_submit(image_id):
     """Submit review for an image"""
     form = ReviewForm()
@@ -1520,6 +1555,7 @@ def review_submit(image_id):
 @app.route('/batch_review')
 @login_required
 @platform_required
+@with_session_error_handling
 def batch_review():
     """Batch review interface with filtering, sorting, and pagination"""
     session = db_manager.get_session()
@@ -1637,6 +1673,7 @@ def batch_review():
 
 @app.route('/api/batch_review', methods=['POST'])
 @login_required
+@with_session_error_handling
 def api_batch_review():
     """API endpoint for batch review"""
     data = request.get_json()
@@ -1677,6 +1714,7 @@ def api_batch_review():
 @app.route('/api/update_caption/<int:image_id>', methods=['POST'])
 @login_required
 @enhanced_input_validation
+@with_session_error_handling
 def api_update_caption(image_id):
     """API endpoint for updating and optionally posting a caption"""
     data = request.get_json()
@@ -1824,6 +1862,7 @@ def api_update_caption(image_id):
 
 @app.route('/api/regenerate_caption/<int:image_id>', methods=['POST'])
 @login_required
+@with_session_error_handling
 def api_regenerate_caption(image_id):
     """API endpoint to regenerate caption for an image"""
     session = db_manager.get_session()
@@ -1943,6 +1982,7 @@ def api_regenerate_caption(image_id):
 
 @app.route('/post_approved')
 @login_required
+@with_session_error_handling
 def post_approved():
     """Post approved captions to platform"""
     # Get current platform context
@@ -2127,6 +2167,7 @@ def update_platform_media_description(image_data, platform_config):
 # Platform Management Routes
 @app.route('/platform_management')
 @login_required
+@with_session_error_handling
 def platform_management():
     """Platform management interface"""
     session = db_manager.get_session()
@@ -2187,6 +2228,7 @@ def platform_management():
 
 @app.route('/switch_platform/<int:platform_id>')
 @login_required
+@with_session_error_handling
 def switch_platform(platform_id):
     """Switch to a different platform"""
     try:
@@ -2244,6 +2286,7 @@ def switch_platform(platform_id):
 @login_required
 @validate_csrf_token
 @enhanced_input_validation
+@with_session_error_handling
 def api_add_platform():
     """Add a new platform connection"""
     try:
@@ -2423,6 +2466,7 @@ def api_add_platform():
 @login_required
 @with_db_session
 @validate_csrf_token
+@with_session_error_handling
 def api_switch_platform(platform_id):
     """Switch to a different platform with session management"""
     try:
@@ -2487,6 +2531,7 @@ def api_switch_platform(platform_id):
 
 @app.route('/api/test_platform/<int:platform_id>', methods=['POST'])
 @login_required
+@with_session_error_handling
 def api_test_platform(platform_id):
     """Test a platform connection"""
     session = db_manager.get_session()
@@ -2529,6 +2574,7 @@ def api_test_platform(platform_id):
 
 @app.route('/api/get_platform/<int:platform_id>', methods=['GET'])
 @login_required
+@with_session_error_handling
 def api_get_platform(platform_id):
     """Get platform connection data for editing"""
     session = db_manager.get_session()
@@ -2566,6 +2612,7 @@ def api_get_platform(platform_id):
 
 @app.route('/api/edit_platform/<int:platform_id>', methods=['PUT'])
 @login_required
+@with_session_error_handling
 def api_edit_platform(platform_id):
     """Edit an existing platform connection"""
     try:
@@ -2721,6 +2768,7 @@ def api_edit_platform(platform_id):
 
 @app.route('/api/session_state', methods=['GET'])
 @login_required
+@with_session_error_handling
 def api_session_state():
     """Get current session state for cross-tab synchronization"""
     try:
@@ -2791,6 +2839,7 @@ def api_session_state():
 
 @app.route('/api/delete_platform/<int:platform_id>', methods=['DELETE'])
 @login_required
+@with_session_error_handling
 def api_delete_platform(platform_id):
     """Delete a platform connection with comprehensive validation"""
     session = db_manager.get_session()
@@ -2921,6 +2970,7 @@ class CaptionSettingsForm(FlaskForm):
 @login_required
 @platform_required
 @rate_limit(limit=10, window_seconds=60)
+@with_session_error_handling
 def caption_generation():
     """Caption generation page"""
     try:
@@ -2995,6 +3045,7 @@ def caption_generation():
 @validate_csrf_token
 @rate_limit(limit=3, window_seconds=300)  # Max 3 attempts per 5 minutes
 @validate_input_length()
+@with_session_error_handling
 def start_caption_generation():
     """Start caption generation process"""
     form = CaptionGenerationForm()
@@ -3100,6 +3151,7 @@ def start_caption_generation():
 @platform_required
 @validate_task_access
 @rate_limit(limit=30, window_seconds=60)
+@with_session_error_handling
 def get_caption_generation_status(task_id):
     """Get caption generation task status"""
     try:
@@ -3144,6 +3196,7 @@ def get_caption_generation_status(task_id):
 @require_secure_connection
 @validate_csrf_token
 @rate_limit(limit=10, window_seconds=60)
+@with_session_error_handling
 def cancel_caption_generation(task_id):
     """Cancel caption generation task"""
     try:
@@ -3187,6 +3240,7 @@ def cancel_caption_generation(task_id):
 @platform_required
 @validate_task_access
 @rate_limit(limit=20, window_seconds=60)
+@with_session_error_handling
 def get_caption_generation_results(task_id):
     """Get caption generation results"""
     try:
@@ -3237,6 +3291,7 @@ def get_caption_generation_results(task_id):
 @login_required
 @platform_required
 @rate_limit(limit=10, window_seconds=60)
+@with_session_error_handling
 def caption_settings():
     """Caption generation settings page"""
     try:
@@ -3283,6 +3338,7 @@ def caption_settings():
 @login_required
 @platform_required
 @rate_limit(limit=20, window_seconds=60)
+@with_session_error_handling
 def api_get_caption_settings():
     """API endpoint to get caption generation settings"""
     try:
@@ -3329,6 +3385,7 @@ def api_get_caption_settings():
 @rate_limit(limit=10, window_seconds=60)
 @validate_input_length()
 @enhanced_input_validation
+@with_session_error_handling
 def save_caption_settings():
     """Save caption generation settings"""
     form = CaptionSettingsForm()
@@ -3396,6 +3453,7 @@ def save_caption_settings():
 @validate_caption_settings_input
 @rate_limit(limit=30, window_seconds=60)
 @validate_input_length()
+@with_session_error_handling
 def api_validate_caption_settings():
     """API endpoint to validate caption generation settings"""
     try:
@@ -3466,6 +3524,7 @@ def api_validate_caption_settings():
 @login_required
 @role_required(UserRole.ADMIN)
 @rate_limit(limit=10, window_seconds=60)
+@with_session_error_handling
 def api_get_error_statistics():
     """Get error statistics for admin monitoring"""
     try:
@@ -3483,10 +3542,43 @@ def api_get_error_statistics():
         app.logger.error(f"Error getting error statistics: {sanitize_for_log(str(e))}")
         return jsonify({'success': False, 'error': 'Failed to get error statistics'}), 500
 
+@app.route('/api/admin/session_error_statistics')
+@login_required
+@role_required(UserRole.ADMIN)
+@with_session_error_handling
+def api_get_session_error_statistics():
+    """Get session error statistics for monitoring"""
+    try:
+        # Get session error handler statistics
+        session_error_handler = getattr(app, 'session_error_handler', None)
+        if session_error_handler:
+            error_stats = session_error_handler.get_error_statistics()
+        else:
+            error_stats = {}
+        
+        # Get detached instance handler statistics if available
+        detached_handler = getattr(app, 'detached_instance_handler', None)
+        recovery_stats = {}
+        if detached_handler and hasattr(detached_handler, '_record_recovery_metrics'):
+            # This would require extending the detached instance handler to track metrics
+            recovery_stats = {'recovery_attempts': 'Not implemented yet'}
+        
+        return jsonify({
+            'success': True,
+            'session_errors': error_stats,
+            'recovery_stats': recovery_stats,
+            'timestamp': datetime.now(timezone.utc).isoformat()
+        })
+        
+    except Exception as e:
+        app.logger.error(f"Error getting session error statistics: {sanitize_for_log(str(e))}")
+        return jsonify({'success': False, 'error': 'Failed to get session error statistics'}), 500
+
 @app.route('/api/admin/notifications/<int:notification_id>/read', methods=['POST'])
 @login_required
 @role_required(UserRole.ADMIN)
 @rate_limit(limit=20, window_seconds=60)
+@with_session_error_handling
 def api_mark_notification_read(notification_id):
     """Mark admin notification as read"""
     try:
@@ -3506,6 +3598,7 @@ def api_mark_notification_read(notification_id):
 @login_required
 @platform_required
 @rate_limit(limit=20, window_seconds=60)
+@with_session_error_handling
 def review_batches():
     """List recent caption generation batches for review"""
     try:
@@ -3541,6 +3634,7 @@ def review_batches():
 @login_required
 @platform_required
 @rate_limit(limit=20, window_seconds=60)
+@with_session_error_handling
 def review_batch(batch_id):
     """Review images in a specific batch"""
     try:
@@ -3593,6 +3687,7 @@ def review_batch(batch_id):
 @validate_csrf_token
 @rate_limit(limit=10, window_seconds=60)
 @validate_input_length()
+@with_session_error_handling
 def api_bulk_approve_batch(batch_id):
     """Bulk approve images in a batch"""
     try:
@@ -3629,6 +3724,7 @@ def api_bulk_approve_batch(batch_id):
 @validate_csrf_token
 @rate_limit(limit=10, window_seconds=60)
 @validate_input_length()
+@with_session_error_handling
 def api_bulk_reject_batch(batch_id):
     """Bulk reject images in a batch"""
     try:
@@ -3665,6 +3761,7 @@ def api_bulk_reject_batch(batch_id):
 @validate_csrf_token
 @rate_limit(limit=30, window_seconds=60)
 @validate_input_length()
+@with_session_error_handling
 def api_update_batch_image_caption(image_id):
     """Update caption for an image in batch review context"""
     try:
@@ -3702,6 +3799,7 @@ def api_update_batch_image_caption(image_id):
 @login_required
 @platform_required
 @rate_limit(limit=20, window_seconds=60)
+@with_session_error_handling
 def api_get_batch_statistics(batch_id):
     """Get statistics for a review batch"""
     try:
@@ -3721,6 +3819,7 @@ def api_get_batch_statistics(batch_id):
 @login_required
 @role_required(UserRole.ADMIN)
 @rate_limit(limit=10, window_seconds=60)
+@with_session_error_handling
 def admin_monitoring_dashboard():
     """Administrative monitoring dashboard"""
     try:
@@ -3751,6 +3850,7 @@ def admin_monitoring_dashboard():
 @login_required
 @role_required(UserRole.ADMIN)
 @rate_limit(limit=30, window_seconds=60)
+@with_session_error_handling
 def api_admin_system_overview():
     """Get real-time system overview"""
     try:
@@ -3765,6 +3865,7 @@ def api_admin_system_overview():
 @login_required
 @role_required(UserRole.ADMIN)
 @rate_limit(limit=20, window_seconds=60)
+@with_session_error_handling
 def api_admin_active_tasks():
     """Get active caption generation tasks"""
     try:
@@ -3781,6 +3882,7 @@ def api_admin_active_tasks():
 @login_required
 @role_required(UserRole.ADMIN)
 @rate_limit(limit=20, window_seconds=60)
+@with_session_error_handling
 def api_admin_task_history():
     """Get task history"""
     try:
@@ -3799,6 +3901,7 @@ def api_admin_task_history():
 @login_required
 @role_required(UserRole.ADMIN)
 @rate_limit(limit=20, window_seconds=60)
+@with_session_error_handling
 def api_admin_performance_metrics():
     """Get performance metrics"""
     try:
@@ -3817,6 +3920,7 @@ def api_admin_performance_metrics():
 @require_secure_connection
 @validate_csrf_token
 @rate_limit(limit=10, window_seconds=60)
+@with_session_error_handling
 def api_admin_cancel_task(task_id):
     """Cancel a task as administrator"""
     try:
@@ -3844,6 +3948,7 @@ def api_admin_cancel_task(task_id):
 @require_secure_connection
 @validate_csrf_token
 @rate_limit(limit=5, window_seconds=300)
+@with_session_error_handling
 def api_admin_cleanup_tasks():
     """Clean up old tasks"""
     try:
@@ -3868,6 +3973,7 @@ def api_admin_cleanup_tasks():
 @validate_csrf_token
 @rate_limit(limit=10, window_seconds=60)
 @validate_input_length()
+@with_session_error_handling
 def api_update_user_settings():
     """Update user settings for the current platform"""
     try:
@@ -3941,6 +4047,7 @@ def api_update_user_settings():
 @login_required
 @role_required(UserRole.ADMIN)
 @rate_limit(limit=20, window_seconds=60)
+@with_session_error_handling
 def api_admin_user_activity():
     """Get user activity statistics"""
     try:
@@ -3957,6 +4064,7 @@ def api_admin_user_activity():
 @login_required
 @role_required(UserRole.ADMIN)
 @rate_limit(limit=10, window_seconds=60)
+@with_session_error_handling
 def api_admin_system_limits():
     """Get or update system limits"""
     try:
@@ -3977,6 +4085,7 @@ def api_admin_system_limits():
 
 # Favicon and static asset routes
 @app.route('/favicon.ico')
+@with_session_error_handling
 def favicon():
     """Serve favicon.ico with proper caching"""
     return send_from_directory(
@@ -4018,6 +4127,7 @@ if __name__ == '__main__':
 
 @app.route('/api/progress_stream/<task_id>')
 @login_required
+@with_session_error_handling
 def progress_stream(task_id):
     """Server-Sent Events endpoint for real-time progress updates"""
     # Verify authentication before starting stream
