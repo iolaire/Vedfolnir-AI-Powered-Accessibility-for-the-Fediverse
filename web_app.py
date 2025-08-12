@@ -561,6 +561,8 @@ def login():
                     if not platform_data:
                         # First-time user - redirect to platform setup
                         flash('Welcome! Please set up your first platform connection to get started.', 'info')
+                        # Clear any existing platform context for first-time users
+                        session.pop('platform_connection_id', None)
                         return redirect(url_for('first_time_setup'))
                     
                     # Create Flask-based session with default platform using extracted data
@@ -575,16 +577,38 @@ def login():
                             db_session.commit()
                         
                         # Create database session record with platform context
-                        session_id = session_manager.create_user_session(user_id, default_platform['id'])
-                        
-                        # Store session ID in Flask session for cross-tab synchronization
-                        session['_id'] = session_id
-                        session['user_id'] = user_id
-                        session['platform_connection_id'] = default_platform['id']
-                        session['authenticated'] = True
-                        session['created_at'] = datetime.now(timezone.utc).isoformat()
-                        session['last_activity'] = datetime.now(timezone.utc).isoformat()
-                        session.permanent = True
+                        session_id = None
+                        try:
+                            session_id = session_manager.create_user_session(user_id, default_platform['id'])
+                            
+                            if session_id:
+                                # Store session ID in Flask session for cross-tab synchronization
+                                session['_id'] = session_id
+                                session['user_id'] = user_id
+                                session['platform_connection_id'] = default_platform['id']
+                                session['authenticated'] = True
+                                session['created_at'] = datetime.now(timezone.utc).isoformat()
+                                session['last_activity'] = datetime.now(timezone.utc).isoformat()
+                                session.permanent = True
+                                app.logger.info(f"Created database session {sanitize_for_log(session_id)} for user {sanitize_for_log(username)}")
+                            else:
+                                app.logger.warning(f"Failed to create database session for user {sanitize_for_log(username)}, using Flask session only")
+                                # Still set Flask session for basic functionality
+                                session['user_id'] = user_id
+                                session['platform_connection_id'] = default_platform['id']
+                                session['authenticated'] = True
+                                session['created_at'] = datetime.now(timezone.utc).isoformat()
+                                session['last_activity'] = datetime.now(timezone.utc).isoformat()
+                                session.permanent = True
+                        except Exception as session_error:
+                            app.logger.warning(f"Error creating database session for user {sanitize_for_log(username)}: {sanitize_for_log(str(session_error))}, using Flask session only")
+                            # Still set Flask session for basic functionality
+                            session['user_id'] = user_id
+                            session['platform_connection_id'] = default_platform['id']
+                            session['authenticated'] = True
+                            session['created_at'] = datetime.now(timezone.utc).isoformat()
+                            session['last_activity'] = datetime.now(timezone.utc).isoformat()
+                            session.permanent = True
                         
                         # Create Flask session manager context for backward compatibility
                         flask_session_success = flask_session_manager.create_user_session(user_id, default_platform['id'])
@@ -593,8 +617,12 @@ def login():
                             # Welcome message with platform info
                             flash(f'Welcome back! Connected to {default_platform["name"]} ({default_platform["platform_type"].title()})', 'success')
                             app.logger.info(f"Created integrated session for user {sanitize_for_log(username)} with platform {sanitize_for_log(default_platform['name'])}")
+                        elif flask_session_success:
+                            # Flask session created but database session failed - still functional
+                            flash(f'Welcome back! Connected to {default_platform["name"]} ({default_platform["platform_type"].title()})', 'success')
+                            app.logger.info(f"Created Flask session for user {sanitize_for_log(username)} with platform {sanitize_for_log(default_platform['name'])} (database session unavailable)")
                         else:
-                            app.logger.error(f"Failed to create integrated session for user {sanitize_for_log(username)}")
+                            app.logger.error(f"Failed to create session for user {sanitize_for_log(username)}")
                             flash('Login successful, but there was an issue setting up your platform context', 'warning')
                         
                     except Exception as e:
@@ -726,11 +754,12 @@ def logout_all():
     
     return redirect(url_for('login'))
 
-@app.route('/profile')
+@app.route('/app_management')
 @login_required
+@role_required(UserRole.ADMIN)
 @with_session_error_handling
-def profile():
-    """User profile with platform preferences"""
+def app_management():
+    """App management interface for administrators"""
     db_session = db_manager.get_session()
     try:
         # Get user's platform connections
@@ -743,9 +772,9 @@ def profile():
         current_platform = None
         context = get_current_platform_context()
         if context and context.get('platform_info'):
-            # Convert platform info dict to a simple object for template compatibility
+            # Keep platform info as dict to avoid attribute access issues
             platform_info = context['platform_info']
-            current_platform = type('Platform', (), platform_info)()
+            current_platform = platform_info
         
         # Get user statistics per platform
         platform_stats = {}
@@ -786,7 +815,7 @@ def profile():
             from models import CaptionGenerationUserSettings
             user_settings = db_session.query(CaptionGenerationUserSettings).filter_by(
                 user_id=current_user.id,
-                platform_connection_id=current_platform.id
+                platform_connection_id=current_platform['id']
             ).first()
         
         # Convert platforms to dicts to avoid DetachedInstanceError
@@ -812,7 +841,7 @@ def profile():
                 'is_active': current_platform.is_active
             }
         
-        return render_template('profile.html',
+        return render_template('app_management.html',
                              user_platforms=user_platforms_dict,
                              current_platform=current_platform_dict,
                              platform_stats=platform_stats,
@@ -2556,18 +2585,56 @@ def api_add_platform():
         else:
             app.logger.info(f"Skipping connection test for platform {sanitize_for_log(name)} as requested by user")
         
-        # If this is the first platform, automatically switch to it
+        # If this is the first platform, automatically switch to it and update session context
         if is_first_platform:
             try:
                 from flask import session as flask_session
+                
+                # Create database session if it doesn't exist
                 flask_session_id = flask_session.get('_id')
-                success = False
-                if flask_session_id:
-                    success = session_manager.update_platform_context(flask_session_id, platform.id)
-                if success:
-                    app.logger.info(f"Automatically switched to first platform {sanitize_for_log(name)} for user {sanitize_for_log(current_user.username)}")
+                db_session_success = False
+                
+                if not flask_session_id:
+                    # Create a new database session for the user
+                    try:
+                        flask_session_id = session_manager.create_user_session(current_user.id, platform.id)
+                        if flask_session_id:
+                            flask_session['_id'] = flask_session_id
+                            db_session_success = True
+                            app.logger.info(f"Created new database session {sanitize_for_log(flask_session_id)} for first platform")
+                        else:
+                            app.logger.warning(f"Failed to create database session for first platform {sanitize_for_log(name)}")
+                    except Exception as session_create_error:
+                        app.logger.error(f"Error creating database session for first platform: {sanitize_for_log(str(session_create_error))}")
                 else:
-                    app.logger.error(f"Failed to switch to first platform {sanitize_for_log(name)}")
+                    # Update existing database session
+                    db_session_success = session_manager.update_platform_context(flask_session_id, platform.id)
+                    if not db_session_success:
+                        app.logger.warning(f"Failed to update existing database session {sanitize_for_log(flask_session_id)}, attempting to create new one")
+                        # Try to create a new session if update failed
+                        try:
+                            new_session_id = session_manager.create_user_session(current_user.id, platform.id)
+                            if new_session_id:
+                                flask_session['_id'] = new_session_id
+                                db_session_success = True
+                                app.logger.info(f"Created replacement database session {sanitize_for_log(new_session_id)} for first platform")
+                        except Exception as session_create_error:
+                            app.logger.error(f"Error creating replacement database session: {sanitize_for_log(str(session_create_error))}")
+                
+                # Update Flask session context
+                flask_session_success = flask_session_manager.update_platform_context(platform.id)
+                
+                # Update Flask session data directly for immediate effect
+                flask_session['platform_connection_id'] = platform.id
+                flask_session['last_activity'] = datetime.now(timezone.utc).isoformat()
+                
+                if db_session_success and flask_session_success:
+                    app.logger.info(f"Successfully switched to first platform {sanitize_for_log(name)} for user {sanitize_for_log(current_user.username)} with integrated session management")
+                elif flask_session_success:
+                    # Flask session updated but database session failed - this is acceptable for basic functionality
+                    app.logger.warning(f"Partially switched to first platform {sanitize_for_log(name)} - Flask session updated but database session failed")
+                else:
+                    app.logger.error(f"Failed to switch to first platform {sanitize_for_log(name)} - db: {db_session_success}, flask: {flask_session_success}")
             except Exception as e:
                 app.logger.error(f"Error switching to first platform: {e}")
                 # Don't fail the platform creation, just log the error
@@ -2582,7 +2649,10 @@ def api_add_platform():
                 'instance_url': platform.instance_url,
                 'username': platform.username,
                 'is_default': platform.is_default
-            }
+            },
+            'is_first_platform': is_first_platform,
+            'session_updated': is_first_platform,  # Indicate if session was updated
+            'requires_refresh': is_first_platform  # Indicate if page refresh is recommended
         })
         
     except Exception as e:
@@ -2930,6 +3000,13 @@ def api_session_state():
                 'created_at': context.get('created_at'),
                 'last_activity': context.get('last_activity')
             }
+        elif context:
+            # We have some context but no platform_info, extract what we can
+            session_info = {
+                'session_id': context.get('session_id'),
+                'created_at': context.get('created_at'),
+                'last_activity': context.get('last_activity')
+            }
         else:
             # Fallback to default platform if no current platform
             db_session = db_manager.get_session()
@@ -2963,11 +3040,21 @@ def api_session_state():
                     from flask import session as flask_session
                     flask_session_id = flask_session.get('_id')
                     if flask_session_id:
-                        session_manager.update_platform_context(flask_session_id, platform_id)
-                        # Also update Flask session for consistency
+                        try:
+                            session_manager.update_platform_context(flask_session_id, platform_id)
+                            # Also update Flask session for consistency
+                            flask_session['platform_connection_id'] = platform_id
+                            flask_session['last_activity'] = datetime.now(timezone.utc).isoformat()
+                            app.logger.info(f"Updated integrated session context to default platform {platform_name}")
+                        except Exception as update_error:
+                            app.logger.error(f"Failed to update session context: {sanitize_for_log(str(update_error))}")
+                            # Still update Flask session for basic functionality
+                            flask_session['platform_connection_id'] = platform_id
+                            flask_session['last_activity'] = datetime.now(timezone.utc).isoformat()
+                    else:
+                        # No database session, just update Flask session
                         flask_session['platform_connection_id'] = platform_id
                         flask_session['last_activity'] = datetime.now(timezone.utc).isoformat()
-                    app.logger.info(f"Updated integrated session context to default platform {platform_name}")
             finally:
                 db_session.close()
         

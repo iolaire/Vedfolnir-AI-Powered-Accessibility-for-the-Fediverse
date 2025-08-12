@@ -137,7 +137,7 @@ class DatabaseManager:
             return context_manager.apply_platform_filter(query, model_class)
         except PlatformContextError:
             # If no context is set, return unfiltered query
-            logger.warning(f"No platform context set for {model_class.__name__} query")
+            logger.debug(f"No platform context set for {model_class.__name__} query")
             return query
     
     def _inject_platform_data(self, data: Dict[str, Any]) -> Dict[str, Any]:
@@ -146,7 +146,7 @@ class DatabaseManager:
             context_manager = self.get_context_manager()
             return context_manager.inject_platform_data(data)
         except PlatformContextError:
-            logger.warning("No platform context set for data injection")
+            logger.debug("No platform context set for data injection")
             return data
     
     def get_or_create_post(self, post_id: str, user_id: str, post_url: str, post_content: str = None):

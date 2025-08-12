@@ -44,10 +44,10 @@ class TestSessionDecoratorsIntegration(unittest.TestCase):
         def dashboard():
             return f'Dashboard for user {current_user.id}'
         
-        @self.app.route('/profile')
+        @self.app.route('/app_management')
         @with_db_session
-        def profile():
-            return f'Profile for user {current_user.username}'
+        def app_management():
+            return f'App Management for user {current_user.username}'
         
         @self.app.route('/login')
         def login():
@@ -120,8 +120,8 @@ class TestSessionDecoratorsIntegration(unittest.TestCase):
                 self.assertEqual(response.status_code, 302)  # Redirect
                 self.assertIn('/first_time_setup', response.location)
     
-    def test_profile_access_with_session_attachment(self):
-        """Test profile access with proper session attachment"""
+    def test_app_management_access_with_session_attachment(self):
+        """Test app management access with proper session attachment"""
         with self.app.test_request_context():
             # Mock user
             mock_user = Mock()
@@ -135,12 +135,12 @@ class TestSessionDecoratorsIntegration(unittest.TestCase):
             self.mock_session.__contains__ = Mock(return_value=True)
             
             with patch('session_aware_decorators.current_user', session_aware_user):
-                response = self.client.get('/profile')
+                response = self.client.get('/app_management')
                 self.assertEqual(response.status_code, 200)
-                self.assertIn('Profile for user testuser', response.data.decode())
+                self.assertIn('App Management for user testuser', response.data.decode())
     
-    def test_profile_access_with_detached_user(self):
-        """Test profile access when user becomes detached"""
+    def test_app_management_access_with_detached_user(self):
+        """Test app management access when user becomes detached"""
         with self.app.test_request_context():
             # Mock user
             mock_user = Mock()
@@ -160,7 +160,7 @@ class TestSessionDecoratorsIntegration(unittest.TestCase):
             self.session_manager.ensure_session_attachment = Mock(return_value=reattached_user)
             
             with patch('session_aware_decorators.current_user', session_aware_user):
-                response = self.client.get('/profile')
+                response = self.client.get('/app_management')
                 self.assertEqual(response.status_code, 200)
                 # Verify reattachment was called
                 self.session_manager.ensure_session_attachment.assert_called_once()
@@ -276,7 +276,7 @@ class TestSessionDecoratorsIntegration(unittest.TestCase):
             mock_user.id = 1
             
             with patch('session_aware_decorators.current_user', mock_user):
-                response = self.client.get('/profile')
+                response = self.client.get('/app_management')
                 self.assertEqual(response.status_code, 302)  # Should redirect to login
 
 

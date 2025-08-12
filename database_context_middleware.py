@@ -194,19 +194,41 @@ class DatabaseContextMiddleware:
         }
         
         try:
-            # Try to get platforms from SessionAwareUser
+            # Always load from database to ensure fresh data
+            user_id = getattr(user, 'id', None) or getattr(user, '_user_id', None)
+            if user_id:
+                result.update(self._load_platforms_from_database(user_id))
+                return result
+            
+            # Fallback: Try to get platforms from SessionAwareUser
             if hasattr(user, 'platforms'):
                 platforms = user.platforms
                 result['user_platforms'] = [self._platform_to_dict(p) for p in platforms if p]
                 result['platform_count'] = len(result['user_platforms'])
                 
-                # Get active platform
-                if hasattr(user, 'get_active_platform'):
+                # Get active platform - check session context first
+                active_platform_id = None
+                try:
+                    from flask import session as flask_session
+                    active_platform_id = flask_session.get('platform_connection_id')
+                except Exception:
+                    pass
+                
+                # If we have an active platform ID from session, use that
+                if active_platform_id:
+                    for platform_dict in result['user_platforms']:
+                        if platform_dict.get('id') == active_platform_id:
+                            result['active_platform'] = platform_dict
+                            break
+                
+                # Fallback to SessionAwareUser method
+                if not result['active_platform'] and hasattr(user, 'get_active_platform'):
                     active_platform = user.get_active_platform()
                     if active_platform:
                         result['active_platform'] = self._platform_to_dict(active_platform)
-                else:
-                    # Fallback: find default platform
+                
+                # Fallback: find default platform
+                if not result['active_platform']:
                     for platform_dict in result['user_platforms']:
                         if platform_dict.get('is_default'):
                             result['active_platform'] = platform_dict
@@ -220,16 +242,22 @@ class DatabaseContextMiddleware:
                 
         except (DetachedInstanceError, SQLAlchemyError) as e:
             logger.warning(f"DetachedInstanceError accessing platforms, attempting database recovery: {sanitize_for_log(str(e))}")
+            # Recovery: Load platforms directly from database
+            try:
+                user_id = getattr(user, 'id', None) or getattr(user, '_user_id', None)
+                if user_id:
+                    result.update(self._load_platforms_from_database(user_id))
+            except Exception as recovery_error:
+                logger.error(f"Failed to recover platforms from database: {sanitize_for_log(str(recovery_error))}")
         except Exception as e:
             logger.error(f"Unexpected error accessing platforms: {sanitize_for_log(str(e))}")
-        
-        # Recovery: Load platforms directly from database
-        try:
-            user_id = getattr(user, 'id', None) or getattr(user, '_user_id', None)
-            if user_id:
-                result.update(self._load_platforms_from_database(user_id))
-        except Exception as recovery_error:
-            logger.error(f"Failed to recover platforms from database: {sanitize_for_log(str(recovery_error))}")
+            # Recovery: Load platforms directly from database
+            try:
+                user_id = getattr(user, 'id', None) or getattr(user, '_user_id', None)
+                if user_id:
+                    result.update(self._load_platforms_from_database(user_id))
+            except Exception as recovery_error:
+                logger.error(f"Failed to recover platforms from database: {sanitize_for_log(str(recovery_error))}")
         
         return result
     
@@ -259,17 +287,33 @@ class DatabaseContextMiddleware:
             result['user_platforms'] = [self._platform_to_dict(p) for p in platforms]
             result['platform_count'] = len(platforms)
             
-            # Find active platform
-            for platform in platforms:
-                if platform.is_default:
-                    result['active_platform'] = self._platform_to_dict(platform)
-                    break
+            # Find active platform - check session context first
+            active_platform_id = None
+            try:
+                from flask import session as flask_session
+                active_platform_id = flask_session.get('platform_connection_id')
+            except Exception:
+                pass
+            
+            # If we have an active platform ID from session, use that
+            if active_platform_id:
+                for platform in platforms:
+                    if platform.id == active_platform_id:
+                        result['active_platform'] = self._platform_to_dict(platform)
+                        break
+            
+            # Fallback to default platform
+            if not result['active_platform']:
+                for platform in platforms:
+                    if platform.is_default:
+                        result['active_platform'] = self._platform_to_dict(platform)
+                        break
             
             # If no default, use first platform
             if not result['active_platform'] and platforms:
                 result['active_platform'] = self._platform_to_dict(platforms[0])
             
-            logger.debug(f"Recovered {len(platforms)} platforms from database for user {user_id}")
+            logger.debug(f"Recovered {len(platforms)} platforms from database for user {user_id}, active: {result['active_platform']['name'] if result['active_platform'] else 'None'}")
             
         except Exception as e:
             logger.error(f"Error loading platforms from database: {sanitize_for_log(str(e))}")

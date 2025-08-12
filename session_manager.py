@@ -177,6 +177,19 @@ class SessionManager:
             # Generate unique session ID
             session_id = str(uuid.uuid4())
             
+            # Clean up any existing sessions for this user to prevent duplicates
+            try:
+                existing_sessions = db_session.query(UserSession).filter_by(user_id=user_id).all()
+                if existing_sessions:
+                    logger.debug(f"Found {len(existing_sessions)} existing sessions for user {user_id}, cleaning up expired ones")
+                    for existing_session in existing_sessions:
+                        if self._is_session_expired(existing_session):
+                            db_session.delete(existing_session)
+                            logger.debug(f"Removed expired session {sanitize_for_log(existing_session.session_id)}")
+            except Exception as cleanup_error:
+                logger.warning(f"Error during session cleanup: {sanitize_for_log(str(cleanup_error))}")
+                # Continue with session creation even if cleanup fails
+            
             # Create session record
             user_session = UserSession(
                 user_id=user_id,
@@ -206,7 +219,7 @@ class SessionManager:
             
         except Exception as e:
             db_session.rollback()
-            logger.error(f"Error creating user session: {e}")
+            logger.error(f"Error creating user session: {sanitize_for_log(str(e))}")
             raise
         finally:
             db_session.close()
@@ -240,8 +253,8 @@ class SessionManager:
                     ).filter_by(session_id=session_id).first()
                     
                     if not user_session:
-                        if attempt == 0:  # Only log detailed debug info on first attempt
-                            logger.warning(f"No session found for session_id: {sanitize_for_log(session_id)}")
+                        if attempt == 0:  # Only log on first attempt to reduce noise
+                            logger.debug(f"No session found for session_id: {sanitize_for_log(session_id[:8])}...")
                             # Try to find any sessions for debugging
                             all_sessions = db_session.query(UserSession).all()
                             logger.debug(f"Total sessions in database: {len(all_sessions)}")
@@ -306,6 +319,10 @@ class SessionManager:
         Returns:
             True if successful, False otherwise
         """
+        if not session_id or not session_id.strip():
+            logger.warning("update_platform_context called with empty session_id")
+            return False
+            
         # Use direct database session instead of context manager
         db_session = self.db_manager.get_session()
         try:
@@ -314,7 +331,7 @@ class SessionManager:
             ).first()
             
             if not user_session:
-                logger.warning(f"Session {sanitize_for_log(session_id)} not found for platform update")
+                logger.debug(f"Session {sanitize_for_log(session_id[:8])}... not found for platform update")
                 return False
             
             # Check if session is expired before updating
@@ -333,6 +350,9 @@ class SessionManager:
             if not platform:
                 logger.warning(f"Platform {sanitize_for_log(str(platform_connection_id))} not found or not accessible to user {sanitize_for_log(str(user_session.user_id))}")
                 return False
+            
+            # Extract platform data before updating to avoid DetachedInstanceError
+            platform_name = platform.name
             
             # Check for suspicious platform switching activity
             if self.security_hardening:
@@ -356,7 +376,7 @@ class SessionManager:
             if self.security_hardening:
                 self.security_hardening.create_security_audit_event(
                     session_id, user_session.user_id, 'platform_switch',
-                    details={'platform_id': platform_connection_id, 'platform_name': platform.name}
+                    details={'platform_id': platform_connection_id, 'platform_name': platform_name}
                 )
             
             logger.info(f"Updated session {sanitize_for_log(session_id)} to use platform {sanitize_for_log(str(platform_connection_id))}")
@@ -1182,12 +1202,28 @@ class PlatformContextMiddleware:
                             
                             if default_platform:
                                 # Create new session
-                                flask_session_id = self.session_manager.create_user_session(
-                                    current_user.id, default_platform.id
-                                )
-                                session['_id'] = flask_session_id
-                                session.permanent = True
-                                logger.info(f"Recreated session for user {sanitize_for_log(current_user.username)}")
+                                try:
+                                    flask_session_id = self.session_manager.create_user_session(
+                                        current_user.id, default_platform.id
+                                    )
+                                    if flask_session_id:
+                                        session['_id'] = flask_session_id
+                                        session['platform_connection_id'] = default_platform.id
+                                        session['user_id'] = current_user.id
+                                        session.permanent = True
+                                        logger.info(f"Recreated session for user {sanitize_for_log(current_user.username)}")
+                                    else:
+                                        logger.warning(f"Failed to recreate database session for user {sanitize_for_log(current_user.username)}, using Flask session only")
+                                        # Set basic Flask session data
+                                        session['platform_connection_id'] = default_platform.id
+                                        session['user_id'] = current_user.id
+                                        session.permanent = True
+                                except Exception as recreate_error:
+                                    logger.warning(f"Error recreating session for user {sanitize_for_log(current_user.username)}: {sanitize_for_log(str(recreate_error))}, using Flask session only")
+                                    # Set basic Flask session data as fallback
+                                    session['platform_connection_id'] = default_platform.id
+                                    session['user_id'] = current_user.id
+                                    session.permanent = True
                         finally:
                             db_session.close()
                     except Exception as e:

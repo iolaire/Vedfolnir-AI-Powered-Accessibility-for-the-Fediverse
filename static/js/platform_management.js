@@ -84,12 +84,30 @@ function handleAddPlatform(event) {
     .then(result => {
         if (result.success) {
             showAlert('success', result.message);
-            // Close modal and redirect to platform management
+            // Close modal
             const modal = bootstrap.Modal.getInstance(document.getElementById('addPlatformModal'));
             modal.hide();
+            
+            // Mark platform context for refresh
+            if (window.markPlatformContextForRefresh) {
+                window.markPlatformContextForRefresh();
+            }
+            
+            // If this was the first platform, redirect to dashboard instead of platform management
+            const redirectUrl = result.is_first_platform ? '/' : '/platform_management';
+            const redirectMessage = result.is_first_platform ? 'Redirecting to dashboard...' : 'Redirecting to platform management...';
+            
+            if (result.is_first_platform) {
+                if (result.requires_refresh) {
+                    showAlert('info', 'First platform added successfully! Please refresh the page if you experience any issues. ' + redirectMessage);
+                } else {
+                    showAlert('info', 'First platform added successfully! ' + redirectMessage);
+                }
+            }
+            
             setTimeout(() => {
-                window.location.href = '/platform_management';
-            }, 1000);
+                window.location.href = redirectUrl;
+            }, result.is_first_platform ? 1500 : 1000);
         } else {
             showAlert('danger', result.error || 'Failed to add platform connection');
         }
@@ -493,14 +511,19 @@ function showAlert(type, message) {
     alertDiv.appendChild(messageSpan);
     alertDiv.appendChild(closeButton);
     
-    // Insert at the top of the container
-    const container = document.querySelector('.container-fluid');
-    container.insertBefore(alertDiv, container.firstChild);
+    // Insert at the top of the container or body if container not found
+    const container = document.querySelector('.container-fluid') || document.body;
+    if (container.firstChild) {
+        container.insertBefore(alertDiv, container.firstChild);
+    } else {
+        container.appendChild(alertDiv);
+    }
     
     // Scroll to top to show alert
     window.scrollTo({ top: 0, behavior: 'smooth' });
     
-    // Auto-dismiss after 7 seconds for better UX
+    // Auto-dismiss after appropriate time for better UX
+    const dismissTime = type === 'info' ? 10000 : 7000;
     setTimeout(() => {
         if (alertDiv.parentNode) {
             alertDiv.classList.add('fade');
@@ -510,7 +533,7 @@ function showAlert(type, message) {
                 }
             }, 300);
         }
-    }, 7000);
+    }, dismissTime);
 }
 
 // Helper function to update current platform display

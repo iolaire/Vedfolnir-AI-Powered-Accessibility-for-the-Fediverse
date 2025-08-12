@@ -168,6 +168,10 @@
                                     Admin
                                 </a>
                                 <ul class="dropdown-menu" aria-labelledby="adminDropdown">
+                                    <li><a class="dropdown-item" href="{{ url_for('app_management') }}">
+                                        <i class="bi bi-gear-fill"></i> App Management
+                                    </a></li>
+                                    <li><hr class="dropdown-divider"></li>
                                     <li><a class="dropdown-item" href="{{ url_for('admin_monitoring_dashboard') }}">
                                         <i class="bi bi-speedometer2"></i> Monitoring Dashboard
                                     </a></li>
@@ -186,9 +190,6 @@
                                     {% if active_platform %}
                                     <li><span class="dropdown-item-text text-muted">Platform: {{ active_platform.name }}</span></li>
                                     {% endif %}
-                                    <li><a class="dropdown-item" href="{{ url_for('profile') }}">
-                                        <i class="bi bi-person me-2"></i>Profile
-                                    </a></li>
                                     <li><a class="dropdown-item" href="{{ url_for('logout') }}">
                                         <i class="bi bi-box-arrow-right me-2"></i>Logout
                                     </a></li>
@@ -232,9 +233,6 @@
                                 {% endif %}
                                 
                                 <li><hr class="dropdown-divider"></li>
-                                <li><a class="dropdown-item" href="{{ url_for('profile') }}">
-                                    <i class="bi bi-person me-2"></i>Profile
-                                </a></li>
                                 <li><a class="dropdown-item" href="{{ url_for('logout') }}" onclick="handleLogout(event)">
                                     <i class="bi bi-box-arrow-right me-2"></i>Logout
                                 </a></li>
@@ -274,6 +272,7 @@
     <script src="{{ url_for('static', filename='js/error_handler.js') }}"></script>
     <script src="{{ url_for('static', filename='js/session_sync.js') }}"></script>
     <script src="{{ url_for('static', filename='js/navigation.js') }}"></script>
+    <script src="{{ url_for('static', filename='js/platform_context_refresh.js') }}"></script>
     
     <!-- Session Management JavaScript -->
     <script>

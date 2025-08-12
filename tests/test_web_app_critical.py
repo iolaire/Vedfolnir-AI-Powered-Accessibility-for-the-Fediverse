@@ -80,8 +80,8 @@ class TestWebAppCritical(unittest.TestCase):
             session['user_id'] = 1
             return 'logged in'
         
-        @self.app.route('/profile')
-        def profile():
+        @self.app.route('/app_management')
+        def app_management():
             from flask import session
             if 'user_id' in session:
                 return f'user {session["user_id"]}'
@@ -93,7 +93,7 @@ class TestWebAppCritical(unittest.TestCase):
             self.assertEqual(response.status_code, 200)
             
             # Test session persistence
-            response = client.get('/profile')
+            response = client.get('/app_management')
             self.assertEqual(response.status_code, 200)
             self.assertIn('user 1', response.get_data(as_text=True))
     

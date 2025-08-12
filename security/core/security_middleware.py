@@ -150,7 +150,9 @@ class SecurityMiddleware:
                 if not isinstance(key, str) or len(key) > 100:
                     raise BadRequest("Invalid JSON key")
                 
-                self._validate_string_content(str(value))
+                # Skip validation for password, token, and API key fields
+                if not any(field in key.lower() for field in ['password', 'token', 'access_token', 'api_key', 'apikey', 'csrf']):
+                    self._validate_string_content(str(value))
                 
                 if isinstance(value, (dict, list)):
                     self._validate_json_data(value, max_depth, current_depth + 1)
@@ -174,7 +176,9 @@ class SecurityMiddleware:
             if len(value) > 10000:  # 10KB per field
                 raise BadRequest("Form field value too long")
             
-            self._validate_string_content(value)
+            # Skip validation for password, token, and API key fields
+            if not any(field in key.lower() for field in ['password', 'token', 'access_token', 'api_key', 'apikey', 'csrf']):
+                self._validate_string_content(value)
     
     def _validate_query_params(self, query_params):
         """Validate query parameters"""

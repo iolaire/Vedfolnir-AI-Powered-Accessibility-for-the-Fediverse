@@ -74,8 +74,8 @@ class SessionErrorHandler:
             flash('Session expired. Please log in again.', 'warning')
             return redirect(url_for('login'))
             
-        elif endpoint in ['dashboard', 'index']:
-            # Dashboard/index - try to recover or redirect to platform management
+        elif endpoint in ['health_dashboard', 'index']:
+            # Health dashboard/index - try to recover or redirect to platform management
             try:
                 # Attempt to recover current user session
                 if current_user.is_authenticated:
@@ -107,7 +107,7 @@ class SessionErrorHandler:
         elif endpoint in ['review', 'batch_review']:
             # Review endpoints - try to recover or redirect to dashboard
             flash('Session issue detected while reviewing. Returning to dashboard.', 'warning')
-            return redirect(url_for('dashboard'))
+            return redirect(url_for('health_dashboard'))
             
         elif 'api' in endpoint:
             # API endpoints - return JSON error
@@ -171,7 +171,7 @@ class SessionErrorHandler:
                 }), 500
             else:
                 flash('Database connection issue. Please try again.', 'error')
-                return redirect(url_for('dashboard') if current_user.is_authenticated else url_for('login'))
+                return redirect(url_for('health_dashboard') if current_user.is_authenticated else url_for('login'))
         
         # Generic SQLAlchemy error handling
         if 'api' in endpoint:
@@ -182,7 +182,7 @@ class SessionErrorHandler:
             }), 500
         else:
             flash('A database error occurred. Please try again.', 'error')
-            return redirect(url_for('dashboard') if current_user.is_authenticated else url_for('login'))
+            return redirect(url_for('health_dashboard') if current_user.is_authenticated else url_for('login'))
     
     def handle_session_timeout(self, endpoint: str) -> Any:
         """Handle session timeout scenarios
@@ -318,7 +318,7 @@ def with_session_error_handling(f: Callable) -> Callable:
                 }), 500
             else:
                 flash('An unexpected error occurred. Please try again.', 'error')
-                return redirect(url_for('dashboard') if current_user.is_authenticated else url_for('login'))
+                return redirect(url_for('health_dashboard') if current_user.is_authenticated else url_for('login'))
     
     return decorated_function
 
@@ -365,7 +365,7 @@ def register_session_error_handlers(app, session_manager, detached_instance_hand
                 _ = current_user.username
                 
                 # For platform-dependent endpoints, validate platform context
-                if request.endpoint in ['dashboard', 'review', 'batch_review', 'caption_generation']:
+                if request.endpoint in ['health_dashboard', 'review', 'batch_review', 'caption_generation']:
                     from flask_session_manager import get_current_platform_context
                     context = get_current_platform_context()
                     
