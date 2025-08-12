@@ -172,6 +172,30 @@ session_performance_monitor = initialize_performance_monitoring(app, request_ses
 register_session_monitoring_commands(app)
 register_session_monitoring_routes(app)
 
+# Initialize session health checking and alerting system
+from session_health_checker import get_session_health_checker
+from session_health_routes import register_session_health_routes
+from session_alerting_system import get_alerting_system
+
+# Initialize session health checker
+session_health_checker = get_session_health_checker(db_manager, session_manager)
+
+# Initialize alerting system
+session_alerting_system = get_alerting_system(session_health_checker)
+
+# Store components in app config for route access
+app.config['session_health_checker'] = session_health_checker
+app.config['session_alerting_system'] = session_alerting_system
+app.config['db_manager'] = db_manager
+app.config['session_manager'] = session_manager
+
+# Register session health routes
+register_session_health_routes(app)
+
+# Register session alert routes
+from session_alert_routes import register_session_alert_routes
+register_session_alert_routes(app)
+
 # Initialize security middleware
 security_middleware = SecurityMiddleware(app)
 
@@ -490,7 +514,7 @@ class ReviewForm(FlaskForm):
 @validate_input_length()
 @with_session_error_handling
 def login():
-    """User login with proper session management to prevent DetachedInstanceError"""
+    """User login with integrated session management system"""
     # Redirect if user is already logged in
     if current_user.is_authenticated:
         return redirect(url_for('index'))
@@ -550,23 +574,31 @@ def login():
                                 p.is_default = (p.id == default_platform['id'])
                             db_session.commit()
                         
-                        # Create database session with platform context
+                        # Create database session record with platform context
                         session_id = session_manager.create_user_session(user_id, default_platform['id'])
                         
-                        # Store session ID in Flask session
+                        # Store session ID in Flask session for cross-tab synchronization
                         session['_id'] = session_id
+                        session['user_id'] = user_id
+                        session['platform_connection_id'] = default_platform['id']
+                        session['authenticated'] = True
+                        session['created_at'] = datetime.now(timezone.utc).isoformat()
+                        session['last_activity'] = datetime.now(timezone.utc).isoformat()
                         session.permanent = True
                         
-                        if session_id:
+                        # Create Flask session manager context for backward compatibility
+                        flask_session_success = flask_session_manager.create_user_session(user_id, default_platform['id'])
+                        
+                        if session_id and flask_session_success:
                             # Welcome message with platform info
                             flash(f'Welcome back! Connected to {default_platform["name"]} ({default_platform["platform_type"].title()})', 'success')
-                            app.logger.info(f"Created Flask session for user {sanitize_for_log(username)} with platform {sanitize_for_log(default_platform['name'])}")
+                            app.logger.info(f"Created integrated session for user {sanitize_for_log(username)} with platform {sanitize_for_log(default_platform['name'])}")
                         else:
-                            app.logger.error(f"Failed to create Flask session for user {sanitize_for_log(username)}")
+                            app.logger.error(f"Failed to create integrated session for user {sanitize_for_log(username)}")
                             flash('Login successful, but there was an issue setting up your platform context', 'warning')
                         
                     except Exception as e:
-                        app.logger.error(f"Error creating platform session: {sanitize_for_log(str(e))}")
+                        app.logger.error(f"Error creating integrated session: {sanitize_for_log(str(e))}")
                         flash('Login successful, but there was an issue setting up your platform context', 'warning')
                     
                     # Redirect to the requested page or default to index with session context maintained
@@ -609,27 +641,49 @@ def first_time_setup():
 @app.route('/logout')
 @login_required
 def logout():
-    """User logout - clears platform context and current session"""
+    """User logout with integrated session management - cleans up all session data and notifies tabs"""
     # Get current platform info for logging
     current_platform = None
+    user_id = None
     try:
         context = get_current_platform_context()
-        if context and context.get('platform_info'):
-            current_platform = context['platform_info']
+        if context:
+            if context.get('platform_info'):
+                current_platform = context['platform_info']
+            user_id = context.get('user_id')
     except Exception:
         pass
     
-    # Clear database session
-    flask_session_id = session.get('_id')
-    if flask_session_id:
-        # Clean up database session
-        session_manager._cleanup_session(flask_session_id)
+    # Get user ID from current_user if not available from context
+    if not user_id and current_user and current_user.is_authenticated:
+        user_id = current_user.id
     
-    # Clear Flask session
-    session.clear()
-    
-    # Log out the user
-    logout_user()
+    # Integrated session cleanup: Clean up both database and Flask sessions
+    try:
+        # Clean up database session record
+        flask_session_id = session.get('_id')
+        if flask_session_id:
+            session_manager._cleanup_session(flask_session_id)
+            app.logger.info(f"Cleaned up database session {sanitize_for_log(flask_session_id)}")
+        
+        # Clean up Flask session manager context
+        flask_session_manager.clear_session()
+        
+        # Clear Flask session data (this will notify other tabs via session sync)
+        session.clear()
+        
+        # Log out the user from Flask-Login
+        logout_user()
+        
+        # Log successful logout
+        if user_id:
+            app.logger.info(f"User {sanitize_for_log(str(user_id))} logged out successfully")
+        
+    except Exception as e:
+        app.logger.error(f"Error during integrated logout: {sanitize_for_log(str(e))}")
+        # Still proceed with logout even if cleanup fails
+        session.clear()
+        logout_user()
     
     # Provide contextual logout message
     if current_platform:
@@ -642,21 +696,33 @@ def logout():
 @app.route('/logout_all')
 @login_required
 def logout_all():
-    """Logout from current session (Flask sessions are per-browser)"""
+    """Logout from all sessions with integrated session management"""
+    user_id = current_user.id if current_user and current_user.is_authenticated else None
+    
     try:
-        # Clear all database sessions for the user
-        session_manager.cleanup_all_user_sessions(current_user.id)
+        # Integrated session cleanup: Clean up all user sessions
+        if user_id:
+            # Clear all database session records for the user
+            session_manager.cleanup_all_user_sessions(user_id)
+            app.logger.info(f"Cleaned up all database sessions for user {sanitize_for_log(str(user_id))}")
         
-        # Clear Flask session
+        # Clear Flask session manager context
+        flask_session_manager.clear_session()
+        
+        # Clear Flask session (this will notify other tabs via session sync)
         session.clear()
         
-        # Log out the user
+        # Log out the user from Flask-Login
         logout_user()
-        flash('You have been logged out', 'info')
+        
+        flash('You have been logged out from all sessions', 'info')
         
     except Exception as e:
-        app.logger.error(f"Error during logout: {sanitize_for_log(str(e))}")
-        flash('Error logging out', 'error')
+        app.logger.error(f"Error during logout_all: {sanitize_for_log(str(e))}")
+        # Still proceed with logout even if cleanup fails
+        session.clear()
+        logout_user()
+        flash('Error logging out from all sessions', 'error')
     
     return redirect(url_for('login'))
 
@@ -967,7 +1033,7 @@ def health_check():
 @role_required(UserRole.ADMIN)
 @with_session_error_handling
 def health_check_detailed():
-    """Detailed health check endpoint"""
+    """Detailed health check endpoint including session management"""
     try:
         # Run comprehensive health check with proper resource management
         loop = asyncio.new_event_loop()
@@ -983,8 +1049,26 @@ def health_check_detailed():
             except Exception as e:
                 app.logger.warning(f"Error closing event loop: {sanitize_for_log(str(e))}")
         
+        # Add session management health check
+        session_health = None
+        try:
+            session_health_checker = app.config.get('session_health_checker')
+            if session_health_checker:
+                session_system_health = session_health_checker.check_comprehensive_session_health()
+                session_health = session_health_checker.to_dict(session_system_health)
+        except Exception as e:
+            app.logger.error(f"Session health check failed: {sanitize_for_log(str(e))}")
+            session_health = {
+                'status': 'unhealthy',
+                'error': f'Session health check failed: {str(e)}'
+            }
+        
         # Convert to dictionary for JSON response
         health_dict = health_checker.to_dict(system_health)
+        
+        # Add session health to response
+        if session_health:
+            health_dict['session_management'] = session_health
         
         # Return appropriate HTTP status code based on health
         status_code = 200
@@ -992,6 +1076,10 @@ def health_check_detailed():
             status_code = 503
         elif system_health.status.value == 'degraded':
             status_code = 200  # Still operational, but with issues
+        
+        # Check session health status too
+        if session_health and session_health.get('status') == 'unhealthy':
+            status_code = 503
         
         return jsonify(health_dict), status_code
         
@@ -1024,6 +1112,24 @@ def health_dashboard():
             except Exception as e:
                 app.logger.warning(f"Error closing event loop: {sanitize_for_log(str(e))}")
         
+        # Get session management health
+        session_health = None
+        session_alerts = []
+        try:
+            session_health_checker = app.config.get('session_health_checker')
+            session_alerting_system = app.config.get('session_alerting_system')
+            
+            if session_health_checker:
+                session_system_health = session_health_checker.check_comprehensive_session_health()
+                session_health = session_health_checker.to_dict(session_system_health)
+            
+            if session_alerting_system:
+                # Check for new alerts
+                session_alerting_system.check_alerts()
+                session_alerts = session_alerting_system.get_active_alerts()
+        except Exception as e:
+            app.logger.error(f"Error getting session health for dashboard: {sanitize_for_log(str(e))}")
+        
         # Get error statistics for admin dashboard
         try:
             error_stats = error_recovery_manager.get_error_statistics()
@@ -1035,6 +1141,8 @@ def health_dashboard():
         
         return render_template('health_dashboard.html', 
                              health=system_health,
+                             session_health=session_health,
+                             session_alerts=session_alerts,
                              error_stats=error_stats,
                              admin_notifications=admin_notifications)
         
@@ -2487,7 +2595,7 @@ def api_add_platform():
 @validate_csrf_token
 @with_session_error_handling
 def api_switch_platform(platform_id):
-    """Switch to a different platform with session management"""
+    """Switch to a different platform with integrated session management"""
     try:
         # Use request-scoped session for all database operations
         with request_session_manager.session_scope() as db_session:
@@ -2525,28 +2633,39 @@ def api_switch_platform(platform_id):
             except Exception as e:
                 app.logger.error(f"Error handling active caption generation task during platform switch: {sanitize_for_log(str(e))}")
             
-            # Update database session platform context using session manager
+            # Integrated session management: Update both database and Flask sessions
             from flask import session as flask_session
             flask_session_id = flask_session.get('_id')
             session_updated = False
+            flask_session_updated = False
+            
+            # Update database session platform context
             if flask_session_id:
                 session_updated = session_manager.update_platform_context(flask_session_id, platform_id)
+            
+            # Update Flask session for cross-tab synchronization
+            flask_session_updated = flask_session_manager.update_platform_context(platform_id)
+            
+            # Update Flask session data directly for immediate effect
+            flask_session['platform_connection_id'] = platform_id
+            flask_session['last_activity'] = datetime.now(timezone.utc).isoformat()
             
             # Also set as default platform in database for persistence
             db_success = db_manager.set_default_platform(current_user.id, platform_id)
             
-            if session_updated:
-                app.logger.info(f"User {sanitize_for_log(current_user.username)} switched to platform {sanitize_for_log(platform_data['name'])}")
+            if session_updated and flask_session_updated:
+                app.logger.info(f"User {sanitize_for_log(current_user.username)} switched to platform {sanitize_for_log(platform_data['name'])} via integrated session management")
                 return jsonify({
                     'success': True,
                     'message': f'Successfully switched to {platform_data["name"]} ({platform_data["platform_type"].title()})',
                     'platform': platform_data
                 })
             else:
-                return jsonify({'success': False, 'error': 'Failed to switch platform'}), 500
+                app.logger.warning(f"Partial platform switch success - database: {session_updated}, flask: {flask_session_updated}")
+                return jsonify({'success': False, 'error': 'Failed to switch platform completely'}), 500
                 
     except Exception as e:
-        app.logger.error(f"Error switching platform: {sanitize_for_log(str(e))}")
+        app.logger.error(f"Error switching platform with integrated session management: {sanitize_for_log(str(e))}")
         return jsonify({'success': False, 'error': 'Failed to switch platform'}), 500
 
 @app.route('/api/test_platform/<int:platform_id>', methods=['POST'])
@@ -2790,13 +2909,14 @@ def api_edit_platform(platform_id):
 @login_required
 @with_session_error_handling
 def api_session_state():
-    """Get current session state for cross-tab synchronization"""
+    """Get current session state for cross-tab synchronization with integrated session management"""
     try:
-        # Get current platform context with fallback
+        # Get current platform context with integrated session management
         context = get_current_platform_context()
         current_platform = None
+        session_info = None
         
-        # Get platform info from Flask session context
+        # Get platform info from integrated session context
         if context and context.get('platform_info'):
             current_platform = {
                 'id': context['platform_info']['id'],
@@ -2804,6 +2924,11 @@ def api_session_state():
                 'type': context['platform_info']['platform_type'],
                 'instance_url': context['platform_info']['instance_url'],
                 'is_default': context['platform_info']['is_default']
+            }
+            session_info = {
+                'session_id': context.get('session_id'),
+                'created_at': context.get('created_at'),
+                'last_activity': context.get('last_activity')
             }
         else:
             # Fallback to default platform if no current platform
@@ -2834,14 +2959,26 @@ def api_session_state():
                         'is_default': default_platform.is_default
                     }
                     
-                    # Update database session context
+                    # Update integrated session context
                     from flask import session as flask_session
                     flask_session_id = flask_session.get('_id')
                     if flask_session_id:
                         session_manager.update_platform_context(flask_session_id, platform_id)
-                    app.logger.info(f"Updated session context to default platform {platform_name}")
+                        # Also update Flask session for consistency
+                        flask_session['platform_connection_id'] = platform_id
+                        flask_session['last_activity'] = datetime.now(timezone.utc).isoformat()
+                    app.logger.info(f"Updated integrated session context to default platform {platform_name}")
             finally:
                 db_session.close()
+        
+        # Get Flask session data for cross-tab synchronization
+        flask_session_data = {
+            'user_id': session.get('user_id'),
+            'platform_connection_id': session.get('platform_connection_id'),
+            'authenticated': session.get('authenticated'),
+            'created_at': session.get('created_at'),
+            'last_activity': session.get('last_activity')
+        }
         
         return jsonify({
             'success': True,
@@ -2851,16 +2988,106 @@ def api_session_state():
                 'email': current_user.email
             },
             'platform': current_platform,
-            'session_type': 'flask',
+            'session': session_info,
+            'flask_session': flask_session_data,
+            'session_type': 'integrated',
             'timestamp': datetime.now(timezone.utc).isoformat(),
             'context_source': 'session' if context else 'fallback'
         })
         
     except Exception as e:
-        app.logger.error(f"Error getting session state: {e}")
+        app.logger.error(f"Error getting integrated session state: {e}")
         return jsonify({'success': False, 'error': 'Failed to get session state'}), 500
 
-# Flask sessions are per-browser, so no need for multi-session management endpoints
+@app.route('/api/session/cleanup', methods=['POST'])
+@login_required
+@validate_csrf_token
+@rate_limit(limit=5, window_seconds=60)
+@with_session_error_handling
+def api_session_cleanup():
+    """Clean up expired sessions and notify tabs - integrated session management"""
+    try:
+        user_id = current_user.id if current_user and current_user.is_authenticated else None
+        if not user_id:
+            return jsonify({'success': False, 'error': 'User not authenticated'}), 401
+        
+        # Clean up expired database sessions
+        expired_count = session_manager.cleanup_user_sessions(user_id)
+        
+        # Clean up Flask session if needed
+        flask_session_manager.clear_session()
+        
+        app.logger.info(f"Cleaned up {expired_count} expired sessions for user {sanitize_for_log(str(user_id))}")
+        
+        return jsonify({
+            'success': True,
+            'cleaned_sessions': expired_count,
+            'message': f'Cleaned up {expired_count} expired sessions'
+        })
+        
+    except Exception as e:
+        app.logger.error(f"Error in session cleanup: {sanitize_for_log(str(e))}")
+        return jsonify({'success': False, 'error': 'Failed to cleanup sessions'}), 500
+
+@app.route('/api/session/validate', methods=['POST'])
+@login_required
+@rate_limit(limit=20, window_seconds=60)
+@with_session_error_handling
+def api_session_validate():
+    """Validate current session with integrated session management"""
+    try:
+        user_id = current_user.id if current_user and current_user.is_authenticated else None
+        if not user_id:
+            return jsonify({'success': False, 'error': 'User not authenticated'}), 401
+        
+        # Validate database session
+        flask_session_id = session.get('_id')
+        db_session_valid = False
+        if flask_session_id:
+            db_session_valid = session_manager.validate_session(flask_session_id, user_id)
+        
+        # Validate Flask session
+        flask_session_valid = flask_session_manager.validate_session(user_id)
+        
+        # Update last activity
+        session['last_activity'] = datetime.now(timezone.utc).isoformat()
+        
+        return jsonify({
+            'success': True,
+            'valid': db_session_valid and flask_session_valid,
+            'database_session_valid': db_session_valid,
+            'flask_session_valid': flask_session_valid,
+            'timestamp': datetime.now(timezone.utc).isoformat()
+        })
+        
+    except Exception as e:
+        app.logger.error(f"Error validating integrated session: {sanitize_for_log(str(e))}")
+        return jsonify({'success': False, 'error': 'Failed to validate session'}), 500
+
+@app.route('/api/session/notify_logout', methods=['POST'])
+@rate_limit(limit=10, window_seconds=60)
+@with_session_error_handling
+def api_session_notify_logout():
+    """Notify other tabs about logout - for cross-tab session synchronization"""
+    try:
+        # This endpoint can be called without authentication since it's for logout notification
+        # Get user info from session if available
+        user_id = session.get('user_id')
+        
+        # Clear any remaining session data
+        session.clear()
+        
+        app.logger.info(f"Logout notification processed for user {sanitize_for_log(str(user_id)) if user_id else 'unknown'}")
+        
+        return jsonify({
+            'success': True,
+            'message': 'Logout notification processed',
+            'timestamp': datetime.now(timezone.utc).isoformat()
+        })
+        
+    except Exception as e:
+        app.logger.error(f"Error processing logout notification: {sanitize_for_log(str(e))}")
+        return jsonify({'success': False, 'error': 'Failed to process logout notification'}), 500
 
 @app.route('/api/delete_platform/<int:platform_id>', methods=['DELETE'])
 @login_required
@@ -3588,10 +3815,36 @@ def api_get_session_error_statistics():
             # This would require extending the detached instance handler to track metrics
             recovery_stats = {'recovery_attempts': 'Not implemented yet'}
         
+        # Get session health statistics
+        session_health_stats = {}
+        try:
+            session_health_checker = app.config.get('session_health_checker')
+            if session_health_checker:
+                session_system_health = session_health_checker.check_comprehensive_session_health()
+                session_health_stats = {
+                    'overall_status': session_system_health.status.value,
+                    'component_count': len(session_system_health.components),
+                    'healthy_components': session_system_health.summary['healthy_components'],
+                    'active_alerts': session_system_health.summary['total_alerts']
+                }
+        except Exception as e:
+            app.logger.error(f"Error getting session health stats: {sanitize_for_log(str(e))}")
+        
+        # Get alerting statistics
+        alerting_stats = {}
+        try:
+            session_alerting_system = app.config.get('session_alerting_system')
+            if session_alerting_system:
+                alerting_stats = session_alerting_system.get_alert_summary()
+        except Exception as e:
+            app.logger.error(f"Error getting alerting stats: {sanitize_for_log(str(e))}")
+        
         return jsonify({
             'success': True,
             'session_errors': error_stats,
             'recovery_stats': recovery_stats,
+            'session_health': session_health_stats,
+            'alerting': alerting_stats,
             'timestamp': datetime.now(timezone.utc).isoformat()
         })
         

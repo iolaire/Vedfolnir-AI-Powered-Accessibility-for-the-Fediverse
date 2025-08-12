@@ -201,8 +201,10 @@ def monitoring_dashboard():
 
 
 @session_monitoring_bp.route('/health')
+@login_required
+@admin_required
 def monitoring_health():
-    """Health check endpoint for monitoring systems."""
+    """Admin-only health check endpoint for session monitoring."""
     try:
         monitor = get_performance_monitor()
         metrics = monitor.get_current_metrics()

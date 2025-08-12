@@ -182,7 +182,7 @@ class SessionSync {
     }
     
     /**
-     * Sync session state across tabs with performance optimizations
+     * Sync session state across tabs with integrated session management
      */
     async syncSessionState() {
         if (!this.isOnline) {
@@ -208,7 +208,7 @@ class SessionSync {
         const syncStartTime = performance.now();
         
         try {
-            // Get current session state from server
+            // Get current session state from integrated session management API
             const response = await fetch('/api/session_state', {
                 method: 'GET',
                 headers: {
@@ -229,11 +229,12 @@ class SessionSync {
                 
                 // Check if state actually changed to avoid unnecessary updates
                 if (this.hasSessionStateChanged(sessionState)) {
-                    // Update local storage to notify other tabs
+                    // Update local storage to notify other tabs with integrated session data
                     localStorage.setItem(this.storageKey, JSON.stringify({
                         ...sessionState,
                         timestamp: Date.now(),
-                        tabId: this.tabId
+                        tabId: this.tabId,
+                        session_type: 'integrated'
                     }));
                     
                     // Apply state to current tab
@@ -242,9 +243,9 @@ class SessionSync {
                     // Store last state for comparison
                     this.lastSessionState = sessionState;
                     
-                    console.log(`Session state synced successfully for tab ${this.tabId}`);
+                    console.log(`Integrated session state synced successfully for tab ${this.tabId}`);
                 } else {
-                    console.log('Session state unchanged, skipping update');
+                    console.log('Integrated session state unchanged, skipping update');
                 }
                 
                 this.lastSyncTime = Date.now();
@@ -264,7 +265,7 @@ class SessionSync {
                 throw new Error(`HTTP ${response.status}: ${response.statusText}`);
             }
         } catch (error) {
-            console.error(`Error syncing session state for tab ${this.tabId}:`, error);
+            console.error(`Error syncing integrated session state for tab ${this.tabId}:`, error);
             this.updatePerformanceMetrics(syncStartTime, false);
             this.handleSyncError(error);
         } finally {
@@ -273,7 +274,7 @@ class SessionSync {
     }
     
     /**
-     * Validate session with server periodically
+     * Validate session with integrated session management
      */
     async validateSession() {
         if (!this.isOnline) {
@@ -288,25 +289,33 @@ class SessionSync {
         }
         
         try {
-            const response = await fetch('/api/session_state', {
-                method: 'GET',
+            // Use integrated session validation endpoint
+            const response = await fetch('/api/session/validate', {
+                method: 'POST',
                 headers: {
                     'Content-Type': 'application/json',
-                    'X-Requested-With': 'XMLHttpRequest'
+                    'X-Requested-With': 'XMLHttpRequest',
+                    'X-CSRFToken': this.getCSRFToken()
                 },
                 credentials: 'same-origin'
             });
             
-            if (response.status === 401) {
+            if (response.ok) {
+                const result = await response.json();
+                if (!result.valid) {
+                    console.warn('Integrated session validation failed:', result);
+                    this.handleSessionExpired();
+                }
+            } else if (response.status === 401) {
                 this.handleSessionExpired();
             } else if (response.status === 302) {
                 // Redirect response (likely to login page)
                 this.handleSessionExpired();
-            } else if (!response.ok) {
-                console.warn(`Session validation failed: ${response.status}`);
+            } else {
+                console.warn(`Integrated session validation failed: ${response.status}`);
             }
         } catch (error) {
-            console.error('Error validating session:', error);
+            console.error('Error validating integrated session:', error);
         }
     }
     
@@ -648,9 +657,23 @@ class SessionSync {
     }
     
     /**
-     * Handle logout event from another tab
+     * Handle logout event from another tab with integrated session management
      */
-    handleLogoutEvent() {
+    async handleLogoutEvent() {
+        try {
+            // Notify server about logout for integrated session cleanup
+            await fetch('/api/session/notify_logout', {
+                method: 'POST',
+                headers: {
+                    'Content-Type': 'application/json',
+                    'X-Requested-With': 'XMLHttpRequest'
+                },
+                credentials: 'same-origin'
+            });
+        } catch (error) {
+            console.error('Error notifying server about logout:', error);
+        }
+        
         // Clear local session data
         localStorage.removeItem(this.storageKey);
         
@@ -677,22 +700,31 @@ class SessionSync {
     }
     
     /**
-     * Check if session state has actually changed
+     * Check if integrated session state has actually changed
      */
     hasSessionStateChanged(newState) {
         if (!this.lastSessionState) {
             return true;
         }
         
-        // Compare key fields that matter for UI updates
-        const keyFields = ['user.id', 'platform.id', 'platform.name', 'platform.type', 'session_id'];
+        // Compare key fields that matter for UI updates in integrated session management
+        const keyFields = [
+            'user.id', 
+            'platform.id', 
+            'platform.name', 
+            'platform.type', 
+            'session.session_id',
+            'flask_session.user_id',
+            'flask_session.platform_connection_id',
+            'session_type'
+        ];
         
         for (const field of keyFields) {
             const oldValue = this.getNestedValue(this.lastSessionState, field);
             const newValue = this.getNestedValue(newState, field);
             
             if (oldValue !== newValue) {
-                console.log(`Session state changed: ${field} changed from ${oldValue} to ${newValue}`);
+                console.log(`Integrated session state changed: ${field} changed from ${oldValue} to ${newValue}`);
                 return true;
             }
         }
@@ -702,7 +734,16 @@ class SessionSync {
         const newPlatform = newState.platform;
         
         if ((oldPlatform === null) !== (newPlatform === null)) {
-            console.log('Platform availability changed');
+            console.log('Platform availability changed in integrated session');
+            return true;
+        }
+        
+        // Check if session type changed (e.g., from flask to integrated)
+        const oldSessionType = this.lastSessionState.session_type;
+        const newSessionType = newState.session_type;
+        
+        if (oldSessionType !== newSessionType) {
+            console.log(`Session type changed from ${oldSessionType} to ${newSessionType}`);
             return true;
         }
         
@@ -762,6 +803,43 @@ class SessionSync {
         this.debounceTimer = setTimeout(() => {
             this.syncSessionState();
         }, delay);
+    }
+    
+    /**
+     * Get CSRF token for API requests
+     */
+    getCSRFToken() {
+        const csrfToken = document.querySelector('meta[name="csrf-token"]');
+        return csrfToken ? csrfToken.getAttribute('content') : '';
+    }
+    
+    /**
+     * Clean up expired sessions (can be called manually)
+     */
+    async cleanupExpiredSessions() {
+        try {
+            const response = await fetch('/api/session/cleanup', {
+                method: 'POST',
+                headers: {
+                    'Content-Type': 'application/json',
+                    'X-Requested-With': 'XMLHttpRequest',
+                    'X-CSRFToken': this.getCSRFToken()
+                },
+                credentials: 'same-origin'
+            });
+            
+            if (response.ok) {
+                const result = await response.json();
+                console.log(`Cleaned up ${result.cleaned_sessions} expired sessions`);
+                return result;
+            } else {
+                console.warn('Failed to cleanup expired sessions:', response.status);
+            }
+        } catch (error) {
+            console.error('Error cleaning up expired sessions:', error);
+        }
+        
+        return null;
     }
 }
 

@@ -19,6 +19,7 @@ from threading import Lock
 from models import UserSession, User
 from database import DatabaseManager
 from security.core.security_utils import sanitize_for_log
+from session_config import get_session_config, SessionConfig
 
 logger = getLogger(__name__)
 
@@ -45,22 +46,20 @@ class SessionEvent:
 class SessionMonitor:
     """Comprehensive session monitoring and metrics collection"""
     
-    def __init__(self, db_manager: DatabaseManager):
+    def __init__(self, db_manager: DatabaseManager, config: Optional[SessionConfig] = None):
         self.db_manager = db_manager
-        self.metrics_buffer = deque(maxlen=1000)  # Keep last 1000 metrics
-        self.events_buffer = deque(maxlen=500)    # Keep last 500 events
+        self.config = config or get_session_config()
+        
+        # Use configuration for buffer sizes and thresholds
+        self.metrics_buffer = deque(maxlen=self.config.monitoring.metrics_buffer_size)
+        self.events_buffer = deque(maxlen=self.config.monitoring.events_buffer_size)
         self.performance_stats = defaultdict(list)
-        self.alert_thresholds = {
-            'session_creation_rate': 100,  # per minute
-            'session_failure_rate': 10,    # per minute
-            'avg_session_duration': 3600,  # seconds
-            'concurrent_sessions': 1000,   # total
-            'suspicious_activity_rate': 5  # per minute
-        }
+        self.alert_thresholds = self.config.monitoring.alert_thresholds
         self._lock = Lock()
         
-        # Initialize monitoring
-        self._initialize_monitoring()
+        # Initialize monitoring if enabled
+        if self.config.monitoring.enable_performance_monitoring:
+            self._initialize_monitoring()
     
     def _initialize_monitoring(self):
         """Initialize monitoring system"""
@@ -469,9 +468,13 @@ class SessionMonitor:
 # Global session monitor instance
 session_monitor = None
 
-def get_session_monitor(db_manager: DatabaseManager) -> SessionMonitor:
+def get_session_monitor(db_manager: DatabaseManager, config: Optional[SessionConfig] = None) -> Optional[SessionMonitor]:
     """Get or create global session monitor instance"""
     global session_monitor
     if session_monitor is None:
-        session_monitor = SessionMonitor(db_manager)
+        session_config = config or get_session_config()
+        if session_config.monitoring.enable_performance_monitoring:
+            session_monitor = SessionMonitor(db_manager, session_config)
+        else:
+            return None
     return session_monitor

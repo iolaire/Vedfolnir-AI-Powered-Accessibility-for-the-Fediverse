@@ -439,6 +439,10 @@ class Config:
         self.webapp = WebAppConfig.from_env()
         self.auth = AuthConfig.from_env()
         self.batch_update = BatchUpdateConfig.from_env()
+        
+        # Initialize session configuration (lazy loading to avoid circular imports)
+        self._session_config = None
+        
         self.use_batch_updates = self.batch_update.enabled
         self.batch_size = self.batch_update.batch_size
         self.max_concurrent_batches = self.batch_update.max_concurrent_batches
@@ -449,3 +453,15 @@ class Config:
         self.user_processing_delay = int(os.getenv("USER_PROCESSING_DELAY", "5"))  # Delay in seconds between processing users
         self.dry_run = os.getenv("DRY_RUN", "false").lower() == "true"
         self.log_level = os.getenv("LOG_LEVEL", "INFO")
+    
+    @property
+    def session(self):
+        """Get session configuration (lazy loading)"""
+        if self._session_config is None:
+            try:
+                from session_config import get_session_config
+                self._session_config = get_session_config()
+            except ImportError:
+                # Fallback if session_config is not available
+                self._session_config = None
+        return self._session_config

@@ -20,6 +20,7 @@ from sqlalchemy.exc import SQLAlchemyError, DisconnectionError, TimeoutError, In
 
 from models import User, PlatformConnection, UserSession
 from database import DatabaseManager
+from session_config import get_session_config, SessionConfig
 
 logger = getLogger(__name__)
 
@@ -34,9 +35,10 @@ class SessionError(Exception):
 class SessionManager:
     """Manages platform-aware user sessions"""
     
-    def __init__(self, db_manager: DatabaseManager):
+    def __init__(self, db_manager: DatabaseManager, config: Optional[SessionConfig] = None):
         self.db_manager = db_manager
-        self.session_timeout = timedelta(hours=48)  # Extended session timeout for better UX
+        self.config = config or get_session_config()
+        self.session_timeout = self.config.timeout.session_lifetime
         
         # Initialize monitoring (lazy loading to avoid circular imports)
         self._monitor = None
@@ -369,42 +371,20 @@ class SessionManager:
     
     def cleanup_expired_sessions(self) -> int:
         """
-        Clean up expired sessions using bulk delete for better performance
+        Clean up expired sessions using configurable batch processing
         
         Returns:
             Number of sessions cleaned up
         """
-        db_session = self.db_manager.get_session()
-        try:
-            cutoff_time = datetime.now(timezone.utc) - self.session_timeout
-            
-            # Use bulk delete for better performance, but handle timezone-naive datetimes
-            # For safety, we'll use individual session checks instead of bulk delete
-            sessions_to_delete = db_session.query(UserSession).all()
-            count = 0
-            for session_obj in sessions_to_delete:
-                if self._is_session_expired(session_obj):
-                    db_session.delete(session_obj)
-                    count += 1
-            
-            db_session.commit()
-            
-            if count > 0:
-                logger.info(f"Cleaned up {sanitize_for_log(str(count))} expired sessions")
-            
-            return count
-            
-        except SQLAlchemyError as e:
-            db_session.rollback()
-            logger.error(f"Database error cleaning up sessions: {e}")
+        if not self.config.features.enable_background_cleanup:
+            logger.debug("Background cleanup disabled by configuration")
             return 0
-        finally:
-            db_session.close()
+        
+        return self.batch_cleanup_sessions(self.config.cleanup.cleanup_batch_size)
     
     def cleanup_user_sessions(self, user_id: int, keep_current: Optional[str] = None) -> int:
         """
-        Clean up expired sessions for a user, optionally keeping one current session.
-        For concurrent sessions, only clean up expired sessions, not all sessions.
+        Clean up expired sessions for a user with concurrent session limits
         
         Args:
             user_id: User ID to clean up sessions for
@@ -415,18 +395,36 @@ class SessionManager:
         """
         db_session = self.db_manager.get_session()
         try:
-            # Get all sessions for this user and check expiration safely
+            # Get all sessions for this user
             query = db_session.query(UserSession).filter(UserSession.user_id == user_id)
             
             if keep_current:
                 query = query.filter(UserSession.session_id != keep_current)
             
-            all_sessions = query.all()
-            sessions_to_delete = []
+            all_sessions = query.order_by(UserSession.updated_at.desc()).all()
+            
+            # Separate expired and active sessions
+            expired_sessions = []
+            active_sessions = []
             
             for session_obj in all_sessions:
                 if self._is_session_expired(session_obj):
-                    sessions_to_delete.append(session_obj)
+                    expired_sessions.append(session_obj)
+                else:
+                    active_sessions.append(session_obj)
+            
+            sessions_to_delete = expired_sessions
+            
+            # Enforce concurrent session limit if configured
+            if self.config.security.max_concurrent_sessions_per_user > 0:
+                max_sessions = self.config.security.max_concurrent_sessions_per_user
+                if len(active_sessions) > max_sessions:
+                    # Keep the most recent sessions, delete the oldest
+                    excess_sessions = active_sessions[max_sessions:]
+                    sessions_to_delete.extend(excess_sessions)
+                    
+                    if self.config.debug_mode:
+                        logger.debug(f"Enforcing concurrent session limit for user {user_id}: keeping {max_sessions}, removing {len(excess_sessions)} excess sessions")
             
             count = len(sessions_to_delete)
             
@@ -436,7 +434,7 @@ class SessionManager:
             db_session.commit()
             
             if count > 0:
-                logger.info(f"Cleaned up {sanitize_for_log(str(count))} expired sessions for user {sanitize_for_log(str(user_id))}")
+                logger.info(f"Cleaned up {sanitize_for_log(str(count))} sessions for user {sanitize_for_log(str(user_id))} (expired: {len(expired_sessions)}, excess: {count - len(expired_sessions)})")
             
             return count
             
@@ -799,57 +797,61 @@ class SessionManager:
     
     def enforce_session_timeout(self, max_idle_time: Optional[timedelta] = None) -> int:
         """
-        Enforce session timeout by cleaning up idle sessions
+        Enforce session timeout by cleaning up idle sessions using configuration
         
         Args:
-            max_idle_time: Maximum idle time before session expires
+            max_idle_time: Maximum idle time before session expires (uses config if None)
             
         Returns:
             Number of sessions cleaned up
         """
         try:
             if max_idle_time is None:
-                max_idle_time = self.session_timeout
+                max_idle_time = self.config.timeout.idle_timeout
             
             cutoff_time = datetime.now(timezone.utc) - max_idle_time
             
+            # Check if we should trigger cleanup based on threshold
             with self.get_db_session() as db_session:
-                # Find sessions that haven't been updated recently
-                idle_sessions = db_session.query(UserSession).filter(
+                expired_count = db_session.query(UserSession).filter(
                     UserSession.updated_at < cutoff_time
-                ).all()
+                ).count()
                 
-                count = 0
-                for session_obj in idle_sessions:
-                    db_session.delete(session_obj)
-                    count += 1
+                if expired_count < self.config.cleanup.cleanup_trigger_threshold:
+                    if self.config.debug_mode:
+                        logger.debug(f"Skipping cleanup - only {expired_count} expired sessions (threshold: {self.config.cleanup.cleanup_trigger_threshold})")
+                    return 0
                 
-                if count > 0:
-                    logger.info(f"Enforced session timeout - cleaned up {count} idle sessions")
-                
-                return count
+                # Perform cleanup in batches
+                return self.batch_cleanup_sessions()
                 
         except Exception as e:
             logger.error(f"Error enforcing session timeout: {e}")
             return 0
     
-    def batch_cleanup_sessions(self, batch_size: int = 100) -> int:
+    def batch_cleanup_sessions(self, batch_size: Optional[int] = None) -> int:
         """
-        Perform batch cleanup of expired sessions for better performance
+        Perform batch cleanup of expired sessions using configuration settings
         
         Args:
-            batch_size: Number of sessions to process in each batch
+            batch_size: Number of sessions to process in each batch (uses config default if None)
             
         Returns:
             Total number of sessions cleaned up
         """
+        if batch_size is None:
+            batch_size = self.config.cleanup.cleanup_batch_size
+        
+        max_batches = self.config.cleanup.max_cleanup_batches_per_run
+        
         try:
             total_cleaned = 0
+            batches_processed = 0
             
-            while True:
+            while batches_processed < max_batches:
                 with self.get_db_session() as db_session:
-                    # Get a batch of expired sessions
-                    cutoff_time = datetime.now(timezone.utc) - self.session_timeout
+                    # Get a batch of expired sessions with grace period
+                    cutoff_time = datetime.now(timezone.utc) - self.session_timeout - self.config.timeout.cleanup_grace_period
                     
                     expired_sessions = db_session.query(UserSession).filter(
                         UserSession.updated_at < cutoff_time
@@ -865,14 +867,17 @@ class SessionManager:
                         batch_count += 1
                     
                     total_cleaned += batch_count
-                    logger.debug(f"Cleaned up batch of {batch_count} expired sessions")
+                    batches_processed += 1
+                    
+                    if self.config.debug_mode:
+                        logger.debug(f"Cleaned up batch {batches_processed} of {batch_count} expired sessions")
                     
                     # If we got fewer than batch_size, we're done
                     if len(expired_sessions) < batch_size:
                         break
             
             if total_cleaned > 0:
-                logger.info(f"Batch cleanup completed - cleaned up {total_cleaned} expired sessions")
+                logger.info(f"Batch cleanup completed - cleaned up {total_cleaned} expired sessions in {batches_processed} batches")
             
             return total_cleaned
             
@@ -936,7 +941,7 @@ class SessionManager:
     @property
     def monitor(self):
         """Get session monitor instance (lazy loading)"""
-        if self._monitor is None:
+        if self._monitor is None and self.config.monitoring.enable_performance_monitoring:
             try:
                 from session_monitoring import get_session_monitor
                 self._monitor = get_session_monitor(self.db_manager)
@@ -948,7 +953,7 @@ class SessionManager:
     @property
     def security_hardening(self):
         """Get session security hardening instance (lazy loading)"""
-        if self._security_hardening is None:
+        if self._security_hardening is None and self.config.security.enable_fingerprinting:
             try:
                 from security.features.session_security import initialize_session_security
                 self._security_hardening = initialize_session_security(self)
@@ -1003,7 +1008,7 @@ class SessionManager:
     
     def _is_session_expired(self, user_session: UserSession) -> bool:
         """
-        Check if a session is expired
+        Check if a session is expired using configuration timeouts
         
         Args:
             user_session: UserSession object to check
@@ -1020,7 +1025,24 @@ class SessionManager:
             # Assume naive datetimes are UTC
             updated_at = updated_at.replace(tzinfo=timezone.utc)
         
-        return datetime.now(timezone.utc) - updated_at > self.session_timeout
+        now = datetime.now(timezone.utc)
+        
+        # Check idle timeout
+        idle_time = now - updated_at
+        if idle_time > self.config.timeout.idle_timeout:
+            return True
+        
+        # Check absolute timeout if session has creation time
+        if user_session.created_at:
+            created_at = user_session.created_at
+            if created_at.tzinfo is None:
+                created_at = created_at.replace(tzinfo=timezone.utc)
+            
+            absolute_time = now - created_at
+            if absolute_time > self.config.timeout.absolute_timeout:
+                return True
+        
+        return False
     
     def _log_session_metrics(self, db_session):
         """
@@ -1059,7 +1081,7 @@ class SessionManager:
             engine = self.db_manager.engine
             pool = engine.pool
             
-            return {
+            status = {
                 'pool_size': pool.size(),
                 'checked_out': pool.checkedout(),
                 'overflow': pool.overflow(),
@@ -1067,8 +1089,16 @@ class SessionManager:
                 'total_connections': pool.size() + pool.overflow(),
                 'available_connections': pool.size() - pool.checkedout(),
                 'pool_timeout': getattr(pool, '_timeout', 'unknown'),
-                'pool_recycle': getattr(pool, '_recycle', 'unknown')
+                'pool_recycle': getattr(pool, '_recycle', 'unknown'),
+                'configuration': {
+                    'cleanup_enabled': self.config.features.enable_background_cleanup,
+                    'monitoring_enabled': self.config.monitoring.enable_performance_monitoring,
+                    'session_timeout_hours': self.config.timeout.session_lifetime.total_seconds() / 3600,
+                    'cleanup_interval_minutes': self.config.cleanup.cleanup_interval.total_seconds() / 60
+                }
             }
+            
+            return status
         except Exception as e:
             logger.error(f"Error getting connection pool status: {e}")
             return {'error': str(e)}
