@@ -137,6 +137,7 @@ flask_session_manager = FlaskSessionManager(db_manager)
 
 # Initialize request-scoped session manager for preventing DetachedInstanceError
 request_session_manager = RequestScopedSessionManager(db_manager)
+app.request_session_manager = request_session_manager  # Store in app for decorator access
 
 # Initialize database context middleware for request lifecycle management
 from database_context_middleware import DatabaseContextMiddleware
