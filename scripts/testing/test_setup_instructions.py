@@ -39,7 +39,7 @@ def test_example_configs():
     """Test that example configurations are valid"""
     print("Testing example configurations...")
     
-    example_files = ['.env.example', '.env.example.mastodon', '.env.example.pixelfed']
+    example_files = ['.env.example']
     
     for example_file in example_files:
         if not os.path.exists(example_file):
@@ -85,8 +85,8 @@ def test_documentation_completeness():
         'init_admin_user.py',
         'check_db.py',
         '.env.example',
-        '.env.example.mastodon',
-        '.env.example.pixelfed'
+        # mastodon configuration now handled via web interface
+        # Platform configuration now handled via web interface
     ]
     
     missing_files = []
@@ -172,7 +172,7 @@ def test_config_variables_documented():
     
     # Check example files for documented variables
     documented_vars = set()
-    for example_file in ['.env.example', '.env.example.mastodon', '.env.example.pixelfed']:
+    for example_file in ['.env.example']:
         if os.path.exists(example_file):
             with open(example_file, 'r') as f:
                 for line in f:

@@ -67,7 +67,7 @@ Create your configuration file:
 
 ```bash
 # Copy the Pixelfed example
-cp .env.example.pixelfed .env
+cp .env.example .env
 
 # Edit with your details
 nano .env
@@ -176,7 +176,7 @@ Create your configuration file:
 
 ```bash
 # Copy the Mastodon example
-cp .env.example.mastodon .env
+cp .env.example .env
 
 # Edit with your details
 nano .env

@@ -8,7 +8,7 @@ Tests for platform-aware session management
 import unittest
 import tempfile
 import os
-from datetime import datetime, timedelta
+from datetime import datetime, timedelta, timezone
 from unittest.mock import Mock, patch
 
 from config import Config

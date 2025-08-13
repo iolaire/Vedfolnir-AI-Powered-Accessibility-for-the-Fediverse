@@ -10,7 +10,7 @@ Implements comprehensive security event monitoring, logging, and alerting.
 import logging
 import json
 import hashlib
-from datetime import datetime, timedelta
+from datetime import datetime, timedelta, timezone
 from collections import defaultdict, deque
 from typing import Dict, List, Optional, Any
 from dataclasses import dataclass
@@ -94,7 +94,7 @@ class SecurityMonitor:
         event = SecurityEvent(
             event_type=event_type,
             severity=severity,
-            timestamp=datetime.utcnow(),
+            timestamp=datetime.now(timezone.utc),
             source_ip=source_ip,
             user_id=user_id,
             endpoint=endpoint,
@@ -147,7 +147,7 @@ class SecurityMonitor:
     
     def _check_alert_conditions(self, event: SecurityEvent):
         """Check if event triggers any alert conditions"""
-        current_time = datetime.utcnow()
+        current_time = datetime.now(timezone.utc)
         time_window = timedelta(minutes=self.alert_thresholds['time_window_minutes'])
         
         # Check for brute force attacks
@@ -258,7 +258,7 @@ class SecurityMonitor:
             'event_type': event_type.value,
             'severity': severity.value,
             'message': message,
-            'timestamp': datetime.utcnow().isoformat(),
+            'timestamp': datetime.now(timezone.utc).isoformat(),
             'details': details
         }
         
@@ -287,7 +287,7 @@ class SecurityMonitor:
     
     def _cleanup_old_events(self):
         """Clean up old events to prevent memory issues"""
-        cutoff_time = datetime.utcnow() - timedelta(hours=24)
+        cutoff_time = datetime.now(timezone.utc) - timedelta(hours=24)
         
         with self.lock:
             # Clean up IP events
@@ -310,7 +310,7 @@ class SecurityMonitor:
     
     def _generate_security_metrics(self):
         """Generate security metrics for monitoring"""
-        current_time = datetime.utcnow()
+        current_time = datetime.now(timezone.utc)
         last_hour = current_time - timedelta(hours=1)
         
         recent_events = [e for e in self.events if e.timestamp > last_hour]
@@ -339,7 +339,7 @@ class SecurityMonitor:
     
     def get_security_dashboard_data(self):
         """Get data for security dashboard"""
-        current_time = datetime.utcnow()
+        current_time = datetime.now(timezone.utc)
         last_24h = current_time - timedelta(hours=24)
         
         recent_events = [e for e in self.events if e.timestamp > last_24h]

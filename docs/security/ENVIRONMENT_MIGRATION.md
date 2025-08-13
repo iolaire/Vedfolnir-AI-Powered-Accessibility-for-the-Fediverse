@@ -23,7 +23,7 @@ Updated configuration classes to provide clear error messages when required envi
 ### 3. Created Security Documentation
 
 - **`docs/security/environment-setup.md`** - Comprehensive setup guide
-- **`.env.local.example`** - Template for local environment variables
+- **Environment variable templates** - Secure configuration examples
 - Clear instructions for generating secure values
 
 ### 4. Automated Setup Tools
@@ -51,7 +51,7 @@ PLATFORM_ENCRYPTION_KEY=QWeybjDPjNv5CAHTYDK3lsB8WxR2JI9LFsHwI1fFejk=
 
 ### After (Secure)
 ```bash
-# .env.local file (gitignored, not committed)
+# Environment variables (set via system or deployment platform)
 export FLASK_SECRET_KEY="cryptographically-secure-generated-key"
 export AUTH_ADMIN_PASSWORD="strong-unique-password"
 export PLATFORM_ENCRYPTION_KEY="properly-generated-fernet-key"
@@ -68,7 +68,7 @@ export PLATFORM_ENCRYPTION_KEY="properly-generated-fernet-key"
 
 2. **Source the environment:**
    ```bash
-   source .env.local
+   # Environment variables are now set automatically by the setup script
    ```
 
 3. **Verify setup:**
@@ -76,7 +76,7 @@ export PLATFORM_ENCRYPTION_KEY="properly-generated-fernet-key"
    python3 scripts/setup/verify_env_setup.py
    ```
 
-4. **Update any deployment scripts** to source `.env.local` or set environment variables
+4. **Update any deployment scripts** to set environment variables via your platform's configuration
 
 ### For New Installations
 
@@ -96,7 +96,7 @@ For production environments, use your platform's secrets management:
 
 - [ ] Removed hardcoded credentials from `.env` files
 - [ ] Generated cryptographically secure keys
-- [ ] Set up `.env.local` with proper permissions (600)
+- [ ] Set up environment variables with proper security
 - [ ] Verified all environment variables are set correctly
 - [ ] Updated deployment procedures
 - [ ] Planned key rotation schedule
@@ -117,7 +117,7 @@ For production environments, use your platform's secrets management:
 - `docs/security/environment-setup.md` - Comprehensive security guide
 
 ### New Files
-- `.env.local.example` - Template for local environment setup
+- Environment variable documentation - Secure configuration examples
 - `scripts/setup/generate_env_secrets.py` - Automated secret generation
 - `scripts/setup/verify_env_setup.py` - Environment verification
 - `docs/security/ENVIRONMENT_MIGRATION.md` - This migration guide

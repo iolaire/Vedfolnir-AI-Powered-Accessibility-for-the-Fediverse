@@ -40,7 +40,7 @@ class DocumentationValidator:
             config_vars.update(matches)
             
             # Also check .env.example files
-            for env_file in ['.env.example', '.env.example.mastodon', '.env.example.pixelfed']:
+            for env_file in ['.env.example']:
                 if os.path.exists(env_file):
                     with open(env_file, 'r') as f:
                         for line in f:
@@ -214,7 +214,7 @@ class DocumentationValidator:
         example_files = [
             '.env.example',
             '.env.example.mastodon',
-            '.env.example.pixelfed'
+            # Platform configuration now handled via web interface
         ]
         
         for example_file in example_files:

@@ -21,7 +21,7 @@ from unittest.mock import patch
 from dotenv import load_dotenv, dotenv_values
 import re
 
-from config import Config, ActivityPubConfig, ConfigurationError
+from config import Config, ConfigurationError
 
 
 class TestConfigurationExamples(unittest.TestCase):
@@ -32,8 +32,8 @@ class TestConfigurationExamples(unittest.TestCase):
         self.project_root = os.path.dirname(os.path.dirname(os.path.abspath(__file__)))
         self.example_files = {
             'main': os.path.join(self.project_root, '.env.example'),
-            'mastodon': os.path.join(self.project_root, '.env.example.mastodon'),
-            'pixelfed': os.path.join(self.project_root, '.env.example.pixelfed')
+            # mastodon configuration now handled via web interface
+            # pixelfed configuration now handled via web interface
         }
     
     def test_example_files_exist(self):
@@ -42,41 +42,39 @@ class TestConfigurationExamples(unittest.TestCase):
             with self.subTest(file=name):
                 self.assertTrue(os.path.exists(path), f"Example file {name} does not exist at {path}")
     
-    def test_mastodon_example_contains_required_variables(self):
-        """Test that .env.example.mastodon contains all required Mastodon variables"""
-        mastodon_required_vars = [
+    def test_platform_configuration_moved_to_database(self):
+        """Test that platform configuration is now handled via web interface and database"""
+        # Platform-specific configuration is no longer in .env files
+        # This test verifies that the main .env.example doesn't contain platform-specific variables
+        config_vars = dotenv_values(self.example_files['main'])
+        
+        # These variables should NOT be in the main .env file anymore
+        deprecated_platform_vars = [
             'ACTIVITYPUB_API_TYPE',
-            'ACTIVITYPUB_INSTANCE_URL',
+            'ACTIVITYPUB_INSTANCE_URL', 
             'ACTIVITYPUB_USERNAME',
             'ACTIVITYPUB_ACCESS_TOKEN',
             'MASTODON_CLIENT_KEY',
             'MASTODON_CLIENT_SECRET'
         ]
         
-        config_vars = dotenv_values(self.example_files['mastodon'])
-        
-        for var in mastodon_required_vars:
-            with self.subTest(variable=var):
-                self.assertIn(var, config_vars, f"Required Mastodon variable {var} not found")
-                self.assertIsNotNone(config_vars[var], f"Required Mastodon variable {var} is None")
-                self.assertNotEqual(config_vars[var].strip(), '', f"Required Mastodon variable {var} is empty")
+        for var in deprecated_platform_vars:
+            self.assertNotIn(var, config_vars, 
+                           f"Platform variable {var} should not be in .env.example - it's now managed via web interface")
     
-    def test_pixelfed_example_contains_required_variables(self):
-        """Test that .env.example.pixelfed contains all required Pixelfed variables"""
-        pixelfed_required_vars = [
-            'ACTIVITYPUB_API_TYPE',
-            'ACTIVITYPUB_INSTANCE_URL',
-            'ACTIVITYPUB_USERNAME',
-            'ACTIVITYPUB_ACCESS_TOKEN'
-        ]
+    def test_database_managed_platform_configuration(self):
+        """Test that platform configuration documentation is present in .env.example"""
+        # Verify that the .env.example file contains documentation about platform management
+        with open(self.example_files['main'], 'r') as f:
+            content = f.read()
         
-        config_vars = dotenv_values(self.example_files['pixelfed'])
-        
-        for var in pixelfed_required_vars:
-            with self.subTest(variable=var):
-                self.assertIn(var, config_vars, f"Required Pixelfed variable {var} not found")
-                self.assertIsNotNone(config_vars[var], f"Required Pixelfed variable {var} is None")
-                self.assertNotEqual(config_vars[var].strip(), '', f"Required Pixelfed variable {var} is empty")
+        # Check that the file documents the new platform management approach
+        self.assertIn("Platform Management", content, 
+                     ".env.example should document platform management via web interface")
+        self.assertIn("web interface", content,
+                     ".env.example should mention web interface for platform configuration")
+        self.assertIn("encrypted and stored securely", content,
+                     ".env.example should mention secure credential storage")
     
     def test_example_configurations_are_syntactically_valid(self):
         """Test that example configurations are syntactically valid"""
@@ -106,28 +104,20 @@ class TestConfigurationExamples(unittest.TestCase):
                         # Mock environment variables
                         with patch.dict(os.environ, config_vars, clear=True):
                             try:
-                                # Try to create ActivityPubConfig (this will validate the config)
-                                if config_vars.get('ACTIVITYPUB_API_TYPE') == 'mastodon':
-                                    # For Mastodon, we expect it to work with all required vars
-                                    config = ActivityPubConfig.from_env()
-                                    self.assertEqual(config.api_type, 'mastodon')
-                                elif config_vars.get('ACTIVITYPUB_API_TYPE') == 'pixelfed':
-                                    # For Pixelfed, we expect it to work with basic vars
-                                    config = ActivityPubConfig.from_env()
-                                    self.assertEqual(config.api_type, 'pixelfed')
-                                else:
-                                    # For main example, it should default to pixelfed
-                                    config = ActivityPubConfig.from_env()
-                                    self.assertIn(config.api_type, ['pixelfed', 'mastodon'])
+                                # Try to create basic Config (not ActivityPubConfig since platforms are in DB)
+                                config = Config()
+                                # Basic config should load successfully
+                                self.assertIsNotNone(config)
+                                self.assertIsInstance(config.webapp.secret_key, str)
+                                self.assertIsInstance(config.storage.database_dir, str)
                             except ConfigurationError as e:
-                                # This is expected for placeholder values, but we should get specific errors
+                                # Only fail if it's not due to expected placeholder values
                                 error_msg = str(e).lower()
                                 expected_errors = [
-                                    'your_access_token_here',
-                                    'your_username',
-                                    'your_client_key_here',
-                                    'your_client_secret_here',
-                                    'your-instance.example.com'
+                                    'change_me_to_a_secure',
+                                    'change_me_to_a_fernet',
+                                    'placeholder',
+                                    'example'
                                 ]
                                 
                                 # Check if the error is due to placeholder values (which is expected)
@@ -143,12 +133,17 @@ class TestConfigurationExamples(unittest.TestCase):
             with self.subTest(file=name):
                 config_vars = dotenv_values(path)
                 
-                # Test URL formatting
-                if 'ACTIVITYPUB_INSTANCE_URL' in config_vars:
-                    url = config_vars['ACTIVITYPUB_INSTANCE_URL']
-                    self.assertTrue(url.startswith('https://'), f"Instance URL in {name} should use HTTPS")
-                    self.assertRegex(url, r'^https://[a-zA-Z0-9.-]+\.[a-zA-Z]{2,}$', 
-                                   f"Instance URL in {name} has invalid format")
+                # Test URL formatting for any remaining URLs
+                url_vars = ['OLLAMA_URL', 'DATABASE_URL']
+                for url_var in url_vars:
+                    if url_var in config_vars:
+                        url = config_vars[url_var]
+                        if url_var == 'OLLAMA_URL':
+                            self.assertTrue(url.startswith('http://') or url.startswith('https://'), 
+                                          f"{url_var} in {name} should be a valid URL")
+                        elif url_var == 'DATABASE_URL':
+                            self.assertTrue(url.startswith('sqlite://'), 
+                                          f"{url_var} in {name} should be a valid database URL")
                 
                 # Test boolean values
                 boolean_vars = ['DRY_RUN', 'FLASK_DEBUG', 'AUTH_REQUIRE_AUTH', 'FALLBACK_ENABLED']
@@ -207,12 +202,11 @@ class TestConfigurationExamples(unittest.TestCase):
     
     def test_missing_optional_variables_have_appropriate_defaults(self):
         """Test that missing optional variables have appropriate defaults"""
-        # Test with minimal configuration
+        # Test with minimal configuration (no platform-specific vars needed)
         minimal_config = {
-            'ACTIVITYPUB_API_TYPE': 'pixelfed',
-            'ACTIVITYPUB_INSTANCE_URL': 'https://test.example.com',
-            'ACTIVITYPUB_USERNAME': 'testuser',
-            'ACTIVITYPUB_ACCESS_TOKEN': 'test_token'
+            'FLASK_SECRET_KEY': 'test_secret_key_for_testing_only',
+            'PLATFORM_ENCRYPTION_KEY': 'test_encryption_key_for_testing_only_32_chars',
+            'DATABASE_URL': 'sqlite:///test.db'
         }
         
         with patch.dict(os.environ, minimal_config, clear=True):
@@ -253,8 +247,14 @@ class TestConfigurationExamples(unittest.TestCase):
         # Variables that are expected to be in examples but not necessarily used in code
         # (like comments, deprecated variables, or future features)
         expected_missing = {
-            'ACTIVITYPUB_PLATFORM_TYPE',  # Deprecated
-            'PIXELFED_API',  # Deprecated
+            'ACTIVITYPUB_PLATFORM_TYPE',  # Deprecated - moved to database
+            'PIXELFED_API',  # Deprecated - moved to database
+            'ACTIVITYPUB_API_TYPE',  # Deprecated - moved to database
+            'ACTIVITYPUB_INSTANCE_URL',  # Deprecated - moved to database
+            'ACTIVITYPUB_USERNAME',  # Deprecated - moved to database
+            'ACTIVITYPUB_ACCESS_TOKEN',  # Deprecated - moved to database
+            'MASTODON_CLIENT_KEY',  # Deprecated - moved to database
+            'MASTODON_CLIENT_SECRET',  # Deprecated - moved to database
         }
         
         missing_vars = []
@@ -275,36 +275,23 @@ class TestConfigurationExamples(unittest.TestCase):
             print(f"Warning: Variables in examples but not found in checked files: {missing_vars}")
             # self.fail(f"Variables in examples but not used in codebase: {missing_vars}")
     
-    def test_platform_specific_variables_are_correctly_separated(self):
-        """Test that platform-specific variables are only in appropriate example files"""
-        mastodon_vars = dotenv_values(self.example_files['mastodon'])
-        pixelfed_vars = dotenv_values(self.example_files['pixelfed'])
+    def test_no_platform_specific_variables_in_env_example(self):
+        """Test that platform-specific variables are not in .env.example (they're in database)"""
+        config_vars = dotenv_values(self.example_files['main'])
         
-        # Mastodon-specific variables should not be in Pixelfed example
-        mastodon_specific = ['MASTODON_CLIENT_KEY', 'MASTODON_CLIENT_SECRET']
-        for var in mastodon_specific:
-            self.assertIn(var, mastodon_vars, f"Mastodon variable {var} missing from Mastodon example")
-            self.assertNotIn(var, pixelfed_vars, f"Mastodon variable {var} should not be in Pixelfed example")
+        # These platform-specific variables should NOT be in .env.example anymore
+        platform_specific_vars = [
+            'ACTIVITYPUB_API_TYPE',
+            'ACTIVITYPUB_INSTANCE_URL', 
+            'ACTIVITYPUB_USERNAME',
+            'ACTIVITYPUB_ACCESS_TOKEN',
+            'MASTODON_CLIENT_KEY', 
+            'MASTODON_CLIENT_SECRET'
+        ]
         
-        # Both should have the correct API type
-        self.assertEqual(mastodon_vars.get('ACTIVITYPUB_API_TYPE'), 'mastodon')
-        self.assertEqual(pixelfed_vars.get('ACTIVITYPUB_API_TYPE'), 'pixelfed')
-    
-    def test_rate_limiting_configuration_is_platform_appropriate(self):
-        """Test that rate limiting configuration is appropriate for each platform"""
-        mastodon_vars = dotenv_values(self.example_files['mastodon'])
-        pixelfed_vars = dotenv_values(self.example_files['pixelfed'])
-        
-        # Mastodon should have higher rate limits
-        mastodon_minute = int(mastodon_vars.get('RATE_LIMIT_MASTODON_MINUTE', '0'))
-        pixelfed_minute = int(pixelfed_vars.get('RATE_LIMIT_PIXELFED_MINUTE', '0'))
-        
-        self.assertGreater(mastodon_minute, pixelfed_minute, 
-                          "Mastodon should have higher rate limits than Pixelfed")
-        
-        # Both should have reasonable limits
-        self.assertGreater(mastodon_minute, 100, "Mastodon rate limit seems too low")
-        self.assertGreater(pixelfed_minute, 30, "Pixelfed rate limit seems too low")
+        for var in platform_specific_vars:
+            self.assertNotIn(var, config_vars, 
+                           f"Platform variable {var} should not be in .env.example - it's managed via database")
 
 
 if __name__ == '__main__':

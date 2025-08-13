@@ -1,0 +1,324 @@
+# tests.test_user_model_enhancements_simple
+
+**File Path:** `/Volumes/Gold/DevContainerTesting/vedfolnir/tests/test_user_model_enhancements_simple.py`
+
+## Classes
+
+### MockPlatformConnection
+
+```python
+class MockPlatformConnection
+```
+
+Simple mock platform connection that doesn't interfere with SQLAlchemy
+
+**Methods:**
+
+#### __init__
+
+```python
+def __init__(self, id, name, platform_type, is_active, is_default)
+```
+
+**Type:** Instance method
+
+### TestUserModelEnhancements
+
+```python
+class TestUserModelEnhancements(unittest.TestCase)
+```
+
+Test enhanced User model with explicit relationship loading strategies
+
+**Methods:**
+
+#### setUp
+
+```python
+def setUp(self)
+```
+
+Set up test fixtures
+
+**Type:** Instance method
+
+#### test_active_platforms_hybrid_property_exists
+
+```python
+def test_active_platforms_hybrid_property_exists(self)
+```
+
+Test that active_platforms is a hybrid property
+
+**Type:** Instance method
+
+#### test_default_platform_hybrid_property_exists
+
+```python
+def test_default_platform_hybrid_property_exists(self)
+```
+
+Test that default_platform is a hybrid property
+
+**Type:** Instance method
+
+#### test_active_platforms_with_mock_connections
+
+```python
+def test_active_platforms_with_mock_connections(self)
+```
+
+Test active_platforms hybrid property with mock connections
+
+**Type:** Instance method
+
+#### test_active_platforms_handles_exception
+
+```python
+def test_active_platforms_handles_exception(self)
+```
+
+Test active_platforms hybrid property handles exceptions gracefully
+
+**Type:** Instance method
+
+#### test_default_platform_with_default_set
+
+```python
+def test_default_platform_with_default_set(self)
+```
+
+Test default_platform hybrid property returns the default platform
+
+**Type:** Instance method
+
+#### test_default_platform_no_default_returns_first_active
+
+```python
+def test_default_platform_no_default_returns_first_active(self)
+```
+
+Test default_platform hybrid property returns first active when no default set
+
+**Type:** Instance method
+
+#### test_default_platform_no_active_platforms
+
+```python
+def test_default_platform_no_active_platforms(self)
+```
+
+Test default_platform hybrid property returns None when no active platforms
+
+**Type:** Instance method
+
+#### test_default_platform_handles_exception
+
+```python
+def test_default_platform_handles_exception(self)
+```
+
+Test default_platform hybrid property handles exceptions gracefully
+
+**Type:** Instance method
+
+#### test_legacy_methods_use_hybrid_properties
+
+```python
+def test_legacy_methods_use_hybrid_properties(self)
+```
+
+Test that legacy methods use the new hybrid properties
+
+**Type:** Instance method
+
+#### test_get_platform_by_type
+
+```python
+def test_get_platform_by_type(self)
+```
+
+Test get_platform_by_type method
+
+**Type:** Instance method
+
+#### test_get_platform_by_name
+
+```python
+def test_get_platform_by_name(self)
+```
+
+Test get_platform_by_name method
+
+**Type:** Instance method
+
+#### test_set_default_platform
+
+```python
+def test_set_default_platform(self)
+```
+
+Test set_default_platform method
+
+**Type:** Instance method
+
+#### test_has_platform_access
+
+```python
+def test_has_platform_access(self)
+```
+
+Test has_platform_access method
+
+**Type:** Instance method
+
+#### test_has_permission
+
+```python
+def test_has_permission(self)
+```
+
+Test has_permission method
+
+**Type:** Instance method
+
+#### test_password_methods
+
+```python
+def test_password_methods(self)
+```
+
+Test password setting and checking methods
+
+**Type:** Instance method
+
+#### test_user_repr
+
+```python
+def test_user_repr(self)
+```
+
+Test User __repr__ method
+
+**Type:** Instance method
+
+### TestPlatformConnectionEnhancements
+
+```python
+class TestPlatformConnectionEnhancements(unittest.TestCase)
+```
+
+Test enhanced PlatformConnection model
+
+**Methods:**
+
+#### setUp
+
+```python
+def setUp(self)
+```
+
+Set up test fixtures
+
+**Type:** Instance method
+
+#### test_to_dict_method
+
+```python
+def test_to_dict_method(self)
+```
+
+Test to_dict method for safe serialization
+
+**Type:** Instance method
+
+#### test_to_dict_method_with_none_dates
+
+```python
+def test_to_dict_method_with_none_dates(self)
+```
+
+Test to_dict method handles None dates gracefully
+
+**Type:** Instance method
+
+#### test_platform_connection_repr
+
+```python
+def test_platform_connection_repr(self)
+```
+
+Test PlatformConnection __repr__ method
+
+**Type:** Instance method
+
+### TestUserSessionEnhancements
+
+```python
+class TestUserSessionEnhancements(unittest.TestCase)
+```
+
+Test enhanced UserSession model
+
+**Methods:**
+
+#### setUp
+
+```python
+def setUp(self)
+```
+
+Set up test fixtures
+
+**Type:** Instance method
+
+#### test_user_session_repr
+
+```python
+def test_user_session_repr(self)
+```
+
+Test UserSession __repr__ method
+
+**Type:** Instance method
+
+### TestModelRelationshipLoadingStrategies
+
+```python
+class TestModelRelationshipLoadingStrategies(unittest.TestCase)
+```
+
+Test that model relationships use proper loading strategies
+
+**Methods:**
+
+#### test_user_relationships_use_select_loading
+
+```python
+def test_user_relationships_use_select_loading(self)
+```
+
+Test that User model relationships use select loading strategy
+
+**Type:** Instance method
+
+#### test_platform_connection_relationships_use_select_loading
+
+```python
+def test_platform_connection_relationships_use_select_loading(self)
+```
+
+Test that PlatformConnection model relationships use select loading strategy
+
+**Type:** Instance method
+
+#### test_user_session_relationships_use_select_loading
+
+```python
+def test_user_session_relationships_use_select_loading(self)
+```
+
+Test that UserSession model relationships use select loading strategy
+
+**Type:** Instance method
+

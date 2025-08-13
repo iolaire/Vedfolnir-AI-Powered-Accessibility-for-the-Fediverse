@@ -131,7 +131,7 @@ class AppResetManager:
                 logger.info("🎉 Complete application reset successful!")
                 logger.info("The application is now in a fresh state.")
                 logger.info("Next steps:")
-                logger.info("1. Ensure environment variables are set: source .env.local")
+                logger.info("1. Ensure environment variables are set (run: python scripts/setup/generate_env_secrets.py)")
                 logger.info("2. Start the web application: python web_app.py")
                 logger.info("3. Log in and set up your platform connections")
             else:

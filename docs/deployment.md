@@ -168,8 +168,8 @@ Docker provides the easiest and most consistent deployment method.
 
 5. **Configure environment:**
    ```bash
-   # Copy appropriate example configuration
-   cp .env.example.mastodon .env  # or .env.example.pixelfed
+   # Copy example configuration
+   cp .env.example .env
    
    # Edit .env with your settings
    nano .env
@@ -244,7 +244,7 @@ For more control or when Docker isn't available.
 
 3. **Configure environment:**
    ```bash
-   cp .env.example.mastodon .env  # or .env.example.pixelfed
+   cp .env.example .env
    nano .env
    
    # Set production values

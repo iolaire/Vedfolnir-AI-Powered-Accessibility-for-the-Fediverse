@@ -1,0 +1,299 @@
+# API Documentation Index
+
+This is an auto-generated index of all modules in the Vedfolnir project.
+
+## Core Modules
+
+- [activitypub_client](activitypub_client.md)
+- [activitypub_platforms](activitypub_platforms.md) - Platform-specific adapters for different ActivityPub implementations.
+- [activitypub_platforms_pagination](activitypub_platforms_pagination.md) - Enhanced version of the PixelfedPlatform class with pagination support.
+- [config](config.md)
+- [database](database.md)
+- [database_context_middleware](database_context_middleware.md)
+- [flask_session_manager](flask_session_manager.md) - Flask-based Session Management System
+- [image_processor](image_processor.md)
+- [main](main.md)
+- [models](models.md)
+- [ollama_caption_generator](ollama_caption_generator.md)
+- [request_scoped_session_manager](request_scoped_session_manager.md)
+- [session_config](session_config.md) - Session Management Configuration System
+- [session_manager](session_manager.md) - Session Management for Platform-Aware Database System
+- [web_app](web_app.md)
+
+## Security Modules
+
+- [scripts.deployment.deploy_security_config](scripts_deployment_deploy_security_config.md) - Deploy Security Configuration
+- [scripts.maintenance.security_maintenance_scheduler](scripts_maintenance_security_maintenance_scheduler.md) - Security Maintenance Scheduler
+- [scripts.security.comprehensive_security_test](scripts_security_comprehensive_security_test.md) - Comprehensive Security Testing
+- [scripts.security.owasp_compliance_validator](scripts_security_owasp_compliance_validator.md) - OWASP Compliance Validator
+- [scripts.security.run_csrf_audit](scripts_security_run_csrf_audit.md) - CSRF Security Audit CLI
+- [scripts.security.session_security_monitor](scripts_security_session_security_monitor.md) - Session Security Monitor CLI
+- [scripts.testing.run_security_performance_tests](scripts_testing_run_security_performance_tests.md) - Security and Performance test runner for Task 5.3
+- [security.audit.csrf_compliance_validator](security_audit_csrf_compliance_validator.md) - CSRF Compliance Validator
+- [security.audit.csrf_template_scanner](security_audit_csrf_template_scanner.md) - CSRF Template Scanner
+- [security.audit.security_auditor](security_audit_security_auditor.md) - Comprehensive Security Auditor for Web Caption Generation System
+- [security.config.production_security_config](security_config_production_security_config.md) - Production Security Configuration
+- [security.core.csrf_error_handler](security_core_csrf_error_handler.md) - CSRF Error Handler
+- [security.core.csrf_middleware](security_core_csrf_middleware.md) - CSRF Validation Middleware
+- [security.core.csrf_token_manager](security_core_csrf_token_manager.md) - CSRF Token Manager
+- [security.core.security_config](security_core_security_config.md) - Security Configuration for Vedfolnir
+- [security.core.security_middleware](security_core_security_middleware.md) - Security middleware for Flask application
+- [security.core.security_monitoring](security_core_security_monitoring.md) - Security monitoring and alerting system
+- [security.core.security_utils](security_core_security_utils.md) - Security utilities for the Vedfolnir application.
+- [security.features.caption_security](security_features_caption_security.md) - Security controls for caption generation functionality
+- [security.features.session_security](security_features_session_security.md) - Session Security Hardening Features
+- [security.logging.secure_error_handlers](security_logging_secure_error_handlers.md) - Secure Error Handlers
+- [security.logging.secure_logging](security_logging_secure_logging.md) - Secure Logging Utilities
+- [security.monitoring.csrf_dashboard](security_monitoring_csrf_dashboard.md) - CSRF Security Dashboard
+- [security.monitoring.csrf_security_metrics](security_monitoring_csrf_security_metrics.md) - CSRF Security Metrics System
+- [security.monitoring.security_alerting](security_monitoring_security_alerting.md) - Security Alerting System
+- [security.reporting.audit_dashboard](security_reporting_audit_dashboard.md) - Security Audit Dashboard
+- [security.reporting.security_audit_system](security_reporting_security_audit_system.md) - Security Audit Reporting System
+- [security.reports.csrf_audit_reporter](security_reports_csrf_audit_reporter.md) - CSRF Security Audit Reporter
+- [security.security_audit](security_security_audit.md) - Comprehensive Security Audit for Web-Integrated Caption Generation
+- [security.tests.test_security_fixes](security_tests_test_security_fixes.md) - Security tests to validate implemented fixes
+- [security.validation.security_fixes](security_validation_security_fixes.md) - Security Fixes Implementation
+- [security.validation.security_validation](security_validation_security_validation.md) - Security Validation Script
+- [tests.security.test_comprehensive_security](tests_security_test_comprehensive_security.md) - Comprehensive security regression tests
+- [tests.security.test_credential_security](tests_security_test_credential_security.md) - Security tests for credential storage and encryption
+- [tests.security.test_csrf_compliance_validation](tests_security_test_csrf_compliance_validation.md) - CSRF Security Compliance Validation Tests
+- [tests.security.test_csrf_security_suite](tests_security_test_csrf_security_suite.md) - CSRF Security Test Suite
+- [tests.security.test_csrf_template_audit](tests_security_test_csrf_template_audit.md) - CSRF Template Security Audit Tests
+- [tests.security.test_platform_access](tests_security_test_platform_access.md) - Security tests for platform access control
+- [tests.security.test_session_security_hardening](tests_security_test_session_security_hardening.md) - Tests for session security hardening features
+- [tests.security.test_session_security_simple](tests_security_test_session_security_simple.md) - Simple tests for session security hardening features without Flask context
+- [tests.test_security_comprehensive](tests_test_security_comprehensive.md) - Comprehensive Security Tests
+- [tests.test_security_fixes](tests_test_security_fixes.md) - Security fixes validation tests.
+- [tests.test_session_security](tests_test_session_security.md) - Tests for session security and validation
+- [tests.web_caption_generation.test_security_validation](tests_web_caption_generation_test_security_validation.md) - Security tests for caption generation system
+
+## Utility Modules
+
+- [platform_context](platform_context.md) - Platform Context Manager
+- [platform_context_utils](platform_context_utils.md) - Platform Context Utilities
+- [progress_tracker](progress_tracker.md) - Progress Tracking System for Caption Generation
+- [rate_limiter](rate_limiter.md) - Rate limiting implementation for API calls.
+- [test_platform_context](test_platform_context.md) - Test script to verify platform context functionality
+- [tests.test_platform_context](tests_test_platform_context.md) - Unit tests for platform context management
+- [tests.test_platform_context_error_handling](tests_test_platform_context_error_handling.md) - Test error handling for PlatformContextManager
+- [tests.test_platform_context_thread_safety](tests_test_platform_context_thread_safety.md) - Test thread safety of PlatformContextManager
+- [tests.test_progress_tracker](tests_test_progress_tracker.md) - Unit tests for Progress Tracker
+- [tests.test_rate_limiter](tests_test_rate_limiter.md) - Tests for the rate limiter implementation.
+- [utils](utils.md)
+
+## Test Modules
+
+- [scripts.testing.run_comprehensive_tests](scripts_testing_run_comprehensive_tests.md) - Comprehensive test runner for the Vedfolnir web-integrated caption generation system
+- [scripts.testing.run_integration_tests](scripts_testing_run_integration_tests.md) - Integration test runner for Task 5.2: Integration Testing for Platform Operations
+- [scripts.testing.run_platform_tests](scripts_testing_run_platform_tests.md) - Test runner for Task 5.1: Comprehensive Unit Testing
+- [scripts.testing.run_session_management_e2e_tests](scripts_testing_run_session_management_e2e_tests.md) - Session Management End-to-End Test Runner
+- [scripts.testing.run_tests](scripts_testing_run_tests.md) - Test runner script for Vedfolnir.
+- [scripts.testing.test_auth_flow](scripts_testing_test_auth_flow.md) - Test script for Task 4.2: Update Authentication Flow
+- [scripts.testing.test_cleanup_direct](scripts_testing_test_cleanup_direct.md) - Direct test of cleanup functionality without web interface
+- [scripts.testing.test_cleanup_routes](scripts_testing_test_cleanup_routes.md) - Test script to verify cleanup routes are working
+- [scripts.testing.test_concurrent_sessions](scripts_testing_test_concurrent_sessions.md) - Test script to verify concurrent sessions work correctly.
+- [scripts.testing.test_setup_instructions](scripts_testing_test_setup_instructions.md) - Test script to verify setup instructions work correctly.
+- [scripts.testing.test_user_agent](scripts_testing_test_user_agent.md) - Test to check what user agent requests library uses
+- [scripts.testing.test_web_auth](scripts_testing_test_web_auth.md) - Test script to verify web interface authentication and styling
+- [scripts.testing.test_web_interface](scripts_testing_test_web_interface.md) - Quick test script to check if the web interface is working properly
+- [test_coverage_analysis](test_coverage_analysis.md) - Comprehensive Test Coverage Analysis
+- [test_flask_sessions](test_flask_sessions.md) - Test Flask Session Management
+- [test_login_functionality](test_login_functionality.md) - Test login functionality to identify issues after session management changes
+- [test_session_management_performance](test_session_management_performance.md) - Session Management Performance Test
+- [test_session_monitoring_integration](test_session_monitoring_integration.md) - Integration test for session performance monitoring.
+- [test_simple_session](test_simple_session.md) - Simple test to create a platform and session for testing
+- [test_sse](test_sse.md) - Test script for Server-Sent Events implementation
+- [tests.deployment.test_deployment_tools](tests_deployment_test_deployment_tools.md) - Tests for deployment and monitoring tools (Task 6.2)
+- [tests.deployment.test_monitoring_functionality](tests_deployment_test_monitoring_functionality.md) - Functional tests for monitoring and health check systems
+- [tests.documentation.test_documentation_completeness](tests_documentation_test_documentation_completeness.md) - Tests for Task 6.1: Documentation completeness and accuracy
+- [tests.integration.test_cross_tab_functionality](tests_integration_test_cross_tab_functionality.md) - Integration tests for cross-tab functionality.
+- [tests.integration.test_platform_migration](tests_integration_test_platform_migration.md) - Integration tests for platform migration scenarios
+- [tests.integration.test_platform_performance](tests_integration_test_platform_performance.md) - Integration tests for platform performance
+- [tests.integration.test_platform_switching](tests_integration_test_platform_switching.md) - Integration tests for platform switching workflows
+- [tests.integration.test_platform_web](tests_integration_test_platform_web.md) - Integration tests for web interface platform operations
+- [tests.integration.test_session_management_e2e](tests_integration_test_session_management_e2e.md) - End-to-End Session Management Integration Tests
+- [tests.performance.test_platform_load](tests_performance_test_platform_load.md) - Load testing for platform operations
+- [tests.performance.test_platform_queries](tests_performance_test_platform_queries.md) - Performance tests for platform-filtered queries
+- [tests.performance.test_session_load](tests_performance_test_session_load.md) - Performance and load tests for session management system.
+- [tests.run_detached_instance_fix_tests](tests_run_detached_instance_fix_tests.md) - Test Runner for DetachedInstanceError Fix
+- [tests.scripts.cleanup_mock_user](tests_scripts_cleanup_mock_user.md) - Test Cleanup Mock User Script
+- [tests.scripts.create_mock_user](tests_scripts_create_mock_user.md) - Test Create Mock User Script
+- [tests.test_activitypub_client_error_handling](tests_test_activitypub_client_error_handling.md) - Tests for ActivityPub client error handling and retry logic.
+- [tests.test_activitypub_client_rate_limiting](tests_test_activitypub_client_rate_limiting.md) - Integration tests for ActivityPub client with multi-platform rate limiting.
+- [tests.test_activitypub_platforms](tests_test_activitypub_platforms.md) - Tests for the ActivityPub platform adapters
+- [tests.test_add_batch_id_column](tests_test_add_batch_id_column.md)
+- [tests.test_api_rate_limiting](tests_test_api_rate_limiting.md) - Integration test for API rate limiting with ActivityPubClient.
+- [tests.test_app_initialization](tests_test_app_initialization.md) - Tests for Web Application Initialization with Session Management
+- [tests.test_app_initialization_integration](tests_test_app_initialization_integration.md) - Integration Tests for Web Application Initialization
+- [tests.test_batch_update](tests_test_batch_update.md)
+- [tests.test_caption_config_integration](tests_test_caption_config_integration.md)
+- [tests.test_caption_fallback](tests_test_caption_fallback.md)
+- [tests.test_caption_fallback_comprehensive](tests_test_caption_fallback_comprehensive.md) - Comprehensive tests for caption generation fallback mechanisms.
+- [tests.test_caption_formatter](tests_test_caption_formatter.md)
+- [tests.test_caption_quality](tests_test_caption_quality.md)
+- [tests.test_config_multi_platform](tests_test_config_multi_platform.md) - Unit tests for multi-platform configuration support.
+- [tests.test_config_validation_script](tests_test_config_validation_script.md) - Test suite for the configuration validation script.
+- [tests.test_configuration_examples](tests_test_configuration_examples.md) - Test suite for configuration example files.
+- [tests.test_configuration_validation_comprehensive](tests_test_configuration_validation_comprehensive.md) - Comprehensive configuration validation tests.
+- [tests.test_dashboard_access_integration](tests_test_dashboard_access_integration.md) - Integration tests for dashboard access without DetachedInstanceError.
+- [tests.test_dashboard_session_management](tests_test_dashboard_session_management.md) - Tests for dashboard route with session-aware decorators to prevent DetachedInstanceError.
+- [tests.test_database_context_middleware](tests_test_database_context_middleware.md)
+- [tests.test_database_error_handling](tests_test_database_error_handling.md) - Test error handling for DatabaseManager platform operations
+- [tests.test_database_optimizations](tests_test_database_optimizations.md) - Comprehensive tests for database optimization features.
+- [tests.test_detached_instance_fix_flask_final](tests_test_detached_instance_fix_flask_final.md) - Final Flask Context Tests for DetachedInstanceError Fix
+- [tests.test_detached_instance_fix_flask_integration](tests_test_detached_instance_fix_flask_integration.md) - Flask Integration Tests for DetachedInstanceError Fix
+- [tests.test_detached_instance_fix_simple_flask](tests_test_detached_instance_fix_simple_flask.md) - Simple Flask Context Tests for DetachedInstanceError Fix
+- [tests.test_detached_instance_fix_web_routes](tests_test_detached_instance_fix_web_routes.md) - Web Routes Tests for DetachedInstanceError Fix
+- [tests.test_detached_instance_handler](tests_test_detached_instance_handler.md)
+- [tests.test_detached_instance_handler_simple](tests_test_detached_instance_handler_simple.md)
+- [tests.test_end_to_end](tests_test_end_to_end.md) - End-to-end tests for Vedfolnir complete workflows.
+- [tests.test_favicon_logo_integration](tests_test_favicon_logo_integration.md)
+- [tests.test_frontend_session_sync](tests_test_frontend_session_sync.md) - Frontend JavaScript tests for session synchronization functionality.
+- [tests.test_helpers.__init__](tests_test_helpers___init__.md) - Test Helpers Package
+- [tests.test_helpers.mock_user_helper](tests_test_helpers_mock_user_helper.md) - Mock User Helper for Testing
+- [tests.test_image_processing](tests_test_image_processing.md) - Test script for image processing functionality.
+- [tests.test_integration_comprehensive](tests_test_integration_comprehensive.md) - Comprehensive integration tests for Vedfolnir components.
+- [tests.test_login_session_management](tests_test_login_session_management.md) - Tests for login route with proper session management to prevent DetachedInstanceError.
+- [tests.test_main_integration_multi_platform](tests_test_main_integration_multi_platform.md) - Integration test to verify that the main application works with the refactored ActivityPub client.
+- [tests.test_mastodon_authentication](tests_test_mastodon_authentication.md) - Tests for Mastodon authentication functionality.
+- [tests.test_mastodon_authentication_integration](tests_test_mastodon_authentication_integration.md) - Integration tests for Mastodon authentication with ActivityPubClient.
+- [tests.test_mastodon_integration_comprehensive](tests_test_mastodon_integration_comprehensive.md) - Comprehensive integration tests for Mastodon support.
+- [tests.test_mastodon_media_processing](tests_test_mastodon_media_processing.md) - Comprehensive tests for Mastodon media processing functionality.
+- [tests.test_mastodon_media_updates](tests_test_mastodon_media_updates.md) - Comprehensive tests for Mastodon media updates functionality.
+- [tests.test_mastodon_media_updates_integration](tests_test_mastodon_media_updates_integration.md) - Integration tests for Mastodon media updates with mock server responses.
+- [tests.test_mastodon_status_edit](tests_test_mastodon_status_edit.md) - Test for Mastodon status edit API functionality.
+- [tests.test_middleware_context](tests_test_middleware_context.md) - Tests for middleware platform context application
+- [tests.test_middleware_simple](tests_test_middleware_simple.md) - Simple tests for middleware platform context application
+- [tests.test_mock_user_example](tests_test_mock_user_example.md) - Example Test Using Mock User Helpers
+- [tests.test_mock_user_helpers](tests_test_mock_user_helpers.md) - Test Mock User Helpers
+- [tests.test_multi_user](tests_test_multi_user.md)
+- [tests.test_ollama_integration](tests_test_ollama_integration.md)
+- [tests.test_platform_adapter_architecture](tests_test_platform_adapter_architecture.md) - Comprehensive tests for the platform adapter architecture.
+- [tests.test_platform_adapter_factory](tests_test_platform_adapter_factory.md) - Tests for PlatformAdapterFactory and platform adapter creation.
+- [tests.test_platform_adapters_comprehensive](tests_test_platform_adapters_comprehensive.md) - Comprehensive unit tests for platform adapters.
+- [tests.test_platform_aware_caption_adapter](tests_test_platform_aware_caption_adapter.md) - Unit tests for Platform-Aware Caption Generator Adapter
+- [tests.test_platform_aware_caption_adapter_simple](tests_test_platform_aware_caption_adapter_simple.md) - Simple unit tests for Platform-Aware Caption Generator Adapter
+- [tests.test_platform_connection_task7](tests_test_platform_connection_task7.md)
+- [tests.test_platform_connection_task7_simple](tests_test_platform_connection_task7_simple.md)
+- [tests.test_platform_database](tests_test_platform_database.md) - Unit tests for platform-aware database operations
+- [tests.test_platform_encryption](tests_test_platform_encryption.md) - Unit tests for platform credential encryption
+- [tests.test_platform_management_interface](tests_test_platform_management_interface.md) - Test Platform Management Interface
+- [tests.test_platform_models](tests_test_platform_models.md) - Unit tests for platform-aware models
+- [tests.test_platform_switching](tests_test_platform_switching.md) - Tests for platform switching functionality
+- [tests.test_platform_switching_integration](tests_test_platform_switching_integration.md) - Integration tests for platform switching with caption generation
+- [tests.test_platform_switching_session_management](tests_test_platform_switching_session_management.md) - Test suite for platform switching API with session management.
+- [tests.test_rate_limiting_multi_platform](tests_test_rate_limiting_multi_platform.md) - Tests for multi-platform rate limiting functionality.
+- [tests.test_real_captions](tests_test_real_captions.md)
+- [tests.test_retry_mechanism_comprehensive](tests_test_retry_mechanism_comprehensive.md) - Comprehensive tests for retry mechanism functionality.
+- [tests.test_retry_stats](tests_test_retry_stats.md) - Test script to demonstrate retry statistics tracking functionality.
+- [tests.test_retry_stats_direct](tests_test_retry_stats_direct.md) - Simple test script to verify retry_stats.py functionality directly.
+- [tests.test_safe_template_context](tests_test_safe_template_context.md) - Tests for Safe Template Context Processor
+- [tests.test_safe_template_context_simple](tests_test_safe_template_context_simple.md) - Simplified Tests for Safe Template Context Processor
+- [tests.test_session_aware_decorators](tests_test_session_aware_decorators.md)
+- [tests.test_session_cleanup](tests_test_session_cleanup.md) - Tests for session cleanup data integrity
+- [tests.test_session_config](tests_test_session_config.md) - Tests for Session Configuration System
+- [tests.test_session_decorators_integration](tests_test_session_decorators_integration.md)
+- [tests.test_session_decorators_simple](tests_test_session_decorators_simple.md)
+- [tests.test_session_integration](tests_test_session_integration.md) - Integration tests for session management with web app
+- [tests.test_session_maintenance_utilities](tests_test_session_maintenance_utilities.md) - Tests for Session Maintenance Utilities
+- [tests.test_session_management](tests_test_session_management.md) - Tests for platform-aware session management
+- [tests.test_session_management_backend](tests_test_session_management_backend.md) - Comprehensive unit tests for backend session management functionality.
+- [tests.test_session_management_comprehensive](tests_test_session_management_comprehensive.md) - Comprehensive Unit Tests for Session Management
+- [tests.test_session_performance_monitoring](tests_test_session_performance_monitoring.md)
+- [tests.test_task_queue_manager](tests_test_task_queue_manager.md) - Unit tests for Task Queue Manager
+- [tests.test_template_safe_context](tests_test_template_safe_context.md) - Test Template Safe Context Implementation
+- [tests.test_user_model_enhancements](tests_test_user_model_enhancements.md)
+- [tests.test_user_model_enhancements_simple](tests_test_user_model_enhancements_simple.md)
+- [tests.test_user_model_task6](tests_test_user_model_task6.md)
+- [tests.test_web_app_critical](tests_test_web_app_critical.md) - Critical Web Application Tests
+- [tests.test_web_caption_generation_service](tests_test_web_caption_generation_service.md) - Unit tests for Web Caption Generation Service
+- [tests.test_websocket_progress_handler](tests_test_websocket_progress_handler.md) - Integration tests for WebSocket Progress Handler
+- [tests.web_caption_generation.__init__](tests_web_caption_generation___init__.md) - Web Caption Generation Test Suite
+- [tests.web_caption_generation.test_admin_monitoring](tests_web_caption_generation_test_admin_monitoring.md) - Tests for administrative monitoring and controls
+- [tests.web_caption_generation.test_caption_review_integration](tests_web_caption_generation_test_caption_review_integration.md) - Tests for caption review integration system
+- [tests.web_caption_generation.test_end_to_end_web](tests_web_caption_generation_test_end_to_end_web.md) - End-to-end tests for web interface functionality
+- [tests.web_caption_generation.test_error_recovery](tests_web_caption_generation_test_error_recovery.md) - Tests for error recovery and handling system
+- [tests.web_caption_generation.test_integration_workflow](tests_web_caption_generation_test_integration_workflow.md) - Integration tests for complete caption generation workflow
+- [tests.web_caption_generation.test_performance_concurrent](tests_web_caption_generation_test_performance_concurrent.md) - Performance tests for concurrent caption generation scenarios
+
+## Script Modules
+
+- [scripts.backup_platform_data](scripts_backup_platform_data.md) - Platform-aware backup script
+- [scripts.deployment.session_management_deployment_checklist](scripts_deployment_session_management_deployment_checklist.md) - Session Management Deployment Checklist and Validation
+- [scripts.maintenance.check_db](scripts_maintenance_check_db.md)
+- [scripts.maintenance.check_expired_media](scripts_maintenance_check_expired_media.md) - Script to check for and optionally clean up expired media attachments.
+- [scripts.maintenance.check_media_ids](scripts_maintenance_check_media_ids.md)
+- [scripts.maintenance.data_cleanup](scripts_maintenance_data_cleanup.md)
+- [scripts.maintenance.empty_db](scripts_maintenance_empty_db.md)
+- [scripts.maintenance.reset_app](scripts_maintenance_reset_app.md) - Complete Application Reset Script for Vedfolnir
+- [scripts.maintenance.retry_stats](scripts_maintenance_retry_stats.md)
+- [scripts.maintenance.session_analytics](scripts_maintenance_session_analytics.md) - Session Analytics and Health Monitoring Utility
+- [scripts.maintenance.session_cleanup](scripts_maintenance_session_cleanup.md) - Session Cleanup and Maintenance Utility
+- [scripts.maintenance.session_config_manager](scripts_maintenance_session_config_manager.md) - Session Configuration Management Utility
+- [scripts.maintenance.session_db_maintenance](scripts_maintenance_session_db_maintenance.md) - Session Database Maintenance Utility
+- [scripts.maintenance.session_maintenance](scripts_maintenance_session_maintenance.md) - Unified Session Maintenance CLI
+- [scripts.maintenance.validate_config](scripts_maintenance_validate_config.md) - Configuration validation script for Vedfolnir.
+- [scripts.maintenance.validate_documentation](scripts_maintenance_validate_documentation.md) - Documentation validation script for Vedfolnir.
+- [scripts.rollback_platform_migration](scripts_rollback_platform_migration.md) - Platform migration rollback script
+- [scripts.setup.add_batch_id_column](scripts_setup_add_batch_id_column.md) - Migration script to add batch_id column to processing_runs table
+- [scripts.setup.add_image_category_columns](scripts_setup_add_image_category_columns.md)
+- [scripts.setup.add_media_id_column](scripts_setup_add_media_id_column.md)
+- [scripts.setup.add_original_post_date_column](scripts_setup_add_original_post_date_column.md) - Database migration script to add original_post_date column to images table.
+- [scripts.setup.check_admin_user](scripts_setup_check_admin_user.md) - Check admin user in database and test password verification
+- [scripts.setup.fix_encryption_key](scripts_setup_fix_encryption_key.md) - Fix encryption key mismatch for platform credentials
+- [scripts.setup.init_admin_user](scripts_setup_init_admin_user.md) - Initialize the first admin user for the Vedfolnir web interface.
+- [scripts.setup.init_migrations](scripts_setup_init_migrations.md)
+- [scripts.setup.migrate_logs](scripts_setup_migrate_logs.md) - Migration script to move log files to the logs directory.
+- [scripts.setup.migrate_to_platform_aware](scripts_setup_migrate_to_platform_aware.md) - Platform-Aware Database Migration CLI
+- [scripts.setup.update_admin_user](scripts_setup_update_admin_user.md) - Admin user management tool.
+- [scripts.validate_platform_config](scripts_validate_platform_config.md) - Platform configuration validation script
+- [scripts.validate_success_criteria](scripts_validate_success_criteria.md) - Success Criteria Validation Script
+
+## Other Modules
+
+- [add_copyright_headers](add_copyright_headers.md) - Copyright Header Utility Script
+- [admin_monitoring](admin_monitoring.md) - Administrative Monitoring and Controls
+- [app_initialization](app_initialization.md) - Web Application Initialization with Session Management
+- [batch_update_cli](batch_update_cli.md) - Command-line interface for batch updating approved captions to ActivityPub
+- [batch_update_service](batch_update_service.md)
+- [caption_fallback](caption_fallback.md)
+- [caption_formatter](caption_formatter.md)
+- [caption_quality_assessment](caption_quality_assessment.md)
+- [caption_review_integration](caption_review_integration.md) - Caption Review Integration
+- [detached_instance_handler](detached_instance_handler.md) - DetachedInstanceError Recovery Handler
+- [detect_platform](detect_platform.md) - Utility script to detect the platform type of an ActivityPub instance
+- [diagnose_login](diagnose_login.md) - Diagnose login issues
+- [docs.api.generate_api_docs](docs_api_generate_api_docs.md) - API Documentation Generator
+- [docs.summary.generate_summaries](docs_summary_generate_summaries.md) - Summary Report Generator
+- [enhanced_input_validation](enhanced_input_validation.md) - Enhanced Input Validation Middleware
+- [error_recovery_manager](error_recovery_manager.md) - Error Recovery Manager for Caption Generation
+- [health_check](health_check.md) - Health check module for Vedfolnir system monitoring.
+- [input_validation](input_validation.md) - Input validation utilities for security
+- [logger](logger.md)
+- [migrate_to_flask_sessions](migrate_to_flask_sessions.md) - Migration Script: Move from Database Sessions to Flask Sessions
+- [migrations.add_caption_generation_tables](migrations_add_caption_generation_tables.md) - Database migration script to add caption generation tables.
+- [migrations.platform_aware_migration](migrations_platform_aware_migration.md) - Platform-Aware Database Migration
+- [migrations.remove_user_sessions](migrations_remove_user_sessions.md) - Database Migration: Remove UserSession table
+- [monitoring.platform_health](monitoring_platform_health.md) - Platform health monitoring
+- [platform_aware_caption_adapter](platform_aware_caption_adapter.md) - Platform-Aware Caption Generator Adapter
+- [post_service](post_service.md)
+- [run_session_management_migration](run_session_management_migration.md) - Session Management Migration Runner
+- [safe_template_context](safe_template_context.md) - Safe Template Context Processor
+- [session_alert_routes](session_alert_routes.md) - Session Management Alert Routes
+- [session_alerting_system](session_alerting_system.md) - Session Management Alerting System
+- [session_aware_decorators](session_aware_decorators.md)
+- [session_aware_user](session_aware_user.md)
+- [session_error_handlers](session_error_handlers.md) - Session Error Handlers
+- [session_error_logger](session_error_logger.md) - Session Error Logger
+- [session_health_checker](session_health_checker.md) - Session Management Health Checker
+- [session_health_routes](session_health_routes.md) - Session Management Health Check Routes
+- [session_monitoring](session_monitoring.md) - Session Monitoring and Logging Infrastructure
+- [session_monitoring_cli](session_monitoring_cli.md)
+- [session_monitoring_routes](session_monitoring_routes.md)
+- [session_performance_monitor](session_performance_monitor.md)
+- [sse_progress_handler](sse_progress_handler.md) - Server-Sent Events (SSE) Progress Handler
+- [task_queue_manager](task_queue_manager.md) - Task Queue Manager for Caption Generation
+- [validate_copyright_headers](validate_copyright_headers.md) - Copyright Header Validation Script
+- [web_caption_generation_service](web_caption_generation_service.md) - Web Caption Generation Service
+- [websocket_progress_handler](websocket_progress_handler.md) - WebSocket Progress Handler for Caption Generation
+

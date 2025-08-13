@@ -28,12 +28,11 @@ class TestConfigValidationScript(unittest.TestCase):
     
     def test_validation_script_runs_with_valid_config(self):
         """Test that the validation script runs successfully with valid configuration"""
-        # Create a temporary valid configuration
+        # Create a temporary valid configuration (no platform-specific vars needed)
         valid_config = {
-            'ACTIVITYPUB_API_TYPE': 'pixelfed',
-            'ACTIVITYPUB_INSTANCE_URL': 'https://test.example.com',
-            'ACTIVITYPUB_USERNAME': 'testuser',
-            'ACTIVITYPUB_ACCESS_TOKEN': 'test_token_123',
+            'FLASK_SECRET_KEY': 'test_secret_key_for_validation',
+            'PLATFORM_ENCRYPTION_KEY': 'test_encryption_key_for_validation_32_chars',
+            'DATABASE_URL': 'sqlite:///test.db',
             'OLLAMA_URL': 'http://localhost:11434',
             'OLLAMA_MODEL': 'llava:7b'
         }
@@ -65,13 +64,11 @@ class TestConfigValidationScript(unittest.TestCase):
     
     def test_validation_script_fails_with_invalid_config(self):
         """Test that the validation script fails appropriately with invalid configuration"""
-        # Create a temporary invalid configuration (missing required fields)
+        # Create a temporary invalid configuration (missing required core fields)
         invalid_config = {
-            'ACTIVITYPUB_API_TYPE': 'mastodon',
-            'ACTIVITYPUB_INSTANCE_URL': 'https://test.example.com',
-            'ACTIVITYPUB_USERNAME': 'testuser',
-            'ACTIVITYPUB_ACCESS_TOKEN': 'test_token_123',
-            # Missing MASTODON_CLIENT_KEY and MASTODON_CLIENT_SECRET
+            'FLASK_SECRET_KEY': 'CHANGE_ME_TO_A_SECURE_32_CHAR_SECRET_KEY',  # Invalid placeholder
+            'PLATFORM_ENCRYPTION_KEY': 'CHANGE_ME_TO_A_FERNET_ENCRYPTION_KEY',  # Invalid placeholder
+            # Missing DATABASE_URL
         }
         
         with tempfile.NamedTemporaryFile(mode='w', suffix='.env', delete=False) as temp_file:
@@ -102,8 +99,12 @@ class TestConfigValidationScript(unittest.TestCase):
     
     def test_validation_script_provides_helpful_error_messages(self):
         """Test that the validation script provides helpful error messages"""
-        # Test with missing Mastodon credentials
+        # Test with deprecated platform configuration
         invalid_config = {
+            'FLASK_SECRET_KEY': 'test_secret_key',
+            'PLATFORM_ENCRYPTION_KEY': 'test_encryption_key_32_chars',
+            'DATABASE_URL': 'sqlite:///test.db',
+            # Include deprecated platform variables
             'ACTIVITYPUB_API_TYPE': 'mastodon',
             'ACTIVITYPUB_INSTANCE_URL': 'https://test.example.com',
             'ACTIVITYPUB_USERNAME': 'testuser',
@@ -122,9 +123,9 @@ class TestConfigValidationScript(unittest.TestCase):
             cwd=self.project_root
         )
         
-        # Should provide helpful error message about Mastodon credentials
-        self.assertIn("Create a Mastodon application", result.stdout)
-        self.assertIn("client key and secret", result.stdout)
+        # Should provide helpful message about deprecated platform configuration
+        self.assertIn("deprecated platform configuration", result.stdout)
+        self.assertIn("web interface", result.stdout)
 
 
 if __name__ == '__main__':

@@ -192,7 +192,8 @@ Before performing destructive operations:
 
 3. **Backup Configuration:**
    ```bash
-   cp .env.local .env.local.backup
+   # Environment variables are managed by the system
+   # No configuration files to backup
    ```
 
 ## Common Use Cases
@@ -233,7 +234,6 @@ After performing a reset, you may need to:
 
 1. **Ensure Environment Variables:**
    ```bash
-   source .env.local
    python scripts/setup/verify_env_setup.py
    ```
 
@@ -265,7 +265,6 @@ If you see configuration errors:
 2. Generate missing variables:
    ```bash
    python scripts/setup/generate_env_secrets.py
-   source .env.local
    ```
 
 ### Permission Errors

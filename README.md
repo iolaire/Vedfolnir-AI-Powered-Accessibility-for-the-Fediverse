@@ -144,6 +144,10 @@ python scripts/setup/update_admin_user.py
 
 ### Technical Documentation
 - [**API Documentation**](docs/api_documentation.md) - REST API reference
+- [**Core Modules API**](docs/api/core_modules.md) - Core application modules documentation
+- [**Utility Modules API**](docs/api/utility_modules.md) - Utility and service modules documentation
+- [**Security Modules API**](docs/api/security_modules.md) - Security system documentation
+- [**Complete API Reference**](docs/api/generated/index.md) - Auto-generated comprehensive API documentation
 - [**Security Guide**](docs/SECURITY.md) - Security features and best practices
 - [**Deployment Guide**](docs/deployment.md) - Production deployment instructions
 - [**Testing Guide**](docs/TESTING.md) - Testing framework and procedures
