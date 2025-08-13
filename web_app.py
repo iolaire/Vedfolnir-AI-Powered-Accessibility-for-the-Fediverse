@@ -4472,6 +4472,142 @@ def api_admin_system_limits():
         app.logger.error(f"Error with system limits: {sanitize_for_log(str(e))}")
         return jsonify({'success': False, 'error': 'Failed to handle system limits'}), 500
 
+# Profile Management Routes
+@app.route('/profile')
+@login_required
+@with_session_error_handling
+def profile():
+    """User profile page with platform management and settings"""
+    try:
+        # Use request-scoped session for all database operations
+        with request_session_manager.session_scope() as db_session:
+            # Get user's platform connections
+            user_platforms = db_session.query(PlatformConnection).filter_by(
+                user_id=current_user.id,
+                is_active=True
+            ).order_by(PlatformConnection.is_default.desc(), PlatformConnection.name).all()
+            
+            # Get current platform from context
+            current_platform = None
+            context = get_current_platform_context()
+            if context and context.get('platform_connection_id'):
+                current_platform = db_session.query(PlatformConnection).filter_by(
+                    id=context['platform_connection_id'],
+                    user_id=current_user.id,
+                    is_active=True
+                ).first()
+            
+            # Get platform statistics
+            platform_stats = {}
+            for platform in user_platforms:
+                stats = {
+                    'posts': db_session.query(Post).filter_by(platform_connection_id=platform.id).count(),
+                    'images': db_session.query(Image).filter_by(platform_connection_id=platform.id).count(),
+                    'pending': db_session.query(Image).filter_by(
+                        platform_connection_id=platform.id,
+                        status=ProcessingStatus.PENDING
+                    ).count(),
+                    'posted': db_session.query(Image).filter_by(
+                        platform_connection_id=platform.id,
+                        status=ProcessingStatus.POSTED
+                    ).count()
+                }
+                platform_stats[platform.id] = stats
+            
+            # Get active sessions (simplified for profile view)
+            active_sessions = []
+            if context:
+                active_sessions = [{
+                    'session_id': context.get('session_id', 'current'),
+                    'platform_name': current_platform.name if current_platform else 'Unknown',
+                    'platform_type': current_platform.platform_type if current_platform else 'unknown',
+                    'updated_at': datetime.now(timezone.utc),
+                    'is_current': True
+                }]
+            
+            # Get user settings for current platform
+            user_settings = None
+            if current_platform:
+                from models import CaptionGenerationUserSettings
+                user_settings = db_session.query(CaptionGenerationUserSettings).filter_by(
+                    user_id=current_user.id,
+                    platform_connection_id=current_platform.id
+                ).first()
+            
+            # Convert to safe dictionaries to avoid DetachedInstanceError
+            user_platforms_safe = [{
+                'id': p.id,
+                'name': p.name,
+                'platform_type': p.platform_type,
+                'instance_url': p.instance_url,
+                'username': p.username,
+                'is_default': p.is_default,
+                'is_active': p.is_active,
+                'last_used': p.last_used
+            } for p in user_platforms]
+            
+            current_platform_safe = None
+            if current_platform:
+                current_platform_safe = {
+                    'id': current_platform.id,
+                    'name': current_platform.name,
+                    'platform_type': current_platform.platform_type,
+                    'instance_url': current_platform.instance_url,
+                    'username': current_platform.username,
+                    'is_default': current_platform.is_default,
+                    'is_active': current_platform.is_active
+                }
+            
+            # Create safe user object
+            current_user_safe = {
+                'id': current_user.id,
+                'username': current_user.username,
+                'email': current_user.email,
+                'role': current_user.role,
+                'created_at': current_user.created_at,
+                'last_login': current_user.last_login
+            }
+            
+            return render_template('profile.html',
+                                 current_user_safe=current_user_safe,
+                                 user_platforms=user_platforms_safe,
+                                 active_platform=current_platform_safe,
+                                 platform_stats=platform_stats,
+                                 active_sessions=active_sessions,
+                                 user_settings=user_settings)
+                                 
+    except Exception as e:
+        app.logger.error(f"Error loading profile page: {sanitize_for_log(str(e))}")
+        flash('Error loading profile page.', 'error')
+        return redirect(url_for('index'))
+
+@app.route('/api/sessions/<session_id>', methods=['DELETE'])
+@login_required
+@validate_csrf_token
+@rate_limit(limit=10, window_seconds=60)
+@with_session_error_handling
+def api_terminate_session(session_id):
+    """Terminate a specific session"""
+    try:
+        # For now, we only support terminating the current session
+        # In a full implementation, you'd validate session ownership and terminate specific sessions
+        if session_id == 'current' or session_id == session.get('_id'):
+            # Clear current session
+            session.clear()
+            return jsonify({
+                'success': True,
+                'message': 'Session terminated successfully'
+            })
+        else:
+            return jsonify({
+                'success': False,
+                'error': 'Can only terminate current session'
+            }), 400
+            
+    except Exception as e:
+        app.logger.error(f"Error terminating session: {sanitize_for_log(str(e))}")
+        return jsonify({'success': False, 'error': 'Failed to terminate session'}), 500
+
 
 # Favicon and static asset routes
 @app.route('/favicon.ico')
