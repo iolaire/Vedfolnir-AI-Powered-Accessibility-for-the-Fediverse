@@ -115,8 +115,13 @@ def main():
     encryption_key = generate_platform_encryption_key()
     admin_password = generate_secure_password()
     
+    # Get Ollama configuration from user
+    print("Ollama Configuration:")
+    ollama_url = input("Ollama URL (default: http://localhost:11434): ").strip() or "http://localhost:11434"
+    ollama_model = input("Ollama model (default: llava:7b): ").strip() or "llava:7b"
+    
     # Get admin details from user
-    print("Admin User Configuration:")
+    print("\nAdmin User Configuration:")
     admin_username = input("Admin username (default: admin): ").strip() or "admin"
     admin_email = input("Admin email: ").strip()
     
@@ -155,6 +160,14 @@ def main():
                 "PLATFORM_ENCRYPTION_KEY=CHANGE_ME_TO_A_FERNET_ENCRYPTION_KEY",
                 f"PLATFORM_ENCRYPTION_KEY={encryption_key}"
             )
+            env_content = env_content.replace(
+                "OLLAMA_URL=CHANGE_ME_TO_OLLAMA_URL_AND_PORT",
+                f"OLLAMA_URL={ollama_url}"
+            )
+            env_content = env_content.replace(
+                "OLLAMA_MODEL=CHANGE_ME_TO_OLLAMA_MODEL",
+                f"OLLAMA_MODEL={ollama_model}"
+            )
         else:
             # Create a basic .env file
             env_content = f"""# Vedfolnir Configuration
@@ -172,6 +185,10 @@ FLASK_PORT=5000
 FLASK_DEBUG=false
 DATABASE_URL=sqlite:///storage/database/vedfolnir.db
 LOG_LEVEL=INFO
+
+# Ollama Configuration
+OLLAMA_URL={ollama_url}
+OLLAMA_MODEL={ollama_model}
 """
         
         with open(".env", "w") as f:

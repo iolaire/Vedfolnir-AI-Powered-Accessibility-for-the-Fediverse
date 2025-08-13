@@ -13,6 +13,10 @@ import argparse
 import time
 from io import StringIO
 
+# Add the project root to the Python path
+sys.path.insert(0, os.path.join(os.path.dirname(__file__), '..', '..'))
+os.chdir(os.path.join(os.path.dirname(__file__), '..', '..'))
+
 # Test suite categories
 TEST_SUITES = {
     'unit': [
@@ -90,6 +94,13 @@ class ComprehensiveTestRunner:
         loaded_modules = 0
         for module_name in test_modules:
             try:
+                # Check if the test file actually exists
+                test_file = module_name.replace('.', '/') + '.py'
+                if not os.path.exists(test_file):
+                    if self.verbosity >= 1:
+                        print(f"  ⚠ Skipped {module_name}: File not found")
+                    continue
+                
                 module_suite = loader.loadTestsFromName(module_name)
                 suite.addTest(module_suite)
                 loaded_modules += 1

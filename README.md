@@ -200,7 +200,7 @@ Platforms are configured through the web interface:
 
 ## 🧪 Testing
 
-The project has comprehensive test coverage (176.5%) with 1,975 test methods covering:
+The project has comprehensive test coverage with extensive test methods covering:
 
 ### Test Categories
 - **Unit Tests**: Individual component testing
@@ -213,15 +213,21 @@ The project has comprehensive test coverage (176.5%) with 1,975 test methods cov
 
 ```bash
 # Run all tests
-python -m unittest discover tests -v
-
-# Run specific test categories
 python scripts/testing/run_comprehensive_tests.py
-python scripts/testing/run_security_performance_tests.py
-python scripts/testing/run_integration_tests.py
 
-# Run test coverage analysis
-python test_coverage_analysis.py
+# Run specific test suites
+python scripts/testing/run_comprehensive_tests.py --suite config
+python scripts/testing/run_comprehensive_tests.py --suite unit
+python scripts/testing/run_comprehensive_tests.py --suite security
+
+# Run quick tests (unit + integration only)
+python scripts/testing/run_comprehensive_tests.py --quick
+
+# Run individual test files
+python -m unittest tests.test_config_validation_script -v
+
+# List available test suites
+python scripts/testing/run_comprehensive_tests.py --list-suites
 ```
 
 ## 🔒 Security

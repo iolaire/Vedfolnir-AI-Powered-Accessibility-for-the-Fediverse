@@ -2,6 +2,7 @@
 # Copyright (C) 2025 iolaire mcfadden.
 # This program is free software: you can redistribute it and/or modify it under the terms of the GNU Affero General Public License as published by the Free Software Foundation, either version 3 of the License, or (at your option) any later version.
 # THE SOFTWARE IS PROVIDED "AS IS", WITHOUT WARRANTY OF ANY KIND, EXPRESS OR IMPLIED, INCLUDING BUT NOT LIMITED TO THE WARRANTIES OF MERCHANTABILITY, FITNESS FOR A PARTICULAR PURPOSE AND NONINFRINGEMENT. IN NO EVENT SHALL THE AUTHORS OR COPYRIGHT HOLDERS BE LIABLE FOR ANY CLAIM, DAMAGES OR OTHER LIABILITY, WHETHER IN AN ACTION OF CONTRACT, TORT OR OTHERWISE, ARISING FROM, OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE SOFTWARE.
+
 """
 Initialize the first admin user for the Vedfolnir web interface.
 This script should be run once after setting up the database.
@@ -9,121 +10,121 @@ This script should be run once after setting up the database.
 
 import os
 import sys
-import logging
-import getpass
+import secrets
+import string
+
+# Add the project root to the Python path
+sys.path.insert(0, os.path.join(os.path.dirname(__file__), '..', '..'))
+
+from dotenv import load_dotenv
 from config import Config
 from database import DatabaseManager
 from models import User, UserRole
 
-# Set up logging
-logging.basicConfig(
-    level=logging.INFO,
-    format='%(asctime)s - %(name)s - %(levelname)s - %(message)s'
-)
-logger = logging.getLogger(__name__)
+def generate_secure_password(length=24):
+    """Generate a secure password"""
+    # Use a mix of characters but avoid ambiguous ones
+    chars = string.ascii_letters + string.digits + "!@#$%^&*()_+-=[]{}|;:,.<>?"
+    return ''.join(secrets.choice(chars) for _ in range(length))
 
-def create_or_update_admin_user(db_manager, username, email, password):
-    """Create an admin user if one doesn't exist, or update existing one"""
-    session = db_manager.get_session()
+def create_or_update_admin_user(username, email, password):
+    """Create or update admin user in database"""
     try:
-        admin_exists = session.query(User).filter_by(role=UserRole.ADMIN).first()
-        if admin_exists:
-            logger.info(f"Admin user already exists: {admin_exists.username}")
+        # Load environment first to get config
+        load_dotenv()
+        
+        config = Config()
+        db_manager = DatabaseManager(config)
+        
+        with db_manager.get_session() as session:
+            # Check if admin user already exists
+            existing_user = session.query(User).filter_by(username=username).first()
             
-            # Ask if user wants to update existing admin
-            response = input(f"Update existing admin user '{admin_exists.username}' with new credentials? (y/N): ").strip().lower()
-            if response == 'y':
-                success = db_manager.update_user(
-                    user_id=admin_exists.id,
+            if existing_user:
+                print(f"Admin user already exists: {existing_user.username}")
+                response = input(f"Update existing admin user '{existing_user.username}' with new credentials? (y/N): ").strip().lower()
+                if response == 'y':
+                    existing_user.email = email
+                    existing_user.set_password(password)
+                    existing_user.role = UserRole.ADMIN
+                    existing_user.is_active = True
+                    session.commit()
+                    print(f"Admin user '{username}' updated successfully")
+                    return True, "updated"
+                else:
+                    print("Keeping existing admin user unchanged")
+                    return True, "existing"
+            else:
+                print(f"Creating new admin user: {username}")
+                admin_user = User(
                     username=username,
                     email=email,
-                    password=password,
                     role=UserRole.ADMIN,
                     is_active=True
                 )
-                if success:
-                    logger.info(f"Admin user '{username}' updated successfully")
-                    return True, "updated"
-                else:
-                    logger.error("Failed to update admin user")
-                    return False, "update_failed"
-            else:
-                logger.info("Keeping existing admin user unchanged")
-                return True, "existing"
-    finally:
-        session.close()
-    
-    # Create the admin user
-    user = db_manager.create_user(
-        username=username,
-        email=email,
-        password=password,
-        role=UserRole.ADMIN
-    )
-    
-    if user:
-        logger.info(f"Admin user '{username}' created successfully")
-        return True, "created"
-    else:
-        logger.error("Failed to create admin user")
-        return False, "create_failed"
+                admin_user.set_password(password)
+                session.add(admin_user)
+                session.commit()
+                print(f"Admin user '{username}' created successfully")
+                return True, "created"
+            
+    except Exception as e:
+        print(f"Error creating/updating admin user: {e}")
+        return False, "error"
 
 def main():
     """Main function"""
-    # Load configuration
-    config = Config()
-    db_manager = DatabaseManager(config)
+    print("👤 Vedfolnir Admin User Setup")
+    print("=" * 30)
+    print()
     
-    # Check if admin credentials are provided in environment variables
-    admin_username = config.auth.admin_username
-    admin_email = config.auth.admin_email
-    admin_password = config.auth.admin_password
+    # Get admin details from user
+    admin_username = input("Admin username (default: admin): ").strip() or "admin"
+    admin_email = input("Admin email: ").strip()
     
-    # If admin password is not set in environment, prompt for it
-    if not admin_password:
-        print("\nInitializing first admin user for Vedfolnir")
-        print("==============================================\n")
-        
-        if not admin_username:
-            admin_username = input("Admin username [admin]: ") or "admin"
-        else:
-            print(f"Admin username: {admin_username}")
-            
-        if not admin_email:
-            admin_email = input("Admin email [admin@example.com]: ") or "admin@example.com"
-        else:
-            print(f"Admin email: {admin_email}")
-            
-        # Prompt for password and confirmation
-        while True:
-            admin_password = getpass.getpass("Admin password: ")
-            if not admin_password:
-                print("Password cannot be empty")
-                continue
-                
-            confirm_password = getpass.getpass("Confirm password: ")
-            if admin_password != confirm_password:
-                print("Passwords do not match")
-                continue
-                
-            break
+    if not admin_email:
+        print("Error: Admin email is required")
+        sys.exit(1)
+    
+    # Validate email format (basic)
+    if "@" not in admin_email or "." not in admin_email.split("@")[-1]:
+        print("Error: Please enter a valid email address")
+        sys.exit(1)
+    
+    # Generate secure password
+    admin_password = generate_secure_password()
+    
+    print()
+    print("Creating admin user in database...")
     
     # Create or update the admin user
-    success, action = create_or_update_admin_user(db_manager, admin_username, admin_email, admin_password)
+    success, action = create_or_update_admin_user(admin_username, admin_email, admin_password)
     
     if success:
+        print()
         if action == "created":
-            print(f"\nAdmin user '{admin_username}' created successfully.")
+            print(f"✅ Admin user '{admin_username}' created successfully!")
         elif action == "updated":
-            print(f"\nAdmin user '{admin_username}' updated successfully.")
+            print(f"✅ Admin user '{admin_username}' updated successfully!")
         elif action == "existing":
-            print(f"\nExisting admin user kept unchanged.")
-        print("You can now log in to the web interface with these credentials.")
+            print(f"ℹ️  Existing admin user kept unchanged.")
+        
+        print()
+        print("You can now log in to the web interface with these credentials:")
+        print(f"  Username: {admin_username}")
+        print(f"  Email: {admin_email}")
+        print(f"  Password: {admin_password}")
+        print()
+        print("⚠️  IMPORTANT: Save your admin password securely!")
+        print("   Consider using a password manager.")
+        print()
+        print("Next steps:")
+        print("1. Start the application: python web_app.py")
+        print("2. Open http://localhost:5000 in your browser")
+        print("3. Log in with your admin credentials")
     else:
-        if action == "create_failed":
-            print("\nFailed to create admin user. Check the logs for details.")
-        elif action == "update_failed":
-            print("\nFailed to update admin user. Check the logs for details.")
+        print("\n❌ Failed to create/update admin user.")
+        print("Make sure the database is accessible and environment variables are set.")
         sys.exit(1)
 
 if __name__ == "__main__":
