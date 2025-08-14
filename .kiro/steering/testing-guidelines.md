@@ -1,5 +1,72 @@
 # Testing Guidelines
 
+## Test File Organization
+
+All test files must be organized in appropriate subdirectories within `/tests`. Never place test files in the root directory.
+
+### Test Directory Structure
+
+```
+tests/
+├── unit/                    # Unit tests for individual components
+├── integration/             # Integration tests for workflows
+├── frontend/                # Web interface and UI tests
+├── security/                # Security-focused tests
+├── performance/             # Performance and load tests
+├── scripts/                 # Test utilities and helper scripts
+└── test_helpers.py          # Shared test helper functions
+```
+
+### Test File Placement Guidelines
+
+#### Unit Tests (`tests/unit/`)
+- Individual module/class testing
+- Database model tests
+- Configuration validation tests
+- Utility function tests
+- Examples: `test_config_validation.py`, `test_database_models.py`
+
+#### Integration Tests (`tests/integration/`)
+- End-to-end workflow testing
+- Session management tests
+- Platform integration tests
+- Multi-component interaction tests
+- Examples: `test_session_management.py`, `test_platform_workflows.py`
+
+#### Frontend Tests (`tests/frontend/`)
+- Web interface tests
+- Form validation tests
+- JavaScript functionality tests
+- UI component tests
+- Examples: `test_web_interface.py`, `test_form_validation.py`
+
+#### Security Tests (`tests/security/`)
+- Authentication tests
+- Authorization tests
+- CSRF protection tests
+- Input validation tests
+- Examples: `test_auth_security.py`, `test_csrf_protection.py`
+
+#### Performance Tests (`tests/performance/`)
+- Load testing
+- Stress testing
+- Performance benchmarks
+- Resource usage tests
+- Examples: `test_performance_benchmarks.py`, `test_load_testing.py`
+
+#### Test Scripts (`tests/scripts/`)
+- Test data setup scripts
+- Mock user management scripts
+- Test environment utilities
+- Examples: `create_mock_user.py`, `cleanup_mock_user.py`
+
+### Naming Conventions
+
+- Test files: `test_*.py`
+- Test classes: `Test*` (e.g., `TestUserAuthentication`)
+- Test methods: `test_*` (e.g., `test_user_login_success`)
+- Helper scripts: Descriptive names without `test_` prefix
+
 ## Mock User Management for Tests
 
 When writing tests that involve user sessions, authentication, or platform connections, always use the standardized mock user helpers to ensure consistent test data and proper cleanup.

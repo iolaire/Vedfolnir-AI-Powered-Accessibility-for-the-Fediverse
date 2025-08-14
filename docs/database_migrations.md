@@ -96,6 +96,24 @@ alembic history
 5. Use meaningful commit messages for migration scripts
 6. Run migrations as part of your deployment process
 
+## Session Performance Migration
+
+A special migration script is available for session performance optimization:
+
+```bash
+python scripts/database/migrate_session_performance.py
+```
+
+This migration:
+1. Adds required columns to the `user_sessions` table:
+   - `last_activity`: Tracks when the session was last used
+   - `expires_at`: Session expiration timestamp
+   - `is_active`: Boolean flag for active sessions
+2. Creates performance indexes for faster session queries
+3. Updates existing sessions with default values
+
+**Note**: This migration is required for the session performance optimization system to work correctly.
+
 ## Troubleshooting
 
 If you encounter issues with migrations:

@@ -105,7 +105,6 @@ class TestDashboardSessionManagement(unittest.TestCase):
         """Set up the dashboard route with proper decorators and dependencies"""
         from flask_login import LoginManager, current_user
         from session_aware_decorators import with_db_session, require_platform_context
-        from flask_session_manager import get_current_platform_context
         from security.core.security_utils import sanitize_for_log
         
         login_manager = LoginManager()
@@ -388,7 +387,7 @@ class TestDashboardSessionManagement(unittest.TestCase):
         # Create user with platforms but mock no platform context
         self._login_user(self.test_user_with_platforms)
         
-        with patch('flask_session_manager.get_current_platform_context', return_value=None):
+        with patch('platform_context_utils.get_current_platform_context', return_value=None):
             response = self.client.get('/')
             self.assertEqual(response.status_code, 200)
             # Should still show dashboard with general stats

@@ -66,7 +66,7 @@
     
     {% block head %}{% endblock %}
 </head>
-<body>
+<body data-authenticated="{% if current_user_safe %}true{% else %}false{% endif %}">
     <!-- Skip to content link for accessibility -->
     <a href="#main-content" class="skip-to-content">Skip to main content</a>
     
@@ -282,7 +282,7 @@
     <script src="{{ url_for('static', filename='js/csrf-handler.js') }}"></script>
     <script src="{{ url_for('static', filename='js/app.js') }}"></script>
     <script src="{{ url_for('static', filename='js/error_handler.js') }}"></script>
-    <script src="{{ url_for('static', filename='js/session_sync.js') }}"></script>
+    <script src="{{ url_for('static', filename='js/session-sync.js') }}"></script>
     <script src="{{ url_for('static', filename='js/navigation.js') }}"></script>
     <script src="{{ url_for('static', filename='js/platform_context_refresh.js') }}"></script>
     
@@ -425,6 +425,28 @@
                     }
                 });
             });
+        }
+        
+        // Session management functions
+        function handleLogout(event) {
+            // Notify other tabs about logout
+            if (window.vedfolnir && window.vedfolnir.sessionSync) {
+                window.vedfolnir.sessionSync.notifyLogout();
+            }
+            
+            // Allow normal logout to proceed
+            return true;
+        }
+        
+        // Platform switching handler
+        function handlePlatformSwitch(platformId, platformName) {
+            // Notify other tabs about platform switch
+            if (window.vedfolnir && window.vedfolnir.sessionSync) {
+                window.vedfolnir.sessionSync.notifyPlatformSwitch({
+                    id: platformId,
+                    name: platformName
+                });
+            }
         }
     </script>
     {% block scripts %}{% endblock %}

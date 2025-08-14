@@ -111,7 +111,7 @@ class TestSessionDecoratorsIntegration(unittest.TestCase):
             login_user(session_aware_user)
             
             # Mock platform context
-            with patch('flask_session_manager.get_current_platform_context') as mock_context:
+            with patch('platform_context_utils.get_current_platform_context') as mock_context:
                 mock_context.return_value = {'platform_connection_id': 1}
                 
                 response = self.client.get('/dashboard')
@@ -295,7 +295,7 @@ class TestSessionDecoratorsIntegration(unittest.TestCase):
             login_user(session_aware_user)
             
             # Mock platform context
-            with patch('flask_session_manager.get_current_platform_context') as mock_context:
+            with patch('platform_context_utils.get_current_platform_context') as mock_context:
                 mock_context.return_value = {'platform_connection_id': 1}
                 
                 response = self.client.get('/test-multiple')

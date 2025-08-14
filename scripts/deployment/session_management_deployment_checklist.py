@@ -21,7 +21,6 @@ sys.path.insert(0, os.path.dirname(os.path.dirname(os.path.dirname(__file__))))
 from config import Config
 from database import DatabaseManager
 from session_manager import SessionManager
-from flask_session_manager import FlaskSessionManager
 from session_health_checker import get_session_health_checker
 from session_alerting_system import get_alerting_system
 
@@ -43,7 +42,6 @@ class SessionManagementDeploymentChecker:
         self.config = Config()
         self.db_manager = DatabaseManager(self.config)
         self.session_manager = SessionManager(self.db_manager)
-        self.flask_session_manager = FlaskSessionManager(self.db_manager)
         self.results: List[CheckResult] = []
         
         # Setup logging

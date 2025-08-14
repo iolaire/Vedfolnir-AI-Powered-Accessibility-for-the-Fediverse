@@ -144,6 +144,8 @@ python scripts/setup/update_admin_user.py
 
 ### Technical Documentation
 - [**API Documentation**](docs/api_documentation.md) - REST API reference
+- [**Session Management API**](docs/session-management-unified-api.md) - Unified session management system API
+- [**Session API Reference**](docs/session-management-api-reference.md) - Complete session management API reference
 - [**Core Modules API**](docs/api/core_modules.md) - Core application modules documentation
 - [**Utility Modules API**](docs/api/utility_modules.md) - Utility and service modules documentation
 - [**Security Modules API**](docs/api/security_modules.md) - Security system documentation
@@ -153,12 +155,16 @@ python scripts/setup/update_admin_user.py
 - [**Testing Guide**](docs/TESTING.md) - Testing framework and procedures
 
 ### Reference
+- [**Database Schema**](docs/database_schema.md) - Complete database schema documentation
 - [**Database Migrations**](docs/database_migrations.md) - Database schema management
 - [**Batch Updates**](docs/batch_update.md) - Bulk operation documentation
 - [**Troubleshooting**](docs/troubleshooting.md) - Common issues and solutions
+- [**Session Troubleshooting**](docs/session-management-troubleshooting-unified.md) - Session management troubleshooting guide
 - [**Migration Guide**](docs/migration_guide.md) - Upgrading and migration procedures
 - [**Security Audit Summary**](docs/summary/SECURITY_AUDIT_SUMMARY.md) - Complete security audit results
 - [**Test Coverage Report**](docs/summary/TEST_COVERAGE_REPORT.md) - Comprehensive test coverage analysis
+
+### Legacy Documentation
 
 ## 🔧 Configuration
 

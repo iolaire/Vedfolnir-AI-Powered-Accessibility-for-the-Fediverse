@@ -123,8 +123,8 @@ def require_platform_context(f):
                         return redirect(url_for('first_time_setup'))
                     
                     # Check for active platform context
-                    from flask_session_manager import get_current_platform_context
-                    context = get_current_platform_context()
+                    from database_session_middleware import get_current_session_context
+                    context = get_current_session_context()
                     
                     if not context or not context.get('platform_connection_id'):
                         # No platform context, try to set default platform
@@ -137,12 +137,14 @@ def require_platform_context(f):
                         if not default_platform:
                             default_platform = user_platforms[0]  # Use first platform as fallback
                         
-                        # Try to set platform context
-                        from flask import session
-                        session['platform_connection_id'] = default_platform.id
-                        session['last_activity'] = datetime.now(timezone.utc).isoformat()
+                        # Try to set platform context using database session
+                        from database_session_middleware import update_session_platform
+                        success = update_session_platform(default_platform.id)
                         
-                        logger.info(f"Set platform context to {default_platform.name} for user {current_user.id}")
+                        if success:
+                            logger.info(f"Set platform context to {default_platform.name} for user {current_user.id}")
+                        else:
+                            logger.warning(f"Failed to set platform context to {default_platform.name} for user {current_user.id}")
                     
             except Exception as e:
                 logger.error(f"Error checking platform context in {f.__name__}: {e}")

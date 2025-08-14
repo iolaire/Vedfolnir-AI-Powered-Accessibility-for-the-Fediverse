@@ -10,7 +10,6 @@ This is an auto-generated index of all modules in the Vedfolnir project.
 - [config](config.md)
 - [database](database.md)
 - [database_context_middleware](database_context_middleware.md)
-- [flask_session_manager](flask_session_manager.md) - Flask-based Session Management System
 - [image_processor](image_processor.md)
 - [main](main.md)
 - [models](models.md)
@@ -97,7 +96,6 @@ This is an auto-generated index of all modules in the Vedfolnir project.
 - [scripts.testing.test_web_auth](scripts_testing_test_web_auth.md) - Test script to verify web interface authentication and styling
 - [scripts.testing.test_web_interface](scripts_testing_test_web_interface.md) - Quick test script to check if the web interface is working properly
 - [test_coverage_analysis](test_coverage_analysis.md) - Comprehensive Test Coverage Analysis
-- [test_flask_sessions](test_flask_sessions.md) - Test Flask Session Management
 - [test_login_functionality](test_login_functionality.md) - Test login functionality to identify issues after session management changes
 - [test_session_management_performance](test_session_management_performance.md) - Session Management Performance Test
 - [test_session_monitoring_integration](test_session_monitoring_integration.md) - Integration test for session performance monitoring.
@@ -270,7 +268,6 @@ This is an auto-generated index of all modules in the Vedfolnir project.
 - [health_check](health_check.md) - Health check module for Vedfolnir system monitoring.
 - [input_validation](input_validation.md) - Input validation utilities for security
 - [logger](logger.md)
-- [migrate_to_flask_sessions](migrate_to_flask_sessions.md) - Migration Script: Move from Database Sessions to Flask Sessions
 - [migrations.add_caption_generation_tables](migrations_add_caption_generation_tables.md) - Database migration script to add caption generation tables.
 - [migrations.platform_aware_migration](migrations_platform_aware_migration.md) - Platform-Aware Database Migration
 - [migrations.remove_user_sessions](migrations_remove_user_sessions.md) - Database Migration: Remove UserSession table

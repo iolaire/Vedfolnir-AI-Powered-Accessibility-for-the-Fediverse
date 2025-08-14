@@ -79,10 +79,14 @@ class SessionErrorHandler:
         
         # Determine appropriate recovery action based on endpoint
         if endpoint == 'login':
-            # Login page - clear session and show login form
-            flask_session.clear()
+            # Login page - clear any session cookies and show login form
+            from flask import make_response
+            response = make_response(redirect(url_for('login')))
+            from session_cookie_manager import create_session_cookie_manager
+            cookie_manager = create_session_cookie_manager({})
+            cookie_manager.clear_session_cookie(response)
             flash('Session expired. Please log in again.', 'warning')
-            return redirect(url_for('login'))
+            return response
             
         elif endpoint in ['health_dashboard', 'index']:
             # Health dashboard/index - try to recover or redirect to platform management
@@ -276,13 +280,17 @@ class SessionErrorHandler:
             Redirect to login page
         """
         try:
-            # Clear Flask session
-            flask_session.clear()
-            
             # Clear database session if exists
-            flask_session_id = flask_session.get('_id')
-            if flask_session_id:
-                from session_manager import SessionManager
+            from database_session_middleware import get_current_session_id
+            session_id = get_current_session_id()
+            if session_id:
+                from unified_session_manager import UnifiedSessionManager
+                from database import DatabaseManager
+                from config import Config
+                
+                db_manager = DatabaseManager(Config())
+                unified_session_manager = UnifiedSessionManager(db_manager)
+                unified_session_manager.destroy_session(session_id)
                 session_manager = SessionManager(current_app.config.get('db_manager'))
                 session_manager._cleanup_session(flask_session_id)
             
@@ -428,15 +436,15 @@ def register_session_error_handlers(app, session_manager, detached_instance_hand
                     # For platform-dependent endpoints, validate platform context
                     if request.endpoint in ['health_dashboard', 'review', 'batch_review', 'caption_generation']:
                         try:
-                            from flask_session_manager import get_current_platform_context
-                            context = get_current_platform_context()
+                            from database_session_middleware import get_current_session_context
+                            context = get_current_session_context()
                             
                             if not context or not context.get('platform_connection_id'):
                                 # No platform context - redirect to platform management
                                 flash('Please select a platform to continue.', 'info')
                                 return redirect(url_for('platform_management'))
                         except ImportError:
-                            # flask_session_manager not available - skip platform validation
+                            # database_session_middleware not available - skip platform validation
                             pass
                     
                 except DetachedInstanceError:

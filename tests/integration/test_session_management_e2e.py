@@ -21,7 +21,6 @@ from flask_login import login_user, logout_user
 from database import DatabaseManager
 from models import User, PlatformConnection, UserRole
 from session_manager import SessionManager
-from flask_session_manager import FlaskSessionManager
 from request_scoped_session_manager import RequestScopedSessionManager
 from config import Config
 
@@ -34,7 +33,6 @@ class SessionManagementE2ETest(unittest.TestCase):
         self.config = Config()
         self.db_manager = DatabaseManager(self.config)
         self.session_manager = SessionManager(self.db_manager)
-        self.flask_session_manager = FlaskSessionManager(self.db_manager)
         self.request_session_manager = RequestScopedSessionManager(self.db_manager)
         
         # Create test Flask app
@@ -300,35 +298,7 @@ class SessionManagementE2ETest(unittest.TestCase):
             if session_id:
                 self.session_manager._cleanup_session(session_id)
     
-    def test_flask_session_integration(self):
-        """Test Flask session manager integration"""
-        with self.app.test_client() as client:
-            with client.session_transaction() as sess:
-                # Test Flask session creation
-                success = self.flask_session_manager.create_user_session(
-                    self.test_user.id, 
-                    self.test_platform.id
-                )
-                self.assertTrue(success)
-                
-                # Test session validation
-                valid = self.flask_session_manager.validate_session(self.test_user.id)
-                self.assertTrue(valid)
-                
-                # Test platform context update
-                context_updated = self.flask_session_manager.update_platform_context(
-                    self.test_platform.id
-                )
-                self.assertTrue(context_updated)
-                
-                # Test session clearing
-                self.flask_session_manager.clear_session()
-                
-                # Verify session is cleared
-                valid_after_clear = self.flask_session_manager.validate_session(
-                    self.test_user.id
-                )
-                self.assertFalse(valid_after_clear)
+
 
 
 class SessionManagementLoadTest(unittest.TestCase):

@@ -21,6 +21,7 @@ from sqlalchemy.exc import SQLAlchemyError, DisconnectionError, TimeoutError, In
 from models import User, PlatformConnection, UserSession
 from database import DatabaseManager
 from session_config import get_session_config, SessionConfig
+from session_performance_optimizer import get_session_optimizer
 
 logger = getLogger(__name__)
 
@@ -39,6 +40,9 @@ class SessionManager:
         self.db_manager = db_manager
         self.config = config or get_session_config()
         self.session_timeout = self.config.timeout.session_lifetime
+        
+        # Initialize performance optimizer
+        self.optimizer = get_session_optimizer(db_manager)
         
         # Initialize monitoring (lazy loading to avoid circular imports)
         self._monitor = None
@@ -244,7 +248,7 @@ class SessionManager:
     
     def get_session_context(self, session_id: str) -> Optional[Dict[str, Any]]:
         """
-        Get session context including user and platform information
+        Get session context including user and platform information with caching
         
         Args:
             session_id: Session ID to look up
@@ -256,77 +260,12 @@ class SessionManager:
             logger.debug("get_session_context called with empty session_id")
             return None
         
-        # Retry logic for database connection issues
-        max_retries = 3
-        retry_delay = 0.1
+        # Use optimized cached lookup
+        context = self.optimizer.get_cached_session_context(session_id)
+        if context:
+            logger.debug(f"Retrieved session context for session_id: {sanitize_for_log(session_id)}, platform_id: {sanitize_for_log(str(context['platform_connection_id']))}")
         
-        for attempt in range(max_retries):
-            try:
-                with self.get_db_session() as db_session:
-                    # Use eager loading to avoid DetachedInstanceError
-                    from sqlalchemy.orm import joinedload
-                    user_session = db_session.query(UserSession).options(
-                        joinedload(UserSession.user),
-                        joinedload(UserSession.active_platform)
-                    ).filter_by(session_id=session_id).first()
-                    
-                    if not user_session:
-                        if attempt == 0:  # Only log on first attempt to reduce noise
-                            logger.debug(f"No session found for session_id: {sanitize_for_log(session_id[:8])}...")
-                            # Try to find any sessions for debugging
-                            all_sessions = db_session.query(UserSession).all()
-                            logger.debug(f"Total sessions in database: {len(all_sessions)}")
-                            if all_sessions:
-                                logger.debug(f"Sample session IDs: {[s.session_id[:8] + '...' for s in all_sessions[:3]]}")
-                                # Check if the session exists with a different case or format
-                                for sess in all_sessions:
-                                    if sess.session_id.lower() == session_id.lower():
-                                        logger.warning(f"Found session with different case: {sanitize_for_log(sess.session_id)}")
-                                        break
-                        return None
-                    
-                    # Check if session is expired
-                    if self._is_session_expired(user_session):
-                        logger.debug(f"Session expired for session_id: {sanitize_for_log(session_id)}")
-                        # Don't cleanup immediately to avoid blocking the request
-                        # Just return None and let cleanup happen later
-                        return None
-                    
-                    # Extract data from objects before closing session to avoid DetachedInstanceError
-                    user = user_session.user
-                    platform = user_session.active_platform
-                    
-                    context = {
-                        'session_id': session_id,
-                        'user_id': user.id if user else None,
-                        'user_username': user.username if user else None,
-                        'user': user,  # Include user object for test compatibility
-                        'platform_connection_id': platform.id if platform else None,
-                        'platform_name': platform.name if platform else None,
-                        'platform_type': platform.platform_type if platform else None,
-                        'platform_connection': platform,  # Include platform object for test compatibility
-                        'created_at': user_session.created_at,
-                        'updated_at': user_session.updated_at
-                    }
-                    
-                    logger.debug(f"Retrieved session context for session_id: {sanitize_for_log(session_id)}, platform_id: {sanitize_for_log(str(context['platform_connection_id']))}")
-                    return context
-                    
-            except (DisconnectionError, TimeoutError, InvalidRequestError) as e:
-                # Connection-related errors that might be recoverable
-                if attempt < max_retries - 1:
-                    logger.warning(f"Database connection error getting session context (attempt {attempt + 1}/{max_retries}): {e}")
-                    import time
-                    time.sleep(retry_delay * (attempt + 1))
-                    continue
-                else:
-                    logger.error(f"Failed to get session context after {max_retries} attempts: {e}")
-                    return None
-            except Exception as e:
-                logger.error(f"Error getting session context for session_id {sanitize_for_log(session_id)}: {e}")
-                return None
-        
-        return None
+        return context
     
     def update_platform_context(self, session_id: str, platform_connection_id: int) -> bool:
         """
@@ -423,7 +362,7 @@ class SessionManager:
     
     def cleanup_expired_sessions(self) -> int:
         """
-        Clean up expired sessions using configurable batch processing
+        Clean up expired sessions using optimized batch processing
         
         Returns:
             Number of sessions cleaned up
@@ -432,7 +371,7 @@ class SessionManager:
             logger.debug("Background cleanup disabled by configuration")
             return 0
         
-        return self.batch_cleanup_sessions(self.config.cleanup.cleanup_batch_size)
+        return self.optimizer.cleanup_expired_sessions_optimized(self.config.cleanup.cleanup_batch_size)
     
     def cleanup_user_sessions(self, user_id: int, keep_current: Optional[str] = None) -> int:
         """
@@ -481,7 +420,7 @@ class SessionManager:
     
     def get_user_active_sessions(self, user_id: int) -> list:
         """
-        Get all active (non-expired) sessions for a user
+        Get all active (non-expired) sessions for a user with optimization
         
         Args:
             user_id: User ID to get sessions for
@@ -489,38 +428,11 @@ class SessionManager:
         Returns:
             List of active session dictionaries
         """
-        db_session = self.db_manager.get_session()
         try:
-            # Get all sessions for this user and filter active ones safely
-            all_sessions = db_session.query(UserSession).filter(
-                UserSession.user_id == user_id
-            ).order_by(UserSession.updated_at.desc()).all()
-            
-            active_sessions = []
-            for session_obj in all_sessions:
-                if not self._is_session_expired(session_obj):
-                    active_sessions.append(session_obj)
-            
-            sessions_info = []
-            for session_obj in active_sessions:
-                platform = session_obj.active_platform
-                sessions_info.append({
-                    'session_id': session_obj.session_id,
-                    'platform_id': platform.id if platform else None,
-                    'platform_name': platform.name if platform else None,
-                    'platform_type': platform.platform_type if platform else None,
-                    'created_at': session_obj.created_at,
-                    'updated_at': session_obj.updated_at,
-                    'is_current': False  # Will be set by caller if needed
-                })
-            
-            return sessions_info
-            
-        except SQLAlchemyError as e:
-            logger.error(f"Database error getting user sessions: {e}")
+            return self.optimizer.get_user_sessions_optimized(user_id, active_only=True)
+        except Exception as e:
+            logger.error(f"Error getting user active sessions: {e}")
             return []
-        finally:
-            db_session.close()
     
     def cleanup_all_user_sessions(self, user_id: int) -> int:
         """
@@ -556,7 +468,7 @@ class SessionManager:
     
     def validate_session(self, session_id: str, user_id: int) -> bool:
         """
-        Validate that a session belongs to the specified user and is not expired
+        Validate that a session belongs to the specified user and is not expired with optimization
         
         Args:
             session_id: Session ID to validate
@@ -566,15 +478,9 @@ class SessionManager:
             True if session is valid, False otherwise
         """
         try:
-            context = self.get_session_context(session_id)
-            
-            if not context:
-                logger.warning(f"Session validation failed - no context found for session {sanitize_for_log(session_id)}")
-                return False
-            
-            # Check user ID match
-            if context['user_id'] != user_id:
-                logger.warning(f"Session validation failed - user ID mismatch for session {sanitize_for_log(session_id)}")
+            # Use optimized validation first
+            if not self.optimizer.validate_session_optimized(session_id, user_id):
+                logger.warning(f"Session validation failed - optimized check failed for session {sanitize_for_log(session_id)}")
                 return False
             
             # Additional security checks
@@ -1157,6 +1063,10 @@ class SessionManager:
         try:
             engine = self.db_manager.engine
             
+            # Apply database optimizations
+            optimization_results = self.optimizer.apply_database_optimizations()
+            logger.info(f"Database optimizations applied: {optimization_results}")
+            
             # Dispose of all connections to force pool refresh
             engine.dispose()
             
@@ -1261,29 +1171,32 @@ class PlatformContextMiddleware:
             if context:
                 g.platform_context = context
                 
-                # Update session activity less frequently to reduce database load
-                # Only update every 5 minutes instead of every request
-                last_update = session.get('_last_activity_update')
-                now = datetime.now(timezone.utc)
-                
-                if not last_update or (now - datetime.fromisoformat(last_update)).total_seconds() > 300:
-                    try:
-                        db_session = self.session_manager.db_manager.get_session()
-                        try:
-                            user_session = db_session.query(UserSession).filter_by(
-                                session_id=flask_session_id
-                            ).first()
-                            if user_session:
-                                user_session.updated_at = now
-                                db_session.commit()
-                                session['_last_activity_update'] = now.isoformat()
-                        except SQLAlchemyError as e:
-                            logger.error(f"Database error updating session activity: {sanitize_for_log(str(e))}")
-                            db_session.rollback()
-                        finally:
-                            db_session.close()
-                    except Exception as e:
-                        logger.error(f"Error updating session activity: {sanitize_for_log(str(e))}")
+                # Update session activity using optimized method with throttling
+                try:
+                    if hasattr(self.session_manager, 'optimizer'):
+                        self.session_manager.optimizer.update_session_activity_optimized(flask_session_id)
+                    else:
+                        # Fallback to original method with reduced frequency
+                        last_update = session.get('_last_activity_update')
+                        now = datetime.now(timezone.utc)
+                        
+                        if not last_update or (now - datetime.fromisoformat(last_update)).total_seconds() > 300:
+                            db_session = self.session_manager.db_manager.get_session()
+                            try:
+                                user_session = db_session.query(UserSession).filter_by(
+                                    session_id=flask_session_id
+                                ).first()
+                                if user_session:
+                                    user_session.updated_at = now
+                                    db_session.commit()
+                                    session['_last_activity_update'] = now.isoformat()
+                            except SQLAlchemyError as e:
+                                logger.error(f"Database error updating session activity: {sanitize_for_log(str(e))}")
+                                db_session.rollback()
+                            finally:
+                                db_session.close()
+                except Exception as e:
+                    logger.error(f"Error updating session activity: {sanitize_for_log(str(e))}")
         except Exception as e:
             logger.error(f"Unexpected error in middleware before_request: {sanitize_for_log(str(e))}")
             # Ensure g has safe defaults even if there's an error
@@ -1295,6 +1208,10 @@ class PlatformContextMiddleware:
         # Clean up any temporary context
         if hasattr(g, 'platform_context'):
             g.platform_context = None
+        
+        # Clear session cache if it exists
+        if hasattr(g, 'session_cache'):
+            g.session_cache = None
         
         return response
 

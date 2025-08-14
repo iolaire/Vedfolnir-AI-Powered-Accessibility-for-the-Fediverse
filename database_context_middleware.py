@@ -223,8 +223,8 @@ class DatabaseContextMiddleware:
                 # Get active platform - check session context first
                 active_platform_id = None
                 try:
-                    from flask import session as flask_session
-                    active_platform_id = flask_session.get('platform_connection_id')
+                    from database_session_middleware import get_current_platform_id
+                    active_platform_id = get_current_platform_id()
                 except Exception:
                     pass
                 
@@ -304,8 +304,8 @@ class DatabaseContextMiddleware:
             # Find active platform - check session context first
             active_platform_id = None
             try:
-                from flask import session as flask_session
-                active_platform_id = flask_session.get('platform_connection_id')
+                from database_session_middleware import get_current_platform_id
+                active_platform_id = get_current_platform_id()
             except Exception:
                 pass
             
@@ -432,7 +432,7 @@ class DatabaseContextMiddleware:
         """
         try:
             context_info = {
-                'flask_session_id': session.get('_id'),
+                'session_id': getattr(g, 'session_id', None),
                 'has_db_session': hasattr(g, 'db_session'),
                 'db_session_active': False,
                 'user_authenticated': current_user.is_authenticated

@@ -11,9 +11,47 @@ When creating any new source code file (.py, .js, .html, .css, .sh, .sql), ALWAY
 - **Language**: Python 3
 - **Web Framework**: Flask
 - **Database**: SQLAlchemy with SQLite backend
+- **Session Management**: Database sessions using UserSession table (NOT Flask sessions)
 - **AI Model**: Ollama with LLaVA model for image caption generation
 - **HTTP Client**: httpx for async HTTP requests
 - **Image Processing**: Pillow (PIL)
+
+## Session Management Architecture
+
+**IMPORTANT**: This application uses **database sessions** exclusively for session management. Flask sessions (secure cookies) are NOT used.
+
+### Database Session Implementation
+- **Primary Storage**: UserSession table in the database
+- **Session Data**: All session state stored in database records
+- **Session Tokens**: Secure tokens stored in HTTP-only cookies
+- **Cross-Tab Sync**: Real-time synchronization via database queries
+- **Audit Trail**: Complete session activity logging in the database
+
+### Session Management Components
+- **UserSession Model**: Database table for session storage
+- **SessionManager**: Core session operations (create, validate, cleanup)
+- **RequestSessionManager**: Request-scoped session handling
+- **Session Decorators**: Authentication and platform context decorators
+- **Session Middleware**: Automatic session validation and cleanup
+
+### Key Session Features
+- **Platform Context**: Sessions maintain current platform selection
+- **Multi-Platform Support**: Users can switch between platforms within sessions
+- **Automatic Cleanup**: Expired sessions automatically removed
+- **Security**: Secure token generation and validation
+- **Scalability**: Database sessions support multiple application instances
+
+### Session Configuration
+```bash
+# Session timeout (seconds)
+SESSION_TIMEOUT=7200
+
+# Session cleanup interval (seconds)
+SESSION_CLEANUP_INTERVAL=3600
+
+# Session token length
+SESSION_TOKEN_LENGTH=32
+```
 
 ## Key Dependencies
 - **requests**: HTTP client for synchronous requests
@@ -223,6 +261,26 @@ python tests/scripts/cleanup_mock_user.py
 ```
 
 See `.kiro/steering/testing-guidelines.md` for complete mock user management documentation and `tests/test_helpers/README.md` for API reference.
+
+**Session Testing:**
+For session-related tests, always use database sessions:
+
+```python
+# Test database session functionality
+from session_manager import SessionManager
+from request_session_manager import RequestSessionManager
+
+class TestDatabaseSessions(unittest.TestCase):
+    def setUp(self):
+        self.session_manager = SessionManager(self.db_manager)
+        self.request_session_manager = RequestSessionManager(self.db_manager)
+    
+    def test_session_creation(self):
+        # Test database session creation
+        session = self.session_manager.create_session(user_id=1)
+        self.assertIsNotNone(session.session_token)
+        self.assertEqual(session.user_id, 1)
+```
 
 **Note:** Many tests require environment variables to be set. If you encounter configuration errors, either:
 1. Set up your `.env` file with valid configuration

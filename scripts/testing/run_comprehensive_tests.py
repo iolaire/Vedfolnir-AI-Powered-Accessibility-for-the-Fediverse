@@ -23,24 +23,32 @@ TEST_SUITES = {
         'tests.test_web_caption_generation_service',
         'tests.test_task_queue_manager',
         'tests.test_progress_tracker',
-        'tests.test_websocket_progress_handler'
+        'tests.test_websocket_progress_handler',
+        'tests.test_unified_session_manager',
+        'tests.test_session_cookie_manager',
+        'tests.test_database_session_middleware'
     ],
     'integration': [
-        'tests.web_caption_generation.test_integration_workflow'
+        'tests.web_caption_generation.test_integration_workflow',
+        'tests.test_session_consolidation_integration',
+        'tests.integration.test_session_management_e2e'
     ],
     'security': [
         'tests.web_caption_generation.test_security_validation',
         'tests.security.test_comprehensive_security',
-        'tests.security.test_platform_access'
+        'tests.security.test_platform_access',
+        'tests.security.test_session_security_hardening'
     ],
     'performance': [
         'tests.web_caption_generation.test_performance_concurrent',
         'tests.performance.test_platform_load',
-        'tests.performance.test_platform_queries'
+        'tests.performance.test_platform_queries',
+        'tests.performance.test_session_consolidation_load'
     ],
     'web': [
         'tests.web_caption_generation.test_end_to_end_web',
-        'tests.test_platform_management_interface'
+        'tests.test_platform_management_interface',
+        'tests.frontend.test_login_functionality'
     ],
     'error_handling': [
         'tests.web_caption_generation.test_error_recovery',
@@ -49,12 +57,22 @@ TEST_SUITES = {
     'platform': [
         'tests.test_platform_adapters_comprehensive',
         'tests.test_platform_switching_integration',
-        'tests.integration.test_platform_web'
+        'tests.integration.test_platform_web',
+        'tests.test_platform_switching_session_management'
     ],
     'config': [
         'tests.test_configuration_examples',
         'tests.test_config_validation_script',
         'tests.test_config_multi_platform'
+    ],
+    'session_consolidation': [
+        'tests.test_session_consolidation_final_e2e',
+        'tests.test_unified_session_manager',
+        'tests.test_session_cookie_manager',
+        'tests.test_database_session_middleware',
+        'tests.test_session_consolidation_integration',
+        'tests.test_login_session_management',
+        'tests.performance.test_session_consolidation_load'
     ]
 }
 
@@ -260,6 +278,11 @@ def main():
         help='Run only unit and integration tests'
     )
     parser.add_argument(
+        '--session-consolidation',
+        action='store_true',
+        help='Run session consolidation validation tests'
+    )
+    parser.add_argument(
         '--ci',
         action='store_true',
         help='Run in CI mode (minimal output, exit codes)'
@@ -283,6 +306,8 @@ def main():
     # Determine suites to run
     if args.quick:
         selected_suites = ['unit', 'integration']
+    elif getattr(args, 'session_consolidation', False):
+        selected_suites = ['session_consolidation']
     elif args.suites:
         selected_suites = args.suites
     elif args.suite == 'all':

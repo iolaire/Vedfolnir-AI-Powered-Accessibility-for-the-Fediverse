@@ -712,6 +712,10 @@ class UserSession(Base):
     active_platform_id = Column(Integer, ForeignKey('platform_connections.id'), nullable=True)
     created_at = Column(DateTime, default=func.now(), nullable=False)
     updated_at = Column(DateTime, default=func.now(), onupdate=func.now(), nullable=False, index=True)
+    last_activity = Column(DateTime, default=func.now(), nullable=False, index=True)
+    expires_at = Column(DateTime, nullable=False, index=True)
+    is_active = Column(Boolean, default=True, nullable=False, index=True)
+    session_fingerprint = Column(Text, nullable=True)
     user_agent = Column(Text, nullable=True)
     ip_address = Column(String(45), nullable=True)
     
@@ -726,6 +730,106 @@ class UserSession(Base):
         back_populates='user_sessions',
         lazy='select'  # Use select loading instead of lazy loading
     )
+    
+    def is_expired(self) -> bool:
+        """Check if session is expired"""
+        from datetime import datetime, timezone
+        return datetime.now(timezone.utc) > self.expires_at.replace(tzinfo=timezone.utc)
+    
+    def to_context_dict(self) -> Dict[str, Any]:
+        """Convert session to context dictionary"""
+        return {
+            'session_id': self.session_id,
+            'user_id': self.user_id,
+            'platform_connection_id': self.active_platform_id,
+            'created_at': self.created_at.isoformat() if self.created_at else None,
+            'last_activity': self.last_activity.isoformat() if self.last_activity else None,
+            'expires_at': self.expires_at.isoformat() if self.expires_at else None,
+            'user_info': {
+                'id': self.user.id,
+                'username': self.user.username,
+                'email': self.user.email,
+                'role': self.user.role.value
+            } if self.user else None,
+            'platform_info': {
+                'id': self.active_platform.id,
+                'name': self.active_platform.name,
+                'platform_type': self.active_platform.platform_type,
+                'instance_url': self.active_platform.instance_url,
+                'is_default': self.active_platform.is_default
+            } if self.active_platform else None
+        }
+    
+    def update_activity(self) -> None:
+        """Update last activity timestamp"""
+        from datetime import datetime, timezone
+        self.last_activity = datetime.now(timezone.utc)
+        self.updated_at = datetime.now(timezone.utc)
+    
+    def extend_expiration(self, hours: int = 24) -> None:
+        """Extend session expiration by specified hours"""
+        from datetime import datetime, timezone, timedelta
+        self.expires_at = datetime.now(timezone.utc) + timedelta(hours=hours)
+        self.updated_at = datetime.now(timezone.utc)
+    
+    def time_until_expiry(self) -> int:
+        """Get seconds until session expires"""
+        from datetime import datetime, timezone
+        if self.expires_at:
+            delta = self.expires_at.replace(tzinfo=timezone.utc) - datetime.now(timezone.utc)
+            return max(0, int(delta.total_seconds()))
+        return 0
+    
+    def is_recently_active(self, minutes: int = 30) -> bool:
+        """Check if session was active within specified minutes"""
+        from datetime import datetime, timezone, timedelta
+        if self.last_activity:
+            cutoff = datetime.now(timezone.utc) - timedelta(minutes=minutes)
+            return self.last_activity.replace(tzinfo=timezone.utc) > cutoff
+        return False
+    
+    def get_session_duration(self) -> int:
+        """Get session duration in seconds"""
+        from datetime import datetime, timezone
+        if self.created_at:
+            delta = datetime.now(timezone.utc) - self.created_at.replace(tzinfo=timezone.utc)
+            return int(delta.total_seconds())
+        return 0
+    
+    @classmethod
+    def find_by_session_id(cls, db_session, session_id: str):
+        """Find active session by session ID"""
+        return db_session.query(cls).filter_by(
+            session_id=session_id,
+            is_active=True
+        ).first()
+    
+    @classmethod
+    def find_user_sessions(cls, db_session, user_id: int, active_only: bool = True):
+        """Find all sessions for a user"""
+        query = db_session.query(cls).filter_by(user_id=user_id)
+        if active_only:
+            query = query.filter_by(is_active=True)
+        return query.order_by(cls.last_activity.desc()).all()
+    
+    @classmethod
+    def find_expired_sessions(cls, db_session):
+        """Find all expired sessions"""
+        from datetime import datetime, timezone
+        return db_session.query(cls).filter(
+            cls.expires_at < datetime.now(timezone.utc)
+        ).all()
+    
+    @classmethod
+    def cleanup_expired_sessions(cls, db_session) -> int:
+        """Clean up expired sessions and return count"""
+        expired_sessions = cls.find_expired_sessions(db_session)
+        count = len(expired_sessions)
+        
+        for session in expired_sessions:
+            db_session.delete(session)
+        
+        return count
     
     def __repr__(self):
         return f"<UserSession {self.session_id} - User {self.user_id}>"
