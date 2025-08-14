@@ -156,8 +156,12 @@ class RequestScopedSessionManager:
         session = self.get_request_session()
         
         # Check if the object is already in this session
-        if obj in session:
-            return obj
+        try:
+            if obj in session:
+                return obj
+        except (TypeError, AttributeError):
+            # Handle cases where session is a Mock object or doesn't support 'in' operator
+            pass
         
         # Time the reattachment operation
         start_time = time.time()

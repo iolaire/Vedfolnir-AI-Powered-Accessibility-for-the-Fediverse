@@ -45,6 +45,11 @@ class DatabaseContextMiddleware:
         @self.app.before_request
         def before_request():
             """Initialize database session for request"""
+            # Skip database session creation for static files
+            from flask import request
+            if request.endpoint == 'static':
+                return
+                
             try:
                 # Ensure we have a request-scoped session
                 session = self.session_manager.get_request_session()
@@ -60,6 +65,11 @@ class DatabaseContextMiddleware:
         @self.app.teardown_request
         def teardown_request(exception=None):
             """Clean up database session after request"""
+            # Skip database session cleanup for static files
+            from flask import request
+            if request.endpoint == 'static':
+                return
+                
             try:
                 if exception:
                     logger.warning(f"Request ended with exception: {sanitize_for_log(str(exception))}")
@@ -80,6 +90,10 @@ class DatabaseContextMiddleware:
         @self.app.context_processor
         def inject_session_aware_objects():
             """Inject session-aware objects into template context"""
+            # Skip template context injection for static files
+            from flask import request
+            if request.endpoint == 'static':
+                return {}
             return self._create_safe_template_context()
     
     def _create_safe_template_context(self) -> Dict[str, Any]:

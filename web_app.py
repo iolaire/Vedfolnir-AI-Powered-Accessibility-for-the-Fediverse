@@ -479,10 +479,7 @@ class UserForm(FlaskForm):
                                     validators=[EqualTo('password', message='Passwords must match')])
     role = SelectField('Role', choices=[(role.value, role.value.capitalize()) for role in UserRole])
 
-class AddUserForm(UserForm):
-    """Form for adding a new user"""
-    password = PasswordField('Password', validators=[DataRequired(), Length(min=8)])
-    submit = SubmitField('Add User')
+
 
 class EditUserForm(UserForm):
     """Form for editing an existing user"""
@@ -494,6 +491,17 @@ class DeleteUserForm(FlaskForm):
     """Form for deleting a user"""
     user_id = HiddenField('User ID', validators=[DataRequired()])
     submit = SubmitField('Delete User')
+
+class AddUserForm(FlaskForm):
+    """Form for adding a new user"""
+    username = StringField('Username', validators=[DataRequired(), Length(min=3, max=64)])
+    email = StringField('Email', validators=[DataRequired(), Email(), Length(max=120)])
+    password = PasswordField('Password', validators=[DataRequired(), Length(min=6)])
+    confirm_password = PasswordField('Confirm Password', 
+                                    validators=[DataRequired(), EqualTo('password', message='Passwords must match')])
+    role = SelectField('Role', choices=[(role.value, role.value.capitalize()) for role in UserRole], validators=[DataRequired()])
+    is_active = BooleanField('Active', default=True)
+    submit = SubmitField('Add User')
 
 class ReviewForm(FlaskForm):
     """Form for reviewing image captions"""
@@ -860,81 +868,31 @@ def user_management():
     try:
         users = session.query(User).all()
         
+        # Count admin users to prevent deletion of last admin
+        admin_count = session.query(User).filter_by(role=UserRole.ADMIN, is_active=True).count()
+        
         # Create forms for user management
-        add_form = AddUserForm()
         edit_form = EditUserForm()
         delete_form = DeleteUserForm()
         
         return render_template('user_management.html', 
                               users=users, 
-                              add_form=add_form, 
+                              admin_count=admin_count,
                               edit_form=edit_form, 
                               delete_form=delete_form)
     finally:
         session.close()
 
-@app.route('/add_user', methods=['POST'])
-@login_required
-@role_required(UserRole.ADMIN)
-@require_secure_connection
-@validate_input_length()
-@enhanced_input_validation
-@with_session_error_handling
-def add_user():
-    """Add a new user"""
-    form = AddUserForm()
-    if form.validate_on_submit():
-        session = db_manager.get_session()
-        try:
-            # Check if username or email already exists
-            existing_user = session.query(User).filter(
-                (User.username == form.username.data) | 
-                (User.email == form.email.data)
-            ).first()
-            
-            if existing_user:
-                if existing_user.username == form.username.data:
-                    flash(f'Username {form.username.data} is already taken', 'error')
-                else:
-                    flash(f'Email {form.email.data} is already registered', 'error')
-                return redirect(url_for('user_management'))
-            
-            # Create new user
-            user = User(
-                username=form.username.data,
-                email=form.email.data,
-                role=UserRole(form.role.data),
-                is_active=True
-            )
-            user.set_password(form.password.data)
-            
-            session.add(user)
-            session.commit()
-            flash(f'User {form.username.data} created successfully', 'success')
-        except SQLAlchemyError as e:
-            session.rollback()
-            app.logger.error(f'Database error creating user: {sanitize_for_log(str(e))}')
-            flash('Database error occurred while creating the user', 'error')
-        except (ValueError, TypeError, AttributeError) as e:
-            session.rollback()
-            flash(f'Validation error: {sanitize_for_log(str(e))}', 'error')
-        except Exception as e:
-            session.rollback()
-            app.logger.exception(f'Unexpected error creating user: {sanitize_for_log(str(e))}')
-            flash('An unexpected error occurred while creating the user', 'error')
-        finally:
-            session.close()
-    else:
-        for field, errors in form.errors.items():
-            for error in errors:
-                flash(f'{field}: {error}', 'error')
-    
-    return redirect(url_for('user_management'))
+@app.route('/test_post', methods=['POST'])
+def test_post():
+    print("TEST POST ROUTE HIT")
+    return "POST works"
+
+
 
 @app.route('/edit_user', methods=['POST'])
 @login_required
 @role_required(UserRole.ADMIN)
-@require_secure_connection
 @validate_input_length()
 @enhanced_input_validation
 @with_session_error_handling
@@ -997,7 +955,6 @@ def edit_user():
 @app.route('/delete_user', methods=['POST'])
 @login_required
 @role_required(UserRole.ADMIN)
-@require_secure_connection
 @with_session_error_handling
 def delete_user():
     """Delete a user"""
@@ -1030,6 +987,104 @@ def delete_user():
             session.close()
     
     return redirect(url_for('user_management'))
+
+@app.route('/api/add_user', methods=['POST'])
+@login_required
+@role_required(UserRole.ADMIN)
+@validate_csrf_token
+@rate_limit(limit=10, window_seconds=60)
+@validate_input_length()
+@enhanced_input_validation
+@with_session_error_handling
+def api_add_user():
+    """API endpoint for adding a new user"""
+    try:
+        # Get form data
+        username = request.form.get('username', '').strip()
+        email = request.form.get('email', '').strip()
+        password = request.form.get('password', '')
+        confirm_password = request.form.get('confirm_password', '')
+        role_str = request.form.get('role', '').strip()
+        is_active = request.form.get('is_active') == 'on'
+        
+        # Validate required fields
+        if not username or not email or not password or not role_str:
+            return jsonify({'success': False, 'error': 'All fields are required'}), 400
+        
+        # Validate username length
+        if len(username) < 3 or len(username) > 64:
+            return jsonify({'success': False, 'error': 'Username must be between 3 and 64 characters'}), 400
+        
+        # Validate email format
+        if '@' not in email or len(email) > 120:
+            return jsonify({'success': False, 'error': 'Invalid email address'}), 400
+        
+        # Validate password length
+        if len(password) < 6:
+            return jsonify({'success': False, 'error': 'Password must be at least 6 characters'}), 400
+        
+        # Validate passwords match
+        if password != confirm_password:
+            return jsonify({'success': False, 'error': 'Passwords do not match'}), 400
+        
+        # Validate role
+        try:
+            role = UserRole(role_str)
+        except ValueError:
+            return jsonify({'success': False, 'error': 'Invalid role'}), 400
+        
+        session = db_manager.get_session()
+        try:
+            # Check if username already exists
+            existing_user = session.query(User).filter_by(username=username).first()
+            if existing_user:
+                return jsonify({'success': False, 'error': f'Username {username} already exists'}), 400
+            
+            # Check if email already exists
+            existing_email = session.query(User).filter_by(email=email).first()
+            if existing_email:
+                return jsonify({'success': False, 'error': f'Email {email} is already registered'}), 400
+            
+            # Create new user
+            new_user = User(
+                username=username,
+                email=email,
+                role=role,
+                is_active=is_active
+            )
+            new_user.set_password(password)
+            
+            session.add(new_user)
+            session.commit()
+            
+            app.logger.info(f"Admin {sanitize_for_log(current_user.username)} created new user {sanitize_for_log(username)} with role {sanitize_for_log(role.value)}")
+            
+            return jsonify({
+                'success': True,
+                'message': f'User {username} created successfully',
+                'user': {
+                    'id': new_user.id,
+                    'username': new_user.username,
+                    'email': new_user.email,
+                    'role': new_user.role.value,
+                    'is_active': new_user.is_active
+                }
+            })
+            
+        except SQLAlchemyError as e:
+            session.rollback()
+            app.logger.error(f"Database error creating user: {sanitize_for_log(str(e))}")
+            return jsonify({'success': False, 'error': 'Database error creating user'}), 500
+        except Exception as e:
+            session.rollback()
+            app.logger.error(f"Unexpected error creating user: {sanitize_for_log(str(e))}")
+            return jsonify({'success': False, 'error': 'An unexpected error occurred'}), 500
+        finally:
+            session.close()
+            
+    except Exception as e:
+        app.logger.error(f"Error in add_user API: {sanitize_for_log(str(e))}")
+        return jsonify({'success': False, 'error': 'Failed to add user'}), 500
 
 # Health check endpoints
 @app.route('/health')
@@ -3175,6 +3230,8 @@ def api_session_notify_logout():
     except Exception as e:
         app.logger.error(f"Error processing logout notification: {sanitize_for_log(str(e))}")
         return jsonify({'success': False, 'error': 'Failed to process logout notification'}), 500
+
+
 
 @app.route('/api/delete_platform/<int:platform_id>', methods=['DELETE'])
 @login_required

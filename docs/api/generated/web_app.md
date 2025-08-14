@@ -33,17 +33,7 @@ Base form for user management
 - `confirm_password`
 - `role`
 
-### AddUserForm
 
-```python
-class AddUserForm(UserForm)
-```
-
-Form for adding a new user
-
-**Class Variables:**
-- `password`
-- `submit`
 
 ### EditUserForm
 
@@ -285,22 +275,7 @@ User management interface
 - `@role_required(UserRole.ADMIN)`
 - `@with_session_error_handling`
 
-### add_user
 
-```python
-def add_user()
-```
-
-Add a new user
-
-**Decorators:**
-- `@app.route('/add_user', methods=['POST'])`
-- `@login_required`
-- `@role_required(UserRole.ADMIN)`
-- `@require_secure_connection`
-- `@validate_input_length()`
-- `@enhanced_input_validation`
-- `@with_session_error_handling`
 
 ### edit_user
 

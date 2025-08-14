@@ -176,7 +176,10 @@
 
 <script>
 document.addEventListener('DOMContentLoaded', function() {
-    const bulkActionModal = new bootstrap.Modal(document.getElementById('bulkActionModal'));
+    const modalElement = document.getElementById('bulkActionModal');
+    if (!modalElement) return;
+    
+    const bulkActionModal = new bootstrap.Modal(modalElement);
     const bulkActionMessage = document.getElementById('bulkActionMessage');
     const bulkActionNotes = document.getElementById('bulkActionNotes');
     const confirmBulkAction = document.getElementById('confirmBulkAction');

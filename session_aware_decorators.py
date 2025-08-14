@@ -4,6 +4,7 @@
 
 import logging
 from functools import wraps
+from datetime import datetime, timezone
 from flask import current_app, redirect, url_for, flash, request
 from flask_login import current_user
 from sqlalchemy.orm.exc import DetachedInstanceError
@@ -103,34 +104,49 @@ def require_platform_context(f):
                 flash('Please log in to access this page.', 'info')
                 return redirect(url_for('login', next=request.url))
             
-            # Check if user has any platforms
-            try:
-                user_platforms = current_user.platforms
-                if not user_platforms:
-                    flash('You need to set up at least one platform connection to access this feature.', 'warning')
-                    return redirect(url_for('first_time_setup'))
-            except DetachedInstanceError as e:
-                logger.warning(f"DetachedInstanceError accessing user platforms in {f.__name__}: {e}")
-                flash('Session error. Please log in again.', 'warning')
-                return redirect(url_for('login'))
-            except Exception as e:
-                logger.error(f"Error accessing user platforms in {f.__name__}: {e}")
-                flash('Error loading platform information. Please try again.', 'error')
-                return redirect(url_for('platform_management'))
+            # Use direct database query instead of current_user.platforms to avoid session issues
+            from flask import current_app
+            from models import PlatformConnection
             
-            # Check for active platform
             try:
-                active_platform = current_user.get_active_platform()
-                if not active_platform:
-                    flash('No active platform found. Please select a platform.', 'warning')
-                    return redirect(url_for('platform_management'))
-            except DetachedInstanceError as e:
-                logger.warning(f"DetachedInstanceError getting active platform in {f.__name__}: {e}")
-                flash('Session error. Please log in again.', 'warning')
-                return redirect(url_for('login'))
+                # Get request-scoped session manager
+                session_manager = current_app.request_session_manager
+                with session_manager.session_scope() as db_session:
+                    # Check if user has any platforms
+                    user_platforms = db_session.query(PlatformConnection).filter_by(
+                        user_id=current_user.id,
+                        is_active=True
+                    ).all()
+                    
+                    if not user_platforms:
+                        flash('You need to set up at least one platform connection to access this feature.', 'warning')
+                        return redirect(url_for('first_time_setup'))
+                    
+                    # Check for active platform context
+                    from flask_session_manager import get_current_platform_context
+                    context = get_current_platform_context()
+                    
+                    if not context or not context.get('platform_connection_id'):
+                        # No platform context, try to set default platform
+                        default_platform = None
+                        for platform in user_platforms:
+                            if platform.is_default:
+                                default_platform = platform
+                                break
+                        
+                        if not default_platform:
+                            default_platform = user_platforms[0]  # Use first platform as fallback
+                        
+                        # Try to set platform context
+                        from flask import session
+                        session['platform_connection_id'] = default_platform.id
+                        session['last_activity'] = datetime.now(timezone.utc).isoformat()
+                        
+                        logger.info(f"Set platform context to {default_platform.name} for user {current_user.id}")
+                    
             except Exception as e:
-                logger.error(f"Error getting active platform in {f.__name__}: {e}")
-                flash('Error loading platform context. Please try again.', 'error')
+                logger.error(f"Error checking platform context in {f.__name__}: {e}")
+                flash('Error loading platform information. Please try again.', 'error')
                 return redirect(url_for('platform_management'))
             
             # Call the original function

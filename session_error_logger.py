@@ -231,15 +231,22 @@ class SessionErrorLogger:
                 'referrer': sanitize_for_log(request.referrer or 'None')
             })
         
-        # Add user context if available
-        if current_user and hasattr(current_user, 'is_authenticated') and current_user.is_authenticated:
-            try:
-                error_context.update({
-                    'user_id': current_user.id,
-                    'username': sanitize_for_log(current_user.username)
-                })
-            except Exception:
-                error_context['user_context_error'] = 'Failed to access current_user attributes'
+        # Add user context if available (with safe access)
+        try:
+            from flask import has_request_context
+            from flask_login import current_user
+            
+            if has_request_context() and current_user and hasattr(current_user, 'is_authenticated') and current_user.is_authenticated:
+                try:
+                    error_context.update({
+                        'user_id': current_user.id,
+                        'username': sanitize_for_log(current_user.username)
+                    })
+                except Exception:
+                    error_context['user_context_error'] = 'Failed to access current_user attributes'
+        except (ImportError, RuntimeError):
+            # Flask-Login not available or no request context
+            error_context['user_context_error'] = 'Flask-Login not available or no request context'
         
         # Add error details if available
         if error:

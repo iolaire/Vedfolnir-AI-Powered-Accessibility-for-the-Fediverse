@@ -156,7 +156,15 @@ class CSRFHandler {
                     request.headers['X-CSRFToken'] = csrfToken;
                 }
             } else {
-                console.warn('Unknown request type for CSRF injection:', typeof request);
+                // For other request types, create headers object if it doesn't exist
+                if (!request.headers) {
+                    request.headers = {};
+                }
+                if (request.headers instanceof Headers) {
+                    request.headers.set('X-CSRFToken', csrfToken);
+                } else {
+                    request.headers['X-CSRFToken'] = csrfToken;
+                }
             }
             
         } catch (error) {

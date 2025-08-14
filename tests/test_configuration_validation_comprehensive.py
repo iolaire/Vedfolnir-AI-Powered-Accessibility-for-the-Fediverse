@@ -99,28 +99,28 @@ class TestActivityPubConfigValidation(unittest.TestCase):
         self.assertIn("ACTIVITYPUB_ACCESS_TOKEN is required", str(context.exception))
     
     def test_mastodon_config_validation_missing_client_key(self):
-        """Test Mastodon configuration validation with missing client key"""
+        """Test Mastodon configuration validation with missing client key (should succeed)"""
         os.environ['ACTIVITYPUB_INSTANCE_URL'] = 'https://mastodon.social'
         os.environ['ACTIVITYPUB_ACCESS_TOKEN'] = 'test_token'
         os.environ['ACTIVITYPUB_API_TYPE'] = 'mastodon'
         os.environ['MASTODON_CLIENT_SECRET'] = 'test_client_secret'
         
-        with self.assertRaises(ConfigurationError) as context:
-            ActivityPubConfig.from_env()
-        
-        self.assertIn("MASTODON_CLIENT_KEY is required", str(context.exception))
+        # Should not raise an error - client credentials are optional for Mastodon
+        config = ActivityPubConfig.from_env()
+        self.assertEqual(config.api_type, 'mastodon')
+        self.assertEqual(config.access_token, 'test_token')
     
     def test_mastodon_config_validation_missing_client_secret(self):
-        """Test Mastodon configuration validation with missing client secret"""
+        """Test Mastodon configuration validation with missing client secret (should succeed)"""
         os.environ['ACTIVITYPUB_INSTANCE_URL'] = 'https://mastodon.social'
         os.environ['ACTIVITYPUB_ACCESS_TOKEN'] = 'test_token'
         os.environ['ACTIVITYPUB_API_TYPE'] = 'mastodon'
         os.environ['MASTODON_CLIENT_KEY'] = 'test_client_key'
         
-        with self.assertRaises(ConfigurationError) as context:
-            ActivityPubConfig.from_env()
-        
-        self.assertIn("MASTODON_CLIENT_SECRET is required", str(context.exception))
+        # Should not raise an error - client credentials are optional for Mastodon
+        config = ActivityPubConfig.from_env()
+        self.assertEqual(config.api_type, 'mastodon')
+        self.assertEqual(config.access_token, 'test_token')
     
     def test_config_validation_unsupported_api_type(self):
         """Test configuration validation with unsupported API type falls back to pixelfed"""
@@ -331,32 +331,28 @@ class TestConfigurationErrorMessages(unittest.TestCase):
         self.assertNotIn("ACTIVITYPUB_INSTANCE_URL", error_message)  # Should not mention other fields
     
     def test_clear_error_message_mastodon_missing_client_key(self):
-        """Test clear error message for missing Mastodon client key"""
+        """Test that missing Mastodon client key does not cause error"""
         os.environ['ACTIVITYPUB_INSTANCE_URL'] = 'https://mastodon.social'
         os.environ['ACTIVITYPUB_ACCESS_TOKEN'] = 'test_token'
         os.environ['ACTIVITYPUB_API_TYPE'] = 'mastodon'
         os.environ['MASTODON_CLIENT_SECRET'] = 'test_secret'
         
-        with self.assertRaises(ConfigurationError) as context:
-            ActivityPubConfig.from_env()
-        
-        error_message = str(context.exception)
-        self.assertIn("MASTODON_CLIENT_KEY is required", error_message)
-        self.assertIn("mastodon", error_message.lower())
+        # Should succeed without client key
+        config = ActivityPubConfig.from_env()
+        self.assertEqual(config.api_type, 'mastodon')
+        self.assertIsNone(config.client_key)  # Should be None/empty
     
     def test_clear_error_message_mastodon_missing_client_secret(self):
-        """Test clear error message for missing Mastodon client secret"""
+        """Test that missing Mastodon client secret does not cause error"""
         os.environ['ACTIVITYPUB_INSTANCE_URL'] = 'https://mastodon.social'
         os.environ['ACTIVITYPUB_ACCESS_TOKEN'] = 'test_token'
         os.environ['ACTIVITYPUB_API_TYPE'] = 'mastodon'
         os.environ['MASTODON_CLIENT_KEY'] = 'test_key'
         
-        with self.assertRaises(ConfigurationError) as context:
-            ActivityPubConfig.from_env()
-        
-        error_message = str(context.exception)
-        self.assertIn("MASTODON_CLIENT_SECRET is required", error_message)
-        self.assertIn("mastodon", error_message.lower())
+        # Should succeed without client secret
+        config = ActivityPubConfig.from_env()
+        self.assertEqual(config.api_type, 'mastodon')
+        self.assertIsNone(config.client_secret)  # Should be None/empty
     
     def test_clear_error_message_unsupported_platform(self):
         """Test that unsupported platform types fall back to pixelfed"""
@@ -370,20 +366,17 @@ class TestConfigurationErrorMessages(unittest.TestCase):
         self.assertEqual(config.api_type, 'pixelfed')  # Falls back to default
     
     def test_helpful_error_message_for_common_mistakes(self):
-        """Test helpful error messages for common configuration mistakes"""
-        # Test with common typo in API type
+        """Test that Mastodon configuration works without client credentials"""
+        # Test with Mastodon API type
         os.environ['ACTIVITYPUB_INSTANCE_URL'] = 'https://example.com'
         os.environ['ACTIVITYPUB_ACCESS_TOKEN'] = 'test_token'
-        os.environ['ACTIVITYPUB_API_TYPE'] = 'mastodon'  # Correct
-        # Missing Mastodon credentials
+        os.environ['ACTIVITYPUB_API_TYPE'] = 'mastodon'
+        # No Mastodon client credentials needed
         
-        with self.assertRaises(ConfigurationError) as context:
-            ActivityPubConfig.from_env()
-        
-        error_message = str(context.exception)
-        self.assertIn("MASTODON_CLIENT_KEY is required", error_message)
-        # Should provide context about what's needed for Mastodon
-        self.assertIn("mastodon", error_message.lower())
+        # Should succeed - only access token is required for Mastodon
+        config = ActivityPubConfig.from_env()
+        self.assertEqual(config.api_type, 'mastodon')
+        self.assertEqual(config.access_token, 'test_token')
 
 
 class TestPlatformAdapterFactoryConfigValidation(unittest.TestCase):
@@ -507,12 +500,10 @@ class TestConfigurationIntegration(unittest.TestCase):
     
     def test_configuration_validation_chain(self):
         """Test that configuration validation works through the entire chain"""
-        # Test with invalid Mastodon configuration (missing client key)
+        # Test with invalid configuration (missing access token)
         os.environ['ACTIVITYPUB_INSTANCE_URL'] = 'https://mastodon.social'
-        os.environ['ACTIVITYPUB_ACCESS_TOKEN'] = 'test_token'
         os.environ['ACTIVITYPUB_API_TYPE'] = 'mastodon'
-        os.environ['MASTODON_CLIENT_SECRET'] = 'test_secret'
-        # Missing MASTODON_CLIENT_KEY
+        # Missing ACTIVITYPUB_ACCESS_TOKEN
         
         # Configuration creation should fail
         with self.assertRaises(ConfigurationError):

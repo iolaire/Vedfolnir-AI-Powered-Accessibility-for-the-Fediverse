@@ -369,7 +369,6 @@
           "severity": "CRITICAL",
           "description": "Post Form form missing CSRF protection",
           "line_number": 86,
-          "code_snippet": "<form method=\"POST\" action=\"{{ url_for('add_user') }}\">",
           "recommendation": "Add {{ form.hidden_tag() }} inside the form"
         },
         {

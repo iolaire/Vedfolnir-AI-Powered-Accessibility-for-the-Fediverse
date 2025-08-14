@@ -303,24 +303,22 @@ class TestMastodonPlatformAdapter(unittest.TestCase):
         self.assertIsNotNone(platform)
     
     def test_mastodon_config_validation_missing_client_key(self):
-        """Test Mastodon configuration validation with missing client key"""
+        """Test Mastodon configuration validation with missing client key (should succeed)"""
         config = MockConfig(api_type="mastodon")
         config.client_key = None
         
-        with self.assertRaises(PlatformAdapterError) as context:
-            MastodonPlatform(config)
-        
-        self.assertIn("client_key is required", str(context.exception))
+        # Should not raise an error - client credentials are optional for Mastodon
+        platform = MastodonPlatform(config)
+        self.assertIsNotNone(platform)
     
     def test_mastodon_config_validation_missing_client_secret(self):
-        """Test Mastodon configuration validation with missing client secret"""
+        """Test Mastodon configuration validation with missing client secret (should succeed)"""
         config = MockConfig(api_type="mastodon", client_key="test_key")
         config.client_secret = None
         
-        with self.assertRaises(PlatformAdapterError) as context:
-            MastodonPlatform(config)
-        
-        self.assertIn("client_secret is required", str(context.exception))
+        # Should not raise an error - client credentials are optional for Mastodon
+        platform = MastodonPlatform(config)
+        self.assertIsNotNone(platform)
     
     async def test_mastodon_authenticate_success(self):
         """Test successful Mastodon authentication"""

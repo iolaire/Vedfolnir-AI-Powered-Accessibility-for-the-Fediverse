@@ -54,6 +54,19 @@ class FlaskDetachedInstanceFixTest(unittest.TestCase):
         cls.app.config['SECRET_KEY'] = 'test_secret_key'
         cls.app.config['WTF_CSRF_ENABLED'] = False
         
+        # Add basic routes to prevent url_for errors
+        @cls.app.route('/login')
+        def login():
+            return "Login page"
+        
+        @cls.app.route('/health_dashboard')
+        def health_dashboard():
+            return "Health dashboard"
+        
+        @cls.app.route('/platform_management')
+        def platform_management():
+            return "Platform management"
+        
         # Initialize session management components
         cls.request_session_manager = RequestScopedSessionManager(cls.db_manager)
         cls.database_middleware = DatabaseContextMiddleware(cls.app, cls.request_session_manager)
@@ -87,16 +100,17 @@ class FlaskDetachedInstanceFixTest(unittest.TestCase):
         
         # Create test client
         self.client = self.app.test_client()
-        self.app_context = self.app.app_context()
-        self.request_context = None
+        
+        # Initialize session isolation
+        from tests.test_helpers.session_test_isolation import SessionTestIsolation
+        self.session_isolation = SessionTestIsolation(self.app)
+        self.session_isolation.setup_test_context()
     
     def tearDown(self):
         """Clean up individual test"""
-        # Clean up contexts
-        if self.request_context:
-            self.request_context.pop()
-        if self.app_context:
-            self.app_context.pop()
+        # Clean up session isolation
+        if hasattr(self, 'session_isolation'):
+            self.session_isolation.teardown_contexts()
         
         # Clean up mock user
         cleanup_test_user(self.user_helper)
@@ -162,7 +176,7 @@ class FlaskDetachedInstanceFixTest(unittest.TestCase):
                 self.assertIsNotNone(session)
                 
                 # Test template context injection
-                context = self.database_middleware.inject_safe_template_context()
+                context = self.database_middleware._create_safe_template_context()
                 self.assertIn('current_user_safe', context)
                 self.assertIn('user_platforms', context)
                 self.assertIn('template_error', context)
@@ -375,7 +389,7 @@ class FlaskDetachedInstanceFixTest(unittest.TestCase):
         with self.app.app_context():
             with self.app.test_request_context():
                 # Test safe template context creation
-                context = self.database_middleware.inject_safe_template_context()
+                context = self.database_middleware._create_safe_template_context()
                 
                 # Verify context contains expected keys
                 expected_keys = ['current_user_safe', 'user_platforms', 'template_error']

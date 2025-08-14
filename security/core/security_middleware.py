@@ -326,9 +326,9 @@ def require_https(f):
     """Decorator to require HTTPS for sensitive endpoints"""
     @wraps(f)
     def decorated_function(*args, **kwargs):
-        # Allow HTTP in debug mode for localhost/development
+        # Allow HTTP for localhost/development (regardless of debug mode)
         if not request.is_secure:
-            if current_app.debug and request.remote_addr in ['127.0.0.1', '::1', 'localhost']:
+            if request.remote_addr in ['127.0.0.1', '::1', 'localhost']:
                 # Allow HTTP for local development
                 return f(*args, **kwargs)
             else:

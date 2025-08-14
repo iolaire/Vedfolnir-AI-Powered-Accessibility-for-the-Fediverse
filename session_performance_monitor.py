@@ -288,20 +288,40 @@ class SessionPerformanceMonitor:
         Args:
             engine: SQLAlchemy engine to get pool metrics from
         """
-        if not hasattr(engine, 'pool'):
-            return
-        
-        pool = engine.pool
-        
-        with self.lock:
-            self.metrics.pool_size = pool.size()
-            self.metrics.pool_checked_out = pool.checkedout()
-            self.metrics.pool_overflow = pool.overflow()
-            self.metrics.pool_checked_in = pool.checkedin()
-        
-        # Alert on pool exhaustion
-        if self.metrics.pool_checked_out >= self.metrics.pool_size * 0.9:
-            self.logger.warning(f"Database pool near exhaustion: {self.metrics.pool_checked_out}/{self.metrics.pool_size}")
+        try:
+            if not hasattr(engine, 'pool'):
+                return
+            
+            pool = engine.pool
+            
+            # Use timeout to prevent hanging on pool operations
+            import signal
+            
+            def timeout_handler(signum, frame):
+                raise TimeoutError("Pool metrics update timed out")
+            
+            # Set a 2-second timeout for pool operations
+            old_handler = signal.signal(signal.SIGALRM, timeout_handler)
+            signal.alarm(2)
+            
+            try:
+                with self.lock:
+                    self.metrics.pool_size = pool.size()
+                    self.metrics.pool_checked_out = pool.checkedout()
+                    self.metrics.pool_overflow = pool.overflow()
+                    self.metrics.pool_checked_in = pool.checkedin()
+                
+                # Alert on pool exhaustion
+                if self.metrics.pool_checked_out >= self.metrics.pool_size * 0.9:
+                    self.logger.warning(f"Database pool near exhaustion: {self.metrics.pool_checked_out}/{self.metrics.pool_size}")
+                    
+            finally:
+                signal.alarm(0)  # Cancel the alarm
+                signal.signal(signal.SIGALRM, old_handler)  # Restore old handler
+                
+        except (TimeoutError, AttributeError, Exception) as e:
+            self.logger.debug(f"Error updating pool metrics (non-critical): {e}")
+            # Don't let pool metrics errors affect request processing
     
     @contextmanager
     def time_operation(self, operation_name: str):
@@ -444,16 +464,43 @@ Active Requests: {metrics['active_requests']}
         """
         current_time = time.time()
         if current_time - self.last_metrics_snapshot >= interval_seconds:
-            self.logger.info(f"Performance Summary:\n{self.get_performance_summary()}")
-            
-            # Take snapshot for history
-            with self.lock:
-                self.metrics_history.append({
-                    'timestamp': current_time,
-                    'metrics': self.get_current_metrics()
-                })
-            
-            self.last_metrics_snapshot = current_time
+            try:
+                # Use a separate thread for logging to prevent blocking request teardown
+                import threading
+                def log_summary():
+                    try:
+                        summary = self.get_performance_summary()
+                        self.logger.info(f"Performance Summary:\n{summary}")
+                        
+                        # Take snapshot for history
+                        with self.lock:
+                            self.metrics_history.append({
+                                'timestamp': current_time,
+                                'metrics': self.get_current_metrics()
+                            })
+                    except Exception as e:
+                        self.logger.error(f"Error in performance summary logging: {e}")
+                
+                # Run logging in background thread to prevent blocking
+                log_thread = threading.Thread(target=log_summary, daemon=True)
+                log_thread.start()
+                
+                # Update timestamp immediately to prevent multiple threads
+                self.last_metrics_snapshot = current_time
+                
+            except Exception as e:
+                self.logger.error(f"Error starting performance summary thread: {e}")
+                # Fallback to synchronous logging if threading fails
+                try:
+                    self.logger.info(f"Performance Summary:\n{self.get_performance_summary()}")
+                    with self.lock:
+                        self.metrics_history.append({
+                            'timestamp': current_time,
+                            'metrics': self.get_current_metrics()
+                        })
+                    self.last_metrics_snapshot = current_time
+                except Exception as fallback_error:
+                    self.logger.error(f"Error in fallback performance logging: {fallback_error}")
     
     def _add_request_operation(self, operation: str):
         """
@@ -547,16 +594,32 @@ def initialize_performance_monitoring(app, session_manager, engine):
     @app.before_request
     def start_performance_monitoring():
         """Start performance monitoring for each request"""
-        _global_monitor.start_request_monitoring()
-        _global_monitor.update_pool_metrics(engine)
+        # Skip monitoring for static files
+        if request.endpoint == 'static':
+            return
+        
+        try:
+            _global_monitor.start_request_monitoring()
+            _global_monitor.update_pool_metrics(engine)
+        except Exception as e:
+            # Don't let performance monitoring errors break request processing
+            app.logger.debug(f"Error in performance monitoring startup: {e}")
     
     @app.teardown_request
     def end_performance_monitoring(exception=None):
         """End performance monitoring for each request"""
-        _global_monitor.end_request_monitoring()
+        # Skip monitoring for static files
+        if request.endpoint == 'static':
+            return
         
-        # Log periodic summary
-        _global_monitor.log_periodic_summary()
+        try:
+            _global_monitor.end_request_monitoring()
+            
+            # Periodic summary disabled to prevent hanging
+            # _global_monitor.log_periodic_summary()
+        except Exception as e:
+            # Don't let performance monitoring errors break request teardown
+            app.logger.error(f"Error in performance monitoring teardown: {e}")
     
     # Store monitor in app for access by other components
     app.session_performance_monitor = _global_monitor

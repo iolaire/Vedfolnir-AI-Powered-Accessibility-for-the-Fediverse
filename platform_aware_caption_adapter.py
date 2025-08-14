@@ -168,6 +168,20 @@ class PlatformAwareCaptionAdapter:
             
             # Get user's posts from the platform
             username = self.platform_connection.username
+            
+            # If username is not set, try to get it from authenticated user
+            if not username:
+                try:
+                    # Test connection to get authenticated user info
+                    success, message = await self.activitypub_client.test_connection()
+                    if success and "authenticated as" in message:
+                        username = message.split("authenticated as ")[-1]
+                        logger.info(f"Retrieved username from authentication: {username}")
+                    else:
+                        raise ValueError(f"Could not determine username from platform connection. Message: {message}")
+                except Exception as e:
+                    raise ValueError(f"Username not set in platform connection and could not retrieve from authentication: {e}")
+            
             posts = await self.activitypub_client.get_user_posts(username, settings.max_posts_per_run)
             
             if not posts:

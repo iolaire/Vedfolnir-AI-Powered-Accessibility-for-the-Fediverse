@@ -66,7 +66,17 @@ class PlatformContext:
 
 class PlatformContextError(Exception):
     """Raised when there are issues with platform context operations"""
-    pass
+    
+    def __init__(self, message: str, **kwargs):
+        """
+        Initialize PlatformContextError with message and optional context.
+        
+        Args:
+            message: Error message
+            **kwargs: Additional context information (e.g., user_id, platform_id)
+        """
+        super().__init__(message)
+        self.context = kwargs
 
 
 class PlatformContextManager:
@@ -120,27 +130,58 @@ class PlatformContextManager:
         """
         with self._lock:
             try:
-                # Get user from database
-                user = self.session.query(User).get(user_id)
+                # Validate user_id to prevent SQL injection
+                if not isinstance(user_id, int) or user_id <= 0:
+                    raise PlatformContextError(f"Invalid user ID: {user_id}. Must be a positive integer.")
+                
+                # Validate platform_connection_id if provided
+                if platform_connection_id is not None:
+                    if not isinstance(platform_connection_id, int) or platform_connection_id <= 0:
+                        raise PlatformContextError(f"Invalid platform connection ID: {platform_connection_id}. Must be a positive integer.")
+                
+                # Get user from database using parameterized query
+                user = self.session.query(User).filter(User.id == user_id).first()
                 if not user:
                     raise PlatformContextError(f"User with ID {user_id} not found")
                 
                 if not user.is_active:
                     raise PlatformContextError(f"User {user.username} is not active")
                 
-                # Determine platform connection
+                # Determine platform connection with comprehensive validation
                 platform_connection = None
                 if platform_connection_id:
-                    # Use specified platform connection
-                    platform_connection = self.session.query(PlatformConnection).filter_by(
-                        id=platform_connection_id,
-                        user_id=user_id,
-                        is_active=True
+                    # Use specified platform connection with strict validation
+                    platform_connection = self.session.query(PlatformConnection).filter(
+                        PlatformConnection.id == platform_connection_id,
+                        PlatformConnection.user_id == user_id,
+                        PlatformConnection.is_active == True
                     ).first()
                     
                     if not platform_connection:
+                        # Check if platform connection exists but is inactive
+                        inactive_platform = self.session.query(PlatformConnection).filter(
+                            PlatformConnection.id == platform_connection_id,
+                            PlatformConnection.user_id == user_id
+                        ).first()
+                        
+                        if inactive_platform:
+                            raise PlatformContextError(
+                                f"Platform connection {platform_connection_id} exists but is inactive for user {user.username}"
+                            )
+                        
+                        # Check if platform connection exists but belongs to different user
+                        other_user_platform = self.session.query(PlatformConnection).filter(
+                            PlatformConnection.id == platform_connection_id
+                        ).first()
+                        
+                        if other_user_platform:
+                            raise PlatformContextError(
+                                f"Platform connection {platform_connection_id} belongs to a different user"
+                            )
+                        
+                        # Platform connection doesn't exist at all
                         raise PlatformContextError(
-                            f"Platform connection {platform_connection_id} not found or not active for user {user.username}"
+                            f"Platform connection {platform_connection_id} not found"
                         )
                 else:
                     # Use default platform connection
@@ -155,6 +196,10 @@ class PlatformContextManager:
                             )
                         else:
                             raise PlatformContextError(f"No active platform connections found for user {user.username}")
+                
+                # Additional validation for platform connection
+                if not platform_connection.is_active:
+                    raise PlatformContextError(f"Platform connection {platform_connection.name} is not active")
                 
                 # Create context
                 context = PlatformContext(
@@ -174,6 +219,9 @@ class PlatformContextManager:
                 
                 return context
                 
+            except PlatformContextError:
+                # Re-raise PlatformContextError as-is
+                raise
             except Exception as e:
                 self.logger.error(f"Failed to set platform context: {e}")
                 raise PlatformContextError(f"Failed to set platform context: {e}")
@@ -351,26 +399,85 @@ class PlatformContextManager:
         Raises:
             PlatformContextError: If switch fails or platform not accessible
         """
-        current_context = self.require_context()
-        
-        # Verify the new platform belongs to the current user
-        platform_connection = self.session.query(PlatformConnection).filter_by(
-            id=platform_connection_id,
-            user_id=current_context.user_id,
-            is_active=True
-        ).first()
-        
-        if not platform_connection:
-            raise PlatformContextError(
-                f"Platform connection {platform_connection_id} not found or not accessible"
-            )
-        
-        # Update context
-        return self.set_context(
-            user_id=current_context.user_id,
-            platform_connection_id=platform_connection_id,
-            session_id=current_context.session_id
-        )
+        try:
+            current_context = self.require_context()
+            
+            # Validate platform_connection_id to prevent SQL injection
+            if not isinstance(platform_connection_id, int) or platform_connection_id <= 0:
+                raise PlatformContextError(f"Invalid platform connection ID: {platform_connection_id}. Must be a positive integer.")
+            
+            # Verify the new platform belongs to the current user with comprehensive checks
+            platform_connection = self.session.query(PlatformConnection).filter(
+                PlatformConnection.id == platform_connection_id,
+                PlatformConnection.user_id == current_context.user_id,
+                PlatformConnection.is_active == True
+            ).first()
+            
+            if not platform_connection:
+                # Provide detailed error information
+                # Check if platform exists but is inactive
+                inactive_platform = self.session.query(PlatformConnection).filter(
+                    PlatformConnection.id == platform_connection_id,
+                    PlatformConnection.user_id == current_context.user_id
+                ).first()
+                
+                if inactive_platform:
+                    raise PlatformContextError(
+                        f"Cannot switch to platform connection {platform_connection_id}: platform is inactive"
+                    )
+                
+                # Check if platform exists but belongs to different user
+                other_user_platform = self.session.query(PlatformConnection).filter(
+                    PlatformConnection.id == platform_connection_id
+                ).first()
+                
+                if other_user_platform:
+                    raise PlatformContextError(
+                        f"Platform connection {platform_connection_id} not found or not accessible"
+                    )
+                
+                # Platform doesn't exist
+                raise PlatformContextError(
+                    f"Platform connection {platform_connection_id} not found or not accessible"
+                )
+            
+            # Store previous context for rollback if needed
+            previous_context = current_context
+            
+            try:
+                # Update context
+                new_context = self.set_context(
+                    user_id=current_context.user_id,
+                    platform_connection_id=platform_connection_id,
+                    session_id=current_context.session_id
+                )
+                
+                self.logger.info(
+                    f"Successfully switched platform context from {previous_context.platform_connection.name} "
+                    f"to {new_context.platform_connection.name} for user {current_context.user.username}"
+                )
+                
+                return new_context
+                
+            except Exception as switch_error:
+                # Attempt to restore previous context on failure
+                try:
+                    self._local.context = previous_context
+                    self.logger.warning(
+                        f"Platform switch failed, restored previous context: {switch_error}"
+                    )
+                except Exception as restore_error:
+                    self.logger.error(
+                        f"Failed to restore previous context after switch failure: {restore_error}"
+                    )
+                raise PlatformContextError(f"Platform switch failed: {switch_error}")
+                
+        except PlatformContextError:
+            # Re-raise PlatformContextError as-is
+            raise
+        except Exception as e:
+            self.logger.error(f"Unexpected error during platform switch: {e}")
+            raise PlatformContextError(f"Platform switch failed due to unexpected error: {e}")
     
     def get_user_platforms(self, user_id: Optional[int] = None) -> List[PlatformConnection]:
         """
@@ -381,15 +488,30 @@ class PlatformContextManager:
             
         Returns:
             List of active platform connections
+            
+        Raises:
+            PlatformContextError: If user_id is invalid
         """
-        if user_id is None:
-            context = self.require_context()
-            user_id = context.user_id
-        
-        return self.session.query(PlatformConnection).filter_by(
-            user_id=user_id,
-            is_active=True
-        ).order_by(PlatformConnection.is_default.desc(), PlatformConnection.name).all()
+        try:
+            if user_id is None:
+                context = self.require_context()
+                user_id = context.user_id
+            else:
+                # Validate user_id to prevent SQL injection
+                if not isinstance(user_id, int) or user_id <= 0:
+                    raise PlatformContextError(f"Invalid user ID: {user_id}. Must be a positive integer.")
+            
+            return self.session.query(PlatformConnection).filter(
+                PlatformConnection.user_id == user_id,
+                PlatformConnection.is_active == True
+            ).order_by(PlatformConnection.is_default.desc(), PlatformConnection.name).all()
+            
+        except PlatformContextError:
+            # Re-raise PlatformContextError as-is
+            raise
+        except Exception as e:
+            self.logger.error(f"Failed to get user platforms: {e}")
+            raise PlatformContextError(f"Failed to get user platforms: {e}")
     
     def set_default_platform(self, platform_connection_id: int, user_id: Optional[int] = None) -> None:
         """
@@ -402,26 +524,57 @@ class PlatformContextManager:
         Raises:
             PlatformContextError: If operation fails
         """
-        if user_id is None:
-            context = self.require_context()
-            user_id = context.user_id
-        
-        # Verify the platform belongs to the user
-        platform_connection = self.session.query(PlatformConnection).filter_by(
-            id=platform_connection_id,
-            user_id=user_id,
-            is_active=True
-        ).first()
-        
-        if not platform_connection:
-            raise PlatformContextError(
-                f"Platform connection {platform_connection_id} not found or not accessible"
-            )
-        
         try:
-            # Clear existing default for this user
-            self.session.query(PlatformConnection).filter_by(
-                user_id=user_id
+            # Validate platform_connection_id to prevent SQL injection
+            if not isinstance(platform_connection_id, int) or platform_connection_id <= 0:
+                raise PlatformContextError(f"Invalid platform connection ID: {platform_connection_id}. Must be a positive integer.")
+            
+            if user_id is None:
+                context = self.require_context()
+                user_id = context.user_id
+            else:
+                # Validate user_id to prevent SQL injection
+                if not isinstance(user_id, int) or user_id <= 0:
+                    raise PlatformContextError(f"Invalid user ID: {user_id}. Must be a positive integer.")
+            
+            # Verify the platform belongs to the user with comprehensive validation
+            platform_connection = self.session.query(PlatformConnection).filter(
+                PlatformConnection.id == platform_connection_id,
+                PlatformConnection.user_id == user_id,
+                PlatformConnection.is_active == True
+            ).first()
+            
+            if not platform_connection:
+                # Provide detailed error information
+                # Check if platform exists but is inactive
+                inactive_platform = self.session.query(PlatformConnection).filter(
+                    PlatformConnection.id == platform_connection_id,
+                    PlatformConnection.user_id == user_id
+                ).first()
+                
+                if inactive_platform:
+                    raise PlatformContextError(
+                        f"Cannot set inactive platform connection {platform_connection_id} as default"
+                    )
+                
+                # Check if platform exists but belongs to different user
+                other_user_platform = self.session.query(PlatformConnection).filter(
+                    PlatformConnection.id == platform_connection_id
+                ).first()
+                
+                if other_user_platform:
+                    raise PlatformContextError(
+                        f"Cannot set platform connection {platform_connection_id} as default: access denied"
+                    )
+                
+                # Platform doesn't exist
+                raise PlatformContextError(
+                    f"Platform connection {platform_connection_id} not found"
+                )
+            
+            # Clear existing default for this user using parameterized query
+            self.session.query(PlatformConnection).filter(
+                PlatformConnection.user_id == user_id
             ).update({'is_default': False})
             
             # Set new default
@@ -432,8 +585,15 @@ class PlatformContextManager:
                 f"Set platform {platform_connection.name} as default for user {user_id}"
             )
             
+        except PlatformContextError:
+            # Re-raise PlatformContextError as-is
+            raise
         except Exception as e:
-            self.session.rollback()
+            try:
+                self.session.rollback()
+            except Exception as rollback_error:
+                self.logger.error(f"Failed to rollback transaction: {rollback_error}")
+            
             self.logger.error(f"Failed to set default platform: {e}")
             raise PlatformContextError(f"Failed to set default platform: {e}")
     
@@ -513,3 +673,83 @@ class PlatformContextManager:
             errors.append("Platform connection is not active")
         
         return errors
+    
+    def validate_platform_access(self, platform_type: str, instance_url: str) -> bool:
+        """
+        Validate if the current context has access to a specific platform.
+        
+        Args:
+            platform_type: Type of platform (e.g., 'pixelfed', 'mastodon')
+            instance_url: URL of the platform instance
+            
+        Returns:
+            True if access is valid, False otherwise
+        """
+        try:
+            context = self.require_context()
+            platform_info = context.platform_info
+            
+            return (
+                platform_info.get('platform_type') == platform_type and
+                platform_info.get('instance_url') == instance_url
+            )
+        except PlatformContextError:
+            return False
+    
+    def get_platform_statistics(self) -> Dict[str, Any]:
+        """
+        Get statistics for the current platform context.
+        
+        Returns:
+            Dictionary with platform statistics
+            
+        Raises:
+            PlatformContextError: If no context is set
+        """
+        context = self.require_context()
+        
+        try:
+            # Get platform-specific statistics
+            from models import Post, Image
+            
+            # Count posts for this platform
+            total_posts = self.session.query(Post).filter(
+                Post.platform_connection_id == context.platform_connection_id
+            ).count()
+            
+            # Count images for this platform
+            total_images = self.session.query(Image).filter(
+                Image.platform_connection_id == context.platform_connection_id
+            ).count()
+            
+            # Count processed images
+            processed_images = self.session.query(Image).filter(
+                Image.platform_connection_id == context.platform_connection_id,
+                Image.final_caption.isnot(None)
+            ).count()
+            
+            return {
+                'total_posts': total_posts,
+                'total_images': total_images,
+                'processed_images': processed_images,
+                'platform_type': context.platform_info.get('platform_type'),
+                'instance_url': context.platform_info.get('instance_url'),
+                'platform_name': context.platform_connection.name
+            }
+            
+        except Exception as e:
+            self.logger.error(f"Failed to get platform statistics: {e}")
+            raise PlatformContextError(f"Failed to get platform statistics: {e}")
+    
+    def get_activitypub_config(self) -> ActivityPubConfig:
+        """
+        Get ActivityPub configuration from the current platform context.
+        This is an alias for create_activitypub_config for backward compatibility.
+        
+        Returns:
+            ActivityPub configuration object
+            
+        Raises:
+            PlatformContextError: If no context is set or config cannot be created
+        """
+        return self.create_activitypub_config()

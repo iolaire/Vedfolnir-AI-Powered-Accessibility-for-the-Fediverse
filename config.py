@@ -3,7 +3,7 @@
 # THE SOFTWARE IS PROVIDED "AS IS", WITHOUT WARRANTY OF ANY KIND, EXPRESS OR IMPLIED, INCLUDING BUT NOT LIMITED TO THE WARRANTIES OF MERCHANTABILITY, FITNESS FOR A PARTICULAR PURPOSE AND NONINFRINGEMENT. IN NO EVENT SHALL THE AUTHORS OR COPYRIGHT HOLDERS BE LIABLE FOR ANY CLAIM, DAMAGES OR OTHER LIABILITY, WHETHER IN AN ACTION OF CONTRACT, TORT OR OTHERWISE, ARISING FROM, OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE SOFTWARE.
 import os
 from dataclasses import dataclass, field
-from typing import Optional, Dict
+from typing import Optional, Dict, List
 from dotenv import load_dotenv
 
 # Load environment variables from .env file
@@ -205,6 +205,8 @@ class ActivityPubConfig:
             pass
         else:
             raise ConfigurationError(f"Unsupported ACTIVITYPUB_API_TYPE: {self.api_type}. Supported types: 'pixelfed', 'mastodon'")
+    
+
     
     @classmethod
     def from_env(cls):
@@ -465,3 +467,126 @@ class Config:
                 # Fallback if session_config is not available
                 self._session_config = None
         return self._session_config
+    
+    def validate_configuration(self) -> List[str]:
+        """
+        Validate all configuration components and return list of validation errors.
+        
+        Returns:
+            List of validation error messages. Empty list if all valid.
+        """
+        errors = []
+        
+        try:
+            # Validate ActivityPub configuration
+            self.activitypub._validate_configuration()
+        except ConfigurationError as e:
+            errors.append(f"ActivityPub configuration: {str(e)}")
+        
+        try:
+            # Validate WebApp configuration
+            if not self.webapp.secret_key:
+                errors.append("FLASK_SECRET_KEY is required")
+        except ConfigurationError as e:
+            errors.append(f"WebApp configuration: {str(e)}")
+        
+        # Validate other critical configuration
+        try:
+            if not os.getenv("PLATFORM_ENCRYPTION_KEY"):
+                errors.append("PLATFORM_ENCRYPTION_KEY is required for platform credential encryption")
+        except Exception as e:
+            errors.append(f"Platform encryption configuration: {str(e)}")
+        
+        return errors
+    
+    def reload_configuration(self):
+        """
+        Reload configuration from environment variables and re-validate.
+        
+        Raises:
+            ConfigurationError: If configuration is invalid after reload
+        """
+        # Reload environment variables
+        load_dotenv(override=True)
+        
+        # Reinitialize configuration components
+        try:
+            self.activitypub = ActivityPubConfig.from_env()
+        except ConfigurationError as e:
+            # Allow empty config for database-stored connections
+            if "ACTIVITYPUB_INSTANCE_URL is required" in str(e) or "ACTIVITYPUB_ACCESS_TOKEN is required" in str(e):
+                self.activitypub = ActivityPubConfig(
+                    instance_url="",
+                    access_token="",
+                    api_type="pixelfed",
+                    retry=RetryConfig.from_env(),
+                    rate_limit=RateLimitConfig.from_env()
+                )
+            else:
+                raise
+        
+        self.ollama = OllamaConfig.from_env()
+        self.caption = CaptionConfig.from_env()
+        self.storage = StorageConfig.from_env()
+        self.webapp = WebAppConfig.from_env()
+        self.auth = AuthConfig.from_env()
+        self.batch_update = BatchUpdateConfig.from_env()
+        
+        # Update derived configuration
+        self.use_batch_updates = self.batch_update.enabled
+        self.batch_size = self.batch_update.batch_size
+        self.max_concurrent_batches = self.batch_update.max_concurrent_batches
+        self.verification_delay = self.batch_update.verification_delay
+        self.rollback_on_failure = self.batch_update.rollback_on_failure
+        self.max_posts_per_run = int(os.getenv("MAX_POSTS_PER_RUN", "50"))
+        self.max_users_per_run = int(os.getenv("MAX_USERS_PER_RUN", "10"))
+        self.user_processing_delay = int(os.getenv("USER_PROCESSING_DELAY", "5"))
+        self.dry_run = os.getenv("DRY_RUN", "false").lower() == "true"
+        self.log_level = os.getenv("LOG_LEVEL", "INFO")
+        
+        # Reset session config to force reload
+        self._session_config = None
+        
+        # Validate the reloaded configuration
+        validation_errors = self.validate_configuration()
+        if validation_errors:
+            raise ConfigurationError(f"Configuration validation failed after reload: {'; '.join(validation_errors)}")
+    
+    def get_configuration_status(self) -> dict:
+        """
+        Get comprehensive configuration status information.
+        
+        Returns:
+            Dictionary containing configuration status and validation results
+        """
+        validation_errors = self.validate_configuration()
+        
+        return {
+            'valid': len(validation_errors) == 0,
+            'errors': validation_errors,
+            'activitypub': {
+                'configured': bool(self.activitypub.instance_url and self.activitypub.access_token),
+                'api_type': self.activitypub.api_type,
+                'instance_url': self.activitypub.instance_url or 'Not configured',
+                'has_access_token': bool(self.activitypub.access_token),
+                'mastodon_credentials': {
+                    'has_client_key': bool(self.activitypub.client_key),
+                    'has_client_secret': bool(self.activitypub.client_secret)
+                } if self.activitypub.api_type == 'mastodon' else None
+            },
+            'webapp': {
+                'configured': bool(self.webapp.secret_key),
+                'host': self.webapp.host,
+                'port': self.webapp.port,
+                'debug': self.webapp.debug
+            },
+            'ollama': {
+                'url': self.ollama.url,
+                'model': self.ollama.model_name,
+                'timeout': self.ollama.timeout
+            },
+            'storage': {
+                'base_dir': self.storage.base_dir,
+                'database_url': self.storage.database_url
+            }
+        }

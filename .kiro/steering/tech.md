@@ -68,6 +68,21 @@ python main.py --users username1 --log-level DEBUG
 ```bash
 # Start the web server
 python web_app.py
+
+# Stop the web server (if running in background)
+ps aux | grep "python.*web_app.py" | grep -v grep  # Find the process ID
+kill <process_id>  # Replace <process_id> with the actual PID
+
+# Restart the web server
+# Step 1: Find and stop the current process
+ps aux | grep "python.*web_app.py" | grep -v grep
+kill <process_id>
+
+# Step 2: Wait a moment for cleanup
+sleep 2
+
+# Step 3: Start the server again
+python web_app.py
 ```
 
 ### Database Management

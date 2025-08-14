@@ -466,7 +466,7 @@ def _validate_json_recursive(data, validator, depth=0):
             
             # Add validation decorator to vulnerable endpoints
             vulnerable_endpoints = [
-                'add_user', 'edit_user', 'api_update_caption', 
+                'edit_user', 'api_update_caption', 
                 'api_add_platform', 'save_caption_settings'
             ]
             

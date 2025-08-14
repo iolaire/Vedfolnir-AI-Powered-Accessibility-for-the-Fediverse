@@ -351,12 +351,12 @@ class SessionManager:
             ).first()
             
             if not user_session:
-                logger.debug(f"Session {sanitize_for_log(session_id[:8])}... not found for platform update")
+                logger.warning(f"Session {sanitize_for_log(session_id[:8])}... not found for platform update")
                 return False
             
             # Check if session is expired before updating
             if self._is_session_expired(user_session):
-                logger.warning(f"Cannot update expired session {sanitize_for_log(session_id)}")
+                logger.warning(f"Cannot update expired session {sanitize_for_log(session_id[:8])}... - session expired")
                 self._cleanup_session(session_id)
                 return False
             
@@ -368,7 +368,7 @@ class SessionManager:
             ).first()
             
             if not platform:
-                logger.warning(f"Platform {sanitize_for_log(str(platform_connection_id))} not found or not accessible to user {sanitize_for_log(str(user_session.user_id))}")
+                logger.warning(f"Platform {sanitize_for_log(str(platform_connection_id))} not found or not accessible to user {sanitize_for_log(str(user_session.user_id))} for session {sanitize_for_log(session_id[:8])}...")
                 return False
             
             # Extract platform data before updating to avoid DetachedInstanceError

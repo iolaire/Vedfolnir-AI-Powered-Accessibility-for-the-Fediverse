@@ -1,6 +1,23 @@
 # Test Helpers
 
-This directory contains helper utilities for testing the Alt Text Bot application.
+This directory contains helper utilities for testing the Alt Text Bot application, including standardized mock configurations, async helpers, database mocks, and platform-specific mocks.
+
+## Standardized Mock Configurations
+
+The test helpers now include comprehensive standardized mock configurations to address common testing issues:
+
+- **Async Mock Issues**: Proper configuration of AsyncMock for async operations
+- **Tuple Unpacking**: Mock objects that support tuple/list unpacking operations  
+- **Database Query Chains**: Proper mock configuration for SQLAlchemy query method chaining
+- **Platform Behavior**: Accurate simulation of platform-specific API behavior
+
+### Key Components
+
+- `mock_configurations.py`: Core standardized mock factory and configurations
+- `async_mock_helpers.py`: Specialized helpers for async operations and HTTP clients
+- `database_mock_helpers.py`: Database session and query chain mock helpers
+- `platform_mock_helpers.py`: Platform-specific mock configurations
+- `MOCK_CONFIGURATIONS_GUIDE.md`: Comprehensive usage guide
 
 ## Mock User Helper
 
@@ -111,3 +128,64 @@ See `tests/test_mock_user_example.py` for a complete example of proper usage.
 **Encryption Errors**: Ensure `PLATFORM_ENCRYPTION_KEY` is set in your `.env` file.
 
 **Database Errors**: Verify your database configuration and that tables exist.
+#
+# Quick Start with Standardized Mocks
+
+```python
+import unittest
+from tests.test_helpers import (
+    StandardizedMockFactory,
+    DatabaseMockHelper,
+    AsyncMockHelper,
+    create_pixelfed_test_setup,
+    QueryMockBuilder
+)
+
+class TestMyFeature(unittest.TestCase):
+    def setUp(self):
+        # Create standardized database mocks
+        self.session_mock = DatabaseMockHelper.create_session_mock()
+        self.db_manager_mock = DatabaseMockHelper.create_database_manager_mock(self.session_mock)
+    
+    def test_database_operations(self):
+        # Use QueryMockBuilder for clean query configuration
+        query_mock = (QueryMockBuilder()
+                     .filter_by()
+                     .order_by()
+                     .first({'id': 1, 'name': 'test'}))
+        
+        self.session_mock.query.return_value = query_mock
+        
+        # Your test logic here...
+    
+    def test_async_operations(self):
+        # Create async HTTP client mock
+        client_mock = AsyncMockHelper.create_async_http_client()
+        
+        # Your async test logic here...
+    
+    def test_platform_integration(self):
+        # Create complete platform test setup
+        user_mock, connection_mock, api_mock = create_pixelfed_test_setup()
+        
+        # Your platform test logic here...
+```
+
+## Migration from Manual Mocks
+
+To migrate existing tests to use standardized mocks:
+
+1. Replace manual mock creation with standardized factory methods
+2. Use QueryMockBuilder for database query chains
+3. Use platform-specific helpers for platform testing
+4. Leverage async helpers for async operations
+
+See `MOCK_CONFIGURATIONS_GUIDE.md` for detailed migration examples and `test_standardized_mock_configurations.py` for comprehensive usage examples.
+
+## Benefits
+
+- **Reduced Boilerplate**: Less manual mock configuration code
+- **Improved Reliability**: Consistent mock behavior across tests
+- **Better Error Handling**: Proper async and database error simulation
+- **Easier Maintenance**: Centralized mock configuration management
+- **Enhanced Readability**: Cleaner, more readable test code
