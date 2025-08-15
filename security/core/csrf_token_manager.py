@@ -16,7 +16,7 @@ import secrets
 import time
 from typing import Optional, Dict, Any, Tuple
 from datetime import datetime, timedelta
-from flask import session, request, current_app
+from flask import request, current_app
 import logging
 
 logger = logging.getLogger(__name__)
@@ -219,25 +219,24 @@ class CSRFTokenManager:
             return {'error': f'Failed to extract token info: {e}'}
     
     def _get_current_session_id(self) -> str:
-        """Get current session ID
+        """Get current session ID from database session
         
         Returns:
             Current session ID
         """
         try:
-            # Try to get session ID from Flask session
-            if hasattr(session, 'sid'):
-                return session.sid
-            elif '_id' in session:
-                return session['_id']
+            # Try to get session ID from database session middleware
+            from database_session_middleware import get_current_session_id
+            session_id = get_current_session_id()
+            
+            if session_id:
+                return session_id
             else:
-                # Generate a temporary session ID if none exists
-                temp_id = secrets.token_hex(16)
-                session['_id'] = temp_id
-                logger.warning(f"No session ID found, generated temporary ID: {temp_id[:8]}...")
-                return temp_id
+                # No database session, generate request-based ID
+                logger.warning("No database session ID found, using request-based ID")
+                return self._generate_request_based_id()
         except Exception as e:
-            logger.error(f"Failed to get session ID: {e}")
+            logger.error(f"Failed to get database session ID: {e}")
             # Fallback to request-based ID
             return self._generate_request_based_id()
     
@@ -355,14 +354,11 @@ class CSRFValidationContext:
         self.token_source: Optional[str] = None  # 'form', 'header', 'meta'
     
     def _get_session_id(self) -> str:
-        """Get session ID for context"""
+        """Get session ID for context from database session"""
         try:
-            if hasattr(session, 'sid'):
-                return session.sid
-            elif '_id' in session:
-                return session['_id']
-            else:
-                return 'no-session'
+            from database_session_middleware import get_current_session_id
+            session_id = get_current_session_id()
+            return session_id if session_id else 'no-session'
         except Exception:
             return 'unknown-session'
     

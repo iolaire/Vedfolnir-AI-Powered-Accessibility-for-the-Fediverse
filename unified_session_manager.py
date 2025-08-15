@@ -46,7 +46,11 @@ class UnifiedSessionManager:
     def __init__(self, db_manager: DatabaseManager, config: Optional[SessionConfig] = None, security_manager=None, monitor=None, performance_optimizer=None):
         self.db_manager = db_manager
         self.config = config or get_session_config()
-        self.session_timeout = timedelta(seconds=self.config.timeout.session_lifetime)
+        # Handle session_lifetime whether it's seconds (int) or timedelta object
+        if isinstance(self.config.timeout.session_lifetime, timedelta):
+            self.session_timeout = self.config.timeout.session_lifetime
+        else:
+            self.session_timeout = timedelta(seconds=self.config.timeout.session_lifetime)
         
         # Initialize monitoring
         self.monitor = monitor

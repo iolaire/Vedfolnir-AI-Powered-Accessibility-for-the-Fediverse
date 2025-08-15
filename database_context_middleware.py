@@ -4,7 +4,7 @@
 
 import logging
 from typing import Optional, Dict, Any
-from flask import Flask, g, session, current_app
+from flask import Flask, g, current_app
 from flask_login import current_user
 from sqlalchemy.exc import SQLAlchemyError
 from sqlalchemy.orm.exc import DetachedInstanceError
@@ -162,8 +162,14 @@ class DatabaseContextMiddleware:
             
             try:
                 user_dict['role'] = user.role
+                # Ensure we have the role value for template comparison
+                if hasattr(user_dict['role'], 'value'):
+                    user_dict['role_value'] = user_dict['role'].value
+                else:
+                    user_dict['role_value'] = str(user_dict['role']) if user_dict['role'] else None
             except (DetachedInstanceError, SQLAlchemyError, AttributeError):
                 user_dict['role'] = None
+                user_dict['role_value'] = None
             
             try:
                 user_dict['is_active'] = user.is_active
@@ -184,6 +190,7 @@ class DatabaseContextMiddleware:
                 'username': 'Unknown',
                 'email': 'Unknown',
                 'role': None,
+                'role_value': None,
                 'is_active': True,
                 'last_login': None
             }

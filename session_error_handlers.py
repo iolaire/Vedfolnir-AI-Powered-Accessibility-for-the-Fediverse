@@ -15,7 +15,7 @@ from functools import wraps
 from typing import Any, Callable, Optional, Dict, List
 from flask import (
     current_app, request, redirect, url_for, flash, jsonify, 
-    render_template, session as flask_session
+    render_template
 )
 from flask_login import current_user, logout_user
 from sqlalchemy.exc import SQLAlchemyError, InvalidRequestError
@@ -291,8 +291,7 @@ class SessionErrorHandler:
                 db_manager = DatabaseManager(Config())
                 unified_session_manager = UnifiedSessionManager(db_manager)
                 unified_session_manager.destroy_session(session_id)
-                session_manager = SessionManager(current_app.config.get('db_manager'))
-                session_manager._cleanup_session(flask_session_id)
+                # Flask session cleanup removed - using database sessions only
             
             # Log out user
             logout_user()
@@ -434,7 +433,8 @@ def register_session_error_handlers(app, session_manager, detached_instance_hand
                     _ = current_user.username
                     
                     # For platform-dependent endpoints, validate platform context
-                    if request.endpoint in ['health_dashboard', 'review', 'batch_review', 'caption_generation']:
+                    # Note: health_dashboard is admin-only and doesn't require platform context
+                    if request.endpoint in ['review', 'batch_review', 'caption_generation']:
                         try:
                             from database_session_middleware import get_current_session_context
                             context = get_current_session_context()
@@ -443,8 +443,20 @@ def register_session_error_handlers(app, session_manager, detached_instance_hand
                                 # No platform context - redirect to platform management
                                 flash('Please select a platform to continue.', 'info')
                                 return redirect(url_for('platform_management'))
-                        except ImportError:
-                            # database_session_middleware not available - skip platform validation
+                        except Exception:
+                            # If we can't get session context, let other handlers deal with it
+                            pass
+                    elif request.endpoint == 'health_dashboard':
+                        # Health dashboard is admin-only and doesn't require platform context
+                        # Admin users don't have platform connections, so skip platform validation
+                        try:
+                            from models import UserRole
+                            if not (hasattr(current_user, 'role') and current_user.role == UserRole.ADMIN):
+                                # Non-admin users shouldn't access health dashboard
+                                flash('Access denied. Admin privileges required.', 'error')
+                                return redirect(url_for('index'))
+                        except (Exception, ImportError):
+                            # If we can't check role, let the @role_required decorator handle it
                             pass
                     
                 except DetachedInstanceError:

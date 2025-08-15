@@ -4,7 +4,7 @@
 import os
 import asyncio
 from datetime import datetime, timedelta, timezone
-from flask import Flask, render_template, request, jsonify, redirect, url_for, flash, send_from_directory, session, g, Response, make_response
+from flask import Flask, render_template, request, jsonify, redirect, url_for, flash, send_from_directory, g, Response, make_response
 # Removed Flask-SocketIO import - using SSE instead
 from flask_wtf import FlaskForm
 from flask_wtf.csrf import CSRFProtect
@@ -22,7 +22,7 @@ from activitypub_client import ActivityPubClient
 from ollama_caption_generator import OllamaCaptionGenerator
 from caption_quality_assessment import CaptionQualityManager
 from health_check import HealthChecker
-from session_manager import SessionManager, PlatformContextMiddleware
+from session_manager import SessionManager, get_current_platform_context
 # Removed Flask session manager imports - using database sessions only
 from request_scoped_session_manager import RequestScopedSessionManager
 from session_aware_user import SessionAwareUser
@@ -60,6 +60,9 @@ app.config['REMEMBER_COOKIE_DURATION'] = timedelta(seconds=config.auth.remember_
 # Initialize CSRF protection
 csrf = CSRFProtect()
 csrf.init_app(app)
+
+# Exempt session heartbeat from CSRF protection
+# Note: CSRF exemptions are applied after route registration
 
 # Initialize enhanced CSRF token manager
 from security.core.csrf_token_manager import initialize_csrf_token_manager
@@ -168,6 +171,11 @@ app.session_error_handler = session_error_handler
 from session_state_api import create_session_state_routes
 create_session_state_routes(app)
 
+# Exempt session heartbeat from CSRF protection (after routes are registered)
+csrf.exempt(app.view_functions['api_session_heartbeat'])
+csrf.exempt(app.view_functions['api_session_state'])
+csrf.exempt(app.view_functions['api_session_validate'])
+
 # Initialize session monitoring API routes
 from session_monitoring_api import create_session_monitoring_routes
 create_session_monitoring_routes(app)
@@ -178,7 +186,7 @@ app.session_monitor = session_monitor
 
 # Keep old session manager for backward compatibility during transition
 session_manager = SessionManager(db_manager)
-platform_middleware = PlatformContextMiddleware(app, session_manager)
+# platform_middleware = PlatformContextMiddleware(app, session_manager)  # Removed - using DatabaseSessionMiddleware
 
 # Initialize request-scoped session manager for preventing DetachedInstanceError
 request_session_manager = RequestScopedSessionManager(db_manager)
@@ -381,17 +389,28 @@ def role_required(role):
             try:
                 server_user = db_session.query(User).get(current_user.id)
                 if not server_user:
+                    app.logger.warning(f"User account not found for ID: {current_user.id}")
                     flash('User account not found.', 'error')
                     logout_user()
                     return redirect(url_for('login'))
                 if not server_user.is_active:
+                    app.logger.warning(f"Inactive user attempted access: {server_user.username}")
                     flash('Your account has been deactivated.', 'error')
                     logout_user()
                     return redirect(url_for('login'))
+                
+                # Debug logging for role checking
+                app.logger.debug(f"Role check: user={server_user.username}, user_role={server_user.role}, required_role={role}")
+                app.logger.debug(f"Role check: user_role.value={server_user.role.value if server_user.role else 'None'}")
+                app.logger.debug(f"Role check: has_permission={server_user.has_permission(role)}")
+                
                 # Use server-side user data for role validation
                 if not server_user.has_permission(role):
+                    app.logger.warning(f"Access denied: user {server_user.username} (role: {server_user.role.value if server_user.role else 'None'}) attempted to access {role.value} resource")
                     flash('You do not have permission to access this page.', 'error')
                     return redirect(url_for('index'))
+                
+                app.logger.debug(f"Access granted: user {server_user.username} has {role.value} permission")
                 # Store validated user role in g for this request
                 g.validated_user_role = server_user.role
             except SQLAlchemyError as e:
@@ -602,55 +621,95 @@ def login():
                     # Log in the user with Flask-Login (creates SessionAwareUser via load_user)
                     login_user(user, remember=form.remember.data)
                     
-                    if not platform_data:
+                    # Debug: Check user role
+                    app.logger.info(f"Login: User {sanitize_for_log(username)} has role {sanitize_for_log(str(user.role))}, UserRole.ADMIN is {sanitize_for_log(str(UserRole.ADMIN))}, comparison: {sanitize_for_log(str(user.role == UserRole.ADMIN))}")
+                    
+                    # Check if user is admin - admins don't need platform connections
+                    if user.role == UserRole.ADMIN:
+                        # Create database session for admin without platform context
+                        try:
+                            from unified_session_manager import UnifiedSessionManager
+                            unified_session_manager = UnifiedSessionManager(db_manager)
+                            session_id = unified_session_manager.create_session(user_id, None)  # No platform for admin
+                            
+                            if session_id:
+                                # Set session cookie with session ID only
+                                response = make_response(redirect(
+                                    request.args.get('next') if request.args.get('next') and request.args.get('next').startswith('/') 
+                                    else url_for('index')
+                                ))
+                                
+                                # Get cookie manager from app config
+                                cookie_manager = getattr(app, 'session_cookie_manager', None)
+                                if not cookie_manager:
+                                    from session_cookie_manager import create_session_cookie_manager
+                                    cookie_manager = create_session_cookie_manager(app.config)
+                                    app.session_cookie_manager = cookie_manager
+                                
+                                cookie_manager.set_session_cookie(response, session_id)
+                                
+                                # Welcome message for admin
+                                flash(f'Welcome back, {username}! Admin access granted.', 'success')
+                                app.logger.info(f"Created database session {sanitize_for_log(session_id)} for admin user {sanitize_for_log(username)}")
+                                
+                                return response
+                            else:
+                                app.logger.error(f"Failed to create database session for admin user {sanitize_for_log(username)}")
+                                flash('Login failed. Please try again.', 'error')
+                        except Exception as e:
+                            app.logger.error(f"Error creating admin database session: {sanitize_for_log(str(e))}")
+                            flash('Login failed due to session error. Please try again.', 'error')
+                    
+                    elif not platform_data:
                         # First-time user - redirect to platform setup
                         flash('Welcome! Please set up your first platform connection to get started.', 'info')
                         return redirect(url_for('first_time_setup'))
                     
-                    # Create database session with default platform using extracted data
-                    try:
-                        default_platform = next((p for p in platform_data if p['is_default']), None)
-                        if not default_platform:
-                            # Set first platform as default if none is set
-                            default_platform = platform_data[0]
-                            # Update default platform in database within session scope
-                            for p in user_platforms:
-                                p.is_default = (p.id == default_platform['id'])
-                            db_session.commit()
-                        
-                        # Create database session record with platform context using unified session manager
-                        from unified_session_manager import UnifiedSessionManager
-                        unified_session_manager = UnifiedSessionManager(db_manager)
-                        session_id = unified_session_manager.create_session(user_id, default_platform['id'])
-                        
-                        if session_id:
-                            # Set session cookie with session ID only
-                            response = make_response(redirect(
-                                request.args.get('next') if request.args.get('next') and request.args.get('next').startswith('/') 
-                                else url_for('index')
-                            ))
+                    else:
+                        # Create database session with default platform using extracted data
+                        try:
+                            default_platform = next((p for p in platform_data if p['is_default']), None)
+                            if not default_platform:
+                                # Set first platform as default if none is set
+                                default_platform = platform_data[0]
+                                # Update default platform in database within session scope
+                                for p in user_platforms:
+                                    p.is_default = (p.id == default_platform['id'])
+                                db_session.commit()
                             
-                            # Get cookie manager from app config
-                            cookie_manager = getattr(app, 'session_cookie_manager', None)
-                            if not cookie_manager:
-                                from session_cookie_manager import create_session_cookie_manager
-                                cookie_manager = create_session_cookie_manager(app.config)
-                                app.session_cookie_manager = cookie_manager
+                            # Create database session record with platform context using unified session manager
+                            from unified_session_manager import UnifiedSessionManager
+                            unified_session_manager = UnifiedSessionManager(db_manager)
+                            session_id = unified_session_manager.create_session(user_id, default_platform['id'])
                             
-                            cookie_manager.set_session_cookie(response, session_id)
+                            if session_id:
+                                # Set session cookie with session ID only
+                                response = make_response(redirect(
+                                    request.args.get('next') if request.args.get('next') and request.args.get('next').startswith('/') 
+                                    else url_for('index')
+                                ))
+                                
+                                # Get cookie manager from app config
+                                cookie_manager = getattr(app, 'session_cookie_manager', None)
+                                if not cookie_manager:
+                                    from session_cookie_manager import create_session_cookie_manager
+                                    cookie_manager = create_session_cookie_manager(app.config)
+                                    app.session_cookie_manager = cookie_manager
+                                
+                                cookie_manager.set_session_cookie(response, session_id)
+                                
+                                # Welcome message with platform info
+                                flash(f'Welcome back! Connected to {default_platform["name"]} ({default_platform["platform_type"].title()})', 'success')
+                                app.logger.info(f"Created database session {sanitize_for_log(session_id)} for user {sanitize_for_log(username)} with platform {sanitize_for_log(default_platform['name'])}")
+                                
+                                return response
+                            else:
+                                app.logger.error(f"Failed to create database session for user {sanitize_for_log(username)}")
+                                flash('Login failed. Please try again.', 'error')
                             
-                            # Welcome message with platform info
-                            flash(f'Welcome back! Connected to {default_platform["name"]} ({default_platform["platform_type"].title()})', 'success')
-                            app.logger.info(f"Created database session {sanitize_for_log(session_id)} for user {sanitize_for_log(username)} with platform {sanitize_for_log(default_platform['name'])}")
-                            
-                            return response
-                        else:
-                            app.logger.error(f"Failed to create database session for user {sanitize_for_log(username)}")
-                            flash('Login failed. Please try again.', 'error')
-                        
-                    except Exception as e:
-                        app.logger.error(f"Error creating database session: {sanitize_for_log(str(e))}")
-                        flash('Login failed due to session error. Please try again.', 'error')
+                        except Exception as e:
+                            app.logger.error(f"Error creating database session: {sanitize_for_log(str(e))}")
+                            flash('Login failed due to session error. Please try again.', 'error')
                     
                 else:
                     flash('Invalid username or password', 'error')
@@ -669,6 +728,10 @@ def login():
 @with_session_error_handling
 def first_time_setup():
     """First-time platform setup for new users"""
+    # Admin users don't need platform setup - redirect to index
+    if current_user.role == UserRole.ADMIN:
+        return redirect(url_for('index'))
+    
     # Check if user already has platforms - redirect if they do
     db_session = db_manager.get_session()
     try:
@@ -769,101 +832,7 @@ def logout_all():
     
     return response
 
-@app.route('/app_management')
-@login_required
-@role_required(UserRole.ADMIN)
-@with_session_error_handling
-def app_management():
-    """App management interface for administrators"""
-    db_session = db_manager.get_session()
-    try:
-        # Get user's platform connections
-        user_platforms = db_session.query(PlatformConnection).filter_by(
-            user_id=current_user.id,
-            is_active=True
-        ).order_by(PlatformConnection.is_default.desc(), PlatformConnection.name).all()
-        
-        # Get current platform from context
-        current_platform = None
-        context = get_current_platform_context()
-        if context and context.get('platform_info'):
-            # Keep platform info as dict to avoid attribute access issues
-            platform_info = context['platform_info']
-            current_platform = platform_info
-        
-        # Get user statistics per platform
-        platform_stats = {}
-        for platform in user_platforms:
-            stats = {
-                'posts': db_session.query(Post).filter_by(platform_connection_id=platform.id).count(),
-                'images': db_session.query(Image).filter_by(platform_connection_id=platform.id).count(),
-                'pending': db_session.query(Image).filter_by(
-                    platform_connection_id=platform.id,
-                    status=ProcessingStatus.PENDING
-                ).count(),
-                'approved': db_session.query(Image).filter_by(
-                    platform_connection_id=platform.id,
-                    status=ProcessingStatus.APPROVED
-                ).count(),
-                'posted': db_session.query(Image).filter_by(
-                    platform_connection_id=platform.id,
-                    status=ProcessingStatus.POSTED
-                ).count()
-            }
-            platform_stats[platform.id] = stats
-        
-        # Get current session info (Flask sessions are per-browser)
-        active_sessions = []
-        context = get_current_platform_context()
-        if context:
-            active_sessions = [{
-                'platform_id': context.get('platform_connection_id'),
-                'platform_name': context.get('platform_info', {}).get('name', 'Unknown') if context.get('platform_info') else 'Unknown',
-                'created_at': context.get('created_at'),
-                'last_activity': context.get('last_activity'),
-                'is_current': True
-            }]
-        
-        # Get user settings for current platform
-        user_settings = None
-        if current_platform:
-            from models import CaptionGenerationUserSettings
-            user_settings = db_session.query(CaptionGenerationUserSettings).filter_by(
-                user_id=current_user.id,
-                platform_connection_id=current_platform['id']
-            ).first()
-        
-        # Convert platforms to dicts to avoid DetachedInstanceError
-        user_platforms_dict = [{
-            'id': p.id,
-            'name': p.name,
-            'platform_type': p.platform_type,
-            'instance_url': p.instance_url,
-            'username': p.username,
-            'is_default': p.is_default,
-            'is_active': p.is_active
-        } for p in user_platforms]
-        
-        current_platform_dict = None
-        if current_platform:
-            current_platform_dict = {
-                'id': current_platform.id,
-                'name': current_platform.name,
-                'platform_type': current_platform.platform_type,
-                'instance_url': current_platform.instance_url,
-                'username': current_platform.username,
-                'is_default': current_platform.is_default,
-                'is_active': current_platform.is_active
-            }
-        
-        return render_template('app_management.html',
-                             user_platforms=user_platforms_dict,
-                             current_platform=current_platform_dict,
-                             platform_stats=platform_stats,
-                             active_sessions=active_sessions,
-                             user_settings=user_settings)
-    finally:
-        db_session.close()
+
 
 @app.route('/user_management')
 @login_required
@@ -1096,6 +1065,8 @@ def api_add_user():
 # Health check endpoints
 @app.route('/health')
 @login_required
+@role_required(UserRole.ADMIN)
+@with_session_error_handling
 def health_check():
     """Basic health check endpoint"""
     try:
@@ -1309,7 +1280,6 @@ def health_check_component(component_name):
 @app.route('/')
 @login_required
 @with_db_session
-@require_platform_context
 @with_session_error_handling
 def index():
     """Main dashboard with platform-aware statistics and session management"""
@@ -1322,8 +1292,9 @@ def index():
                 is_active=True
             ).count()
             
-            if user_platforms == 0:
-                # Redirect to first-time setup if no platforms
+            # Admin users can access the dashboard without platforms
+            if user_platforms == 0 and not current_user.role == UserRole.ADMIN:
+                # Redirect to first-time setup if no platforms (except for admins)
                 return redirect(url_for('first_time_setup'))
             
             # Get platform-specific statistics using session-aware context
@@ -1355,6 +1326,13 @@ def index():
                 # Fallback to general stats
                 stats = db_manager.get_processing_stats()
                 platform_dict = None
+                
+                # For admin users without platforms, add admin-specific stats
+                if current_user.role == UserRole.ADMIN:
+                    stats['admin_mode'] = True
+                    stats['total_users'] = db_session.query(User).count()
+                    stats['active_users'] = db_session.query(User).filter_by(is_active=True).count()
+                    stats['total_platforms'] = db_session.query(PlatformConnection).count()
             
             return render_template('index.html', stats=stats, current_platform=platform_dict)
             
@@ -2649,8 +2627,6 @@ def api_add_platform():
         # If this is the first platform, automatically switch to it and update session context
         if is_first_platform:
             try:
-                from flask import session as flask_session
-                
                 # Create or update database session using unified session manager
                 from database_session_middleware import get_current_session_id, update_session_platform
                 session_id = get_current_session_id()
@@ -2684,10 +2660,8 @@ def api_add_platform():
                 if db_session_success:
                     app.logger.info(f"Successfully switched to first platform {sanitize_for_log(name)} for user {sanitize_for_log(current_user.username)} with database session management")
                 else:
-                    # Flask session updated but database session failed - this is acceptable for basic functionality
-                    app.logger.warning(f"Partially switched to first platform {sanitize_for_log(name)} - Flask session updated but database session failed")
-                else:
-                    app.logger.error(f"Failed to switch to first platform {sanitize_for_log(name)} - db: {db_session_success}, flask: {flask_session_success}")
+                    # Database session failed - log warning but continue
+                    app.logger.warning(f"Failed to create database session for first platform {sanitize_for_log(name)}")
             except Exception as e:
                 app.logger.error(f"Error switching to first platform: {e}")
                 # Don't fail the platform creation, just log the error
@@ -3015,103 +2989,6 @@ def api_edit_platform(platform_id):
         app.logger.error(f"Error updating platform connection: {str(e)}")
         return jsonify({'success': False, 'error': str(e)}), 500
 
-@app.route('/api/session_state', methods=['GET'])
-@login_required
-@with_session_error_handling
-def api_session_state():
-    """Get current session state for cross-tab synchronization with integrated session management"""
-    try:
-        # Get current platform context with integrated session management
-        context = get_current_platform_context()
-        current_platform = None
-        session_info = None
-        
-        # Get platform info from integrated session context
-        if context and context.get('platform_info'):
-            current_platform = {
-                'id': context['platform_info']['id'],
-                'name': context['platform_info']['name'],
-                'type': context['platform_info']['platform_type'],
-                'instance_url': context['platform_info']['instance_url'],
-                'is_default': context['platform_info']['is_default']
-            }
-            session_info = {
-                'session_id': context.get('session_id'),
-                'created_at': context.get('created_at'),
-                'last_activity': context.get('last_activity')
-            }
-        elif context:
-            # We have some context but no platform_info, extract what we can
-            session_info = {
-                'session_id': context.get('session_id'),
-                'created_at': context.get('created_at'),
-                'last_activity': context.get('last_activity')
-            }
-        else:
-            # Fallback to default platform if no current platform
-            db_session = db_manager.get_session()
-            try:
-                default_platform = db_session.query(PlatformConnection).filter_by(
-                    user_id=current_user.id,
-                    is_default=True,
-                    is_active=True
-                ).first()
-                
-                if not default_platform:
-                    default_platform = db_session.query(PlatformConnection).filter_by(
-                        user_id=current_user.id,
-                        is_active=True
-                    ).first()
-                
-                if default_platform:
-                    # Extract platform data before session closes to avoid DetachedInstanceError
-                    platform_id = default_platform.id
-                    platform_name = default_platform.name
-                    
-                    current_platform = {
-                        'id': platform_id,
-                        'name': platform_name,
-                        'type': default_platform.platform_type,
-                        'instance_url': default_platform.instance_url,
-                        'is_default': default_platform.is_default
-                    }
-                    
-                    # Update database session context
-                    from database_session_middleware import update_session_platform
-                    try:
-                        success = update_session_platform(platform_id)
-                        if success:
-                            app.logger.info(f"Updated database session context to default platform {platform_name}")
-                        else:
-                            app.logger.error(f"Failed to update session context to default platform {platform_name}")
-                    except Exception as update_error:
-                        app.logger.error(f"Failed to update session context: {sanitize_for_log(str(update_error))}")
-            finally:
-                db_session.close()
-        
-        # Get database session data for cross-tab synchronization
-        from database_session_middleware import get_current_session_context
-        session_context = get_current_session_context()
-        session_data = session_context if session_context else {}
-        
-        return jsonify({
-            'success': True,
-            'user': {
-                'id': current_user.id,
-                'username': current_user.username,
-                'email': current_user.email
-            },
-            'platform': current_platform,
-            'session': session_info,
-            'flask_session': flask_session_data,
-            'session_type': 'integrated',
-            'timestamp': datetime.now(timezone.utc).isoformat(),
-            'context_source': 'session' if context else 'fallback'
-        })
-        
-    except Exception as e:
-        app.logger.error(f"Error getting integrated session state: {e}")
-        return jsonify({'success': False, 'error': 'Failed to get session state'}), 500
 
 @app.route('/api/session/cleanup', methods=['POST'])
 @login_required
@@ -3126,7 +3003,7 @@ def api_session_cleanup():
             return jsonify({'success': False, 'error': 'User not authenticated'}), 401
         
         # Clean up expired database sessions
-        expired_count = session_manager.cleanup_user_sessions(user_id)
+        expired_count = unified_session_manager.cleanup_user_sessions(user_id)
         
         # Flask session manager removed - using database sessions only
         
@@ -3142,36 +3019,6 @@ def api_session_cleanup():
         app.logger.error(f"Error in session cleanup: {sanitize_for_log(str(e))}")
         return jsonify({'success': False, 'error': 'Failed to cleanup sessions'}), 500
 
-@app.route('/api/session/validate', methods=['POST'])
-@login_required
-@rate_limit(limit=20, window_seconds=60)
-@with_session_error_handling
-def api_session_validate():
-    """Validate current session with integrated session management"""
-    try:
-        user_id = current_user.id if current_user and current_user.is_authenticated else None
-        if not user_id:
-            return jsonify({'success': False, 'error': 'User not authenticated'}), 401
-        
-        # Validate database session
-        from database_session_middleware import get_current_session_id
-        session_id = get_current_session_id()
-        db_session_valid = False
-        if session_id:
-            db_session_valid = unified_session_manager.validate_session(session_id)
-        
-        # Flask session validation removed - using database sessions only
-        
-        return jsonify({
-            'success': True,
-            'valid': db_session_valid,
-            'database_session_valid': db_session_valid,
-            'timestamp': datetime.now(timezone.utc).isoformat()
-        })
-        
-    except Exception as e:
-        app.logger.error(f"Error validating integrated session: {sanitize_for_log(str(e))}")
-        return jsonify({'success': False, 'error': 'Failed to validate session'}), 500
 
 @app.route('/api/session/notify_logout', methods=['POST'])
 @rate_limit(limit=10, window_seconds=60)
@@ -3184,8 +3031,8 @@ def api_session_notify_logout():
         from database_session_middleware import get_current_user_id
         user_id = get_current_user_id()
         
-        # Clear any remaining session data
-        session.clear()
+        # Database sessions are cleared through the unified session manager
+        # No Flask session data to clear
         
         app.logger.info(f"Logout notification processed for user {sanitize_for_log(str(user_id)) if user_id else 'unknown'}")
         

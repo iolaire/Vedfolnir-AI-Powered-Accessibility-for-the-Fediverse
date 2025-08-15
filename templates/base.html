@@ -162,43 +162,7 @@
                             </a>
                         </li>
                         {% endif %}
-                        {% if current_user_safe and current_user_safe.role == 'admin' %}
-                            <li class="nav-item dropdown">
-                                <a class="nav-link dropdown-toggle" href="#" id="adminDropdown" role="button" data-bs-toggle="dropdown" aria-expanded="false">
-                                    Admin
-                                </a>
-                                <ul class="dropdown-menu" aria-labelledby="adminDropdown">
-                                    <li><a class="dropdown-item" href="{{ url_for('app_management') }}">
-                                        <i class="bi bi-gear-fill"></i> App Management
-                                    </a></li>
-                                    <li><hr class="dropdown-divider"></li>
-                                    <li><a class="dropdown-item" href="{{ url_for('admin_monitoring_dashboard') }}">
-                                        <i class="bi bi-speedometer2"></i> Monitoring Dashboard
-                                    </a></li>
-                                    <li><a class="dropdown-item" href="{{ url_for('health_dashboard') }}">
-                                        <i class="bi bi-heart-pulse"></i> System Health
-                                    </a></li>
-                                    <li><hr class="dropdown-divider"></li>
-                                    <li><a class="dropdown-item" href="{{ url_for('user_management') }}">
-                                        <i class="bi bi-people"></i> User Management
-                                    </a></li>
-                                    <li><a class="dropdown-item" href="{{ url_for('admin_cleanup') }}">
-                                        <i class="bi bi-trash"></i> Data Cleanup
-                                    </a></li>
-                                    <li><hr class="dropdown-divider"></li>
-                                    <li><h6 class="dropdown-header">{{ current_user_safe.username }} ({{ current_user_safe.role }})</h6></li>
-                                    {% if active_platform %}
-                                    <li><span class="dropdown-item-text text-muted">Platform: {{ active_platform.name }}</span></li>
-                                    {% endif %}
-                                    <li><a class="dropdown-item" href="{{ url_for('logout') }}">
-                                        <i class="bi bi-box-arrow-right me-2"></i>Logout
-                                    </a></li>
-                                    <li><a class="dropdown-item" href="{{ url_for('logout_all') }}">
-                                        <i class="bi bi-power me-2"></i>Logout All Devices
-                                    </a></li>
-                                </ul>
-                            </li>
-                        {% endif %}
+
                     {% endif %}
                 </ul>
                 <ul class="navbar-nav">
@@ -236,12 +200,18 @@
                                 <li><a class="dropdown-item" href="{{ url_for('profile') }}">
                                     <i class="bi bi-person-gear me-2"></i>Profile & Settings
                                 </a></li>
-                                {% if current_user_safe and current_user_safe.role.value == 'admin' %}
-                                <li><a class="dropdown-item" href="{{ url_for('app_management') }}">
-                                    <i class="bi bi-gear-fill me-2"></i>App Management
-                                </a></li>
+                                {% if current_user_safe and (current_user_safe.role_value == 'admin' or (current_user_safe.role and current_user_safe.role.value == 'admin')) %}
                                 <li><a class="dropdown-item" href="{{ url_for('user_management') }}">
                                     <i class="bi bi-people me-2"></i>User Management
+                                </a></li>
+                                <li><a class="dropdown-item" href="{{ url_for('health_dashboard') }}">
+                                    <i class="bi bi-heart-pulse me-2"></i>System Health
+                                </a></li>
+                                <li><a class="dropdown-item" href="{{ url_for('admin_monitoring_dashboard') }}">
+                                    <i class="bi bi-speedometer2 me-2"></i>Monitoring Dashboard
+                                </a></li>
+                                <li><a class="dropdown-item" href="{{ url_for('admin_cleanup') }}">
+                                    <i class="bi bi-trash me-2"></i>Data Cleanup
                                 </a></li>
                                 {% endif %}
                                 <li><hr class="dropdown-divider"></li>

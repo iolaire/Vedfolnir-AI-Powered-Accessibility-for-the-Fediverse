@@ -14,7 +14,7 @@ from security.core.security_utils import sanitize_for_log
 from datetime import datetime, timedelta, timezone
 from typing import Optional, Dict, Any, Tuple
 from contextlib import contextmanager
-from flask import session, request, g
+from flask import request, g
 from sqlalchemy.orm import Session
 from sqlalchemy.exc import SQLAlchemyError, DisconnectionError, TimeoutError, InvalidRequestError
 
@@ -206,11 +206,14 @@ class SessionManager:
                 logger.warning(f"Error during session cleanup: {sanitize_for_log(str(cleanup_error))}")
                 # Continue with session creation even if cleanup fails
             
-            # Create session record
+            # Create session record with proper expiration
+            expires_at = datetime.now(timezone.utc) + self.session_timeout
+            
             user_session = UserSession(
                 user_id=user_id,
                 session_id=session_id,
-                active_platform_id=platform_connection_id
+                active_platform_id=platform_connection_id,
+                expires_at=expires_at
             )
             
             db_session.add(user_session)
@@ -667,7 +670,6 @@ class SessionManager:
         """
         try:
             # Import here to avoid circular imports
-            from flask import session as flask_session
             from flask_wtf.csrf import validate_csrf
             
             # Use Flask-WTF's built-in CSRF validation
@@ -1106,12 +1108,10 @@ class PlatformContextMiddleware:
             if request.endpoint in ['static', 'health']:
                 return
             
-            # Ensure session is permanent for persistence across tabs
-            if not session.permanent:
-                session.permanent = True
+            # Flask session permanent setting disabled - using database sessions only
             
-            # Get session ID from Flask session
-            flask_session_id = session.get('_id')
+            # Flask session ID retrieval disabled - using database sessions only
+            flask_session_id = None
             if not flask_session_id:
                 # For authenticated users without session ID, try to recreate
                 from flask_login import current_user
@@ -1141,23 +1141,14 @@ class PlatformContextMiddleware:
                                         current_user.id, default_platform.id
                                     )
                                     if flask_session_id:
-                                        session['_id'] = flask_session_id
-                                        session['platform_connection_id'] = default_platform.id
-                                        session['user_id'] = current_user.id
-                                        session.permanent = True
+                                        # Flask session usage disabled - using database sessions only
                                         logger.info(f"Recreated session for user {sanitize_for_log(current_user.username)}")
                                     else:
-                                        logger.warning(f"Failed to recreate database session for user {sanitize_for_log(current_user.username)}, using Flask session only")
-                                        # Set basic Flask session data
-                                        session['platform_connection_id'] = default_platform.id
-                                        session['user_id'] = current_user.id
-                                        session.permanent = True
+                                        logger.warning(f"Failed to recreate database session for user {sanitize_for_log(current_user.username)}")
+                                        # Flask session fallback disabled - using database sessions only
                                 except Exception as recreate_error:
-                                    logger.warning(f"Error recreating session for user {sanitize_for_log(current_user.username)}: {sanitize_for_log(str(recreate_error))}, using Flask session only")
-                                    # Set basic Flask session data as fallback
-                                    session['platform_connection_id'] = default_platform.id
-                                    session['user_id'] = current_user.id
-                                    session.permanent = True
+                                    logger.warning(f"Error recreating session for user {sanitize_for_log(current_user.username)}: {sanitize_for_log(str(recreate_error))}")
+                                    # Flask session fallback disabled - using database sessions only
                         finally:
                             db_session.close()
                     except Exception as e:
@@ -1177,10 +1168,11 @@ class PlatformContextMiddleware:
                         self.session_manager.optimizer.update_session_activity_optimized(flask_session_id)
                     else:
                         # Fallback to original method with reduced frequency
-                        last_update = session.get('_last_activity_update')
+                        # Flask session activity check disabled - using database sessions only
                         now = datetime.now(timezone.utc)
                         
-                        if not last_update or (now - datetime.fromisoformat(last_update)).total_seconds() > 300:
+                        # Always update activity since Flask session check is disabled
+                        if True:
                             db_session = self.session_manager.db_manager.get_session()
                             try:
                                 user_session = db_session.query(UserSession).filter_by(
@@ -1189,7 +1181,7 @@ class PlatformContextMiddleware:
                                 if user_session:
                                     user_session.updated_at = now
                                     db_session.commit()
-                                    session['_last_activity_update'] = now.isoformat()
+                                    # Flask session activity update disabled - using database sessions only
                             except SQLAlchemyError as e:
                                 logger.error(f"Database error updating session activity: {sanitize_for_log(str(e))}")
                                 db_session.rollback()
@@ -1228,10 +1220,10 @@ def get_current_platform_context() -> Optional[Dict[str, Any]]:
     if context:
         return context
     
-    # Fallback: try to get from session manager directly
+    # Fallback: Flask session fallback disabled - using database sessions only
     try:
-        from flask import session
-        flask_session_id = session.get('_id')
+        # Flask session fallback disabled - using database sessions only
+        flask_session_id = None
         if flask_session_id:
             session_manager = getattr(g, 'session_manager', None)
             if session_manager:

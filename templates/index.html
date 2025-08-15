@@ -18,7 +18,7 @@
                 <button class="btn btn-outline-primary" onclick="location.reload()">
                     <i class="bi bi-arrow-clockwise"></i> Refresh
                 </button>
-                {% if current_user_safe and current_user_safe.role == 'admin' %}
+                {% if current_user_safe and current_user_safe.role.value == 'admin' %}
                 <a href="{{ url_for('health_dashboard') }}" class="btn btn-outline-secondary">
                     <i class="bi bi-heart-pulse"></i> System Health
                 </a>
@@ -160,7 +160,7 @@
                             Post Approved
                         </a>
                     </div>
-                    {% if current_user_safe and current_user_safe.role == 'admin' %}
+                    {% if current_user_safe and current_user_safe.role.value == 'admin' %}
                     <div class="col-md-6">
                         <a href="{{ url_for('admin_cleanup') }}" class="btn btn-outline-secondary btn-lg w-100 d-flex align-items-center justify-content-center">
                             <i class="bi bi-trash me-2"></i>
@@ -234,7 +234,7 @@
 </div>
 
 <!-- Recent Activity (if we have data) -->
-{% if current_user_safe and current_user_safe.role == 'admin' %}
+{% if current_user_safe and current_user_safe.role.value == 'admin' %}
 <div class="row mt-4">
     <div class="col-12">
         <div class="card">

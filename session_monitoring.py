@@ -55,6 +55,17 @@ class SessionMonitor:
         self.events = deque(maxlen=5000)    # Keep last 5k events
         self.metrics_lock = Lock()
         self.events_lock = Lock()
+        self._lock = Lock()  # Main lock for thread safety
+        
+        # Initialize additional storage for monitoring
+        self.metrics_buffer = deque(maxlen=1000)
+        self.events_buffer = deque(maxlen=500)
+        self.performance_stats = defaultdict(list)
+        self.alert_thresholds = {
+            'session_creation_rate': 10.0,
+            'session_failure_rate': 0.1,
+            'concurrent_sessions': 100
+        }
         
         # Performance tracking
         self.session_performance = defaultdict(list)
@@ -856,8 +867,9 @@ def get_session_monitor(db_manager: DatabaseManager, config: Optional[SessionCon
             session_monitor = SessionMonitor(db_manager, session_config)
         else:
             return None
-    return session_monitor  
-  def log_database_session_created(self, session_id: str, user_id: int, platform_id: Optional[int] = None):
+    return session_monitor
+
+    def log_database_session_created(self, session_id: str, user_id: int, platform_id: Optional[int] = None):
         """Log database session creation"""
         self.db_session_metrics['total_sessions_created'] += 1
         self.db_session_metrics['active_sessions'] += 1

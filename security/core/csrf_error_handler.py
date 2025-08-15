@@ -13,7 +13,7 @@ import json
 import logging
 from typing import Dict, Any, Optional, Tuple
 from datetime import datetime
-from flask import request, session, jsonify, render_template, redirect, url_for, flash
+from flask import request, jsonify, render_template, redirect, url_for, flash
 from flask_wtf.csrf import CSRFError
 from werkzeug.exceptions import Forbidden
 from security.core.security_utils import sanitize_for_log
@@ -166,11 +166,10 @@ class CSRFErrorHandler:
         if retry_guidance:
             flash(f"Suggestion: {retry_guidance}", 'info')
         
-        # Store preserved data in session for recovery
+        # Note: Form data preservation disabled in database session mode
+        # TODO: Implement database-based form data preservation if needed
         if preserved_data:
-            session['_csrf_preserved_data'] = preserved_data
-            session['_csrf_preserved_timestamp'] = datetime.now().isoformat()
-            flash('Your form data has been preserved. Please try submitting again.', 'info')
+            flash('Please re-enter your form data and try submitting again.', 'info')
         
         # Redirect to referrer or home page
         redirect_url = request.referrer or url_for('index')
@@ -312,29 +311,14 @@ class CSRFErrorHandler:
             return None
     
     def recover_preserved_data(self) -> Optional[Dict[str, Any]]:
-        """Recover preserved form data from session
+        """Recover preserved form data (disabled in database session mode)
         
         Returns:
-            Recovered form data or None
+            None (form data preservation disabled)
         """
-        try:
-            preserved_data = session.pop('_csrf_preserved_data', None)
-            preserved_timestamp = session.pop('_csrf_preserved_timestamp', None)
-            
-            if not preserved_data or not preserved_timestamp:
-                return None
-            
-            # Check if data is not too old (5 minutes)
-            timestamp = datetime.fromisoformat(preserved_timestamp)
-            if (datetime.now() - timestamp).total_seconds() > 300:
-                logger.debug("Preserved form data expired")
-                return None
-            
-            return json.loads(preserved_data)
-            
-        except Exception as e:
-            logger.warning(f"Failed to recover preserved data: {sanitize_for_log(str(e))}")
-            return None
+        # Form data preservation disabled in database session mode
+        # TODO: Implement database-based form data preservation if needed
+        return None
     
     def generate_retry_guidance(self, context: CSRFValidationContext) -> str:
         """Generate specific retry guidance based on context

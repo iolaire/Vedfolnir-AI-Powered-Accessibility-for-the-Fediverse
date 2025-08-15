@@ -151,7 +151,7 @@ def create_session_state_routes(app):
             }), 500  
   
     @app.route('/api/session/monitoring/metrics', methods=['GET'])
-    def api_session_monitoring_metrics():
+    def api_session_state_metrics():
         """
         Get session monitoring metrics
         

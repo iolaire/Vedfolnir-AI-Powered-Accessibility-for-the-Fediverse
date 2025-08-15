@@ -14,7 +14,8 @@ from flask import g
 from config import Config
 from database import DatabaseManager
 from models import User, PlatformConnection, UserSession, UserRole
-from session_manager import SessionManager, PlatformContextMiddleware, get_current_platform_context, get_current_platform
+from session_manager import SessionManager, get_current_platform_context, get_current_platform
+from database_session_middleware import DatabaseSessionMiddleware
 from web_app import app
 
 
@@ -100,11 +101,14 @@ class TestMiddlewareContext(unittest.TestCase):
     
     def test_middleware_sets_platform_context_with_valid_session(self):
         """Test that middleware sets platform context when valid session exists"""
-        # Create a session
-        session_id = self.session_manager.create_user_session(self.user_id, self.platform_id)
+        from unified_session_manager import UnifiedSessionManager
         
-        # Mock the session manager in the web app
-        with patch('web_app.session_manager', self.session_manager):
+        # Create unified session manager and session
+        unified_session_manager = UnifiedSessionManager(self.db_manager)
+        session_id = unified_session_manager.create_session(self.user_id, self.platform_id)
+        
+        # Mock the unified session manager in the web app
+        with patch('web_app.unified_session_manager', unified_session_manager):
             # Create a test route to check context
             @app.route('/test_context')
             def test_context():

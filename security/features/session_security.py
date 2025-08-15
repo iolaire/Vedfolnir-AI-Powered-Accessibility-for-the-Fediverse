@@ -16,7 +16,7 @@ from datetime import datetime, timedelta, timezone
 from typing import Dict, Any, Optional, List, Tuple
 from dataclasses import dataclass
 from enum import Enum
-from flask import request, session as flask_session
+from flask import request
 from security.core.security_utils import sanitize_for_log
 from security.core.security_monitoring import SecurityEventType, SecurityEventSeverity, log_security_event
 

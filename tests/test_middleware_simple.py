@@ -14,7 +14,8 @@ from flask import g
 from config import Config
 from database import DatabaseManager
 from models import User, PlatformConnection, UserSession, UserRole
-from session_manager import SessionManager, PlatformContextMiddleware, get_current_platform_context, get_current_platform
+from session_manager import SessionManager, get_current_platform_context, get_current_platform
+from database_session_middleware import DatabaseSessionMiddleware
 from web_app import app
 
 
@@ -90,10 +91,16 @@ class TestMiddlewareSimple(unittest.TestCase):
             session.close()
     
     def test_middleware_class_initialization(self):
-        """Test that PlatformContextMiddleware can be initialized"""
-        middleware = PlatformContextMiddleware(app, self.session_manager)
+        """Test that DatabaseSessionMiddleware can be initialized"""
+        from unified_session_manager import UnifiedSessionManager
+        from session_cookie_manager import create_session_cookie_manager
+        
+        unified_session_manager = UnifiedSessionManager(self.db_manager)
+        cookie_manager = create_session_cookie_manager({})
+        
+        middleware = DatabaseSessionMiddleware(app, unified_session_manager, cookie_manager)
         self.assertIsNotNone(middleware)
-        self.assertEqual(middleware.session_manager, self.session_manager)
+        self.assertEqual(middleware.session_manager, unified_session_manager)
     
     def test_get_current_platform_context_utility(self):
         """Test the get_current_platform_context utility function"""
@@ -136,29 +143,35 @@ class TestMiddlewareSimple(unittest.TestCase):
     
     def test_middleware_before_request_method(self):
         """Test the middleware before_request method directly"""
-        middleware = PlatformContextMiddleware(app, self.session_manager)
+        from unified_session_manager import UnifiedSessionManager
+        from session_cookie_manager import create_session_cookie_manager
+        
+        unified_session_manager = UnifiedSessionManager(self.db_manager)
+        cookie_manager = create_session_cookie_manager({})
+        middleware = DatabaseSessionMiddleware(app, unified_session_manager, cookie_manager)
         
         with app.test_request_context():
-            # Mock Flask session
-            with patch('session_manager.session') as mock_session:
-                mock_session.get.return_value = None
-                
-                # Call before_request method
-                result = middleware.before_request()
-                
-                # Should not raise an exception
-                self.assertIsNone(result)
-                
-                # Should set g.platform_context to None when no session
-                self.assertIsNone(getattr(g, 'platform_context', None))
+            # Call before_request method
+            result = middleware.before_request()
+            
+            # Should not raise an exception
+            self.assertIsNone(result)
+            
+            # Should set g.session_context to None when no session
+            self.assertIsNone(getattr(g, 'session_context', None))
     
     def test_middleware_after_request_method(self):
         """Test the middleware after_request method directly"""
-        middleware = PlatformContextMiddleware(app, self.session_manager)
+        from unified_session_manager import UnifiedSessionManager
+        from session_cookie_manager import create_session_cookie_manager
+        
+        unified_session_manager = UnifiedSessionManager(self.db_manager)
+        cookie_manager = create_session_cookie_manager({})
+        middleware = DatabaseSessionMiddleware(app, unified_session_manager, cookie_manager)
         
         with app.test_request_context():
             # Set some context
-            g.platform_context = {'test': 'context'}
+            g.session_context = {'test': 'context'}
             
             # Mock response
             mock_response = MagicMock()
@@ -170,21 +183,22 @@ class TestMiddlewareSimple(unittest.TestCase):
             self.assertEqual(result, mock_response)
             
             # Should clean up context
-            self.assertIsNone(getattr(g, 'platform_context', None))
+            self.assertIsNone(getattr(g, 'session_context', None))
     
     def test_middleware_handles_session_manager_errors(self):
         """Test that middleware handles session manager errors gracefully"""
+        from session_cookie_manager import create_session_cookie_manager
+        
         # Create middleware with mocked session manager that raises errors
         mock_session_manager = MagicMock()
         mock_session_manager.get_session_context.side_effect = Exception("Session error")
+        cookie_manager = create_session_cookie_manager({})
         
-        middleware = PlatformContextMiddleware(app, mock_session_manager)
+        middleware = DatabaseSessionMiddleware(app, mock_session_manager, cookie_manager)
         
         with app.test_request_context():
-            # Mock Flask session with valid session ID
-            with patch('session_manager.session') as mock_session:
-                mock_session.get.return_value = 'test-session-id'
-                
+            # Mock cookie manager to return a session ID
+            with patch.object(cookie_manager, 'get_session_id_from_cookie', return_value='test-session-id'):
                 # Call before_request method - should not raise exception
                 result = middleware.before_request()
                 
@@ -192,15 +206,20 @@ class TestMiddlewareSimple(unittest.TestCase):
                 self.assertIsNone(result)
                 
                 # Context should be None due to error
-                self.assertIsNone(getattr(g, 'platform_context', None))
+                self.assertIsNone(getattr(g, 'session_context', None))
     
     def test_middleware_skips_static_and_health_endpoints(self):
         """Test that middleware skips processing for certain endpoints"""
-        middleware = PlatformContextMiddleware(app, self.session_manager)
+        from unified_session_manager import UnifiedSessionManager
+        from session_cookie_manager import create_session_cookie_manager
+        
+        unified_session_manager = UnifiedSessionManager(self.db_manager)
+        cookie_manager = create_session_cookie_manager({})
+        middleware = DatabaseSessionMiddleware(app, unified_session_manager, cookie_manager)
         
         with app.test_request_context():
             # Mock request endpoint as 'static'
-            with patch('session_manager.request') as mock_request:
+            with patch('database_session_middleware.request') as mock_request:
                 mock_request.endpoint = 'static'
                 
                 # Call before_request method
@@ -208,10 +227,10 @@ class TestMiddlewareSimple(unittest.TestCase):
                 
                 # Should return early (None) and not set context
                 self.assertIsNone(result)
-                self.assertIsNone(getattr(g, 'platform_context', None))
+                self.assertIsNone(getattr(g, 'session_context', None))
             
             # Mock request endpoint as 'health'
-            with patch('session_manager.request') as mock_request:
+            with patch('database_session_middleware.request') as mock_request:
                 mock_request.endpoint = 'health'
                 
                 # Call before_request method
@@ -219,18 +238,23 @@ class TestMiddlewareSimple(unittest.TestCase):
                 
                 # Should return early (None) and not set context
                 self.assertIsNone(result)
-                self.assertIsNone(getattr(g, 'platform_context', None))
+                self.assertIsNone(getattr(g, 'session_context', None))
     
     def test_middleware_sets_session_manager_in_g(self):
         """Test that middleware sets session manager in g"""
-        middleware = PlatformContextMiddleware(app, self.session_manager)
+        from unified_session_manager import UnifiedSessionManager
+        from session_cookie_manager import create_session_cookie_manager
+        
+        unified_session_manager = UnifiedSessionManager(self.db_manager)
+        cookie_manager = create_session_cookie_manager({})
+        middleware = DatabaseSessionMiddleware(app, unified_session_manager, cookie_manager)
         
         with app.test_request_context():
             # Call before_request method
             middleware.before_request()
             
             # Should set session manager in g
-            self.assertEqual(getattr(g, 'session_manager', None), self.session_manager)
+            self.assertEqual(getattr(g, 'session_manager', None), unified_session_manager)
     
     def test_middleware_integration_with_existing_routes(self):
         """Test that middleware works with existing routes"""
@@ -245,11 +269,17 @@ class TestMiddlewareSimple(unittest.TestCase):
     
     def test_session_context_functions_work_correctly(self):
         """Test that session context utility functions work as expected"""
+        from unified_session_manager import UnifiedSessionManager
+        from database_session_middleware import get_current_session_context
+        
+        # Create unified session manager
+        unified_session_manager = UnifiedSessionManager(self.db_manager)
+        
         # Create a real session
-        session_id = self.session_manager.create_user_session(self.user_id, self.platform_id)
+        session_id = unified_session_manager.create_session(self.user_id, self.platform_id)
         
         # Test that session manager can get context
-        context = self.session_manager.get_session_context(session_id)
+        context = unified_session_manager.get_session_context(session_id)
         self.assertIsNotNone(context)
         self.assertEqual(context['user_id'], self.user_id)
         self.assertEqual(context['platform_connection_id'], self.platform_id)
@@ -257,11 +287,15 @@ class TestMiddlewareSimple(unittest.TestCase):
         # Test utility functions with mocked Flask context
         with app.test_request_context():
             # Set the context in g (simulating what middleware would do)
-            g.platform_context = context
+            g.session_context = context
             
-            # Test get_current_platform_context
-            current_context = get_current_platform_context()
+            # Test get_current_session_context
+            current_context = get_current_session_context()
             self.assertEqual(current_context, context)
+            
+            # Test get_current_platform_context (should work with session context)
+            platform_context = get_current_platform_context()
+            self.assertIsNotNone(platform_context)
             
             # Test get_current_platform
             current_platform = get_current_platform()

@@ -219,6 +219,17 @@ class SessionAwareUser(UserMixin):
         if name in ('is_authenticated', 'is_anonymous', 'get_id'):
             return getattr(self, f'_{name}', None) or getattr(User, name, None)
         
+        # Handle critical user attributes that need to be always available
+        if name in ('id', 'username', 'email', 'role', 'is_active'):
+            # For critical attributes, try to get from cached user first
+            if hasattr(self, '_user') and self._user:
+                try:
+                    value = getattr(self._user, name)
+                    if value is not None:
+                        return value
+                except (DetachedInstanceError, SQLAlchemyError):
+                    pass  # Fall through to database lookup
+        
         user = self._get_attached_user()
         if not user:
             logger.warning(f"No user available for attribute access: {name}")
@@ -291,6 +302,28 @@ class SessionAwareUser(UserMixin):
     def get_id(self) -> str:
         """Get user ID as string for Flask-Login"""
         return str(self._user_id)
+    
+    @property
+    def role(self):
+        """Get user role with session safety - critical for admin access control"""
+        # Try cached user first
+        if hasattr(self, '_user') and self._user:
+            try:
+                return self._user.role
+            except (DetachedInstanceError, SQLAlchemyError):
+                pass
+        
+        # Get fresh user from database
+        user = self._get_attached_user()
+        if user:
+            try:
+                return user.role
+            except Exception as e:
+                logger.error(f"Failed to get user role: {e}")
+        
+        # Fallback - this should never happen for valid users
+        logger.error(f"Unable to determine role for user {self._user_id}")
+        return None
     
     def __repr__(self) -> str:
         """String representation of SessionAwareUser"""

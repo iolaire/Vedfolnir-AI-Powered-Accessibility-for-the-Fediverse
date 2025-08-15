@@ -9,7 +9,7 @@ Provides utilities to ensure platform context is consistently available througho
 """
 
 from typing import Optional, Dict, Any, Tuple
-from flask import g, session
+from flask import g
 from flask_login import current_user
 import logging
 
