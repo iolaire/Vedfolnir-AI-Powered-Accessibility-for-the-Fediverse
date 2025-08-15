@@ -40,4 +40,4 @@ def register_routes(bp):
         finally:
             session.close()
         
-        return render_template('admin/dashboard.html', stats=stats)
+        return render_template('dashboard.html', stats=stats)

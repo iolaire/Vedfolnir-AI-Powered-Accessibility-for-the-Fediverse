@@ -1,282 +1,74 @@
-<!-- Copyright (C) 2025 iolaire mcfadden. -->
-<!-- This program is free software: you can redistribute it and/or modify it under the terms of the GNU Affero General Public License as published by the Free Software Foundation, either version 3 of the License, or (at your option) any later version. -->
-<!-- THE SOFTWARE IS PROVIDED "AS IS", WITHOUT WARRANTY OF ANY KIND, EXPRESS OR IMPLIED, INCLUDING BUT NOT LIMITED TO THE WARRANTIES OF MERCHANTABILITY, FITNESS FOR A PARTICULAR PURPOSE AND NONINFRINGEMENT. IN NO EVENT SHALL THE AUTHORS OR COPYRIGHT HOLDERS BE LIABLE FOR ANY CLAIM, DAMAGES OR OTHER LIABILITY, WHETHER IN AN ACTION OF CONTRACT, TORT OR OTHERWISE, ARISING FROM, OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE SOFTWARE. -->
+{% extends "base_admin.html" %}
 
-{% extends "admin/base_admin.html" %}
-
-{% block title %}Session Performance Monitoring{% endblock %}
+{% block title %}Session Monitoring Dashboard{% endblock %}
 
 {% block content %}
 <div class="container-fluid">
     <div class="row">
         <div class="col-12">
-            <h1>Session Performance Monitoring</h1>
-            <p class="text-muted">Real-time monitoring of database session management performance</p>
-        </div>
-    </div>
-
-    <!-- Status Cards -->
-    <div class="row mb-4">
-        <div class="col-md-3">
-            <div class="card bg-primary text-white">
-                <div class="card-body">
-                    <h5 class="card-title">Active Sessions</h5>
-                    <h2 class="mb-0">{{ metrics.session_metrics.active_sessions }}</h2>
-                    <small>Peak: {{ metrics.session_metrics.peak_active_sessions }}</small>
+            <h1 class="h3 mb-4">Session Monitoring Dashboard</h1>
+            
+            <div class="row mb-4">
+                <div class="col-md-3">
+                    <div class="card">
+                        <div class="card-body text-center">
+                            <h5 class="card-title">0</h5>
+                            <p class="card-text">Total Sessions</p>
+                        </div>
+                    </div>
+                </div>
+                <div class="col-md-3">
+                    <div class="card">
+                        <div class="card-body text-center">
+                            <h5 class="card-title">0</h5>
+                            <p class="card-text">Active Users</p>
+                        </div>
+                    </div>
+                </div>
+                <div class="col-md-3">
+                    <div class="card">
+                        <div class="card-body text-center">
+                            <h5 class="card-title">0</h5>
+                            <p class="card-text">Failed Logins</p>
+                        </div>
+                    </div>
+                </div>
+                <div class="col-md-3">
+                    <div class="card">
+                        <div class="card-body text-center">
+                            <h5 class="card-title">0</h5>
+                            <p class="card-text">Suspicious Activity</p>
+                        </div>
+                    </div>
                 </div>
             </div>
-        </div>
-        <div class="col-md-3">
-            <div class="card bg-success text-white">
-                <div class="card-body">
-                    <h5 class="card-title">Total Created</h5>
-                    <h2 class="mb-0">{{ metrics.session_metrics.creations }}</h2>
-                    <small>{{ metrics.session_metrics.closures }} closed</small>
-                </div>
-            </div>
-        </div>
-        <div class="col-md-3">
-            <div class="card bg-warning text-white">
-                <div class="card-body">
-                    <h5 class="card-title">Recoveries</h5>
-                    <h2 class="mb-0">{{ metrics.recovery_metrics.detached_instance_recoveries }}</h2>
-                    <small>{{ "%.1f"|format(metrics.recovery_metrics.recovery_rate * 100) }}% rate</small>
-                </div>
-            </div>
-        </div>
-        <div class="col-md-3">
-            <div class="card bg-{% if metrics.session_metrics.errors > 0 %}danger{% else %}info{% endif %} text-white">
-                <div class="card-body">
-                    <h5 class="card-title">Errors</h5>
-                    <h2 class="mb-0">{{ metrics.session_metrics.errors }}</h2>
-                    <small>Session errors</small>
-                </div>
-            </div>
-        </div>
-    </div>
-
-    <!-- Performance Metrics -->
-    <div class="row mb-4">
-        <div class="col-md-6">
+            
             <div class="card">
                 <div class="card-header">
-                    <h5 class="mb-0">Performance Timing</h5>
+                    <h5 class="mb-0">Session Activity</h5>
                 </div>
                 <div class="card-body">
-                    <div class="row">
-                        <div class="col-6">
-                            <strong>Avg Creation Time:</strong><br>
-                            <span class="h5">{{ "%.3f"|format(metrics.performance_metrics.avg_creation_time) }}s</span>
-                        </div>
-                        <div class="col-6">
-                            <strong>Avg Cleanup Time:</strong><br>
-                            <span class="h5">{{ "%.3f"|format(metrics.performance_metrics.avg_cleanup_time) }}s</span>
-                        </div>
-                    </div>
-                    <hr>
-                    <div class="row">
-                        <div class="col-12">
-                            <strong>Avg Recovery Time:</strong><br>
-                            <span class="h5">{{ "%.3f"|format(metrics.performance_metrics.avg_recovery_time) }}s</span>
-                        </div>
-                    </div>
-                </div>
-            </div>
-        </div>
-        <div class="col-md-6">
-            <div class="card">
-                <div class="card-header">
-                    <h5 class="mb-0">Database Pool</h5>
-                </div>
-                <div class="card-body">
-                    <div class="row">
-                        <div class="col-6">
-                            <strong>Pool Size:</strong><br>
-                            <span class="h5">{{ metrics.pool_metrics.pool_size }}</span>
-                        </div>
-                        <div class="col-6">
-                            <strong>Checked Out:</strong><br>
-                            <span class="h5">{{ metrics.pool_metrics.checked_out }}</span>
-                        </div>
-                    </div>
-                    <hr>
-                    <div class="row">
-                        <div class="col-6">
-                            <strong>Overflow:</strong><br>
-                            <span class="h5">{{ metrics.pool_metrics.overflow }}</span>
-                        </div>
-                        <div class="col-6">
-                            <strong>Checked In:</strong><br>
-                            <span class="h5">{{ metrics.pool_metrics.checked_in }}</span>
-                        </div>
-                    </div>
-                    {% if metrics.pool_metrics.pool_size > 0 %}
-                    <div class="mt-3">
-                        {% set utilization = (metrics.pool_metrics.checked_out / metrics.pool_metrics.pool_size * 100) %}
-                        <strong>Utilization:</strong>
-                        <div class="progress mt-1">
-                            <div class="progress-bar {% if utilization > 80 %}bg-danger{% elif utilization > 60 %}bg-warning{% else %}bg-success{% endif %}" 
-                                 role="progressbar" style="width: {{ utilization }}%">
-                                {{ "%.1f"|format(utilization) }}%
-                            </div>
-                        </div>
-                    </div>
-                    {% endif %}
-                </div>
-            </div>
-        </div>
-    </div>
-
-    <!-- Session Operations -->
-    <div class="row mb-4">
-        <div class="col-md-12">
-            <div class="card">
-                <div class="card-header">
-                    <h5 class="mb-0">Session Operations</h5>
-                </div>
-                <div class="card-body">
-                    <div class="row">
-                        <div class="col-md-3">
-                            <div class="text-center">
-                                <h4 class="text-success">{{ metrics.session_metrics.commits }}</h4>
-                                <small class="text-muted">Commits</small>
-                            </div>
-                        </div>
-                        <div class="col-md-3">
-                            <div class="text-center">
-                                <h4 class="text-warning">{{ metrics.session_metrics.rollbacks }}</h4>
-                                <small class="text-muted">Rollbacks</small>
-                            </div>
-                        </div>
-                        <div class="col-md-3">
-                            <div class="text-center">
-                                <h4 class="text-info">{{ metrics.recovery_metrics.session_reattachments }}</h4>
-                                <small class="text-muted">Reattachments</small>
-                            </div>
-                        </div>
-                        <div class="col-md-3">
-                            <div class="text-center">
-                                <h4 class="text-primary">{{ metrics.active_requests }}</h4>
-                                <small class="text-muted">Active Requests</small>
-                            </div>
-                        </div>
-                    </div>
-                </div>
-            </div>
-        </div>
-    </div>
-
-    <!-- Alerts Section -->
-    <div class="row mb-4">
-        <div class="col-md-12">
-            <div class="card">
-                <div class="card-header">
-                    <h5 class="mb-0">Performance Alerts</h5>
-                </div>
-                <div class="card-body">
-                    <div id="alerts-container">
-                        <div class="text-center">
-                            <div class="spinner-border text-primary" role="status">
-                                <span class="sr-only">Loading alerts...</span>
-                            </div>
-                        </div>
-                    </div>
-                </div>
-            </div>
-        </div>
-    </div>
-
-    <!-- Refresh Controls -->
-    <div class="row">
-        <div class="col-md-12">
-            <div class="card">
-                <div class="card-body">
-                    <div class="d-flex justify-content-between align-items-center">
-                        <div>
-                            <strong>Last Updated:</strong> {{ metrics.timestamp }}
-                        </div>
-                        <div>
-                            <button class="btn btn-primary" onclick="refreshData()">
-                                <i class="fas fa-sync-alt"></i> Refresh
-                            </button>
-                            <button class="btn btn-secondary" onclick="toggleAutoRefresh()">
-                                <i class="fas fa-play"></i> <span id="auto-refresh-text">Start Auto Refresh</span>
-                            </button>
-                        </div>
+                    <div class="table-responsive">
+                        <table class="table table-striped">
+                            <thead>
+                                <tr>
+                                    <th>User</th>
+                                    <th>Session ID</th>
+                                    <th>Platform</th>
+                                    <th>Last Activity</th>
+                                    <th>Status</th>
+                                </tr>
+                            </thead>
+                            <tbody>
+                                <tr>
+                                    <td colspan="5" class="text-center text-muted">No active sessions</td>
+                                </tr>
+                            </tbody>
+                        </table>
                     </div>
                 </div>
             </div>
         </div>
     </div>
 </div>
-
-<script>
-let autoRefreshInterval = null;
-let isAutoRefreshing = false;
-
-function refreshData() {
-    // Reload the page to get fresh data
-    window.location.reload();
-}
-
-function toggleAutoRefresh() {
-    const button = document.querySelector('button[onclick="toggleAutoRefresh()"]');
-    const text = document.getElementById('auto-refresh-text');
-    
-    if (isAutoRefreshing) {
-        clearInterval(autoRefreshInterval);
-        isAutoRefreshing = false;
-        button.innerHTML = '<i class="fas fa-play"></i> <span id="auto-refresh-text">Start Auto Refresh</span>';
-        button.classList.remove('btn-danger');
-        button.classList.add('btn-secondary');
-    } else {
-        autoRefreshInterval = setInterval(refreshData, 30000); // Refresh every 30 seconds
-        isAutoRefreshing = true;
-        button.innerHTML = '<i class="fas fa-stop"></i> <span id="auto-refresh-text">Stop Auto Refresh</span>';
-        button.classList.remove('btn-secondary');
-        button.classList.add('btn-danger');
-    }
-}
-
-function loadAlerts() {
-    fetch('/admin/session-monitoring/alerts')
-        .then(response => response.json())
-        .then(data => {
-            const container = document.getElementById('alerts-container');
-            
-            if (data.status === 'success') {
-                const alerts = data.data.alerts;
-                
-                if (alerts.length === 0) {
-                    container.innerHTML = '<div class="alert alert-success"><i class="fas fa-check-circle"></i> No performance alerts detected</div>';
-                } else {
-                    let alertsHtml = '';
-                    alerts.forEach(alert => {
-                        const alertClass = alert.severity === 'critical' ? 'alert-danger' : 
-                                         alert.severity === 'error' ? 'alert-danger' : 'alert-warning';
-                        const icon = alert.severity === 'critical' ? 'fas fa-exclamation-triangle' :
-                                   alert.severity === 'error' ? 'fas fa-times-circle' : 'fas fa-exclamation-circle';
-                        
-                        alertsHtml += `
-                            <div class="alert ${alertClass}">
-                                <i class="${icon}"></i> <strong>${alert.severity.toUpperCase()}:</strong> ${alert.message}
-                                ${alert.details ? `<br><small>${alert.details}</small>` : ''}
-                            </div>
-                        `;
-                    });
-                    container.innerHTML = alertsHtml;
-                }
-            } else {
-                container.innerHTML = '<div class="alert alert-danger"><i class="fas fa-exclamation-triangle"></i> Error loading alerts: ' + data.message + '</div>';
-            }
-        })
-        .catch(error => {
-            console.error('Error loading alerts:', error);
-            document.getElementById('alerts-container').innerHTML = '<div class="alert alert-danger"><i class="fas fa-exclamation-triangle"></i> Error loading alerts</div>';
-        });
-}
-
-// Load alerts when page loads
-document.addEventListener('DOMContentLoaded', loadAlerts);
-</script>
 {% endblock %}

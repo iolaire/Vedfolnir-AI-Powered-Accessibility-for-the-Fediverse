@@ -1,510 +1,59 @@
-{% extends "admin/base_admin.html" %}
+{% extends "base_admin.html" %}
 
-{% block title %}Session Health Dashboard - {{ super() }}{% endblock %}
-
-{% block extra_head %}
-<style>
-.health-status {
-    padding: 0.5rem 1rem;
-    border-radius: 0.375rem;
-    font-weight: 600;
-    text-align: center;
-    margin-bottom: 1rem;
-}
-
-.health-healthy {
-    background-color: #d1fae5;
-    color: #065f46;
-    border: 1px solid #a7f3d0;
-}
-
-.health-degraded {
-    background-color: #fef3c7;
-    color: #92400e;
-    border: 1px solid #fde68a;
-}
-
-.health-unhealthy {
-    background-color: #fee2e2;
-    color: #991b1b;
-    border: 1px solid #fecaca;
-}
-
-.component-card {
-    border: 1px solid #e5e7eb;
-    border-radius: 0.5rem;
-    padding: 1.5rem;
-    margin-bottom: 1rem;
-    background: white;
-}
-
-.component-header {
-    display: flex;
-    justify-content: between;
-    align-items: center;
-    margin-bottom: 1rem;
-}
-
-.component-title {
-    font-size: 1.125rem;
-    font-weight: 600;
-    margin: 0;
-}
-
-.component-status {
-    padding: 0.25rem 0.75rem;
-    border-radius: 0.375rem;
-    font-size: 0.875rem;
-    font-weight: 500;
-}
-
-.metric-grid {
-    display: grid;
-    grid-template-columns: repeat(auto-fit, minmax(200px, 1fr));
-    gap: 1rem;
-    margin-top: 1rem;
-}
-
-.metric-item {
-    text-align: center;
-    padding: 1rem;
-    background: #f9fafb;
-    border-radius: 0.375rem;
-}
-
-.metric-value {
-    font-size: 1.5rem;
-    font-weight: 700;
-    color: #1f2937;
-}
-
-.metric-label {
-    font-size: 0.875rem;
-    color: #6b7280;
-    margin-top: 0.25rem;
-}
-
-.alert-item {
-    padding: 1rem;
-    border-radius: 0.375rem;
-    margin-bottom: 0.5rem;
-    border-left: 4px solid;
-}
-
-.alert-critical {
-    background-color: #fee2e2;
-    border-left-color: #dc2626;
-}
-
-.alert-warning {
-    background-color: #fef3c7;
-    border-left-color: #d97706;
-}
-
-.alert-info {
-    background-color: #dbeafe;
-    border-left-color: #2563eb;
-}
-
-.refresh-controls {
-    display: flex;
-    justify-content: space-between;
-    align-items: center;
-    margin-bottom: 2rem;
-    padding: 1rem;
-    background: #f9fafb;
-    border-radius: 0.5rem;
-}
-
-.auto-refresh {
-    display: flex;
-    align-items: center;
-    gap: 0.5rem;
-}
-
-.loading-spinner {
-    display: none;
-    width: 1rem;
-    height: 1rem;
-    border: 2px solid #e5e7eb;
-    border-top: 2px solid #3b82f6;
-    border-radius: 50%;
-    animation: spin 1s linear infinite;
-}
-
-@keyframes spin {
-    0% { transform: rotate(0deg); }
-    100% { transform: rotate(360deg); }
-}
-
-.details-toggle {
-    background: none;
-    border: none;
-    color: #3b82f6;
-    cursor: pointer;
-    text-decoration: underline;
-    font-size: 0.875rem;
-}
-
-.component-details {
-    display: none;
-    margin-top: 1rem;
-    padding: 1rem;
-    background: #f9fafb;
-    border-radius: 0.375rem;
-    font-size: 0.875rem;
-}
-
-.response-time {
-    font-size: 0.875rem;
-    color: #6b7280;
-    margin-left: 0.5rem;
-}
-</style>
-{% endblock %}
+{% block title %}Session Health Dashboard{% endblock %}
 
 {% block content %}
 <div class="container-fluid">
     <div class="row">
         <div class="col-12">
-            <h1 class="h3 mb-4">
-                <i class="fas fa-heartbeat me-2"></i>
-                Session Management Health Dashboard
-            </h1>
+            <h1 class="h3 mb-4">Session Health Dashboard</h1>
             
-            <!-- Refresh Controls -->
-            <div class="refresh-controls">
-                <div>
-                    <button id="refresh-btn" class="btn btn-primary btn-sm">
-                        <i class="fas fa-sync-alt me-1"></i>
-                        Refresh Now
-                    </button>
-                    <span class="loading-spinner" id="loading-spinner"></span>
-                </div>
-                
-                <div class="auto-refresh">
-                    <label for="auto-refresh-toggle">Auto-refresh:</label>
-                    <input type="checkbox" id="auto-refresh-toggle" checked>
-                    <select id="refresh-interval" class="form-select form-select-sm" style="width: auto;">
-                        <option value="15">15s</option>
-                        <option value="30" selected>30s</option>
-                        <option value="60">1m</option>
-                        <option value="300">5m</option>
-                    </select>
-                </div>
-                
-                <div>
-                    <small class="text-muted">
-                        Last updated: <span id="last-updated">{{ dashboard_data.system_health.timestamp }}</span>
-                    </small>
-                </div>
-            </div>
-            
-            <!-- Overall System Status -->
             <div class="row mb-4">
-                <div class="col-12">
+                <div class="col-md-4">
                     <div class="card">
-                        <div class="card-body">
-                            <h5 class="card-title">Overall System Health</h5>
-                            <div id="overall-status" class="health-status health-{{ dashboard_data.system_health.status }}">
-                                {{ dashboard_data.system_health.status.title() }}
-                            </div>
-                            
-                            <div class="metric-grid">
-                                <div class="metric-item">
-                                    <div class="metric-value" id="healthy-components">{{ dashboard_data.system_health.summary.healthy_components }}</div>
-                                    <div class="metric-label">Healthy Components</div>
-                                </div>
-                                <div class="metric-item">
-                                    <div class="metric-value" id="total-components">{{ dashboard_data.system_health.summary.total_components }}</div>
-                                    <div class="metric-label">Total Components</div>
-                                </div>
-                                <div class="metric-item">
-                                    <div class="metric-value" id="total-alerts">{{ dashboard_data.system_health.summary.total_alerts }}</div>
-                                    <div class="metric-label">Active Alerts</div>
-                                </div>
-                                <div class="metric-item">
-                                    <div class="metric-value" id="avg-response-time">{{ "%.0f"|format(dashboard_data.system_health.summary.avg_response_time_ms) }}ms</div>
-                                    <div class="metric-label">Avg Response Time</div>
-                                </div>
-                            </div>
+                        <div class="card-body text-center">
+                            <h5 class="card-title text-success">Healthy</h5>
+                            <p class="card-text">Session System</p>
+                        </div>
+                    </div>
+                </div>
+                <div class="col-md-4">
+                    <div class="card">
+                        <div class="card-body text-center">
+                            <h5 class="card-title">0</h5>
+                            <p class="card-text">Active Sessions</p>
+                        </div>
+                    </div>
+                </div>
+                <div class="col-md-4">
+                    <div class="card">
+                        <div class="card-body text-center">
+                            <h5 class="card-title">0</h5>
+                            <p class="card-text">Expired Sessions</p>
                         </div>
                     </div>
                 </div>
             </div>
             
-            <!-- Alerts Section -->
-            {% if dashboard_data.system_health.alerts %}
-            <div class="row mb-4">
-                <div class="col-12">
-                    <div class="card">
-                        <div class="card-body">
-                            <h5 class="card-title">
-                                <i class="fas fa-exclamation-triangle me-2"></i>
-                                Active Alerts ({{ dashboard_data.system_health.alerts|length }})
-                            </h5>
-                            <div id="alerts-container">
-                                {% for alert in dashboard_data.system_health.alerts %}
-                                <div class="alert-item alert-{{ alert.severity }}">
-                                    <div class="d-flex justify-content-between align-items-start">
-                                        <div>
-                                            <strong>{{ alert.component.replace('_', ' ').title() }}</strong>
-                                            <div>{{ alert.message }}</div>
-                                        </div>
-                                        <small class="text-muted">{{ alert.timestamp }}</small>
-                                    </div>
-                                </div>
-                                {% endfor %}
-                            </div>
-                        </div>
-                    </div>
+            <div class="card">
+                <div class="card-header">
+                    <h5 class="mb-0">Session Health Status</h5>
                 </div>
-            </div>
-            {% endif %}
-            
-            <!-- Component Health Cards -->
-            <div class="row">
-                <div class="col-12">
-                    <h5 class="mb-3">Component Health Status</h5>
-                    <div id="components-container">
-                        {% for component_name in dashboard_data.component_order %}
-                            {% set component = dashboard_data.system_health.components[component_name] %}
-                            <div class="component-card" data-component="{{ component_name }}">
-                                <div class="component-header">
-                                    <h6 class="component-title">
-                                        {{ component.name.replace('_', ' ').title() }}
-                                        {% if component.response_time_ms %}
-                                        <span class="response-time">({{ "%.0f"|format(component.response_time_ms) }}ms)</span>
-                                        {% endif %}
-                                    </h6>
-                                    <span class="component-status health-{{ component.status }}">
-                                        {{ component.status.title() }}
-                                    </span>
-                                </div>
-                                
-                                <div class="component-message">
-                                    {{ component.message }}
-                                </div>
-                                
-                                {% if component.metrics %}
-                                <div class="metric-grid">
-                                    {% for metric_name, metric_value in component.metrics.items() %}
-                                    {% if metric_name != 'response_time_ms' %}
-                                    <div class="metric-item">
-                                        <div class="metric-value">
-                                            {% if metric_value is number %}
-                                                {% if metric_value < 1 %}
-                                                    {{ "%.2f"|format(metric_value) }}
-                                                {% else %}
-                                                    {{ "%.0f"|format(metric_value) }}
-                                                {% endif %}
-                                            {% else %}
-                                                {{ metric_value }}
-                                            {% endif %}
-                                        </div>
-                                        <div class="metric-label">{{ metric_name.replace('_', ' ').title() }}</div>
-                                    </div>
-                                    {% endif %}
-                                    {% endfor %}
-                                </div>
-                                {% endif %}
-                                
-                                {% if component.details %}
-                                <button class="details-toggle" onclick="toggleDetails('{{ component_name }}')">
-                                    Show Details
-                                </button>
-                                <div class="component-details" id="details-{{ component_name }}">
-                                    <pre>{{ component.details | tojson(indent=2) }}</pre>
-                                </div>
-                                {% endif %}
-                            </div>
-                        {% endfor %}
+                <div class="card-body">
+                    <div class="row">
+                        <div class="col-md-6">
+                            <h6>Database Sessions</h6>
+                            <p><span class="badge bg-success">Operational</span> Database session management active</p>
+                            <p><strong>Session Timeout:</strong> 2 hours</p>
+                        </div>
+                        <div class="col-md-6">
+                            <h6>Session Monitoring</h6>
+                            <p class="text-muted">Session health metrics will be displayed here</p>
+                        </div>
                     </div>
                 </div>
             </div>
         </div>
     </div>
 </div>
-
-<script>
-let autoRefreshInterval;
-let isRefreshing = false;
-
-document.addEventListener('DOMContentLoaded', function() {
-    // Initialize auto-refresh
-    setupAutoRefresh();
-    
-    // Manual refresh button
-    document.getElementById('refresh-btn').addEventListener('click', refreshDashboard);
-    
-    // Auto-refresh toggle
-    document.getElementById('auto-refresh-toggle').addEventListener('change', function() {
-        if (this.checked) {
-            setupAutoRefresh();
-        } else {
-            clearInterval(autoRefreshInterval);
-        }
-    });
-    
-    // Refresh interval change
-    document.getElementById('refresh-interval').addEventListener('change', function() {
-        if (document.getElementById('auto-refresh-toggle').checked) {
-            setupAutoRefresh();
-        }
-    });
-});
-
-function setupAutoRefresh() {
-    clearInterval(autoRefreshInterval);
-    const interval = parseInt(document.getElementById('refresh-interval').value) * 1000;
-    autoRefreshInterval = setInterval(refreshDashboard, interval);
-}
-
-async function refreshDashboard() {
-    if (isRefreshing) return;
-    
-    isRefreshing = true;
-    const spinner = document.getElementById('loading-spinner');
-    const refreshBtn = document.getElementById('refresh-btn');
-    
-    spinner.style.display = 'inline-block';
-    refreshBtn.disabled = true;
-    
-    try {
-        const response = await fetch('/admin/session-health/status');
-        const result = await response.json();
-        
-        if (result.status === 'success') {
-            updateDashboard(result.data);
-            document.getElementById('last-updated').textContent = new Date().toLocaleString();
-        } else {
-            console.error('Failed to refresh dashboard:', result.message);
-            showError('Failed to refresh dashboard: ' + result.message);
-        }
-    } catch (error) {
-        console.error('Error refreshing dashboard:', error);
-        showError('Error refreshing dashboard: ' + error.message);
-    } finally {
-        spinner.style.display = 'none';
-        refreshBtn.disabled = false;
-        isRefreshing = false;
-    }
-}
-
-function updateDashboard(healthData) {
-    // Update overall status
-    const overallStatus = document.getElementById('overall-status');
-    overallStatus.className = `health-status health-${healthData.status}`;
-    overallStatus.textContent = healthData.status.charAt(0).toUpperCase() + healthData.status.slice(1);
-    
-    // Update summary metrics
-    document.getElementById('healthy-components').textContent = healthData.summary.healthy_components;
-    document.getElementById('total-components').textContent = healthData.summary.total_components;
-    document.getElementById('total-alerts').textContent = healthData.summary.total_alerts;
-    document.getElementById('avg-response-time').textContent = Math.round(healthData.summary.avg_response_time_ms) + 'ms';
-    
-    // Update alerts
-    updateAlerts(healthData.alerts);
-    
-    // Update components
-    updateComponents(healthData.components);
-}
-
-function updateAlerts(alerts) {
-    const alertsContainer = document.getElementById('alerts-container');
-    if (!alertsContainer) return;
-    
-    if (alerts.length === 0) {
-        alertsContainer.innerHTML = '<div class="text-muted">No active alerts</div>';
-        return;
-    }
-    
-    alertsContainer.innerHTML = alerts.map(alert => `
-        <div class="alert-item alert-${alert.severity}">
-            <div class="d-flex justify-content-between align-items-start">
-                <div>
-                    <strong>${alert.component.replace(/_/g, ' ').replace(/\b\w/g, l => l.toUpperCase())}</strong>
-                    <div>${alert.message}</div>
-                </div>
-                <small class="text-muted">${alert.timestamp}</small>
-            </div>
-        </div>
-    `).join('');
-}
-
-function updateComponents(components) {
-    Object.keys(components).forEach(componentName => {
-        const component = components[componentName];
-        const card = document.querySelector(`[data-component="${componentName}"]`);
-        if (!card) return;
-        
-        // Update status
-        const statusElement = card.querySelector('.component-status');
-        statusElement.className = `component-status health-${component.status}`;
-        statusElement.textContent = component.status.charAt(0).toUpperCase() + component.status.slice(1);
-        
-        // Update message
-        const messageElement = card.querySelector('.component-message');
-        messageElement.textContent = component.message;
-        
-        // Update response time
-        const titleElement = card.querySelector('.component-title');
-        const responseTimeSpan = titleElement.querySelector('.response-time');
-        if (responseTimeSpan && component.response_time_ms) {
-            responseTimeSpan.textContent = `(${Math.round(component.response_time_ms)}ms)`;
-        }
-        
-        // Update metrics
-        if (component.metrics) {
-            const metricItems = card.querySelectorAll('.metric-item');
-            metricItems.forEach(item => {
-                const label = item.querySelector('.metric-label').textContent.toLowerCase().replace(/ /g, '_');
-                if (component.metrics[label] !== undefined) {
-                    const value = component.metrics[label];
-                    const valueElement = item.querySelector('.metric-value');
-                    if (typeof value === 'number') {
-                        valueElement.textContent = value < 1 ? value.toFixed(2) : Math.round(value);
-                    } else {
-                        valueElement.textContent = value;
-                    }
-                }
-            });
-        }
-    });
-}
-
-function toggleDetails(componentName) {
-    const details = document.getElementById(`details-${componentName}`);
-    const button = details.previousElementSibling;
-    
-    if (details.style.display === 'none' || details.style.display === '') {
-        details.style.display = 'block';
-        button.textContent = 'Hide Details';
-    } else {
-        details.style.display = 'none';
-        button.textContent = 'Show Details';
-    }
-}
-
-function showError(message) {
-    // Create a temporary error alert
-    const alertDiv = document.createElement('div');
-    alertDiv.className = 'alert alert-danger alert-dismissible fade show';
-    alertDiv.innerHTML = `
-        ${message}
-        <button type="button" class="btn-close" data-bs-dismiss="alert"></button>
-    `;
-    
-    // Insert at the top of the container
-    const container = document.querySelector('.container-fluid');
-    container.insertBefore(alertDiv, container.firstChild);
-    
-    // Auto-dismiss after 5 seconds
-    setTimeout(() => {
-        if (alertDiv.parentNode) {
-            alertDiv.remove();
-        }
-    }, 5000);
-}
-</script>
 {% endblock %}

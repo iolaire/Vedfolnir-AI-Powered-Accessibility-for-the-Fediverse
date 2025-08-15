@@ -1,4 +1,4 @@
-{% extends "admin/base_admin.html" %}
+{% extends "base_admin.html" %}
 
 {% block title %}Admin Dashboard - Vedfolnir{% endblock %}
 
@@ -55,16 +55,28 @@
             <div class="card-body">
                 <div class="d-grid gap-2">
                     <a href="{{ url_for('admin.user_management') }}" class="btn btn-outline-primary">
-                        <i class="fas fa-users"></i> Manage Users
+                        <i class="bi bi-people"></i> Manage Users
                     </a>
                     <a href="{{ url_for('admin.health_dashboard') }}" class="btn btn-outline-success">
-                        <i class="fas fa-heartbeat"></i> System Health
+                        <i class="bi bi-heart-pulse"></i> System Health
+                    </a>
+                    <a href="{{ url_for('admin.csrf_security_dashboard') }}" class="btn btn-outline-info">
+                        <i class="bi bi-shield-check"></i> CSRF Security
+                    </a>
+                    <a href="{{ url_for('admin.security_audit_dashboard') }}" class="btn btn-outline-danger">
+                        <i class="bi bi-shield-exclamation"></i> Security Audit
+                    </a>
+                    <a href="{{ url_for('admin.session_health_dashboard') }}" class="btn btn-outline-secondary">
+                        <i class="bi bi-activity"></i> Session Health
+                    </a>
+                    <a href="{{ url_for('admin.session_monitoring_dashboard') }}" class="btn btn-outline-dark">
+                        <i class="bi bi-eye"></i> Session Monitoring
                     </a>
                     <a href="{{ url_for('admin.cleanup') }}" class="btn btn-outline-warning">
-                        <i class="fas fa-broom"></i> Data Cleanup
+                        <i class="bi bi-trash"></i> Data Cleanup
                     </a>
                     <a href="{{ url_for('admin.monitoring_dashboard') }}" class="btn btn-outline-info">
-                        <i class="fas fa-chart-line"></i> System Monitoring
+                        <i class="bi bi-graph-up"></i> System Monitoring
                     </a>
                 </div>
             </div>

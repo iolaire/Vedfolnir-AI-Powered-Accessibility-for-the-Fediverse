@@ -118,3 +118,43 @@ def register_routes(bp):
         except Exception as e:
             flash(f'Error loading health dashboard: {str(e)}', 'error')
             return redirect(url_for('admin.dashboard'))
+
+    @bp.route('/csrf_security_dashboard')
+    @login_required
+    @with_session_error_handling
+    def csrf_security_dashboard():
+        """CSRF Security Dashboard"""
+        if not current_user.role == UserRole.ADMIN:
+            flash('Access denied. Admin privileges required.', 'error')
+            return redirect(url_for('index'))
+        return render_template('csrf_security_dashboard.html')
+
+    @bp.route('/security_audit_dashboard')
+    @login_required
+    @with_session_error_handling
+    def security_audit_dashboard():
+        """Security Audit Dashboard"""
+        if not current_user.role == UserRole.ADMIN:
+            flash('Access denied. Admin privileges required.', 'error')
+            return redirect(url_for('index'))
+        return render_template('security_audit_dashboard.html')
+
+    @bp.route('/session_health_dashboard')
+    @login_required
+    @with_session_error_handling
+    def session_health_dashboard():
+        """Session Health Dashboard"""
+        if not current_user.role == UserRole.ADMIN:
+            flash('Access denied. Admin privileges required.', 'error')
+            return redirect(url_for('index'))
+        return render_template('session_health_dashboard.html')
+
+    @bp.route('/session_monitoring_dashboard')
+    @login_required
+    @with_session_error_handling
+    def session_monitoring_dashboard():
+        """Session Monitoring Dashboard"""
+        if not current_user.role == UserRole.ADMIN:
+            flash('Access denied. Admin privileges required.', 'error')
+            return redirect(url_for('index'))
+        return render_template('session_monitoring_dashboard.html')

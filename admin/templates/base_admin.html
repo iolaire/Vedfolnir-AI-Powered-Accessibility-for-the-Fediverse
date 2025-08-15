@@ -74,6 +74,26 @@
                             </a>
                         </li>
                         <li class="nav-item">
+                            <a class="nav-link" href="{{ url_for('admin.csrf_security_dashboard') }}">
+                                <i class="bi bi-shield-check"></i> CSRF Security
+                            </a>
+                        </li>
+                        <li class="nav-item">
+                            <a class="nav-link" href="{{ url_for('admin.security_audit_dashboard') }}">
+                                <i class="bi bi-shield-exclamation"></i> Security Audit
+                            </a>
+                        </li>
+                        <li class="nav-item">
+                            <a class="nav-link" href="{{ url_for('admin.session_health_dashboard') }}">
+                                <i class="bi bi-activity"></i> Session Health
+                            </a>
+                        </li>
+                        <li class="nav-item">
+                            <a class="nav-link" href="{{ url_for('admin.session_monitoring_dashboard') }}">
+                                <i class="bi bi-eye"></i> Session Monitoring
+                            </a>
+                        </li>
+                        <li class="nav-item">
                             <a class="nav-link" href="{{ url_for('admin.cleanup') }}">
                                 <i class="bi bi-trash"></i> Data Cleanup
                             </a>
