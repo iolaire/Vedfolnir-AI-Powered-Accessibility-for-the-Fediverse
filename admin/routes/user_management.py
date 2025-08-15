@@ -34,12 +34,14 @@ def register_routes(bp):
         
         edit_form = EditUserForm()
         delete_form = DeleteUserForm()
+        add_form = AddUserForm()
         
         return render_template('user_management.html', 
                               users=users, 
                               admin_count=admin_count,
                               edit_form=edit_form, 
-                              delete_form=delete_form)
+                              delete_form=delete_form,
+                              add_form=add_form)
 
     @bp.route('/users/edit', methods=['POST'])
     @login_required
@@ -124,12 +126,13 @@ def register_routes(bp):
             return jsonify({'success': False, 'error': 'Access denied'}), 403
             
         form = AddUserForm()
+        
         if form.validate_on_submit():
             db_manager = current_app.config['db_manager']
             user_service = UserService(db_manager)
             
             try:
-                user = user_service.create_user(
+                user_data = user_service.create_user(
                     username=form.username.data,
                     email=form.email.data,
                     password=form.password.data,
@@ -137,18 +140,11 @@ def register_routes(bp):
                     is_active=form.is_active.data
                 )
                 
-                if user:
-                    current_app.logger.info(f"Admin {sanitize_for_log(current_user.username)} created new user {sanitize_for_log(form.username.data)}")
+                if user_data:
                     return jsonify({
                         'success': True,
                         'message': f'User {form.username.data} created successfully',
-                        'user': {
-                            'id': user.id,
-                            'username': user.username,
-                            'email': user.email,
-                            'role': user.role.value,
-                            'is_active': user.is_active
-                        }
+                        'user': user_data
                     })
                 else:
                     return jsonify({'success': False, 'error': 'Failed to create user'}), 400

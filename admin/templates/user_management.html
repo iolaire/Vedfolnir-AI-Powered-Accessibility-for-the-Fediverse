@@ -162,34 +162,30 @@
                 <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
             </div>
             <form id="add-user-form">
+                {{ add_form.hidden_tag() }}
                 <div class="modal-body">
                     <div class="mb-3">
                         <label for="add_username" class="form-label">Username</label>
-                        <input type="text" class="form-control" id="add_username" name="username" required>
+                        {{ add_form.username(class="form-control", id="add_username") }}
                     </div>
                     <div class="mb-3">
                         <label for="add_email" class="form-label">Email</label>
-                        <input type="email" class="form-control" id="add_email" name="email" required>
+                        {{ add_form.email(class="form-control", id="add_email") }}
                     </div>
                     <div class="mb-3">
                         <label for="add_password" class="form-label">Password</label>
-                        <input type="password" class="form-control" id="add_password" name="password" required>
+                        {{ add_form.password(class="form-control", id="add_password") }}
                     </div>
                     <div class="mb-3">
                         <label for="add_confirm_password" class="form-label">Confirm Password</label>
-                        <input type="password" class="form-control" id="add_confirm_password" name="confirm_password" required>
+                        {{ add_form.confirm_password(class="form-control", id="add_confirm_password") }}
                     </div>
                     <div class="mb-3">
                         <label for="add_role" class="form-label">Role</label>
-                        <select class="form-select" id="add_role" name="role" required>
-                            <option value="viewer">Viewer</option>
-                            <option value="reviewer">Reviewer</option>
-                            <option value="moderator">Moderator</option>
-                            <option value="admin">Admin</option>
-                        </select>
+                        {{ add_form.role(class="form-select", id="add_role") }}
                     </div>
                     <div class="mb-3 form-check">
-                        <input type="checkbox" class="form-check-input" id="add_is_active" name="is_active" checked>
+                        {{ add_form.is_active(class="form-check-input", id="add_is_active") }}
                         <label class="form-check-label" for="add_is_active">Active</label>
                     </div>
                 </div>
@@ -237,21 +233,37 @@ document.addEventListener('DOMContentLoaded', function() {
                 return;
             }
             
+            // Handle checkbox - if not checked, FormData won't include it
+            const isActiveCheckbox = document.getElementById('add_is_active');
+            if (!isActiveCheckbox.checked) {
+                formData.set('is_active', 'false');
+            }
+            
             // Disable submit button
             submitBtn.disabled = true;
             submitBtn.innerHTML = '<i class="bi bi-hourglass-split"></i> Adding...';
             
-            // Get CSRF token and add to form data
-            window.csrfHandler.getCSRFToken().then(token => {
-                formData.append('csrf_token', token);
-                
-                // Use secure fetch with automatic CSRF handling
-                return window.csrfHandler.secureFetch('/api/add_user', {
-                    method: 'POST',
-                    body: formData
-                });
+            console.log('Submitting form data:', Object.fromEntries(formData));
+            
+            // Submit form data (CSRF token is already included by WTForms)
+            fetch('/admin/users/add', {
+                method: 'POST',
+                body: formData,
+                credentials: 'same-origin',
+                headers: {
+                    'X-Requested-With': 'XMLHttpRequest'
+                }
             })
-            .then(response => response.json())
+            .then(response => {
+                if (!response.ok) {
+                    console.error('Response not ok:', response.status, response.statusText);
+                    return response.text().then(text => {
+                        console.error('Response body:', text);
+                        throw new Error(`HTTP ${response.status}: ${response.statusText}`);
+                    });
+                }
+                return response.json();
+            })
             .then(data => {
                 if (data.success) {
                     // Show success message

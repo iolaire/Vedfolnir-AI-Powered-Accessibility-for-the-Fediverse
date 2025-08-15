@@ -31,8 +31,8 @@ class UserService:
             session.close()
     
     def create_user(self, username: str, email: str, password: str, 
-                   role: UserRole, is_active: bool = True) -> Optional[User]:
-        """Create a new user"""
+                   role: UserRole, is_active: bool = True) -> Optional[dict]:
+        """Create a new user and return user data dict"""
         session = self.db_manager.get_session()
         try:
             # Check for existing username/email
@@ -56,7 +56,17 @@ class UserService:
             
             session.add(user)
             session.commit()
-            return user
+            session.refresh(user)
+            
+            # Extract user data before session closes
+            user_data = {
+                'id': user.id,
+                'username': user.username,
+                'email': user.email,
+                'role': user.role.value,
+                'is_active': user.is_active
+            }
+            return user_data
             
         except SQLAlchemyError:
             session.rollback()
