@@ -121,7 +121,7 @@ class SessionErrorHandler:
         elif endpoint in ['review', 'batch_review']:
             # Review endpoints - try to recover or redirect to dashboard
             flash('Session issue detected while reviewing. Returning to dashboard.', 'warning')
-            return redirect(url_for('health_dashboard'))
+            return redirect(url_for('admin.health_dashboard'))
             
         elif endpoint and 'api' in endpoint:
             # API endpoints - return JSON error
@@ -218,7 +218,7 @@ class SessionErrorHandler:
             else:
                 try:
                     flash('Database connection issue. Please try again.', 'error')
-                    return redirect(url_for('health_dashboard') if current_user.is_authenticated else url_for('login'))
+                    return redirect(url_for('admin.health_dashboard') if current_user.is_authenticated else url_for('login'))
                 except Exception:
                     # url_for or flash failed - return simple error
                     return "Database connection issue. Please refresh the page.", 500
@@ -233,7 +233,7 @@ class SessionErrorHandler:
         else:
             try:
                 flash('A database error occurred. Please try again.', 'error')
-                return redirect(url_for('health_dashboard') if current_user.is_authenticated else url_for('login'))
+                return redirect(url_for('admin.health_dashboard') if current_user.is_authenticated else url_for('login'))
             except Exception:
                 # url_for or flash failed - return simple error
                 return "A database error occurred. Please refresh the page.", 500
@@ -385,7 +385,7 @@ def with_session_error_handling(f: Callable) -> Callable:
                 }), 500
             else:
                 flash('An unexpected error occurred. Please try again.', 'error')
-                return redirect(url_for('health_dashboard') if current_user.is_authenticated else url_for('login'))
+                return redirect(url_for('admin.health_dashboard') if current_user.is_authenticated else url_for('login'))
     
     return decorated_function
 

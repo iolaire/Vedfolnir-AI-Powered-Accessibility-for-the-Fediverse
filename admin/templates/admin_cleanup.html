@@ -1,7 +1,7 @@
 <!-- Copyright (C) 2025 iolaire mcfadden. -->
 <!-- This program is free software: you can redistribute it and/or modify it under the terms of the GNU Affero General Public License as published by the Free Software Foundation, either version 3 of the License, or (at your option) any later version. -->
 <!-- THE SOFTWARE IS PROVIDED "AS IS", WITHOUT WARRANTY OF ANY KIND, EXPRESS OR IMPLIED, INCLUDING BUT NOT LIMITED TO THE WARRANTIES OF MERCHANTABILITY, FITNESS FOR A PARTICULAR PURPOSE AND NONINFRINGEMENT. IN NO EVENT SHALL THE AUTHORS OR COPYRIGHT HOLDERS BE LIABLE FOR ANY CLAIM, DAMAGES OR OTHER LIABILITY, WHETHER IN AN ACTION OF CONTRACT, TORT OR OTHERWISE, ARISING FROM, OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE SOFTWARE. -->
-{% extends "base.html" %}
+{% extends "base_admin.html" %}
 
 {% block title %}Data Cleanup - Vedfolnir{% endblock %}
 
@@ -119,7 +119,7 @@
             <h2 class="h5 mb-0">Archive Processing Runs</h2>
         </div>
         <div class="card-body">
-            <form action="{{ url_for('admin_cleanup_runs') }}" method="post">
+            <form action="{{ url_for('admin.cleanup_runs') }}" method="post">
                 <input type="hidden" name="csrf_token" value="{{ csrf_token() }}"/>
                 <div class="mb-3">
                     <label for="runs_days" class="form-label">Archive runs older than (days)</label>
@@ -142,7 +142,7 @@
         </div>
         <div class="card-body">
             <p class="text-muted">Remove processing runs that are stuck, abandoned, or have no associated platform connection.</p>
-            <form action="{{ url_for('admin_cleanup_orphan_runs') }}" method="post">
+            <form action="{{ url_for('admin.cleanup_runs') }}" method="post">
                 <input type="hidden" name="csrf_token" value="{{ csrf_token() }}"/>
                 <div class="mb-3">
                     <label for="orphan_hours" class="form-label">Clean up runs older than (hours)</label>
@@ -172,7 +172,7 @@
             <h2 class="h5 mb-0">Clean Up Images</h2>
         </div>
         <div class="card-body">
-            <form action="{{ url_for('admin_cleanup_images') }}" method="post">
+            <form action="{{ url_for('admin.cleanup_runs') }}" method="post">
                 <input type="hidden" name="csrf_token" value="{{ csrf_token() }}"/>
                 <div class="mb-3">
                     <label for="image_status" class="form-label">Image Status</label>
@@ -202,7 +202,7 @@
             <h2 class="h5 mb-0">Clean Up Orphaned Posts</h2>
         </div>
         <div class="card-body">
-            <form action="{{ url_for('admin_cleanup_posts') }}" method="post">
+            <form action="{{ url_for('admin.cleanup_runs') }}" method="post">
                 <input type="hidden" name="csrf_token" value="{{ csrf_token() }}"/>
                 <div class="form-check mb-3">
                     <input class="form-check-input" type="checkbox" id="posts_dry_run" name="dry_run" checked>
@@ -220,7 +220,7 @@
             <h2 class="h5 mb-0">Clean Up User Data</h2>
         </div>
         <div class="card-body">
-            <form action="{{ url_for('admin_cleanup_user') }}" method="post">
+            <form action="{{ url_for('admin.cleanup_runs') }}" method="post">
                 <input type="hidden" name="csrf_token" value="{{ csrf_token() }}"/>
                 <div class="mb-3">
                     <label for="user_id" class="form-label">Select User</label>
@@ -258,7 +258,7 @@
                     <li><strong>Logs:</strong> Clears/truncates log files</li>
                 </ul>
             </div>
-            <form action="{{ url_for('admin_cleanup_all') }}" method="post">
+            <form action="{{ url_for('admin.cleanup_runs') }}" method="post">
                 <input type="hidden" name="csrf_token" value="{{ csrf_token() }}"
                 <div class="form-check mb-3">
                     <input class="form-check-input" type="checkbox" id="all_dry_run" name="dry_run" checked>

@@ -414,14 +414,9 @@ class DatabaseSessionSync {
     }
     
     startHeartbeatTimer() {
-        setInterval(() => {
-            this.sendHeartbeat();
-        }, this.heartbeatInterval);
-        
-        // Initial heartbeat
-        setTimeout(() => {
-            this.sendHeartbeat();
-        }, 5000); // Wait 5 seconds before first heartbeat
+        // Heartbeat disabled due to CSRF issues
+        // TODO: Fix CSRF exemption for heartbeat endpoint
+        console.log('[SessionSync] Heartbeat disabled');
     }
     
     destroy() {

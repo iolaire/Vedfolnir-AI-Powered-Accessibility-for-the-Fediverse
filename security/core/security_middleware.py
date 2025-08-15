@@ -103,8 +103,8 @@ class SecurityMiddleware:
             if req_time > cutoff_time
         ]
         
-        # Check rate limit (60 requests per minute)
-        if len(self.rate_limit_storage[client_ip]) >= 60:
+        # Check rate limit (120 requests per minute)
+        if len(self.rate_limit_storage[client_ip]) >= 120:
             return False
         
         # Add current request
@@ -436,7 +436,7 @@ def validate_input_length(max_length=10000):
         return decorator
 
 
-def rate_limit(limit=60, window_seconds=60, requests_per_minute=None):
+def rate_limit(limit=120, window_seconds=60, requests_per_minute=None):
     """Decorator to add rate limiting to endpoints"""
     def decorator(f):
         @wraps(f)

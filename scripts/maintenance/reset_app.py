@@ -247,7 +247,10 @@ class AppResetManager:
             "AUTH_ADMIN_USERNAME",
             "AUTH_ADMIN_EMAIL", 
             "AUTH_ADMIN_PASSWORD",
-            "PLATFORM_ENCRYPTION_KEY"
+            "PLATFORM_ENCRYPTION_KEY",
+            "SECURITY_CSRF_ENABLED",
+            "SECURITY_RATE_LIMITING_ENABLED",
+            "SECURITY_INPUT_VALIDATION_ENABLED"
         ]
         
         logger.info("\n🔐 Environment Variables:")

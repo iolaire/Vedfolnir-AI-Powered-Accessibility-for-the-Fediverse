@@ -201,17 +201,8 @@
                                     <i class="bi bi-person-gear me-2"></i>Profile & Settings
                                 </a></li>
                                 {% if current_user_safe and (current_user_safe.role_value == 'admin' or (current_user_safe.role and current_user_safe.role.value == 'admin')) %}
-                                <li><a class="dropdown-item" href="{{ url_for('user_management') }}">
-                                    <i class="bi bi-people me-2"></i>User Management
-                                </a></li>
-                                <li><a class="dropdown-item" href="{{ url_for('health_dashboard') }}">
-                                    <i class="bi bi-heart-pulse me-2"></i>System Health
-                                </a></li>
-                                <li><a class="dropdown-item" href="{{ url_for('admin_monitoring_dashboard') }}">
-                                    <i class="bi bi-speedometer2 me-2"></i>Monitoring Dashboard
-                                </a></li>
-                                <li><a class="dropdown-item" href="{{ url_for('admin_cleanup') }}">
-                                    <i class="bi bi-trash me-2"></i>Data Cleanup
+                                <li><a class="dropdown-item" href="{{ url_for('admin.dashboard') }}">
+                                    <i class="bi bi-shield-check me-2"></i>Site Administration
                                 </a></li>
                                 {% endif %}
                                 <li><hr class="dropdown-divider"></li>

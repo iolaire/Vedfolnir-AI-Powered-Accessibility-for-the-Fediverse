@@ -1,7 +1,7 @@
 <!-- Copyright (C) 2025 iolaire mcfadden. -->
 <!-- This program is free software: you can redistribute it and/or modify it under the terms of the GNU Affero General Public License as published by the Free Software Foundation, either version 3 of the License, or (at your option) any later version. -->
 <!-- THE SOFTWARE IS PROVIDED "AS IS", WITHOUT WARRANTY OF ANY KIND, EXPRESS OR IMPLIED, INCLUDING BUT NOT LIMITED TO THE WARRANTIES OF MERCHANTABILITY, FITNESS FOR A PARTICULAR PURPOSE AND NONINFRINGEMENT. IN NO EVENT SHALL THE AUTHORS OR COPYRIGHT HOLDERS BE LIABLE FOR ANY CLAIM, DAMAGES OR OTHER LIABILITY, WHETHER IN AN ACTION OF CONTRACT, TORT OR OTHERWISE, ARISING FROM, OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE SOFTWARE. -->
-{% extends "base.html" %}
+{% extends "base_admin.html" %}
 
 {% block title %}System Health Dashboard{% endblock %}
 
@@ -96,18 +96,16 @@
                         <div class="col-md-6">
                             <h6>Health Checks</h6>
                             <div class="d-flex flex-wrap gap-2">
-                                <a href="{{ url_for('health_check') }}" class="btn btn-sm btn-outline-primary" target="_blank">Basic Health Check</a>
-                                <a href="{{ url_for('health_check_detailed') }}" class="btn btn-sm btn-outline-info" target="_blank">Detailed Health Check</a>
+                                <a href="{{ url_for('admin.health_check') }}" class="btn btn-sm btn-outline-primary" target="_blank">Basic Health Check</a>
+                                <a href="{{ url_for('admin.health_check_detailed') }}" class="btn btn-sm btn-outline-info" target="_blank">Detailed Health Check</a>
                                 <button onclick="refreshHealthData()" class="btn btn-sm btn-outline-success">Refresh</button>
                             </div>
                         </div>
                         <div class="col-md-6">
-                            <h6>Component Checks</h6>
+                            <h6>System Status</h6>
                             <div class="d-flex flex-wrap gap-2">
-                                {% for component_name in health.components.keys() %}
-                                <a href="{{ url_for('health_check_component', component_name=component_name) }}" 
-                                   class="btn btn-sm btn-outline-secondary" target="_blank">{{ component_name.title() }}</a>
-                                {% endfor %}
+                                <span class="badge bg-{% if health.status.value == 'healthy' %}success{% elif health.status.value == 'degraded' %}warning{% else %}danger{% endif %}">{{ health.components|length }} Components</span>
+                                <span class="badge bg-info">{{ health.version or 'v1.0.0' }}</span>
                             </div>
                         </div>
                     </div>
@@ -123,18 +121,20 @@
                     <div class="row">
                         <div class="col-md-4">
                             <h6>Database</h6>
-                            {% if health.components.database.details %}
+                            {% if health.components.database and health.components.database.details %}
                             <ul class="list-unstyled">
                                 <li><small>Posts: {{ health.components.database.details.posts or 0 }}</small></li>
                                 <li><small>Images: {{ health.components.database.details.images or 0 }}</small></li>
                                 <li><small>Processing Runs: {{ health.components.database.details.processing_runs or 0 }}</small></li>
                                 <li><small>Recent Runs (24h): {{ health.components.database.details.recent_runs_24h or 0 }}</small></li>
                             </ul>
+                            {% else %}
+                            <p><small class="text-muted">Database info not available</small></p>
                             {% endif %}
                         </div>
                         <div class="col-md-4">
                             <h6>Storage</h6>
-                            {% if health.components.storage.details %}
+                            {% if health.components.storage and health.components.storage.details %}
                             <ul class="list-unstyled">
                                 <li><small>Stored Images: {{ health.components.storage.details.stored_images or 0 }}</small></li>
                                 {% if health.components.storage.details.images_disk_free_gb %}
@@ -144,11 +144,13 @@
                                 <li><small>DB Disk Free: {{ health.components.storage.details.db_disk_free_gb }}GB</small></li>
                                 {% endif %}
                             </ul>
+                            {% else %}
+                            <p><small class="text-muted">Storage info not available</small></p>
                             {% endif %}
                         </div>
                         <div class="col-md-4">
                             <h6>ActivityPub</h6>
-                            {% if health.components.activitypub.details %}
+                            {% if health.components.activitypub and health.components.activitypub.details %}
                             <ul class="list-unstyled">
                                 <li><small>Instance: {{ health.components.activitypub.details.instance_title or 'Unknown' }}</small></li>
                                 <li><small>Version: {{ health.components.activitypub.details.instance_version or 'Unknown' }}</small></li>
@@ -156,6 +158,8 @@
                                 <li><small>Users: {{ health.components.activitypub.details.user_count }}</small></li>
                                 {% endif %}
                             </ul>
+                            {% else %}
+                            <p><small class="text-muted">ActivityPub info not available</small></p>
                             {% endif %}
                         </div>
                     </div>

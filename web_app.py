@@ -4,6 +4,14 @@
 import os
 import asyncio
 from datetime import datetime, timedelta, timezone
+
+# Security feature toggles from environment
+CSRF_ENABLED = os.getenv('SECURITY_CSRF_ENABLED', 'true').lower() == 'true'
+RATE_LIMITING_ENABLED = os.getenv('SECURITY_RATE_LIMITING_ENABLED', 'true').lower() == 'true'
+INPUT_VALIDATION_ENABLED = os.getenv('SECURITY_INPUT_VALIDATION_ENABLED', 'true').lower() == 'true'
+SECURITY_HEADERS_ENABLED = os.getenv('SECURITY_HEADERS_ENABLED', 'true').lower() == 'true'
+SESSION_VALIDATION_ENABLED = os.getenv('SECURITY_SESSION_VALIDATION_ENABLED', 'true').lower() == 'true'
+ADMIN_CHECKS_ENABLED = os.getenv('SECURITY_ADMIN_CHECKS_ENABLED', 'true').lower() == 'true'
 from flask import Flask, render_template, request, jsonify, redirect, url_for, flash, send_from_directory, g, Response, make_response
 # Removed Flask-SocketIO import - using SSE instead
 from flask_wtf import FlaskForm
@@ -30,12 +38,13 @@ from session_aware_decorators import with_db_session, require_platform_context
 from security.core.security_utils import sanitize_for_log, sanitize_html_input
 from enhanced_input_validation import enhanced_input_validation, EnhancedInputValidator
 from security.core.security_middleware import SecurityMiddleware, require_https, validate_csrf_token, sanitize_filename, generate_secure_token, rate_limit, validate_input_length, require_secure_connection
+from security_decorators import conditional_rate_limit, conditional_validate_csrf_token, conditional_validate_input_length, conditional_enhanced_input_validation
 from security.core.security_config import security_config
 from security.features.caption_security import CaptionSecurityManager, caption_generation_auth_required, validate_task_access, caption_generation_rate_limit, validate_caption_settings_input, log_caption_security_event
 from error_recovery_manager import error_recovery_manager
 from web_caption_generation_service import WebCaptionGenerationService
 from caption_review_integration import CaptionReviewIntegration
-from admin_monitoring import AdminMonitoringService
+
 from security.logging.secure_error_handlers import register_secure_error_handlers
 # Removed WebSocketProgressHandler import - using SSE instead
 from progress_tracker import ProgressTracker
@@ -57,9 +66,14 @@ app.config['REMEMBER_COOKIE_DURATION'] = timedelta(seconds=config.auth.remember_
 
 
 
-# Initialize CSRF protection
-csrf = CSRFProtect()
-csrf.init_app(app)
+# Initialize CSRF protection (conditional)
+if CSRF_ENABLED:
+    csrf = CSRFProtect()
+    csrf.init_app(app)
+else:
+    app.config['WTF_CSRF_ENABLED'] = False
+    app.logger.warning("CSRF protection disabled - DO NOT USE IN PRODUCTION")
+    csrf = None
 
 # Exempt session heartbeat from CSRF protection
 # Note: CSRF exemptions are applied after route registration
@@ -90,42 +104,45 @@ if os.getenv('DISABLE_CSRF_FOR_TESTING', 'false').lower() == 'true':
     app.config['WTF_CSRF_ENABLED'] = False
     app.logger.warning("CSRF protection disabled for testing - DO NOT USE IN PRODUCTION")
 
-# Security headers middleware
-@app.after_request
-def add_security_headers(response):
-    """Add comprehensive security headers to all responses"""
-    # Prevent clickjacking
-    response.headers['X-Frame-Options'] = 'DENY'
-    
-    # Prevent MIME type sniffing
-    response.headers['X-Content-Type-Options'] = 'nosniff'
-    
-    # XSS protection
-    response.headers['X-XSS-Protection'] = '1; mode=block'
-    
-    # HTTPS enforcement (only in production)
-    if not app.debug:
-        response.headers['Strict-Transport-Security'] = 'max-age=31536000; includeSubDomains'
-    
-    # Content Security Policy
-    csp = (
-        "default-src 'self'; "
-        "script-src 'self' 'unsafe-inline' cdnjs.cloudflare.com https://cdn.jsdelivr.net https://cdn.socket.io; "
-        "style-src 'self' 'unsafe-inline' cdnjs.cloudflare.com cdn.jsdelivr.net fonts.googleapis.com; "
-        "font-src 'self' cdnjs.cloudflare.com cdn.jsdelivr.net fonts.gstatic.com; "
-        "img-src 'self' data: https:; "
-        "connect-src 'self' ws: wss:; "
-        "frame-ancestors 'none'"
-    )
-    response.headers['Content-Security-Policy'] = csp
-    
-    # Referrer policy
-    response.headers['Referrer-Policy'] = 'strict-origin-when-cross-origin'
-    
-    # Permissions policy
-    response.headers['Permissions-Policy'] = 'geolocation=(), microphone=(), camera=()'
-    
-    return response
+# Security headers middleware (conditional)
+if SECURITY_HEADERS_ENABLED:
+    @app.after_request
+    def add_security_headers(response):
+        """Add comprehensive security headers to all responses"""
+        # Prevent clickjacking
+        response.headers['X-Frame-Options'] = 'DENY'
+        
+        # Prevent MIME type sniffing
+        response.headers['X-Content-Type-Options'] = 'nosniff'
+        
+        # XSS protection
+        response.headers['X-XSS-Protection'] = '1; mode=block'
+        
+        # HTTPS enforcement (only in production)
+        if not app.debug:
+            response.headers['Strict-Transport-Security'] = 'max-age=31536000; includeSubDomains'
+        
+        # Content Security Policy
+        csp = (
+            "default-src 'self'; "
+            "script-src 'self' 'unsafe-inline' cdnjs.cloudflare.com https://cdn.jsdelivr.net https://kit.fontawesome.com https://ka-f.fontawesome.com; "
+            "style-src 'self' 'unsafe-inline' cdnjs.cloudflare.com cdn.jsdelivr.net fonts.googleapis.com https://ka-f.fontawesome.com; "
+            "font-src 'self' cdnjs.cloudflare.com cdn.jsdelivr.net fonts.gstatic.com https://ka-f.fontawesome.com; "
+            "img-src 'self' data: https:; "
+            "connect-src 'self' ws: wss:; "
+            "frame-ancestors 'none'"
+        )
+        response.headers['Content-Security-Policy'] = csp
+        
+        # Referrer policy
+        response.headers['Referrer-Policy'] = 'strict-origin-when-cross-origin'
+        
+        # Permissions policy
+        response.headers['Permissions-Policy'] = 'geolocation=(), microphone=(), camera=()'
+        
+        return response
+else:
+    app.logger.warning("Security headers disabled - DO NOT USE IN PRODUCTION")
 
 
 # Initialize database and quality manager
@@ -134,6 +151,7 @@ quality_manager = CaptionQualityManager()
 
 # Initialize health checker
 health_checker = HealthChecker(config, db_manager)
+app.config['health_checker'] = health_checker
 
 # Initialize unified session management system
 from unified_session_manager import UnifiedSessionManager
@@ -171,10 +189,7 @@ app.session_error_handler = session_error_handler
 from session_state_api import create_session_state_routes
 create_session_state_routes(app)
 
-# Exempt session heartbeat from CSRF protection (after routes are registered)
-csrf.exempt(app.view_functions['api_session_heartbeat'])
-csrf.exempt(app.view_functions['api_session_state'])
-csrf.exempt(app.view_functions['api_session_validate'])
+# Session endpoints are exempted from CSRF in their respective modules
 
 # Initialize session monitoring API routes
 from session_monitoring_api import create_session_monitoring_routes
@@ -268,13 +283,24 @@ detached_instance_handler = create_global_detached_instance_handler(app, request
 # Register comprehensive session error handlers
 register_session_error_handlers(app, request_session_manager, detached_instance_handler)
 
-# Initialize admin monitoring service
-admin_monitoring_service = AdminMonitoringService(db_manager)
 
-# Initialize WebSocket progress handler components
+
+# Initialize WebSocket progress handler components with proper resource management
 progress_tracker = ProgressTracker(db_manager)
 task_queue_manager = TaskQueueManager(db_manager)
-sse_progress_handler = SSEProgressHandler(db_manager, progress_tracker, task_queue_manager)
+
+# Initialize SSE progress handler with resource cleanup support
+try:
+    sse_progress_handler = SSEProgressHandler(db_manager, progress_tracker, task_queue_manager)
+except Exception as e:
+    app.logger.error(f"Failed to initialize SSE progress handler: {sanitize_for_log(str(e))}")
+    # Create a fallback handler to prevent application startup failure
+    class FallbackSSEHandler:
+        def create_event_stream(self, task_id):
+            yield 'data: {"type": "error", "message": "Progress streaming unavailable"}\n\n'
+        def cleanup(self):
+            pass
+    sse_progress_handler = FallbackSSEHandler()
 
 # Initialize Flask-Login
 login_manager = LoginManager()
@@ -394,7 +420,7 @@ def role_required(role):
                     logout_user()
                     return redirect(url_for('login'))
                 if not server_user.is_active:
-                    app.logger.warning(f"Inactive user attempted access: {server_user.username}")
+                    app.logger.warning(f"Inactive user attempted access: {sanitize_for_log(server_user.username)}")
                     flash('Your account has been deactivated.', 'error')
                     logout_user()
                     return redirect(url_for('login'))
@@ -406,11 +432,11 @@ def role_required(role):
                 
                 # Use server-side user data for role validation
                 if not server_user.has_permission(role):
-                    app.logger.warning(f"Access denied: user {server_user.username} (role: {server_user.role.value if server_user.role else 'None'}) attempted to access {role.value} resource")
+                    app.logger.warning(f"Access denied: user {sanitize_for_log(server_user.username)} (role: {sanitize_for_log(server_user.role.value if server_user.role else 'None')}) attempted to access {sanitize_for_log(role.value)} resource")
                     flash('You do not have permission to access this page.', 'error')
                     return redirect(url_for('index'))
                 
-                app.logger.debug(f"Access granted: user {server_user.username} has {role.value} permission")
+                app.logger.debug(f"Access granted: user {sanitize_for_log(server_user.username)} has {sanitize_for_log(role.value)} permission")
                 # Store validated user role in g for this request
                 g.validated_user_role = server_user.role
             except SQLAlchemyError as e:
@@ -437,8 +463,7 @@ def platform_required(f):
         
         if not context or not context.get('platform_connection_id'):
             # No platform context, check if user has any platforms
-            db_session = db_manager.get_session()
-            try:
+            with request_session_manager.session_scope() as db_session:
                 user_platforms = db_session.query(PlatformConnection).filter_by(
                     user_id=current_user.id,
                     is_active=True
@@ -450,8 +475,6 @@ def platform_required(f):
                 else:
                     flash('Please select a platform to continue.', 'warning')
                     return redirect(url_for('platform_management'))
-            finally:
-                db_session.close()
         
         return f(*args, **kwargs)
     return decorated_function
@@ -472,8 +495,7 @@ def platform_access_required(platform_type=None, instance_url=None):
                 return redirect(url_for('platform_management'))
             
             # Get current platform from database to avoid DetachedInstanceError
-            db_session = db_manager.get_session()
-            try:
+            with request_session_manager.session_scope() as db_session:
                 current_platform = db_session.query(PlatformConnection).filter_by(
                     id=context['platform_connection_id'],
                     user_id=current_user.id,
@@ -487,8 +509,6 @@ def platform_access_required(platform_type=None, instance_url=None):
                 # Extract platform data before closing session
                 platform_type_actual = current_platform.platform_type
                 instance_url_actual = current_platform.instance_url
-            finally:
-                db_session.close()
             
             # Validate platform type if specified
             if platform_type and platform_type_actual != platform_type:
@@ -510,13 +530,19 @@ def nl2br_filter(text):
     """Convert newlines to <br> tags"""
     if not text:
         return ""
-    return text.replace('\n', '<br>')
+    from markupsafe import escape, Markup
+    return Markup(escape(text).replace('\n', '<br>'))
 
 # Make UserRole available in all templates
 @app.context_processor
 def inject_user_role():
     """Make UserRole available in all templates"""
     return {'UserRole': UserRole}
+
+# Register admin blueprint
+from admin import create_admin_blueprint
+admin_bp = create_admin_blueprint(app)
+app.register_blueprint(admin_bp)
 
 class LoginForm(FlaskForm):
     """Form for user login"""
@@ -525,38 +551,7 @@ class LoginForm(FlaskForm):
     remember = BooleanField('Remember Me')
     submit = SubmitField('Login')
 
-class UserForm(FlaskForm):
-    """Base form for user management"""
-    username = StringField('Username', validators=[DataRequired(), Length(min=3, max=64)])
-    email = StringField('Email', validators=[DataRequired(), Email(), Length(max=120)])
-    password = PasswordField('Password')
-    confirm_password = PasswordField('Confirm Password', 
-                                    validators=[EqualTo('password', message='Passwords must match')])
-    role = SelectField('Role', choices=[(role.value, role.value.capitalize()) for role in UserRole])
 
-
-
-class EditUserForm(UserForm):
-    """Form for editing an existing user"""
-    user_id = HiddenField('User ID')
-    is_active = BooleanField('Active')
-    submit = SubmitField('Save Changes')
-
-class DeleteUserForm(FlaskForm):
-    """Form for deleting a user"""
-    user_id = HiddenField('User ID', validators=[DataRequired()])
-    submit = SubmitField('Delete User')
-
-class AddUserForm(FlaskForm):
-    """Form for adding a new user"""
-    username = StringField('Username', validators=[DataRequired(), Length(min=3, max=64)])
-    email = StringField('Email', validators=[DataRequired(), Email(), Length(max=120)])
-    password = PasswordField('Password', validators=[DataRequired(), Length(min=6)])
-    confirm_password = PasswordField('Confirm Password', 
-                                    validators=[DataRequired(), EqualTo('password', message='Passwords must match')])
-    role = SelectField('Role', choices=[(role.value, role.value.capitalize()) for role in UserRole], validators=[DataRequired()])
-    is_active = BooleanField('Active', default=True)
-    submit = SubmitField('Add User')
 
 class ReviewForm(FlaskForm):
     """Form for reviewing image captions"""
@@ -573,8 +568,8 @@ class ReviewForm(FlaskForm):
 
 # Authentication routes
 @app.route('/login', methods=['GET', 'POST'])
-@rate_limit(limit=10, window_seconds=300)  # 10 attempts per 5 minutes
-@validate_input_length()
+@conditional_rate_limit(limit=10, window_seconds=300)  # 10 attempts per 5 minutes
+@conditional_validate_input_length()
 @with_session_error_handling
 def login():
     """User login with database session management only"""
@@ -628,8 +623,6 @@ def login():
                     if user.role == UserRole.ADMIN:
                         # Create database session for admin without platform context
                         try:
-                            from unified_session_manager import UnifiedSessionManager
-                            unified_session_manager = UnifiedSessionManager(db_manager)
                             session_id = unified_session_manager.create_session(user_id, None)  # No platform for admin
                             
                             if session_id:
@@ -639,14 +632,7 @@ def login():
                                     else url_for('index')
                                 ))
                                 
-                                # Get cookie manager from app config
-                                cookie_manager = getattr(app, 'session_cookie_manager', None)
-                                if not cookie_manager:
-                                    from session_cookie_manager import create_session_cookie_manager
-                                    cookie_manager = create_session_cookie_manager(app.config)
-                                    app.session_cookie_manager = cookie_manager
-                                
-                                cookie_manager.set_session_cookie(response, session_id)
+                                session_cookie_manager.set_session_cookie(response, session_id)
                                 
                                 # Welcome message for admin
                                 flash(f'Welcome back, {username}! Admin access granted.', 'success')
@@ -661,9 +647,24 @@ def login():
                             flash('Login failed due to session error. Please try again.', 'error')
                     
                     elif not platform_data:
-                        # First-time user - redirect to platform setup
-                        flash('Welcome! Please set up your first platform connection to get started.', 'info')
-                        return redirect(url_for('first_time_setup'))
+                        # Create database session without platform for first-time users
+                        try:
+                            session_id = unified_session_manager.create_session(user_id, None)  # No platform
+                            
+                            if session_id:
+                                response = make_response(redirect(url_for('first_time_setup')))
+                                session_cookie_manager.set_session_cookie(response, session_id)
+                                
+                                flash('Welcome! Please set up your first platform connection to get started.', 'info')
+                                app.logger.info(f"Created database session {sanitize_for_log(session_id)} for new user {sanitize_for_log(username)}")
+                                
+                                return response
+                            else:
+                                app.logger.error(f"Failed to create database session for new user {sanitize_for_log(username)}")
+                                flash('Login failed. Please try again.', 'error')
+                        except Exception as e:
+                            app.logger.error(f"Error creating database session for new user: {sanitize_for_log(str(e))}")
+                            flash('Login failed due to session error. Please try again.', 'error')
                     
                     else:
                         # Create database session with default platform using extracted data
@@ -678,8 +679,6 @@ def login():
                                 db_session.commit()
                             
                             # Create database session record with platform context using unified session manager
-                            from unified_session_manager import UnifiedSessionManager
-                            unified_session_manager = UnifiedSessionManager(db_manager)
                             session_id = unified_session_manager.create_session(user_id, default_platform['id'])
                             
                             if session_id:
@@ -689,14 +688,7 @@ def login():
                                     else url_for('index')
                                 ))
                                 
-                                # Get cookie manager from app config
-                                cookie_manager = getattr(app, 'session_cookie_manager', None)
-                                if not cookie_manager:
-                                    from session_cookie_manager import create_session_cookie_manager
-                                    cookie_manager = create_session_cookie_manager(app.config)
-                                    app.session_cookie_manager = cookie_manager
-                                
-                                cookie_manager.set_session_cookie(response, session_id)
+                                session_cookie_manager.set_session_cookie(response, session_id)
                                 
                                 # Welcome message with platform info
                                 flash(f'Welcome back! Connected to {default_platform["name"]} ({default_platform["platform_type"].title()})', 'success')
@@ -834,445 +826,8 @@ def logout_all():
 
 
 
-@app.route('/user_management')
-@login_required
-@role_required(UserRole.ADMIN)
-@with_session_error_handling
-def user_management():
-    """User management interface"""
-    session = db_manager.get_session()
-    try:
-        users = session.query(User).all()
-        
-        # Count admin users to prevent deletion of last admin
-        admin_count = session.query(User).filter_by(role=UserRole.ADMIN, is_active=True).count()
-        
-        # Create forms for user management
-        edit_form = EditUserForm()
-        delete_form = DeleteUserForm()
-        
-        return render_template('user_management.html', 
-                              users=users, 
-                              admin_count=admin_count,
-                              edit_form=edit_form, 
-                              delete_form=delete_form)
-    finally:
-        session.close()
-
-@app.route('/test_post', methods=['POST'])
-def test_post():
-    print("TEST POST ROUTE HIT")
-    return "POST works"
-
-
-
-@app.route('/edit_user', methods=['POST'])
-@login_required
-@role_required(UserRole.ADMIN)
-@validate_input_length()
-@enhanced_input_validation
-@with_session_error_handling
-def edit_user():
-    """Edit an existing user"""
-    form = EditUserForm()
-    if form.validate_on_submit():
-        session = db_manager.get_session()
-        try:
-            user = session.query(User).get(form.user_id.data)
-            if not user:
-                flash('User not found', 'error')
-                return redirect(url_for('user_management'))
-            
-            # Check if username or email already exists for another user
-            existing_user = session.query(User).filter(
-                ((User.username == form.username.data) | (User.email == form.email.data)) &
-                (User.id != user.id)
-            ).first()
-            
-            if existing_user:
-                if existing_user.username == form.username.data:
-                    flash(f'Username {form.username.data} is already taken', 'error')
-                else:
-                    flash(f'Email {form.email.data} is already registered', 'error')
-                return redirect(url_for('user_management'))
-            
-            # Update user
-            user.username = form.username.data
-            user.email = form.email.data
-            user.role = UserRole(form.role.data)
-            user.is_active = form.is_active.data
-            
-            # Update password if provided
-            if form.password.data:
-                user.set_password(form.password.data)
-            
-            session.commit()
-            flash(f'User {form.username.data} updated successfully', 'success')
-        except SQLAlchemyError as e:
-            session.rollback()
-            app.logger.error(f"Database error updating user: {sanitize_for_log(str(e))}")
-            flash('Database error updating user', 'error')
-        except (ValueError, TypeError) as e:
-            session.rollback()
-            flash(f'Validation error: {sanitize_for_log(str(e))}', 'error')
-        except Exception as e:
-            session.rollback()
-            app.logger.error(f"Unexpected error updating user: {sanitize_for_log(str(e))}")
-            flash('An unexpected error occurred while updating the user', 'error')
-        finally:
-            session.close()
-    else:
-        for field, errors in form.errors.items():
-            for error in errors:
-                flash(f'{field}: {error}', 'error')
-    
-    return redirect(url_for('user_management'))
-
-@app.route('/delete_user', methods=['POST'])
-@login_required
-@role_required(UserRole.ADMIN)
-@with_session_error_handling
-def delete_user():
-    """Delete a user"""
-    form = DeleteUserForm()
-    if form.validate_on_submit():
-        # Prevent deleting yourself
-        if int(form.user_id.data) == current_user.id:
-            flash('You cannot delete your own account', 'error')
-            return redirect(url_for('user_management'))
-        
-        session = db_manager.get_session()
-        try:
-            user = session.query(User).get(form.user_id.data)
-            if user:
-                username = user.username
-                session.delete(user)
-                session.commit()
-                flash(f'User {username} deleted successfully', 'success')
-            else:
-                flash('User not found', 'error')
-        except SQLAlchemyError as e:
-            session.rollback()
-            app.logger.error(f"Database error deleting user: {sanitize_for_log(str(e))}")
-            flash('Database error deleting user', 'error')
-        except Exception as e:
-            session.rollback()
-            app.logger.error(f"Unexpected error deleting user: {sanitize_for_log(str(e))}")
-            flash('An unexpected error occurred while deleting the user', 'error')
-        finally:
-            session.close()
-    
-    return redirect(url_for('user_management'))
-
-@app.route('/api/add_user', methods=['POST'])
-@login_required
-@role_required(UserRole.ADMIN)
-@validate_csrf_token
-@rate_limit(limit=10, window_seconds=60)
-@validate_input_length()
-@enhanced_input_validation
-@with_session_error_handling
-def api_add_user():
-    """API endpoint for adding a new user"""
-    try:
-        # Get form data
-        username = request.form.get('username', '').strip()
-        email = request.form.get('email', '').strip()
-        password = request.form.get('password', '')
-        confirm_password = request.form.get('confirm_password', '')
-        role_str = request.form.get('role', '').strip()
-        is_active = request.form.get('is_active') == 'on'
-        
-        # Validate required fields
-        if not username or not email or not password or not role_str:
-            return jsonify({'success': False, 'error': 'All fields are required'}), 400
-        
-        # Validate username length
-        if len(username) < 3 or len(username) > 64:
-            return jsonify({'success': False, 'error': 'Username must be between 3 and 64 characters'}), 400
-        
-        # Validate email format
-        if '@' not in email or len(email) > 120:
-            return jsonify({'success': False, 'error': 'Invalid email address'}), 400
-        
-        # Validate password length
-        if len(password) < 6:
-            return jsonify({'success': False, 'error': 'Password must be at least 6 characters'}), 400
-        
-        # Validate passwords match
-        if password != confirm_password:
-            return jsonify({'success': False, 'error': 'Passwords do not match'}), 400
-        
-        # Validate role
-        try:
-            role = UserRole(role_str)
-        except ValueError:
-            return jsonify({'success': False, 'error': 'Invalid role'}), 400
-        
-        session = db_manager.get_session()
-        try:
-            # Check if username already exists
-            existing_user = session.query(User).filter_by(username=username).first()
-            if existing_user:
-                return jsonify({'success': False, 'error': f'Username {username} already exists'}), 400
-            
-            # Check if email already exists
-            existing_email = session.query(User).filter_by(email=email).first()
-            if existing_email:
-                return jsonify({'success': False, 'error': f'Email {email} is already registered'}), 400
-            
-            # Create new user
-            new_user = User(
-                username=username,
-                email=email,
-                role=role,
-                is_active=is_active
-            )
-            new_user.set_password(password)
-            
-            session.add(new_user)
-            session.commit()
-            
-            app.logger.info(f"Admin {sanitize_for_log(current_user.username)} created new user {sanitize_for_log(username)} with role {sanitize_for_log(role.value)}")
-            
-            return jsonify({
-                'success': True,
-                'message': f'User {username} created successfully',
-                'user': {
-                    'id': new_user.id,
-                    'username': new_user.username,
-                    'email': new_user.email,
-                    'role': new_user.role.value,
-                    'is_active': new_user.is_active
-                }
-            })
-            
-        except SQLAlchemyError as e:
-            session.rollback()
-            app.logger.error(f"Database error creating user: {sanitize_for_log(str(e))}")
-            return jsonify({'success': False, 'error': 'Database error creating user'}), 500
-        except Exception as e:
-            session.rollback()
-            app.logger.error(f"Unexpected error creating user: {sanitize_for_log(str(e))}")
-            return jsonify({'success': False, 'error': 'An unexpected error occurred'}), 500
-        finally:
-            session.close()
-            
-    except Exception as e:
-        app.logger.error(f"Error in add_user API: {sanitize_for_log(str(e))}")
-        return jsonify({'success': False, 'error': 'Failed to add user'}), 500
-
-# Health check endpoints
-@app.route('/health')
-@login_required
-@role_required(UserRole.ADMIN)
-@with_session_error_handling
-def health_check():
-    """Basic health check endpoint"""
-    try:
-        # Simple health check - just verify we can connect to database
-        session = db_manager.get_session()
-        try:
-            from sqlalchemy import text
-            session.execute(text("SELECT 1"))
-            return jsonify({
-                'status': 'healthy',
-                'timestamp': datetime.now(timezone.utc).isoformat(),
-                'service': 'vedfolnir'
-            }), 200
-        finally:
-            session.close()
-    except Exception as e:
-        return jsonify({
-            'status': 'unhealthy',
-            'timestamp': datetime.now(timezone.utc).isoformat(),
-            'service': 'vedfolnir',
-            'error': str(e)
-        }), 503
-
-@app.route('/health/detailed')
-@login_required
-@role_required(UserRole.ADMIN)
-@with_session_error_handling
-def health_check_detailed():
-    """Detailed health check endpoint including session management"""
-    try:
-        # Run comprehensive health check with proper resource management
-        loop = asyncio.new_event_loop()
-        try:
-            asyncio.set_event_loop(loop)
-            system_health = loop.run_until_complete(health_checker.check_system_health())
-        except Exception as e:
-            app.logger.error(f"Health check failed: {sanitize_for_log(str(e))}")
-            raise
-        finally:
-            try:
-                loop.close()
-            except Exception as e:
-                app.logger.warning(f"Error closing event loop: {sanitize_for_log(str(e))}")
-        
-        # Add session management health check
-        session_health = None
-        try:
-            session_health_checker = app.config.get('session_health_checker')
-            if session_health_checker:
-                session_system_health = session_health_checker.check_comprehensive_session_health()
-                session_health = session_health_checker.to_dict(session_system_health)
-        except Exception as e:
-            app.logger.error(f"Session health check failed: {sanitize_for_log(str(e))}")
-            session_health = {
-                'status': 'unhealthy',
-                'error': f'Session health check failed: {str(e)}'
-            }
-        
-        # Convert to dictionary for JSON response
-        health_dict = health_checker.to_dict(system_health)
-        
-        # Add session health to response
-        if session_health:
-            health_dict['session_management'] = session_health
-        
-        # Return appropriate HTTP status code based on health
-        status_code = 200
-        if system_health.status.value == 'unhealthy':
-            status_code = 503
-        elif system_health.status.value == 'degraded':
-            status_code = 200  # Still operational, but with issues
-        
-        # Check session health status too
-        if session_health and session_health.get('status') == 'unhealthy':
-            status_code = 503
-        
-        return jsonify(health_dict), status_code
-        
-    except Exception as e:
-        return jsonify({
-            'status': 'unhealthy',
-            'timestamp': datetime.now(timezone.utc).isoformat(),
-            'service': 'vedfolnir',
-            'error': f'Health check failed: {str(e)}'
-        }), 503
-
-@app.route('/health/dashboard')
-@login_required
-@role_required(UserRole.ADMIN)
-@with_session_error_handling
-def health_dashboard():
-    """Health dashboard for system administrators"""
-    try:
-        # Run comprehensive health check with proper resource management
-        loop = asyncio.new_event_loop()
-        try:
-            asyncio.set_event_loop(loop)
-            system_health = loop.run_until_complete(health_checker.check_system_health())
-        except Exception as e:
-            app.logger.error(f"Health dashboard check failed: {sanitize_for_log(str(e))}")
-            raise
-        finally:
-            try:
-                loop.close()
-            except Exception as e:
-                app.logger.warning(f"Error closing event loop: {sanitize_for_log(str(e))}")
-        
-        # Get session management health
-        session_health = None
-        session_alerts = []
-        try:
-            session_health_checker = app.config.get('session_health_checker')
-            session_alerting_system = app.config.get('session_alerting_system')
-            
-            if session_health_checker:
-                session_system_health = session_health_checker.check_comprehensive_session_health()
-                session_health = session_health_checker.to_dict(session_system_health)
-            
-            if session_alerting_system:
-                # Check for new alerts
-                session_alerting_system.check_alerts()
-                session_alerts = session_alerting_system.get_active_alerts()
-        except Exception as e:
-            app.logger.error(f"Error getting session health for dashboard: {sanitize_for_log(str(e))}")
-        
-        # Get error statistics for admin dashboard
-        try:
-            error_stats = error_recovery_manager.get_error_statistics()
-            admin_notifications = error_recovery_manager.get_admin_notifications(unread_only=True)
-        except Exception as e:
-            app.logger.error(f"Error getting error statistics for dashboard: {sanitize_for_log(str(e))}")
-            error_stats = {'total_errors': 0}
-            admin_notifications = []
-        
-        return render_template('health_dashboard.html', 
-                             health=system_health,
-                             session_health=session_health,
-                             session_alerts=session_alerts,
-                             error_stats=error_stats,
-                             admin_notifications=admin_notifications)
-        
-    except Exception as e:
-        flash(f'Error loading health dashboard: {str(e)}', 'error')
-        return redirect(url_for('index'))
-
-@app.route('/health/components/<component_name>')
-@login_required
-@role_required(UserRole.ADMIN)
-@with_session_error_handling
-def health_check_component(component_name):
-    """Health check for a specific component"""
-    try:
-        # Map component names to health check methods
-        component_checks = {
-            'database': health_checker.check_database_health,
-            'ollama': health_checker.check_ollama_health,
-            'activitypub': health_checker.check_activitypub_health,
-            'storage': health_checker.check_storage_health
-        }
-        
-        if component_name not in component_checks:
-            return jsonify({
-                'error': f'Unknown component: {component_name}',
-                'available_components': list(component_checks.keys())
-            }), 404
-        
-        # Run specific component health check with proper resource management
-        loop = asyncio.new_event_loop()
-        try:
-            asyncio.set_event_loop(loop)
-            component_health = loop.run_until_complete(component_checks[component_name]())
-        except Exception as e:
-            app.logger.error(f"Component health check failed for {component_name}: {sanitize_for_log(str(e))}")
-            raise
-        finally:
-            try:
-                loop.close()
-            except Exception as e:
-                app.logger.warning(f"Error closing event loop: {sanitize_for_log(str(e))}")
-        
-        # Convert to dictionary
-        health_dict = {
-            'name': component_health.name,
-            'status': component_health.status.value,
-            'message': component_health.message,
-            'response_time_ms': component_health.response_time_ms,
-            'last_check': component_health.last_check.isoformat() if component_health.last_check else None,
-            'details': component_health.details
-        }
-        
-        # Return appropriate HTTP status code
-        status_code = 200
-        if component_health.status.value == 'unhealthy':
-            status_code = 503
-        elif component_health.status.value == 'degraded':
-            status_code = 200
-        
-        return jsonify(health_dict), status_code
-        
-    except Exception as e:
-        return jsonify({
-            'component': component_name,
-            'status': 'unhealthy',
-            'error': f'Component health check failed: {str(e)}',
-            'timestamp': datetime.now(timezone.utc).isoformat()
-        }), 503
+# Legacy routes - now handled by admin blueprint
+# These routes are kept for backward compatibility but should use /admin/ URLs
 
 
 
@@ -1341,237 +896,22 @@ def index():
         flash('Error loading dashboard. Please try again.', 'error')
         return redirect(url_for('platform_management'))
 
-@app.route('/admin/cleanup')
-@login_required
-@role_required(UserRole.ADMIN)
-@with_session_error_handling
-def admin_cleanup():
-    """Admin interface for data cleanup"""
-    from scripts.maintenance.data_cleanup import DataCleanupManager
-    
-    # Get database statistics
-    stats = db_manager.get_processing_stats()
-    
-    # Add processing runs count
-    session = db_manager.get_session()
-    try:
-        stats['processing_runs'] = session.query(ProcessingRun).count()
-        
-        # Get list of unique user IDs from posts
-        users = session.query(Post.user_id).distinct().all()
-        user_ids = [user[0] for user in users if user[0]]
-        
-        # Get post counts for each user
-        user_stats = []
-        for user_id in user_ids:
-            post_count = session.query(Post).filter(Post.user_id == user_id).count()
-            image_count = session.query(Image).join(Post).filter(Post.user_id == user_id).count()
-            user_stats.append({
-                'user_id': user_id,
-                'post_count': post_count,
-                'image_count': image_count
-            })
-    finally:
-        session.close()
-    
-    # Get retention configuration
-    cleanup_manager = DataCleanupManager(db_manager, config)
-    retention = cleanup_manager.default_retention
-    
-    return render_template('admin_cleanup.html', stats=stats, retention=retention, users=user_stats)
+# Admin cleanup routes are handled by the admin blueprint at /admin/cleanup
 
-@app.route('/admin/cleanup/runs', methods=['POST'])
-@login_required
-@role_required(UserRole.ADMIN)
-@with_session_error_handling
-def admin_cleanup_runs():
-    """Archive old processing runs"""
-    from scripts.maintenance.data_cleanup import DataCleanupManager
-    
-    days = request.form.get('days', type=int)
-    dry_run = 'dry_run' in request.form
-    
-    if not days or days < 1:
-        flash('Invalid number of days', 'danger')
-        return redirect(url_for('admin_cleanup'))
-    
-    cleanup_manager = DataCleanupManager(db_manager, config)
-    try:
-        count = cleanup_manager.archive_old_processing_runs(days=days, dry_run=dry_run)
-        
-        if dry_run:
-            flash(f'Dry run: Would archive {count} processing runs older than {days} days', 'info')
-        else:
-            flash(f'Successfully archived {count} processing runs older than {days} days', 'success')
-    except Exception as e:
-        flash(f'Error archiving processing runs: {str(e)}', 'danger')
-    
-    return redirect(url_for('admin_cleanup'))
-
-@app.route('/admin/cleanup/images', methods=['POST'])
-@login_required
-@role_required(UserRole.ADMIN)
-@with_session_error_handling
-def admin_cleanup_images():
-    """Clean up old images"""
-    from scripts.maintenance.data_cleanup import DataCleanupManager
-    
-    status_str = request.form.get('status')
-    days = request.form.get('days', type=int)
-    dry_run = 'dry_run' in request.form
-    
-    if not days or days < 1:
-        flash('Invalid number of days', 'danger')
-        return redirect(url_for('admin_cleanup'))
-    
-    # Map status string to ProcessingStatus enum
-    status_map = {
-        'rejected': ProcessingStatus.REJECTED,
-        'posted': ProcessingStatus.POSTED,
-        'error': ProcessingStatus.ERROR
-    }
-    
-    status = status_map.get(status_str)
-    if not status:
-        flash('Invalid status', 'danger')
-        return redirect(url_for('admin_cleanup'))
-    
-    cleanup_manager = DataCleanupManager(db_manager, config)
-    try:
-        count = cleanup_manager.cleanup_old_images(status=status, days=days, dry_run=dry_run)
-        
-        if dry_run:
-            flash(f'Dry run: Would clean up {count} {status.value} images older than {days} days', 'info')
-        else:
-            flash(f'Successfully cleaned up {count} {status.value} images older than {days} days', 'success')
-    except ValueError as e:
-        flash(f'Invalid parameters: {sanitize_for_log(str(e))}', 'danger')
-    except Exception as e:
-        logger.error(f"Unexpected error cleaning up images: {sanitize_for_log(str(e))}")
-        flash('An unexpected error occurred during cleanup', 'danger')
-    
-    return redirect(url_for('admin_cleanup'))
-
-@app.route('/admin/cleanup/posts', methods=['POST'])
-@login_required
-@role_required(UserRole.ADMIN)
-@with_session_error_handling
-def admin_cleanup_posts():
-    """Clean up orphaned posts"""
-    from scripts.maintenance.data_cleanup import DataCleanupManager
-    
-    dry_run = 'dry_run' in request.form
-    
-    cleanup_manager = DataCleanupManager(db_manager, config)
-    try:
-        count = cleanup_manager.cleanup_orphaned_posts(dry_run=dry_run)
-        
-        if dry_run:
-            flash(f'Dry run: Would clean up {count} orphaned posts', 'info')
-        else:
-            flash(f'Successfully cleaned up {count} orphaned posts', 'success')
-    except Exception as e:
-        logger.error(f"Unexpected error cleaning up posts: {sanitize_for_log(str(e))}")
-        flash('An unexpected error occurred during post cleanup', 'danger')
-    
-    return redirect(url_for('admin_cleanup'))
-
-@app.route('/admin/cleanup/orphan_runs', methods=['POST'])
-@login_required
-@role_required(UserRole.ADMIN)
-@with_session_error_handling
-def admin_cleanup_orphan_runs():
-    """Clean up orphan processing runs"""
-    from scripts.maintenance.data_cleanup import DataCleanupManager
-    
-    hours = request.form.get('hours', type=float)
-    dry_run = request.form.get('dry_run') == 'true'
-    
-    if not hours or hours <= 0:
-        flash('Invalid number of hours (must be greater than 0)', 'danger')
-        return redirect(url_for('admin_cleanup'))
-    
-    cleanup_manager = DataCleanupManager(db_manager, config)
-    
-    try:
-        result = cleanup_manager.cleanup_orphan_processing_runs(hours=hours, dry_run=dry_run)
-        
-        if dry_run:
-            flash(f'Dry run completed: Would delete {result["deleted"]} orphan processing runs', 'info')
-        else:
-            flash(f'Successfully deleted {result["deleted"]} orphan processing runs', 'success')
-            
-        if result['errors'] > 0:
-            flash(f'Encountered {result["errors"]} errors during cleanup', 'warning')
-            
-    except Exception as e:
-        logger.error(f"Error during orphan processing runs cleanup: {e}")
-        flash('An unexpected error occurred during orphan processing runs cleanup', 'danger')
-    
-    return redirect(url_for('admin_cleanup'))
-
-@app.route('/admin/cleanup/user', methods=['POST'])
-@login_required
-@role_required(UserRole.ADMIN)
-@with_session_error_handling
-def admin_cleanup_user():
-    """Clean up all data for a specific user"""
-    from scripts.maintenance.data_cleanup import DataCleanupManager
-    
-    user_id = request.form.get('user_id')
-    dry_run = 'dry_run' in request.form
-    
-    if not user_id:
-        flash('Please select a user', 'danger')
-        return redirect(url_for('admin_cleanup'))
-    
-    cleanup_manager = DataCleanupManager(db_manager, config)
-    try:
-        results = cleanup_manager.cleanup_user_data(user_id=user_id, dry_run=dry_run)
-        
-        if dry_run:
-            flash(f'Dry run: Would delete {results["posts"]} posts, {results["images"]} images, and {results["runs"]} processing runs for user {user_id}', 'info')
-        else:
-            flash(f'Successfully deleted {results["posts"]} posts, {results["images"]} images, and {results["runs"]} processing runs for user {user_id}', 'success')
-    except ValueError as e:
-        flash(f'Invalid user ID: {sanitize_for_log(str(e))}', 'danger')
-    except Exception as e:
-        logger.error(f"Unexpected error cleaning up user data: {sanitize_for_log(str(e))}")
-        flash('An unexpected error occurred during user data cleanup', 'danger')
-    
-    return redirect(url_for('admin_cleanup'))
-
-@app.route('/admin/cleanup/all', methods=['POST'])
-@login_required
-@role_required(UserRole.ADMIN)
-@with_session_error_handling
-def admin_cleanup_all():
-    """Run full cleanup"""
-    from scripts.maintenance.data_cleanup import DataCleanupManager
-    
-    dry_run = 'dry_run' in request.form
-    
-    cleanup_manager = DataCleanupManager(db_manager, config)
-    try:
-        results = cleanup_manager.run_full_cleanup(dry_run=dry_run)
-        
-        total_items = sum(results.values())
-        
-        if dry_run:
-            flash(f'Dry run: Would clean up {total_items} items (database: {results["archived_runs"] + results["cleaned_rejected"] + results["cleaned_posted"] + results["cleaned_error"] + results["cleaned_posts"]}, storage: {results["deleted_images"]}, logs: {results["deleted_logs"]})', 'info')
-        else:
-            flash(f'Successfully cleaned up {total_items} items (database: {results["archived_runs"] + results["cleaned_rejected"] + results["cleaned_posted"] + results["cleaned_error"] + results["cleaned_posts"]}, storage: {results["deleted_images"]}, logs: {results["deleted_logs"]})', 'success')
-    except Exception as e:
-        logger.error(f"Unexpected error during full cleanup: {sanitize_for_log(str(e))}")
-        flash('An unexpected error occurred during full cleanup', 'danger')
-    
-    return redirect(url_for('admin_cleanup'))
+# Admin cleanup routes are handled by the admin blueprint
 
 
 @app.route('/images/<path:filename>')
 def serve_image(filename):
     """Serve stored images"""
     return send_from_directory(config.storage.images_dir, filename)
+
+@app.route('/static/js/<path:filename>')
+def serve_js(filename):
+    """Serve JavaScript files with correct MIME type"""
+    response = send_from_directory(os.path.join(app.root_path, 'static', 'js'), filename)
+    response.headers['Content-Type'] = 'application/javascript'
+    return response
 
 @app.route('/review')
 @login_required
@@ -1736,9 +1076,12 @@ def review_submit(image_id):
         else:
             flash('Error submitting review. Image may not exist.', 'error')
         
-        # Redirect to next image or review list
-        next_url = request.args.get('next', url_for('review_list'))
-        return redirect(next_url)
+        # Redirect to next image or review list - validate URL to prevent open redirect
+        next_url = request.args.get('next')
+        if next_url and next_url.startswith('/'):
+            return redirect(next_url)
+        else:
+            return redirect(url_for('review_list'))
     
     # If form validation failed, show errors
     for field, errors in form.errors.items():
@@ -2080,9 +1423,10 @@ def api_regenerate_caption(image_id):
             }), 403
         
         # Initialize caption generator
-        caption_generator = OllamaCaptionGenerator(config.ollama)
-        
+        caption_generator = None
         try:
+            caption_generator = OllamaCaptionGenerator(config.ollama)
+            
             # Log model information
             model_info = caption_generator.get_model_info()
             if model_info:
@@ -2163,7 +1507,8 @@ def api_regenerate_caption(image_id):
                 }), 500
         finally:
             # Clean up model resources
-            caption_generator.cleanup()
+            if caption_generator:
+                caption_generator.cleanup()
             
     except Exception as e:
         session.rollback()
@@ -2428,8 +1773,7 @@ def switch_platform(platform_id):
     """Switch to a different platform using database sessions"""
     try:
         # Verify the platform belongs to the current user
-        db_session = db_manager.get_session()
-        try:
+        with request_session_manager.session_scope() as db_session:
             platform = db_session.query(PlatformConnection).filter_by(
                 id=platform_id,
                 user_id=current_user.id,
@@ -2439,6 +1783,8 @@ def switch_platform(platform_id):
             if not platform:
                 flash('Platform not found or not accessible', 'error')
                 return redirect(url_for('platform_management'))
+            
+            platform_name = platform.name  # Extract before session closes
             
             # Check for active caption generation tasks and cancel them
             try:
@@ -2461,13 +1807,10 @@ def switch_platform(platform_id):
             success = update_session_platform(platform_id)
             
             if success:
-                flash(f'Switched to platform: {platform.name}', 'success')
-                app.logger.info(f"User {sanitize_for_log(current_user.username)} switched to platform {sanitize_for_log(platform.name)}")
+                flash(f'Switched to platform: {platform_name}', 'success')
+                app.logger.info(f"User {sanitize_for_log(current_user.username)} switched to platform {sanitize_for_log(platform_name)}")
             else:
                 flash('Failed to switch platform', 'error')
-            
-        finally:
-            db_session.close()
             
     except Exception as e:
         app.logger.error(f"Error switching platform: {e}")
@@ -3099,7 +2442,7 @@ def api_delete_platform(platform_id):
         
     except Exception as e:
         session.rollback()
-        app.logger.error(f"Error during platform deletion validation: {str(e)}")
+        app.logger.error(f"Error during platform deletion validation: {sanitize_for_log(str(e))}")
         return jsonify({'success': False, 'error': 'Database error during validation'}), 500
     finally:
         session.close()
@@ -3112,6 +2455,7 @@ def api_delete_platform(platform_id):
             force=False  # Don't force delete, let it check for associated data
         )
         
+        # amazonq-ignore-next-line
         if success:
             message = f'Platform connection "{platform_name}" deleted successfully'
             if data_info:
@@ -3731,104 +3075,7 @@ def api_validate_caption_settings():
         app.logger.error(f"Error validating caption settings: {sanitize_for_log(str(e))}")
         return jsonify({'success': False, 'error': 'Validation failed'}), 500
 
-@app.route('/api/admin/error_statistics')
-@login_required
-@role_required(UserRole.ADMIN)
-@rate_limit(limit=10, window_seconds=60)
-@with_session_error_handling
-def api_get_error_statistics():
-    """Get error statistics for admin monitoring"""
-    try:
-        stats = error_recovery_manager.get_error_statistics()
-        notifications = error_recovery_manager.get_admin_notifications(unread_only=True)
-        
-        return jsonify({
-            'success': True,
-            'statistics': stats,
-            'unread_notifications': len(notifications),
-            'notifications': notifications[:10]  # Latest 10 notifications
-        })
-        
-    except Exception as e:
-        app.logger.error(f"Error getting error statistics: {sanitize_for_log(str(e))}")
-        return jsonify({'success': False, 'error': 'Failed to get error statistics'}), 500
-
-@app.route('/api/admin/session_error_statistics')
-@login_required
-@role_required(UserRole.ADMIN)
-@with_session_error_handling
-def api_get_session_error_statistics():
-    """Get session error statistics for monitoring"""
-    try:
-        # Get session error handler statistics
-        session_error_handler = getattr(app, 'session_error_handler', None)
-        if session_error_handler:
-            error_stats = session_error_handler.get_error_statistics()
-        else:
-            error_stats = {}
-        
-        # Get detached instance handler statistics if available
-        detached_handler = getattr(app, 'detached_instance_handler', None)
-        recovery_stats = {}
-        if detached_handler and hasattr(detached_handler, '_record_recovery_metrics'):
-            # This would require extending the detached instance handler to track metrics
-            recovery_stats = {'recovery_attempts': 'Not implemented yet'}
-        
-        # Get session health statistics
-        session_health_stats = {}
-        try:
-            session_health_checker = app.config.get('session_health_checker')
-            if session_health_checker:
-                session_system_health = session_health_checker.check_comprehensive_session_health()
-                session_health_stats = {
-                    'overall_status': session_system_health.status.value,
-                    'component_count': len(session_system_health.components),
-                    'healthy_components': session_system_health.summary['healthy_components'],
-                    'active_alerts': session_system_health.summary['total_alerts']
-                }
-        except Exception as e:
-            app.logger.error(f"Error getting session health stats: {sanitize_for_log(str(e))}")
-        
-        # Get alerting statistics
-        alerting_stats = {}
-        try:
-            session_alerting_system = app.config.get('session_alerting_system')
-            if session_alerting_system:
-                alerting_stats = session_alerting_system.get_alert_summary()
-        except Exception as e:
-            app.logger.error(f"Error getting alerting stats: {sanitize_for_log(str(e))}")
-        
-        return jsonify({
-            'success': True,
-            'session_errors': error_stats,
-            'recovery_stats': recovery_stats,
-            'session_health': session_health_stats,
-            'alerting': alerting_stats,
-            'timestamp': datetime.now(timezone.utc).isoformat()
-        })
-        
-    except Exception as e:
-        app.logger.error(f"Error getting session error statistics: {sanitize_for_log(str(e))}")
-        return jsonify({'success': False, 'error': 'Failed to get session error statistics'}), 500
-
-@app.route('/api/admin/notifications/<int:notification_id>/read', methods=['POST'])
-@login_required
-@role_required(UserRole.ADMIN)
-@rate_limit(limit=20, window_seconds=60)
-@with_session_error_handling
-def api_mark_notification_read(notification_id):
-    """Mark admin notification as read"""
-    try:
-        success = error_recovery_manager.mark_notification_read(notification_id)
-        
-        if success:
-            return jsonify({'success': True, 'message': 'Notification marked as read'})
-        else:
-            return jsonify({'success': False, 'error': 'Notification not found'}), 404
-            
-    except Exception as e:
-        app.logger.error(f"Error marking notification as read: {sanitize_for_log(str(e))}")
-        return jsonify({'success': False, 'error': 'Failed to mark notification as read'}), 500
+# Admin API routes are handled by the admin blueprint at /admin/api/
 
 # Caption Review Integration Routes
 @app.route('/review/batches')
@@ -4051,158 +3298,7 @@ def api_get_batch_statistics(batch_id):
         app.logger.error(f"Error getting batch statistics: {sanitize_for_log(str(e))}")
         return jsonify({'success': False, 'error': 'Failed to get statistics'}), 500
 
-# Administrative Monitoring Routes
-@app.route('/admin/monitoring')
-@login_required
-@role_required(UserRole.ADMIN)
-@rate_limit(limit=10, window_seconds=60)
-@with_session_error_handling
-def admin_monitoring_dashboard():
-    """Administrative monitoring dashboard"""
-    try:
-        # Get system overview
-        system_overview = admin_monitoring_service.get_system_overview()
-        
-        # Get active tasks
-        active_tasks = admin_monitoring_service.get_active_tasks(limit=20)
-        
-        # Get recent performance metrics
-        performance_metrics = admin_monitoring_service.get_performance_metrics(days=7)
-        
-        # Get system limits
-        system_limits = admin_monitoring_service.get_system_limits()
-        
-        return render_template('admin_monitoring.html',
-                             system_overview=system_overview,
-                             active_tasks=active_tasks,
-                             performance_metrics=performance_metrics,
-                             system_limits=system_limits)
-                             
-    except Exception as e:
-        app.logger.error(f"Error loading admin monitoring dashboard: {sanitize_for_log(str(e))}")
-        flash('Error loading monitoring dashboard.', 'error')
-        return redirect(url_for('index'))
-
-@app.route('/api/admin/system_overview')
-@login_required
-@role_required(UserRole.ADMIN)
-@rate_limit(limit=30, window_seconds=60)
-@with_session_error_handling
-def api_admin_system_overview():
-    """Get real-time system overview"""
-    try:
-        overview = admin_monitoring_service.get_system_overview()
-        return jsonify({'success': True, 'overview': overview})
-        
-    except Exception as e:
-        app.logger.error(f"Error getting system overview: {sanitize_for_log(str(e))}")
-        return jsonify({'success': False, 'error': 'Failed to get system overview'}), 500
-
-@app.route('/api/admin/active_tasks')
-@login_required
-@role_required(UserRole.ADMIN)
-@rate_limit(limit=20, window_seconds=60)
-@with_session_error_handling
-def api_admin_active_tasks():
-    """Get active caption generation tasks"""
-    try:
-        limit = request.args.get('limit', 50, type=int)
-        tasks = admin_monitoring_service.get_active_tasks(limit=limit)
-        
-        return jsonify({'success': True, 'tasks': tasks})
-        
-    except Exception as e:
-        app.logger.error(f"Error getting active tasks: {sanitize_for_log(str(e))}")
-        return jsonify({'success': False, 'error': 'Failed to get active tasks'}), 500
-
-@app.route('/api/admin/task_history')
-@login_required
-@role_required(UserRole.ADMIN)
-@rate_limit(limit=20, window_seconds=60)
-@with_session_error_handling
-def api_admin_task_history():
-    """Get task history"""
-    try:
-        hours = request.args.get('hours', 24, type=int)
-        limit = request.args.get('limit', 100, type=int)
-        
-        tasks = admin_monitoring_service.get_task_history(hours=hours, limit=limit)
-        
-        return jsonify({'success': True, 'tasks': tasks})
-        
-    except Exception as e:
-        app.logger.error(f"Error getting task history: {sanitize_for_log(str(e))}")
-        return jsonify({'success': False, 'error': 'Failed to get task history'}), 500
-
-@app.route('/api/admin/performance_metrics')
-@login_required
-@role_required(UserRole.ADMIN)
-@rate_limit(limit=20, window_seconds=60)
-@with_session_error_handling
-def api_admin_performance_metrics():
-    """Get performance metrics"""
-    try:
-        days = request.args.get('days', 7, type=int)
-        metrics = admin_monitoring_service.get_performance_metrics(days=days)
-        
-        return jsonify({'success': True, 'metrics': metrics})
-        
-    except Exception as e:
-        app.logger.error(f"Error getting performance metrics: {sanitize_for_log(str(e))}")
-        return jsonify({'success': False, 'error': 'Failed to get performance metrics'}), 500
-
-@app.route('/api/admin/cancel_task/<task_id>', methods=['POST'])
-@login_required
-@role_required(UserRole.ADMIN)
-@require_secure_connection
-@validate_csrf_token
-@rate_limit(limit=10, window_seconds=60)
-@with_session_error_handling
-def api_admin_cancel_task(task_id):
-    """Cancel a task as administrator"""
-    try:
-        data = request.get_json() or {}
-        reason = data.get('reason', '').strip()
-        
-        result = admin_monitoring_service.cancel_task(
-            task_id=task_id,
-            admin_user_id=current_user.id,
-            reason=reason
-        )
-        
-        if result['success']:
-            return jsonify(result)
-        else:
-            return jsonify(result), 400
-            
-    except Exception as e:
-        app.logger.error(f"Error cancelling task: {sanitize_for_log(str(e))}")
-        return jsonify({'success': False, 'error': 'Failed to cancel task'}), 500
-
-@app.route('/api/admin/cleanup_tasks', methods=['POST'])
-@login_required
-@role_required(UserRole.ADMIN)
-@require_secure_connection
-@validate_csrf_token
-@rate_limit(limit=5, window_seconds=300)
-@with_session_error_handling
-def api_admin_cleanup_tasks():
-    """Clean up old tasks"""
-    try:
-        data = request.get_json() or {}
-        days = data.get('days', 7)
-        dry_run = data.get('dry_run', True)
-        
-        if not isinstance(days, int) or days < 1 or days > 365:
-            return jsonify({'success': False, 'error': 'Invalid days parameter (1-365)'}), 400
-        
-        result = admin_monitoring_service.cleanup_old_tasks(days=days, dry_run=dry_run)
-        
-        return jsonify(result)
-        
-    except Exception as e:
-        app.logger.error(f"Error cleaning up tasks: {sanitize_for_log(str(e))}")
-        return jsonify({'success': False, 'error': 'Failed to cleanup tasks'}), 500
+# Administrative routes are handled by the admin blueprint at /admin/
 
 @app.route('/api/csrf-token', methods=['GET'])
 @login_required
@@ -4305,44 +3401,7 @@ def api_update_user_settings():
         app.logger.error(f"Error updating user settings: {sanitize_for_log(str(e))}")
         return jsonify({'success': False, 'error': 'Failed to update settings'}), 500
 
-@app.route('/api/admin/user_activity')
-@login_required
-@role_required(UserRole.ADMIN)
-@rate_limit(limit=20, window_seconds=60)
-@with_session_error_handling
-def api_admin_user_activity():
-    """Get user activity statistics"""
-    try:
-        days = request.args.get('days', 7, type=int)
-        activity = admin_monitoring_service.get_user_activity(days=days)
-        
-        return jsonify({'success': True, 'activity': activity})
-        
-    except Exception as e:
-        app.logger.error(f"Error getting user activity: {sanitize_for_log(str(e))}")
-        return jsonify({'success': False, 'error': 'Failed to get user activity'}), 500
-
-@app.route('/api/admin/system_limits', methods=['GET', 'POST'])
-@login_required
-@role_required(UserRole.ADMIN)
-@rate_limit(limit=10, window_seconds=60)
-@with_session_error_handling
-def api_admin_system_limits():
-    """Get or update system limits"""
-    try:
-        if request.method == 'GET':
-            limits = admin_monitoring_service.get_system_limits()
-            return jsonify({'success': True, 'limits': limits})
-        
-        else:  # POST
-            data = request.get_json() or {}
-            result = admin_monitoring_service.update_system_limits(data)
-            
-            return jsonify(result)
-            
-    except Exception as e:
-        app.logger.error(f"Error with system limits: {sanitize_for_log(str(e))}")
-        return jsonify({'success': False, 'error': 'Failed to handle system limits'}), 500
+# Admin API routes are handled by the admin blueprint
 
 # Profile Management Routes
 @app.route('/profile')
@@ -4369,22 +3428,38 @@ def profile():
                     is_active=True
                 ).first()
             
-            # Get platform statistics
+            # Get platform statistics with optimized queries
             platform_stats = {}
-            for platform in user_platforms:
-                stats = {
-                    'posts': db_session.query(Post).filter_by(platform_connection_id=platform.id).count(),
-                    'images': db_session.query(Image).filter_by(platform_connection_id=platform.id).count(),
-                    'pending': db_session.query(Image).filter_by(
-                        platform_connection_id=platform.id,
-                        status=ProcessingStatus.PENDING
-                    ).count(),
-                    'posted': db_session.query(Image).filter_by(
-                        platform_connection_id=platform.id,
-                        status=ProcessingStatus.POSTED
-                    ).count()
-                }
-                platform_stats[platform.id] = stats
+            if user_platforms:
+                platform_ids = [p.id for p in user_platforms]
+                from sqlalchemy import func, case
+                
+                # Single query to get all stats
+                stats_query = db_session.query(
+                    Image.platform_connection_id,
+                    func.count().label('total_images'),
+                    func.sum(case([(Image.status == ProcessingStatus.PENDING, 1)], else_=0)).label('pending'),
+                    func.sum(case([(Image.status == ProcessingStatus.POSTED, 1)], else_=0)).label('posted')
+                ).filter(Image.platform_connection_id.in_(platform_ids)).group_by(Image.platform_connection_id).all()
+                
+                posts_query = db_session.query(
+                    Post.platform_connection_id,
+                    func.count().label('total_posts')
+                ).filter(Post.platform_connection_id.in_(platform_ids)).group_by(Post.platform_connection_id).all()
+                
+                # Build stats dict
+                for platform in user_platforms:
+                    platform_stats[platform.id] = {'posts': 0, 'images': 0, 'pending': 0, 'posted': 0}
+                
+                for stat in stats_query:
+                    platform_stats[stat.platform_connection_id].update({
+                        'images': stat.total_images or 0,
+                        'pending': stat.pending or 0,
+                        'posted': stat.posted or 0
+                    })
+                
+                for stat in posts_query:
+                    platform_stats[stat.platform_connection_id]['posts'] = stat.total_posts or 0
             
             # Get active sessions (simplified for profile view)
             active_sessions = []
@@ -4484,6 +3559,8 @@ def api_terminate_session(session_id):
         return jsonify({'success': False, 'error': 'Failed to terminate session'}), 500
 
 
+
+
 # Favicon and static asset routes
 @app.route('/favicon.ico')
 @with_session_error_handling
@@ -4535,15 +3612,21 @@ def progress_stream(task_id):
     if not current_user or not current_user.is_authenticated:
         app.logger.warning(f"Unauthenticated SSE connection attempt for task {sanitize_for_log(task_id)}")
         return Response(
-            f"data: {{\"type\": \"error\", \"message\": \"Authentication required\"}}\n\n",
+            'data: {"type": "error", "message": "Authentication required"}\n\n',
             mimetype='text/event-stream',
             status=401
         )
     
     app.logger.info(f"SSE connection request for task {sanitize_for_log(task_id)} from user {sanitize_for_log(str(current_user.id))}")
+    
+    # Initialize event stream generator to None for proper resource management
+    event_stream = None
     try:
+        # Create event stream with proper resource initialization
+        event_stream = sse_progress_handler.create_event_stream(task_id)
+        
         return Response(
-            sse_progress_handler.create_event_stream(task_id),
+            event_stream,
             mimetype='text/event-stream',
             headers={
                 'Cache-Control': 'no-cache',
@@ -4554,15 +3637,35 @@ def progress_stream(task_id):
         )
     except Exception as e:
         app.logger.error(f"Error in progress_stream: {sanitize_for_log(str(e))}")
+        # Clean up event stream resources if initialization failed
+        if event_stream and hasattr(event_stream, 'close'):
+            try:
+                event_stream.close()
+            except Exception as cleanup_error:
+                app.logger.warning(f"Error cleaning up event stream: {sanitize_for_log(str(cleanup_error))}")
+        
         return Response(
-            f"data: {{\"type\": \"error\", \"message\": \"Stream initialization failed\"}}\n\n",
+            'data: {"type": "error", "message": "Stream initialization failed"}\n\n',
             mimetype='text/event-stream',
             status=500
         )
 
 if __name__ == '__main__':
-    app.run(
-        host=config.webapp.host,
-        port=config.webapp.port,
-        debug=config.webapp.debug
-    )
+    try:
+        app.run(
+            host=config.webapp.host,
+            port=config.webapp.port,
+            debug=config.webapp.debug
+        )
+    except KeyboardInterrupt:
+        app.logger.info("Application shutdown requested")
+    except Exception as e:
+        app.logger.error(f"Application startup failed: {sanitize_for_log(str(e))}")
+        raise
+    finally:
+        # Clean up resources on application shutdown
+        try:
+            if 'sse_progress_handler' in globals() and hasattr(sse_progress_handler, 'cleanup'):
+                sse_progress_handler.cleanup()
+        except Exception as cleanup_error:
+            app.logger.warning(f"Error during application cleanup: {sanitize_for_log(str(cleanup_error))}")

@@ -1,7 +1,7 @@
 <!-- Copyright (C) 2025 iolaire mcfadden. -->
 <!-- This program is free software: you can redistribute it and/or modify it under the terms of the GNU Affero General Public License as published by the Free Software Foundation, either version 3 of the License, or (at your option) any later version. -->
 <!-- THE SOFTWARE IS PROVIDED "AS IS", WITHOUT WARRANTY OF ANY KIND, EXPRESS OR IMPLIED, INCLUDING BUT NOT LIMITED TO THE WARRANTIES OF MERCHANTABILITY, FITNESS FOR A PARTICULAR PURPOSE AND NONINFRINGEMENT. IN NO EVENT SHALL THE AUTHORS OR COPYRIGHT HOLDERS BE LIABLE FOR ANY CLAIM, DAMAGES OR OTHER LIABILITY, WHETHER IN AN ACTION OF CONTRACT, TORT OR OTHERWISE, ARISING FROM, OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE SOFTWARE. -->
-{% extends "base.html" %}
+{% extends "base_admin.html" %}
 
 {% block title %}User Management - Vedfolnir{% endblock %}
 
@@ -91,7 +91,7 @@
                 <h5 class="modal-title" id="editUserModalLabel">Edit User</h5>
                 <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
             </div>
-            <form method="POST" action="{{ url_for('edit_user') }}">
+            <form method="POST" action="{{ url_for('admin.edit_user') }}">
                 {{ edit_form.hidden_tag() }}
                 {{ edit_form.user_id() }}
                 <div class="modal-body">
@@ -137,7 +137,7 @@
                 <h5 class="modal-title" id="deleteUserModalLabel">Delete User</h5>
                 <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
             </div>
-            <form method="POST" action="{{ url_for('delete_user') }}">
+            <form method="POST" action="{{ url_for('admin.delete_user') }}">
                 {{ delete_form.hidden_tag() }}
                 {{ delete_form.user_id() }}
                 <div class="modal-body">

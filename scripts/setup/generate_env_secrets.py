@@ -117,13 +117,51 @@ def main():
     
     # Get Ollama configuration from user
     print("Ollama Configuration:")
-    ollama_url = input("Ollama URL (default: http://localhost:11434): ").strip() or "http://localhost:11434"
+    ollama_url = input("Ollama URL (default: http://Mac-mini-M2.local:11434): ").strip() or "http://Mac-mini-M2.local:11434"
     ollama_model = input("Ollama model (default: llava:7b): ").strip() or "llava:7b"
+    
+    # Get security configuration
+    print("\nSecurity Configuration:")
+    print("Choose security mode:")
+    print("1. Development (disable security) - Default")
+    print("2. Testing (partial security)")
+    print("3. Production (full security)")
+    
+    while True:
+        choice = input("Enter choice (1-3) [1]: ").strip() or '1'
+        if choice == '1':
+            security_mode = 'development'
+            security_settings = {
+                'SECURITY_CSRF_ENABLED': 'false',
+                'SECURITY_RATE_LIMITING_ENABLED': 'false',
+                'SECURITY_INPUT_VALIDATION_ENABLED': 'false'
+            }
+            break
+        elif choice == '2':
+            security_mode = 'testing'
+            security_settings = {
+                'SECURITY_CSRF_ENABLED': 'false',
+                'SECURITY_RATE_LIMITING_ENABLED': 'true',
+                'SECURITY_INPUT_VALIDATION_ENABLED': 'true'
+            }
+            break
+        elif choice == '3':
+            security_mode = 'production'
+            security_settings = {
+                'SECURITY_CSRF_ENABLED': 'true',
+                'SECURITY_RATE_LIMITING_ENABLED': 'true',
+                'SECURITY_INPUT_VALIDATION_ENABLED': 'true'
+            }
+            break
+        else:
+            print("Invalid choice. Please enter 1, 2, or 3.")
+    
+    print(f"Selected: {security_mode.title()} mode")
     
     # Get admin details from user
     print("\nAdmin User Configuration:")
     admin_username = input("Admin username (default: admin): ").strip() or "admin"
-    admin_email = input("Admin email: ").strip()
+    admin_email = input("Admin email (default: iolaire@iolaire.net): ").strip() or "iolaire@iolaire.net"
     
     if not admin_email:
         print("Error: Admin email is required")
@@ -168,6 +206,13 @@ def main():
                 "OLLAMA_MODEL=CHANGE_ME_TO_OLLAMA_MODEL",
                 f"OLLAMA_MODEL={ollama_model}"
             )
+            
+            # Apply security settings
+            import re
+            for setting, value in security_settings.items():
+                pattern = f'^{setting}=.*$'
+                replacement = f'{setting}={value}'
+                env_content = re.sub(pattern, replacement, env_content, flags=re.MULTILINE)
         else:
             # Create a basic .env file
             env_content = f"""# Vedfolnir Configuration
@@ -189,6 +234,11 @@ LOG_LEVEL=INFO
 # Ollama Configuration
 OLLAMA_URL={ollama_url}
 OLLAMA_MODEL={ollama_model}
+
+# Security Settings
+SECURITY_CSRF_ENABLED={security_settings['SECURITY_CSRF_ENABLED']}
+SECURITY_RATE_LIMITING_ENABLED={security_settings['SECURITY_RATE_LIMITING_ENABLED']}
+SECURITY_INPUT_VALIDATION_ENABLED={security_settings['SECURITY_INPUT_VALIDATION_ENABLED']}
 """
         
         with open(".env", "w") as f:

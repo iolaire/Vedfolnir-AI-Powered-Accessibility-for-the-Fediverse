@@ -12,12 +12,14 @@ using database sessions as the single source of truth.
 from logging import getLogger
 from datetime import datetime, timezone
 from flask import jsonify, request, g
+from flask_wtf.csrf import CSRFProtect
 from database_session_middleware import get_current_session_context, get_current_session_id, is_session_authenticated
 
 logger = getLogger(__name__)
 
 def create_session_state_routes(app):
     """Create session state API routes"""
+    csrf = app.extensions.get('csrf', None)
     
     @app.route('/api/session/state', methods=['GET'])
     def api_session_state():
@@ -148,7 +150,13 @@ def create_session_state_routes(app):
                 'success': False,
                 'error': 'Failed to process heartbeat',
                 'timestamp': datetime.now(timezone.utc).isoformat()
-            }), 500  
+            }), 500
+    
+    # Apply CSRF exemption to session endpoints
+    if csrf:
+        csrf.exempt(api_session_heartbeat)
+        csrf.exempt(api_session_state)
+        csrf.exempt(api_session_validate)
   
     @app.route('/api/session/monitoring/metrics', methods=['GET'])
     def api_session_state_metrics():

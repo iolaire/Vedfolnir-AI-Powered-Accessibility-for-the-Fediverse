@@ -149,6 +149,7 @@ python scripts/setup/update_admin_user.py
 - [**Core Modules API**](docs/api/core_modules.md) - Core application modules documentation
 - [**Utility Modules API**](docs/api/utility_modules.md) - Utility and service modules documentation
 - [**Security Modules API**](docs/api/security_modules.md) - Security system documentation
+- [**Admin Module Guide**](docs/admin/README.md) - Administrative functionality documentation
 - [**Complete API Reference**](docs/api/generated/index.md) - Auto-generated comprehensive API documentation
 - [**Security Guide**](docs/SECURITY.md) - Security features and best practices
 - [**Deployment Guide**](docs/deployment.md) - Production deployment instructions
@@ -163,6 +164,7 @@ python scripts/setup/update_admin_user.py
 - [**Migration Guide**](docs/migration_guide.md) - Upgrading and migration procedures
 - [**Security Audit Summary**](docs/summary/SECURITY_AUDIT_SUMMARY.md) - Complete security audit results
 - [**Test Coverage Report**](docs/summary/TEST_COVERAGE_REPORT.md) - Comprehensive test coverage analysis
+- [**Admin Module Refactoring**](docs/summary/ADMIN_MODULE_REFACTORING_SUMMARY.md) - Admin functionality reorganization
 
 ### Legacy Documentation
 

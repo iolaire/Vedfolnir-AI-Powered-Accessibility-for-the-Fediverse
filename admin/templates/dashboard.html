@@ -1,0 +1,102 @@
+{% extends "admin/base_admin.html" %}
+
+{% block title %}Admin Dashboard - Vedfolnir{% endblock %}
+
+{% block content %}
+<div class="d-flex justify-content-between flex-wrap flex-md-nowrap align-items-center pt-3 pb-2 mb-3 border-bottom">
+    <h1 class="h2">Admin Dashboard</h1>
+</div>
+
+<div class="row">
+    <div class="col-md-3">
+        <div class="card text-white bg-primary mb-3">
+            <div class="card-header">Total Users</div>
+            <div class="card-body">
+                <h4 class="card-title">{{ stats.total_users or 0 }}</h4>
+                <p class="card-text">{{ stats.active_users or 0 }} active</p>
+            </div>
+        </div>
+    </div>
+    
+    <div class="col-md-3">
+        <div class="card text-white bg-success mb-3">
+            <div class="card-header">Platform Connections</div>
+            <div class="card-body">
+                <h4 class="card-title">{{ stats.total_platforms or 0 }}</h4>
+            </div>
+        </div>
+    </div>
+    
+    <div class="col-md-3">
+        <div class="card text-white bg-info mb-3">
+            <div class="card-header">Total Images</div>
+            <div class="card-body">
+                <h4 class="card-title">{{ stats.total_images or 0 }}</h4>
+            </div>
+        </div>
+    </div>
+    
+    <div class="col-md-3">
+        <div class="card text-white bg-warning mb-3">
+            <div class="card-header">Total Posts</div>
+            <div class="card-body">
+                <h4 class="card-title">{{ stats.total_posts or 0 }}</h4>
+            </div>
+        </div>
+    </div>
+</div>
+
+<div class="row mt-4">
+    <div class="col-md-6">
+        <div class="card">
+            <div class="card-header">
+                <h5>Quick Actions</h5>
+            </div>
+            <div class="card-body">
+                <div class="d-grid gap-2">
+                    <a href="{{ url_for('admin.user_management') }}" class="btn btn-outline-primary">
+                        <i class="fas fa-users"></i> Manage Users
+                    </a>
+                    <a href="{{ url_for('admin.health_dashboard') }}" class="btn btn-outline-success">
+                        <i class="fas fa-heartbeat"></i> System Health
+                    </a>
+                    <a href="{{ url_for('admin.cleanup') }}" class="btn btn-outline-warning">
+                        <i class="fas fa-broom"></i> Data Cleanup
+                    </a>
+                    <a href="{{ url_for('admin.monitoring_dashboard') }}" class="btn btn-outline-info">
+                        <i class="fas fa-chart-line"></i> System Monitoring
+                    </a>
+                </div>
+            </div>
+        </div>
+    </div>
+    
+    <div class="col-md-6">
+        <div class="card">
+            <div class="card-header">
+                <h5>System Status</h5>
+            </div>
+            <div class="card-body">
+                <div class="row">
+                    <div class="col-6">
+                        <div class="text-center">
+                            <div class="text-success">
+                                <i class="fas fa-check-circle fa-2x"></i>
+                            </div>
+                            <small>Database</small>
+                        </div>
+                    </div>
+                    <div class="col-6">
+                        <div class="text-center">
+                            <div class="text-success">
+                                <i class="fas fa-check-circle fa-2x"></i>
+                            </div>
+                            <small>Web Server</small>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+{% endblock %}

@@ -1,0 +1,58 @@
+# Copyright (C) 2025 iolaire mcfadden.
+# This program is free software: you can redistribute it and/or modify it under the terms of the GNU Affero General Public License as published by the Free Software Foundation, either version 3 of the License, or (at your option) any later version.
+# THE SOFTWARE IS PROVIDED "AS IS", WITHOUT WARRANTY OF ANY KIND, EXPRESS OR IMPLIED, INCLUDING BUT NOT LIMITED TO THE WARRANTIES OF MERCHANTABILITY, FITNESS FOR A PARTICULAR PURPOSE AND NONINFRINGEMENT. IN NO EVENT SHALL THE AUTHORS OR COPYRIGHT HOLDERS BE LIABLE FOR ANY CLAIM, DAMAGES OR OTHER LIABILITY, WHETHER IN AN ACTION OF CONTRACT, TORT OR OTHERWISE, ARISING FROM, OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE SOFTWARE.
+
+"""Admin Monitoring Routes"""
+
+from flask import render_template, jsonify, redirect, url_for, flash, current_app
+from flask_login import login_required, current_user
+from models import UserRole
+from session_error_handlers import with_session_error_handling
+from security.core.security_middleware import rate_limit
+
+def register_routes(bp):
+    """Register monitoring routes"""
+    
+    @bp.route('/monitoring')
+    @login_required
+    @with_session_error_handling
+    def monitoring_dashboard():
+        """Administrative monitoring dashboard"""
+        if not current_user.role == UserRole.ADMIN:
+            flash('Access denied. Admin privileges required.', 'error')
+            return redirect(url_for('index'))
+            
+        try:
+            from ..services.monitoring_service import AdminMonitoringService
+            monitoring_service = AdminMonitoringService(current_app.config['db_manager'])
+            
+            system_overview = monitoring_service.get_system_overview()
+            active_tasks = monitoring_service.get_active_tasks(limit=20)
+            performance_metrics = monitoring_service.get_performance_metrics(days=7)
+            
+            return render_template('admin_monitoring.html',
+                                 system_overview=system_overview,
+                                 active_tasks=active_tasks,
+                                 performance_metrics=performance_metrics)
+                                 
+        except Exception as e:
+            current_app.logger.error(f"Error loading monitoring dashboard: {str(e)}")
+            flash('Error loading monitoring dashboard.', 'error')
+            return redirect(url_for('admin.dashboard'))
+
+    @bp.route('/api/system_overview')
+    @login_required
+    @rate_limit(limit=30, window_seconds=60)
+    @with_session_error_handling
+    def api_system_overview():
+        """Get real-time system overview"""
+        if not current_user.role == UserRole.ADMIN:
+            return jsonify({'error': 'Access denied'}), 403
+            
+        try:
+            from ..services.monitoring_service import AdminMonitoringService
+            monitoring_service = AdminMonitoringService(current_app.config['db_manager'])
+            overview = monitoring_service.get_system_overview()
+            return jsonify({'success': True, 'overview': overview})
+        except Exception as e:
+            return jsonify({'success': False, 'error': str(e)}), 500

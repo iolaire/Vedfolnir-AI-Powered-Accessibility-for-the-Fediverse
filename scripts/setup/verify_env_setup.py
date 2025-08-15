@@ -171,6 +171,11 @@ def main():
     all_checks_passed &= check_env_variable("FLASK_HOST", "Flask host", required=False)
     all_checks_passed &= check_env_variable("FLASK_PORT", "Flask port", required=False)
     all_checks_passed &= check_env_variable("LOG_LEVEL", "Log level", required=False)
+    
+    # Check security settings
+    all_checks_passed &= check_env_variable("SECURITY_CSRF_ENABLED", "CSRF protection", required=True)
+    all_checks_passed &= check_env_variable("SECURITY_RATE_LIMITING_ENABLED", "Rate limiting", required=True)
+    all_checks_passed &= check_env_variable("SECURITY_INPUT_VALIDATION_ENABLED", "Input validation", required=True)
     print()
     
     # Check encryption key format

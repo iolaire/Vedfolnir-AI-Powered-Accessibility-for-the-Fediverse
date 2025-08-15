@@ -21,9 +21,15 @@
 - `ollama_caption_generator.py`: Generates image captions using Ollama with LLaVA model
 
 ### Web Interface
-- `web_app.py`: Flask web application for reviewing and managing captions
-- `templates/`: HTML templates for the web interface
-- `static/`: Static assets (CSS, JavaScript) for the web interface
+- `web_app.py`: Main Flask web application for reviewing and managing captions
+- `admin/`: Administrative functionality module
+  - `routes/`: Admin route handlers (user management, system health, cleanup, monitoring)
+  - `services/`: Admin business logic services
+  - `templates/`: Admin-specific HTML templates
+  - `static/`: Admin-specific static assets
+  - `forms/`: Admin form definitions
+- `templates/`: Main application HTML templates
+- `static/`: Main application static assets (CSS, JavaScript)
 
 ### Utilities
 - `utils.py` / `utils_new.py`: Utility functions and helpers
@@ -33,13 +39,17 @@
 ## Directory Structure
 - `.devcontainer/`: Development container configuration
 - `.kiro/`: Kiro specifications and steering files
-- `static/`: Static web assets
-  - `css/`: Stylesheets
-  - `js/`: JavaScript files
+- `static/`: Main application static assets
+  - `css/`: Main application stylesheets
+  - `js/`: Main application JavaScript files
+- `admin/static/`: Admin-specific static assets
+  - `css/`: Admin stylesheets
+  - `js/`: Admin JavaScript files
 - `storage/`: Data storage
   - `database/`: SQLite database files
   - `images/`: Downloaded and processed images
-- `templates/`: HTML templates for Flask
+- `templates/`: Main application HTML templates
+- `admin/templates/`: Admin-specific HTML templates
 - `tests/`: Test files and test utilities
   - All test files should be placed here with naming convention `test_*.py`
 - `__pycache__/`: Python bytecode cache (not tracked in version control)

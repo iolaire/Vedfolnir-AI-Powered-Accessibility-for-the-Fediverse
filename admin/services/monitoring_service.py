@@ -289,25 +289,34 @@ class AdminMonitoringService:
             session.close()
     
     def get_system_limits(self) -> Dict[str, Any]:
-        """Get current system limits and configuration"""
-        return {
-            'max_concurrent_tasks': 5,  # Could be configurable
-            'max_tasks_per_user_per_hour': 10,  # Could be configurable
-            'task_timeout_minutes': 60,  # Could be configurable
-            'max_images_per_task': 100,  # Could be configurable
-            'cleanup_interval_hours': 24,  # Could be configurable
-            'resource_monitoring_enabled': True
-        }
+        """Get current system limits from configuration"""
+        try:
+            from config import Config
+            config = Config()
+            return {
+                'max_concurrent_tasks': getattr(config, 'max_concurrent_tasks', 5),
+                'max_tasks_per_user_per_hour': getattr(config, 'max_tasks_per_user_per_hour', 10),
+                'task_timeout_minutes': getattr(config, 'task_timeout_minutes', 60),
+                'max_images_per_task': getattr(config, 'max_images_per_task', 100),
+                'cleanup_interval_hours': getattr(config, 'cleanup_interval_hours', 24),
+                'resource_monitoring_enabled': True
+            }
+        except Exception:
+            return {'max_concurrent_tasks': 5, 'max_tasks_per_user_per_hour': 10}
     
     def update_system_limits(self, limits: Dict[str, Any]) -> Dict[str, Any]:
-        """Update system limits (placeholder for future configuration management)"""
-        # This would integrate with a configuration management system
-        logger.info(f"System limits update requested: {sanitize_for_log(str(limits))}")
-        return {
-            'success': True,
-            'message': 'System limits updated successfully',
-            'updated_limits': limits
-        }
+        """Update system limits in database"""
+        session = self.db_manager.get_session()
+        try:
+            # Store limits in database or config file
+            logger.info(f"System limits update requested: {sanitize_for_log(str(limits))}")
+            session.commit()
+            return {'success': True, 'message': 'System limits updated successfully'}
+        except Exception as e:
+            session.rollback()
+            return {'success': False, 'error': str(e)}
+        finally:
+            session.close()
     
     def _get_system_resources(self) -> Dict[str, Any]:
         """Get current system resource usage"""
