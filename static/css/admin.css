@@ -1,39 +1,67 @@
-/* Admin Panel Styles */
+/* Admin Panel Styles - Inherits main app colors */
 .sidebar {
     position: fixed;
-    top: 56px;
+    top: 72px;
     bottom: 0;
     left: 0;
-    z-index: 100;
-    padding: 48px 0 0;
+    z-index: 99;
+    padding: 1rem 0;
     box-shadow: inset -1px 0 0 rgba(0, 0, 0, .1);
+    background-color: #f8f9fa;
 }
 
 .sidebar .nav-link {
     font-weight: 500;
-    color: #333;
+    color: #495057;
+    padding: 0.75rem 1rem;
+    border-radius: 0.375rem;
+    margin: 0.125rem 0.5rem;
+    transition: all 0.15s ease-in-out;
 }
 
 .sidebar .nav-link:hover {
-    color: #007bff;
+    color: #0d6efd;
+    background-color: rgba(13, 110, 253, 0.1);
 }
 
 .sidebar .nav-link.active {
-    color: #007bff;
+    color: #0d6efd;
+    background-color: rgba(13, 110, 253, 0.1);
+    font-weight: 600;
+}
+
+.sidebar .nav-link i {
+    width: 1.25rem;
+    margin-right: 0.5rem;
 }
 
 main {
-    margin-top: 48px;
+    margin-top: 1rem;
+    padding-top: 1rem;
 }
 
+/* Navbar brand styling to match main app */
 .navbar-brand {
     padding-top: .75rem;
     padding-bottom: .75rem;
+    font-weight: 600;
 }
 
+.navbar-logo {
+    height: 32px;
+    width: auto;
+}
+
+.navbar-brand-text {
+    font-weight: 600;
+    color: #fff;
+}
+
+/* Card styling to match main app */
 .card {
     box-shadow: 0 0.125rem 0.25rem rgba(0, 0, 0, 0.075);
     border: 1px solid rgba(0, 0, 0, 0.125);
+    border-radius: 0.5rem;
 }
 
 .badge-lg {
@@ -42,25 +70,51 @@ main {
 }
 
 /* Health Dashboard Specific Styles */
-.health-status-healthy { color: #28a745; }
+.health-status-healthy { color: #198754; }
 .health-status-degraded { color: #ffc107; }
 .health-status-unhealthy { color: #dc3545; }
 
-/* Button improvements */
+/* Button improvements to match main app */
 .btn-outline-primary {
-    color: #007bff;
-    border-color: #007bff;
+    color: #0d6efd;
+    border-color: #0d6efd;
 }
 
 .btn-outline-primary:hover {
     color: #fff;
-    background-color: #007bff;
-    border-color: #007bff;
+    background-color: #0d6efd;
+    border-color: #0d6efd;
+}
+
+.btn-outline-info {
+    color: #0dcaf0;
+    border-color: #0dcaf0;
+}
+
+.btn-outline-info:hover {
+    color: #000;
+    background-color: #0dcaf0;
+    border-color: #0dcaf0;
+}
+
+.btn-outline-success {
+    color: #198754;
+    border-color: #198754;
+}
+
+.btn-outline-success:hover {
+    color: #fff;
+    background-color: #198754;
+    border-color: #198754;
 }
 
 /* Responsive adjustments */
 @media (max-width: 767.98px) {
     .sidebar {
         top: 5rem;
+    }
+    
+    .navbar-brand-text {
+        font-size: 1rem;
     }
 }

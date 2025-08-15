@@ -149,17 +149,19 @@
                             {% endif %}
                         </div>
                         <div class="col-md-4">
-                            <h6>ActivityPub</h6>
-                            {% if health.components.activitypub and health.components.activitypub.details %}
+                            <h6>Ollama AI</h6>
+                            {% if health.components.ollama and health.components.ollama.details %}
                             <ul class="list-unstyled">
-                                <li><small>Instance: {{ health.components.activitypub.details.instance_title or 'Unknown' }}</small></li>
-                                <li><small>Version: {{ health.components.activitypub.details.instance_version or 'Unknown' }}</small></li>
-                                {% if health.components.activitypub.details.user_count %}
-                                <li><small>Users: {{ health.components.activitypub.details.user_count }}</small></li>
+                                <li><small>Base URL: {{ health.components.ollama.details.base_url or 'Unknown' }}</small></li>
+                                <li><small>Model: {{ health.components.ollama.details.required_model or 'Unknown' }}</small></li>
+                                {% if health.components.ollama.details.model_available %}
+                                <li><small>Status: Available</small></li>
+                                {% else %}
+                                <li><small>Status: Model not found</small></li>
                                 {% endif %}
                             </ul>
                             {% else %}
-                            <p><small class="text-muted">ActivityPub info not available</small></p>
+                            <p><small class="text-muted">Ollama info not available</small></p>
                             {% endif %}
                         </div>
                     </div>

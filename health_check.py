@@ -431,7 +431,6 @@ class HealthChecker:
         tasks = [
             self.check_database_health(),
             self.check_ollama_health(),
-            self.check_activitypub_health(),
             self.check_storage_health()
         ]
         
@@ -443,7 +442,7 @@ class HealthChecker:
         for i, result in enumerate(component_results):
             if isinstance(result, Exception):
                 # Handle unexpected errors in health checks
-                component_name = ["database", "ollama", "activitypub", "storage"][i]
+                component_name = ["database", "ollama", "storage"][i]
                 components[component_name] = ComponentHealth(
                     name=component_name,
                     status=HealthStatus.UNHEALTHY,
