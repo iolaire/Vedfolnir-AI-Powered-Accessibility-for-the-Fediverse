@@ -63,7 +63,7 @@ class TestEnvConfigValidation(unittest.TestCase):
         # Set all other required variables
         os.environ.update({
             'AUTH_ADMIN_USERNAME': 'admin_user',
-            'AUTH_ADMIN_EMAIL': 'admin@example.com',
+            'AUTH_ADMIN_EMAIL': 'admin@test.com',
             'AUTH_ADMIN_PASSWORD': 'SecurePassword123!',
             'PLATFORM_ENCRYPTION_KEY': 'fernet-key-here-32-chars-base64-encoded='
         })
@@ -116,7 +116,7 @@ class TestEnvConfigValidation(unittest.TestCase):
         os.environ.update({
             'FLASK_SECRET_KEY': '',  # Empty string
             'AUTH_ADMIN_USERNAME': 'admin_user',
-            'AUTH_ADMIN_EMAIL': 'admin@example.com',
+            'AUTH_ADMIN_EMAIL': 'admin@test.com',
             'AUTH_ADMIN_PASSWORD': 'SecurePassword123!'
         })
         

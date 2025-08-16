@@ -85,7 +85,7 @@ class TestDatabaseContextMiddleware(unittest.TestCase):
         mock_user = Mock()
         mock_user.id = 1
         mock_user.username = 'testuser'
-        mock_user.email = 'test@example.com'
+        mock_user.email = 'test@test.com'
         mock_user.role = 'user'
         mock_user.is_active = True
         mock_user.last_login = None
@@ -95,7 +95,7 @@ class TestDatabaseContextMiddleware(unittest.TestCase):
         expected = {
             'id': 1,
             'username': 'testuser',
-            'email': 'test@example.com',
+            'email': 'test@test.com',
             'role': 'user',
             'is_active': True,
             'last_login': None

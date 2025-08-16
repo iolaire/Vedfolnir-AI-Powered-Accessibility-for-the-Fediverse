@@ -61,7 +61,7 @@ class TestMiddlewareContext(unittest.TestCase):
             # Create test user
             self.test_user = User(
                 username='testuser',
-                email='test@example.com',
+                email='test@test.com',
                 role=UserRole.REVIEWER,
                 is_active=True
             )
@@ -277,7 +277,7 @@ class TestMiddlewareContext(unittest.TestCase):
         try:
             user2 = User(
                 username='user2',
-                email='user2@example.com',
+                email='user2@test.com',
                 role=UserRole.REVIEWER,
                 is_active=True
             )

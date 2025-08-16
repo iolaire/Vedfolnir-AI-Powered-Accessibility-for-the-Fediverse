@@ -120,6 +120,30 @@ def main():
     ollama_url = input("Ollama URL (default: http://Mac-mini-M2.local:11434): ").strip() or "http://Mac-mini-M2.local:11434"
     ollama_model = input("Ollama model (default: llava:7b): ").strip() or "llava:7b"
     
+    # Get email configuration from user
+    print("\nEmail Configuration:")
+    print("Configure email settings for user notifications (verification, password reset, etc.)")
+    configure_email = input("Configure email settings? (y/N): ").strip().lower() == 'y'
+    
+    email_settings = {}
+    if configure_email:
+        email_settings['MAIL_SERVER'] = input("SMTP server (e.g., smtp.gmail.com): ").strip()
+        email_settings['MAIL_PORT'] = input("SMTP port (default: 587): ").strip() or "587"
+        email_settings['MAIL_USE_TLS'] = input("Use TLS? (Y/n): ").strip().lower() != 'n'
+        email_settings['MAIL_USERNAME'] = input("SMTP username/email: ").strip()
+        email_settings['MAIL_PASSWORD'] = input("SMTP password/app password: ").strip()
+        email_settings['MAIL_DEFAULT_SENDER'] = input(f"Default sender email (default: {email_settings['MAIL_USERNAME']}): ").strip() or email_settings['MAIL_USERNAME']
+    else:
+        # Set default/disabled email settings
+        email_settings = {
+            'MAIL_SERVER': 'localhost',
+            'MAIL_PORT': '587',
+            'MAIL_USE_TLS': True,
+            'MAIL_USERNAME': '',
+            'MAIL_PASSWORD': '',
+            'MAIL_DEFAULT_SENDER': 'noreply@localhost'
+        }
+    
     # Get security configuration
     print("\nSecurity Configuration:")
     print("Choose security mode:")
@@ -179,6 +203,9 @@ def main():
     print(f"  Admin Username: {admin_username}")
     print(f"  Admin Email: {admin_email}")
     print(f"  Admin Password: {admin_password[:8]}... (24 chars)")
+    if configure_email:
+        print(f"  Email Server: {email_settings['MAIL_SERVER']}:{email_settings['MAIL_PORT']}")
+        print(f"  Email Username: {email_settings['MAIL_USERNAME']}")
     print()
     
     # Create .env file
@@ -213,6 +240,19 @@ def main():
                 pattern = f'^{setting}=.*$'
                 replacement = f'{setting}={value}'
                 env_content = re.sub(pattern, replacement, env_content, flags=re.MULTILINE)
+            
+            # Add email settings if not already present
+            if 'MAIL_SERVER=' not in env_content:
+                email_config = f"""
+# Email Configuration (for user notifications)
+MAIL_SERVER={email_settings['MAIL_SERVER']}
+MAIL_PORT={email_settings['MAIL_PORT']}
+MAIL_USE_TLS={'true' if email_settings['MAIL_USE_TLS'] else 'false'}
+MAIL_USERNAME={email_settings['MAIL_USERNAME']}
+MAIL_PASSWORD={email_settings['MAIL_PASSWORD']}
+MAIL_DEFAULT_SENDER={email_settings['MAIL_DEFAULT_SENDER']}
+"""
+                env_content += email_config
         else:
             # Create a basic .env file
             env_content = f"""# Vedfolnir Configuration
@@ -239,6 +279,14 @@ OLLAMA_MODEL={ollama_model}
 SECURITY_CSRF_ENABLED={security_settings['SECURITY_CSRF_ENABLED']}
 SECURITY_RATE_LIMITING_ENABLED={security_settings['SECURITY_RATE_LIMITING_ENABLED']}
 SECURITY_INPUT_VALIDATION_ENABLED={security_settings['SECURITY_INPUT_VALIDATION_ENABLED']}
+
+# Email Configuration (for user notifications)
+MAIL_SERVER={email_settings['MAIL_SERVER']}
+MAIL_PORT={email_settings['MAIL_PORT']}
+MAIL_USE_TLS={'true' if email_settings['MAIL_USE_TLS'] else 'false'}
+MAIL_USERNAME={email_settings['MAIL_USERNAME']}
+MAIL_PASSWORD={email_settings['MAIL_PASSWORD']}
+MAIL_DEFAULT_SENDER={email_settings['MAIL_DEFAULT_SENDER']}
 """
         
         with open(".env", "w") as f:

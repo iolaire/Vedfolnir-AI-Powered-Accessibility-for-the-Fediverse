@@ -113,7 +113,7 @@ class AppResetManager:
         return True
     
     def reset_complete(self, dry_run=False):
-        """Complete application reset - database and storage"""
+        """Complete application reset - database, storage, and environment"""
         logger.info("🔄 Performing complete application reset")
         
         success = True
@@ -126,12 +126,27 @@ class AppResetManager:
         if not self.reset_storage_only(dry_run):
             success = False
         
+        # Remove .env file
+        env_file = ".env"
+        if os.path.exists(env_file):
+            try:
+                if dry_run:
+                    logger.info(f"DRY RUN - Would remove {env_file}")
+                else:
+                    os.remove(env_file)
+                    logger.info(f"✅ Removed {env_file}")
+            except Exception as e:
+                logger.error(f"❌ Failed to remove {env_file}: {e}")
+                success = False
+        else:
+            logger.info(f"📂 {env_file} does not exist, skipping")
+        
         if success:
             if not dry_run:
                 logger.info("🎉 Complete application reset successful!")
                 logger.info("The application is now in a fresh state.")
                 logger.info("Next steps:")
-                logger.info("1. Ensure environment variables are set (run: python scripts/setup/generate_env_secrets.py)")
+                logger.info("1. Generate new environment configuration: python scripts/setup/generate_env_secrets.py")
                 logger.info("2. Start the web application: python web_app.py")
                 logger.info("3. Log in and set up your platform connections")
             else:
@@ -240,6 +255,14 @@ class AppResetManager:
                 logger.info(f"✅ {dir_path}: {file_count} files ({total_size / 1024 / 1024:.1f} MB)")
             else:
                 logger.info(f"❌ {dir_path}: Does not exist")
+        
+        # Check .env file
+        env_file = ".env"
+        if os.path.exists(env_file):
+            env_size = os.path.getsize(env_file)
+            logger.info(f"✅ {env_file}: Exists ({env_size / 1024:.1f} KB)")
+        else:
+            logger.info(f"❌ {env_file}: Does not exist")
         
         # Check environment variables
         required_env_vars = [

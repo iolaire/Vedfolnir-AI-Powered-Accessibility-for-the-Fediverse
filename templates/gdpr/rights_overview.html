@@ -1,0 +1,344 @@
+<!-- Copyright (C) 2025 iolaire mcfadden. -->
+<!-- This program is free software: you can redistribute it and/or modify it under the terms of the GNU Affero General Public License as published by the Free Software Foundation, either version 3 of the License, or (at your option) any later version. -->
+<!-- THE SOFTWARE IS PROVIDED "AS IS", WITHOUT WARRANTY OF ANY KIND, EXPRESS OR IMPLIED, INCLUDING BUT NOT LIMITED TO THE WARRANTIES OF MERCHANTABILITY, FITNESS FOR A PARTICULAR PURPOSE AND NONINFRINGEMENT. IN NO EVENT SHALL THE AUTHORS OR COPYRIGHT HOLDERS BE LIABLE FOR ANY CLAIM, DAMAGES OR OTHER LIABILITY, WHETHER IN AN ACTION OF CONTRACT, TORT OR OTHERWISE, ARISING FROM, OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE SOFTWARE. -->
+
+{% extends "base.html" %}
+
+{% block title %}Your Privacy Rights - Vedfolnir{% endblock %}
+
+{% block content %}
+<div class="container mt-4">
+    <div class="row justify-content-center">
+        <div class="col-md-10">
+            <div class="card">
+                <div class="card-header">
+                    <h2 class="mb-0">
+                        <i class="fas fa-balance-scale me-2"></i>
+                        Your Privacy Rights
+                    </h2>
+                    <small class="text-muted">Understanding your rights under GDPR and other privacy laws</small>
+                </div>
+                <div class="card-body">
+                    <div class="alert alert-info">
+                        <i class="fas fa-info-circle me-2"></i>
+                        <strong>Your Rights Matter</strong><br>
+                        You have fundamental rights regarding your personal data. This page explains each right and how to exercise them with Vedfolnir.
+                    </div>
+
+                    <div class="row">
+                        <!-- Right to Access -->
+                        <div class="col-md-6 mb-4">
+                            <div class="card h-100 border-primary">
+                                <div class="card-header bg-primary text-white">
+                                    <h5 class="mb-0">
+                                        <i class="fas fa-eye me-2"></i>
+                                        Right to Access
+                                    </h5>
+                                    <small>GDPR Article 15</small>
+                                </div>
+                                <div class="card-body">
+                                    <p>You have the right to know what personal data we have about you and how we use it.</p>
+                                    <h6>What you can get:</h6>
+                                    <ul class="small">
+                                        <li>All your personal data</li>
+                                        <li>How we use your data</li>
+                                        <li>Who we share it with</li>
+                                        <li>How long we keep it</li>
+                                    </ul>
+                                    <div class="mt-auto">
+                                        <a href="{{ url_for('gdpr.data_export') }}" class="btn btn-primary btn-sm">
+                                            <i class="fas fa-download me-2"></i>Export My Data
+                                        </a>
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
+
+                        <!-- Right to Rectification -->
+                        <div class="col-md-6 mb-4">
+                            <div class="card h-100 border-success">
+                                <div class="card-header bg-success text-white">
+                                    <h5 class="mb-0">
+                                        <i class="fas fa-edit me-2"></i>
+                                        Right to Rectification
+                                    </h5>
+                                    <small>GDPR Article 16</small>
+                                </div>
+                                <div class="card-body">
+                                    <p>You have the right to correct inaccurate or incomplete personal data.</p>
+                                    <h6>What you can do:</h6>
+                                    <ul class="small">
+                                        <li>Correct wrong information</li>
+                                        <li>Complete missing data</li>
+                                        <li>Update outdated information</li>
+                                        <li>Fix spelling errors</li>
+                                    </ul>
+                                    <div class="mt-auto">
+                                        <a href="{{ url_for('gdpr.data_rectification') }}" class="btn btn-success btn-sm">
+                                            <i class="fas fa-edit me-2"></i>Correct My Data
+                                        </a>
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
+
+                        <!-- Right to Erasure -->
+                        <div class="col-md-6 mb-4">
+                            <div class="card h-100 border-danger">
+                                <div class="card-header bg-danger text-white">
+                                    <h5 class="mb-0">
+                                        <i class="fas fa-trash-alt me-2"></i>
+                                        Right to Erasure
+                                    </h5>
+                                    <small>GDPR Article 17</small>
+                                </div>
+                                <div class="card-body">
+                                    <p>You have the right to have your personal data deleted under certain circumstances.</p>
+                                    <h6>When you can delete:</h6>
+                                    <ul class="small">
+                                        <li>Data no longer needed</li>
+                                        <li>You withdraw consent</li>
+                                        <li>Data processed unlawfully</li>
+                                        <li>Legal obligation requires it</li>
+                                    </ul>
+                                    <div class="mt-auto">
+                                        <a href="{{ url_for('gdpr.data_erasure') }}" class="btn btn-danger btn-sm">
+                                            <i class="fas fa-trash-alt me-2"></i>Delete My Data
+                                        </a>
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
+
+                        <!-- Right to Restrict Processing -->
+                        <div class="col-md-6 mb-4">
+                            <div class="card h-100 border-warning">
+                                <div class="card-header bg-warning text-dark">
+                                    <h5 class="mb-0">
+                                        <i class="fas fa-pause me-2"></i>
+                                        Right to Restrict Processing
+                                    </h5>
+                                    <small>GDPR Article 18</small>
+                                </div>
+                                <div class="card-body">
+                                    <p>You have the right to limit how we process your data under certain circumstances.</p>
+                                    <h6>When you can restrict:</h6>
+                                    <ul class="small">
+                                        <li>You contest data accuracy</li>
+                                        <li>Processing is unlawful</li>
+                                        <li>We no longer need the data</li>
+                                        <li>You object to processing</li>
+                                    </ul>
+                                    <div class="mt-auto">
+                                        <a href="{{ url_for('gdpr.privacy_request') }}" class="btn btn-warning btn-sm">
+                                            <i class="fas fa-pause me-2"></i>Request Restriction
+                                        </a>
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
+
+                        <!-- Right to Data Portability -->
+                        <div class="col-md-6 mb-4">
+                            <div class="card h-100 border-info">
+                                <div class="card-header bg-info text-white">
+                                    <h5 class="mb-0">
+                                        <i class="fas fa-exchange-alt me-2"></i>
+                                        Right to Data Portability
+                                    </h5>
+                                    <small>GDPR Article 20</small>
+                                </div>
+                                <div class="card-body">
+                                    <p>You have the right to receive your data in a portable format or transfer it to another service.</p>
+                                    <h6>What you get:</h6>
+                                    <ul class="small">
+                                        <li>Machine-readable format</li>
+                                        <li>Structured data export</li>
+                                        <li>Easy to import elsewhere</li>
+                                        <li>Your data, your choice</li>
+                                    </ul>
+                                    <div class="mt-auto">
+                                        <a href="{{ url_for('gdpr.data_portability') }}" class="btn btn-info btn-sm">
+                                            <i class="fas fa-exchange-alt me-2"></i>Port My Data
+                                        </a>
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
+
+                        <!-- Right to Object -->
+                        <div class="col-md-6 mb-4">
+                            <div class="card h-100 border-secondary">
+                                <div class="card-header bg-secondary text-white">
+                                    <h5 class="mb-0">
+                                        <i class="fas fa-hand-paper me-2"></i>
+                                        Right to Object
+                                    </h5>
+                                    <small>GDPR Article 21</small>
+                                </div>
+                                <div class="card-body">
+                                    <p>You have the right to object to certain types of data processing.</p>
+                                    <h6>What you can object to:</h6>
+                                    <ul class="small">
+                                        <li>Direct marketing</li>
+                                        <li>Profiling for marketing</li>
+                                        <li>Processing for legitimate interests</li>
+                                        <li>Research and statistics</li>
+                                    </ul>
+                                    <div class="mt-auto">
+                                        <a href="{{ url_for('gdpr.privacy_request') }}" class="btn btn-secondary btn-sm">
+                                            <i class="fas fa-hand-paper me-2"></i>Object to Processing
+                                        </a>
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
+
+                        <!-- Right to Withdraw Consent -->
+                        <div class="col-md-6 mb-4">
+                            <div class="card h-100 border-dark">
+                                <div class="card-header bg-dark text-white">
+                                    <h5 class="mb-0">
+                                        <i class="fas fa-times-circle me-2"></i>
+                                        Right to Withdraw Consent
+                                    </h5>
+                                    <small>GDPR Article 7(3)</small>
+                                </div>
+                                <div class="card-body">
+                                    <p>You have the right to withdraw your consent for data processing at any time.</p>
+                                    <h6>Important notes:</h6>
+                                    <ul class="small">
+                                        <li>Easy as giving consent</li>
+                                        <li>No penalty for withdrawal</li>
+                                        <li>Doesn't affect past processing</li>
+                                        <li>May limit service features</li>
+                                    </ul>
+                                    <div class="mt-auto">
+                                        <a href="{{ url_for('gdpr.consent_management') }}" class="btn btn-dark btn-sm">
+                                            <i class="fas fa-times-circle me-2"></i>Manage Consent
+                                        </a>
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
+
+                        <!-- Right to Lodge a Complaint -->
+                        <div class="col-md-6 mb-4">
+                            <div class="card h-100 border-primary">
+                                <div class="card-header bg-primary text-white">
+                                    <h5 class="mb-0">
+                                        <i class="fas fa-balance-scale me-2"></i>
+                                        Right to Lodge a Complaint
+                                    </h5>
+                                    <small>GDPR Article 77</small>
+                                </div>
+                                <div class="card-body">
+                                    <p>You have the right to file a complaint with a data protection authority.</p>
+                                    <h6>When to complain:</h6>
+                                    <ul class="small">
+                                        <li>We don't respond to requests</li>
+                                        <li>You're not satisfied with our response</li>
+                                        <li>You believe we violated your rights</li>
+                                        <li>You have privacy concerns</li>
+                                    </ul>
+                                    <div class="mt-auto">
+                                        <a href="{{ url_for('gdpr.privacy_request') }}" class="btn btn-primary btn-sm">
+                                            <i class="fas fa-balance-scale me-2"></i>File Complaint
+                                        </a>
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+
+                    <div class="card mt-4">
+                        <div class="card-header">
+                            <h4 class="mb-0">How to Exercise Your Rights</h4>
+                        </div>
+                        <div class="card-body">
+                            <div class="row">
+                                <div class="col-md-4">
+                                    <h5><i class="fas fa-user-check me-2"></i>Step 1: Verify Identity</h5>
+                                    <p>Log into your account to verify your identity. This protects your privacy and ensures only you can access your data.</p>
+                                </div>
+                                <div class="col-md-4">
+                                    <h5><i class="fas fa-mouse-pointer me-2"></i>Step 2: Choose Your Right</h5>
+                                    <p>Select the privacy right you want to exercise using the buttons above or through your profile settings.</p>
+                                </div>
+                                <div class="col-md-4">
+                                    <h5><i class="fas fa-clock me-2"></i>Step 3: We Respond</h5>
+                                    <p>We'll process your request within 30 days (or 1 month) as required by GDPR and notify you of the outcome.</p>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+
+                    <div class="card mt-4">
+                        <div class="card-header">
+                            <h4 class="mb-0">Important Information</h4>
+                        </div>
+                        <div class="card-body">
+                            <div class="row">
+                                <div class="col-md-6">
+                                    <h6><i class="fas fa-calendar me-2"></i>Response Times</h6>
+                                    <ul>
+                                        <li><strong>Standard:</strong> 30 days maximum</li>
+                                        <li><strong>Complex requests:</strong> May extend to 60 days</li>
+                                        <li><strong>Urgent matters:</strong> We prioritize security issues</li>
+                                    </ul>
+                                </div>
+                                <div class="col-md-6">
+                                    <h6><i class="fas fa-dollar-sign me-2"></i>Costs</h6>
+                                    <ul>
+                                        <li><strong>First request:</strong> Always free</li>
+                                        <li><strong>Repeated requests:</strong> Usually free</li>
+                                        <li><strong>Excessive requests:</strong> May charge reasonable fee</li>
+                                    </ul>
+                                </div>
+                            </div>
+                            <div class="row mt-3">
+                                <div class="col-md-6">
+                                    <h6><i class="fas fa-shield-alt me-2"></i>Identity Verification</h6>
+                                    <p>We may ask for additional verification if we have reasonable doubts about your identity, especially for sensitive requests like data deletion.</p>
+                                </div>
+                                <div class="col-md-6">
+                                    <h6><i class="fas fa-question-circle me-2"></i>Need Help?</h6>
+                                    <p>If you're unsure about any of your rights or need assistance, please contact our privacy team through the privacy request form.</p>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+
+                    <div class="text-center mt-4">
+                        <a href="{{ url_for('gdpr.privacy_policy') }}" class="btn btn-outline-primary me-2">
+                            <i class="fas fa-file-alt me-2"></i>Read Privacy Policy
+                        </a>
+                        <a href="{{ url_for('gdpr.privacy_request') }}" class="btn btn-primary">
+                            <i class="fas fa-envelope me-2"></i>Submit Privacy Request
+                        </a>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+{% endblock %}
+
+{% block scripts %}
+<script>
+document.addEventListener('DOMContentLoaded', function() {
+    // Add hover effects to cards
+    const cards = document.querySelectorAll('.card.h-100');
+    cards.forEach(card => {
+        card.addEventListener('mouseenter', function() {
+            this.style.transform = 'translateY(-5px)';
+            this.style.transition = 'transform 0.3s ease';
+        });
+        
+        card.addEventListener('mouseleave', function() {
+            this.style.transform = 'translateY(0)';
+        });
+    });
+});
+</script>
+{% endblock %}

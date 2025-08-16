@@ -1,0 +1,201 @@
+<!-- Copyright (C) 2025 iolaire mcfadden. -->
+<!-- This program is free software: you can redistribute it and/or modify it under the terms of the GNU Affero General Public License as published by the Free Software Foundation, either version 3 of the License, or (at your option) any later version. -->
+<!-- THE SOFTWARE IS PROVIDED "AS IS", WITHOUT WARRANTY OF ANY KIND, EXPRESS OR IMPLIED, INCLUDING BUT NOT LIMITED TO THE WARRANTIES OF MERCHANTABILITY, FITNESS FOR A PARTICULAR PURPOSE AND NONINFRINGEMENT. IN NO EVENT SHALL THE AUTHORS OR COPYRIGHT HOLDERS BE LIABLE FOR ANY CLAIM, DAMAGES OR OTHER LIABILITY, WHETHER IN AN ACTION OF CONTRACT, TORT OR OTHERWISE, ARISING FROM, OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE SOFTWARE. -->
+
+{% extends "base.html" %}
+
+{% block title %}Delete Personal Data - Vedfolnir{% endblock %}
+
+{% block content %}
+<div class="container mt-4">
+    <div class="row justify-content-center">
+        <div class="col-md-8">
+            <div class="card border-danger">
+                <div class="card-header bg-danger text-white">
+                    <h3 class="mb-0">
+                        <i class="fas fa-trash-alt me-2"></i>
+                        Delete Personal Data
+                    </h3>
+                    <small>GDPR Article 17 - Right to erasure</small>
+                </div>
+                <div class="card-body">
+                    <div class="alert alert-danger">
+                        <i class="fas fa-exclamation-triangle me-2"></i>
+                        <strong>WARNING: This action cannot be undone!</strong><br>
+                        You are about to permanently delete your account and all associated data. 
+                        Please read all information carefully before proceeding.
+                    </div>
+
+                    <form method="POST" id="erasureForm">
+                        {{ form.hidden_tag() }}
+                        
+                        <div class="mb-3">
+                            {{ form.erasure_type.label(class="form-label") }}
+                            {{ form.erasure_type(class="form-select") }}
+                            <div class="form-text">{{ form.erasure_type.description }}</div>
+                        </div>
+
+                        <div class="mb-3">
+                            {{ form.erasure_reason.label(class="form-label") }}
+                            {{ form.erasure_reason(class="form-select") }}
+                            <div class="form-text">{{ form.erasure_reason.description }}</div>
+                        </div>
+
+                        <div class="mb-3">
+                            {{ form.additional_reason.label(class="form-label") }}
+                            {{ form.additional_reason(class="form-control", rows="3") }}
+                            <div class="form-text">{{ form.additional_reason.description }}</div>
+                        </div>
+
+                        <div class="alert alert-info">
+                            <h6>What will be deleted:</h6>
+                            <ul class="mb-0">
+                                <li>Your profile information (name, email, username)</li>
+                                <li>All platform connections and credentials</li>
+                                <li>All posts, images, and captions</li>
+                                <li>Processing history and logs</li>
+                                <li>All stored files and media</li>
+                                <li>Account settings and preferences</li>
+                            </ul>
+                        </div>
+
+                        <div class="mb-3">
+                            <div class="form-check">
+                                {{ form.understand_consequences(class="form-check-input") }}
+                                {{ form.understand_consequences.label(class="form-check-label") }}
+                                <div class="form-text">{{ form.understand_consequences.description }}</div>
+                                {% if form.understand_consequences.errors %}
+                                    <div class="text-danger">
+                                        {% for error in form.understand_consequences.errors %}
+                                            <small>{{ error }}</small><br>
+                                        {% endfor %}
+                                    </div>
+                                {% endif %}
+                            </div>
+                        </div>
+
+                        <div class="mb-3">
+                            <div class="form-check">
+                                {{ form.confirm_identity(class="form-check-input") }}
+                                {{ form.confirm_identity.label(class="form-check-label") }}
+                                <div class="form-text">{{ form.confirm_identity.description }}</div>
+                                {% if form.confirm_identity.errors %}
+                                    <div class="text-danger">
+                                        {% for error in form.confirm_identity.errors %}
+                                            <small>{{ error }}</small><br>
+                                        {% endfor %}
+                                    </div>
+                                {% endif %}
+                            </div>
+                        </div>
+
+                        <div class="mb-3">
+                            <div class="form-check">
+                                {{ form.final_confirmation(class="form-check-input") }}
+                                {{ form.final_confirmation.label(class="form-check-label") }}
+                                <div class="form-text">{{ form.final_confirmation.description }}</div>
+                                {% if form.final_confirmation.errors %}
+                                    <div class="text-danger">
+                                        {% for error in form.final_confirmation.errors %}
+                                            <small>{{ error }}</small><br>
+                                        {% endfor %}
+                                    </div>
+                                {% endif %}
+                            </div>
+                        </div>
+
+                        <div class="alert alert-warning">
+                            <i class="fas fa-clock me-2"></i>
+                            <strong>Processing Time:</strong> Data deletion may take up to 30 days to complete across all systems. 
+                            You will receive a confirmation email once the process is finished.
+                        </div>
+
+                        <div class="d-grid gap-2 d-md-flex justify-content-md-end">
+                            <a href="{{ url_for('profile.profile') }}" class="btn btn-secondary me-md-2">Cancel</a>
+                            {{ form.submit(class="btn btn-danger", id="deleteButton", disabled=true) }}
+                        </div>
+                    </form>
+                </div>
+            </div>
+
+            <div class="card mt-4">
+                <div class="card-header">
+                    <h5 class="mb-0">Alternatives to Account Deletion</h5>
+                </div>
+                <div class="card-body">
+                    <p>Before deleting your account, consider these alternatives:</p>
+                    <div class="row">
+                        <div class="col-md-6">
+                            <h6><i class="fas fa-user-slash me-2"></i>Deactivate Account</h6>
+                            <p class="small">Temporarily disable your account without deleting data. You can reactivate it later.</p>
+                        </div>
+                        <div class="col-md-6">
+                            <h6><i class="fas fa-download me-2"></i>Export Data First</h6>
+                            <p class="small">Download your data before deletion to keep a personal copy.</p>
+                            <a href="{{ url_for('gdpr.data_export') }}" class="btn btn-sm btn-outline-primary">Export Data</a>
+                        </div>
+                    </div>
+                    <div class="row mt-3">
+                        <div class="col-md-6">
+                            <h6><i class="fas fa-cog me-2"></i>Adjust Privacy Settings</h6>
+                            <p class="small">Modify your privacy preferences instead of deleting everything.</p>
+                            <a href="{{ url_for('gdpr.consent_management') }}" class="btn btn-sm btn-outline-primary">Privacy Settings</a>
+                        </div>
+                        <div class="col-md-6">
+                            <h6><i class="fas fa-question-circle me-2"></i>Contact Support</h6>
+                            <p class="small">Speak with our support team about your concerns.</p>
+                            <a href="{{ url_for('gdpr.privacy_request') }}" class="btn btn-sm btn-outline-primary">Contact Support</a>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+{% endblock %}
+
+{% block scripts %}
+<script>
+document.addEventListener('DOMContentLoaded', function() {
+    const form = document.getElementById('erasureForm');
+    const deleteButton = document.getElementById('deleteButton');
+    const checkboxes = form.querySelectorAll('input[type="checkbox"]');
+    
+    function updateDeleteButton() {
+        let allChecked = true;
+        checkboxes.forEach(checkbox => {
+            if (!checkbox.checked) {
+                allChecked = false;
+            }
+        });
+        
+        deleteButton.disabled = !allChecked;
+        
+        if (allChecked) {
+            deleteButton.textContent = 'DELETE MY ACCOUNT PERMANENTLY';
+        } else {
+            deleteButton.textContent = 'Complete all confirmations to proceed';
+        }
+    }
+    
+    checkboxes.forEach(checkbox => {
+        checkbox.addEventListener('change', updateDeleteButton);
+    });
+    
+    // Double confirmation on submit
+    form.addEventListener('submit', function(e) {
+        const confirmed = confirm(
+            'FINAL WARNING: This will permanently delete your account and all data. ' +
+            'This action cannot be undone. Are you absolutely sure you want to proceed?'
+        );
+        
+        if (!confirmed) {
+            e.preventDefault();
+        }
+    });
+    
+    // Update button state on page load
+    updateDeleteButton();
+});
+</script>
+{% endblock %}

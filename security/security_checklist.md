@@ -1,4 +1,4 @@
-# Security Checklist for Alt Text Bot
+# Security Checklist for Vedfolnir
 
 This checklist ensures that security best practices are followed throughout the development lifecycle.
 

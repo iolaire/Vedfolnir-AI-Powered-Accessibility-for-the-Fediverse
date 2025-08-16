@@ -1,6 +1,6 @@
 # Test Helpers
 
-This directory contains helper utilities for testing the Alt Text Bot application, including standardized mock configurations, async helpers, database mocks, and platform-specific mocks.
+This directory contains helper utilities for testing the Vedfolnir application, including standardized mock configurations, async helpers, database mocks, and platform-specific mocks.
 
 ## Standardized Mock Configurations
 

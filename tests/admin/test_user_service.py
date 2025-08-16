@@ -57,7 +57,7 @@ class TestUserService(unittest.TestCase):
         with patch('admin.services.user_service.User', return_value=mock_user):
             user = self.user_service.create_user(
                 username="testuser",
-                email="test@example.com",
+                email="test@test.com",
                 password="password123",
                 role=UserRole.REVIEWER
             )
@@ -76,7 +76,7 @@ class TestUserService(unittest.TestCase):
         with self.assertRaises(ValueError) as context:
             self.user_service.create_user(
                 username="testuser",
-                email="test@example.com",
+                email="test@test.com",
                 password="password123",
                 role=UserRole.REVIEWER
             )
@@ -96,14 +96,14 @@ class TestUserService(unittest.TestCase):
         success = self.user_service.update_user(
             user_id=1,
             username="newusername",
-            email="new@example.com",
+            email="new@test.com",
             role=UserRole.ADMIN,
             is_active=True
         )
         
         self.assertTrue(success)
         self.assertEqual(mock_user.username, "newusername")
-        self.assertEqual(mock_user.email, "new@example.com")
+        self.assertEqual(mock_user.email, "new@test.com")
         self.assertEqual(mock_user.role, UserRole.ADMIN)
         self.assertTrue(mock_user.is_active)
         self.mock_session.commit.assert_called_once()
@@ -115,7 +115,7 @@ class TestUserService(unittest.TestCase):
         success = self.user_service.update_user(
             user_id=999,
             username="newusername",
-            email="new@example.com",
+            email="new@test.com",
             role=UserRole.ADMIN,
             is_active=True
         )

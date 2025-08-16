@@ -2,7 +2,7 @@
 
 ## Overview
 
-The Session Management System is a comprehensive solution that provides robust session handling, cross-tab synchronization, and platform context management for the Alt Text Bot web application. The system ensures consistent user experience across multiple browser tabs while maintaining security, performance, and data integrity.
+The Session Management System is a comprehensive solution that provides robust session handling, cross-tab synchronization, and platform context management for the Vedfolnir web application. The system ensures consistent user experience across multiple browser tabs while maintaining security, performance, and data integrity.
 
 ## Architecture
 

@@ -1,0 +1,162 @@
+<!-- Copyright (C) 2025 iolaire mcfadden. -->
+<!-- This program is free software: you can redistribute it and/or modify it under the terms of the GNU Affero General Public License as published by the Free Software Foundation, either version 3 of the License, or (at your option) any later version. -->
+<!-- THE SOFTWARE IS PROVIDED "AS IS", WITHOUT WARRANTY OF ANY KIND, EXPRESS OR IMPLIED, INCLUDING BUT NOT LIMITED TO THE WARRANTIES OF MERCHANTABILITY, FITNESS FOR A PARTICULAR PURPOSE AND NONINFRINGEMENT. IN NO EVENT SHALL THE AUTHORS OR COPYRIGHT HOLDERS BE LIABLE FOR ANY CLAIM, DAMAGES OR OTHER LIABILITY, WHETHER IN AN ACTION OF CONTRACT, TORT OR OTHERWISE, ARISING FROM, OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE SOFTWARE. -->
+
+{% extends "base.html" %}
+
+{% block title %}Export Personal Data - Vedfolnir{% endblock %}
+
+{% block content %}
+<div class="container mt-4">
+    <div class="row justify-content-center">
+        <div class="col-md-8">
+            <div class="card">
+                <div class="card-header">
+                    <h3 class="mb-0">
+                        <i class="fas fa-download me-2"></i>
+                        Export Personal Data
+                    </h3>
+                    <small class="text-muted">GDPR Article 20 - Right to data portability</small>
+                </div>
+                <div class="card-body">
+                    <div class="alert alert-info">
+                        <i class="fas fa-info-circle me-2"></i>
+                        <strong>Your Right to Data Portability</strong><br>
+                        You have the right to receive your personal data in a structured, commonly used, and machine-readable format. 
+                        This export will include all personal data we have about you.
+                    </div>
+
+                    <form method="POST">
+                        {{ form.hidden_tag() }}
+                        
+                        <div class="mb-3">
+                            {{ form.export_format.label(class="form-label") }}
+                            {{ form.export_format(class="form-select") }}
+                            <div class="form-text">{{ form.export_format.description }}</div>
+                        </div>
+
+                        <div class="mb-3">
+                            <label class="form-label">Data to Include</label>
+                            <div class="form-check">
+                                {{ form.include_activity_log(class="form-check-input") }}
+                                {{ form.include_activity_log.label(class="form-check-label") }}
+                                <div class="form-text">{{ form.include_activity_log.description }}</div>
+                            </div>
+                            <div class="form-check">
+                                {{ form.include_content_data(class="form-check-input") }}
+                                {{ form.include_content_data.label(class="form-check-label") }}
+                                <div class="form-text">{{ form.include_content_data.description }}</div>
+                            </div>
+                            <div class="form-check">
+                                {{ form.include_platform_data(class="form-check-input") }}
+                                {{ form.include_platform_data.label(class="form-check-label") }}
+                                <div class="form-text">{{ form.include_platform_data.description }}</div>
+                            </div>
+                        </div>
+
+                        <div class="mb-3">
+                            {{ form.delivery_method.label(class="form-label") }}
+                            {{ form.delivery_method(class="form-select") }}
+                            <div class="form-text">{{ form.delivery_method.description }}</div>
+                        </div>
+
+                        <div class="mb-3">
+                            <div class="form-check">
+                                {{ form.confirmation(class="form-check-input") }}
+                                {{ form.confirmation.label(class="form-check-label") }}
+                                <div class="form-text">{{ form.confirmation.description }}</div>
+                            </div>
+                        </div>
+
+                        <div class="alert alert-warning">
+                            <i class="fas fa-exclamation-triangle me-2"></i>
+                            <strong>Important Information:</strong>
+                            <ul class="mb-0 mt-2">
+                                <li>Your data export will be available for 7 days</li>
+                                <li>Access tokens are excluded for security reasons</li>
+                                <li>Large exports may take several minutes to generate</li>
+                                <li>You can request a new export at any time</li>
+                            </ul>
+                        </div>
+
+                        <div class="d-grid gap-2 d-md-flex justify-content-md-end">
+                            <a href="{{ url_for('profile.profile') }}" class="btn btn-secondary me-md-2">Cancel</a>
+                            {{ form.submit(class="btn btn-primary") }}
+                        </div>
+                    </form>
+                </div>
+            </div>
+
+            <div class="card mt-4">
+                <div class="card-header">
+                    <h5 class="mb-0">What's Included in Your Export?</h5>
+                </div>
+                <div class="card-body">
+                    <div class="row">
+                        <div class="col-md-6">
+                            <h6>Profile Data</h6>
+                            <ul class="list-unstyled">
+                                <li><i class="fas fa-check text-success me-2"></i>Username and email</li>
+                                <li><i class="fas fa-check text-success me-2"></i>First and last name</li>
+                                <li><i class="fas fa-check text-success me-2"></i>Account creation date</li>
+                                <li><i class="fas fa-check text-success me-2"></i>Role and permissions</li>
+                                <li><i class="fas fa-check text-success me-2"></i>Consent preferences</li>
+                            </ul>
+                        </div>
+                        <div class="col-md-6">
+                            <h6>Platform Data</h6>
+                            <ul class="list-unstyled">
+                                <li><i class="fas fa-check text-success me-2"></i>Connected platforms</li>
+                                <li><i class="fas fa-check text-success me-2"></i>Platform usernames</li>
+                                <li><i class="fas fa-check text-success me-2"></i>Connection settings</li>
+                                <li><i class="fas fa-times text-danger me-2"></i>Access tokens (excluded)</li>
+                            </ul>
+                        </div>
+                    </div>
+                    <div class="row mt-3">
+                        <div class="col-md-6">
+                            <h6>Content Data</h6>
+                            <ul class="list-unstyled">
+                                <li><i class="fas fa-check text-success me-2"></i>Posts and images</li>
+                                <li><i class="fas fa-check text-success me-2"></i>Generated captions</li>
+                                <li><i class="fas fa-check text-success me-2"></i>Review history</li>
+                                <li><i class="fas fa-check text-success me-2"></i>Processing runs</li>
+                            </ul>
+                        </div>
+                        <div class="col-md-6">
+                            <h6>Activity Data</h6>
+                            <ul class="list-unstyled">
+                                <li><i class="fas fa-check text-success me-2"></i>Login history</li>
+                                <li><i class="fas fa-check text-success me-2"></i>Account changes</li>
+                                <li><i class="fas fa-check text-success me-2"></i>Privacy actions</li>
+                                <li><i class="fas fa-check text-success me-2"></i>System interactions</li>
+                            </ul>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+{% endblock %}
+
+{% block scripts %}
+<script>
+document.addEventListener('DOMContentLoaded', function() {
+    const deliveryMethod = document.getElementById('delivery_method');
+    const exportFormat = document.getElementById('export_format');
+    
+    function updateFormBasedOnDelivery() {
+        if (deliveryMethod.value === 'email') {
+            // Email delivery - recommend JSON format
+            if (exportFormat.value === 'csv') {
+                exportFormat.value = 'json';
+            }
+        }
+    }
+    
+    deliveryMethod.addEventListener('change', updateFormBasedOnDelivery);
+    updateFormBasedOnDelivery();
+});
+</script>
+{% endblock %}

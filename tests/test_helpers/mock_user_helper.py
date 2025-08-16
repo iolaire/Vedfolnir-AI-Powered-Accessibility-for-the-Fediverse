@@ -64,7 +64,7 @@ class MockUserHelper:
         if username is None:
             username = f"test_user_{unique_id}"
         if email is None:
-            email = f"test_{unique_id}@example.com"
+            email = f"test_{unique_id}@test.com"
         
         session = self.db_manager.get_session()
         try:

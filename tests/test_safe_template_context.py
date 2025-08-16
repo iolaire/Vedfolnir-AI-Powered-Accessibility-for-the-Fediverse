@@ -31,7 +31,7 @@ from safe_template_context import (
 
 class MockUser:
     """Mock user class for testing"""
-    def __init__(self, user_id=1, username="testuser", email="test@example.com", role="user", is_active=True):
+    def __init__(self, user_id=1, username="testuser", email="test@test.com", role="user", is_active=True):
         self.id = user_id
         self.username = username
         self.email = email
@@ -122,7 +122,7 @@ class TestSafeTemplateContext(unittest.TestCase):
             'is_authenticated': True,
             'id': 1,
             'username': 'testuser',
-            'email': 'test@example.com',
+            'email': 'test@test.com',
             'role': 'user',
             'is_active': True
         })
@@ -189,7 +189,7 @@ class TestSafeTemplateContext(unittest.TestCase):
         expected = {
             'id': 1,
             'username': 'testuser',
-            'email': 'test@example.com',
+            'email': 'test@test.com',
             'role': 'user',
             'is_active': True
         }

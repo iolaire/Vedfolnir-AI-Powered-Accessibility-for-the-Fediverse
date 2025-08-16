@@ -1,0 +1,315 @@
+<!-- Copyright (C) 2025 iolaire mcfadden. -->
+<!-- This program is free software: you can redistribute it and/or modify it under the terms of the GNU Affero General Public License as published by the Free Software Foundation, either version 3 of the License, or (at your option) any later version. -->
+<!-- THE SOFTWARE IS PROVIDED "AS IS", WITHOUT WARRANTY OF ANY KIND, EXPRESS OR IMPLIED, INCLUDING BUT NOT LIMITED TO THE WARRANTIES OF MERCHANTABILITY, FITNESS FOR A PARTICULAR PURPOSE AND NONINFRINGEMENT. IN NO EVENT SHALL THE AUTHORS OR COPYRIGHT HOLDERS BE LIABLE FOR ANY CLAIM, DAMAGES OR OTHER LIABILITY, WHETHER IN AN ACTION OF CONTRACT, TORT OR OTHERWISE, ARISING FROM, OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE SOFTWARE. -->
+
+<!-- Viewer User Navigation Component -->
+<!-- Requirements: 8.1, 8.5 -->
+
+<nav class="viewer-navigation" role="navigation" aria-label="Viewer navigation">
+    <div class="nav-section">
+        <h3 class="nav-section-title">Content Management</h3>
+        <ul class="nav-list">
+            <li class="nav-item">
+                <a href="{{ url_for('index') }}" class="nav-link {{ 'active' if request.endpoint == 'index' }}">
+                    <i class="icon-home" aria-hidden="true"></i>
+                    <span>Dashboard</span>
+                </a>
+            </li>
+            <li class="nav-item">
+                <a href="{{ url_for('review') }}" class="nav-link {{ 'active' if request.endpoint == 'review' }}">
+                    <i class="icon-review" aria-hidden="true"></i>
+                    <span>Review Images</span>
+                    {% if pending_review_count > 0 %}
+                        <span class="badge badge-primary">{{ pending_review_count }}</span>
+                    {% endif %}
+                </a>
+            </li>
+            <li class="nav-item">
+                <a href="{{ url_for('review_batches') }}" class="nav-link {{ 'active' if request.endpoint == 'review_batches' }}">
+                    <i class="icon-batch" aria-hidden="true"></i>
+                    <span>Review Batches</span>
+                </a>
+            </li>
+            <li class="nav-item">
+                <a href="{{ url_for('caption_generation') }}" class="nav-link {{ 'active' if request.endpoint == 'caption_generation' }}">
+                    <i class="icon-generate" aria-hidden="true"></i>
+                    <span>Generate Captions</span>
+                </a>
+            </li>
+        </ul>
+    </div>
+
+    <div class="nav-section">
+        <h3 class="nav-section-title">Platform Management</h3>
+        <ul class="nav-list">
+            <li class="nav-item">
+                <a href="{{ url_for('platform_management') }}" class="nav-link {{ 'active' if request.endpoint == 'platform_management' }}">
+                    <i class="icon-platform" aria-hidden="true"></i>
+                    <span>My Platforms</span>
+                    {% if user_platform_count > 0 %}
+                        <span class="badge badge-secondary">{{ user_platform_count }}</span>
+                    {% endif %}
+                </a>
+            </li>
+            <li class="nav-item">
+                <a href="{{ url_for('caption_settings') }}" class="nav-link {{ 'active' if request.endpoint == 'caption_settings' }}">
+                    <i class="icon-settings" aria-hidden="true"></i>
+                    <span>Caption Settings</span>
+                </a>
+            </li>
+        </ul>
+    </div>
+
+    <div class="nav-section">
+        <h3 class="nav-section-title">Account</h3>
+        <ul class="nav-list">
+            <li class="nav-item">
+                <a href="{{ url_for('user_management.profile') }}" class="nav-link {{ 'active' if request.endpoint == 'user_management.profile' }}">
+                    <i class="icon-user" aria-hidden="true"></i>
+                    <span>My Profile</span>
+                </a>
+            </li>
+            <li class="nav-item">
+                <a href="{{ url_for('user_management.change_password') }}" class="nav-link {{ 'active' if request.endpoint == 'user_management.change_password' }}">
+                    <i class="icon-lock" aria-hidden="true"></i>
+                    <span>Change Password</span>
+                </a>
+            </li>
+        </ul>
+    </div>
+
+    <!-- Platform Context Display -->
+    {% if current_platform %}
+    <div class="nav-section platform-context">
+        <h3 class="nav-section-title">Current Platform</h3>
+        <div class="current-platform-info">
+            <div class="platform-badge">
+                <i class="icon-{{ current_platform.platform_type }}" aria-hidden="true"></i>
+                <div class="platform-details">
+                    <div class="platform-name">{{ current_platform.name }}</div>
+                    <div class="platform-instance">{{ current_platform.instance_url }}</div>
+                    <div class="platform-username">@{{ current_platform.username }}</div>
+                </div>
+            </div>
+            {% if user_platforms|length > 1 %}
+            <div class="platform-switch">
+                <select id="platform-switcher" class="form-select form-select-sm" onchange="switchPlatform(this.value)">
+                    {% for platform in user_platforms %}
+                    <option value="{{ platform.id }}" {{ 'selected' if platform.id == current_platform.id }}>
+                        {{ platform.name }} ({{ platform.platform_type }})
+                    </option>
+                    {% endfor %}
+                </select>
+            </div>
+            {% endif %}
+        </div>
+    </div>
+    {% endif %}
+
+    <!-- Access Level Indicator -->
+    <div class="nav-section access-level">
+        <div class="access-indicator viewer-access">
+            <i class="icon-viewer" aria-hidden="true"></i>
+            <span class="access-label">Viewer Access</span>
+            <small class="access-description">You can manage your own platforms and content</small>
+        </div>
+    </div>
+</nav>
+
+<style>
+.viewer-navigation {
+    background: #f8f9fa;
+    border-right: 1px solid #dee2e6;
+    padding: 1rem;
+    height: 100vh;
+    overflow-y: auto;
+}
+
+.nav-section {
+    margin-bottom: 2rem;
+}
+
+.nav-section-title {
+    font-size: 0.875rem;
+    font-weight: 600;
+    color: #6c757d;
+    text-transform: uppercase;
+    letter-spacing: 0.05em;
+    margin-bottom: 0.5rem;
+    padding-bottom: 0.25rem;
+    border-bottom: 1px solid #e9ecef;
+}
+
+.nav-list {
+    list-style: none;
+    padding: 0;
+    margin: 0;
+}
+
+.nav-item {
+    margin-bottom: 0.25rem;
+}
+
+.nav-link {
+    display: flex;
+    align-items: center;
+    padding: 0.5rem 0.75rem;
+    color: #495057;
+    text-decoration: none;
+    border-radius: 0.375rem;
+    transition: all 0.15s ease-in-out;
+}
+
+.nav-link:hover {
+    background-color: #e9ecef;
+    color: #212529;
+    text-decoration: none;
+}
+
+.nav-link.active {
+    background-color: #007bff;
+    color: white;
+}
+
+.nav-link i {
+    margin-right: 0.5rem;
+    width: 1rem;
+    text-align: center;
+}
+
+.badge {
+    margin-left: auto;
+    font-size: 0.75rem;
+    padding: 0.25rem 0.5rem;
+    border-radius: 0.375rem;
+}
+
+.badge-primary {
+    background-color: #007bff;
+    color: white;
+}
+
+.badge-secondary {
+    background-color: #6c757d;
+    color: white;
+}
+
+.platform-context {
+    background: #e3f2fd;
+    border-radius: 0.5rem;
+    padding: 1rem;
+    margin-top: 1rem;
+}
+
+.current-platform-info {
+    display: flex;
+    flex-direction: column;
+    gap: 0.5rem;
+}
+
+.platform-badge {
+    display: flex;
+    align-items: center;
+    gap: 0.5rem;
+}
+
+.platform-details {
+    flex: 1;
+}
+
+.platform-name {
+    font-weight: 600;
+    color: #1976d2;
+}
+
+.platform-instance {
+    font-size: 0.75rem;
+    color: #666;
+}
+
+.platform-username {
+    font-size: 0.75rem;
+    color: #666;
+    font-style: italic;
+}
+
+.platform-switch {
+    margin-top: 0.5rem;
+}
+
+.access-level {
+    margin-top: auto;
+    padding-top: 1rem;
+    border-top: 1px solid #dee2e6;
+}
+
+.access-indicator {
+    display: flex;
+    align-items: center;
+    gap: 0.5rem;
+    padding: 0.75rem;
+    border-radius: 0.5rem;
+}
+
+.viewer-access {
+    background-color: #d4edda;
+    border: 1px solid #c3e6cb;
+    color: #155724;
+}
+
+.access-label {
+    font-weight: 600;
+    font-size: 0.875rem;
+}
+
+.access-description {
+    display: block;
+    font-size: 0.75rem;
+    opacity: 0.8;
+    margin-top: 0.25rem;
+}
+
+/* Responsive adjustments */
+@media (max-width: 768px) {
+    .viewer-navigation {
+        height: auto;
+        border-right: none;
+        border-bottom: 1px solid #dee2e6;
+    }
+    
+    .nav-section {
+        margin-bottom: 1rem;
+    }
+    
+    .platform-context {
+        margin-top: 0.5rem;
+    }
+}
+</style>
+
+<script>
+function switchPlatform(platformId) {
+    if (!platformId) return;
+    
+    fetch(`/api/switch_platform/${platformId}`, {
+        method: 'POST',
+        headers: {
+            'Content-Type': 'application/json',
+            'X-CSRFToken': document.querySelector('meta[name=csrf-token]').getAttribute('content')
+        }
+    })
+    .then(response => response.json())
+    .then(data => {
+        if (data.success) {
+            // Reload the page to update the platform context
+            window.location.reload();
+        } else {
+            alert('Failed to switch platform: ' + (data.error || 'Unknown error'));
+        }
+    })
+    .catch(error => {
+        console.error('Error switching platform:', error);
+        alert('Failed to switch platform. Please try again.');
+    });
+}
+</script>

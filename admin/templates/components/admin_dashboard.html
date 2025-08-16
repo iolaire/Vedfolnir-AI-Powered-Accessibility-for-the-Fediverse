@@ -1,0 +1,600 @@
+<!-- Copyright (C) 2025 iolaire mcfadden. -->
+<!-- This program is free software: you can redistribute it and/or modify it under the terms of the GNU Affero General Public License as published by the Free Software Foundation, either version 3 of the License, or (at your option) any later version. -->
+<!-- THE SOFTWARE IS PROVIDED "AS IS", WITHOUT WARRANTY OF ANY KIND, EXPRESS OR IMPLIED, INCLUDING BUT NOT LIMITED TO THE WARRANTIES OF MERCHANTABILITY, FITNESS FOR A PARTICULAR PURPOSE AND NONINFRINGEMENT. IN NO EVENT SHALL THE AUTHORS OR COPYRIGHT HOLDERS BE LIABLE FOR ANY CLAIM, DAMAGES OR OTHER LIABILITY, WHETHER IN AN ACTION OF CONTRACT, TORT OR OTHERWISE, ARISING FROM, OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE SOFTWARE. -->
+
+<!-- Admin Dashboard Component -->
+<!-- Requirements: 1.2, 1.3, 1.4, 1.5 -->
+
+<div class="admin-dashboard">
+    <!-- Welcome Section -->
+    <div class="dashboard-header">
+        <h1 class="dashboard-title">Administrator Dashboard</h1>
+        <p class="dashboard-subtitle">System overview and management controls</p>
+    </div>
+
+    <!-- System Status Cards -->
+    <div class="status-grid">
+        <div class="status-card system-health">
+            <div class="status-icon">
+                <i class="icon-health" aria-hidden="true"></i>
+            </div>
+            <div class="status-content">
+                <div class="status-title">System Health</div>
+                <div class="status-value {{ 'healthy' if system_health == 'healthy' else 'warning' if system_health == 'warning' else 'critical' }}">
+                    {{ system_health|title or 'Unknown' }}
+                </div>
+            </div>
+            <div class="status-action">
+                <a href="{{ url_for('admin.health_dashboard') }}" class="btn btn-sm btn-outline-primary">Details</a>
+            </div>
+        </div>
+
+        <div class="status-card user-stats">
+            <div class="status-icon">
+                <i class="icon-users" aria-hidden="true"></i>
+            </div>
+            <div class="status-content">
+                <div class="status-title">Total Users</div>
+                <div class="status-value">{{ stats.total_users or 0 }}</div>
+                <div class="status-subtitle">{{ stats.active_users or 0 }} active</div>
+            </div>
+            <div class="status-action">
+                <a href="{{ url_for('admin.user_management') }}" class="btn btn-sm btn-primary">Manage</a>
+            </div>
+        </div>
+
+        <div class="status-card platform-stats">
+            <div class="status-icon">
+                <i class="icon-platform" aria-hidden="true"></i>
+            </div>
+            <div class="status-content">
+                <div class="status-title">Total Platforms</div>
+                <div class="status-value">{{ stats.total_platforms or 0 }}</div>
+                <div class="status-subtitle">Across all users</div>
+            </div>
+            <div class="status-action">
+                <a href="{{ url_for('platform_management') }}" class="btn btn-sm btn-outline-secondary">View All</a>
+            </div>
+        </div>
+
+        <div class="status-card content-stats">
+            <div class="status-icon">
+                <i class="icon-images" aria-hidden="true"></i>
+            </div>
+            <div class="status-content">
+                <div class="status-title">Total Images</div>
+                <div class="status-value">{{ stats.total_images or 0 }}</div>
+                <div class="status-subtitle">{{ stats.pending_review or 0 }} pending review</div>
+            </div>
+            <div class="status-action">
+                <a href="{{ url_for('review') }}" class="btn btn-sm btn-success">Review</a>
+            </div>
+        </div>
+    </div>
+
+    <!-- Alert Section -->
+    {% if alerts and alerts|length > 0 %}
+    <div class="alerts-section">
+        <h2 class="section-title">System Alerts</h2>
+        <div class="alerts-container">
+            {% for alert in alerts %}
+            <div class="alert-card alert-{{ alert.severity }}">
+                <div class="alert-icon">
+                    <i class="icon-{{ alert.type }}" aria-hidden="true"></i>
+                </div>
+                <div class="alert-content">
+                    <div class="alert-title">{{ alert.title }}</div>
+                    <div class="alert-message">{{ alert.message }}</div>
+                    <div class="alert-time">{{ alert.created_at.strftime('%Y-%m-%d %H:%M') if alert.created_at else 'Unknown time' }}</div>
+                </div>
+                <div class="alert-actions">
+                    <button class="btn btn-sm btn-outline-primary" onclick="acknowledgeAlert('{{ alert.id }}')">
+                        Acknowledge
+                    </button>
+                </div>
+            </div>
+            {% endfor %}
+        </div>
+    </div>
+    {% endif %}
+
+    <!-- Recent Activity Section -->
+    <div class="activity-section">
+        <h2 class="section-title">Recent Activity</h2>
+        <div class="activity-grid">
+            <!-- User Management Activity -->
+            <div class="activity-card">
+                <div class="activity-header">
+                    <h3 class="activity-title">User Management</h3>
+                    <a href="{{ url_for('admin.user_management') }}" class="activity-link">View All</a>
+                </div>
+                <div class="activity-stats">
+                    <div class="activity-stat">
+                        <span class="stat-label">New Users (24h):</span>
+                        <span class="stat-value">{{ recent_stats.new_users_24h or 0 }}</span>
+                    </div>
+                    <div class="activity-stat">
+                        <span class="stat-label">Unverified:</span>
+                        <span class="stat-value warning">{{ recent_stats.unverified_users or 0 }}</span>
+                    </div>
+                    <div class="activity-stat">
+                        <span class="stat-label">Locked Accounts:</span>
+                        <span class="stat-value danger">{{ recent_stats.locked_accounts or 0 }}</span>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Content Processing Activity -->
+            <div class="activity-card">
+                <div class="activity-header">
+                    <h3 class="activity-title">Content Processing</h3>
+                    <a href="{{ url_for('review') }}" class="activity-link">Review Content</a>
+                </div>
+                <div class="activity-stats">
+                    <div class="activity-stat">
+                        <span class="stat-label">Processed (24h):</span>
+                        <span class="stat-value">{{ recent_stats.processed_24h or 0 }}</span>
+                    </div>
+                    <div class="activity-stat">
+                        <span class="stat-label">Generated Captions:</span>
+                        <span class="stat-value">{{ recent_stats.generated_captions or 0 }}</span>
+                    </div>
+                    <div class="activity-stat">
+                        <span class="stat-label">Approved:</span>
+                        <span class="stat-value success">{{ recent_stats.approved_captions or 0 }}</span>
+                    </div>
+                </div>
+            </div>
+
+            <!-- System Performance -->
+            <div class="activity-card">
+                <div class="activity-header">
+                    <h3 class="activity-title">System Performance</h3>
+                    <a href="{{ url_for('admin.monitoring_dashboard') }}" class="activity-link">Monitoring</a>
+                </div>
+                <div class="activity-stats">
+                    <div class="activity-stat">
+                        <span class="stat-label">Avg Response Time:</span>
+                        <span class="stat-value">{{ performance_stats.avg_response_time or 'N/A' }}</span>
+                    </div>
+                    <div class="activity-stat">
+                        <span class="stat-label">Error Rate:</span>
+                        <span class="stat-value {{ 'danger' if (performance_stats.error_rate or 0) > 5 else 'success' }}">
+                            {{ performance_stats.error_rate or 0 }}%
+                        </span>
+                    </div>
+                    <div class="activity-stat">
+                        <span class="stat-label">Uptime:</span>
+                        <span class="stat-value success">{{ performance_stats.uptime or 'N/A' }}</span>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Quick Actions Section -->
+    <div class="quick-actions-section">
+        <h2 class="section-title">Quick Actions</h2>
+        <div class="actions-grid">
+            <a href="{{ url_for('admin.user_management') }}?action=create" class="action-card">
+                <div class="action-icon">
+                    <i class="icon-user-add" aria-hidden="true"></i>
+                </div>
+                <div class="action-content">
+                    <h3 class="action-title">Create User</h3>
+                    <p class="action-description">Add a new user to the system</p>
+                </div>
+            </a>
+
+            <a href="{{ url_for('admin.cleanup') }}" class="action-card">
+                <div class="action-icon">
+                    <i class="icon-cleanup" aria-hidden="true"></i>
+                </div>
+                <div class="action-content">
+                    <h3 class="action-title">System Cleanup</h3>
+                    <p class="action-description">Clean up temporary files and data</p>
+                </div>
+            </a>
+
+            <a href="{{ url_for('admin.security_audit') }}" class="action-card">
+                <div class="action-icon">
+                    <i class="icon-security" aria-hidden="true"></i>
+                </div>
+                <div class="action-content">
+                    <h3 class="action-title">Security Audit</h3>
+                    <p class="action-description">Review security settings and logs</p>
+                </div>
+            </a>
+
+            <a href="{{ url_for('caption_generation') }}" class="action-card">
+                <div class="action-icon">
+                    <i class="icon-generate" aria-hidden="true"></i>
+                </div>
+                <div class="action-content">
+                    <h3 class="action-title">Generate Captions</h3>
+                    <p class="action-description">Process images for all platforms</p>
+                </div>
+            </a>
+        </div>
+    </div>
+</div>
+
+<style>
+.admin-dashboard {
+    padding: 2rem;
+    max-width: 1400px;
+    margin: 0 auto;
+}
+
+.dashboard-header {
+    margin-bottom: 2rem;
+    text-align: center;
+}
+
+.dashboard-title {
+    font-size: 2.5rem;
+    font-weight: 700;
+    color: #dc3545;
+    margin-bottom: 0.5rem;
+}
+
+.dashboard-subtitle {
+    font-size: 1.1rem;
+    color: #6c757d;
+    margin: 0;
+}
+
+.status-grid {
+    display: grid;
+    grid-template-columns: repeat(auto-fit, minmax(280px, 1fr));
+    gap: 1.5rem;
+    margin-bottom: 3rem;
+}
+
+.status-card {
+    background: white;
+    border: 1px solid #dee2e6;
+    border-radius: 0.5rem;
+    padding: 1.5rem;
+    display: flex;
+    align-items: center;
+    gap: 1rem;
+    box-shadow: 0 2px 4px rgba(0,0,0,0.1);
+    transition: transform 0.2s ease, box-shadow 0.2s ease;
+}
+
+.status-card:hover {
+    transform: translateY(-2px);
+    box-shadow: 0 4px 8px rgba(0,0,0,0.15);
+}
+
+.status-icon {
+    width: 3.5rem;
+    height: 3.5rem;
+    border-radius: 50%;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    font-size: 1.5rem;
+}
+
+.system-health .status-icon {
+    background: #d4edda;
+    color: #155724;
+}
+
+.user-stats .status-icon {
+    background: #cce5ff;
+    color: #004085;
+}
+
+.platform-stats .status-icon {
+    background: #fff3cd;
+    color: #856404;
+}
+
+.content-stats .status-icon {
+    background: #e2e3e5;
+    color: #383d41;
+}
+
+.status-content {
+    flex: 1;
+}
+
+.status-title {
+    font-size: 0.875rem;
+    color: #6c757d;
+    margin-bottom: 0.25rem;
+}
+
+.status-value {
+    font-size: 2rem;
+    font-weight: 700;
+    color: #212529;
+    line-height: 1;
+}
+
+.status-value.healthy {
+    color: #28a745;
+}
+
+.status-value.warning {
+    color: #ffc107;
+}
+
+.status-value.critical {
+    color: #dc3545;
+}
+
+.status-subtitle {
+    font-size: 0.75rem;
+    color: #6c757d;
+    margin-top: 0.25rem;
+}
+
+.section-title {
+    font-size: 1.5rem;
+    font-weight: 600;
+    color: #212529;
+    margin-bottom: 1.5rem;
+    padding-bottom: 0.5rem;
+    border-bottom: 2px solid #e9ecef;
+}
+
+.alerts-section {
+    margin-bottom: 3rem;
+}
+
+.alerts-container {
+    display: flex;
+    flex-direction: column;
+    gap: 1rem;
+}
+
+.alert-card {
+    background: white;
+    border-radius: 0.5rem;
+    padding: 1rem;
+    display: flex;
+    align-items: center;
+    gap: 1rem;
+    border-left: 4px solid;
+}
+
+.alert-card.alert-info {
+    border-left-color: #17a2b8;
+}
+
+.alert-card.alert-warning {
+    border-left-color: #ffc107;
+}
+
+.alert-card.alert-error {
+    border-left-color: #dc3545;
+}
+
+.alert-icon {
+    width: 2.5rem;
+    height: 2.5rem;
+    border-radius: 50%;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    background: #f8f9fa;
+    color: #6c757d;
+}
+
+.alert-content {
+    flex: 1;
+}
+
+.alert-title {
+    font-weight: 600;
+    color: #212529;
+    margin-bottom: 0.25rem;
+}
+
+.alert-message {
+    color: #6c757d;
+    font-size: 0.875rem;
+    margin-bottom: 0.25rem;
+}
+
+.alert-time {
+    font-size: 0.75rem;
+    color: #adb5bd;
+}
+
+.activity-section {
+    margin-bottom: 3rem;
+}
+
+.activity-grid {
+    display: grid;
+    grid-template-columns: repeat(auto-fit, minmax(350px, 1fr));
+    gap: 1.5rem;
+}
+
+.activity-card {
+    background: white;
+    border: 1px solid #dee2e6;
+    border-radius: 0.5rem;
+    padding: 1.5rem;
+    box-shadow: 0 2px 4px rgba(0,0,0,0.1);
+}
+
+.activity-header {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    margin-bottom: 1rem;
+    padding-bottom: 0.5rem;
+    border-bottom: 1px solid #e9ecef;
+}
+
+.activity-title {
+    font-size: 1.125rem;
+    font-weight: 600;
+    color: #212529;
+    margin: 0;
+}
+
+.activity-link {
+    font-size: 0.875rem;
+    color: #007bff;
+    text-decoration: none;
+}
+
+.activity-link:hover {
+    text-decoration: underline;
+}
+
+.activity-stats {
+    display: flex;
+    flex-direction: column;
+    gap: 0.75rem;
+}
+
+.activity-stat {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+}
+
+.stat-label {
+    font-size: 0.875rem;
+    color: #6c757d;
+}
+
+.stat-value {
+    font-weight: 600;
+    color: #212529;
+}
+
+.stat-value.success {
+    color: #28a745;
+}
+
+.stat-value.warning {
+    color: #ffc107;
+}
+
+.stat-value.danger {
+    color: #dc3545;
+}
+
+.actions-grid {
+    display: grid;
+    grid-template-columns: repeat(auto-fit, minmax(250px, 1fr));
+    gap: 1.5rem;
+}
+
+.action-card {
+    background: white;
+    border: 1px solid #dee2e6;
+    border-radius: 0.5rem;
+    padding: 1.5rem;
+    display: flex;
+    align-items: flex-start;
+    gap: 1rem;
+    text-decoration: none;
+    color: inherit;
+    transition: transform 0.2s ease, box-shadow 0.2s ease;
+}
+
+.action-card:hover {
+    transform: translateY(-2px);
+    box-shadow: 0 4px 8px rgba(0,0,0,0.15);
+    text-decoration: none;
+    color: inherit;
+}
+
+.action-icon {
+    width: 3rem;
+    height: 3rem;
+    background: #f8d7da;
+    border-radius: 0.5rem;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    color: #721c24;
+    font-size: 1.5rem;
+}
+
+.action-content {
+    flex: 1;
+}
+
+.action-title {
+    font-size: 1.125rem;
+    font-weight: 600;
+    color: #212529;
+    margin: 0 0 0.5rem 0;
+}
+
+.action-description {
+    font-size: 0.875rem;
+    color: #6c757d;
+    margin: 0;
+}
+
+/* Responsive Design */
+@media (max-width: 768px) {
+    .admin-dashboard {
+        padding: 1rem;
+    }
+    
+    .status-grid {
+        grid-template-columns: 1fr;
+        gap: 1rem;
+    }
+    
+    .activity-grid {
+        grid-template-columns: 1fr;
+        gap: 1rem;
+    }
+    
+    .actions-grid {
+        grid-template-columns: 1fr;
+        gap: 1rem;
+    }
+    
+    .dashboard-title {
+        font-size: 2rem;
+    }
+}
+</style>
+
+<script>
+function acknowledgeAlert(alertId) {
+    fetch(`/admin/alerts/${alertId}/acknowledge`, {
+        method: 'POST',
+        headers: {
+            'Content-Type': 'application/json',
+            'X-CSRFToken': document.querySelector('meta[name=csrf-token]').getAttribute('content')
+        }
+    })
+    .then(response => response.json())
+    .then(data => {
+        if (data.success) {
+            // Remove the alert from the display
+            const alertCard = document.querySelector(`[data-alert-id="${alertId}"]`);
+            if (alertCard) {
+                alertCard.remove();
+            }
+            // Reload if no more alerts
+            const alertsContainer = document.querySelector('.alerts-container');
+            if (alertsContainer && alertsContainer.children.length === 0) {
+                window.location.reload();
+            }
+        } else {
+            alert('Failed to acknowledge alert: ' + (data.error || 'Unknown error'));
+        }
+    })
+    .catch(error => {
+        console.error('Error acknowledging alert:', error);
+        alert('Failed to acknowledge alert. Please try again.');
+    });
+}
+</script>

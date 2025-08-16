@@ -1,0 +1,151 @@
+<!-- Copyright (C) 2025 iolaire mcfadden. -->
+<!-- This program is free software: you can redistribute it and/or modify it under the terms of the GNU Affero General Public License as published by the Free Software Foundation, either version 3 of the License, or (at your option) any later version. -->
+<!-- THE SOFTWARE IS PROVIDED "AS IS", WITHOUT WARRANTY OF ANY KIND, EXPRESS OR IMPLIED, INCLUDING BUT NOT LIMITED TO THE WARRANTIES OF MERCHANTABILITY, FITNESS FOR A PARTICULAR PURPOSE AND NONINFRINGEMENT. IN NO EVENT SHALL THE AUTHORS OR COPYRIGHT HOLDERS BE LIABLE FOR ANY CLAIM, DAMAGES OR OTHER LIABILITY, WHETHER IN AN ACTION OF CONTRACT, TORT OR OTHERWISE, ARISING FROM, OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE SOFTWARE. -->
+
+{% extends "base.html" %}
+
+{% block title %}Delete Profile{% endblock %}
+
+{% block content %}
+<div class="container mt-4">
+    <div class="row justify-content-center">
+        <div class="col-md-8">
+            <div class="card border-danger">
+                <div class="card-header bg-danger text-white">
+                    <h4 class="mb-0">
+                        <i class="fas fa-exclamation-triangle"></i> Delete Profile
+                    </h4>
+                </div>
+                <div class="card-body">
+                    <div class="alert alert-danger">
+                        <h5 class="alert-heading">
+                            <i class="fas fa-warning"></i> Warning: This action cannot be undone!
+                        </h5>
+                        <p class="mb-0">
+                            Deleting your profile will permanently remove all of your data from our system, including:
+                        </p>
+                    </div>
+
+                    <div class="row mb-4">
+                        <div class="col-md-6">
+                            <h6><i class="fas fa-user text-danger"></i> Personal Information</h6>
+                            <ul class="list-unstyled">
+                                <li><i class="fas fa-times text-danger"></i> Your username and email</li>
+                                <li><i class="fas fa-times text-danger"></i> Your first and last name</li>
+                                <li><i class="fas fa-times text-danger"></i> Your account preferences</li>
+                                <li><i class="fas fa-times text-danger"></i> Your login history</li>
+                            </ul>
+                        </div>
+                        <div class="col-md-6">
+                            <h6><i class="fas fa-database text-danger"></i> Platform Data</h6>
+                            <ul class="list-unstyled">
+                                <li><i class="fas fa-times text-danger"></i> All platform connections</li>
+                                <li><i class="fas fa-times text-danger"></i> All processed images</li>
+                                <li><i class="fas fa-times text-danger"></i> All generated captions</li>
+                                <li><i class="fas fa-times text-danger"></i> All processing history</li>
+                            </ul>
+                        </div>
+                    </div>
+
+                    <div class="alert alert-info">
+                        <h6><i class="fas fa-shield-alt"></i> GDPR Compliance</h6>
+                        <p class="mb-0">
+                            This deletion process is fully compliant with GDPR regulations. All your personal data 
+                            will be permanently removed from our systems within 30 days. You have the right to 
+                            <a href="{{ url_for('user_management.export_profile_data') }}" class="alert-link">export your data</a> 
+                            before deletion if needed.
+                        </p>
+                    </div>
+
+                    <form method="POST" novalidate id="deleteForm">
+                        {{ form.hidden_tag() }}
+                        
+                        <div class="mb-3">
+                            {{ form.confirmation.label(class="form-label fw-bold") }}
+                            {{ form.confirmation(class="form-control" + (" is-invalid" if form.confirmation.errors else "")) }}
+                            {% if form.confirmation.errors %}
+                                <div class="invalid-feedback">
+                                    {% for error in form.confirmation.errors %}
+                                        {{ error }}
+                                    {% endfor %}
+                                </div>
+                            {% endif %}
+                            <div class="form-text">
+                                You must type <strong>DELETE</strong> exactly to confirm.
+                            </div>
+                        </div>
+
+                        <div class="mb-4">
+                            {{ form.password.label(class="form-label fw-bold") }}
+                            {{ form.password(class="form-control" + (" is-invalid" if form.password.errors else "")) }}
+                            {% if form.password.errors %}
+                                <div class="invalid-feedback">
+                                    {% for error in form.password.errors %}
+                                        {{ error }}
+                                    {% endfor %}
+                                </div>
+                            {% endif %}
+                            <div class="form-text">
+                                Enter your current password to confirm your identity.
+                            </div>
+                        </div>
+
+                        <div class="d-grid gap-2 d-md-flex justify-content-md-end">
+                            <a href="{{ url_for('user_management.profile') }}" class="btn btn-secondary me-md-2">
+                                <i class="fas fa-arrow-left"></i> Cancel
+                            </a>
+                            <a href="{{ url_for('user_management.export_profile_data') }}" class="btn btn-info me-md-2">
+                                <i class="fas fa-download"></i> Export Data First
+                            </a>
+                            {{ form.submit(class="btn btn-danger", id="deleteButton", disabled=true) }}
+                        </div>
+                    </form>
+                </div>
+            </div>
+
+            <div class="card mt-3">
+                <div class="card-body">
+                    <h6 class="card-title">
+                        <i class="fas fa-question-circle text-info"></i> Need Help?
+                    </h6>
+                    <p class="mb-0">
+                        If you're having issues with your account or just want to take a break, 
+                        consider contacting support instead of deleting your profile. 
+                        We may be able to help resolve your concerns without losing your data.
+                    </p>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+
+<script>
+document.addEventListener('DOMContentLoaded', function() {
+    const confirmationInput = document.getElementById('confirmation');
+    const passwordInput = document.getElementById('password');
+    const deleteButton = document.getElementById('deleteButton');
+    
+    function checkFormValidity() {
+        const confirmationValid = confirmationInput.value === 'DELETE';
+        const passwordValid = passwordInput.value.length > 0;
+        
+        deleteButton.disabled = !(confirmationValid && passwordValid);
+        
+        if (confirmationValid && passwordValid) {
+            deleteButton.classList.remove('btn-danger');
+            deleteButton.classList.add('btn-danger');
+        }
+    }
+    
+    confirmationInput.addEventListener('input', checkFormValidity);
+    passwordInput.addEventListener('input', checkFormValidity);
+    
+    // Add confirmation dialog
+    document.getElementById('deleteForm').addEventListener('submit', function(e) {
+        if (!confirm('Are you absolutely sure you want to delete your profile? This action cannot be undone and all your data will be permanently lost.')) {
+            e.preventDefault();
+        }
+    });
+});
+</script>
+{% endblock %}

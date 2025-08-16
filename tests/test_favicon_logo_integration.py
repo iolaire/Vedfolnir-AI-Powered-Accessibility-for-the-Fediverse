@@ -148,7 +148,7 @@ class TestFaviconLogoIntegration(unittest.TestCase):
         manifest_data = json.loads(response.data.decode())
         
         # Check required fields
-        self.assertEqual(manifest_data['name'], 'Vedfolnir - Alt Text Bot')
+        self.assertEqual(manifest_data['name'], 'Vedfolnir - – AI-Powered Accessibility for the Fediverse')
         self.assertEqual(manifest_data['short_name'], 'Vedfolnir')
         self.assertIn('description', manifest_data)
         self.assertEqual(manifest_data['start_url'], '/')

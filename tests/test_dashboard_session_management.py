@@ -88,7 +88,7 @@ class TestDashboardSessionManagement(unittest.TestCase):
         # Create user with platforms
         self.test_user_with_platforms = self.mock_user_helper.create_mock_user(
             username='dashboard_user_with_platforms',
-            email='dashboard_with_platforms@example.com',
+            email='dashboard_with_platforms@test.com',
             password='test_password_123',
             with_platforms=True
         )
@@ -96,7 +96,7 @@ class TestDashboardSessionManagement(unittest.TestCase):
         # Create user without platforms
         self.test_user_no_platforms = self.mock_user_helper.create_mock_user(
             username='dashboard_user_no_platforms',
-            email='dashboard_no_platforms@example.com',
+            email='dashboard_no_platforms@test.com',
             password='test_password_123',
             with_platforms=False
         )

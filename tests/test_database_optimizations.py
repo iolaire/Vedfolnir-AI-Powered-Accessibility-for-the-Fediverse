@@ -98,7 +98,7 @@ class TestDatabaseOptimizations(unittest.TestCase):
             for i in range(3):
                 user = User(
                     username=f"testuser_{i}",
-                    email=f"test{i}@example.com",
+                    email=f"test{i}@test.com",
                     role=UserRole.ADMIN if i == 0 else UserRole.REVIEWER,
                     is_active=True
                 )

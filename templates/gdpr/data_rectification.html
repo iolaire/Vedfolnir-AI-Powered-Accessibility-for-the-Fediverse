@@ -1,0 +1,182 @@
+<!-- Copyright (C) 2025 iolaire mcfadden. -->
+<!-- This program is free software: you can redistribute it and/or modify it under the terms of the GNU Affero General Public License as published by the Free Software Foundation, either version 3 of the License, or (at your option) any later version. -->
+<!-- THE SOFTWARE IS PROVIDED "AS IS", WITHOUT WARRANTY OF ANY KIND, EXPRESS OR IMPLIED, INCLUDING BUT NOT LIMITED TO THE WARRANTIES OF MERCHANTABILITY, FITNESS FOR A PARTICULAR PURPOSE AND NONINFRINGEMENT. IN NO EVENT SHALL THE AUTHORS OR COPYRIGHT HOLDERS BE LIABLE FOR ANY CLAIM, DAMAGES OR OTHER LIABILITY, WHETHER IN AN ACTION OF CONTRACT, TORT OR OTHERWISE, ARISING FROM, OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE SOFTWARE. -->
+
+{% extends "base.html" %}
+
+{% block title %}Rectify Personal Data - Vedfolnir{% endblock %}
+
+{% block content %}
+<div class="container mt-4">
+    <div class="row justify-content-center">
+        <div class="col-md-8">
+            <div class="card">
+                <div class="card-header">
+                    <h3 class="mb-0">
+                        <i class="fas fa-edit me-2"></i>
+                        Rectify Personal Data
+                    </h3>
+                    <small class="text-muted">GDPR Article 16 - Right to rectification</small>
+                </div>
+                <div class="card-body">
+                    <div class="alert alert-info">
+                        <i class="fas fa-info-circle me-2"></i>
+                        <strong>Your Right to Rectification</strong><br>
+                        You have the right to have inaccurate personal data corrected or completed if it is incomplete. 
+                        Use this form to update your personal information.
+                    </div>
+
+                    <form method="POST">
+                        {{ form.hidden_tag() }}
+                        
+                        <div class="row">
+                            <div class="col-md-6">
+                                <div class="mb-3">
+                                    {{ form.first_name.label(class="form-label") }}
+                                    {{ form.first_name(class="form-control") }}
+                                    <div class="form-text">{{ form.first_name.description }}</div>
+                                    {% if form.first_name.errors %}
+                                        <div class="text-danger">
+                                            {% for error in form.first_name.errors %}
+                                                <small>{{ error }}</small><br>
+                                            {% endfor %}
+                                        </div>
+                                    {% endif %}
+                                </div>
+                            </div>
+                            <div class="col-md-6">
+                                <div class="mb-3">
+                                    {{ form.last_name.label(class="form-label") }}
+                                    {{ form.last_name(class="form-control") }}
+                                    <div class="form-text">{{ form.last_name.description }}</div>
+                                    {% if form.last_name.errors %}
+                                        <div class="text-danger">
+                                            {% for error in form.last_name.errors %}
+                                                <small>{{ error }}</small><br>
+                                            {% endfor %}
+                                        </div>
+                                    {% endif %}
+                                </div>
+                            </div>
+                        </div>
+
+                        <div class="mb-3">
+                            {{ form.email.label(class="form-label") }}
+                            {{ form.email(class="form-control") }}
+                            <div class="form-text">{{ form.email.description }}</div>
+                            {% if form.email.errors %}
+                                <div class="text-danger">
+                                    {% for error in form.email.errors %}
+                                        <small>{{ error }}</small><br>
+                                    {% endfor %}
+                                </div>
+                            {% endif %}
+                        </div>
+
+                        <div class="mb-3">
+                            {{ form.rectification_reason.label(class="form-label") }}
+                            {{ form.rectification_reason(class="form-control", rows="4") }}
+                            <div class="form-text">{{ form.rectification_reason.description }}</div>
+                            {% if form.rectification_reason.errors %}
+                                <div class="text-danger">
+                                    {% for error in form.rectification_reason.errors %}
+                                        <small>{{ error }}</small><br>
+                                    {% endfor %}
+                                </div>
+                            {% endif %}
+                        </div>
+
+                        <div class="mb-3">
+                            <div class="form-check">
+                                {{ form.confirmation(class="form-check-input") }}
+                                {{ form.confirmation.label(class="form-check-label") }}
+                                <div class="form-text">{{ form.confirmation.description }}</div>
+                                {% if form.confirmation.errors %}
+                                    <div class="text-danger">
+                                        {% for error in form.confirmation.errors %}
+                                            <small>{{ error }}</small><br>
+                                        {% endfor %}
+                                    </div>
+                                {% endif %}
+                            </div>
+                        </div>
+
+                        <div class="alert alert-warning">
+                            <i class="fas fa-exclamation-triangle me-2"></i>
+                            <strong>Important Notes:</strong>
+                            <ul class="mb-0 mt-2">
+                                <li>Changes to your email address will require re-verification</li>
+                                <li>You are responsible for the accuracy of the corrected information</li>
+                                <li>All changes will be logged for audit purposes</li>
+                                <li>Some changes may affect your account functionality</li>
+                            </ul>
+                        </div>
+
+                        <div class="d-grid gap-2 d-md-flex justify-content-md-end">
+                            <a href="{{ url_for('profile.profile') }}" class="btn btn-secondary me-md-2">Cancel</a>
+                            {{ form.submit(class="btn btn-primary") }}
+                        </div>
+                    </form>
+                </div>
+            </div>
+
+            <div class="card mt-4">
+                <div class="card-header">
+                    <h5 class="mb-0">Current Information</h5>
+                </div>
+                <div class="card-body">
+                    <div class="row">
+                        <div class="col-md-4">
+                            <strong>Username:</strong><br>
+                            <span class="text-muted">{{ current_user.username }}</span>
+                            <small class="d-block text-muted">Cannot be changed</small>
+                        </div>
+                        <div class="col-md-4">
+                            <strong>Current Email:</strong><br>
+                            <span class="text-muted">{{ current_user.email }}</span>
+                            {% if current_user.email_verified %}
+                                <small class="d-block text-success">
+                                    <i class="fas fa-check-circle me-1"></i>Verified
+                                </small>
+                            {% else %}
+                                <small class="d-block text-warning">
+                                    <i class="fas fa-exclamation-circle me-1"></i>Not verified
+                                </small>
+                            {% endif %}
+                        </div>
+                        <div class="col-md-4">
+                            <strong>Account Created:</strong><br>
+                            <span class="text-muted">{{ current_user.created_at.strftime('%Y-%m-%d') if current_user.created_at else 'Unknown' }}</span>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+{% endblock %}
+
+{% block scripts %}
+<script>
+document.addEventListener('DOMContentLoaded', function() {
+    const emailField = document.getElementById('email');
+    const originalEmail = '{{ current_user.email }}';
+    
+    emailField.addEventListener('change', function() {
+        if (this.value !== originalEmail && this.value.trim() !== '') {
+            const alertDiv = document.createElement('div');
+            alertDiv.className = 'alert alert-info mt-2';
+            alertDiv.innerHTML = '<i class="fas fa-info-circle me-2"></i>Changing your email address will require re-verification.';
+            
+            // Remove existing alert if present
+            const existingAlert = this.parentNode.querySelector('.alert');
+            if (existingAlert) {
+                existingAlert.remove();
+            }
+            
+            this.parentNode.appendChild(alertDiv);
+        }
+    });
+});
+</script>
+{% endblock %}

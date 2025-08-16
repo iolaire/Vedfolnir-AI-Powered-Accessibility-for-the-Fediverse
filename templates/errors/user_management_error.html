@@ -1,0 +1,132 @@
+<!-- Copyright (C) 2025 iolaire mcfadden. -->
+<!-- This program is free software: you can redistribute it and/or modify it under the terms of the GNU Affero General Public License as published by the Free Software Foundation, either version 3 of the License, or (at your option) any later version. -->
+<!-- THE SOFTWARE IS PROVIDED "AS IS", WITHOUT WARRANTY OF ANY KIND, EXPRESS OR IMPLIED, INCLUDING BUT NOT LIMITED TO THE WARRANTIES OF MERCHANTABILITY, FITNESS FOR A PARTICULAR PURPOSE AND NONINFRINGEMENT. IN NO EVENT SHALL THE AUTHORS OR COPYRIGHT HOLDERS BE LIABLE FOR ANY CLAIM, DAMAGES OR OTHER LIABILITY, WHETHER IN AN ACTION OF CONTRACT, TORT OR OTHERWISE, ARISING FROM, OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE SOFTWARE. -->
+
+{% extends "base.html" %}
+
+{% block title %}Error - Vedfolnir{% endblock %}
+
+{% block content %}
+<div class="container mt-5">
+    <div class="row justify-content-center">
+        <div class="col-md-8">
+            <div class="card border-danger">
+                <div class="card-header bg-danger text-white">
+                    <h4 class="mb-0">
+                        <i class="fas fa-exclamation-triangle me-2"></i>
+                        Error
+                    </h4>
+                </div>
+                <div class="card-body">
+                    {% if error %}
+                        <div class="alert alert-danger" role="alert">
+                            <h5 class="alert-heading">{{ error.error_code or 'Error' }}</h5>
+                            <p class="mb-0">{{ error.message or 'An unexpected error occurred.' }}</p>
+                            
+                            {% if error.timestamp %}
+                                <hr>
+                                <small class="text-muted">
+                                    <i class="fas fa-clock me-1"></i>
+                                    {{ error.timestamp }}
+                                </small>
+                            {% endif %}
+                            
+                            {% if error.request_id %}
+                                <br>
+                                <small class="text-muted">
+                                    <i class="fas fa-tag me-1"></i>
+                                    Request ID: {{ error.request_id }}
+                                </small>
+                            {% endif %}
+                        </div>
+                    {% else %}
+                        <div class="alert alert-danger" role="alert">
+                            <h5 class="alert-heading">Unexpected Error</h5>
+                            <p class="mb-0">An unexpected error occurred. Please try again later.</p>
+                        </div>
+                    {% endif %}
+                    
+                    <div class="mt-4">
+                        <h6>What you can do:</h6>
+                        <ul class="list-unstyled">
+                            <li><i class="fas fa-redo me-2 text-primary"></i>Try refreshing the page</li>
+                            <li><i class="fas fa-arrow-left me-2 text-primary"></i>Go back to the previous page</li>
+                            <li><i class="fas fa-home me-2 text-primary"></i>Return to the home page</li>
+                            {% if error and error.error_code == 'RATE_LIMIT_ERROR' %}
+                                <li><i class="fas fa-clock me-2 text-warning"></i>Wait a few minutes before trying again</li>
+                            {% endif %}
+                            {% if error and error.error_code == 'VALIDATION_ERROR' %}
+                                <li><i class="fas fa-edit me-2 text-info"></i>Check your input and correct any errors</li>
+                            {% endif %}
+                        </ul>
+                    </div>
+                    
+                    <div class="mt-4 d-flex gap-2 flex-wrap">
+                        <button onclick="window.location.reload()" class="btn btn-primary">
+                            <i class="fas fa-redo me-1"></i>
+                            Refresh Page
+                        </button>
+                        <button onclick="window.history.back()" class="btn btn-secondary">
+                            <i class="fas fa-arrow-left me-1"></i>
+                            Go Back
+                        </button>
+                        <a href="{{ url_for('index') }}" class="btn btn-outline-primary">
+                            <i class="fas fa-home me-1"></i>
+                            Home
+                        </a>
+                    </div>
+                    
+                    {% if error and error.error_code in ['DATABASE_ERROR', 'SYSTEM_ERROR'] %}
+                        <div class="mt-4">
+                            <div class="alert alert-info" role="alert">
+                                <i class="fas fa-info-circle me-2"></i>
+                                <strong>System Issue:</strong> Our technical team has been automatically notified of this issue. 
+                                If the problem persists, please contact support.
+                            </div>
+                        </div>
+                    {% endif %}
+                </div>
+            </div>
+            
+            {% if current_app.debug and error %}
+                <div class="card mt-3 border-warning">
+                    <div class="card-header bg-warning text-dark">
+                        <h6 class="mb-0">
+                            <i class="fas fa-bug me-2"></i>
+                            Debug Information
+                        </h6>
+                    </div>
+                    <div class="card-body">
+                        <pre class="small text-muted">{{ error | tojson(indent=2) }}</pre>
+                    </div>
+                </div>
+            {% endif %}
+        </div>
+    </div>
+</div>
+
+<script>
+// Auto-refresh for certain error types
+{% if error and error.error_code == 'RATE_LIMIT_ERROR' %}
+    // Auto-refresh after rate limit period
+    setTimeout(function() {
+        if (confirm('Rate limit period has expired. Would you like to refresh the page?')) {
+            window.location.reload();
+        }
+    }, 60000); // 1 minute
+{% endif %}
+
+// Keyboard shortcuts
+document.addEventListener('keydown', function(e) {
+    if (e.key === 'r' && (e.ctrlKey || e.metaKey)) {
+        e.preventDefault();
+        window.location.reload();
+    } else if (e.key === 'Escape') {
+        window.history.back();
+    } else if (e.key === 'h' && (e.ctrlKey || e.metaKey)) {
+        e.preventDefault();
+        window.location.href = '{{ url_for("index") }}';
+    }
+});
+</script>
+{% endblock %}

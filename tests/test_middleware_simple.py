@@ -61,7 +61,7 @@ class TestMiddlewareSimple(unittest.TestCase):
             # Create test user
             self.test_user = User(
                 username='testuser',
-                email='test@example.com',
+                email='test@test.com',
                 role=UserRole.REVIEWER,
                 is_active=True
             )

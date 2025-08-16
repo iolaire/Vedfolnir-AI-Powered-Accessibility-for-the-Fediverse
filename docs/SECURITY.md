@@ -142,11 +142,89 @@ HSTS_MAX_AGE=31536000
 DATABASE_ENCRYPTION_KEY=your-database-encryption-key
 ```
 
+### Security Feature Toggles (Development/Testing Only)
+
+⚠️ **WARNING**: These toggles are for development and testing purposes only. **NEVER disable security features in production**.
+
+```bash
+# CSRF Protection (default: true)
+SECURITY_CSRF_ENABLED=true
+
+# Rate Limiting (default: true)
+SECURITY_RATE_LIMITING_ENABLED=true
+
+# Input Validation and Sanitization (default: true)
+SECURITY_INPUT_VALIDATION_ENABLED=true
+
+# Security Headers (default: true)
+SECURITY_HEADERS_ENABLED=true
+
+# Session Security Validation (default: true)
+SECURITY_SESSION_VALIDATION_ENABLED=true
+
+# Admin Access Control (default: true)
+SECURITY_ADMIN_CHECKS_ENABLED=true
+```
+
+#### Security Toggle Descriptions
+
+- **SECURITY_CSRF_ENABLED**: Controls CSRF protection middleware
+  - When `false`: Disables CSRF token validation (useful for API testing)
+  - When `true`: Full CSRF protection enabled (production setting)
+
+- **SECURITY_RATE_LIMITING_ENABLED**: Controls rate limiting middleware
+  - When `false`: Disables all rate limiting (useful for load testing)
+  - When `true`: Rate limiting active on all protected endpoints
+
+- **SECURITY_INPUT_VALIDATION_ENABLED**: Controls enhanced input validation
+  - When `false`: Disables additional input sanitization (basic validation still active)
+  - When `true`: Full input validation and sanitization enabled
+
+- **SECURITY_HEADERS_ENABLED**: Controls security HTTP headers
+  - When `false`: Disables security headers like CSP, HSTS, X-Frame-Options
+  - When `true`: Full security headers enabled
+
+- **SECURITY_SESSION_VALIDATION_ENABLED**: Controls session security checks
+  - When `false`: Disables additional session validation
+  - When `true`: Full session security validation enabled
+
+- **SECURITY_ADMIN_CHECKS_ENABLED**: Controls admin-specific security checks
+  - When `false`: Disables additional admin access validation
+  - When `true`: Full admin security checks enabled
+
+#### Development Use Cases
+
+```bash
+# For API testing without CSRF tokens
+SECURITY_CSRF_ENABLED=false
+
+# For load testing without rate limits
+SECURITY_RATE_LIMITING_ENABLED=false
+
+# For debugging with relaxed headers
+SECURITY_HEADERS_ENABLED=false
+```
+
+#### Production Requirements
+
+**ALL security toggles MUST be set to `true` in production environments:**
+
+```bash
+# Production Security Configuration (REQUIRED)
+SECURITY_CSRF_ENABLED=true
+SECURITY_RATE_LIMITING_ENABLED=true
+SECURITY_INPUT_VALIDATION_ENABLED=true
+SECURITY_HEADERS_ENABLED=true
+SECURITY_SESSION_VALIDATION_ENABLED=true
+SECURITY_ADMIN_CHECKS_ENABLED=true
+```
+
 ### Production Security Checklist
 
 - [ ] **HTTPS Only**: Force HTTPS in production
 - [ ] **Secret Keys**: Use strong, unique secret keys
 - [ ] **Database Encryption**: Enable database encryption
+- [ ] **Security Toggles**: All security features enabled (`SECURITY_*_ENABLED=true`)
 - [ ] **Regular Updates**: Keep dependencies updated
 - [ ] **Security Monitoring**: Enable security monitoring
 - [ ] **Backup Security**: Secure backup procedures
@@ -255,6 +333,11 @@ python security_validation.py
 
 ## 📚 Additional Resources
 
+### Internal Documentation
+- [Security Feature Toggles](security/feature-toggles.md) - Development/testing security toggles
+- [Environment Setup](security/environment-setup.md) - Secure environment configuration
+
+### External Resources
 - [OWASP Top 10](https://owasp.org/www-project-top-ten/)
 - [CWE/SANS Top 25](https://cwe.mitre.org/top25/)
 - [Flask Security Best Practices](https://flask.palletsprojects.com/en/2.0.x/security/)

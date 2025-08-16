@@ -613,7 +613,7 @@ class TestCSRFErrorHandling(unittest.TestCase):
         """Test form data preservation during CSRF errors"""
         form_data = {
             'username': 'testuser',
-            'email': 'test@example.com',
+            'email': 'test@test.com',
             'message': 'This is a test message',
             'password': 'secret123',  # Should be filtered out
             'csrf_token': 'token123'  # Should be filtered out

@@ -6,27 +6,37 @@
 {% block title %}Dashboard - Vedfolnir{% endblock %}
 
 {% block content %}
-<!-- Header Section -->
-<div class="row mb-4">
-    <div class="col-12">
-        <div class="d-flex justify-content-between align-items-center">
-            <div>
-                <h1 class="display-6 fw-bold mb-2">Dashboard</h1>
-                <p class="lead text-muted mb-0">Automated alt text generation and review system</p>
-            </div>
-            <div class="d-flex gap-2">
-                <button class="btn btn-outline-primary" onclick="location.reload()">
-                    <i class="bi bi-arrow-clockwise"></i> Refresh
-                </button>
-                {% if current_user_safe and current_user_safe.role.value == 'admin' %}
-                <a href="{{ url_for('admin.health_dashboard') }}" class="btn btn-outline-secondary">
-                    <i class="bi bi-heart-pulse"></i> System Health
-                </a>
-                {% endif %}
+<!-- Role-based Dashboard Display -->
+{% if is_viewer %}
+    <!-- Viewer Dashboard -->
+    {% include 'components/viewer_dashboard.html' %}
+{% elif is_admin %}
+    <!-- Admin Dashboard -->
+    {% include 'admin/templates/components/admin_dashboard.html' %}
+{% else %}
+    <!-- Legacy Dashboard -->
+    <!-- Header Section -->
+    <div class="row mb-4">
+        <div class="col-12">
+            <div class="d-flex justify-content-between align-items-center">
+                <div>
+                    <h1 class="display-6 fw-bold mb-2">Dashboard</h1>
+                    <p class="lead text-muted mb-0">Automated alt text generation and review system</p>
+                </div>
+                <div class="d-flex gap-2">
+                    <button class="btn btn-outline-primary" onclick="location.reload()">
+                        <i class="bi bi-arrow-clockwise"></i> Refresh
+                    </button>
+                    {% if is_admin %}
+                    <a href="{{ url_for('admin.health_dashboard') }}" class="btn btn-outline-secondary">
+                        <i class="bi bi-heart-pulse"></i> System Health
+                    </a>
+                    {% endif %}
+                </div>
             </div>
         </div>
     </div>
-</div>
+{% endif %}
 
 <!-- Platform Context Banner -->
 {% if active_platform %}

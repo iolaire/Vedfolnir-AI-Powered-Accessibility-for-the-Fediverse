@@ -141,7 +141,7 @@ def cleanup_all_test_users():
             test_users = session.query(User).filter(
                 User.username.like('test_%') | 
                 User.email.like('test_%@%') |
-                User.email.like('%@example.com')
+                User.email.like('%@test.com')
             ).all()
             
             if not test_users:

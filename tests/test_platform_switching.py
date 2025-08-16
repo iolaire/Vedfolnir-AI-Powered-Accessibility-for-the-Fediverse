@@ -60,7 +60,7 @@ class TestPlatformSwitching(unittest.TestCase):
             # Create test user
             self.test_user = User(
                 username='testuser',
-                email='test@example.com',
+                email='test@test.com',
                 role=UserRole.REVIEWER,
                 is_active=True
             )
@@ -177,7 +177,7 @@ class TestPlatformSwitching(unittest.TestCase):
         try:
             other_user = User(
                 username='otheruser',
-                email='other@example.com',
+                email='other@test.com',
                 role=UserRole.REVIEWER,
                 is_active=True
             )

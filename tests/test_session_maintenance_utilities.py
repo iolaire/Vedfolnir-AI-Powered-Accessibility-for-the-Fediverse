@@ -61,7 +61,7 @@ class TestSessionMaintenanceUtilities(unittest.TestCase):
             unique_id = str(uuid.uuid4())[:8]
             user = User(
                 username=f'testuser_{unique_id}',
-                email=f'test_{unique_id}@example.com',
+                email=f'test_{unique_id}@test.com',
                 password_hash='hashed_password'
             )
             db_session.add(user)

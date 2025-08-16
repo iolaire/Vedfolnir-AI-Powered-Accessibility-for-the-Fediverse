@@ -268,7 +268,7 @@ class TestSecurityAuditReporting(unittest.TestCase):
         
         with patch('security.audit.csrf_compliance_validator.send_notification') as mock_notify:
             report = self.reporter.generate_compliance_report(high_risk_results)
-            self.reporter.send_report_notifications(report, ['admin@example.com'])
+            self.reporter.send_report_notifications(report, ['admin@test.com'])
             
             # Should send notification for critical issues
             mock_notify.assert_called_once()

@@ -22,7 +22,7 @@ class TestUserModelEnhancements(unittest.TestCase):
         self.user = User()
         self.user.id = 1
         self.user.username = "testuser"
-        self.user.email = "test@example.com"
+        self.user.email = "test@test.com"
         self.user.role = UserRole.VIEWER
         self.user.is_active = True
         self.user.created_at = datetime.utcnow()

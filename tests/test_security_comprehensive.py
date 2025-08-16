@@ -175,7 +175,7 @@ class TestInputValidation(unittest.TestCase):
         
         # Valid emails
         valid_emails = [
-            "user@example.com",
+            "user@test.com",
             "test.email@domain.co.uk",
             "user+tag@example.org"
         ]
@@ -186,10 +186,10 @@ class TestInputValidation(unittest.TestCase):
         # Invalid emails
         invalid_emails = [
             "invalid-email",
-            "@example.com",
+            "@test.com",
             "user@",
             "user@.com",
-            "user space@example.com"
+            "user space@test.com"
         ]
         
         for email in invalid_emails:

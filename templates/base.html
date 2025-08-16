@@ -197,7 +197,7 @@
                                 {% endif %}
                                 
                                 <li><hr class="dropdown-divider"></li>
-                                <li><a class="dropdown-item" href="{{ url_for('profile') }}">
+                                <li><a class="dropdown-item" href="{{ url_for('user_management.profile') }}">
                                     <i class="bi bi-person-gear me-2"></i>Profile & Settings
                                 </a></li>
                                 {% if current_user_safe and (current_user_safe.role_value == 'admin' or (current_user_safe.role and current_user_safe.role.value == 'admin')) %}

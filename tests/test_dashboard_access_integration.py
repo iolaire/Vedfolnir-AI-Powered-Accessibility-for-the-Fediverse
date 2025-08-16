@@ -92,7 +92,7 @@ class TestDashboardAccessIntegration(unittest.TestCase):
         # Create user with multiple platforms
         self.test_user = self.mock_user_helper.create_mock_user(
             username='integration_test_user',
-            email='integration@example.com',
+            email='integration@test.com',
             password='test_password_123',
             role=UserRole.REVIEWER,
             with_platforms=True,
@@ -119,7 +119,7 @@ class TestDashboardAccessIntegration(unittest.TestCase):
         # Create user without platforms for testing
         self.test_user_no_platforms = self.mock_user_helper.create_mock_user(
             username='no_platforms_user',
-            email='no_platforms@example.com',
+            email='no_platforms@test.com',
             password='test_password_123',
             role=UserRole.REVIEWER,
             with_platforms=False
@@ -515,7 +515,7 @@ class TestDashboardAccessIntegration(unittest.TestCase):
         
         # User information should be accessible
         self.assertIn('integration_test_user', response_text)
-        self.assertIn('integration@example.com', response_text)
+        self.assertIn('integration@test.com', response_text)
         self.assertIn('reviewer', response_text.lower())
         
         # Platform count should be rendered

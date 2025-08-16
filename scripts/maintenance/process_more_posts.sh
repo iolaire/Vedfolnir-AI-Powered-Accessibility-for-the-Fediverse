@@ -6,11 +6,11 @@
 # Script to process more posts and skip already processed ones
 
 # Run the bot with increased post limit, pagination support, and fixed SQLAlchemy session handling
-echo "Running Alt Text Bot with pagination support to process more posts..."
+echo "Running Vedfolnir with pagination support to process more posts..."
 echo "This will fetch up to 200 posts and skip those already processed."
 echo "Fixed SQLAlchemy session handling to prevent DetachedInstanceError."
 python main.py --users iolaire --log-level INFO
 
 # To reprocess all images, including those already processed, uncomment the line below:
-# echo "Running Alt Text Bot with pagination support to reprocess ALL posts..."
+# echo "Running Vedfolnir with pagination support to reprocess ALL posts..."
 # python main.py --users iolaire --log-level INFO --reprocess-all

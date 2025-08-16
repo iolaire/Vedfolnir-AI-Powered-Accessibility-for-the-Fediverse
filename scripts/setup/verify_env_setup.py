@@ -138,6 +138,39 @@ def check_flask_config():
         print(f"❌ Flask config: Failed to load ({e})")
         return False
 
+def check_email_config():
+    """Check email configuration"""
+    try:
+        mail_server = os.getenv('MAIL_SERVER')
+        mail_port = os.getenv('MAIL_PORT')
+        mail_username = os.getenv('MAIL_USERNAME')
+        mail_password = os.getenv('MAIL_PASSWORD')
+        
+        if not mail_server or not mail_port:
+            print("⚠️  Email config: Basic settings missing (email features will be disabled)")
+            return True  # Not critical for basic functionality
+        
+        if not mail_username or not mail_password:
+            print("⚠️  Email config: Authentication missing (email features will be disabled)")
+            return True  # Not critical for basic functionality
+        
+        # Try to validate port is numeric
+        try:
+            port_num = int(mail_port)
+            if port_num < 1 or port_num > 65535:
+                print(f"❌ Email config: Invalid port number {mail_port}")
+                return False
+        except ValueError:
+            print(f"❌ Email config: Port must be numeric, got '{mail_port}'")
+            return False
+        
+        print(f"✅ Email config: Server={mail_server}:{mail_port}, Username={mail_username}")
+        return True
+        
+    except Exception as e:
+        print(f"❌ Email config: Failed to validate ({e})")
+        return False
+
 def main():
     print("🔍 Vedfolnir Environment Setup Verification")
     print("=" * 50)
@@ -176,6 +209,14 @@ def main():
     all_checks_passed &= check_env_variable("SECURITY_CSRF_ENABLED", "CSRF protection", required=True)
     all_checks_passed &= check_env_variable("SECURITY_RATE_LIMITING_ENABLED", "Rate limiting", required=True)
     all_checks_passed &= check_env_variable("SECURITY_INPUT_VALIDATION_ENABLED", "Input validation", required=True)
+    
+    # Check email settings (optional but recommended)
+    all_checks_passed &= check_env_variable("MAIL_SERVER", "Email server", required=False)
+    all_checks_passed &= check_env_variable("MAIL_PORT", "Email port", required=False)
+    all_checks_passed &= check_env_variable("MAIL_USE_TLS", "Email TLS", required=False)
+    all_checks_passed &= check_env_variable("MAIL_USERNAME", "Email username", required=False)
+    all_checks_passed &= check_env_variable("MAIL_PASSWORD", "Email password", required=False)
+    all_checks_passed &= check_env_variable("MAIL_DEFAULT_SENDER", "Email default sender", required=False)
     print()
     
     # Check encryption key format
@@ -186,6 +227,11 @@ def main():
     # Check Flask configuration
     print("⚙️  Flask Configuration:")
     all_checks_passed &= check_flask_config()
+    print()
+    
+    # Check email configuration
+    print("📧 Email Configuration:")
+    all_checks_passed &= check_email_config()
     print()
     
     # Check database connection

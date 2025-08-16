@@ -76,7 +76,7 @@ def create_test_user():
             # Create test user
             test_user = User(
                 username='test_user',
-                email='test@example.com',
+                email='test@test.com',
                 role=UserRole.ADMIN,
                 is_active=True,
                 created_at=datetime.now(timezone.utc)

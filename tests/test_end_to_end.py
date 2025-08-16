@@ -56,7 +56,7 @@ class EndToEndTestBase(unittest.TestCase):
         test_password = os.getenv('TEST_USER_PASSWORD', 'test_password_123')
         self.test_user = self.db_manager.create_user(
             username="testuser",
-            email="test@example.com", 
+            email="test@test.com", 
             password=test_password,
             role=UserRole.ADMIN
         )
@@ -787,7 +787,7 @@ class TestWebInterfaceEndToEnd(EndToEndTestBase):
         test_web_password = os.getenv('TEST_WEB_PASSWORD', 'web_test_password_456')
         user = self.db_manager.create_user(
             username="webuser",
-            email="web@example.com",
+            email="web@test.com",
             password=test_web_password,
             role=UserRole.REVIEWER
         )
@@ -806,14 +806,14 @@ class TestWebInterfaceEndToEnd(EndToEndTestBase):
         # Test user update (profile changes)
         success = self.db_manager.update_user(
             user_id=found_user.id,
-            email="newemail@example.com",
+            email="newemail@test.com",
             role=UserRole.ADMIN
         )
         self.assertTrue(success)
         
         # Verify update
         updated_user = self.db_manager.get_user_by_username("webuser")
-        self.assertEqual(updated_user.email, "newemail@example.com")
+        self.assertEqual(updated_user.email, "newemail@test.com")
         self.assertEqual(updated_user.role, UserRole.ADMIN)
 
 

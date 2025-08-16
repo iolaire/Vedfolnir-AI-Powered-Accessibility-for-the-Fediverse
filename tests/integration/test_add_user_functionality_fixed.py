@@ -102,7 +102,7 @@ class TestAddUserFunctionalityFixed(unittest.TestCase):
                 # Test data
                 user_data = {
                     'username': 'testuser',
-                    'email': 'test@example.com',
+                    'email': 'test@test.com',
                     'password': 'password123',
                     'confirm_password': 'password123',
                     'role': 'viewer',
@@ -131,7 +131,7 @@ class TestAddUserFunctionalityFixed(unittest.TestCase):
                 
                 user_data = {
                     'username': 'testuser',
-                    'email': 'test@example.com',
+                    'email': 'test@test.com',
                     'password': 'password123',
                     'confirm_password': 'password123',
                     'role': 'viewer'

@@ -249,7 +249,7 @@ class PlatformTestDataFactory:
         user_mock = Mock(spec=User)
         user_mock.id = user_id
         user_mock.username = username
-        user_mock.email = f'{username}@example.com'
+        user_mock.email = f'{username}@test.com'
         user_mock.role = UserRole.REVIEWER
         user_mock.is_active = True
         user_mock.created_at = datetime.now(timezone.utc)

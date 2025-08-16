@@ -275,7 +275,7 @@ class TestErrorRecoverySystem(unittest.TestCase):
         # Mock user and platform data
         mock_user = Mock(spec=User)
         mock_user.username = "testuser"
-        mock_user.email = "test@example.com"
+        mock_user.email = "test@test.com"
         
         mock_platform = Mock(spec=PlatformConnection)
         mock_platform.name = "Test Platform"

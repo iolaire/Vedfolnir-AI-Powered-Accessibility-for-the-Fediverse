@@ -119,7 +119,7 @@ class TestFlaskRoutesWithDatabaseManager(unittest.TestCase):
             user = web_app.db_manager.get_user_by_username("testuser")
             self.assertIsNone(user)  # Default mock returns None
             
-            user_id = web_app.db_manager.create_user("newuser", "new@example.com", "password")
+            user_id = web_app.db_manager.create_user("newuser", "new@test.com", "password")
             self.assertEqual(user_id, 1)  # Default mock returns 1
             
             # Test platform management methods

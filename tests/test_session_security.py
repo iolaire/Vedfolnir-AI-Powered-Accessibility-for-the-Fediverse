@@ -52,7 +52,7 @@ class TestSessionSecurity(unittest.TestCase):
             # Create test users
             self.user1 = User(
                 username='user1',
-                email='user1@example.com',
+                email='user1@test.com',
                 role=UserRole.REVIEWER,
                 is_active=True
             )
@@ -61,7 +61,7 @@ class TestSessionSecurity(unittest.TestCase):
             
             self.user2 = User(
                 username='user2',
-                email='user2@example.com',
+                email='user2@test.com',
                 role=UserRole.REVIEWER,
                 is_active=True
             )
@@ -71,7 +71,7 @@ class TestSessionSecurity(unittest.TestCase):
             # Create inactive user for testing
             self.inactive_user = User(
                 username='inactive',
-                email='inactive@example.com',
+                email='inactive@test.com',
                 role=UserRole.VIEWER,
                 is_active=False
             )

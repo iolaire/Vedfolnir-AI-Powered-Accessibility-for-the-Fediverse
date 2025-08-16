@@ -1,0 +1,278 @@
+<!-- Copyright (C) 2025 iolaire mcfadden. -->
+<!-- This program is free software: you can redistribute it and/or modify it under the terms of the GNU Affero General Public License as published by the Free Software Foundation, either version 3 of the License, or (at your option) any later version. -->
+<!-- THE SOFTWARE IS PROVIDED "AS IS", WITHOUT WARRANTY OF ANY KIND, EXPRESS OR IMPLIED, INCLUDING BUT NOT LIMITED TO THE WARRANTIES OF MERCHANTABILITY, FITNESS FOR A PARTICULAR PURPOSE AND NONINFRINGEMENT. IN NO EVENT SHALL THE AUTHORS OR COPYRIGHT HOLDERS BE LIABLE FOR ANY CLAIM, DAMAGES OR OTHER LIABILITY, WHETHER IN AN ACTION OF CONTRACT, TORT OR OTHERWISE, ARISING FROM, OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE SOFTWARE. -->
+
+{% extends "base.html" %}
+
+{% block title %}Consent Management - Vedfolnir{% endblock %}
+
+{% block content %}
+<div class="container mt-4">
+    <div class="row justify-content-center">
+        <div class="col-md-8">
+            <div class="card">
+                <div class="card-header">
+                    <h3 class="mb-0">
+                        <i class="fas fa-shield-alt me-2"></i>
+                        Consent Management
+                    </h3>
+                    <small class="text-muted">GDPR Article 7 - Conditions for consent</small>
+                </div>
+                <div class="card-body">
+                    <div class="alert alert-info">
+                        <i class="fas fa-info-circle me-2"></i>
+                        <strong>Your Consent Rights</strong><br>
+                        You have the right to give, withdraw, or modify your consent for data processing at any time. 
+                        Withdrawing consent will not affect the lawfulness of processing before withdrawal.
+                    </div>
+
+                    <form method="POST">
+                        {{ form.hidden_tag() }}
+                        
+                        <div class="card mb-3">
+                            <div class="card-header">
+                                <h5 class="mb-0">Data Processing Consent</h5>
+                            </div>
+                            <div class="card-body">
+                                <div class="form-check form-switch">
+                                    {{ form.data_processing_consent(class="form-check-input", role="switch") }}
+                                    {{ form.data_processing_consent.label(class="form-check-label") }}
+                                </div>
+                                <div class="form-text">{{ form.data_processing_consent.description }}</div>
+                                
+                                <div class="alert alert-warning mt-3">
+                                    <i class="fas fa-exclamation-triangle me-2"></i>
+                                    <strong>Required for Account Functionality:</strong> 
+                                    This consent is necessary for your account to function properly. 
+                                    Withdrawing this consent may limit or disable account features.
+                                </div>
+                            </div>
+                        </div>
+
+                        <div class="card mb-3">
+                            <div class="card-header">
+                                <h5 class="mb-0">Marketing Communications</h5>
+                            </div>
+                            <div class="card-body">
+                                <div class="form-check form-switch">
+                                    {{ form.marketing_consent(class="form-check-input", role="switch") }}
+                                    {{ form.marketing_consent.label(class="form-check-label") }}
+                                </div>
+                                <div class="form-text">{{ form.marketing_consent.description }}</div>
+                                
+                                <small class="text-muted">
+                                    This includes newsletters, feature announcements, and promotional content.
+                                </small>
+                            </div>
+                        </div>
+
+                        <div class="card mb-3">
+                            <div class="card-header">
+                                <h5 class="mb-0">Analytics and Usage Tracking</h5>
+                            </div>
+                            <div class="card-body">
+                                <div class="form-check form-switch">
+                                    {{ form.analytics_consent(class="form-check-input", role="switch") }}
+                                    {{ form.analytics_consent.label(class="form-check-label") }}
+                                </div>
+                                <div class="form-text">{{ form.analytics_consent.description }}</div>
+                                
+                                <small class="text-muted">
+                                    Helps us understand how you use the service to improve functionality and user experience.
+                                </small>
+                            </div>
+                        </div>
+
+                        <div class="card mb-3">
+                            <div class="card-header">
+                                <h5 class="mb-0">Third-Party Platform Sharing</h5>
+                            </div>
+                            <div class="card-body">
+                                <div class="form-check form-switch">
+                                    {{ form.third_party_sharing(class="form-check-input", role="switch") }}
+                                    {{ form.third_party_sharing.label(class="form-check-label") }}
+                                </div>
+                                <div class="form-text">{{ form.third_party_sharing.description }}</div>
+                                
+                                <div class="alert alert-info mt-3">
+                                    <i class="fas fa-info-circle me-2"></i>
+                                    <strong>Platform Integration:</strong> 
+                                    This consent allows us to post captions to your connected social media accounts. 
+                                    Without this consent, caption posting features will not work.
+                                </div>
+                            </div>
+                        </div>
+
+                        <div class="mb-3">
+                            {{ form.consent_reason.label(class="form-label") }}
+                            {{ form.consent_reason(class="form-control", rows="3") }}
+                            <div class="form-text">{{ form.consent_reason.description }}</div>
+                        </div>
+
+                        <div class="d-grid gap-2 d-md-flex justify-content-md-end">
+                            <a href="{{ url_for('profile.profile') }}" class="btn btn-secondary me-md-2">Cancel</a>
+                            {{ form.submit(class="btn btn-primary") }}
+                        </div>
+                    </form>
+                </div>
+            </div>
+
+            <div class="card mt-4">
+                <div class="card-header">
+                    <h5 class="mb-0">Current Consent Status</h5>
+                </div>
+                <div class="card-body">
+                    <div class="row">
+                        <div class="col-md-6">
+                            <h6>Data Processing</h6>
+                            {% if current_user.data_processing_consent %}
+                                <span class="badge bg-success">
+                                    <i class="fas fa-check me-1"></i>Consent Given
+                                </span>
+                            {% else %}
+                                <span class="badge bg-danger">
+                                    <i class="fas fa-times me-1"></i>Consent Withdrawn
+                                </span>
+                            {% endif %}
+                            {% if current_user.data_processing_consent_date %}
+                                <br><small class="text-muted">
+                                    {{ current_user.data_processing_consent_date.strftime('%Y-%m-%d %H:%M UTC') }}
+                                </small>
+                            {% endif %}
+                        </div>
+                        <div class="col-md-6">
+                            <h6>Account Status</h6>
+                            {% if current_user.is_active %}
+                                <span class="badge bg-success">
+                                    <i class="fas fa-check me-1"></i>Active
+                                </span>
+                            {% else %}
+                                <span class="badge bg-warning">
+                                    <i class="fas fa-pause me-1"></i>Inactive
+                                </span>
+                            {% endif %}
+                        </div>
+                    </div>
+                </div>
+            </div>
+
+            <div class="card mt-4">
+                <div class="card-header">
+                    <h5 class="mb-0">Understanding Your Rights</h5>
+                </div>
+                <div class="card-body">
+                    <div class="row">
+                        <div class="col-md-6">
+                            <h6><i class="fas fa-hand-paper me-2"></i>Right to Withdraw</h6>
+                            <p class="small">You can withdraw your consent at any time. This will not affect any processing that occurred before withdrawal.</p>
+                        </div>
+                        <div class="col-md-6">
+                            <h6><i class="fas fa-info me-2"></i>Clear Information</h6>
+                            <p class="small">We provide clear information about what each consent covers and how your data is used.</p>
+                        </div>
+                    </div>
+                    <div class="row">
+                        <div class="col-md-6">
+                            <h6><i class="fas fa-mouse-pointer me-2"></i>Easy to Withdraw</h6>
+                            <p class="small">Withdrawing consent is as easy as giving it - just toggle the switches above.</p>
+                        </div>
+                        <div class="col-md-6">
+                            <h6><i class="fas fa-balance-scale me-2"></i>No Detriment</h6>
+                            <p class="small">Withdrawing consent will not result in any penalty, though some features may become unavailable.</p>
+                        </div>
+                    </div>
+                </div>
+            </div>
+
+            <div class="card mt-4">
+                <div class="card-header">
+                    <h5 class="mb-0">Related Actions</h5>
+                </div>
+                <div class="card-body">
+                    <div class="row">
+                        <div class="col-md-4">
+                            <a href="{{ url_for('gdpr.data_processing_info') }}" class="btn btn-outline-primary btn-sm w-100 mb-2">
+                                <i class="fas fa-info-circle me-2"></i>View Data Processing Info
+                            </a>
+                        </div>
+                        <div class="col-md-4">
+                            <a href="{{ url_for('gdpr.privacy_request') }}" class="btn btn-outline-primary btn-sm w-100 mb-2">
+                                <i class="fas fa-envelope me-2"></i>Submit Privacy Request
+                            </a>
+                        </div>
+                        <div class="col-md-4">
+                            <a href="{{ url_for('gdpr.compliance_report') }}" class="btn btn-outline-primary btn-sm w-100 mb-2">
+                                <i class="fas fa-file-alt me-2"></i>Generate Compliance Report
+                            </a>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+{% endblock %}
+
+{% block scripts %}
+<script>
+document.addEventListener('DOMContentLoaded', function() {
+    const dataProcessingSwitch = document.getElementById('data_processing_consent');
+    const thirdPartySwitch = document.getElementById('third_party_sharing');
+    
+    function updateWarnings() {
+        // Show warning if data processing consent is withdrawn
+        if (!dataProcessingSwitch.checked) {
+            showConsentWarning('data_processing_consent', 
+                'Withdrawing this consent may disable your account functionality.');
+        }
+        
+        // Show warning if third-party sharing is withdrawn
+        if (!thirdPartySwitch.checked) {
+            showConsentWarning('third_party_sharing', 
+                'Withdrawing this consent will disable caption posting to your social media accounts.');
+        }
+    }
+    
+    function showConsentWarning(switchId, message) {
+        const switchElement = document.getElementById(switchId);
+        const existingWarning = switchElement.parentNode.parentNode.querySelector('.consent-warning');
+        
+        if (!existingWarning) {
+            const warningDiv = document.createElement('div');
+            warningDiv.className = 'alert alert-warning mt-2 consent-warning';
+            warningDiv.innerHTML = `<i class="fas fa-exclamation-triangle me-2"></i>${message}`;
+            switchElement.parentNode.parentNode.appendChild(warningDiv);
+        }
+    }
+    
+    function removeConsentWarning(switchId) {
+        const switchElement = document.getElementById(switchId);
+        const existingWarning = switchElement.parentNode.parentNode.querySelector('.consent-warning');
+        if (existingWarning) {
+            existingWarning.remove();
+        }
+    }
+    
+    dataProcessingSwitch.addEventListener('change', function() {
+        if (this.checked) {
+            removeConsentWarning('data_processing_consent');
+        } else {
+            showConsentWarning('data_processing_consent', 
+                'Withdrawing this consent may disable your account functionality.');
+        }
+    });
+    
+    thirdPartySwitch.addEventListener('change', function() {
+        if (this.checked) {
+            removeConsentWarning('third_party_sharing');
+        } else {
+            showConsentWarning('third_party_sharing', 
+                'Withdrawing this consent will disable caption posting to your social media accounts.');
+        }
+    });
+    
+    // Initial check
+    updateWarnings();
+});
+</script>
+{% endblock %}

@@ -156,7 +156,7 @@ class DatabaseMockHelper:
             defaults = {
                 'id': 1,
                 'username': 'testuser',
-                'email': 'test@example.com',
+                'email': 'test@test.com',
                 'role': UserRole.REVIEWER,
                 'is_active': True,
                 'created_at': datetime.now(timezone.utc),

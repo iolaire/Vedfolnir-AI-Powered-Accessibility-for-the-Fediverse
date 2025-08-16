@@ -51,7 +51,7 @@ class TestSessionCleanup(unittest.TestCase):
             # Create test users
             self.user1 = User(
                 username='user1',
-                email='user1@example.com',
+                email='user1@test.com',
                 role=UserRole.REVIEWER,
                 is_active=True
             )
@@ -60,7 +60,7 @@ class TestSessionCleanup(unittest.TestCase):
             
             self.user2 = User(
                 username='user2',
-                email='user2@example.com',
+                email='user2@test.com',
                 role=UserRole.REVIEWER,
                 is_active=True
             )
@@ -274,11 +274,11 @@ class TestSessionCleanup(unittest.TestCase):
             user2 = db_session.query(User).get(self.user2_id)
             
             self.assertEqual(user1.username, 'user1')
-            self.assertEqual(user1.email, 'user1@example.com')
+            self.assertEqual(user1.email, 'user1@test.com')
             self.assertTrue(user1.is_active)
             
             self.assertEqual(user2.username, 'user2')
-            self.assertEqual(user2.email, 'user2@example.com')
+            self.assertEqual(user2.email, 'user2@test.com')
             self.assertTrue(user2.is_active)
         finally:
             db_session.close()

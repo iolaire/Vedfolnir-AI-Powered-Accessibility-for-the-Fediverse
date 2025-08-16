@@ -191,11 +191,22 @@ SESSION_TIMEOUT=7200
 CSRF_ENABLED=true
 RATE_LIMITING_ENABLED=true
 
+# Security Feature Toggles (Development/Testing Only)
+# WARNING: ALL must be 'true' in production
+SECURITY_CSRF_ENABLED=true
+SECURITY_RATE_LIMITING_ENABLED=true
+SECURITY_INPUT_VALIDATION_ENABLED=true
+SECURITY_HEADERS_ENABLED=true
+SECURITY_SESSION_VALIDATION_ENABLED=true
+SECURITY_ADMIN_CHECKS_ENABLED=true
+
 # Caption Generation
 CAPTION_MAX_LENGTH=500
 CAPTION_OPTIMAL_MIN_LENGTH=150
 CAPTION_OPTIMAL_MAX_LENGTH=450
 ```
+
+**Security Note**: The `SECURITY_*_ENABLED` toggles are for development and testing only. All security features must be enabled (`true`) in production environments. See [Security Guide](docs/SECURITY.md) for details.
 
 ### Platform Configuration
 
@@ -257,7 +268,7 @@ This project implements enterprise-grade security with a **100% security score**
 - ✅ **Security Audit**: Regular automated security audits
 - ✅ **Penetration Testing**: Built-in security testing
 
-For detailed security information, see [Security Guide](docs/SECURITY.md).
+For detailed security information, including security feature toggles, see [Security Guide](docs/SECURITY.md).
 
 ## 🏗️ Architecture
 

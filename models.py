@@ -230,6 +230,29 @@ class User(Base):
     created_at = Column(DateTime, default=datetime.utcnow)
     last_login = Column(DateTime)
     
+    # Email verification fields
+    email_verified = Column(Boolean, default=False)
+    email_verification_token = Column(String(255), nullable=True)
+    email_verification_sent_at = Column(DateTime, nullable=True)
+    
+    # Profile management fields
+    first_name = Column(String(100), nullable=True)
+    last_name = Column(String(100), nullable=True)
+    
+    # Password reset fields
+    password_reset_token = Column(String(255), nullable=True)
+    password_reset_sent_at = Column(DateTime, nullable=True)
+    password_reset_used = Column(Boolean, default=False)
+    
+    # GDPR compliance fields
+    data_processing_consent = Column(Boolean, default=False)
+    data_processing_consent_date = Column(DateTime, nullable=True)
+    
+    # Account security fields
+    account_locked = Column(Boolean, default=False)
+    failed_login_attempts = Column(Integer, default=0)
+    last_failed_login = Column(DateTime, nullable=True)
+    
     # Relationships with explicit loading strategies
     platform_connections = relationship(
         "PlatformConnection", 
@@ -315,6 +338,167 @@ class User(Base):
             for pc in self.platform_connections
         )
     
+    # Email verification methods
+    def generate_email_verification_token(self):
+        """Generate a secure email verification token"""
+        import secrets
+        self.email_verification_token = secrets.token_urlsafe(32)
+        self.email_verification_sent_at = datetime.utcnow()
+        return self.email_verification_token
+    
+    def verify_email_token(self, token):
+        """Verify email verification token and mark email as verified"""
+        if not self.email_verification_token or self.email_verification_token != token:
+            return False
+        
+        # Check if token is expired (24 hours)
+        if self.email_verification_sent_at:
+            from datetime import timedelta
+            if datetime.utcnow() - self.email_verification_sent_at > timedelta(hours=24):
+                return False
+        
+        # Mark email as verified and clear token
+        self.email_verified = True
+        self.email_verification_token = None
+        self.email_verification_sent_at = None
+        return True
+    
+    # Password reset methods
+    def generate_password_reset_token(self):
+        """Generate a secure password reset token"""
+        import secrets
+        self.password_reset_token = secrets.token_urlsafe(32)
+        self.password_reset_sent_at = datetime.utcnow()
+        self.password_reset_used = False
+        return self.password_reset_token
+    
+    def verify_password_reset_token(self, token):
+        """Verify password reset token"""
+        if not self.password_reset_token or self.password_reset_token != token:
+            return False
+        
+        if self.password_reset_used:
+            return False
+        
+        # Check if token is expired (1 hour)
+        if self.password_reset_sent_at:
+            from datetime import timedelta
+            if datetime.utcnow() - self.password_reset_sent_at > timedelta(hours=1):
+                return False
+        
+        return True
+    
+    def reset_password(self, new_password, token):
+        """Reset password using token"""
+        if not self.verify_password_reset_token(token):
+            return False
+        
+        self.set_password(new_password)
+        self.password_reset_token = None
+        self.password_reset_sent_at = None
+        self.password_reset_used = True
+        
+        # Reset failed login attempts
+        self.failed_login_attempts = 0
+        self.account_locked = False
+        self.last_failed_login = None
+        
+        return True
+    
+    # Account security methods
+    def can_login(self):
+        """Check if user can login (email verified and account not locked)"""
+        return self.is_active and self.email_verified and not self.account_locked
+    
+    def record_failed_login(self):
+        """Record a failed login attempt"""
+        self.failed_login_attempts += 1
+        self.last_failed_login = datetime.utcnow()
+        
+        # Lock account after 5 failed attempts
+        if self.failed_login_attempts >= 5:
+            self.account_locked = True
+    
+    def unlock_account(self):
+        """Unlock account and reset failed login attempts"""
+        self.account_locked = False
+        self.failed_login_attempts = 0
+        self.last_failed_login = None
+    
+    # Profile methods
+    def get_full_name(self):
+        """Get formatted full name"""
+        if self.first_name and self.last_name:
+            return f"{self.first_name} {self.last_name}"
+        elif self.first_name:
+            return self.first_name
+        elif self.last_name:
+            return self.last_name
+        else:
+            return self.username
+    
+    def update_profile(self, first_name=None, last_name=None, email=None):
+        """Update user profile information"""
+        if first_name is not None:
+            self.first_name = first_name
+        if last_name is not None:
+            self.last_name = last_name
+        if email is not None and email != self.email:
+            # Email change requires re-verification
+            self.email = email
+            self.email_verified = False
+            self.email_verification_token = None
+            self.email_verification_sent_at = None
+    
+    # GDPR compliance methods
+    def give_consent(self):
+        """Record user's data processing consent"""
+        self.data_processing_consent = True
+        self.data_processing_consent_date = datetime.utcnow()
+    
+    def withdraw_consent(self):
+        """Withdraw user's data processing consent"""
+        self.data_processing_consent = False
+        self.data_processing_consent_date = datetime.utcnow()
+    
+    def export_personal_data(self):
+        """Export user's personal data for GDPR compliance"""
+        return {
+            'id': self.id,
+            'username': self.username,
+            'email': self.email,
+            'first_name': self.first_name,
+            'last_name': self.last_name,
+            'role': self.role.value if self.role else None,
+            'is_active': self.is_active,
+            'email_verified': self.email_verified,
+            'data_processing_consent': self.data_processing_consent,
+            'data_processing_consent_date': self.data_processing_consent_date.isoformat() if self.data_processing_consent_date else None,
+            'created_at': self.created_at.isoformat() if self.created_at else None,
+            'last_login': self.last_login.isoformat() if self.last_login else None,
+            'platform_connections': [pc.to_dict() for pc in self.platform_connections if pc.is_active]
+        }
+    
+    def anonymize_data(self):
+        """Anonymize user data for GDPR compliance (soft delete)"""
+        import uuid
+        anonymous_id = str(uuid.uuid4())[:8]
+        
+        self.username = f"deleted_user_{anonymous_id}"
+        self.email = f"deleted_{anonymous_id}@example.com"
+        self.first_name = None
+        self.last_name = None
+        self.is_active = False
+        self.email_verified = False
+        self.data_processing_consent = False
+        
+        # Clear sensitive tokens
+        self.email_verification_token = None
+        self.password_reset_token = None
+        
+        # Keep audit trail but anonymize
+        return anonymous_id
+    
     # Flask-Login interface methods
     def get_id(self):
         """Return the user ID as a string for Flask-Login"""
@@ -332,6 +516,107 @@ class User(Base):
     
     def __repr__(self):
         return f"<User {self.username}>"
+
+
+class UserAuditLog(Base):
+    """Audit trail for user management actions"""
+    __tablename__ = 'user_audit_log'
+    
+    id = Column(Integer, primary_key=True)
+    user_id = Column(Integer, ForeignKey('users.id'), nullable=True)
+    action = Column(String(100), nullable=False)
+    details = Column(Text, nullable=True)
+    ip_address = Column(String(45), nullable=True)
+    user_agent = Column(Text, nullable=True)
+    created_at = Column(DateTime, default=datetime.utcnow)
+    admin_user_id = Column(Integer, ForeignKey('users.id'), nullable=True)
+    
+    # Relationships
+    user = relationship("User", foreign_keys=[user_id], backref="audit_logs")
+    admin_user = relationship("User", foreign_keys=[admin_user_id], backref="admin_actions")
+    
+    def __repr__(self):
+        return f"<UserAuditLog {self.action} - User {self.user_id}>"
+    
+    @classmethod
+    def log_action(cls, session, action, user_id=None, admin_user_id=None, 
+                   details=None, ip_address=None, user_agent=None):
+        """Create an audit log entry"""
+        audit_entry = cls(
+            user_id=user_id,
+            action=action,
+            details=details,
+            ip_address=ip_address,
+            user_agent=user_agent,
+            admin_user_id=admin_user_id
+        )
+        session.add(audit_entry)
+        return audit_entry
+
+
+class GDPRAuditLog(Base):
+    """Audit trail specifically for GDPR compliance actions"""
+    __tablename__ = 'gdpr_audit_log'
+    
+    id = Column(Integer, primary_key=True)
+    user_id = Column(Integer, ForeignKey('users.id'), nullable=True)
+    action_type = Column(String(50), nullable=False)  # export, rectification, erasure, consent, etc.
+    gdpr_article = Column(String(20), nullable=True)  # Article 15, 16, 17, etc.
+    action_details = Column(Text, nullable=True)
+    request_data = Column(Text, nullable=True)  # JSON of request parameters
+    response_data = Column(Text, nullable=True)  # JSON of response/result
+    status = Column(String(20), default='pending')  # pending, completed, failed
+    ip_address = Column(String(45), nullable=True)
+    user_agent = Column(Text, nullable=True)
+    created_at = Column(DateTime, default=datetime.utcnow)
+    completed_at = Column(DateTime, nullable=True)
+    admin_user_id = Column(Integer, ForeignKey('users.id'), nullable=True)
+    
+    # Relationships
+    user = relationship("User", foreign_keys=[user_id], backref="gdpr_audit_logs")
+    admin_user = relationship("User", foreign_keys=[admin_user_id], backref="gdpr_admin_actions")
+    
+    def __repr__(self):
+        return f"<GDPRAuditLog {self.action_type} - User {self.user_id}>"
+    
+    @classmethod
+    def log_gdpr_action(cls, session, action_type, gdpr_article=None, user_id=None, 
+                       admin_user_id=None, action_details=None, request_data=None,
+                       response_data=None, status='pending', ip_address=None, user_agent=None):
+        """Create a GDPR-specific audit log entry"""
+        import json
+        
+        audit_entry = cls(
+            user_id=user_id,
+            action_type=action_type,
+            gdpr_article=gdpr_article,
+            action_details=action_details,
+            request_data=json.dumps(request_data) if request_data else None,
+            response_data=json.dumps(response_data) if response_data else None,
+            status=status,
+            ip_address=ip_address,
+            user_agent=user_agent,
+            admin_user_id=admin_user_id
+        )
+        session.add(audit_entry)
+        return audit_entry
+    
+    def update_status(self, session, status, response_data=None, completed_at=None):
+        """Update the status and completion details of a GDPR action"""
+        import json
+        from datetime import datetime
+        
+        self.status = status
+        if response_data:
+            self.response_data = json.dumps(response_data)
+        if completed_at:
+            self.completed_at = completed_at
+        elif status in ['completed', 'failed']:
+            self.completed_at = datetime.utcnow()
+        
+        session.commit()
+        return self
+
 
 class ProcessingRun(Base):
     __tablename__ = 'processing_runs'

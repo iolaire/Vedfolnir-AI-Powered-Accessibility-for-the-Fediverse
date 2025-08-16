@@ -335,7 +335,7 @@ class TestIntegrationWithMockUsers(unittest.TestCase):
         self.mock_user = Mock(spec=User)
         self.mock_user.id = 1
         self.mock_user.username = "test_user"
-        self.mock_user.email = "test@example.com"
+        self.mock_user.email = "test@test.com"
         
         self.mock_platform = Mock(spec=PlatformConnection)
         self.mock_platform.id = 1

@@ -46,7 +46,7 @@ class TestTemplateSafeContext(unittest.TestCase):
         self.mock_user = Mock(spec=User)
         self.mock_user.id = 1
         self.mock_user.username = 'testuser'
-        self.mock_user.email = 'test@example.com'
+        self.mock_user.email = 'test@test.com'
         self.mock_user.role = UserRole.VIEWER
         self.mock_user.is_active = True
         self.mock_user.is_authenticated = True
@@ -76,7 +76,7 @@ class TestTemplateSafeContext(unittest.TestCase):
             handler.safe_access.side_effect = lambda obj, attr, default=None: {
                 'id': 1,
                 'username': 'testuser',
-                'email': 'test@example.com',
+                'email': 'test@test.com',
                 'role': 'user',
                 'is_active': True
             }.get(attr, default)
@@ -95,7 +95,7 @@ class TestTemplateSafeContext(unittest.TestCase):
                 
                 # Verify user data
                 self.assertEqual(context['current_user_safe']['username'], 'testuser')
-                self.assertEqual(context['current_user_safe']['email'], 'test@example.com')
+                self.assertEqual(context['current_user_safe']['email'], 'test@test.com')
                 self.assertEqual(context['current_user_safe']['role'], 'user')
                 
                 # Verify no template error
@@ -313,7 +313,7 @@ class TestTemplateSafeContext(unittest.TestCase):
         handler.safe_access.side_effect = lambda obj, attr, default=None: {
             'id': 1,
             'username': 'testuser',
-            'email': 'test@example.com',
+            'email': 'test@test.com',
             'role': 'user',
             'is_active': True
         }.get(attr, default)
@@ -324,7 +324,7 @@ class TestTemplateSafeContext(unittest.TestCase):
         # Verify safe user data
         self.assertIsInstance(result, dict)
         self.assertEqual(result['username'], 'testuser')
-        self.assertEqual(result['email'], 'test@example.com')
+        self.assertEqual(result['email'], 'test@test.com')
         self.assertEqual(result['role'], 'user')
         self.assertTrue(result['is_active'])
     

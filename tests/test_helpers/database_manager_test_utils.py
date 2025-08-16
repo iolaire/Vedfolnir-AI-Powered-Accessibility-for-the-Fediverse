@@ -197,7 +197,7 @@ def patch_database_manager_class(mock_db_manager: Optional[Mock] = None):
         yield MockDatabaseManager
 
 def create_mock_user(user_id: int = 1, username: str = "testuser", 
-                    email: str = "test@example.com", is_active: bool = True):
+                    email: str = "test@test.com", is_active: bool = True):
     """
     Create a mock user object for testing.
     

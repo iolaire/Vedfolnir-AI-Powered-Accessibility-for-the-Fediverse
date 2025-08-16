@@ -77,7 +77,7 @@ class TestSessionManagerContextManager(unittest.TestCase):
         with self.session_manager.get_db_session() as db_session:
             new_user = User(
                 username='context_test_user',
-                email='context@example.com',
+                email='context@test.com',
                 role=UserRole.REVIEWER,
                 is_active=True
             )
@@ -89,7 +89,7 @@ class TestSessionManagerContextManager(unittest.TestCase):
         with self.session_manager.get_db_session() as db_session:
             saved_user = db_session.query(User).filter_by(username='context_test_user').first()
             self.assertIsNotNone(saved_user)
-            self.assertEqual(saved_user.email, 'context@example.com')
+            self.assertEqual(saved_user.email, 'context@test.com')
     
     def test_context_manager_error_rollback(self):
         """Test automatic rollback on database error"""
@@ -105,7 +105,7 @@ class TestSessionManagerContextManager(unittest.TestCase):
                 # Create user with duplicate username (should fail)
                 duplicate_user = User(
                     username=self.test_user.username,  # Duplicate username
-                    email='duplicate@example.com',
+                    email='duplicate@test.com',
                     role=UserRole.REVIEWER,
                     is_active=True
                 )

@@ -254,7 +254,7 @@ class TestSessionAwareUser(unittest.TestCase):
         self.mock_user = Mock(spec=User)
         self.mock_user.id = 1
         self.mock_user.username = "testuser"
-        self.mock_user.email = "test@example.com"
+        self.mock_user.email = "test@test.com"
         self.mock_user.is_active = True
         self.mock_user.platform_connections = []
         
@@ -711,7 +711,7 @@ class TestSafeTemplateContext(unittest.TestCase):
                     user_data = {
                         'id': 1,
                         'username': 'testuser',
-                        'email': 'test@example.com',
+                        'email': 'test@test.com',
                         'role': 'user',
                         'is_active': True
                     }
@@ -778,7 +778,7 @@ class TestSafeTemplateContext(unittest.TestCase):
         mock_handler.safe_access.side_effect = lambda obj, attr, default=None: {
             'id': 1,
             'username': 'testuser',
-            'email': 'test@example.com',
+            'email': 'test@test.com',
             'role': 'user',
             'is_active': True
         }.get(attr, default)
@@ -788,7 +788,7 @@ class TestSafeTemplateContext(unittest.TestCase):
         expected = {
             'id': 1,
             'username': 'testuser',
-            'email': 'test@example.com',
+            'email': 'test@test.com',
             'role': 'user',
             'is_active': True
         }

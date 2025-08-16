@@ -1,0 +1,577 @@
+<!-- Copyright (C) 2025 iolaire mcfadden. -->
+<!-- This program is free software: you can redistribute it and/or modify it under the terms of the GNU Affero General Public License as published by the Free Software Foundation, either version 3 of the License, or (at your option) any later version. -->
+<!-- THE SOFTWARE IS PROVIDED "AS IS", WITHOUT WARRANTY OF ANY KIND, EXPRESS OR IMPLIED, INCLUDING BUT NOT LIMITED TO THE WARRANTIES OF MERCHANTABILITY, FITNESS FOR A PARTICULAR PURPOSE AND NONINFRINGEMENT. IN NO EVENT SHALL THE AUTHORS OR COPYRIGHT HOLDERS BE LIABLE FOR ANY CLAIM, DAMAGES OR OTHER LIABILITY, WHETHER IN AN ACTION OF CONTRACT, TORT OR OTHERWISE, ARISING FROM, OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE SOFTWARE. -->
+
+<!-- Viewer User Dashboard Component -->
+<!-- Requirements: 8.1, 8.4, 8.5 -->
+
+<div class="viewer-dashboard">
+    <!-- Welcome Section -->
+    <div class="dashboard-header">
+        <h1 class="dashboard-title">Welcome, {{ current_user.get_full_name() or current_user.username }}</h1>
+        <p class="dashboard-subtitle">Manage your platforms and review image captions</p>
+    </div>
+
+    <!-- Quick Stats Cards -->
+    <div class="stats-grid">
+        <div class="stat-card">
+            <div class="stat-icon">
+                <i class="icon-platform" aria-hidden="true"></i>
+            </div>
+            <div class="stat-content">
+                <div class="stat-number">{{ user_platform_count }}</div>
+                <div class="stat-label">My Platforms</div>
+            </div>
+            <div class="stat-action">
+                <a href="{{ url_for('platform_management') }}" class="btn btn-sm btn-outline-primary">Manage</a>
+            </div>
+        </div>
+
+        <div class="stat-card">
+            <div class="stat-icon">
+                <i class="icon-review" aria-hidden="true"></i>
+            </div>
+            <div class="stat-content">
+                <div class="stat-number">{{ pending_review_count }}</div>
+                <div class="stat-label">Pending Review</div>
+            </div>
+            <div class="stat-action">
+                {% if pending_review_count > 0 %}
+                <a href="{{ url_for('review') }}" class="btn btn-sm btn-primary">Review</a>
+                {% else %}
+                <span class="text-muted">All caught up!</span>
+                {% endif %}
+            </div>
+        </div>
+
+        <div class="stat-card">
+            <div class="stat-icon">
+                <i class="icon-images" aria-hidden="true"></i>
+            </div>
+            <div class="stat-content">
+                <div class="stat-number">{{ total_images_count }}</div>
+                <div class="stat-label">Total Images</div>
+            </div>
+            <div class="stat-action">
+                <a href="{{ url_for('review') }}" class="btn btn-sm btn-outline-secondary">View All</a>
+            </div>
+        </div>
+
+        {% if stats.approved_images is defined %}
+        <div class="stat-card">
+            <div class="stat-icon">
+                <i class="icon-approved" aria-hidden="true"></i>
+            </div>
+            <div class="stat-content">
+                <div class="stat-number">{{ stats.approved_images }}</div>
+                <div class="stat-label">Approved</div>
+            </div>
+            <div class="stat-action">
+                <a href="{{ url_for('post_approved') }}" class="btn btn-sm btn-success">Post</a>
+            </div>
+        </div>
+        {% endif %}
+    </div>
+
+    <!-- Current Platform Info -->
+    {% if current_platform %}
+    <div class="current-platform-section">
+        <h2 class="section-title">Current Platform</h2>
+        <div class="platform-card">
+            <div class="platform-header">
+                <div class="platform-icon">
+                    <i class="icon-{{ current_platform.platform_type }}" aria-hidden="true"></i>
+                </div>
+                <div class="platform-info">
+                    <h3 class="platform-name">{{ current_platform.name }}</h3>
+                    <p class="platform-details">
+                        {{ current_platform.platform_type|title }} • {{ current_platform.instance_url }}
+                    </p>
+                    <p class="platform-username">@{{ current_platform.username }}</p>
+                </div>
+                <div class="platform-actions">
+                    {% if user_platform_count > 1 %}
+                    <button class="btn btn-outline-primary btn-sm" onclick="showPlatformSwitcher()">
+                        Switch Platform
+                    </button>
+                    {% endif %}
+                    <a href="{{ url_for('platform_management') }}" class="btn btn-outline-secondary btn-sm">
+                        Manage
+                    </a>
+                </div>
+            </div>
+            
+            {% if stats.platform_name %}
+            <div class="platform-stats">
+                <div class="platform-stat">
+                    <span class="stat-label">Posts Processed:</span>
+                    <span class="stat-value">{{ stats.posts_processed or 0 }}</span>
+                </div>
+                <div class="platform-stat">
+                    <span class="stat-label">Images Processed:</span>
+                    <span class="stat-value">{{ stats.images_processed or 0 }}</span>
+                </div>
+                <div class="platform-stat">
+                    <span class="stat-label">Captions Generated:</span>
+                    <span class="stat-value">{{ stats.captions_generated or 0 }}</span>
+                </div>
+            </div>
+            {% endif %}
+        </div>
+    </div>
+    {% endif %}
+
+    <!-- Quick Actions -->
+    <div class="quick-actions-section">
+        <h2 class="section-title">Quick Actions</h2>
+        <div class="action-grid">
+            <a href="{{ url_for('caption_generation') }}" class="action-card">
+                <div class="action-icon">
+                    <i class="icon-generate" aria-hidden="true"></i>
+                </div>
+                <div class="action-content">
+                    <h3 class="action-title">Generate Captions</h3>
+                    <p class="action-description">Create AI-generated captions for your images</p>
+                </div>
+            </a>
+
+            <a href="{{ url_for('review') }}" class="action-card">
+                <div class="action-icon">
+                    <i class="icon-review" aria-hidden="true"></i>
+                </div>
+                <div class="action-content">
+                    <h3 class="action-title">Review Images</h3>
+                    <p class="action-description">Review and edit generated captions</p>
+                    {% if pending_review_count > 0 %}
+                    <span class="badge badge-primary">{{ pending_review_count }} pending</span>
+                    {% endif %}
+                </div>
+            </a>
+
+            <a href="{{ url_for('review_batches') }}" class="action-card">
+                <div class="action-icon">
+                    <i class="icon-batch" aria-hidden="true"></i>
+                </div>
+                <div class="action-content">
+                    <h3 class="action-title">Review Batches</h3>
+                    <p class="action-description">Review images in organized batches</p>
+                </div>
+            </a>
+
+            <a href="{{ url_for('caption_settings') }}" class="action-card">
+                <div class="action-icon">
+                    <i class="icon-settings" aria-hidden="true"></i>
+                </div>
+                <div class="action-content">
+                    <h3 class="action-title">Caption Settings</h3>
+                    <p class="action-description">Configure caption generation preferences</p>
+                </div>
+            </a>
+        </div>
+    </div>
+
+    <!-- Platform Switcher Modal -->
+    {% if user_platform_count > 1 %}
+    <div id="platformSwitcherModal" class="modal" style="display: none;">
+        <div class="modal-content">
+            <div class="modal-header">
+                <h3>Switch Platform</h3>
+                <button class="modal-close" onclick="hidePlatformSwitcher()">&times;</button>
+            </div>
+            <div class="modal-body">
+                <div class="platform-list">
+                    {% for platform in user_platforms %}
+                    <div class="platform-option {{ 'active' if platform.id == current_platform.id }}">
+                        <div class="platform-option-info">
+                            <i class="icon-{{ platform.platform_type }}" aria-hidden="true"></i>
+                            <div>
+                                <div class="platform-option-name">{{ platform.name }}</div>
+                                <div class="platform-option-details">{{ platform.instance_url }}</div>
+                            </div>
+                        </div>
+                        {% if platform.id != current_platform.id %}
+                        <button class="btn btn-sm btn-primary" onclick="switchToPlatform({{ platform.id }})">
+                            Switch
+                        </button>
+                        {% else %}
+                        <span class="badge badge-success">Current</span>
+                        {% endif %}
+                    </div>
+                    {% endfor %}
+                </div>
+            </div>
+        </div>
+    </div>
+    {% endif %}
+</div>
+
+<style>
+.viewer-dashboard {
+    padding: 2rem;
+    max-width: 1200px;
+    margin: 0 auto;
+}
+
+.dashboard-header {
+    margin-bottom: 2rem;
+    text-align: center;
+}
+
+.dashboard-title {
+    font-size: 2rem;
+    font-weight: 600;
+    color: #212529;
+    margin-bottom: 0.5rem;
+}
+
+.dashboard-subtitle {
+    font-size: 1.1rem;
+    color: #6c757d;
+    margin: 0;
+}
+
+.stats-grid {
+    display: grid;
+    grid-template-columns: repeat(auto-fit, minmax(250px, 1fr));
+    gap: 1.5rem;
+    margin-bottom: 3rem;
+}
+
+.stat-card {
+    background: white;
+    border: 1px solid #dee2e6;
+    border-radius: 0.5rem;
+    padding: 1.5rem;
+    display: flex;
+    align-items: center;
+    gap: 1rem;
+    box-shadow: 0 2px 4px rgba(0,0,0,0.1);
+    transition: transform 0.2s ease, box-shadow 0.2s ease;
+}
+
+.stat-card:hover {
+    transform: translateY(-2px);
+    box-shadow: 0 4px 8px rgba(0,0,0,0.15);
+}
+
+.stat-icon {
+    width: 3rem;
+    height: 3rem;
+    background: #e3f2fd;
+    border-radius: 50%;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    color: #1976d2;
+    font-size: 1.5rem;
+}
+
+.stat-content {
+    flex: 1;
+}
+
+.stat-number {
+    font-size: 2rem;
+    font-weight: 700;
+    color: #212529;
+    line-height: 1;
+}
+
+.stat-label {
+    font-size: 0.875rem;
+    color: #6c757d;
+    margin-top: 0.25rem;
+}
+
+.section-title {
+    font-size: 1.5rem;
+    font-weight: 600;
+    color: #212529;
+    margin-bottom: 1.5rem;
+    padding-bottom: 0.5rem;
+    border-bottom: 2px solid #e9ecef;
+}
+
+.current-platform-section {
+    margin-bottom: 3rem;
+}
+
+.platform-card {
+    background: white;
+    border: 1px solid #dee2e6;
+    border-radius: 0.5rem;
+    overflow: hidden;
+    box-shadow: 0 2px 4px rgba(0,0,0,0.1);
+}
+
+.platform-header {
+    padding: 1.5rem;
+    display: flex;
+    align-items: center;
+    gap: 1rem;
+    background: #f8f9fa;
+    border-bottom: 1px solid #dee2e6;
+}
+
+.platform-icon {
+    width: 3rem;
+    height: 3rem;
+    background: #007bff;
+    border-radius: 50%;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    color: white;
+    font-size: 1.5rem;
+}
+
+.platform-info {
+    flex: 1;
+}
+
+.platform-name {
+    font-size: 1.25rem;
+    font-weight: 600;
+    color: #212529;
+    margin: 0 0 0.25rem 0;
+}
+
+.platform-details {
+    font-size: 0.875rem;
+    color: #6c757d;
+    margin: 0 0 0.25rem 0;
+}
+
+.platform-username {
+    font-size: 0.875rem;
+    color: #007bff;
+    font-weight: 500;
+    margin: 0;
+}
+
+.platform-actions {
+    display: flex;
+    gap: 0.5rem;
+}
+
+.platform-stats {
+    padding: 1.5rem;
+    display: grid;
+    grid-template-columns: repeat(auto-fit, minmax(150px, 1fr));
+    gap: 1rem;
+}
+
+.platform-stat {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    padding: 0.5rem 0;
+    border-bottom: 1px solid #f1f3f4;
+}
+
+.platform-stat:last-child {
+    border-bottom: none;
+}
+
+.action-grid {
+    display: grid;
+    grid-template-columns: repeat(auto-fit, minmax(280px, 1fr));
+    gap: 1.5rem;
+}
+
+.action-card {
+    background: white;
+    border: 1px solid #dee2e6;
+    border-radius: 0.5rem;
+    padding: 1.5rem;
+    display: flex;
+    align-items: flex-start;
+    gap: 1rem;
+    text-decoration: none;
+    color: inherit;
+    transition: transform 0.2s ease, box-shadow 0.2s ease;
+}
+
+.action-card:hover {
+    transform: translateY(-2px);
+    box-shadow: 0 4px 8px rgba(0,0,0,0.15);
+    text-decoration: none;
+    color: inherit;
+}
+
+.action-icon {
+    width: 3rem;
+    height: 3rem;
+    background: #e8f5e8;
+    border-radius: 0.5rem;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    color: #28a745;
+    font-size: 1.5rem;
+}
+
+.action-content {
+    flex: 1;
+}
+
+.action-title {
+    font-size: 1.125rem;
+    font-weight: 600;
+    color: #212529;
+    margin: 0 0 0.5rem 0;
+}
+
+.action-description {
+    font-size: 0.875rem;
+    color: #6c757d;
+    margin: 0 0 0.5rem 0;
+}
+
+/* Modal Styles */
+.modal {
+    position: fixed;
+    top: 0;
+    left: 0;
+    width: 100%;
+    height: 100%;
+    background: rgba(0,0,0,0.5);
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    z-index: 1000;
+}
+
+.modal-content {
+    background: white;
+    border-radius: 0.5rem;
+    max-width: 500px;
+    width: 90%;
+    max-height: 80vh;
+    overflow-y: auto;
+}
+
+.modal-header {
+    padding: 1.5rem;
+    border-bottom: 1px solid #dee2e6;
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+}
+
+.modal-close {
+    background: none;
+    border: none;
+    font-size: 1.5rem;
+    cursor: pointer;
+    color: #6c757d;
+}
+
+.modal-body {
+    padding: 1.5rem;
+}
+
+.platform-list {
+    display: flex;
+    flex-direction: column;
+    gap: 1rem;
+}
+
+.platform-option {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    padding: 1rem;
+    border: 1px solid #dee2e6;
+    border-radius: 0.375rem;
+}
+
+.platform-option.active {
+    background: #e3f2fd;
+    border-color: #2196f3;
+}
+
+.platform-option-info {
+    display: flex;
+    align-items: center;
+    gap: 0.75rem;
+}
+
+.platform-option-name {
+    font-weight: 600;
+    color: #212529;
+}
+
+.platform-option-details {
+    font-size: 0.875rem;
+    color: #6c757d;
+}
+
+/* Responsive Design */
+@media (max-width: 768px) {
+    .viewer-dashboard {
+        padding: 1rem;
+    }
+    
+    .stats-grid {
+        grid-template-columns: 1fr;
+        gap: 1rem;
+    }
+    
+    .action-grid {
+        grid-template-columns: 1fr;
+        gap: 1rem;
+    }
+    
+    .platform-header {
+        flex-direction: column;
+        align-items: flex-start;
+        gap: 1rem;
+    }
+    
+    .platform-actions {
+        width: 100%;
+        justify-content: flex-end;
+    }
+}
+</style>
+
+<script>
+function showPlatformSwitcher() {
+    document.getElementById('platformSwitcherModal').style.display = 'flex';
+}
+
+function hidePlatformSwitcher() {
+    document.getElementById('platformSwitcherModal').style.display = 'none';
+}
+
+function switchToPlatform(platformId) {
+    fetch(`/api/switch_platform/${platformId}`, {
+        method: 'POST',
+        headers: {
+            'Content-Type': 'application/json',
+            'X-CSRFToken': document.querySelector('meta[name=csrf-token]').getAttribute('content')
+        }
+    })
+    .then(response => response.json())
+    .then(data => {
+        if (data.success) {
+            window.location.reload();
+        } else {
+            alert('Failed to switch platform: ' + (data.error || 'Unknown error'));
+        }
+    })
+    .catch(error => {
+        console.error('Error switching platform:', error);
+        alert('Failed to switch platform. Please try again.');
+    });
+}
+
+// Close modal when clicking outside
+document.addEventListener('click', function(event) {
+    const modal = document.getElementById('platformSwitcherModal');
+    if (event.target === modal) {
+        hidePlatformSwitcher();
+    }
+});
+</script>

@@ -55,7 +55,7 @@ class SessionConsolidationFinalE2ETest(unittest.TestCase):
         mock_user = MagicMock(spec=User)
         mock_user.id = self.test_user_id
         mock_user.username = 'testuser'
-        mock_user.email = 'test@example.com'
+        mock_user.email = 'test@test.com'
         mock_user.is_active = True
         
         mock_platform = MagicMock(spec=PlatformConnection)
@@ -97,7 +97,7 @@ class SessionConsolidationFinalE2ETest(unittest.TestCase):
             'user_id': self.test_user_id,
             'user_info': {
                 'username': 'testuser',
-                'email': 'test@example.com',
+                'email': 'test@test.com',
                 'is_active': True
             },
             'platform_connection_id': self.test_platform_id,

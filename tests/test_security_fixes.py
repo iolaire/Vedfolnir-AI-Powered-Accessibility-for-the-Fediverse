@@ -157,7 +157,7 @@ class TestSQLInjectionFixes(unittest.TestCase):
         # Create a test user
         user_id = self.db_manager.create_user(
             username="testuser",
-            email="test@example.com",
+            email="test@test.com",
             password="testpass",
             role=UserRole.ADMIN
         )
@@ -374,7 +374,7 @@ class TestSecurityIntegration(unittest.TestCase):
         """Test security fixes work together end-to-end"""
         # Create user with potentially malicious input
         malicious_username = "test<script>alert('xss')</script>user"
-        malicious_email = "test@example.com'; DROP TABLE users; --"
+        malicious_email = "test@test.com'; DROP TABLE users; --"
         
         # Should handle malicious input safely
         user_id = self.db_manager.create_user(

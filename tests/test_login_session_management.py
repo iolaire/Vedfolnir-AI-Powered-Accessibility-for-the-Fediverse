@@ -93,7 +93,7 @@ class TestLoginSessionManagement(unittest.TestCase):
         # Create user with platforms
         self.test_user_with_platforms = self.mock_user_helper.create_mock_user(
             username='testuser_with_platforms',
-            email='test_with_platforms@example.com',
+            email='test_with_platforms@test.com',
             password='test_password_123',
             with_platforms=True
         )
@@ -101,7 +101,7 @@ class TestLoginSessionManagement(unittest.TestCase):
         # Create user without platforms
         self.test_user_no_platforms = self.mock_user_helper.create_mock_user(
             username='testuser_no_platforms',
-            email='test_no_platforms@example.com',
+            email='test_no_platforms@test.com',
             password='test_password_123',
             with_platforms=False
         )
@@ -109,7 +109,7 @@ class TestLoginSessionManagement(unittest.TestCase):
         # Create inactive user
         self.test_user_inactive = self.mock_user_helper.create_mock_user(
             username='testuser_inactive',
-            email='test_inactive@example.com',
+            email='test_inactive@test.com',
             password='test_password_123',
             is_active=False,
             with_platforms=True

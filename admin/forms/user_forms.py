@@ -5,7 +5,7 @@
 """Admin User Management Forms"""
 
 from flask_wtf import FlaskForm
-from wtforms import StringField, PasswordField, BooleanField, SelectField, HiddenField, SubmitField
+from wtforms import StringField, PasswordField, BooleanField, SelectField, HiddenField, SubmitField, TextAreaField
 from wtforms.validators import DataRequired, Length, Email, EqualTo
 from models import UserRole
 
@@ -14,11 +14,15 @@ class EditUserForm(FlaskForm):
     user_id = HiddenField('User ID')
     username = StringField('Username', validators=[DataRequired(), Length(min=3, max=64)])
     email = StringField('Email', validators=[DataRequired(), Email(), Length(max=120)])
+    first_name = StringField('First Name', validators=[Length(max=100)])
+    last_name = StringField('Last Name', validators=[Length(max=100)])
     password = PasswordField('Password')
     confirm_password = PasswordField('Confirm Password', 
                                     validators=[EqualTo('password', message='Passwords must match')])
     role = SelectField('Role', choices=[(role.value, role.value.capitalize()) for role in UserRole])
     is_active = BooleanField('Active')
+    email_verified = BooleanField('Email Verified')
+    account_locked = BooleanField('Account Locked')
     submit = SubmitField('Save Changes')
 
 class DeleteUserForm(FlaskForm):
@@ -30,9 +34,43 @@ class AddUserForm(FlaskForm):
     """Form for adding a new user"""
     username = StringField('Username', validators=[DataRequired(), Length(min=3, max=64)])
     email = StringField('Email', validators=[DataRequired(), Email(), Length(max=120)])
+    first_name = StringField('First Name', validators=[Length(max=100)])
+    last_name = StringField('Last Name', validators=[Length(max=100)])
     password = PasswordField('Password', validators=[DataRequired(), Length(min=6)])
     confirm_password = PasswordField('Confirm Password', 
                                     validators=[DataRequired(), EqualTo('password', message='Passwords must match')])
     role = SelectField('Role', choices=[(role.value, role.value.capitalize()) for role in UserRole], validators=[DataRequired()])
     is_active = BooleanField('Active', default=True)
+    email_verified = BooleanField('Email Verified', default=True)
+    send_notification = BooleanField('Send Welcome Email', default=True)
     submit = SubmitField('Add User')
+
+class ResetPasswordForm(FlaskForm):
+    """Form for admin password reset"""
+    user_id = HiddenField('User ID', validators=[DataRequired()])
+    reset_method = SelectField('Reset Method', 
+                              choices=[('email', 'Send temporary password via email'),
+                                     ('generate', 'Generate and display temporary password')],
+                              default='email')
+    invalidate_sessions = BooleanField('Invalidate all existing user sessions', default=True)
+    submit = SubmitField('Reset Password')
+
+class UserStatusForm(FlaskForm):
+    """Form for managing user status"""
+    user_id = HiddenField('User ID', validators=[DataRequired()])
+    is_active = BooleanField('Account Active')
+    email_verified = BooleanField('Email Verified')
+    account_locked = BooleanField('Account Locked')
+    reset_failed_attempts = BooleanField('Reset failed login attempts')
+    send_verification_email = BooleanField('Send new email verification')
+    admin_notes = TextAreaField('Admin Notes', validators=[Length(max=500)])
+    submit = SubmitField('Update Status')
+
+class RoleAssignmentForm(FlaskForm):
+    """Form for changing user roles"""
+    user_id = HiddenField('User ID', validators=[DataRequired()])
+    new_role = SelectField('New Role', 
+                          choices=[(role.value, f"{role.value.capitalize()} - {role.name}") for role in UserRole],
+                          validators=[DataRequired()])
+    reason = TextAreaField('Reason for role change', validators=[Length(max=500)])
+    submit = SubmitField('Change Role')

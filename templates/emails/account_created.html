@@ -1,0 +1,165 @@
+<!-- Copyright (C) 2025 iolaire mcfadden. -->
+<!-- This program is free software: you can redistribute it and/or modify it under the terms of the GNU Affero General Public License as published by the Free Software Foundation, either version 3 of the License, or (at your option) any later version. -->
+<!-- THE SOFTWARE IS PROVIDED "AS IS", WITHOUT WARRANTY OF ANY KIND, EXPRESS OR IMPLIED, INCLUDING BUT NOT LIMITED TO THE WARRANTIES OF MERCHANTABILITY, FITNESS FOR A PARTICULAR PURPOSE AND NONINFRINGEMENT. IN NO EVENT SHALL THE AUTHORS OR COPYRIGHT HOLDERS BE LIABLE FOR ANY CLAIM, DAMAGES OR OTHER LIABILITY, WHETHER IN AN ACTION OF CONTRACT, TORT OR OTHERWISE, ARISING FROM, OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE SOFTWARE. -->
+
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Your Account Has Been Created</title>
+    <style>
+        body {
+            font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, Oxygen, Ubuntu, Cantarell, sans-serif;
+            line-height: 1.6;
+            color: #333;
+            max-width: 600px;
+            margin: 0 auto;
+            padding: 20px;
+            background-color: #f8f9fa;
+        }
+        .container {
+            background-color: white;
+            padding: 40px;
+            border-radius: 8px;
+            box-shadow: 0 2px 10px rgba(0, 0, 0, 0.1);
+        }
+        .header {
+            text-align: center;
+            margin-bottom: 30px;
+        }
+        .logo {
+            font-size: 24px;
+            font-weight: bold;
+            color: #2c3e50;
+            margin-bottom: 10px;
+        }
+        .title {
+            color: #2c3e50;
+            font-size: 28px;
+            margin-bottom: 20px;
+            text-align: center;
+        }
+        .content {
+            margin-bottom: 30px;
+        }
+        .button {
+            display: inline-block;
+            background-color: #27ae60;
+            color: white;
+            padding: 12px 30px;
+            text-decoration: none;
+            border-radius: 5px;
+            font-weight: bold;
+            text-align: center;
+            margin: 20px 0;
+        }
+        .button:hover {
+            background-color: #229954;
+        }
+        .button-container {
+            text-align: center;
+        }
+        .credentials {
+            background-color: #f8f9fa;
+            border: 1px solid #dee2e6;
+            padding: 20px;
+            border-radius: 5px;
+            margin: 20px 0;
+            font-family: monospace;
+        }
+        .credential-row {
+            margin: 10px 0;
+        }
+        .credential-label {
+            font-weight: bold;
+            color: #495057;
+            display: inline-block;
+            width: 120px;
+        }
+        .credential-value {
+            color: #212529;
+            background-color: white;
+            padding: 5px 10px;
+            border-radius: 3px;
+            border: 1px solid #ced4da;
+        }
+        .footer {
+            margin-top: 40px;
+            padding-top: 20px;
+            border-top: 1px solid #eee;
+            font-size: 14px;
+            color: #666;
+            text-align: center;
+        }
+        .security-notice {
+            background-color: #fff3cd;
+            border: 1px solid #ffeaa7;
+            color: #856404;
+            padding: 15px;
+            border-radius: 5px;
+            margin: 20px 0;
+        }
+        .important {
+            background-color: #f8d7da;
+            border: 1px solid #f5c6cb;
+            color: #721c24;
+            padding: 15px;
+            border-radius: 5px;
+            margin: 20px 0;
+        }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <div class="header">
+            <div class="logo">Vedfolnir</div>
+            <div style="color: #666; font-size: 14px;">Vedfolnir</div>
+        </div>
+        
+        <h1 class="title">Welcome to Vedfolnir!</h1>
+        
+        <div class="content">
+            <p>Hi {{ username }},</p>
+            
+            <p>Your account has been created by an administrator. You can now access Vedfolnir using the credentials below:</p>
+            
+            <div class="credentials">
+                <div class="credential-row">
+                    <span class="credential-label">Username:</span>
+                    <span class="credential-value">{{ username }}</span>
+                </div>
+                <div class="credential-row">
+                    <span class="credential-label">Password:</span>
+                    <span class="credential-value">{{ temporary_password }}</span>
+                </div>
+            </div>
+            
+            <div class="important">
+                <strong>Important:</strong> This is a temporary password. You must change it immediately after your first login for security reasons.
+            </div>
+            
+            <div class="button-container">
+                <a href="{{ login_url }}" class="button">Log In Now</a>
+            </div>
+            
+            <div class="security-notice">
+                <strong>Security Tips:</strong>
+                <ul style="margin: 10px 0; padding-left: 20px;">
+                    <li>Change your password immediately after logging in</li>
+                    <li>Choose a strong, unique password</li>
+                    <li>Don't share your login credentials with anyone</li>
+                    <li>Log out when you're finished using the system</li>
+                </ul>
+            </div>
+            
+            <p>If you have any questions about using Vedfolnir or need assistance, please contact your system administrator.</p>
+        </div>
+        
+        <div class="footer">
+            <p>This email was sent from Vedfolnir – AI-Powered Accessibility for the Fediverse.</p>
+            <p>If you believe you received this email in error, please contact your system administrator.</p>
+        </div>
+    </div>
+</body>
+</html>

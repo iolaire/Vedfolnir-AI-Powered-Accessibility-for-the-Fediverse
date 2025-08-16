@@ -1,0 +1,140 @@
+<!-- Copyright (C) 2025 iolaire mcfadden. -->
+<!-- This program is free software: you can redistribute it and/or modify it under the terms of the GNU Affero General Public License as published by the Free Software Foundation, either version 3 of the License, or (at your option) any later version. -->
+<!-- THE SOFTWARE IS PROVIDED "AS IS", WITHOUT WARRANTY OF ANY KIND, EXPRESS OR IMPLIED, INCLUDING BUT NOT LIMITED TO THE WARRANTIES OF MERCHANTABILITY, FITNESS FOR A PARTICULAR PURPOSE AND NONINFRINGEMENT. IN NO EVENT SHALL THE AUTHORS OR COPYRIGHT HOLDERS BE LIABLE FOR ANY CLAIM, DAMAGES OR OTHER LIABILITY, WHETHER IN AN ACTION OF CONTRACT, TORT OR OTHERWISE, ARISING FROM, OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE SOFTWARE. -->
+
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Profile Deleted Successfully</title>
+    <style>
+        body {
+            font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, Oxygen, Ubuntu, Cantarell, sans-serif;
+            line-height: 1.6;
+            color: #333;
+            max-width: 600px;
+            margin: 0 auto;
+            padding: 20px;
+            background-color: #f8f9fa;
+        }
+        .container {
+            background-color: white;
+            padding: 40px;
+            border-radius: 8px;
+            box-shadow: 0 2px 10px rgba(0, 0, 0, 0.1);
+        }
+        .header {
+            text-align: center;
+            margin-bottom: 30px;
+        }
+        .logo {
+            font-size: 24px;
+            font-weight: bold;
+            color: #2c3e50;
+            margin-bottom: 10px;
+        }
+        .title {
+            color: #2c3e50;
+            font-size: 28px;
+            margin-bottom: 20px;
+            text-align: center;
+        }
+        .content {
+            margin-bottom: 30px;
+        }
+        .footer {
+            margin-top: 40px;
+            padding-top: 20px;
+            border-top: 1px solid #eee;
+            font-size: 14px;
+            color: #666;
+            text-align: center;
+        }
+        .confirmation {
+            background-color: #d4edda;
+            border: 1px solid #c3e6cb;
+            color: #155724;
+            padding: 20px;
+            border-radius: 5px;
+            margin: 20px 0;
+            text-align: center;
+        }
+        .data-deleted {
+            background-color: #f8f9fa;
+            border: 1px solid #dee2e6;
+            padding: 20px;
+            border-radius: 5px;
+            margin: 20px 0;
+        }
+        .data-deleted h3 {
+            margin-top: 0;
+            color: #495057;
+        }
+        .data-deleted ul {
+            margin: 10px 0;
+            padding-left: 20px;
+        }
+        .security-notice {
+            background-color: #fff3cd;
+            border: 1px solid #ffeaa7;
+            color: #856404;
+            padding: 15px;
+            border-radius: 5px;
+            margin: 20px 0;
+        }
+        .checkmark {
+            font-size: 48px;
+            color: #28a745;
+            text-align: center;
+            margin: 20px 0;
+        }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <div class="header">
+            <div class="logo">Vedfolnir</div>
+            <div style="color: #666; font-size: 14px;">Vedfolnir</div>
+        </div>
+        
+        <div class="checkmark">✓</div>
+        <h1 class="title">Profile Deleted Successfully</h1>
+        
+        <div class="content">
+            <p>Hi {{ username }},</p>
+            
+            <div class="confirmation">
+                <strong>Your profile and all associated data have been permanently deleted from Vedfolnir.</strong>
+            </div>
+            
+            <p>This confirmation email serves as a record that your account deletion request has been completed successfully.</p>
+            
+            <div class="data-deleted">
+                <h3>The following data has been permanently removed:</h3>
+                <ul>
+                    <li>Your user account and profile information</li>
+                    <li>All platform connections and credentials</li>
+                    <li>All images and captions associated with your account</li>
+                    <li>All session data and login history</li>
+                    <li>All audit logs related to your account</li>
+                    <li>Any other personal data stored in our system</li>
+                </ul>
+            </div>
+            
+            <div class="security-notice">
+                <strong>Important:</strong> If you didn't request this account deletion, please contact your system administrator immediately as this may indicate unauthorized access to your account.
+            </div>
+            
+            <p>Thank you for using Vedfolnir. If you need to use the service again in the future, you'll need to create a new account.</p>
+            
+            <p>This is the final communication you will receive from us regarding your account.</p>
+        </div>
+        
+        <div class="footer">
+            <p>This email was sent from Vedfolnir Vedfolnir.</p>
+            <p>This email address will be removed from our systems after delivery.</p>
+        </div>
+    </div>
+</body>
+</html>

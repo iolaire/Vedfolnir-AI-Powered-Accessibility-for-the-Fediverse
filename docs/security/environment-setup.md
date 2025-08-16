@@ -312,11 +312,48 @@ If you encounter issues:
 4. Check file permissions on .env file
 5. Try the automated verification script: `python3 scripts/setup/verify_env_setup.py`
 
+## Security Feature Toggles (Development/Testing)
+
+The application includes security feature toggles for development and testing purposes. These are configured in the `.env` file:
+
+```bash
+# Security Feature Toggles (Development/Testing Only)
+SECURITY_CSRF_ENABLED=true
+SECURITY_RATE_LIMITING_ENABLED=true
+SECURITY_INPUT_VALIDATION_ENABLED=true
+SECURITY_HEADERS_ENABLED=true
+SECURITY_SESSION_VALIDATION_ENABLED=true
+SECURITY_ADMIN_CHECKS_ENABLED=true
+```
+
+### ⚠️ Important Security Notes
+
+1. **Production Requirement**: ALL security toggles MUST be set to `true` in production
+2. **Development Use**: Only disable specific features for testing/debugging purposes
+3. **Never Commit**: Never commit `.env` files with disabled security features
+4. **Documentation**: See [Security Guide](../SECURITY.md) for detailed information
+
+### Common Development Scenarios
+
+```bash
+# API testing without CSRF tokens
+SECURITY_CSRF_ENABLED=false
+
+# Load testing without rate limits
+SECURITY_RATE_LIMITING_ENABLED=false
+
+# Debugging with relaxed security headers
+SECURITY_HEADERS_ENABLED=false
+```
+
+**Remember to re-enable all security features after testing!**
+
 ## Security Checklist
 
 - [ ] Created .env file from .env.example template
 - [ ] Generated cryptographically secure keys and passwords
 - [ ] Set all required variables in .env file
+- [ ] **Verified all security toggles are enabled for production**
 - [ ] Verified .env file is not committed to version control (.gitignore)
 - [ ] Set proper file permissions (600) on .env file
 - [ ] Tested application startup successfully

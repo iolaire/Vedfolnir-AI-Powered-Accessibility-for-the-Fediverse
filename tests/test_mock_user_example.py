@@ -52,7 +52,7 @@ class TestMockUserExample(unittest.TestCase):
         self.assertIsNotNone(self.test_user)
         self.assertTrue(self.test_user.username.startswith("test_user_"))
         self.assertTrue(self.test_user.email.startswith("test_"))
-        self.assertTrue(self.test_user.email.endswith("@example.com"))
+        self.assertTrue(self.test_user.email.endswith("@test.com"))
         self.assertEqual(self.test_user.role, UserRole.REVIEWER)
         self.assertTrue(self.test_user.is_active)
     

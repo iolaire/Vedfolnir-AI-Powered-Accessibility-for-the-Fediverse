@@ -44,7 +44,7 @@ class SessionManagementE2ETest(unittest.TestCase):
         with self.db_manager.get_session() as session:
             self.test_user = User(
                 username='testuser',
-                email='test@example.com',
+                email='test@test.com',
                 role=UserRole.USER,
                 is_active=True
             )
@@ -318,7 +318,7 @@ class SessionManagementLoadTest(unittest.TestCase):
             for i in range(10):  # Create 10 test users
                 user = User(
                     username=f'loadtest_user_{i}',
-                    email=f'loadtest_{i}@example.com',
+                    email=f'loadtest_{i}@test.com',
                     role=UserRole.USER,
                     is_active=True
                 )

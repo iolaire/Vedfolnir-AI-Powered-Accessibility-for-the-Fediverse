@@ -1,0 +1,145 @@
+<!-- Copyright (C) 2025 iolaire mcfadden. -->
+<!-- This program is free software: you can redistribute it and/or modify it under the terms of the GNU Affero General Public License as published by the Free Software Foundation, either version 3 of the License, or (at your option) any later version. -->
+<!-- THE SOFTWARE IS PROVIDED "AS IS", WITHOUT WARRANTY OF ANY KIND, EXPRESS OR IMPLIED, INCLUDING BUT NOT LIMITED TO THE WARRANTIES OF MERCHANTABILITY, FITNESS FOR A PARTICULAR PURPOSE AND NONINFRINGEMENT. IN NO EVENT SHALL THE AUTHORS OR COPYRIGHT HOLDERS BE LIABLE FOR ANY CLAIM, DAMAGES OR OTHER LIABILITY, WHETHER IN AN ACTION OF CONTRACT, TORT OR OTHERWISE, ARISING FROM, OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE SOFTWARE. -->
+
+{% extends "base.html" %}
+
+{% block title %}User Profile{% endblock %}
+
+{% block content %}
+<div class="container mt-4">
+    <div class="row justify-content-center">
+        <div class="col-md-8">
+            <div class="card">
+                <div class="card-header d-flex justify-content-between align-items-center">
+                    <h4 class="mb-0">
+                        <i class="fas fa-user"></i> User Profile
+                    </h4>
+                    <div class="btn-group" role="group">
+                        <a href="{{ url_for('user_management.edit_profile') }}" class="btn btn-primary btn-sm">
+                            <i class="fas fa-edit"></i> Edit Profile
+                        </a>
+                        <a href="{{ url_for('user_management.change_password') }}" class="btn btn-secondary btn-sm">
+                            <i class="fas fa-key"></i> Change Password
+                        </a>
+                    </div>
+                </div>
+                <div class="card-body">
+                    {% if profile_data %}
+                    <div class="row">
+                        <div class="col-md-6">
+                            <h5>Personal Information</h5>
+                            <table class="table table-borderless">
+                                <tr>
+                                    <td><strong>Username:</strong></td>
+                                    <td>{{ profile_data.username }}</td>
+                                </tr>
+                                <tr>
+                                    <td><strong>Full Name:</strong></td>
+                                    <td>{{ profile_data.full_name or 'Not provided' }}</td>
+                                </tr>
+                                <tr>
+                                    <td><strong>First Name:</strong></td>
+                                    <td>{{ profile_data.first_name or 'Not provided' }}</td>
+                                </tr>
+                                <tr>
+                                    <td><strong>Last Name:</strong></td>
+                                    <td>{{ profile_data.last_name or 'Not provided' }}</td>
+                                </tr>
+                                <tr>
+                                    <td><strong>Email:</strong></td>
+                                    <td>
+                                        {{ profile_data.email }}
+                                        {% if profile_data.email_verified %}
+                                            <span class="badge bg-success ms-2">
+                                                <i class="fas fa-check"></i> Verified
+                                            </span>
+                                        {% else %}
+                                            <span class="badge bg-warning ms-2">
+                                                <i class="fas fa-exclamation-triangle"></i> Unverified
+                                            </span>
+                                            <form method="POST" action="{{ url_for('user_management.resend_verification') }}" class="d-inline ms-2">
+                                                <button type="submit" class="btn btn-link btn-sm p-0">
+                                                    Resend verification email
+                                                </button>
+                                            </form>
+                                        {% endif %}
+                                    </td>
+                                </tr>
+                            </table>
+                        </div>
+                        <div class="col-md-6">
+                            <h5>Account Information</h5>
+                            <table class="table table-borderless">
+                                <tr>
+                                    <td><strong>Role:</strong></td>
+                                    <td>
+                                        <span class="badge bg-info">{{ profile_data.role.title() if profile_data.role else 'Unknown' }}</span>
+                                    </td>
+                                </tr>
+                                <tr>
+                                    <td><strong>Status:</strong></td>
+                                    <td>
+                                        {% if profile_data.is_active %}
+                                            <span class="badge bg-success">Active</span>
+                                        {% else %}
+                                            <span class="badge bg-danger">Inactive</span>
+                                        {% endif %}
+                                    </td>
+                                </tr>
+                                <tr>
+                                    <td><strong>Member Since:</strong></td>
+                                    <td>{{ moment(profile_data.created_at).format('MMMM Do, YYYY') if profile_data.created_at else 'Unknown' }}</td>
+                                </tr>
+                                <tr>
+                                    <td><strong>Last Login:</strong></td>
+                                    <td>{{ moment(profile_data.last_login).fromNow() if profile_data.last_login else 'Never' }}</td>
+                                </tr>
+                                <tr>
+                                    <td><strong>Platforms:</strong></td>
+                                    <td>{{ profile_data.platform_count }} connected</td>
+                                </tr>
+                            </table>
+                        </div>
+                    </div>
+
+                    {% if profile_data.data_processing_consent %}
+                    <div class="row mt-4">
+                        <div class="col-12">
+                            <h5>Data Processing Consent</h5>
+                            <div class="alert alert-info">
+                                <i class="fas fa-info-circle"></i>
+                                You have consented to data processing on {{ moment(profile_data.data_processing_consent_date).format('MMMM Do, YYYY') if profile_data.data_processing_consent_date else 'an unknown date' }}.
+                            </div>
+                        </div>
+                    </div>
+                    {% endif %}
+
+                    <div class="row mt-4">
+                        <div class="col-12">
+                            <h5>Data Management</h5>
+                            <div class="btn-group" role="group">
+                                <a href="{{ url_for('user_management.export_profile_data') }}" class="btn btn-outline-primary">
+                                    <i class="fas fa-download"></i> Export My Data
+                                </a>
+                                <a href="{{ url_for('user_management.delete_profile') }}" class="btn btn-outline-danger">
+                                    <i class="fas fa-trash"></i> Delete My Profile
+                                </a>
+                            </div>
+                            <small class="text-muted d-block mt-2">
+                                Export your personal data or permanently delete your profile in compliance with GDPR regulations.
+                            </small>
+                        </div>
+                    </div>
+                    {% else %}
+                    <div class="alert alert-danger">
+                        <i class="fas fa-exclamation-triangle"></i>
+                        Unable to load profile data. Please try again or contact support.
+                    </div>
+                    {% endif %}
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+{% endblock %}

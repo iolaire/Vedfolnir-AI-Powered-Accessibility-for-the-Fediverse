@@ -612,7 +612,7 @@ class TestDatabaseIntegration(unittest.TestCase):
         test_password = os.getenv('TEST_USER_PASSWORD', 'secure_test_password_123!')
         user = self.db_manager.create_user(
             username="integration_test",
-            email="test@example.com",
+            email="test@test.com",
             password=test_password,
             role=UserRole.REVIEWER
         )

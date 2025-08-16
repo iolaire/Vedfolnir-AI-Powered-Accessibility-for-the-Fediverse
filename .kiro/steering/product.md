@@ -1,7 +1,7 @@
-# Alt Text Bot
+# Vedfolnir
 
 ## Product Overview
-Alt Text Bot is an accessibility tool designed to enhance Pixelfed by automatically generating and managing alt text (image descriptions) for posts that lack them. The bot identifies images without alt text, uses AI to generate appropriate descriptions, provides a human review interface, and updates original posts with approved descriptions.
+Vedfolnir is an accessibility tool designed to enhance Pixelfed by automatically generating and managing alt text (image descriptions) for posts that lack them. The bot identifies images without alt text, uses AI to generate appropriate descriptions, provides a human review interface, and updates original posts with approved descriptions.
 
 ## Core Features
 - Identifies images without alt text in Pixelfed posts

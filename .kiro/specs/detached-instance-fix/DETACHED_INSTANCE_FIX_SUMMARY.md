@@ -2,7 +2,7 @@
 
 ## Overview
 
-This document summarizes the comprehensive implementation of the DetachedInstanceError fix for the Vedfolnir Alt Text Bot application. The implementation addresses SQLAlchemy session management issues that were causing DetachedInstanceError exceptions throughout the application.
+This document summarizes the comprehensive implementation of the DetachedInstanceError fix for the Vedfolnir AI-Powered Accessibility for the Fediverse application. The implementation addresses SQLAlchemy session management issues that were causing DetachedInstanceError exceptions throughout the application.
 
 ## Problem Statement
 

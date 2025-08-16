@@ -5,7 +5,7 @@
 """
 Test Helpers Package
 
-This package contains utilities and helpers for testing the Alt Text Bot application.
+This package contains utilities and helpers for testing the Vedfolnir application.
 Includes standardized mock configurations, async helpers, database mocks, and platform-specific mocks.
 """
 

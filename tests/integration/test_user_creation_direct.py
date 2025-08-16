@@ -20,7 +20,7 @@ def test_user_creation_functionality():
         # Test creating a user (same as the API would do)
         test_data = {
             'username': 'testuser_api',
-            'email': 'testapi@example.com',
+            'email': 'testapi@test.com',
             'password': 'testpass123',
             'role': 'viewer'
         }

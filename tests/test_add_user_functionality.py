@@ -171,7 +171,7 @@ class TestAddUserFunctionality(unittest.TestCase):
         # Test data
         user_data = {
             'username': 'testuser',
-            'email': 'test@example.com',
+            'email': 'test@test.com',
             'password': 'password123',
             'confirm_password': 'password123',
             'role': 'viewer',
@@ -199,7 +199,7 @@ class TestAddUserFunctionality(unittest.TestCase):
         self.assertTrue(data['success'])
         self.assertIn('created successfully', data['message'])
         self.assertEqual(data['user']['username'], 'testuser')
-        self.assertEqual(data['user']['email'], 'test@example.com')
+        self.assertEqual(data['user']['email'], 'test@test.com')
         self.assertEqual(data['user']['role'], 'viewer')
         self.assertTrue(data['user']['is_active'])
         
@@ -208,7 +208,7 @@ class TestAddUserFunctionality(unittest.TestCase):
         try:
             user = session.query(User).filter_by(username='testuser').first()
             self.assertIsNotNone(user)
-            self.assertEqual(user.email, 'test@example.com')
+            self.assertEqual(user.email, 'test@test.com')
             self.assertEqual(user.role, UserRole.VIEWER)
             self.assertTrue(user.is_active)
             self.assertTrue(user.check_password('password123'))
@@ -223,7 +223,7 @@ class TestAddUserFunctionality(unittest.TestCase):
         # Try to create user with existing username
         user_data = {
             'username': 'admin',  # Already exists
-            'email': 'newadmin@example.com',
+            'email': 'newadmin@test.com',
             'password': 'password123',
             'confirm_password': 'password123',
             'role': 'admin'
@@ -274,7 +274,7 @@ class TestAddUserFunctionality(unittest.TestCase):
         
         user_data = {
             'username': 'testuser',
-            'email': 'test@example.com',
+            'email': 'test@test.com',
             'password': 'password123',
             'confirm_password': 'different123',  # Different password
             'role': 'viewer'
@@ -299,7 +299,7 @@ class TestAddUserFunctionality(unittest.TestCase):
         
         user_data = {
             'username': 'testuser',
-            'email': 'test@example.com',
+            'email': 'test@test.com',
             'password': 'password123',
             'confirm_password': 'password123',
             'role': 'invalid_role'
@@ -324,7 +324,7 @@ class TestAddUserFunctionality(unittest.TestCase):
         
         # Missing username
         user_data = {
-            'email': 'test@example.com',
+            'email': 'test@test.com',
             'password': 'password123',
             'confirm_password': 'password123',
             'role': 'viewer'
@@ -349,7 +349,7 @@ class TestAddUserFunctionality(unittest.TestCase):
         
         user_data = {
             'username': 'testuser',
-            'email': 'test@example.com',
+            'email': 'test@test.com',
             'password': '123',  # Too short
             'confirm_password': '123',
             'role': 'viewer'
@@ -401,7 +401,7 @@ class TestAddUserFunctionality(unittest.TestCase):
         # Try to add user
         user_data = {
             'username': 'testuser',
-            'email': 'test@example.com',
+            'email': 'test@test.com',
             'password': 'password123',
             'confirm_password': 'password123',
             'role': 'viewer'
@@ -420,7 +420,7 @@ class TestAddUserFunctionality(unittest.TestCase):
         """Test that add user API requires authentication"""
         user_data = {
             'username': 'testuser',
-            'email': 'test@example.com',
+            'email': 'test@test.com',
             'password': 'password123',
             'confirm_password': 'password123',
             'role': 'viewer'
@@ -440,7 +440,7 @@ class TestAddUserFunctionality(unittest.TestCase):
         for i, role in enumerate(roles_to_test):
             user_data = {
                 'username': f'user_{role}',
-                'email': f'{role}@example.com',
+                'email': f'{role}@test.com',
                 'password': 'password123',
                 'confirm_password': 'password123',
                 'role': role,
