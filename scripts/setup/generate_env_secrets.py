@@ -64,13 +64,15 @@ def create_admin_user(username, email, password):
                 existing_user.set_password(password)
                 existing_user.role = UserRole.ADMIN
                 existing_user.is_active = True
+                existing_user.email_verified = True
             else:
                 print(f"   Creating new admin user: {username}")
                 admin_user = User(
                     username=username,
                     email=email,
                     role=UserRole.ADMIN,
-                    is_active=True
+                    is_active=True,
+                    email_verified=True
                 )
                 admin_user.set_password(password)
                 session.add(admin_user)
@@ -117,13 +119,13 @@ def main():
     
     # Get Ollama configuration from user
     print("Ollama Configuration:")
-    ollama_url = input("Ollama URL (default: http://Mac-mini-M2.local:11434): ").strip() or "http://Mac-mini-M2.local:11434"
+    ollama_url = input("Ollama URL (default: http://10.0.0.1:11434): ").strip() or "http://10.0.0.1:11434"
     ollama_model = input("Ollama model (default: llava:7b): ").strip() or "llava:7b"
     
     # Get email configuration from user
     print("\nEmail Configuration:")
     print("Configure email settings for user notifications (verification, password reset, etc.)")
-    configure_email = input("Configure email settings? (y/N): ").strip().lower() == 'y'
+    configure_email = input("Configure email settings? (y/N): ").strip().lower() == 'y' or "y"
     
     email_settings = {}
     if configure_email:
@@ -185,7 +187,7 @@ def main():
     # Get admin details from user
     print("\nAdmin User Configuration:")
     admin_username = input("Admin username (default: admin): ").strip() or "admin"
-    admin_email = input("Admin email (default: iolaire@iolaire.net): ").strip() or "iolaire@iolaire.net"
+    admin_email = input("Admin email: ").strip()
     
     if not admin_email:
         print("Error: Admin email is required")

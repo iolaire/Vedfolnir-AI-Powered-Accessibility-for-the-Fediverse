@@ -104,7 +104,10 @@ python main.py --users username1 --log-level DEBUG
 
 ### Web Interface
 ```bash
-# Start the web server
+# Start the web server (non-blocking for testing)
+python web_app.py & sleep 10
+
+# Start the web server (blocking for production)
 python web_app.py
 
 # Stop the web server (if running in background)
@@ -119,8 +122,8 @@ kill <process_id>
 # Step 2: Wait a moment for cleanup
 sleep 2
 
-# Step 3: Start the server again
-python web_app.py
+# Step 3: Start the server again (non-blocking)
+python web_app.py & sleep 10
 ```
 
 ### Database Management

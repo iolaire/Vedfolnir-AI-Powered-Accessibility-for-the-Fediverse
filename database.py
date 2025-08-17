@@ -39,27 +39,46 @@ class DatabaseManager:
         self.config = config
         db_config = config.storage.db_config
         
-        # Configure SQLAlchemy engine with connection pooling
-        self.engine = create_engine(
-            config.storage.database_url,
-            echo=False,
-            pool_pre_ping=True,
-            poolclass=QueuePool,
-            pool_size=db_config.pool_size,
-            max_overflow=db_config.max_overflow,
-            pool_timeout=db_config.pool_timeout,
-            pool_recycle=db_config.pool_recycle  # Recycle connections after configured time
-        )
+        # Configure SQLAlchemy engine with optimized settings for SQLite
+        engine_kwargs = {
+            'echo': False,
+            'pool_pre_ping': True,
+            'pool_recycle': db_config.pool_recycle,
+        }
+        
+        # For SQLite, use different connection settings
+        if 'sqlite' in config.storage.database_url:
+            engine_kwargs.update({
+                'poolclass': None,  # Disable connection pooling for SQLite
+                'connect_args': {
+                    'check_same_thread': False,
+                    'timeout': 30,  # 30 second timeout for SQLite
+                    'isolation_level': None,  # Enable autocommit mode
+                }
+            })
+        else:
+            # For other databases, use connection pooling
+            engine_kwargs.update({
+                'poolclass': QueuePool,
+                'pool_size': db_config.pool_size,
+                'max_overflow': db_config.max_overflow,
+                'pool_timeout': db_config.pool_timeout,
+            })
+        
+        self.engine = create_engine(config.storage.database_url, **engine_kwargs)
         
         # Set up query logging
         if db_config.query_logging:
             self._setup_query_logging()
         
-        self.Session = scoped_session(sessionmaker(bind=self.engine))
-        self.create_tables()
+        # Use sessionmaker instead of scoped_session for better control
+        self.SessionFactory = sessionmaker(bind=self.engine)
         
         # Initialize platform context manager
         self._context_manager = None
+        
+        # Create tables on initialization
+        self.create_tables()
     
     def _setup_query_logging(self):
         """Set up query logging for performance analysis"""
@@ -76,40 +95,52 @@ class DatabaseManager:
     
     def create_tables(self):
         """Create database tables"""
+        connection = None
         try:
-            Base.metadata.create_all(self.engine)
-            
-            # Create additional indexes for performance
+            connection = self.engine.connect()
+            Base.metadata.create_all(connection)
             self._create_performance_indexes()
-            
             logger.info("Database tables and indexes created successfully")
         except Exception as e:
             logger.error(f"Error creating database tables: {e}")
             raise
+        finally:
+            if connection:
+                connection.close()
     
     def _create_performance_indexes(self):
         """Create additional indexes for better performance"""
+        connection = None
         try:
             from sqlalchemy import text
-            with self.engine.connect() as conn:
-                # User sessions indexes removed - using Flask sessions
-                
-                conn.commit()
-                logger.debug("Performance indexes created successfully")
+            connection = self.engine.connect()
+            # User sessions indexes removed - using Flask sessions
+            
+            connection.commit()
+            logger.debug("Performance indexes created successfully")
         except Exception as e:
             logger.warning(f"Could not create performance indexes: {e}")
+        finally:
+            # Ensure connection is properly closed
+            if connection:
+                connection.close()
     
     def get_session(self):
-        """Get database session"""
-        return self.Session()
+        """Get database session - caller is responsible for closing"""
+        return self.SessionFactory()
     
-    def close_session(self):
+    def close_session(self, session):
         """Close database session"""
-        self.Session.remove()
+        if session:
+            try:
+                session.close()
+            except Exception as e:
+                logger.error(f"Error closing session: {e}")
     
     def get_context_manager(self) -> PlatformContextManager:
         """Get or create platform context manager"""
         if self._context_manager is None:
+            # Create a session for the context manager
             session = self.get_session()
             self._context_manager = PlatformContextManager(session)
         return self._context_manager

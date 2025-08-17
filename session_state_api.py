@@ -11,7 +11,7 @@ using database sessions as the single source of truth.
 
 from logging import getLogger
 from datetime import datetime, timezone
-from flask import jsonify, request, g
+from flask import jsonify, request, g, make_response
 from flask_wtf.csrf import CSRFProtect
 from database_session_middleware import get_current_session_context, get_current_session_id, is_session_authenticated
 
@@ -21,7 +21,7 @@ def create_session_state_routes(app):
     """Create session state API routes"""
     csrf = app.extensions.get('csrf', None)
     
-    @app.route('/api/session/state', methods=['GET'])
+    @app.route('/api/session/state', methods=['GET', 'OPTIONS'])
     def api_session_state():
         """
         Get current session state for cross-tab synchronization
@@ -29,17 +29,31 @@ def create_session_state_routes(app):
         Returns:
             JSON response with session state information
         """
+        # Handle CORS preflight request
+        if request.method == 'OPTIONS':
+            response = make_response()
+            response.headers['Access-Control-Allow-Origin'] = '*'
+            response.headers['Access-Control-Allow-Methods'] = 'GET, OPTIONS'
+            response.headers['Access-Control-Allow-Headers'] = 'Content-Type, Accept, X-Requested-With'
+            response.headers['Access-Control-Max-Age'] = '86400'
+            return response
+            
         try:
             # Get current session context
             session_context = get_current_session_context()
             session_id = get_current_session_id()
             
             if not session_context or not is_session_authenticated():
-                return jsonify({
+                response = jsonify({
                     'success': True,
                     'authenticated': False,
                     'timestamp': datetime.now(timezone.utc).isoformat()
                 })
+                # Add CORS headers
+                response.headers['Access-Control-Allow-Origin'] = '*'
+                response.headers['Access-Control-Allow-Methods'] = 'GET, OPTIONS'
+                response.headers['Access-Control-Allow-Headers'] = 'Content-Type, Accept, X-Requested-With'
+                return response
             
             # Return session state for cross-tab sync
             response_data = {
@@ -54,15 +68,25 @@ def create_session_state_routes(app):
             }
             
             logger.debug(f"Session state API called for user {session_context.get('user_id')}")
-            return jsonify(response_data)
+            response = jsonify(response_data)
+            # Add CORS headers
+            response.headers['Access-Control-Allow-Origin'] = '*'
+            response.headers['Access-Control-Allow-Methods'] = 'GET, OPTIONS'
+            response.headers['Access-Control-Allow-Headers'] = 'Content-Type, Accept, X-Requested-With'
+            return response
             
         except Exception as e:
             logger.error(f"Error in session state API: {e}")
-            return jsonify({
+            response = jsonify({
                 'success': False,
                 'error': 'Failed to get session state',
                 'timestamp': datetime.now(timezone.utc).isoformat()
-            }), 500
+            })
+            # Add CORS headers even for error responses
+            response.headers['Access-Control-Allow-Origin'] = '*'
+            response.headers['Access-Control-Allow-Methods'] = 'GET, OPTIONS'
+            response.headers['Access-Control-Allow-Headers'] = 'Content-Type, Accept, X-Requested-With'
+            return response, 500
     
     @app.route('/api/session/validate', methods=['POST'])
     def api_session_validate():
@@ -158,7 +182,7 @@ def create_session_state_routes(app):
         csrf.exempt(api_session_state)
         csrf.exempt(api_session_validate)
   
-    @app.route('/api/session/monitoring/metrics', methods=['GET'])
+    @app.route('/api/session/state/metrics', methods=['GET'])
     def api_session_state_metrics():
         """
         Get session monitoring metrics

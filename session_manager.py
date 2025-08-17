@@ -150,7 +150,7 @@ class SessionManager:
                     except Exception as metrics_error:
                         logger.debug(f"Error logging session metrics: {metrics_error}")
     
-    def create_user_session(self, user_id: int, platform_connection_id: Optional[int] = None) -> str:
+    # Removed legacy create_user_session method; use create_session instead.
         """
         Create a new user session with optional platform context
         
@@ -1121,8 +1121,12 @@ class PlatformContextMiddleware:
                         db_session = self.session_manager.db_manager.get_session()
                         try:
                             from models import PlatformConnection
+                            user_id = getattr(current_user, 'id', None)
+                            if not user_id:
+                                return None
+                                
                             default_platform = db_session.query(PlatformConnection).filter_by(
-                                user_id=current_user.id,
+                                user_id=user_id,
                                 is_default=True,
                                 is_active=True
                             ).first()
@@ -1130,7 +1134,7 @@ class PlatformContextMiddleware:
                             if not default_platform:
                                 # Use first available platform
                                 default_platform = db_session.query(PlatformConnection).filter_by(
-                                    user_id=current_user.id,
+                                    user_id=user_id,
                                     is_active=True
                                 ).first()
                             
@@ -1138,7 +1142,7 @@ class PlatformContextMiddleware:
                                 # Create new session
                                 try:
                                     flask_session_id = self.session_manager.create_user_session(
-                                        current_user.id, default_platform.id
+                                        user_id, default_platform.id
                                     )
                                     if flask_session_id:
                                         # Flask session usage disabled - using database sessions only

@@ -54,18 +54,21 @@ class WebSocketProgressHandler:
             
             # Rate limiting check
             if not self._check_connection_rate_limit():
-                logger.warning(f"WebSocket connection rate limit exceeded for user {sanitize_for_log(str(current_user.id))}")
+                user_id = getattr(current_user, 'id', 'unknown')
+                logger.warning(f"WebSocket connection rate limit exceeded for user {sanitize_for_log(str(user_id))}")
                 disconnect()
                 return False
             
-            logger.info(f"WebSocket connected: user {sanitize_for_log(str(current_user.id))} session {sanitize_for_log(request.sid)}")
+            user_id = getattr(current_user, 'id', 'unknown')
+            logger.info(f"WebSocket connected: user {sanitize_for_log(str(user_id))} session {sanitize_for_log(request.sid)}")
             return True
         
         @self.socketio.on('disconnect')
         def handle_disconnect():
             """Handle client disconnection"""
             if current_user.is_authenticated:
-                logger.info(f"WebSocket disconnected: user {sanitize_for_log(str(current_user.id))} session {sanitize_for_log(request.sid)}")
+                user_id = getattr(current_user, 'id', 'unknown')
+                logger.info(f"WebSocket disconnected: user {sanitize_for_log(str(user_id))} session {sanitize_for_log(request.sid)}")
                 self._cleanup_connection(request.sid)
         
         @self.socketio.on('join_task')
@@ -94,7 +97,8 @@ class WebSocketProgressHandler:
                 return
             
             # Verify user has access to this task
-            if not self._verify_task_access(task_id, current_user.id):
+            user_id = getattr(current_user, 'id', None)
+            if not user_id or not self._verify_task_access(task_id, user_id):
                 emit('error', {'message': 'Access denied to task'})
                 return
             
@@ -107,11 +111,11 @@ class WebSocketProgressHandler:
             self._connections[task_id].add(request.sid)
             
             # Send current progress if available
-            progress = self.progress_tracker.get_progress(task_id, current_user.id)
+            progress = self.progress_tracker.get_progress(task_id, user_id)
             if progress:
                 emit('progress_update', progress.to_dict())
             
-            logger.info(f"User {sanitize_for_log(str(current_user.id))} joined task {sanitize_for_log(task_id)} room")
+            logger.info(f"User {sanitize_for_log(str(user_id))} joined task {sanitize_for_log(task_id)} room")
         
         # Add other handlers with similar validation...
     
@@ -119,7 +123,9 @@ class WebSocketProgressHandler:
         """Check WebSocket connection rate limiting"""
         from datetime import datetime, timedelta
         
-        user_id = current_user.id
+        user_id = getattr(current_user, 'id', None)
+        if not user_id:
+            return False
         current_time = datetime.utcnow()
         
         if user_id not in self._rate_limits:
@@ -159,7 +165,8 @@ class WebSocketProgressHandler:
                 if not self._connections[task_id]:
                     del self._connections[task_id]
             
-            logger.info(f"User {sanitize_for_log(str(current_user.id))} left task {sanitize_for_log(task_id)} room")
+            user_id = getattr(current_user, 'id', 'unknown')
+            logger.info(f"User {sanitize_for_log(str(user_id))} left task {sanitize_for_log(task_id)} room")
         
         @self.socketio.on('cancel_task')
         def handle_cancel_task(data):
@@ -174,7 +181,12 @@ class WebSocketProgressHandler:
                 return
             
             # Cancel the task
-            success = self.task_queue_manager.cancel_task(task_id, current_user.id)
+            user_id = getattr(current_user, 'id', None)
+            if not user_id:
+                emit('error', {'message': 'User authentication error'})
+                return
+                
+            success = self.task_queue_manager.cancel_task(task_id, user_id)
             
             if success:
                 # Broadcast cancellation to all clients in the task room
@@ -184,7 +196,7 @@ class WebSocketProgressHandler:
                 }, room=task_id)
                 
                 emit('task_cancelled', {'task_id': task_id, 'success': True})
-                logger.info(f"Task {sanitize_for_log(task_id)} cancelled by user {sanitize_for_log(str(current_user.id))}")
+                logger.info(f"Task {sanitize_for_log(task_id)} cancelled by user {sanitize_for_log(str(user_id))}")
             else:
                 emit('error', {'message': 'Failed to cancel task'})
         
@@ -201,12 +213,13 @@ class WebSocketProgressHandler:
                 return
             
             # Verify user has access to this task
-            if not self._verify_task_access(task_id, current_user.id):
+            user_id = getattr(current_user, 'id', None)
+            if not user_id or not self._verify_task_access(task_id, user_id):
                 emit('error', {'message': 'Access denied to task'})
                 return
             
             # Get current progress
-            progress = self.progress_tracker.get_progress(task_id, current_user.id)
+            progress = self.progress_tracker.get_progress(task_id, user_id)
             if progress:
                 emit('progress_update', progress.to_dict())
             else:

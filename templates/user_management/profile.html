@@ -89,11 +89,11 @@
                                 </tr>
                                 <tr>
                                     <td><strong>Member Since:</strong></td>
-                                    <td>{{ moment(profile_data.created_at).format('MMMM Do, YYYY') if profile_data.created_at else 'Unknown' }}</td>
+                                    <td>{{ profile_data.created_at.strftime('%B %d, %Y') if profile_data.created_at else 'Unknown' }}</td>
                                 </tr>
                                 <tr>
                                     <td><strong>Last Login:</strong></td>
-                                    <td>{{ moment(profile_data.last_login).fromNow() if profile_data.last_login else 'Never' }}</td>
+                                    <td>{{ profile_data.last_login.strftime('%B %d, %Y at %I:%M %p') if profile_data.last_login else 'Never' }}</td>
                                 </tr>
                                 <tr>
                                     <td><strong>Platforms:</strong></td>
@@ -109,7 +109,7 @@
                             <h5>Data Processing Consent</h5>
                             <div class="alert alert-info">
                                 <i class="fas fa-info-circle"></i>
-                                You have consented to data processing on {{ moment(profile_data.data_processing_consent_date).format('MMMM Do, YYYY') if profile_data.data_processing_consent_date else 'an unknown date' }}.
+                                You have consented to data processing on {{ profile_data.data_processing_consent_date.strftime('%B %d, %Y') if profile_data.data_processing_consent_date else 'an unknown date' }}.
                             </div>
                         </div>
                     </div>

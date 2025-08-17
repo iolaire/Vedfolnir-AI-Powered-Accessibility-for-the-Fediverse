@@ -200,13 +200,16 @@
                                 <li><a class="dropdown-item" href="{{ url_for('user_management.profile') }}">
                                     <i class="bi bi-person-gear me-2"></i>Profile & Settings
                                 </a></li>
+                                <li><a class="dropdown-item" href="{{ url_for('gdpr.privacy_policy') }}" target="_blank">
+                                    <i class="bi bi-shield-lock me-2"></i>Privacy Policy
+                                </a></li>
                                 {% if current_user_safe and (current_user_safe.role_value == 'admin' or (current_user_safe.role and current_user_safe.role.value == 'admin')) %}
                                 <li><a class="dropdown-item" href="{{ url_for('admin.dashboard') }}">
                                     <i class="bi bi-shield-check me-2"></i>Site Administration
                                 </a></li>
                                 {% endif %}
                                 <li><hr class="dropdown-divider"></li>
-                                <li><a class="dropdown-item" href="{{ url_for('logout') }}" onclick="handleLogout(event)">
+                                <li><a class="dropdown-item" href="{{ url_for('logout_all') }}" onclick="handleLogout(event)">
                                     <i class="bi bi-box-arrow-right me-2"></i>Logout
                                 </a></li>
                                 <li><a class="dropdown-item" href="{{ url_for('logout_all') }}" onclick="handleLogoutAll(event)">
@@ -216,7 +219,7 @@
                         </li>
                     {% else %}
                         <li class="nav-item">
-                            <a class="nav-link" href="{{ url_for('login') }}">Login</a>
+                            <a class="nav-link" href="{{ url_for('user_management.login') }}">Login</a>
                         </li>
                     {% endif %}
                 </ul>

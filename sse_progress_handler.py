@@ -60,7 +60,7 @@ class SSEProgressHandler:
         from flask_login import current_user
         
         # Authentication is already verified in the endpoint, so current_user should be valid
-        user_id = str(current_user.id)
+        user_id = str(getattr(current_user, 'id', 'unknown'))
         connection_id = f"{user_id}_{task_id}_{int(time.time())}"
         
         try:
@@ -70,7 +70,11 @@ class SSEProgressHandler:
                 return
             
             # Verify user has access to this task
-            task_exists = self._verify_task_access(task_id, current_user.id)
+            current_user_id = getattr(current_user, 'id', None)
+            if not current_user_id:
+                yield 'data: {"type": "error", "message": "User authentication error"}\n\n'
+                return
+            task_exists = self._verify_task_access(task_id, current_user_id)
             if not task_exists:
                 # Task doesn't exist - send error and close connection
                 yield f"data: {json.dumps({'type': 'error', 'message': 'Task not found or access denied'})}\n\n"
@@ -102,7 +106,7 @@ class SSEProgressHandler:
             yield f"data: {json.dumps({'type': 'connected', 'task_id': task_id})}\n\n"
             
             # Send current progress if available
-            progress = self.progress_tracker.get_progress(task_id, current_user.id)
+            progress = self.progress_tracker.get_progress(task_id, current_user_id)
             if progress:
                 logger.debug(f"Sending initial progress for task {sanitize_for_log(task_id)}: {progress.progress_percent}% - {progress.current_step}")
                 yield f"data: {json.dumps({'type': 'progress_update', **progress.to_dict()})}\n\n"
@@ -127,7 +131,7 @@ class SSEProgressHandler:
                     break
                 
                 # Get latest progress
-                current_progress = self.progress_tracker.get_progress(task_id, current_user.id)
+                current_progress = self.progress_tracker.get_progress(task_id, current_user_id)
                 if current_progress:
                     progress_data = current_progress.to_dict()
                     progress_data['type'] = 'progress_update'

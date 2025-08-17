@@ -21,6 +21,13 @@ from flask_login import current_user, logout_user
 from sqlalchemy.exc import SQLAlchemyError, InvalidRequestError
 from sqlalchemy.orm.exc import DetachedInstanceError
 from security.core.security_utils import sanitize_for_log
+
+def safe_get_user_id(current_user):
+    """Safely get user ID from current_user, handling Attribute objects"""
+    try:
+        return getattr(current_user, 'id', None)
+    except (AttributeError, TypeError):
+        return None
 from session_error_logger import get_session_error_logger
 
 logger = logging.getLogger(__name__)
@@ -55,7 +62,7 @@ class SessionErrorHandler:
         try:
             from flask import has_request_context
             if has_request_context() and current_user and hasattr(current_user, 'is_authenticated') and current_user.is_authenticated:
-                user_id = current_user.id
+                user_id = safe_get_user_id(current_user)
         except (ImportError, RuntimeError, AttributeError):
             # Flask-Login not available, no request context, or current_user not accessible
             pass
@@ -96,8 +103,13 @@ class SessionErrorHandler:
                     # Check if user has valid platforms
                     with self.session_manager.session_scope() as db_session:
                         from models import PlatformConnection
+                        user_id = getattr(current_user, 'id', None)
+                        if not user_id:
+                            flash('User authentication error. Please log in again.', 'error')
+                            return redirect(url_for('user_management.login'))
+                            
                         user_platforms = db_session.query(PlatformConnection).filter_by(
-                            user_id=current_user.id,
+                            user_id=user_id,
                             is_active=True
                         ).count()
                         
@@ -181,7 +193,7 @@ class SessionErrorHandler:
         try:
             from flask import has_request_context
             if has_request_context() and current_user and hasattr(current_user, 'is_authenticated') and current_user.is_authenticated:
-                user_id = current_user.id
+                user_id = safe_get_user_id(current_user)
         except (ImportError, RuntimeError, AttributeError):
             # Flask-Login not available, no request context, or current_user not accessible
             pass
@@ -252,7 +264,7 @@ class SessionErrorHandler:
         try:
             from flask import has_request_context
             if has_request_context() and current_user and hasattr(current_user, 'is_authenticated') and current_user.is_authenticated:
-                user_id = current_user.id
+                user_id = safe_get_user_id(current_user)
         except (ImportError, RuntimeError, AttributeError):
             # Flask-Login not available, no request context, or current_user not accessible
             pass
@@ -429,8 +441,8 @@ def register_session_error_handlers(app, session_manager, detached_instance_hand
             if current_user and hasattr(current_user, 'is_authenticated') and current_user.is_authenticated:
                 try:
                     # Check if user object is accessible
-                    _ = current_user.id
-                    _ = current_user.username
+                    _ = getattr(current_user, 'id', None)
+                    _ = getattr(current_user, 'username', None)
                     
                     # For platform-dependent endpoints, validate platform context
                     # Note: health_dashboard is admin-only and doesn't require platform context

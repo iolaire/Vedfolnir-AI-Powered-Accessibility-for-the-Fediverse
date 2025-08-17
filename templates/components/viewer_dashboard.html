@@ -37,7 +37,7 @@
             </div>
             <div class="stat-action">
                 {% if pending_review_count > 0 %}
-                <a href="{{ url_for('review') }}" class="btn btn-sm btn-primary">Review</a>
+                <a href="{{ url_for('review_list') }}" class="btn btn-sm btn-primary">Review</a>
                 {% else %}
                 <span class="text-muted">All caught up!</span>
                 {% endif %}
@@ -53,7 +53,7 @@
                 <div class="stat-label">Total Images</div>
             </div>
             <div class="stat-action">
-                <a href="{{ url_for('review') }}" class="btn btn-sm btn-outline-secondary">View All</a>
+                <a href="{{ url_for('review_list') }}" class="btn btn-sm btn-outline-secondary">View All</a>
             </div>
         </div>
 
@@ -135,7 +135,7 @@
                 </div>
             </a>
 
-            <a href="{{ url_for('review') }}" class="action-card">
+            <a href="{{ url_for('review_list') }}" class="action-card">
                 <div class="action-icon">
                     <i class="icon-review" aria-hidden="true"></i>
                 </div>

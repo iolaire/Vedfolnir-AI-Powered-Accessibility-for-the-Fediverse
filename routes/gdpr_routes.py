@@ -21,7 +21,7 @@ from forms.gdpr_forms import (
 )
 from services.gdpr_service import GDPRDataSubjectService, GDPRPrivacyService
 from services.user_management_service import UserProfileService
-from database import get_db_session
+from request_scoped_session_manager import RequestScopedSessionManager
 from models import UserAuditLog
 
 logger = logging.getLogger(__name__)
@@ -45,9 +45,11 @@ def data_export():
     
     if form.validate_on_submit():
         try:
-            db_session = get_db_session()
-            gdpr_service = GDPRDataSubjectService(db_session, current_app.config.get('BASE_URL', 'http://localhost:5000'))
-            ip_address, user_agent = get_client_info()
+            request_session_manager = RequestScopedSessionManager(current_app.config['db_manager'])
+            
+            with request_session_manager.session_scope() as db_session:
+                gdpr_service = GDPRDataSubjectService(db_session, current_app.config.get('BASE_URL', 'http://localhost:5000'))
+                ip_address, user_agent = get_client_info()
             
             # Export personal data
             success, message, export_data = gdpr_service.export_personal_data(
@@ -94,7 +96,7 @@ def data_export():
                 
                 else:  # Email delivery
                     # Send email notification
-                    email_success, email_message = await gdpr_service.send_data_export_email(current_user, export_data)
+                    email_success, email_message = gdpr_service.send_data_export_email(current_user, export_data)
                     
                     if email_success:
                         flash('Your data export has been completed. You will receive an email with instructions to access your data.', 'success')
@@ -133,12 +135,14 @@ def data_rectification():
     
     if form.validate_on_submit():
         try:
-            db_session = get_db_session()
-            gdpr_service = GDPRDataSubjectService(db_session)
-            ip_address, user_agent = get_client_info()
+            request_session_manager = RequestScopedSessionManager(current_app.config['db_manager'])
             
-            # Prepare rectification data
-            rectification_data = {}
+            with request_session_manager.session_scope() as db_session:
+                gdpr_service = GDPRDataSubjectService(db_session)
+                ip_address, user_agent = get_client_info()
+                
+                # Prepare rectification data
+                rectification_data = {}
             
             if form.first_name.data != current_user.first_name:
                 rectification_data['first_name'] = form.first_name.data
@@ -183,20 +187,22 @@ def data_erasure():
     
     if form.validate_on_submit():
         try:
-            db_session = get_db_session()
-            gdpr_service = GDPRDataSubjectService(db_session)
-            ip_address, user_agent = get_client_info()
+            request_session_manager = RequestScopedSessionManager(current_app.config['db_manager'])
             
-            if form.erasure_type.data == 'complete':
-                # Complete data erasure
-                success, message, result = gdpr_service.erase_personal_data(
-                    user_id=current_user.id,
-                    ip_address=ip_address,
-                    user_agent=user_agent
-                )
-            else:
-                # Data anonymization
-                success, message, result = gdpr_service.anonymize_personal_data(
+            with request_session_manager.session_scope() as db_session:
+                gdpr_service = GDPRDataSubjectService(db_session)
+                ip_address, user_agent = get_client_info()
+                
+                if form.erasure_type.data == 'complete':
+                    # Complete data erasure
+                    success, message, result = gdpr_service.erase_personal_data(
+                        user_id=current_user.id,
+                        ip_address=ip_address,
+                        user_agent=user_agent
+                    )
+                else:
+                    # Data anonymization
+                    success, message, result = gdpr_service.anonymize_personal_data(
                     user_id=current_user.id,
                     ip_address=ip_address,
                     user_agent=user_agent
@@ -205,7 +211,7 @@ def data_erasure():
             if success:
                 # Send confirmation email before account deletion
                 from services.email_service import email_service
-                await email_service.send_data_deletion_confirmation(
+                email_service.send_data_deletion_confirmation(
                     current_user.email, 
                     current_user.username,
                     form.erasure_type.data
@@ -240,33 +246,35 @@ def consent_management():
     
     if form.validate_on_submit():
         try:
-            db_session = get_db_session()
-            privacy_service = GDPRPrivacyService(db_session)
-            ip_address, user_agent = get_client_info()
+            request_session_manager = RequestScopedSessionManager(current_app.config['db_manager'])
             
-            # Update data processing consent
-            if form.data_processing_consent.data != current_user.data_processing_consent:
-                success, message = privacy_service.record_consent(
-                    user_id=current_user.id,
-                    consent_type='data_processing',
-                    consent_given=form.data_processing_consent.data,
-                    ip_address=ip_address,
-                    user_agent=user_agent
-                )
+            with request_session_manager.session_scope() as db_session:
+                privacy_service = GDPRPrivacyService(db_session)
+                ip_address, user_agent = get_client_info()
                 
-                if success:
-                    flash(message, 'success')
+                # Update data processing consent
+                if form.data_processing_consent.data != current_user.data_processing_consent:
+                    success, message = privacy_service.record_consent(
+                        user_id=current_user.id,
+                        consent_type='data_processing',
+                        consent_given=form.data_processing_consent.data,
+                        ip_address=ip_address,
+                        user_agent=user_agent
+                    )
                     
-                    # Send confirmation email for consent withdrawal
-                    if not form.data_processing_consent.data:
-                        from services.email_service import email_service
-                        await email_service.send_consent_withdrawal_confirmation(
-                            current_user.email,
-                            current_user.username,
-                            current_app.config.get('BASE_URL', 'http://localhost:5000')
-                        )
-                else:
-                    flash(f'Consent update failed: {message}', 'error')
+                    if success:
+                        flash(message, 'success')
+                        
+                        # Send confirmation email for consent withdrawal
+                        if not form.data_processing_consent.data:
+                            from services.email_service import email_service
+                            email_service.send_consent_withdrawal_confirmation(
+                                current_user.email,
+                                current_user.username,
+                                current_app.config.get('BASE_URL', 'http://localhost:5000')
+                            )
+                    else:
+                        flash(f'Consent update failed: {message}', 'error')
             
             # Handle other consent types as they are implemented
             # (marketing, analytics, third-party sharing)
@@ -288,8 +296,10 @@ def privacy_request():
     
     if form.validate_on_submit():
         try:
-            db_session = get_db_session()
-            ip_address, user_agent = get_client_info()
+            request_session_manager = RequestScopedSessionManager(current_app.config['db_manager'])
+            
+            with request_session_manager.session_scope() as db_session:
+                ip_address, user_agent = get_client_info()
             
             # Log the privacy request
             UserAuditLog.log_action(
@@ -323,39 +333,41 @@ def compliance_report():
     
     if form.validate_on_submit():
         try:
-            db_session = get_db_session()
-            privacy_service = GDPRPrivacyService(db_session)
+            request_session_manager = RequestScopedSessionManager(current_app.config['db_manager'])
             
-            if form.report_type.data == 'personal':
-                # Personal data report
-                gdpr_service = GDPRDataSubjectService(db_session)
-                success, message, report_data = gdpr_service.get_data_processing_info(current_user.id)
-            elif form.report_type.data == 'consent':
-                # Consent history report
-                success, message, report_data = privacy_service.get_consent_history(current_user.id)
-            elif form.report_type.data == 'compliance':
-                # Full compliance report
-                success, message, report_data = privacy_service.generate_privacy_report(current_user.id)
-            else:
-                # Processing report
-                success, message, report_data = privacy_service.validate_gdpr_compliance(current_user.id)
-            
-            if success and report_data:
-                # Return JSON response for download
-                response_data = json.dumps(report_data, indent=2, ensure_ascii=False)
-                response = make_response(response_data)
-                response.headers['Content-Type'] = 'application/json'
-                response.headers['Content-Disposition'] = f'attachment; filename="gdpr_report_{form.report_type.data}_{current_user.username}_{datetime.utcnow().strftime("%Y%m%d_%H%M%S")}.json"'
+            with request_session_manager.session_scope() as db_session:
+                privacy_service = GDPRPrivacyService(db_session)
                 
-                return response
-            else:
-                flash(f'Report generation failed: {message}', 'error')
+                if form.report_type.data == 'personal':
+                    # Personal data report
+                    gdpr_service = GDPRDataSubjectService(db_session)
+                    success, message, report_data = gdpr_service.get_data_processing_info(current_user.id)
+                elif form.report_type.data == 'consent':
+                    # Consent history report
+                    success, message, report_data = privacy_service.get_consent_history(current_user.id)
+                elif form.report_type.data == 'compliance':
+                    # Full compliance report
+                    success, message, report_data = privacy_service.generate_privacy_report(current_user.id)
+                else:
+                    # Processing report
+                    success, message, report_data = privacy_service.validate_gdpr_compliance(current_user.id)
+                
+                if success and report_data:
+                    # Return JSON response for download
+                    response_data = json.dumps(report_data, indent=2, ensure_ascii=False)
+                    response = make_response(response_data)
+                    response.headers['Content-Type'] = 'application/json'
+                    response.headers['Content-Disposition'] = f'attachment; filename="gdpr_report_{form.report_type.data}_{current_user.username}_{datetime.utcnow().strftime("%Y%m%d_%H%M%S")}.json"'
+                    
+                    return response
+                else:
+                    flash(f'Report generation failed: {message}', 'error')
                 
         except Exception as e:
             logger.error(f"Error generating compliance report: {e}")
             flash('An error occurred while generating your compliance report.', 'error')
     
-    return render_template('gdpr/compliance_report.html', form=form)
+    return render_template('gdpr/privacy_request.html', form=form)
 
 
 @gdpr_bp.route('/data-portability', methods=['GET', 'POST'])
@@ -366,11 +378,13 @@ def data_portability():
     
     if form.validate_on_submit():
         try:
-            db_session = get_db_session()
-            gdpr_service = GDPRDataSubjectService(db_session, current_app.config.get('BASE_URL', 'http://localhost:5000'))
-            ip_address, user_agent = get_client_info()
+            request_session_manager = RequestScopedSessionManager(current_app.config['db_manager'])
             
-            # Export data for portability
+            with request_session_manager.session_scope() as db_session:
+                gdpr_service = GDPRDataSubjectService(db_session, current_app.config.get('BASE_URL', 'http://localhost:5000'))
+                ip_address, user_agent = get_client_info()
+                
+                # Export data for portability
             success, message, export_data = gdpr_service.export_personal_data(
                 user_id=current_user.id,
                 ip_address=ip_address,
@@ -429,7 +443,7 @@ def data_portability():
             logger.error(f"Error processing data portability request: {e}")
             flash('An error occurred while processing your data portability request.', 'error')
     
-    return render_template('gdpr/data_portability.html', form=form)
+    return render_template('gdpr/data_export.html', form=form)
 
 
 @gdpr_bp.route('/privacy-policy')
@@ -443,16 +457,18 @@ def privacy_policy():
 def data_processing_info():
     """Display data processing information for the user"""
     try:
-        db_session = get_db_session()
-        gdpr_service = GDPRDataSubjectService(db_session)
+        request_session_manager = RequestScopedSessionManager(current_app.config['db_manager'])
         
-        success, message, processing_info = gdpr_service.get_data_processing_info(current_user.id)
-        
-        if success:
-            return render_template('gdpr/data_processing_info.html', processing_info=processing_info)
-        else:
-            flash(f'Could not retrieve data processing information: {message}', 'error')
-            return redirect(url_for('profile.profile'))
+        with request_session_manager.session_scope() as db_session:
+            gdpr_service = GDPRDataSubjectService(db_session)
+            
+            success, message, processing_info = gdpr_service.get_data_processing_info(current_user.id)
+            
+            if success:
+                return render_template('gdpr/privacy_policy.html', processing_info=processing_info)
+            else:
+                flash(f'Could not retrieve data processing information: {message}', 'error')
+                return redirect(url_for('profile.profile'))
             
     except Exception as e:
         logger.error(f"Error retrieving data processing info: {e}")

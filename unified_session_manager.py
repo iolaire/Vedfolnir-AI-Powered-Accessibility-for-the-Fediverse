@@ -80,7 +80,7 @@ class UnifiedSessionManager:
     @contextmanager
     def get_db_session(self):
         """
-        Context manager for database sessions with comprehensive error handling and cleanup
+        Context manager for database sessions with proper cleanup
         
         Yields:
             SQLAlchemy session object
@@ -89,74 +89,47 @@ class UnifiedSessionManager:
             SessionDatabaseError: For database-specific errors
         """
         db_session = None
-        retry_count = 0
-        max_retries = 3
-        
-        while retry_count < max_retries:
-            try:
-                db_session = self.db_manager.get_session()
+        try:
+            db_session = self.db_manager.get_session()
+            
+            # Test connection health with a simple query
+            from sqlalchemy import text
+            db_session.execute(text("SELECT 1"))
+            
+            yield db_session
+            
+            # Commit if no exceptions occurred
+            db_session.commit()
+            logger.debug("Database session completed successfully")
                 
-                # Test connection health
-                from sqlalchemy import text
-                db_session.execute(text("SELECT 1"))
+        except SQLAlchemyError as e:
+            # Database-specific errors
+            if db_session:
+                try:
+                    db_session.rollback()
+                except Exception as rollback_error:
+                    logger.error(f"Error during rollback: {rollback_error}")
+            
+            logger.error(f"Database error in session: {e}")
+            raise SessionDatabaseError(f"Database operation failed: {e}")
                 
-                yield db_session
+        except Exception as e:
+            # General errors
+            if db_session:
+                try:
+                    db_session.rollback()
+                except Exception as rollback_error:
+                    logger.error(f"Error during rollback: {rollback_error}")
+            
+            logger.error(f"Unexpected error in database session: {e}")
+            raise SessionDatabaseError(f"Session operation failed: {e}")
                 
-                db_session.commit()
-                
-                # Log successful operation for monitoring
-                logger.debug("Database session completed successfully")
-                return
-                
-            except (DisconnectionError, TimeoutError, InvalidRequestError) as e:
-                # Connection-related errors that might be recoverable
-                retry_count += 1
-                logger.warning(f"Database connection error (attempt {retry_count}/{max_retries}): {e}")
-                
-                if db_session:
-                    try:
-                        db_session.rollback()
-                        db_session.close()
-                    except Exception as cleanup_error:
-                        logger.error(f"Error during session cleanup: {cleanup_error}")
-                    db_session = None
-                
-                if retry_count >= max_retries:
-                    logger.error(f"Database connection failed after {max_retries} attempts")
-                    raise SessionDatabaseError(f"Database connection failed after {max_retries} attempts: {e}")
-                
-                # Brief delay before retry
-                import time
-                time.sleep(0.1 * retry_count)
-                
-            except SQLAlchemyError as e:
-                # Database-specific errors
-                if db_session:
-                    try:
-                        db_session.rollback()
-                    except Exception as rollback_error:
-                        logger.error(f"Error during rollback: {rollback_error}")
-                
-                logger.error(f"Database error in session: {e}")
-                raise SessionDatabaseError(f"Database operation failed: {e}")
-                
-            except Exception as e:
-                # General errors
-                if db_session:
-                    try:
-                        db_session.rollback()
-                    except Exception as rollback_error:
-                        logger.error(f"Error during rollback: {rollback_error}")
-                
-                logger.error(f"Unexpected error in database session: {e}")
-                raise SessionDatabaseError(f"Session operation failed: {e}")
-                
-            finally:
-                if db_session:
-                    try:
-                        db_session.close()
-                    except Exception as close_error:
-                        logger.error(f"Error closing database session: {close_error}")
+        finally:
+            if db_session:
+                try:
+                    db_session.close()
+                except Exception as close_error:
+                    logger.error(f"Error closing database session: {close_error}")
     
     def create_session(self, user_id: int, platform_connection_id: Optional[int] = None) -> str:
         """
@@ -173,12 +146,9 @@ class UnifiedSessionManager:
             SessionValidationError: If user or platform is invalid
             SessionDatabaseError: If database operation fails
         """
+        session_id = str(uuid.uuid4())
+        
         try:
-            # First, clean up any existing sessions for this user to prevent conflicts
-            self.cleanup_user_sessions(user_id)
-            
-            session_id = str(uuid.uuid4())
-            
             with self.get_db_session() as db_session:
                 # Verify user exists and is active
                 user = db_session.get(User, user_id)
@@ -225,7 +195,7 @@ class UnifiedSessionManager:
                 )
                 
                 db_session.add(user_session)
-                db_session.commit()
+                # Commit happens in context manager
                 
                 # Create security audit event
                 self._create_security_audit_event(
@@ -237,10 +207,6 @@ class UnifiedSessionManager:
                         'fingerprint': fingerprint
                     }
                 )
-                
-                # Log session creation
-                if self.monitor:
-                    self.monitor.log_database_session_created(session_id, user_id, platform_connection_id)
                 
                 logger.info(f"Created session {sanitize_for_log(session_id)} for user {sanitize_for_log(str(user_id))} with platform {sanitize_for_log(str(platform_connection_id))}")
                 
@@ -255,16 +221,6 @@ class UnifiedSessionManager:
             raise
         except Exception as e:
             logger.error(f"Error creating user session: {sanitize_for_log(str(e))}")
-            # If there's still a constraint error, try to handle it gracefully
-            if "UNIQUE constraint failed" in str(e):
-                logger.warning(f"Session ID collision detected for user {user_id}, retrying with cleanup")
-                try:
-                    # Force cleanup and retry once
-                    self.cleanup_user_sessions(user_id)
-                    return self._create_session_retry(user_id, platform_connection_id)
-                except Exception as retry_e:
-                    logger.error(f"Failed to create session after retry: {sanitize_for_log(str(retry_e))}")
-                    raise SessionDatabaseError(f"Failed to create session after retry: {retry_e}")
             raise SessionDatabaseError(f"Failed to create session: {e}")
     
     def get_session_context(self, session_id: str) -> Optional[Dict[str, Any]]:
@@ -571,68 +527,33 @@ class UnifiedSessionManager:
             logger.error(f"Error cleaning up user sessions: {sanitize_for_log(str(e))}")
             return 0
     
-    def _create_session_retry(self, user_id: int, platform_connection_id: Optional[int] = None) -> str:
-        """
-        Internal method to retry session creation after cleanup
-        
-        Args:
-            user_id: User ID
-            platform_connection_id: Optional platform connection ID
-        
-        Returns:
-            Session ID if successful
-            
-        Raises:
-            SessionDatabaseError: If retry fails
-        """
-        session_id = str(uuid.uuid4())
-        
-        with self.get_db_session() as db_session:
-            # Create session fingerprint
-            fingerprint = self._create_session_fingerprint()
-            
-            # Calculate expiration time
-            expires_at = datetime.now(timezone.utc) + self.session_timeout
-            
-            # Create new user session
-            user_session = UserSession(
-                user_id=user_id,
-                session_id=session_id,
-                active_platform_id=platform_connection_id,
-                session_fingerprint=fingerprint,
-                created_at=datetime.now(timezone.utc),
-                updated_at=datetime.now(timezone.utc),
-                last_activity=datetime.now(timezone.utc),
-                expires_at=expires_at,
-                is_active=True,
-                user_agent=self._get_user_agent(),
-                ip_address=self._get_client_ip()
-            )
-            
-            db_session.add(user_session)
-            db_session.commit()
-            
-            # Create security audit event
-            self._create_security_audit_event(
-                event_type='session_created',
-                user_id=user_id,
-                session_id=session_id,
-                details={
-                    'platform_connection_id': platform_connection_id,
-                    'fingerprint': fingerprint,
-                    'retry': True
-                }
-            )
-            
-            return session_id
+
     
     def _create_session_fingerprint(self) -> Optional[str]:
         """Create session fingerprint for security"""
         try:
             if self.security_manager:
-                return self.security_manager.create_session_fingerprint()
+                fingerprint = self.security_manager.create_session_fingerprint()
+                # Convert fingerprint object to string if needed
+                if hasattr(fingerprint, 'to_string'):
+                    return fingerprint.to_string()
+                elif isinstance(fingerprint, str):
+                    return fingerprint
+                else:
+                    # Fallback: create a simple hash-based fingerprint
+                    import hashlib
+                    return hashlib.sha256(str(fingerprint).encode()).hexdigest()
             elif self.security_hardening:
-                return self.security_hardening.create_session_fingerprint()
+                fingerprint = self.security_hardening.create_session_fingerprint()
+                # Convert fingerprint object to string if needed
+                if hasattr(fingerprint, 'to_string'):
+                    return fingerprint.to_string()
+                elif isinstance(fingerprint, str):
+                    return fingerprint
+                else:
+                    # Fallback: create a simple hash-based fingerprint
+                    import hashlib
+                    return hashlib.sha256(str(fingerprint).encode()).hexdigest()
         except Exception as e:
             logger.debug(f"Error creating session fingerprint: {e}")
         return None

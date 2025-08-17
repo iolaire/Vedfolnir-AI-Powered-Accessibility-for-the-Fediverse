@@ -48,6 +48,7 @@ def create_or_update_admin_user(username, email, password):
                     existing_user.set_password(password)
                     existing_user.role = UserRole.ADMIN
                     existing_user.is_active = True
+                    existing_user.email_verified = True
                     session.commit()
                     print(f"Admin user '{username}' updated successfully")
                     return True, "updated"
@@ -60,7 +61,8 @@ def create_or_update_admin_user(username, email, password):
                     username=username,
                     email=email,
                     role=UserRole.ADMIN,
-                    is_active=True
+                    is_active=True,
+                    email_verified=True
                 )
                 admin_user.set_password(password)
                 session.add(admin_user)

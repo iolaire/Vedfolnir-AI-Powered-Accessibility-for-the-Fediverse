@@ -312,13 +312,20 @@ def enhanced_csrf_protect(
                         abort(403, description="CSRF token validation failed")
                     
                     db_session.close()
-                    
+                        
                 except Exception as e:
                     logger.error(f"Error in enhanced CSRF protection: {e}")
                     # Fall back to standard CSRF protection
                     from flask_wtf.csrf import validate_csrf
                     try:
-                        validate_csrf(csrf_token)
+                        # Get CSRF token for fallback validation
+                        fallback_csrf_token = (
+                            request.form.get('csrf_token') or
+                            request.headers.get('X-CSRFToken') or
+                            request.headers.get('X-CSRF-Token')
+                        )
+                        if fallback_csrf_token:
+                            validate_csrf(fallback_csrf_token)
                     except ValidationError:
                         abort(403, description="CSRF token validation failed")
             

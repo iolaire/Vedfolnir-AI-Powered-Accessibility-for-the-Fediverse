@@ -27,7 +27,7 @@ def admin_required(f):
 session_monitoring_bp = Blueprint('session_monitoring', __name__, url_prefix='/admin/session-monitoring')
 
 
-@session_monitoring_bp.route('/status')
+@session_monitoring_bp.route('/performance/status')
 @login_required
 @admin_required
 def monitoring_status():
@@ -49,7 +49,7 @@ def monitoring_status():
         }), 500
 
 
-@session_monitoring_bp.route('/summary')
+@session_monitoring_bp.route('/performance/summary')
 @login_required
 @admin_required
 def monitoring_summary():
@@ -74,7 +74,7 @@ def monitoring_summary():
         }), 500
 
 
-@session_monitoring_bp.route('/alerts')
+@session_monitoring_bp.route('/performance/alerts')
 @login_required
 @admin_required
 def monitoring_alerts():
@@ -182,7 +182,7 @@ def monitoring_alerts():
         }), 500
 
 
-@session_monitoring_bp.route('/dashboard')
+@session_monitoring_bp.route('/performance/dashboard')
 @login_required
 @admin_required
 def monitoring_dashboard():
@@ -191,7 +191,7 @@ def monitoring_dashboard():
         monitor = get_performance_monitor()
         metrics = monitor.get_current_metrics()
         
-        return render_template('admin/session_monitoring_dashboard.html',
+        return render_template('admin/templates/session_monitoring_dashboard.html',
                              metrics=metrics,
                              title="Session Performance Monitoring")
         
@@ -200,7 +200,7 @@ def monitoring_dashboard():
         return render_template('errors/500.html'), 500
 
 
-@session_monitoring_bp.route('/health')
+@session_monitoring_bp.route('/performance/health')
 @login_required
 @admin_required
 def monitoring_health():

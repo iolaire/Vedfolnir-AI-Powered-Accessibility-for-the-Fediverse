@@ -25,9 +25,6 @@ class RequestScopedSessionManager:
             db_manager: The database manager instance
         """
         self.db_manager = db_manager
-        self.session_factory = scoped_session(
-            sessionmaker(bind=db_manager.engine)
-        )
         logger.info("RequestScopedSessionManager initialized")
     
     def get_request_session(self):
@@ -44,13 +41,13 @@ class RequestScopedSessionManager:
             raise RuntimeError("get_request_session() must be called within Flask request context")
         
         # Check if we already have a session for this request
-        if not hasattr(g, 'db_session'):
+        if not hasattr(g, 'db_session') or g.db_session is None:
             # Time session creation for performance monitoring
             start_time = time.time()
             
             try:
-                # Create a new session for this request
-                g.db_session = self.session_factory()
+                # Create a new session for this request using the database manager
+                g.db_session = self.db_manager.get_session()
                 creation_duration = time.time() - start_time
                 
                 logger.debug("Created new request-scoped database session")
@@ -77,13 +74,13 @@ class RequestScopedSessionManager:
             logger.warning("close_request_session() called outside Flask request context")
             return
         
-        if hasattr(g, 'db_session'):
+        if hasattr(g, 'db_session') and g.db_session is not None:
             # Time session cleanup for performance monitoring
             start_time = time.time()
             
             try:
-                # Close the session
-                g.db_session.close()
+                # Close the session using the database manager
+                self.db_manager.close_session(g.db_session)
                 cleanup_duration = time.time() - start_time
                 
                 logger.debug("Closed request-scoped database session")
@@ -97,14 +94,9 @@ class RequestScopedSessionManager:
                 self._record_session_error("closure_failed", str(e))
             finally:
                 # Remove the session from g
-                delattr(g, 'db_session')
-        
-        # Remove the scoped session to prevent memory leaks
-        try:
-            self.session_factory.remove()
-        except Exception as e:
-            logger.error(f"Error removing scoped session: {e}")
-            self._record_session_error("scoped_removal_failed", str(e))
+                g.db_session = None
+                if hasattr(g, 'db_session'):
+                    delattr(g, 'db_session')
     
     @contextmanager
     def session_scope(self):

@@ -429,9 +429,9 @@ class TestActivityPubClientRetryAndStats:
                 stats = client.get_platform_specific_retry_info()
                 
                 self.assertTrue("pixelfed_api_calls" in stats)
-                self.assertEqual(stats["pixelfed_api_calls"]["total"], 15  # 10 + 5)
+                self.assertEqual(stats["pixelfed_api_calls"]["total"], 15  )# 10 + 5
                 self.assertEqual(stats["pixelfed_api_calls"]["retried"], 5)
-                self.assertEqual(stats["pixelfed_api_calls"]["success_rate"], 80.0  # 4/5 * 100)
+                self.assertEqual(stats["pixelfed_api_calls"]["success_rate"], 80.0  )# 4/5 * 100
                 self.assertEqual(stats["endpoints"], {"/api/v1/statuses": 10, "/api/v1/media": 5})
                 self.assertEqual(stats["status_codes"], {"429": 2, "500": 1})
                 self.assertEqual(stats["common_errors"], {"TimeoutError": 2})

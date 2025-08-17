@@ -118,7 +118,8 @@ def create_admin_user(db_manager):
                 username=username,
                 email=email,
                 role=UserRole.ADMIN,
-                is_active=True
+                is_active=True,
+                email_verified=True
             )
             user.set_password(password)
             session.add(user)

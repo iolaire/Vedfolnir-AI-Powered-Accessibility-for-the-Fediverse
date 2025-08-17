@@ -7,110 +7,38 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Consent Withdrawal Confirmed</title>
-    <style>
-        body {
-            font-family: Arial, sans-serif;
-            line-height: 1.6;
-            color: #333;
-            max-width: 600px;
-            margin: 0 auto;
-            padding: 20px;
-        }
-        .header {
-            background-color: #f8f9fa;
-            padding: 20px;
-            border-radius: 5px;
-            margin-bottom: 20px;
-        }
-        .content {
-            background-color: #ffffff;
-            padding: 20px;
-            border: 1px solid #dee2e6;
-            border-radius: 5px;
-        }
-        .button {
-            display: inline-block;
-            background-color: #007bff;
-            color: white;
-            padding: 12px 24px;
-            text-decoration: none;
-            border-radius: 5px;
-            margin: 15px 0;
-        }
-        .footer {
-            margin-top: 20px;
-            padding-top: 20px;
-            border-top: 1px solid #dee2e6;
-            font-size: 0.9em;
-            color: #6c757d;
-        }
-        .gdpr-info {
-            background-color: #fff3cd;
-            padding: 15px;
-            border-left: 4px solid #ffc107;
-            margin: 15px 0;
-        }
-        .impact-info {
-            background-color: #e2e3e5;
-            padding: 15px;
-            border-left: 4px solid #6c757d;
-            margin: 15px 0;
-        }
-    </style>
+    <title>Consent Withdrawal Confirmed - Vedfolnir</title>
 </head>
-<body>
-    <div class="header">
-        <h1>Consent Withdrawal Confirmed</h1>
-    </div>
-    
-    <div class="content">
+<body style="font-family: Arial, sans-serif; line-height: 1.6; color: #333;">
+    <div style="max-width: 600px; margin: 0 auto; padding: 20px;">
+        <h2 style="color: #ffc107;">Consent Withdrawal Confirmed</h2>
+        
         <p>Hi {{ username }},</p>
         
-        <p>Your consent for data processing has been withdrawn as requested under <strong>GDPR Article 7(3) (Right to withdraw consent)</strong>.</p>
+        <p>Your consent for data processing has been withdrawn as requested under GDPR Article 7(3).</p>
         
-        <div class="gdpr-info">
-            <strong>Withdrawal Details:</strong><br>
-            Processed: {{ moment().utc().format('YYYY-MM-DD HH:mm:ss UTC') }}<br>
-            Status: Consent withdrawn successfully<br>
-            Effect: Immediate
+        <div style="background-color: #f8f9fa; padding: 15px; border-left: 4px solid #ffc107; margin: 20px 0;">
+            <strong>Withdrawal processed:</strong> {{ moment().utc().format('YYYY-MM-DD HH:mm:ss UTC') }}
         </div>
         
-        <div class="impact-info">
-            <strong>Impact on Your Account:</strong><br>
-            Withdrawing consent may affect the functionality of your account. Some features may be limited or unavailable until you provide consent again.
+        <div style="background-color: #e7f3ff; padding: 15px; border-left: 4px solid #007bff; margin: 20px 0;">
+            <strong>Important:</strong> Withdrawing consent may affect the functionality of your account. You can re-give consent at any time through your profile settings.
         </div>
         
-        <p>What this means:</p>
-        <ul>
-            <li>We will stop processing your personal data for the purposes you withdrew consent for</li>
-            <li>Your account may have limited functionality</li>
-            <li>You can re-give consent at any time through your profile settings</li>
-            <li>This does not affect the lawfulness of processing before withdrawal</li>
-        </ul>
+        <p>If you have any questions about this change or need assistance, please don't hesitate to contact us:</p>
         
-        <p>You can re-give consent at any time by logging into your account:</p>
+        <div style="text-align: center; margin: 30px 0;">
+            <a href="{{ contact_url }}" style="background-color: #007bff; color: white; padding: 12px 24px; text-decoration: none; border-radius: 4px; display: inline-block;">Contact Support</a>
+        </div>
         
-        <a href="{{ base_url }}/profile" class="button">Manage Consent Settings</a>
+        <p>Thanks,<br>
+        Vedfolnir Team</p>
         
-        <p>Your rights under GDPR remain unchanged:</p>
-        <ul>
-            <li>Right to access your data (Article 15)</li>
-            <li>Right to rectification (Article 16)</li>
-            <li>Right to erasure (Article 17)</li>
-            <li>Right to restrict processing (Article 18)</li>
-            <li>Right to data portability (Article 20)</li>
-            <li>Right to object (Article 21)</li>
-        </ul>
-        
-        <p>If you have any questions about this withdrawal or your rights, please don't hesitate to contact us:</p>
-        
-        <a href="{{ contact_url }}" class="button">Contact Support</a>
-    </div>
-    
-    <div class="footer">
-        <p>This email was sent in compliance with GDPR regulations.</p>
-        <p>Vedfolnir - Making social media more accessible</p>
+        <hr style="margin-top: 30px; border: none; border-top: 1px solid #eee;">
+        <p style="font-size: 12px; color: #666;">
+            This email was sent to {{ username }} to confirm your consent withdrawal.
+            <br>Base URL: {{ base_url }}
+        </p>
     </div>
 </body>
 </html>

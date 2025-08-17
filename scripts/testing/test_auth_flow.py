@@ -128,7 +128,7 @@ class AuthFlowTester:
         
         try:
             # Test creating a session
-            session_id = self.session_manager.create_user_session(user_id, platform_ids[0] if platform_ids else None)
+            session_id = self.session_manager.create_session(user_id, platform_ids[0] if platform_ids else None)
             
             if session_id:
                 logger.info(f"✓ Created session: {session_id}")

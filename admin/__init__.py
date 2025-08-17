@@ -19,12 +19,13 @@ def create_admin_blueprint(app):
                         template_folder=os.path.join(os.path.dirname(__file__), 'templates'))
     
     # Import and register route modules
-    from .routes import dashboard, user_management, system_health, cleanup, monitoring
+    from .routes import dashboard, user_management, system_health, cleanup, monitoring, admin_api
     
     dashboard.register_routes(admin_bp)
     user_management.register_routes(admin_bp)
     system_health.register_routes(admin_bp)
     cleanup.register_routes(admin_bp)
     monitoring.register_routes(admin_bp)
+    admin_api.register_api_routes(admin_bp)
     
     return admin_bp

@@ -48,8 +48,12 @@ def ensure_platform_context(db_manager, session_manager) -> Tuple[Optional[Dict[
         # Get user's platforms
         db_session = db_manager.get_session()
         try:
+            user_id = getattr(current_user, 'id', None)
+            if not user_id:
+                return []
+                
             user_platforms = db_session.query(PlatformConnection).filter_by(
-                user_id=current_user.id,
+                user_id=user_id,
                 is_active=True
             ).order_by(PlatformConnection.is_default.desc(), PlatformConnection.name).all()
             
@@ -71,7 +75,7 @@ def ensure_platform_context(db_manager, session_manager) -> Tuple[Optional[Dict[
                 # Create new session using unified session manager
                 from unified_session_manager import UnifiedSessionManager
                 unified_session_manager = UnifiedSessionManager(db_manager)
-                session_id = unified_session_manager.create_session(current_user.id, default_platform.id)
+                session_id = unified_session_manager.create_session(user_id, default_platform.id)
                 
                 if session_id:
                     # Set session cookie
@@ -134,9 +138,13 @@ def validate_platform_context(context: Optional[Dict[str, Any]], db_manager) -> 
         
         db_session = db_manager.get_session()
         try:
+            user_id = getattr(current_user, 'id', None)
+            if not user_id:
+                return None
+                
             platform = db_session.query(PlatformConnection).filter_by(
                 id=context['platform_connection_id'],
-                user_id=current_user.id,
+                user_id=user_id,
                 is_active=True
             ).first()
             

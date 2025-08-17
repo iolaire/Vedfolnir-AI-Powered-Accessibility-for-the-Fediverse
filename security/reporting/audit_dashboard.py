@@ -35,7 +35,7 @@ def audit_dashboard():
         compliance_data = audit_system.get_compliance_dashboard_data()
         remediation_data = audit_system.generate_remediation_report()
         
-        return render_template('admin/security_audit_dashboard.html',
+        return render_template('admin/templates/security_audit_dashboard.html',
                              vulnerability_data=vulnerability_data,
                              compliance_data=compliance_data,
                              remediation_data=remediation_data,

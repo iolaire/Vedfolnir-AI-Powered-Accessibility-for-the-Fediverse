@@ -145,3 +145,6 @@ local_settings.py
 
 # Test artifacts
 tests/scripts/.last_created_user.txt
+
+# Person setup file
+scripts/setup/generate_env_secrets_ILM.py

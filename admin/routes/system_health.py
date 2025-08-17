@@ -139,6 +139,13 @@ def register_routes(bp):
             return redirect(url_for('index'))
         return render_template('security_audit_dashboard.html')
 
+    @bp.route('/security_audit')
+    @login_required
+    @with_session_error_handling
+    def security_audit():
+        """Security Audit Dashboard (alias)"""
+        return security_audit_dashboard()
+
     @bp.route('/session_health_dashboard')
     @login_required
     @with_session_error_handling

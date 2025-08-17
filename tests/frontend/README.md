@@ -84,7 +84,7 @@ The Node.js test file provides:
 ## Running Tests
 
 ### Browser Testing
-1. Start the web application: `python web_app.py`
+1. Start the web application: `python web_app.py & sleep 10`
 2. Navigate to: `http://localhost:5000/tests/frontend/test_session_sync.html`
 3. View test results in the browser
 

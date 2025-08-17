@@ -62,7 +62,9 @@ class AppResetManager:
             # Drop and recreate all tables
             engine = create_engine(self.config.storage.database_url)
             Base.metadata.drop_all(engine)
-            Base.metadata.create_all(engine)
+            
+            # Use DatabaseManager to create tables with proper connection management
+            self.db_manager.create_tables()
             
             logger.info("✅ Database reset successfully")
             return True

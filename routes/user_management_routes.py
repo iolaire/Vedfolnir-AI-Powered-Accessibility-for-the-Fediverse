@@ -27,7 +27,8 @@ from models import User, UserRole, UserAuditLog
 from security_decorators import conditional_rate_limit, conditional_validate_input_length
 from security.core.security_utils import sanitize_for_log
 from security.core.enhanced_rate_limiter import rate_limit_user_management
-from security.core.enhanced_csrf_protection import csrf_protect_user_management, csrf_protect_admin_operation
+# from security.core.enhanced_csrf_protection import csrf_protect_user_management, csrf_protect_admin_operation
+from security_decorators import conditional_validate_csrf_token
 from security.validation.enhanced_input_validator import (
     validate_user_input, USER_REGISTRATION_RULES, USER_LOGIN_RULES, 
     PROFILE_UPDATE_RULES, PASSWORD_CHANGE_RULES, ADMIN_USER_CREATE_RULES
@@ -75,7 +76,7 @@ def get_base_url():
 
 @user_management_bp.route('/register', methods=['GET', 'POST'])
 @rate_limit_user_management('registration')
-@csrf_protect_user_management('registration')
+@conditional_validate_csrf_token
 @validate_user_input(USER_REGISTRATION_RULES)
 @handle_user_management_errors
 @with_recovery('database_connection', max_retries=2)
@@ -275,7 +276,7 @@ def resend_verification():
 
 @user_management_bp.route('/login', methods=['GET', 'POST'])
 @rate_limit_user_management('login')
-@csrf_protect_user_management('login')
+@conditional_validate_csrf_token
 @validate_user_input(USER_LOGIN_RULES)
 @handle_user_management_errors
 @with_recovery('database_connection', max_retries=2)
@@ -429,7 +430,7 @@ def login():
 
 @user_management_bp.route('/forgot-password', methods=['GET', 'POST'])
 @rate_limit_user_management('password_reset')
-@csrf_protect_user_management('password_reset')
+@conditional_validate_csrf_token
 @validate_user_input({'email': {'type': 'email', 'required': True}})
 def forgot_password():
     """Password reset request with enhanced security"""
@@ -682,7 +683,7 @@ def profile():
 @user_management_bp.route('/profile/edit', methods=['GET', 'POST'])
 @login_required
 @rate_limit_user_management('profile_update')
-@csrf_protect_user_management('profile_update')
+@conditional_validate_csrf_token
 @validate_user_input(PROFILE_UPDATE_RULES)
 def edit_profile():
     """Edit user profile"""
@@ -887,55 +888,7 @@ def export_profile_data():
         return redirect(url_for('user_management.profile'))
 
 
-@user_management_bp.route('/change-password', methods=['GET', 'POST'])
-@login_required
-@conditional_rate_limit(limit=5, window_seconds=3600)  # 5 password changes per hour
-@conditional_validate_input_length()
-def change_password():
-    """Change user password"""
-    form = PasswordChangeForm()
-    
-    # Get client information for audit logging
-    ip_address = get_client_ip()
-    user_agent = get_user_agent()
-    
-    if form.validate_on_submit():
-        try:
-            # Use request-scoped session manager for database operations
-            request_session_manager = RequestScopedSessionManager(current_app.config['db_manager'])
-            
-            with request_session_manager.session_scope() as db_session:
-                # Import password management service
-                from services.user_management_service import PasswordManagementService
-                password_service = PasswordManagementService(db_session=db_session, base_url=get_base_url())
-                
-                # Change password
-                success, message = password_service.change_password(
-                    user_id=current_user.id,
-                    current_password=form.current_password.data,
-                    new_password=form.new_password.data,
-                    ip_address=ip_address,
-                    user_agent=user_agent
-                )
-                
-                if success:
-                    flash('Password changed successfully! Please log in with your new password.', 'success')
-                    logger.info(f"Password changed for user {sanitize_for_log(current_user.username)}")
-                    
-                    # Log out user to force re-authentication with new password
-                    logout_user()
-                    response = make_response(redirect(url_for('user_management.login')))
-                    current_app.session_cookie_manager.clear_session_cookie(response)
-                    return response
-                else:
-                    flash(f'Failed to change password: {message}', 'error')
-                    logger.warning(f"Password change failed for user {current_user.id}: {sanitize_for_log(message)}")
-                    
-        except Exception as e:
-            logger.error(f"Error changing password for user {current_user.id}: {e}")
-            flash('Password change failed due to a system error.', 'error')
-    
-    return render_template('user_management/change_password.html', form=form)
+
 
 
 def register_user_management_routes(app):

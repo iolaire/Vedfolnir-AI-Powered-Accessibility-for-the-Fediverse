@@ -53,7 +53,7 @@ def with_db_session(f):
                             logger.debug(f"Reattached current_user {current_user._user_id} to request session")
                     
                     # Test access to user properties to ensure attachment is working
-                    _ = current_user.id
+                    _ = getattr(current_user, 'id', None)
                     
                 except DetachedInstanceError as e:
                     logger.warning(f"DetachedInstanceError for current_user in {f.__name__}: {e}")
@@ -113,8 +113,13 @@ def require_platform_context(f):
                 session_manager = current_app.request_session_manager
                 with session_manager.session_scope() as db_session:
                     # Check if user has any platforms
+                    user_id = getattr(current_user, 'id', None)
+                    if not user_id:
+                        flash('User authentication error. Please log in again.', 'error')
+                        return redirect(url_for('user_management.login'))
+                    
                     user_platforms = db_session.query(PlatformConnection).filter_by(
-                        user_id=current_user.id,
+                        user_id=user_id,
                         is_active=True
                     ).all()
                     
@@ -142,9 +147,9 @@ def require_platform_context(f):
                         success = update_session_platform(default_platform.id)
                         
                         if success:
-                            logger.info(f"Set platform context to {default_platform.name} for user {current_user.id}")
+                            logger.info(f"Set platform context to {default_platform.name} for user {user_id}")
                         else:
-                            logger.warning(f"Failed to set platform context to {default_platform.name} for user {current_user.id}")
+                            logger.warning(f"Failed to set platform context to {default_platform.name} for user {user_id}")
                     
             except Exception as e:
                 logger.error(f"Error checking platform context in {f.__name__}: {e}")
@@ -231,7 +236,7 @@ def ensure_user_session_attachment(f):
                             current_user._invalidate_cache()
                 
                 # Test access to ensure attachment is working
-                _ = current_user.id
+                _ = getattr(current_user, 'id', None)
                 
             except DetachedInstanceError:
                 logger.warning(f"DetachedInstanceError for current_user in {f.__name__}")

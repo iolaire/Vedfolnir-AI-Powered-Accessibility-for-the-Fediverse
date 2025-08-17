@@ -167,7 +167,7 @@ def content_access_required(f):
                         if not platform:
                             logger.warning(f"User {current_user.id} attempted to access image {image_id} without permission")
                             flash('Access denied. You can only access content from your own platforms.', 'error')
-                            return redirect(url_for('review'))
+                            return redirect(url_for('review_list'))
                 
                 # Check post access
                 if post_id:

@@ -52,8 +52,8 @@ def test_concurrent_sessions():
     # Test 1: Create multiple sessions for the same user
     print("\n1. Creating multiple sessions for the same user...")
     
-    session1_id = session_manager.create_user_session(user.id, platforms[0].id)
-    session2_id = session_manager.create_user_session(user.id, platforms[1].id)
+    session1_id = session_manager.create_session(user.id, platforms[0].id)
+    session2_id = session_manager.create_session(user.id, platforms[1].id)
     
     print(f"✓ Created session 1: {session1_id} (platform: {platforms[0].name})")
     print(f"✓ Created session 2: {session2_id} (platform: {platforms[1].name})")

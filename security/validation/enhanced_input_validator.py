@@ -449,8 +449,11 @@ def validate_user_input(validation_rules: Dict[str, Dict[str, Any]]):
         def decorated_function(*args, **kwargs):
             try:
                 # Get database session
-                from database import get_db_session
-                db_session = get_db_session()
+                from database import DatabaseManager
+                from config import Config
+                config = Config()
+                db_manager = DatabaseManager(config)
+                db_session = db_manager.get_session()
                 
                 validator = EnhancedInputValidator(db_session)
                 

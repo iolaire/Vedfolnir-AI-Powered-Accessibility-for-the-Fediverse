@@ -67,7 +67,7 @@
                 <div class="status-subtitle">{{ stats.pending_review or 0 }} pending review</div>
             </div>
             <div class="status-action">
-                <a href="{{ url_for('review') }}" class="btn btn-sm btn-success">Review</a>
+                <a href="{{ url_for('review_list') }}" class="btn btn-sm btn-success">Review</a>
             </div>
         </div>
     </div>
@@ -128,7 +128,7 @@
             <div class="activity-card">
                 <div class="activity-header">
                     <h3 class="activity-title">Content Processing</h3>
-                    <a href="{{ url_for('review') }}" class="activity-link">Review Content</a>
+                    <a href="{{ url_for('review_list') }}" class="activity-link">Review Content</a>
                 </div>
                 <div class="activity-stats">
                     <div class="activity-stat">

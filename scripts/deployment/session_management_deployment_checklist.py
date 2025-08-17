@@ -165,7 +165,7 @@ class SessionManagementDeploymentChecker:
             test_platform_id = 1  # Assume test platform exists
             
             # Create test session
-            session_id = self.session_manager.create_user_session(
+            session_id = self.session_manager.create_session(
                 test_user_id, test_platform_id
             )
             
@@ -217,7 +217,7 @@ class SessionManagementDeploymentChecker:
             with app.test_client() as client:
                 with client.session_transaction() as sess:
                     # Test Flask session creation
-                    success = self.flask_session_manager.create_user_session(1, 1)
+                    success = self.flask_session_manager.create_session(1, 1)
                     
                     if success:
                         # Test validation
@@ -389,7 +389,7 @@ class SessionManagementDeploymentChecker:
             
             # Test session creation performance
             start_time = time.time()
-            session_id = self.session_manager.create_user_session(1, 1)
+            session_id = self.session_manager.create_session(1, 1)
             creation_time = time.time() - start_time
             performance_metrics['session_creation_ms'] = creation_time * 1000
             

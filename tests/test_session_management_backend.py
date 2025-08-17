@@ -759,7 +759,7 @@ class TestSessionStateAPI(unittest.TestCase):
                 return self.test_user
             return None
         
-        @error_app.route('/api/session_state', methods=['GET'])
+        @error_app.route('/api/session_state_error', methods=['GET'])
         @login_required
         def api_session_state_error():
             """Mock session state API that raises an error"""
@@ -776,7 +776,7 @@ class TestSessionStateAPI(unittest.TestCase):
             sess['_fresh'] = True
         
         # Make request to session state API
-        response = error_client.get('/api/session_state')
+        response = error_client.get('/api/session_state_error')
         
         # Should return error response (500 internal server error)
         self.assertEqual(response.status_code, 500)

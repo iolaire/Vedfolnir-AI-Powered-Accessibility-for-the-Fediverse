@@ -256,7 +256,7 @@ def health_dashboard():
             ]
         }
         
-        return render_template('admin/session_health_dashboard.html',
+        return render_template('admin/templates/session_health_dashboard.html',
                              dashboard_data=dashboard_data,
                              title="Session Management Health Dashboard")
         

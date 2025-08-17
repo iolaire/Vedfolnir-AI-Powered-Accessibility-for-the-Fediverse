@@ -379,9 +379,14 @@ def rate_limit_user_management(
     def decorator(f):
         @wraps(f)
         def decorated_function(*args, **kwargs):
-            # Get database session
-            from database import get_db_session
-            db_session = get_db_session()
+            # Get database session from Flask app
+            from flask import current_app
+            db_manager = current_app.config.get('db_manager')
+            if not db_manager:
+                logger.error("Database manager not found in app config")
+                return f(*args, **kwargs)
+            
+            db_session = db_manager.get_session()
             
             try:
                 rate_limiter = EnhancedRateLimiter(db_session)

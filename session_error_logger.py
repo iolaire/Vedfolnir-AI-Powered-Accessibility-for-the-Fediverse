@@ -238,10 +238,13 @@ class SessionErrorLogger:
             
             if has_request_context() and current_user and hasattr(current_user, 'is_authenticated') and current_user.is_authenticated:
                 try:
-                    error_context.update({
-                        'user_id': current_user.id,
-                        'username': sanitize_for_log(current_user.username)
-                    })
+                    user_id = getattr(current_user, 'id', None)
+                    username = getattr(current_user, 'username', 'unknown')
+                    if user_id:
+                        error_context.update({
+                            'user_id': user_id,
+                            'username': sanitize_for_log(username)
+                        })
                 except Exception:
                     error_context['user_context_error'] = 'Failed to access current_user attributes'
         except (ImportError, RuntimeError):

@@ -8,6 +8,10 @@ This guide provides comprehensive instructions for using the Vedfolnir's web int
 
 1. **Start the web application:**
    ```bash
+   # For testing/development (non-blocking)
+   python web_app.py & sleep 10
+   
+   # For production (blocking)
    python web_app.py
    ```
 

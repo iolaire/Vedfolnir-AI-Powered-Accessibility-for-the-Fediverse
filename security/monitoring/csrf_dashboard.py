@@ -31,7 +31,7 @@ def csrf_dashboard():
         csrf_metrics = get_csrf_security_metrics()
         dashboard_data = csrf_metrics.get_csrf_dashboard_data()
         
-        return render_template('admin/csrf_security_dashboard.html', 
+        return render_template('admin/templates/csrf_security_dashboard.html', 
                              dashboard_data=dashboard_data,
                              page_title="CSRF Security Dashboard")
     

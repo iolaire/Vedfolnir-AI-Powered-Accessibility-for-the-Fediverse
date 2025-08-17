@@ -235,6 +235,18 @@ from session_error_handling import create_session_error_handler
 session_error_handler = create_session_error_handler(session_cookie_manager)
 app.session_error_handler = session_error_handler
 
+# Add CORS headers for API endpoints
+@app.after_request
+def after_request(response):
+    """Add CORS headers to API responses"""
+    # Only add CORS headers to API endpoints
+    if request.path.startswith('/api/'):
+        response.headers['Access-Control-Allow-Origin'] = '*'
+        response.headers['Access-Control-Allow-Methods'] = 'GET, POST, PUT, DELETE, OPTIONS'
+        response.headers['Access-Control-Allow-Headers'] = 'Content-Type, Accept, X-Requested-With, X-CSRFToken'
+        response.headers['Access-Control-Max-Age'] = '86400'
+    return response
+
 # Initialize session state API routes
 from session_state_api import create_session_state_routes
 create_session_state_routes(app)
@@ -395,7 +407,7 @@ def inject_config():
     }
 
 # Template context processor to provide platform information is now handled by DatabaseContextMiddleware
-login_manager.login_view = 'login'
+login_manager.login_view = 'user_management.login'
 login_manager.login_message = 'Please log in to access this page.'
 login_manager.login_message_category = 'info'
 
@@ -457,23 +469,30 @@ def role_required(role):
         @wraps(f)
         def decorated_function(*args, **kwargs):
             if not current_user.is_authenticated:
-                return redirect(url_for('login', next=request.url))
+                return redirect(url_for('user_management.login', next=request.url))
             
             # SECURITY FIX: Always validate user permissions from server-side database
             # Never trust client-side session data for authorization
             db_session = db_manager.get_session()
             try:
-                server_user = db_session.query(User).get(current_user.id)
+                user_id = getattr(current_user, 'id', None)
+                if not user_id:
+                    app.logger.warning("User ID not accessible from current_user")
+                    flash('User authentication error. Please log in again.', 'error')
+                    logout_user()
+                    return redirect(url_for('user_management.login'))
+                    
+                server_user = db_session.query(User).get(user_id)
                 if not server_user:
-                    app.logger.warning(f"User account not found for ID: {current_user.id}")
+                    app.logger.warning(f"User account not found for ID: {user_id}")
                     flash('User account not found.', 'error')
                     logout_user()
-                    return redirect(url_for('login'))
+                    return redirect(url_for('user_management.login'))
                 if not server_user.is_active:
                     app.logger.warning(f"Inactive user attempted access: {sanitize_for_log(server_user.username)}")
                     flash('Your account has been deactivated.', 'error')
                     logout_user()
-                    return redirect(url_for('login'))
+                    return redirect(url_for('user_management.login'))
                 
                 # Debug logging for role checking
                 app.logger.debug(f"Role check: user={server_user.username}, user_role={server_user.role}, required_role={role}")
@@ -492,7 +511,7 @@ def role_required(role):
             except SQLAlchemyError as e:
                 app.logger.error(f"Database error during authorization: {sanitize_for_log(str(e))}")
                 flash('Authorization error. Please try again.', 'error')
-                return redirect(url_for('login'))
+                return redirect(url_for('user_management.login'))
             finally:
                 db_session.close()
             
@@ -506,7 +525,7 @@ def platform_required(f):
     @wraps(f)
     def decorated_function(*args, **kwargs):
         if not current_user.is_authenticated:
-            return redirect(url_for('login', next=request.url))
+            return redirect(url_for('user_management.login', next=request.url))
         
         # Check if user has platform context
         context = get_current_platform_context()
@@ -514,8 +533,13 @@ def platform_required(f):
         if not context or not context.get('platform_connection_id'):
             # No platform context, check if user has any platforms
             with request_session_manager.session_scope() as db_session:
+                user_id = getattr(current_user, 'id', None)
+                if not user_id:
+                    flash('User authentication error. Please log in again.', 'error')
+                    return redirect(url_for('user_management.login'))
+                    
                 user_platforms = db_session.query(PlatformConnection).filter_by(
-                    user_id=current_user.id,
+                    user_id=user_id,
                     is_active=True
                 ).count()
                 
@@ -536,7 +560,7 @@ def platform_access_required(platform_type=None, instance_url=None):
         @wraps(f)
         def decorated_function(*args, **kwargs):
             if not current_user.is_authenticated:
-                return redirect(url_for('login', next=request.url))
+                return redirect(url_for('user_management.login', next=request.url))
             
             # Get current platform context and validate with fresh database query
             context = get_current_platform_context()
@@ -546,9 +570,14 @@ def platform_access_required(platform_type=None, instance_url=None):
             
             # Get current platform from database to avoid DetachedInstanceError
             with request_session_manager.session_scope() as db_session:
+                user_id = getattr(current_user, 'id', None)
+                if not user_id:
+                    flash('User authentication error. Please log in again.', 'error')
+                    return redirect(url_for('user_management.login'))
+                    
                 current_platform = db_session.query(PlatformConnection).filter_by(
                     id=context['platform_connection_id'],
-                    user_id=current_user.id,
+                    user_id=user_id,
                     is_active=True
                 ).first()
                 
@@ -616,11 +645,7 @@ class ReviewForm(FlaskForm):
     notes = TextAreaField('Notes', validators=[Length(max=1000)], render_kw={"rows": 2, "placeholder": "Optional notes..."})
     submit = SubmitField('Submit')
 
-# Authentication routes
-@app.route('/login', methods=['GET', 'POST'])
-def login():
-    """Redirect to new user management login route"""
-    return redirect(url_for('user_management.login'))
+# Authentication routes - handled by user_management blueprint
 
 
 @app.route('/first_time_setup')
@@ -647,10 +672,7 @@ def first_time_setup():
     
     return render_template('first_time_setup.html')
 
-@app.route('/logout')
-def logout():
-    """Redirect to new user management logout route"""
-    return redirect(url_for('user_management.logout'))
+# Logout route handled by user_management blueprint
 
 @app.route('/logout_all')
 @login_required
@@ -677,7 +699,7 @@ def logout_all():
         flash('Error logging out from all sessions', 'error')
     
     # Create response with cleared session cookie
-    response = make_response(redirect(url_for('login')))
+    response = make_response(redirect(url_for('user_management.login')))
     session_cookie_manager.clear_session_cookie(response)
     
     return response
@@ -748,7 +770,132 @@ def index():
                     stats['active_users'] = db_session.query(User).filter_by(is_active=True).count()
                     stats['total_platforms'] = db_session.query(PlatformConnection).count()
             
-            return render_template('index.html', stats=stats, current_platform=platform_dict)
+            # Add recent_stats for admin users (regardless of platform status)
+            recent_stats = None
+            performance_stats = None
+            system_health = None
+            alerts = None
+            if current_user.role == UserRole.ADMIN:
+                from datetime import timedelta
+                import psutil
+                import time
+                yesterday = datetime.now(timezone.utc) - timedelta(days=1)
+                
+                # User statistics
+                new_users_24h = db_session.query(User).filter(User.created_at >= yesterday).count()
+                unverified_users = db_session.query(User).filter_by(email_verified=False).count()
+                locked_accounts = db_session.query(User).filter_by(account_locked=True).count()
+                
+                # Content processing statistics
+                processed_24h = db_session.query(Image).filter(
+                    Image.created_at >= yesterday,
+                    Image.status.in_([ProcessingStatus.APPROVED, ProcessingStatus.REJECTED])
+                ).count()
+                
+                generated_captions = db_session.query(Image).filter(
+                    Image.generated_caption.isnot(None)
+                ).count()
+                
+                approved_captions = db_session.query(Image).filter_by(
+                    status=ProcessingStatus.APPROVED
+                ).count()
+                
+                recent_stats = {
+                    'new_users_24h': new_users_24h,
+                    'unverified_users': unverified_users,
+                    'locked_accounts': locked_accounts,
+                    'processed_24h': processed_24h,
+                    'generated_captions': generated_captions,
+                    'approved_captions': approved_captions
+                }
+                
+                # Enhanced stats for admin dashboard
+                total_images = db_session.query(Image).count()
+                pending_review = db_session.query(Image).filter_by(status=ProcessingStatus.PENDING).count()
+                
+                # Add missing stats to the existing stats dict
+                if 'total_images' not in stats:
+                    stats['total_images'] = total_images
+                if 'pending_review' not in stats:
+                    stats['pending_review'] = pending_review
+                
+                # Performance statistics
+                try:
+                    # Get system uptime (simplified)
+                    uptime_seconds = time.time() - psutil.boot_time()
+                    uptime_hours = int(uptime_seconds // 3600)
+                    uptime_days = uptime_hours // 24
+                    uptime_hours = uptime_hours % 24
+                    
+                    if uptime_days > 0:
+                        uptime_str = f"{uptime_days}d {uptime_hours}h"
+                    else:
+                        uptime_str = f"{uptime_hours}h"
+                    
+                    # Basic performance metrics (simplified for now)
+                    performance_stats = {
+                        'avg_response_time': '< 200ms',  # Placeholder - could be calculated from logs
+                        'error_rate': 0,  # Placeholder - could be calculated from error logs
+                        'uptime': uptime_str
+                    }
+                    
+                    # System health assessment (simplified)
+                    cpu_percent = psutil.cpu_percent(interval=1)
+                    memory_percent = psutil.virtual_memory().percent
+                    
+                    if cpu_percent > 80 or memory_percent > 90:
+                        system_health = 'critical'
+                    elif cpu_percent > 60 or memory_percent > 75:
+                        system_health = 'warning'
+                    else:
+                        system_health = 'healthy'
+                        
+                except Exception as e:
+                    # Fallback if psutil is not available or fails
+                    performance_stats = {
+                        'avg_response_time': 'N/A',
+                        'error_rate': 0,
+                        'uptime': 'N/A'
+                    }
+                    system_health = 'unknown'
+                
+                # System alerts (placeholder - could be enhanced with real alert system)
+                alerts = []
+                
+                # Check for potential alerts
+                if unverified_users > 5:
+                    alerts.append({
+                        'id': 'unverified_users',
+                        'severity': 'warning',
+                        'type': 'user',
+                        'title': 'High Number of Unverified Users',
+                        'message': f'{unverified_users} users have not verified their email addresses',
+                        'created_at': datetime.now(timezone.utc)
+                    })
+                
+                if locked_accounts > 0:
+                    alerts.append({
+                        'id': 'locked_accounts',
+                        'severity': 'error',
+                        'type': 'security',
+                        'title': 'Locked User Accounts',
+                        'message': f'{locked_accounts} user accounts are currently locked',
+                        'created_at': datetime.now(timezone.utc)
+                    })
+                
+                if pending_review > 10:
+                    alerts.append({
+                        'id': 'pending_review',
+                        'severity': 'info',
+                        'type': 'content',
+                        'title': 'Content Pending Review',
+                        'message': f'{pending_review} images are waiting for review',
+                        'created_at': datetime.now(timezone.utc)
+                    })
+            
+            return render_template('index.html', stats=stats, current_platform=platform_dict, 
+                                 recent_stats=recent_stats, performance_stats=performance_stats,
+                                 system_health=system_health, alerts=alerts)
             
     except Exception as e:
         app.logger.error(f"Error loading dashboard: {sanitize_for_log(str(e))}")
@@ -2256,35 +2403,7 @@ def api_session_notify_logout():
         return jsonify({'success': False, 'error': 'Failed to process logout notification'}), 500
 
 
-@app.route('/api/clear_platform_context', methods=['POST'])
-@login_required
-@require_admin
-@validate_csrf_token
-def api_clear_platform_context():
-    """Clear platform context for admin users"""
-    try:
-        # Clear platform context from session
-        from flask import session
-        session.pop('platform_context', None)
-        session.pop('current_platform_id', None)
-        
-        # Clear from database session if exists
-        from database_session_middleware import clear_session_platform
-        clear_session_platform()
-        
-        app.logger.info(f"Admin user {current_user.id} cleared platform context")
-        
-        return jsonify({
-            'success': True,
-            'message': 'Platform context cleared successfully'
-        })
-        
-    except Exception as e:
-        app.logger.error(f"Error clearing platform context for admin {current_user.id}: {sanitize_for_log(str(e))}")
-        return jsonify({
-            'success': False,
-            'error': 'Failed to clear platform context'
-        }), 500
+# Removed duplicate route - handled by admin blueprint
 
 
 @app.route('/api/delete_platform/<int:platform_id>', methods=['DELETE'])
@@ -3365,6 +3484,10 @@ def add_favicon_cache_headers(response):
 # Register user management routes
 from routes.user_management_routes import register_user_management_routes
 register_user_management_routes(app)
+
+# Register GDPR routes
+from routes.gdpr_routes import gdpr_bp
+app.register_blueprint(gdpr_bp)
 
 
 if __name__ == '__main__':

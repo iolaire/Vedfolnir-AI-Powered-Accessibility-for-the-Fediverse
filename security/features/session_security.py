@@ -56,6 +56,11 @@ class SessionFingerprint:
             'created_at': self.created_at.isoformat()
         }
     
+    def to_string(self) -> str:
+        """Serialize fingerprint to string for database storage"""
+        import json
+        return json.dumps(self.to_dict(), sort_keys=True)
+    
     @classmethod
     def from_dict(cls, data: Dict[str, Any]) -> 'SessionFingerprint':
         return cls(
@@ -67,6 +72,13 @@ class SessionFingerprint:
             screen_resolution=data.get('screen_resolution'),
             created_at=datetime.fromisoformat(data['created_at'])
         )
+    
+    @classmethod
+    def from_string(cls, fingerprint_str: str) -> 'SessionFingerprint':
+        """Deserialize fingerprint from string"""
+        import json
+        data = json.loads(fingerprint_str)
+        return cls.from_dict(data)
 
 
 @dataclass

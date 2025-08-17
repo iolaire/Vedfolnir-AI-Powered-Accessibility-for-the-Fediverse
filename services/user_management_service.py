@@ -501,7 +501,7 @@ class UserAuthenticationService:
                     platform_connection_id = default_platform.id
             
             # Create database session
-            session_id = self.session_manager.create_user_session(
+            session_id = self.session_manager.create_session(
                 user_id=user.id,
                 platform_connection_id=platform_connection_id
             )
@@ -1099,9 +1099,9 @@ class UserProfileService:
                 'is_active': user.is_active,
                 'email_verified': user.email_verified,
                 'data_processing_consent': user.data_processing_consent,
-                'data_processing_consent_date': user.data_processing_consent_date.isoformat() if user.data_processing_consent_date else None,
-                'created_at': user.created_at.isoformat() if user.created_at else None,
-                'last_login': user.last_login.isoformat() if user.last_login else None,
+                'data_processing_consent_date': user.data_processing_consent_date,
+                'created_at': user.created_at,
+                'last_login': user.last_login,
                 'platform_count': len([pc for pc in user.platform_connections if pc.is_active])
             }
             

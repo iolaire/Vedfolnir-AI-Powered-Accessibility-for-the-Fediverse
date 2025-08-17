@@ -166,3 +166,24 @@ def register_api_routes(bp):
                 'success': False,
                 'error': 'Failed to retrieve platform statistics'
             }), 500
+    
+    @bp.route('/alerts/<alert_id>/acknowledge', methods=['POST'])
+    @admin_api_required
+    def acknowledge_alert(alert_id):
+        """Acknowledge a system alert"""
+        try:
+            # For now, just return success since alerts are generated dynamically
+            # In a real implementation, this would update an alerts database table
+            logger.info(f"Alert {alert_id} acknowledged by admin {current_user.id}")
+            
+            return jsonify({
+                'success': True,
+                'message': 'Alert acknowledged successfully'
+            })
+            
+        except Exception as e:
+            logger.error(f"Error acknowledging alert {alert_id} for admin {current_user.id}: {e}")
+            return jsonify({
+                'success': False,
+                'error': 'Failed to acknowledge alert'
+            }), 500

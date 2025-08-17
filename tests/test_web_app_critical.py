@@ -195,7 +195,7 @@ class TestWebAppCritical(unittest.TestCase):
             @self.app.route('/template')
             def template_route():
                 from flask import render_template
-                return render_template('test.html', name='World')
+                return render_template('tests/templates/test.html', name='World')
             
             with self.app.test_client() as client:
                 response = client.get('/template')
@@ -273,7 +273,7 @@ class TestWebAppSecurity(unittest.TestCase):
             def xss_test():
                 from flask import render_template, request
                 user_input = request.args.get('input', '')
-                return render_template('xss_test.html', user_input=user_input)
+                return render_template('tests/templates/xss_test.html', user_input=user_input)
             
             with self.app.test_client() as client:
                 # Test with XSS payload
