@@ -2,12 +2,21 @@
 # This program is free software: you can redistribute it and/or modify it under the terms of the GNU Affero General Public License as published by the Free Software Foundation, either version 3 of the License, or (at your option) any later version.
 # THE SOFTWARE IS PROVIDED "AS IS", WITHOUT WARRANTY OF ANY KIND, EXPRESS OR IMPLIED, INCLUDING BUT NOT LIMITED TO THE WARRANTIES OF MERCHANTABILITY, FITNESS FOR A PARTICULAR PURPOSE AND NONINFRINGEMENT. IN NO EVENT SHALL THE AUTHORS OR COPYRIGHT HOLDERS BE LIABLE FOR ANY CLAIM, DAMAGES OR OTHER LIABILITY, WHETHER IN AN ACTION OF CONTRACT, TORT OR OTHERWISE, ARISING FROM, OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE SOFTWARE.
 import os
+import logging
+from logger import setup_logging
+
+# Set up logging to file before loading config
+setup_logging(log_file="logs/webapp.log")
 from dataclasses import dataclass, field
 from typing import Optional, Dict, List
 from dotenv import load_dotenv
 
 # Load environment variables from .env file
-load_dotenv()
+load_dotenv(override=True)
+
+# Log the value of DB_POOL_SIZE immediately after loading .env
+db_pool_size_from_env = os.getenv("DB_POOL_SIZE")
+logging.info(f"DB_POOL_SIZE from environment after load_dotenv: {db_pool_size_from_env}")
 
 @dataclass
 class RetryConfig:
@@ -309,20 +318,29 @@ class OllamaConfig:
 @dataclass
 class DatabaseConfig:
     """Configuration for database connection and performance"""
-    pool_size: int = 5
-    max_overflow: int = 10
-    pool_timeout: int = 30
+    pool_size: int = 9
+    max_overflow: int = 19
+    pool_timeout: int = 39
     pool_recycle: int = 1800  # 30 minutes
     query_logging: bool = False
     
     @classmethod
     def from_env(cls):
+        pool_size=int(os.getenv("DB_POOL_SIZE", "7"))
+        max_overflow=int(os.getenv("DB_MAX_OVERFLOW", "17"))
+        pool_timeout=int(os.getenv("DB_POOL_TIMEOUT", "37"))
+        pool_recycle=int(os.getenv("DB_POOL_RECYCLE", "1800"))
+        query_logging=os.getenv("DB_QUERY_LOGGING", "false").lower() == "true"
+        
+        logging.info(f"Database pool size loaded from environment: {pool_size}")
+        logging.info(f"Database max overflow loaded from environment: {max_overflow}")
+
         return cls(
-            pool_size=int(os.getenv("DB_POOL_SIZE", "5")),
-            max_overflow=int(os.getenv("DB_MAX_OVERFLOW", "10")),
-            pool_timeout=int(os.getenv("DB_POOL_TIMEOUT", "30")),
-            pool_recycle=int(os.getenv("DB_POOL_RECYCLE", "1800")),
-            query_logging=os.getenv("DB_QUERY_LOGGING", "false").lower() == "true",
+            pool_size=pool_size,
+            max_overflow=max_overflow,
+            pool_timeout=pool_timeout,
+            pool_recycle=pool_recycle,
+            query_logging=query_logging,
         )
 
 @dataclass

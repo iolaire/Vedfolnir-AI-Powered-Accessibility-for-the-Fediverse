@@ -498,14 +498,13 @@ class SessionPerformanceOptimizer:
 _global_optimizer: Optional[SessionPerformanceOptimizer] = None
 
 
-def get_session_optimizer(db_manager: DatabaseManager = None) -> SessionPerformanceOptimizer:
+def get_session_optimizer(db_manager: DatabaseManager) -> SessionPerformanceOptimizer:
     """Get global session performance optimizer instance"""
     global _global_optimizer
     
     if _global_optimizer is None:
         if db_manager is None:
-            from config import Config
-            db_manager = DatabaseManager(Config())
+            raise ValueError("db_manager must be provided to initialize SessionPerformanceOptimizer")
         _global_optimizer = SessionPerformanceOptimizer(db_manager)
     
     return _global_optimizer

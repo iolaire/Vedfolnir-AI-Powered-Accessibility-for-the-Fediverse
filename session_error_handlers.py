@@ -296,13 +296,10 @@ class SessionErrorHandler:
             from database_session_middleware import get_current_session_id
             session_id = get_current_session_id()
             if session_id:
-                from unified_session_manager import UnifiedSessionManager
-                from database import DatabaseManager
-                from config import Config
-                
-                db_manager = DatabaseManager(Config())
-                unified_session_manager = UnifiedSessionManager(db_manager)
-                unified_session_manager.destroy_session(session_id)
+                # Use the existing session manager to destroy the session
+                # This ensures we use the correctly configured db_manager
+                if hasattr(current_app, 'unified_session_manager'):
+                    current_app.unified_session_manager.destroy_session(session_id)
                 # Flask session cleanup removed - using database sessions only
             
             # Log out user

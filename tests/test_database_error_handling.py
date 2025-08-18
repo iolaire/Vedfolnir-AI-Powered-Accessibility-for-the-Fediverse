@@ -33,9 +33,9 @@ class TestDatabaseErrorHandling(unittest.TestCase):
         
         # Mock db_config
         db_config = Mock()
-        db_config.pool_size = 5
-        db_config.max_overflow = 10
-        db_config.pool_timeout = 30
+        db_config.pool_size = 4
+        db_config.max_overflow = 14
+        db_config.pool_timeout = 34
         db_config.pool_recycle = 3600
         db_config.query_logging = False
         

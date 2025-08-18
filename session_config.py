@@ -16,8 +16,7 @@ from typing import Dict, Any, Optional, List
 from enum import Enum
 from dotenv import load_dotenv
 
-# Load environment variables
-load_dotenv()
+
 
 class SessionEnvironment(Enum):
     """Session management environment types"""

@@ -1247,11 +1247,10 @@ def get_current_platform() -> Optional[PlatformConnection]:
     """
     context = get_current_platform_context()
     if context and context.get('platform_connection_id'):
-        # Import here to avoid circular imports
-        from database import DatabaseManager
-        from config import Config
-        
-        db_manager = DatabaseManager(Config())
+        # Use the db_manager from the request context
+        if not hasattr(g, 'session_manager'):
+            return None
+        db_manager = g.session_manager.db_manager
         db_session = db_manager.get_session()
         try:
             return db_session.query(PlatformConnection).filter_by(
@@ -1272,11 +1271,10 @@ def get_current_user_from_context() -> Optional[User]:
     """
     context = get_current_platform_context()
     if context and context.get('user_id'):
-        # Import here to avoid circular imports
-        from database import DatabaseManager
-        from config import Config
-        
-        db_manager = DatabaseManager(Config())
+        # Use the db_manager from the request context
+        if not hasattr(g, 'session_manager'):
+            return None
+        db_manager = g.session_manager.db_manager
         db_session = db_manager.get_session()
         try:
             return db_session.query(User).filter_by(

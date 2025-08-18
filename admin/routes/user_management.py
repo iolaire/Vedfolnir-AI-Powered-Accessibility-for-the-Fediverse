@@ -36,6 +36,7 @@ def register_routes(bp):
         page_size = int(request.args.get('page_size', 25))
         page = int(request.args.get('page', 1))
         offset = (page - 1) * page_size
+        action = request.args.get('action')
         
         # Convert status filter to boolean parameters
         is_active = None
@@ -98,7 +99,8 @@ def register_routes(bp):
                                   'role': role_filter,
                                   'status': status_filter,
                                   'search': search_term
-                              })
+                              },
+                              open_add_user_modal=(action == 'create'))
 
     @bp.route('/users/edit', methods=['POST'])
     @login_required

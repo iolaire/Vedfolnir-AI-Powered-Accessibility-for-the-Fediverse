@@ -175,8 +175,9 @@
                                         </div>
                                     </td>
                                     <td>
-                                        <span class="badge bg-{{ 'danger' if user.role.value == 'admin' else 'warning' if user.role.value == 'moderator' else 'primary' if user.role.value == 'reviewer' else 'secondary' }}">
-                                            {{ user.role.value.title() }}
+                                        {% set role_str = user.role if user.role is string else user.role.value %}
+                                        <span class="badge bg-{{ 'danger' if role_str == 'admin' else 'warning' if role_str == 'moderator' else 'primary' if role_str == 'reviewer' else 'secondary' }}">
+                                            {{ role_str.title() }}
                                         </span>
                                     </td>
                                     <td>
@@ -204,11 +205,11 @@
                                         {% endif %}
                                     </td>
                                     <td>
-                                        <small>{{ user.created_at.strftime('%Y-%m-%d') if user.created_at else 'Unknown' }}</small>
+                                        <small>{{ (user.created_at.split('T')[0] if user.created_at is string else user.created_at.strftime('%Y-%m-%d')) if user.created_at else 'Unknown' }}</small>
                                     </td>
                                     <td>
                                         {% if user.last_login %}
-                                        <small>{{ user.last_login.strftime('%Y-%m-%d %H:%M') }}</small>
+                                        <small>{{ (user.last_login.split('.')[0].replace('T', ' ') if user.last_login is string else user.last_login.strftime('%Y-%m-%d %H:%M')) if user.last_login else 'Never' }}</small>
                                         {% else %}
                                         <small class="text-muted">Never</small>
                                         {% endif %}
@@ -228,7 +229,7 @@
                                                     data-user-id="{{ user.id }}"
                                                     data-username="{{ user.username }}"
                                                     data-email="{{ user.email }}"
-                                                    data-role="{{ user.role.value }}"
+                                                    data-role="{{ user.role if user.role is string else user.role.value }}"
                                                     data-is-active="{{ user.is_active }}"
                                                     data-email-verified="{{ user.email_verified }}"
                                                     data-account-locked="{{ user.account_locked }}"
@@ -272,7 +273,7 @@
                                                            data-bs-target="#roleAssignmentModal"
                                                            data-user-id="{{ user.id }}"
                                                            data-username="{{ user.username }}"
-                                                           data-current-role="{{ user.role.value }}">
+                                                           data-current-role="{{ user.role if user.role is string else user.role.value }}">
                                                             <i class="bi bi-person-badge"></i> Change Role
                                                         </a>
                                                     </li>
@@ -284,7 +285,8 @@
                                                     </li>
                                                     {% endif %}
                                                     <li><hr class="dropdown-divider"></li>
-                                                    {% if not (user.role.value == 'admin' and admin_count <= 1) %}
+                                                    {% set role_str = user.role if user.role is string else user.role.value %}
+                                                    {% if not (role_str == 'admin' and admin_count <= 1) %}
                                                     <li>
                                                         <a class="dropdown-item text-danger" href="#"
                                                            data-bs-toggle="modal"
@@ -1134,4 +1136,12 @@ document.addEventListener('DOMContentLoaded', function() {
     }
 });
 </script>
+{% if open_add_user_modal %}
+<script>
+    document.addEventListener('DOMContentLoaded', function() {
+        const addUserModal = new bootstrap.Modal(document.getElementById('addUserModal'));
+        addUserModal.show();
+    });
+</script>
+{% endif %}
 {% endblock %}
