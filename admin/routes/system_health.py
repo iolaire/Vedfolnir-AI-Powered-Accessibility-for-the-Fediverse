@@ -19,22 +19,52 @@ def register_routes(bp):
     @login_required
     @with_session_error_handling
     def health_check():
-        """Basic health check endpoint"""
+        """Basic health check endpoint - checks both Redis sessions and database"""
         if not current_user.role == UserRole.ADMIN:
             return jsonify({'error': 'Access denied'}), 403
             
         try:
             db_manager = current_app.config['db_manager']
             unified_session_manager = current_app.unified_session_manager
-
-            with unified_session_manager.get_db_session() as session:
-                from sqlalchemy import text
-                session.execute(text("SELECT 1"))
-                return jsonify({
-                    'status': 'healthy',
-                    'timestamp': datetime.now(timezone.utc).isoformat(),
-                    'service': 'vedfolnir'
-                }), 200
+            
+            health_status = {
+                'status': 'healthy',
+                'timestamp': datetime.now(timezone.utc).isoformat(),
+                'service': 'vedfolnir',
+                'components': {}
+            }
+            
+            # Check database health
+            try:
+                session = db_manager.get_session()
+                try:
+                    from sqlalchemy import text
+                    session.execute(text("SELECT 1"))
+                    health_status['components']['database'] = 'healthy'
+                finally:
+                    db_manager.close_session(session)
+            except Exception as e:
+                health_status['components']['database'] = f'unhealthy: {str(e)}'
+                health_status['status'] = 'degraded'
+            
+            # Check Redis session manager health
+            try:
+                if hasattr(unified_session_manager, 'get_session_stats'):
+                    # Redis session manager
+                    stats = unified_session_manager.get_session_stats()
+                    health_status['components']['redis_sessions'] = 'healthy'
+                    health_status['components']['session_manager_type'] = 'redis'
+                    health_status['components']['active_sessions'] = stats.get('total_sessions', 0)
+                else:
+                    # Database session manager
+                    health_status['components']['database_sessions'] = 'healthy'
+                    health_status['components']['session_manager_type'] = 'database'
+            except Exception as e:
+                health_status['components']['session_manager'] = f'unhealthy: {str(e)}'
+                health_status['status'] = 'degraded'
+            
+            return jsonify(health_status), 200
+            
         except Exception as e:
             return jsonify({
                 'status': 'unhealthy',

@@ -125,7 +125,7 @@ def main():
     # Get email configuration from user
     print("\nEmail Configuration:")
     print("Configure email settings for user notifications (verification, password reset, etc.)")
-    configure_email = input("Configure email settings? (y/N): ").strip().lower() == 'y' or "y"
+    configure_email = input("Configure email settings? (y/N) (default: y): ").strip().lower() == 'y' or 'y'"
     
     email_settings = {}
     if configure_email:
@@ -183,6 +183,30 @@ def main():
             print("Invalid choice. Please enter 1, 2, or 3.")
     
     print(f"Selected: {security_mode.title()} mode")
+
+    # Get Redis configuration
+    print("\nRedis Configuration:")
+    print("Configure Redis for session management (recommended for production)")
+    configure_redis = input("Configure Redis settings? (Y/n) (default: Y): ").strip().lower() != 'n' or "Y"
+    
+    redis_settings = {}
+    if configure_redis:
+        redis_settings['REDIS_HOST'] = input("Redis host (default: localhost): ").strip() or "localhost"
+        redis_settings['REDIS_PORT'] = input("Redis port (default: 6379): ").strip() or "6379"
+        redis_settings['REDIS_DB'] = input("Redis database number (default: 0): ").strip() or "0"
+        redis_settings['REDIS_PASSWORD'] = input("Redis password: ").strip() 
+        redis_settings['REDIS_SSL'] = input("Use SSL? (y/N): ").strip().lower() == 'y'
+        redis_settings['SESSION_STORAGE'] = 'redis'
+    else:
+        # Set default Redis settings but use database for sessions
+        redis_settings = {
+            'REDIS_HOST': 'localhost',
+            'REDIS_PORT': '6379',
+            'REDIS_DB': '0',
+            'REDIS_PASSWORD': 'redis password',
+            'REDIS_SSL': False,
+            'SESSION_STORAGE': 'database'
+        }
     
     # Get admin details from user
     print("\nAdmin User Configuration:")

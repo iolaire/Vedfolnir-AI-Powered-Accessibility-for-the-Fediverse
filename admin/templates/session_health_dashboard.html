@@ -12,7 +12,7 @@
                 <div class="col-md-4">
                     <div class="card">
                         <div class="card-body text-center">
-                            <h5 class="card-title text-success">Healthy</h5>
+                            <h5 class="card-title" id="system-status">Loading...</h5>
                             <p class="card-text">Session System</p>
                         </div>
                     </div>
@@ -20,7 +20,7 @@
                 <div class="col-md-4">
                     <div class="card">
                         <div class="card-body text-center">
-                            <h5 class="card-title">0</h5>
+                            <h5 class="card-title" id="active-sessions">Loading...</h5>
                             <p class="card-text">Active Sessions</p>
                         </div>
                     </div>
@@ -28,7 +28,7 @@
                 <div class="col-md-4">
                     <div class="card">
                         <div class="card-body text-center">
-                            <h5 class="card-title">0</h5>
+                            <h5 class="card-title" id="expired-sessions">Loading...</h5>
                             <p class="card-text">Expired Sessions</p>
                         </div>
                     </div>
@@ -42,13 +42,14 @@
                 <div class="card-body">
                     <div class="row">
                         <div class="col-md-6">
-                            <h6>Database Sessions</h6>
-                            <p><span class="badge bg-success">Operational</span> Database session management active</p>
+                            <h6 id="session-manager-type">Session Management</h6>
+                            <p><span class="badge" id="session-status-badge">Loading...</span> <span id="session-status-text">Loading session status...</span></p>
                             <p><strong>Session Timeout:</strong> 2 hours</p>
                         </div>
                         <div class="col-md-6">
                             <h6>Session Monitoring</h6>
                             <p class="text-muted">Session health metrics will be displayed here</p>
+                            <div id="last-updated">Last updated: <span id="last-updated-time">Never</span></div>
                         </div>
                     </div>
                 </div>
@@ -56,4 +57,125 @@
         </div>
     </div>
 </div>
+
+<script>
+// Function to update session statistics
+function updateSessionStats() {
+    fetch('/admin/session-health/statistics')
+        .then(response => response.json())
+        .then(data => {
+            if (data.status === 'success') {
+                const stats = data.data;
+                
+                // Update session counts
+                document.getElementById('active-sessions').textContent = stats.active_sessions;
+                document.getElementById('expired-sessions').textContent = stats.expired_sessions;
+                
+                // Update session manager type
+                const managerType = stats.session_manager_type;
+                document.getElementById('session-manager-type').textContent = 
+                    managerType.charAt(0).toUpperCase() + managerType.slice(1) + ' Sessions';
+                
+                // Update status badge and text
+                const statusBadge = document.getElementById('session-status-badge');
+                const statusText = document.getElementById('session-status-text');
+                
+                if (stats.active_sessions > 0) {
+                    statusBadge.className = 'badge bg-success';
+                    statusBadge.textContent = 'Operational';
+                    statusText.textContent = `${managerType.charAt(0).toUpperCase() + managerType.slice(1)} session management active`;
+                } else {
+                    statusBadge.className = 'badge bg-warning';
+                    statusBadge.textContent = 'No Active Sessions';
+                    statusText.textContent = `${managerType.charAt(0).toUpperCase() + managerType.slice(1)} session management ready`;
+                }
+                
+                // Update system status
+                document.getElementById('system-status').className = 'card-title text-success';
+                document.getElementById('system-status').textContent = 'Healthy';
+                
+                // Update last updated time
+                const now = new Date();
+                document.getElementById('last-updated-time').textContent = now.toLocaleTimeString();
+                
+            } else {
+                console.error('Error fetching session statistics:', data.message);
+                // Show error state
+                document.getElementById('active-sessions').textContent = 'Error';
+                document.getElementById('expired-sessions').textContent = 'Error';
+                document.getElementById('system-status').className = 'card-title text-danger';
+                document.getElementById('system-status').textContent = 'Error';
+            }
+        })
+        .catch(error => {
+            console.error('Error fetching session statistics:', error);
+            // Show error state
+            document.getElementById('active-sessions').textContent = 'Error';
+            document.getElementById('expired-sessions').textContent = 'Error';
+            document.getElementById('system-status').className = 'card-title text-danger';
+            document.getElementById('system-status').textContent = 'Error';
+        });
+}
+
+// Function to get comprehensive health status
+function updateHealthStatus() {
+    fetch('/admin/session-health/status')
+        .then(response => response.json())
+        .then(data => {
+            if (data.status === 'success') {
+                const health = data.data;
+                
+                // Update overall system status
+                const systemStatus = document.getElementById('system-status');
+                switch (health.status) {
+                    case 'healthy':
+                        systemStatus.className = 'card-title text-success';
+                        systemStatus.textContent = 'Healthy';
+                        break;
+                    case 'degraded':
+                        systemStatus.className = 'card-title text-warning';
+                        systemStatus.textContent = 'Degraded';
+                        break;
+                    case 'unhealthy':
+                        systemStatus.className = 'card-title text-danger';
+                        systemStatus.textContent = 'Unhealthy';
+                        break;
+                    default:
+                        systemStatus.className = 'card-title text-secondary';
+                        systemStatus.textContent = 'Unknown';
+                }
+                
+                // Update session counts from health data
+                if (health.total_active_sessions !== undefined) {
+                    document.getElementById('active-sessions').textContent = health.total_active_sessions;
+                }
+                if (health.total_expired_sessions !== undefined) {
+                    document.getElementById('expired-sessions').textContent = health.total_expired_sessions;
+                }
+                
+                // Update session manager type
+                if (health.session_manager_type) {
+                    const managerType = health.session_manager_type;
+                    document.getElementById('session-manager-type').textContent = 
+                        managerType.charAt(0).toUpperCase() + managerType.slice(1) + ' Sessions';
+                }
+            }
+        })
+        .catch(error => {
+            console.error('Error fetching health status:', error);
+        });
+}
+
+// Update data on page load
+document.addEventListener('DOMContentLoaded', function() {
+    updateSessionStats();
+    updateHealthStatus();
+    
+    // Update every 30 seconds
+    setInterval(function() {
+        updateSessionStats();
+        updateHealthStatus();
+    }, 30000);
+});
+</script>
 {% endblock %}

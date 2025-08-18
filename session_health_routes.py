@@ -44,19 +44,35 @@ def health_status():
         db_manager = current_app.config.get('db_manager')
         session_manager = current_app.config.get('session_manager')
         
+        # If session_manager is None, try to get unified_session_manager directly
+        if not session_manager:
+            session_manager = getattr(current_app, 'unified_session_manager', None)
+        
         if not db_manager or not session_manager:
             return jsonify({
                 'status': 'error',
                 'message': 'Session management components not available'
             }), 500
         
-        health_checker = get_session_health_checker(db_manager, session_manager)
-        system_health = health_checker.check_comprehensive_session_health()
-        
-        return jsonify({
-            'status': 'success',
-            'data': health_checker.to_dict(system_health)
-        })
+        # Use Redis-compatible health checker for better session counting
+        try:
+            from redis_session_health_checker import get_redis_session_health_checker
+            health_checker = get_redis_session_health_checker(db_manager, session_manager)
+            system_health = health_checker.check_comprehensive_session_health()
+            
+            return jsonify({
+                'status': 'success',
+                'data': health_checker.to_dict(system_health)
+            })
+        except ImportError:
+            # Fallback to original health checker
+            health_checker = get_session_health_checker(db_manager, session_manager)
+            system_health = health_checker.check_comprehensive_session_health()
+            
+            return jsonify({
+                'status': 'success',
+                'data': health_checker.to_dict(system_health)
+            })
         
     except Exception as e:
         current_app.logger.error(f"Error retrieving session health status: {sanitize_for_log(str(e))}")
@@ -65,7 +81,68 @@ def health_status():
             'message': str(e)
         }), 500
 
-@session_health_bp.route('/component/<component_name>')
+@session_health_bp.route('/statistics')
+@login_required
+@admin_required
+def session_statistics():
+    """Get current session statistics for dashboards."""
+    try:
+        # Get session manager from app context
+        db_manager = current_app.config.get('db_manager')
+        session_manager = current_app.config.get('session_manager')
+        
+        # If session_manager is None, try to get unified_session_manager directly
+        if not session_manager:
+            session_manager = getattr(current_app, 'unified_session_manager', None)
+        
+        if not db_manager or not session_manager:
+            return jsonify({
+                'status': 'error',
+                'message': 'Session management components not available'
+            }), 500
+        
+        # Use Redis-compatible health checker for accurate session counts
+        try:
+            from redis_session_health_checker import get_redis_session_health_checker
+            health_checker = get_redis_session_health_checker(db_manager, session_manager)
+            session_counts = health_checker.get_session_counts()
+            
+            return jsonify({
+                'status': 'success',
+                'data': {
+                    'session_manager_type': health_checker.session_manager_type,
+                    'active_sessions': session_counts['active_sessions'],
+                    'total_sessions': session_counts['total_sessions'],
+                    'expired_sessions': session_counts['expired_sessions'],
+                    'timestamp': datetime.now(timezone.utc).isoformat()
+                }
+            })
+        except ImportError:
+            # Fallback to basic database query
+            from models import UserSession
+            with db_manager.get_session() as db_session:
+                total_sessions = db_session.query(UserSession).count()
+                active_sessions = db_session.query(UserSession).filter_by(is_active=True).count()
+                expired_sessions = total_sessions - active_sessions
+                
+                return jsonify({
+                    'status': 'success',
+                    'data': {
+                        'session_manager_type': 'database',
+                        'active_sessions': active_sessions,
+                        'total_sessions': total_sessions,
+                        'expired_sessions': expired_sessions,
+                        'timestamp': datetime.now(timezone.utc).isoformat()
+                    }
+                })
+        
+    except Exception as e:
+        current_app.logger.error(f"Error retrieving session statistics: {sanitize_for_log(str(e))}")
+        return jsonify({
+            'status': 'error',
+            'message': str(e)
+        }), 500
+
 @login_required
 @admin_required
 def component_health(component_name):

@@ -11,44 +11,49 @@ When creating any new source code file (.py, .js, .html, .css, .sh, .sql), ALWAY
 - **Language**: Python 3
 - **Web Framework**: Flask
 - **Database**: SQLAlchemy with SQLite backend
-- **Session Management**: Database sessions using UserSession table (NOT Flask sessions)
+- **Session Management**: Redis sessions with database fallback (NOT Flask sessions)
 - **AI Model**: Ollama with LLaVA model for image caption generation
 - **HTTP Client**: httpx for async HTTP requests
 - **Image Processing**: Pillow (PIL)
 
 ## Session Management Architecture
 
-**IMPORTANT**: This application uses **database sessions** exclusively with a **unified session manager** for all session operations. Flask sessions (secure cookies) are NOT used.
+**IMPORTANT**: This application uses **Redis sessions** as the primary session storage with **database fallback** for all session operations. Flask sessions (secure cookies) are NOT used.
 
-### Unified Session Implementation
-- **Primary Storage**: UserSession table in the database
-- **Session Data**: All session state stored in database records
+### Redis Session Implementation
+- **Primary Storage**: Redis for high-performance session storage
+- **Fallback Storage**: UserSession table in the database for reliability
+- **Session Data**: All session state stored in Redis with database backup
 - **Session Tokens**: Secure tokens stored in HTTP-only cookies
-- **Cross-Tab Sync**: Real-time synchronization via database queries
+- **Cross-Tab Sync**: Real-time synchronization via Redis pub/sub
 - **Audit Trail**: Complete session activity logging in the database
-- **Single Manager**: UnifiedSessionManager handles all session operations
+- **Dual Manager**: RedisSessionManager with UnifiedSessionManager fallback
 
 ### Session Management Components
-- **UserSession Model**: Database table for session storage
-- **UnifiedSessionManager**: Single session management system (create, validate, cleanup, platform context)
+- **UserSession Model**: Database table for session backup and audit trail
+- **RedisSessionManager**: Primary session management system using Redis
+- **UnifiedSessionManager**: Fallback session management system using database
 - **RequestSessionManager**: Request-scoped session handling for database operations
 - **Session Decorators**: Authentication and platform context decorators
-- **Session Middleware**: Automatic session validation and cleanup using unified manager
+- **Session Middleware**: Automatic session validation and cleanup using Redis manager
 - **Session Security**: Built-in fingerprinting, audit logging, and security validation
 
 ### Database Session Patterns
 
-**IMPORTANT**: All database operations should use the unified session management patterns. Direct `db_manager.get_session()` usage is deprecated.
+**IMPORTANT**: After the Redis session manager implementation, database operations should use `db_manager` directly. The unified session management patterns are deprecated for database operations due to Redis compatibility issues.
 
 #### Pattern 1: Web Routes with User Context
 ```python
 @app.route('/some_route')
 @login_required
 def some_function():
-    with unified_session_manager.get_db_session() as session:
-        # Database operations with automatic session management
+    session = db_manager.get_session()
+    try:
+        # Database operations with proper session management
         result = session.query(Model).filter_by(user_id=current_user.id).all()
         return render_template('template.html', data=result)
+    finally:
+        db_manager.close_session(session)
 ```
 
 #### Pattern 2: Request-Scoped Operations
@@ -123,6 +128,22 @@ with request_session_manager.session_scope() as session:
     return result
 ```
 
+### Redis Session Manager Migration
+
+**Recent Update**: The application has been migrated from database-only sessions to Redis sessions with database fallback. This change affects how database operations are performed in service layers.
+
+#### Key Changes:
+- **Session Storage**: Primary storage moved from database to Redis
+- **Database Operations**: Service layers now use `db_manager` directly instead of `unified_session_manager.get_db_session()`
+- **Compatibility**: Fixed `'RedisSessionManager' object has no attribute 'get_db_session'` errors
+- **Architecture**: Clear separation between session management (Redis) and database operations (db_manager)
+
+#### Migration Impact:
+- **UserService**: Updated to use `db_manager` directly for all database operations
+- **Admin Routes**: Continue to work with Redis session management
+- **Performance**: Improved session performance with Redis caching
+- **Reliability**: Database fallback ensures session persistence
+
 ### Benefits of Unified Session Management
 - **Consistent Error Handling**: Automatic rollback and cleanup
 - **Session Context Awareness**: User and platform context integration
@@ -147,6 +168,15 @@ SESSION_CLEANUP_INTERVAL=3600
 
 # Session token length
 SESSION_TOKEN_LENGTH=32
+
+# Redis Configuration (for session storage)
+REDIS_URL=redis://localhost:6379/0
+REDIS_SESSION_PREFIX=vedfolnir:session:
+REDIS_SESSION_TIMEOUT=7200
+
+# Database fallback settings
+DB_SESSION_FALLBACK=true
+DB_SESSION_SYNC=true
 ```
 
 ## Key Dependencies

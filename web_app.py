@@ -223,6 +223,9 @@ unified_session_manager = create_session_manager(
     monitor=session_monitor
 )
 
+# Store unified_session_manager on app object for direct access
+app.unified_session_manager = unified_session_manager
+
 # Create session cookie manager
 session_cookie_manager = create_session_cookie_manager(app.config)
 app.session_cookie_manager = session_cookie_manager
@@ -310,12 +313,29 @@ app.config['session_alerting_system'] = session_alerting_system
 app.config['db_manager'] = db_manager
 app.config['session_manager'] = unified_session_manager  # For backward compatibility
 
+# Initialize Redis platform manager
+from redis_platform_manager import get_redis_platform_manager
+import os
+encryption_key = os.getenv('PLATFORM_ENCRYPTION_KEY', 'default-key-change-in-production')
+redis_platform_manager = get_redis_platform_manager(
+    unified_session_manager.redis_client, 
+    db_manager, 
+    encryption_key
+)
+app.config['redis_platform_manager'] = redis_platform_manager
+app.logger.info("Redis platform manager initialized")
+
 # Register session health routes
 register_session_health_routes(app)
 
 # Register session alert routes
 from session_alert_routes import register_session_alert_routes
 register_session_alert_routes(app)
+
+# Register security audit API routes
+from admin.routes.security_audit_api import register_security_audit_api_routes
+register_security_audit_api_routes(app)
+app.logger.info("Security audit API routes registered")
 
 # Initialize security middleware
 security_middleware = SecurityMiddleware(app)
@@ -834,16 +854,12 @@ def index():
                         'uptime': uptime_str
                     }
                     
-                    # System health assessment (simplified)
-                    cpu_percent = psutil.cpu_percent(interval=1)
-                    memory_percent = psutil.virtual_memory().percent
-                    
-                    if cpu_percent > 80 or memory_percent > 90:
-                        system_health = 'critical'
-                    elif cpu_percent > 60 or memory_percent > 75:
+                    # System health assessment using service-based checks (same as admin dashboard)
+                    try:
+                        system_health = get_simple_system_health_for_index(db_session)
+                    except Exception as e:
+                        app.logger.error(f"Error checking system health: {sanitize_for_log(str(e))}")
                         system_health = 'warning'
-                    else:
-                        system_health = 'healthy'
                         
                 except Exception as e:
                     # Fallback if psutil is not available or fails
@@ -1672,26 +1688,88 @@ def update_platform_media_description(image_data, platform_config):
 @require_viewer_or_higher
 @with_session_error_handling
 def platform_management():
-    """Platform management interface"""
-    with unified_session_manager.get_db_session() as session:
-        # Get user's platform connections using role-based filtering
-        platforms_query = session.query(PlatformConnection).filter_by(is_active=True)
-        platforms_query = filter_platforms_for_user(platforms_query)
-        user_platforms = platforms_query.order_by(PlatformConnection.is_default.desc(), PlatformConnection.name).all()
+    """Platform management interface with Redis caching"""
+    try:
+        # Get Redis platform manager for caching
+        redis_platform_manager = app.config.get('redis_platform_manager')
         
-        # Get current platform (default or first available)
-        current_platform = None
-        for platform in user_platforms:
-            if platform.is_default:
-                current_platform = platform
-                break
-        if not current_platform and user_platforms:
-            current_platform = user_platforms[0]
+        # Try Redis cache first
+        if redis_platform_manager:
+            try:
+                user_platforms = redis_platform_manager.get_user_platforms(current_user.id)
+                current_platform = redis_platform_manager.get_default_platform(current_user.id)
+                platform_stats = {}
+                
+                if current_platform:
+                    platform_stats = redis_platform_manager.get_platform_stats(
+                        current_user.id, 
+                        current_platform['id']
+                    )
+                
+                # Convert dict platforms back to objects for template compatibility
+                class PlatformObj:
+                    def __init__(self, data):
+                        for key, value in data.items():
+                            setattr(self, key, value)
+                
+                platform_objects = [PlatformObj(p) for p in user_platforms]
+                current_platform_obj = PlatformObj(current_platform) if current_platform else None
+                
+                return render_template('platform_management.html', 
+                                     platforms=platform_objects,
+                                     current_platform=current_platform_obj,
+                                     platform_stats=platform_stats)
+                                     
+            except Exception as redis_error:
+                app.logger.warning(f"Redis platform cache failed, falling back to database: {redis_error}")
         
-        # Get platform statistics if we have a current platform
-        platform_stats = {}
-        if current_platform:
-            user_summary = db_manager.get_user_platform_summary(current_user.id)
+        # Fallback to database with proper session management
+        session = db_manager.get_session()
+        try:
+            # Get user's platform connections using role-based filtering
+            platforms_query = session.query(PlatformConnection).filter_by(is_active=True)
+            platforms_query = filter_platforms_for_user(platforms_query)
+            user_platforms = platforms_query.order_by(PlatformConnection.is_default.desc(), PlatformConnection.name).all()
+            
+            # Get current platform (default or first available)
+            current_platform = None
+            for platform in user_platforms:
+                if platform.is_default:
+                    current_platform = platform
+                    break
+            if not current_platform and user_platforms:
+                current_platform = user_platforms[0]
+            
+            # Get platform statistics if we have a current platform
+            platform_stats = {}
+            if current_platform:
+                user_summary = db_manager.get_user_platform_summary(current_user.id)
+                platform_stats = {
+                    'total_images': user_summary.get('total_images', 0),
+                    'total_posts': user_summary.get('total_posts', 0),
+                    'platform_name': current_platform.name,
+                    'platform_type': current_platform.platform_type
+                }
+            
+            # Cache in Redis for next time
+            if redis_platform_manager:
+                try:
+                    redis_platform_manager.load_user_platforms_to_redis(current_user.id)
+                except Exception as cache_error:
+                    app.logger.warning(f"Failed to cache platforms in Redis: {cache_error}")
+            
+            return render_template('platform_management.html', 
+                                 platforms=user_platforms,
+                                 current_platform=current_platform,
+                                 platform_stats=platform_stats)
+                                 
+        finally:
+            db_manager.close_session(session)
+            
+    except Exception as e:
+        app.logger.error(f"Error in platform management: {sanitize_for_log(str(e))}")
+        flash('Error loading platform management. Please try again.', 'error')
+        return redirect(url_for('index'))
             for platform_info in user_summary['platforms']:
                 if platform_info['id'] == current_platform.id:
                     platform_stats = platform_info['stats']
@@ -3465,6 +3543,53 @@ def progress_stream(task_id):
             mimetype='text/event-stream',
             status=500
         )
+
+def get_simple_system_health_for_index(db_session):
+    """Get a simple system health status for the index route (using existing db_session)"""
+    try:
+        # Check database connectivity (using existing session)
+        try:
+            from sqlalchemy import text
+            db_session.execute(text("SELECT 1"))
+            db_healthy = True
+        except Exception:
+            db_healthy = False
+        
+        # Check if Ollama is accessible (simple HTTP check)
+        ollama_healthy = True
+        try:
+            import httpx
+            import os
+            ollama_url = os.getenv('OLLAMA_URL', 'http://localhost:11434')
+            with httpx.Client(timeout=2.0) as client:
+                response = client.get(f"{ollama_url}/api/tags")
+                ollama_healthy = response.status_code == 200
+        except Exception:
+            ollama_healthy = False
+        
+        # Check storage (basic directory check)
+        storage_healthy = True
+        try:
+            import os
+            storage_dirs = ['storage', 'storage/database', 'storage/images']
+            for dir_path in storage_dirs:
+                if not os.path.exists(dir_path):
+                    storage_healthy = False
+                    break
+        except Exception:
+            storage_healthy = False
+        
+        # Determine overall health
+        if db_healthy and ollama_healthy and storage_healthy:
+            return 'healthy'
+        elif db_healthy:  # Database is most critical
+            return 'warning'
+        else:
+            return 'critical'
+            
+    except Exception as e:
+        app.logger.error(f"Error checking system health: {e}")
+        return 'warning'
 
 if __name__ == '__main__':
     try:

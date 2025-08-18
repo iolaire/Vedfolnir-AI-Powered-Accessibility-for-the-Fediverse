@@ -116,7 +116,8 @@ def register_routes(bp):
         form = EditUserForm()
         if form.validate_on_submit():
             db_manager = current_app.config['db_manager']
-            user_service = UserService(db_manager)
+            session_manager = current_app.config.get('session_manager')
+            user_service = UserService(db_manager, session_manager)
             
             try:
                 success = user_service.update_user(
@@ -432,9 +433,10 @@ def register_routes(bp):
             )
             
             # Handle additional status updates
-            unified_session_manager = current_app.unified_session_manager
-
-            with unified_session_manager.get_db_session() as session:
+            # Use db_manager directly since session management is now in Redis
+            db_manager = current_app.config['db_manager']
+            session = db_manager.get_session()
+            try:
                 user = session.query(User).filter_by(id=int(user_id)).first()
                 if user:
                     # Update email verification status
@@ -451,6 +453,8 @@ def register_routes(bp):
                         message += ", failed attempts reset"
                     
                     session.commit()
+            finally:
+                db_manager.close_session(session)
             
             if success:
                 flash(message, 'success')

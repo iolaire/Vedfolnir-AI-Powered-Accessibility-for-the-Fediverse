@@ -12,7 +12,7 @@
                 <div class="col-md-3">
                     <div class="card">
                         <div class="card-body text-center">
-                            <h5 class="card-title text-success">100%</h5>
+                            <h5 class="card-title" id="security-score">Loading...</h5>
                             <p class="card-text">Security Score</p>
                         </div>
                     </div>
@@ -20,7 +20,7 @@
                 <div class="col-md-3">
                     <div class="card">
                         <div class="card-body text-center">
-                            <h5 class="card-title text-success">0</h5>
+                            <h5 class="card-title" id="open-issues">Loading...</h5>
                             <p class="card-text">Open Issues</p>
                         </div>
                     </div>
@@ -28,7 +28,7 @@
                 <div class="col-md-3">
                     <div class="card">
                         <div class="card-body text-center">
-                            <h5 class="card-title text-info">Active</h5>
+                            <h5 class="card-title" id="csrf-status">Loading...</h5>
                             <p class="card-text">CSRF Protection</p>
                         </div>
                     </div>
@@ -36,8 +36,62 @@
                 <div class="col-md-3">
                     <div class="card">
                         <div class="card-body text-center">
-                            <h5 class="card-title text-info">Active</h5>
+                            <h5 class="card-title" id="rate-limit-status">Loading...</h5>
                             <p class="card-text">Rate Limiting</p>
+                        </div>
+                    </div>
+                </div>
+            </div>
+            
+            <div class="row mb-4">
+                <div class="col-md-6">
+                    <div class="card">
+                        <div class="card-header">
+                            <h5 class="mb-0">Security Features Status</h5>
+                        </div>
+                        <div class="card-body">
+                            <div id="security-features-list">
+                                <div class="text-center text-muted">Loading security features...</div>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+                <div class="col-md-6">
+                    <div class="card">
+                        <div class="card-header">
+                            <h5 class="mb-0">Recent Security Events</h5>
+                        </div>
+                        <div class="card-body">
+                            <div id="recent-events-list">
+                                <div class="text-center text-muted">Loading recent events...</div>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+            
+            <div class="row mb-4">
+                <div class="col-md-6">
+                    <div class="card">
+                        <div class="card-header">
+                            <h5 class="mb-0">CSRF Protection Metrics</h5>
+                        </div>
+                        <div class="card-body">
+                            <div id="csrf-metrics">
+                                <div class="text-center text-muted">Loading CSRF metrics...</div>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+                <div class="col-md-6">
+                    <div class="card">
+                        <div class="card-header">
+                            <h5 class="mb-0">Compliance Status (fixed in API) </h5>
+                        </div>
+                        <div class="card-body">
+                            <div id="compliance-status">
+                                <div class="text-center text-muted">Loading compliance status...</div>
+                            </div>
                         </div>
                     </div>
                 </div>
@@ -45,27 +99,319 @@
             
             <div class="card">
                 <div class="card-header">
-                    <h5 class="mb-0">Security Features Status</h5>
+                    <h5 class="mb-0">Security Event Timeline</h5>
                 </div>
                 <div class="card-body">
-                    <div class="row">
-                        <div class="col-md-6">
-                            <h6>Active Protections</h6>
-                            <ul class="list-unstyled">
-                                <li><i class="bi bi-check-circle text-success"></i> CSRF Protection</li>
-                                <li><i class="bi bi-check-circle text-success"></i> Rate Limiting</li>
-                                <li><i class="bi bi-check-circle text-success"></i> Input Validation</li>
-                                <li><i class="bi bi-check-circle text-success"></i> Security Headers</li>
-                            </ul>
-                        </div>
-                        <div class="col-md-6">
-                            <h6>Audit Log</h6>
-                            <p class="text-muted">Security audit logs will be displayed here</p>
-                        </div>
+                    <div class="table-responsive">
+                        <table class="table table-striped">
+                            <thead>
+                                <tr>
+                                    <th>Time</th>
+                                    <th>Event Type</th>
+                                    <th>Severity</th>
+                                    <th>Source IP</th>
+                                    <th>Details</th>
+                                </tr>
+                            </thead>
+                            <tbody id="security-events-table">
+                                <tr>
+                                    <td colspan="5" class="text-center text-muted">Loading security events...</td>
+                                </tr>
+                            </tbody>
+                        </table>
+                    </div>
+                    <div class="mt-3">
+                        <small class="text-muted">Last updated: <span id="last-updated-time">Never</span></small>
                     </div>
                 </div>
             </div>
         </div>
     </div>
 </div>
+
+<script>
+// Security audit dashboard JavaScript
+let refreshInterval;
+
+// Function to update security overview
+function updateSecurityOverview() {
+    fetch('/admin/api/security-audit/overview')
+        .then(response => response.json())
+        .then(data => {
+            if (data.status === 'success') {
+                const overview = data.data;
+                
+                // Update security score
+                const scoreElement = document.getElementById('security-score');
+                const score = overview.security_score;
+                scoreElement.textContent = score + '%';
+                
+                // Color code the security score
+                if (score >= 90) {
+                    scoreElement.className = 'card-title text-success';
+                } else if (score >= 70) {
+                    scoreElement.className = 'card-title text-warning';
+                } else {
+                    scoreElement.className = 'card-title text-danger';
+                }
+                
+                // Update open issues
+                const issuesElement = document.getElementById('open-issues');
+                issuesElement.textContent = overview.open_issues;
+                issuesElement.className = overview.open_issues === 0 ? 'card-title text-success' : 'card-title text-warning';
+                
+                // Update security features status
+                updateSecurityFeatures(overview.security_features);
+                
+                // Update last updated time
+                const now = new Date();
+                document.getElementById('last-updated-time').textContent = now.toLocaleTimeString();
+                
+            } else {
+                console.error('Error fetching security overview:', data.message);
+                showError('Failed to load security overview');
+            }
+        })
+        .catch(error => {
+            console.error('Error fetching security overview:', error);
+            showError('Failed to load security overview');
+        });
+}
+
+// Function to update security features display
+function updateSecurityFeatures(features) {
+    const container = document.getElementById('security-features-list');
+    
+    if (!features || Object.keys(features).length === 0) {
+        container.innerHTML = '<div class="text-muted">No security features data available</div>';
+        return;
+    }
+    
+    let html = '';
+    for (const [feature, info] of Object.entries(features)) {
+        const statusClass = info.enabled ? 'text-success' : 'text-danger';
+        const statusIcon = info.enabled ? '✓' : '✗';
+        
+        html += `
+            <div class="d-flex justify-content-between align-items-center mb-2">
+                <div>
+                    <strong>${info.description || feature}</strong>
+                </div>
+                <div class="${statusClass}">
+                    ${statusIcon} ${info.status}
+                </div>
+            </div>
+        `;
+        
+        // Update specific status indicators
+        if (feature === 'csrf_protection') {
+            const csrfElement = document.getElementById('csrf-status');
+            csrfElement.textContent = info.status;
+            csrfElement.className = info.enabled ? 'card-title text-success' : 'card-title text-danger';
+        } else if (feature === 'rate_limiting') {
+            const rateLimitElement = document.getElementById('rate-limit-status');
+            rateLimitElement.textContent = info.status;
+            rateLimitElement.className = info.enabled ? 'card-title text-success' : 'card-title text-danger';
+        }
+    }
+    
+    container.innerHTML = html;
+}
+
+// Function to update security events
+function updateSecurityEvents() {
+    fetch('/admin/api/security-audit/events?hours=24&limit=10')
+        .then(response => response.json())
+        .then(data => {
+            if (data.status === 'success') {
+                updateEventsTable(data.data.events);
+                updateRecentEventsSummary(data.data.events);
+            } else {
+                console.error('Error fetching security events:', data.message);
+            }
+        })
+        .catch(error => {
+            console.error('Error fetching security events:', error);
+        });
+}
+
+// Function to update events table
+function updateEventsTable(events) {
+    const tableBody = document.getElementById('security-events-table');
+    
+    if (!events || events.length === 0) {
+        tableBody.innerHTML = '<tr><td colspan="5" class="text-center text-muted">No recent security events</td></tr>';
+        return;
+    }
+    
+    let html = '';
+    events.forEach(event => {
+        const timestamp = new Date(event.timestamp).toLocaleString();
+        const severityClass = getSeverityClass(event.severity);
+        
+        html += `
+            <tr>
+                <td>${timestamp}</td>
+                <td>${event.type}</td>
+                <td><span class="badge ${severityClass}">${event.severity}</span></td>
+                <td>${event.source_ip}</td>
+                <td>${event.endpoint || 'N/A'}</td>
+            </tr>
+        `;
+    });
+    
+    tableBody.innerHTML = html;
+}
+
+// Function to update recent events summary
+function updateRecentEventsSummary(events) {
+    const container = document.getElementById('recent-events-list');
+    
+    if (!events || events.length === 0) {
+        container.innerHTML = '<div class="text-muted">No recent security events</div>';
+        return;
+    }
+    
+    // Group events by severity
+    const eventsBySeverity = {
+        critical: events.filter(e => e.severity === 'critical').length,
+        high: events.filter(e => e.severity === 'high').length,
+        medium: events.filter(e => e.severity === 'medium').length,
+        low: events.filter(e => e.severity === 'low').length
+    };
+    
+    let html = '<div class="row">';
+    for (const [severity, count] of Object.entries(eventsBySeverity)) {
+        if (count > 0) {
+            const severityClass = getSeverityClass(severity);
+            html += `
+                <div class="col-6 mb-2">
+                    <span class="badge ${severityClass}">${severity.toUpperCase()}</span>
+                    <span class="ms-2">${count} events</span>
+                </div>
+            `;
+        }
+    }
+    html += '</div>';
+    
+    container.innerHTML = html;
+}
+
+// Function to update CSRF metrics
+function updateCSRFMetrics() {
+    fetch('/admin/api/security-audit/csrf-metrics')
+        .then(response => response.json())
+        .then(data => {
+            if (data.status === 'success') {
+                const container = document.getElementById('csrf-metrics');
+                const metrics = data.data;
+                
+                let html = `
+                    <div class="row">
+                        <div class="col-6">
+                            <strong>CSRF Enabled:</strong>
+                            <span class="${metrics.csrf_enabled ? 'text-success' : 'text-danger'}">
+                                ${metrics.csrf_enabled ? 'Yes' : 'No'}
+                            </span>
+                        </div>
+                        <div class="col-6">
+                            <strong>Violations (24h):</strong>
+                            <span class="text-info">${metrics.recent_violations ? metrics.recent_violations.length : 0}</span>
+                        </div>
+                    </div>
+                `;
+                
+                if (metrics.daily_summary) {
+                    html += `
+                        <div class="mt-3">
+                            <strong>Compliance Rate:</strong>
+                            <span class="text-success">${(metrics.daily_summary.compliance_rate * 100).toFixed(1)}%</span>
+                        </div>
+                    `;
+                }
+                
+                container.innerHTML = html;
+            }
+        })
+        .catch(error => {
+            console.error('Error fetching CSRF metrics:', error);
+        });
+}
+
+// Function to update compliance status
+function updateComplianceStatus() {
+    fetch('/admin/api/security-audit/compliance')
+        .then(response => response.json())
+        .then(data => {
+            if (data.status === 'success') {
+                const container = document.getElementById('compliance-status');
+                const compliance = data.data;
+                
+                let html = '';
+                for (const [standard, info] of Object.entries(compliance)) {
+                    const statusClass = info.compliant ? 'text-success' : 'text-danger';
+                    const statusIcon = info.compliant ? '✓' : '✗';
+                    
+                    html += `
+                        <div class="d-flex justify-content-between align-items-center mb-2">
+                            <div>
+                                <strong>${standard.replace('_', ' ').toUpperCase()}</strong>
+                                <br><small class="text-muted">${info.details || ''}</small>
+                            </div>
+                            <div class="${statusClass}">
+                                ${statusIcon} ${info.score || 0}%
+                            </div>
+                        </div>
+                    `;
+                }
+                
+                container.innerHTML = html;
+            }
+        })
+        .catch(error => {
+            console.error('Error fetching compliance status:', error);
+        });
+}
+
+// Helper function to get severity CSS class
+function getSeverityClass(severity) {
+    switch (severity) {
+        case 'critical': return 'bg-danger';
+        case 'high': return 'bg-warning';
+        case 'medium': return 'bg-info';
+        case 'low': return 'bg-secondary';
+        default: return 'bg-light';
+    }
+}
+
+// Function to show error messages
+function showError(message) {
+    console.error(message);
+    // You could add a toast notification here
+}
+
+// Initialize dashboard on page load
+document.addEventListener('DOMContentLoaded', function() {
+    // Load initial data
+    updateSecurityOverview();
+    updateSecurityEvents();
+    updateCSRFMetrics();
+    updateComplianceStatus();
+    
+    // Set up auto-refresh every 30 seconds
+    refreshInterval = setInterval(function() {
+        updateSecurityOverview();
+        updateSecurityEvents();
+        updateCSRFMetrics();
+        updateComplianceStatus();
+    }, 30000);
+});
+
+// Clean up interval when page is unloaded
+window.addEventListener('beforeunload', function() {
+    if (refreshInterval) {
+        clearInterval(refreshInterval);
+    }
+});
+</script>
 {% endblock %}

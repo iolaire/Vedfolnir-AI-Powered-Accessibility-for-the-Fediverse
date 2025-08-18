@@ -604,3 +604,14 @@ class RedisSessionManager:
         except Exception as e:
             logger.error(f"Error getting session stats: {e}")
             return {}
+    
+    def get_db_session(self):
+        """
+        Compatibility method for database operations.
+        
+        NOTE: This is a compatibility layer for code that hasn't been migrated yet.
+        Redis sessions handle session management, but database operations should
+        use db_manager directly for better separation of concerns.
+        """
+        logger.warning("Using compatibility get_db_session() method. Consider migrating to db_manager.get_session() directly.")
+        return self.db_manager.get_session()

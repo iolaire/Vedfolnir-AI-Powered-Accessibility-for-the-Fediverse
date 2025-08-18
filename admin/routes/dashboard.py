@@ -25,10 +25,10 @@ def register_routes(bp):
             
         db_manager = current_app.config['db_manager']
         
-        # Get system overview stats
-        unified_session_manager = current_app.unified_session_manager
-
-        with unified_session_manager.get_db_session() as session:
+        # Get system overview stats using db_manager directly
+        # (Session management is now in Redis, database is for data storage)
+        session = db_manager.get_session()
+        try:
             from models import User, PlatformConnection, Image, Post
             
             stats = {
@@ -38,5 +38,61 @@ def register_routes(bp):
                 'total_images': session.query(Image).count(),
                 'total_posts': session.query(Post).count(),
             }
+        finally:
+            db_manager.close_session(session)
         
-        return render_template('dashboard.html', stats=stats)
+        # Simple synchronous system health check
+        system_health = get_simple_system_health(db_manager)
+        
+        return render_template('dashboard.html', stats=stats, system_health=system_health)
+
+def get_simple_system_health(db_manager):
+    """Get a simple system health status without async operations"""
+    try:
+        # Check database connectivity
+        session = db_manager.get_session()
+        try:
+            from sqlalchemy import text
+            session.execute(text("SELECT 1"))
+            db_healthy = True
+        except Exception:
+            db_healthy = False
+        finally:
+            db_manager.close_session(session)
+        
+        # Check if Ollama is accessible (simple HTTP check)
+        ollama_healthy = True
+        try:
+            import httpx
+            import os
+            ollama_url = os.getenv('OLLAMA_URL', 'http://localhost:11434')
+            with httpx.Client(timeout=2.0) as client:
+                response = client.get(f"{ollama_url}/api/tags")
+                ollama_healthy = response.status_code == 200
+        except Exception:
+            ollama_healthy = False
+        
+        # Check storage (basic directory check)
+        storage_healthy = True
+        try:
+            import os
+            storage_dirs = ['storage', 'storage/database', 'storage/images']
+            for dir_path in storage_dirs:
+                if not os.path.exists(dir_path):
+                    storage_healthy = False
+                    break
+        except Exception:
+            storage_healthy = False
+        
+        # Determine overall health
+        if db_healthy and ollama_healthy and storage_healthy:
+            return 'healthy'
+        elif db_healthy:  # Database is most critical
+            return 'warning'
+        else:
+            return 'critical'
+            
+    except Exception as e:
+        from flask import current_app
+        current_app.logger.error(f"Error checking system health: {e}")
+        return 'warning'
