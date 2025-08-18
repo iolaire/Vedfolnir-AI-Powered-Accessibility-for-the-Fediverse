@@ -1770,10 +1770,10 @@ def platform_management():
         app.logger.error(f"Error in platform management: {sanitize_for_log(str(e))}")
         flash('Error loading platform management. Please try again.', 'error')
         return redirect(url_for('index'))
-            for platform_info in user_summary['platforms']:
-                if platform_info['id'] == current_platform.id:
-                    platform_stats = platform_info['stats']
-                    break
+        for platform_info in user_summary['platforms']:
+            if platform_info['id'] == current_platform.id:
+                platform_stats = platform_info['stats']
+                break
         
         # Convert platforms to dicts to avoid DetachedInstanceError
         user_platforms_dict = [{
