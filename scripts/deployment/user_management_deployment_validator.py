@@ -603,9 +603,9 @@ class UserManagementDeploymentValidator:
         
         def check_session_management():
             try:
-                from session_manager import SessionManager
+                from unified_session_manager import UnifiedSessionManager as SessionManager
                 
-                session_manager = SessionManager(self.db_manager)
+                session_manager = UnifiedSessionManager(self.db_manager)
                 
                 # Test session manager initialization
                 return True, "Session management system is available", {}

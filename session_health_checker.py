@@ -18,7 +18,7 @@ from logging import getLogger
 
 from models import UserSession, User, PlatformConnection
 from database import DatabaseManager
-from session_manager import SessionManager
+from unified_session_manager import UnifiedSessionManager
 from session_monitoring import get_session_monitor
 from session_config import get_session_config
 from security.core.security_utils import sanitize_for_log
@@ -54,7 +54,7 @@ class SessionSystemHealth:
 class SessionHealthChecker:
     """Comprehensive health checker for session management system"""
     
-    def __init__(self, db_manager: DatabaseManager, session_manager: SessionManager):
+    def __init__(self, db_manager: DatabaseManager, session_manager: UnifiedSessionManager):
         self.db_manager = db_manager
         self.session_manager = session_manager
         self.config = get_session_config()
@@ -605,7 +605,7 @@ class SessionHealthChecker:
 # Global session health checker instance
 _session_health_checker = None
 
-def get_session_health_checker(db_manager: DatabaseManager, session_manager: SessionManager) -> SessionHealthChecker:
+def get_session_health_checker(db_manager: DatabaseManager, session_manager: UnifiedSessionManager) -> SessionHealthChecker:
     """Get or create global session health checker instance"""
     global _session_health_checker
     if _session_health_checker is None:

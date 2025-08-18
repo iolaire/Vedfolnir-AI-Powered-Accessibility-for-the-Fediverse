@@ -20,7 +20,7 @@ sys.path.insert(0, os.path.dirname(os.path.dirname(os.path.dirname(os.path.abspa
 
 from config import Config
 from database import DatabaseManager
-from session_manager import SessionManager
+from unified_session_manager import UnifiedSessionManager as SessionManager
 from security.features.session_security import SessionSecurityHardening
 
 
@@ -29,7 +29,7 @@ def setup_database():
     try:
         config = Config()
         db_manager = DatabaseManager(config)
-        session_manager = SessionManager(db_manager)
+        session_manager = UnifiedSessionManager(db_manager)
         return session_manager
     except Exception as e:
         print(f"Error setting up database: {e}")

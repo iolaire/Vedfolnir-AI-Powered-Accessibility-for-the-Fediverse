@@ -18,21 +18,23 @@ When creating any new source code file (.py, .js, .html, .css, .sh, .sql), ALWAY
 
 ## Session Management Architecture
 
-**IMPORTANT**: This application uses **database sessions** exclusively for session management. Flask sessions (secure cookies) are NOT used.
+**IMPORTANT**: This application uses **database sessions** exclusively with a **unified session manager** for all session operations. Flask sessions (secure cookies) are NOT used.
 
-### Database Session Implementation
+### Unified Session Implementation
 - **Primary Storage**: UserSession table in the database
 - **Session Data**: All session state stored in database records
 - **Session Tokens**: Secure tokens stored in HTTP-only cookies
 - **Cross-Tab Sync**: Real-time synchronization via database queries
 - **Audit Trail**: Complete session activity logging in the database
+- **Single Manager**: UnifiedSessionManager handles all session operations
 
 ### Session Management Components
 - **UserSession Model**: Database table for session storage
-- **SessionManager**: Core session operations (create, validate, cleanup)
-- **RequestSessionManager**: Request-scoped session handling
+- **UnifiedSessionManager**: Single session management system (create, validate, cleanup, platform context)
+- **RequestSessionManager**: Request-scoped session handling for database operations
 - **Session Decorators**: Authentication and platform context decorators
-- **Session Middleware**: Automatic session validation and cleanup
+- **Session Middleware**: Automatic session validation and cleanup using unified manager
+- **Session Security**: Built-in fingerprinting, audit logging, and security validation
 
 ### Key Session Features
 - **Platform Context**: Sessions maintain current platform selection

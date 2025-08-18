@@ -22,7 +22,7 @@ from statistics import mean, median
 from config import Config
 from database import DatabaseManager
 from models import User, PlatformConnection, UserSession, UserRole
-from session_manager import SessionManager
+from unified_session_manager import UnifiedSessionManager as SessionManager
 from tests.test_helpers import create_test_user_with_platforms, cleanup_test_user
 
 
@@ -37,7 +37,7 @@ class TestConcurrentSessionOperations(unittest.TestCase):
         
         self.db_manager = DatabaseManager(self.config)
         self.db_manager.create_tables()
-        self.session_manager = SessionManager(self.db_manager)
+        self.session_manager = UnifiedSessionManager(self.db_manager)
         
         self.test_user, self.user_helper = create_test_user_with_platforms(
             self.db_manager,
@@ -187,7 +187,7 @@ class TestDatabaseConnectionPoolEfficiency(unittest.TestCase):
         
         self.db_manager = DatabaseManager(self.config)
         self.db_manager.create_tables()
-        self.session_manager = SessionManager(self.db_manager)
+        self.session_manager = UnifiedSessionManager(self.db_manager)
         
         self.test_user, self.user_helper = create_test_user_with_platforms(
             self.db_manager,
@@ -297,7 +297,7 @@ class TestCrossTabSynchronizationPerformance(unittest.TestCase):
         
         self.db_manager = DatabaseManager(self.config)
         self.db_manager.create_tables()
-        self.session_manager = SessionManager(self.db_manager)
+        self.session_manager = UnifiedSessionManager(self.db_manager)
         
         self.test_user, self.user_helper = create_test_user_with_platforms(
             self.db_manager,
@@ -458,7 +458,7 @@ class TestPerformanceMetrics(unittest.TestCase):
         
         self.db_manager = DatabaseManager(self.config)
         self.db_manager.create_tables()
-        self.session_manager = SessionManager(self.db_manager)
+        self.session_manager = UnifiedSessionManager(self.db_manager)
         
         self.test_user, self.user_helper = create_test_user_with_platforms(
             self.db_manager,

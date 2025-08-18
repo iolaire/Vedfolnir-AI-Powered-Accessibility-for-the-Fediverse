@@ -14,7 +14,7 @@ from bs4 import BeautifulSoup
 from config import Config
 from database import DatabaseManager
 from models import User, PlatformConnection, UserRole
-from session_manager import SessionManager, get_current_platform_context
+from unified_session_manager import UnifiedSessionManager as SessionManager, get_current_platform_context
 from web_app import app
 
 
@@ -35,7 +35,7 @@ class TestSessionIntegration(unittest.TestCase):
         self.db_manager.create_tables()
         
         # Initialize session manager
-        self.session_manager = SessionManager(self.db_manager)
+        self.session_manager = UnifiedSessionManager(self.db_manager)
         
         # Configure Flask app for testing
         app.config['TESTING'] = True

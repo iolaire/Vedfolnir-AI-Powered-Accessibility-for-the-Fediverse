@@ -39,7 +39,7 @@ class TestUnifiedSessionManager(unittest.TestCase):
         
         # Set up test configuration
         self.config = Config()
-        self.config.database.url = f'sqlite:///{self.temp_db.name}'
+        self.config.storage.database_url = f'sqlite:///{self.temp_db.name}'
         
         # Initialize database manager
         self.db_manager = DatabaseManager(self.config)

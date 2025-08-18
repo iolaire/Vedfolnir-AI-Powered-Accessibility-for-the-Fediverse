@@ -20,7 +20,7 @@ from flask_login import login_user, logout_user
 
 from database import DatabaseManager
 from models import User, PlatformConnection, UserRole
-from session_manager import SessionManager
+from unified_session_manager import UnifiedSessionManager as SessionManager
 from request_scoped_session_manager import RequestScopedSessionManager
 from config import Config
 
@@ -32,7 +32,7 @@ class SessionManagementE2ETest(unittest.TestCase):
         """Set up test environment"""
         self.config = Config()
         self.db_manager = DatabaseManager(self.config)
-        self.session_manager = SessionManager(self.db_manager)
+        self.session_manager = UnifiedSessionManager(self.db_manager)
         self.request_session_manager = RequestScopedSessionManager(self.db_manager)
         
         # Create test Flask app
@@ -308,7 +308,7 @@ class SessionManagementLoadTest(unittest.TestCase):
         """Set up load test environment"""
         self.config = Config()
         self.db_manager = DatabaseManager(self.config)
-        self.session_manager = SessionManager(self.db_manager)
+        self.session_manager = UnifiedSessionManager(self.db_manager)
         
         # Create test users and platforms
         self.test_users = []

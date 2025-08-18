@@ -110,8 +110,8 @@ class TestSessionPerformanceOptimizer(unittest.TestCase):
     def test_cached_session_context(self):
         """Test cached session context retrieval"""
         # Create a test session
-        from session_manager import SessionManager
-        session_manager = SessionManager(self.db_manager)
+        from unified_session_manager import UnifiedSessionManager as SessionManager
+        session_manager = UnifiedSessionManager(self.db_manager)
         
         session_id = session_manager.create_user_session(
             self.test_user.id,
@@ -132,8 +132,8 @@ class TestSessionPerformanceOptimizer(unittest.TestCase):
     
     def test_optimized_session_validation(self):
         """Test optimized session validation"""
-        from session_manager import SessionManager
-        session_manager = SessionManager(self.db_manager)
+        from unified_session_manager import UnifiedSessionManager as SessionManager
+        session_manager = UnifiedSessionManager(self.db_manager)
         
         session_id = session_manager.create_user_session(
             self.test_user.id,
@@ -157,8 +157,8 @@ class TestSessionPerformanceOptimizer(unittest.TestCase):
     
     def test_optimized_session_cleanup(self):
         """Test optimized session cleanup"""
-        from session_manager import SessionManager
-        session_manager = SessionManager(self.db_manager)
+        from unified_session_manager import UnifiedSessionManager as SessionManager
+        session_manager = UnifiedSessionManager(self.db_manager)
         
         # Create test sessions
         session_ids = []
@@ -192,8 +192,8 @@ class TestSessionPerformanceOptimizer(unittest.TestCase):
     
     def test_optimized_user_sessions(self):
         """Test optimized user session retrieval"""
-        from session_manager import SessionManager
-        session_manager = SessionManager(self.db_manager)
+        from unified_session_manager import UnifiedSessionManager as SessionManager
+        session_manager = UnifiedSessionManager(self.db_manager)
         
         # Create multiple sessions
         session_ids = []
@@ -216,8 +216,8 @@ class TestSessionPerformanceOptimizer(unittest.TestCase):
     
     def test_session_activity_update_throttling(self):
         """Test session activity update throttling"""
-        from session_manager import SessionManager
-        session_manager = SessionManager(self.db_manager)
+        from unified_session_manager import UnifiedSessionManager as SessionManager
+        session_manager = UnifiedSessionManager(self.db_manager)
         
         session_id = session_manager.create_user_session(
             self.test_user.id,
@@ -262,8 +262,8 @@ class TestSessionPerformanceOptimizer(unittest.TestCase):
     
     def test_cache_invalidation_on_cleanup(self):
         """Test that cache is invalidated when sessions are cleaned up"""
-        from session_manager import SessionManager
-        session_manager = SessionManager(self.db_manager)
+        from unified_session_manager import UnifiedSessionManager as SessionManager
+        session_manager = UnifiedSessionManager(self.db_manager)
         
         session_id = session_manager.create_user_session(
             self.test_user.id,
@@ -336,8 +336,8 @@ class TestPerformanceImprovements(unittest.TestCase):
     
     def test_session_lookup_performance(self):
         """Test that session lookup is faster with optimizations"""
-        from session_manager import SessionManager
-        session_manager = SessionManager(self.db_manager)
+        from unified_session_manager import UnifiedSessionManager as SessionManager
+        session_manager = UnifiedSessionManager(self.db_manager)
         
         # Create test session
         session_id = session_manager.create_user_session(
@@ -366,8 +366,8 @@ class TestPerformanceImprovements(unittest.TestCase):
     
     def test_batch_cleanup_performance(self):
         """Test batch cleanup performance"""
-        from session_manager import SessionManager
-        session_manager = SessionManager(self.db_manager)
+        from unified_session_manager import UnifiedSessionManager as SessionManager
+        session_manager = UnifiedSessionManager(self.db_manager)
         
         # Create many test sessions
         session_ids = []

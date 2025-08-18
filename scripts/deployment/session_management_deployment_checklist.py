@@ -20,7 +20,7 @@ sys.path.insert(0, os.path.dirname(os.path.dirname(os.path.dirname(__file__))))
 
 from config import Config
 from database import DatabaseManager
-from session_manager import SessionManager
+from unified_session_manager import UnifiedSessionManager as SessionManager
 from session_health_checker import get_session_health_checker
 from session_alerting_system import get_alerting_system
 
@@ -41,7 +41,7 @@ class SessionManagementDeploymentChecker:
     def __init__(self):
         self.config = Config()
         self.db_manager = DatabaseManager(self.config)
-        self.session_manager = SessionManager(self.db_manager)
+        self.session_manager = UnifiedSessionManager(self.db_manager)
         self.results: List[CheckResult] = []
         
         # Setup logging

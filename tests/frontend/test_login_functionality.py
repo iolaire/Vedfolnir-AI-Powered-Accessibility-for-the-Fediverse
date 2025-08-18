@@ -17,7 +17,7 @@ def test_basic_imports():
     try:
         from web_app import app
         from models import User, PlatformConnection, UserSession
-        from session_manager import SessionManager
+        from unified_session_manager import UnifiedSessionManager as SessionManager
         from database import DatabaseManager
         from config import Config
         print("✅ All imports successful")
@@ -198,7 +198,7 @@ def test_session_creation():
     test_user_id = None
     try:
         from web_app import app
-        from session_manager import SessionManager
+        from unified_session_manager import UnifiedSessionManager as SessionManager
         from database import DatabaseManager
         from config import Config
         from models import User, PlatformConnection
@@ -210,7 +210,7 @@ def test_session_creation():
         
         config = Config()
         db_manager = DatabaseManager(config)
-        session_manager = SessionManager(db_manager)
+        session_manager = UnifiedSessionManager(db_manager)
         
         with app.app_context():
             with db_manager.get_session() as db_session:

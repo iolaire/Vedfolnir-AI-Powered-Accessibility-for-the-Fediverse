@@ -13,7 +13,7 @@ sys.path.append(os.path.dirname(os.path.abspath(__file__)))
 
 from config import Config
 from database import DatabaseManager
-from session_manager import SessionManager
+from unified_session_manager import UnifiedSessionManager as SessionManager
 from models import User, PlatformConnection
 
 def test_concurrent_sessions():
@@ -23,7 +23,7 @@ def test_concurrent_sessions():
     # Initialize components
     config = Config()
     db_manager = DatabaseManager(config)
-    session_manager = SessionManager(db_manager)
+    session_manager = UnifiedSessionManager(db_manager)
     
     # Get a test user and their platforms
     db_session = db_manager.get_session()

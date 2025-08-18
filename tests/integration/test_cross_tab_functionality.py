@@ -22,7 +22,7 @@ from datetime import datetime, timedelta, timezone
 from config import Config
 from database import DatabaseManager
 from models import User, PlatformConnection, UserSession, UserRole
-from session_manager import SessionManager
+from unified_session_manager import UnifiedSessionManager as SessionManager
 from tests.test_helpers import create_test_user_with_platforms, cleanup_test_user
 
 
@@ -116,7 +116,7 @@ class TestCrossTabPlatformSwitching(unittest.TestCase):
         self.db_manager.create_tables()
         
         # Initialize session manager
-        self.session_manager = SessionManager(self.db_manager)
+        self.session_manager = UnifiedSessionManager(self.db_manager)
         
         # Create test user with platforms
         self.test_user, self.user_helper = create_test_user_with_platforms(
@@ -265,7 +265,7 @@ class TestCrossTabSessionExpiration(unittest.TestCase):
         self.db_manager.create_tables()
         
         # Initialize session manager
-        self.session_manager = SessionManager(self.db_manager)
+        self.session_manager = UnifiedSessionManager(self.db_manager)
         
         # Create test user with platforms
         self.test_user, self.user_helper = create_test_user_with_platforms(
@@ -397,7 +397,7 @@ class TestCrossTabLogoutSynchronization(unittest.TestCase):
         self.db_manager.create_tables()
         
         # Initialize session manager
-        self.session_manager = SessionManager(self.db_manager)
+        self.session_manager = UnifiedSessionManager(self.db_manager)
         
         # Create test user with platforms
         self.test_user, self.user_helper = create_test_user_with_platforms(
@@ -571,7 +571,7 @@ class TestCrossTabIntegrationScenarios(unittest.TestCase):
         self.db_manager.create_tables()
         
         # Initialize session manager
-        self.session_manager = SessionManager(self.db_manager)
+        self.session_manager = UnifiedSessionManager(self.db_manager)
         
         # Create test user with platforms
         self.test_user, self.user_helper = create_test_user_with_platforms(

@@ -29,7 +29,7 @@ from config import Config
 from database import DatabaseManager
 from models import User, PlatformConnection, UserRole, Post, Image, ProcessingStatus
 from request_scoped_session_manager import RequestScopedSessionManager
-from session_manager import SessionManager
+from unified_session_manager import UnifiedSessionManager as SessionManager
 from database_context_middleware import DatabaseContextMiddleware
 from session_aware_user import SessionAwareUser
 from tests.test_helpers.mock_user_helper import MockUserHelper
@@ -53,7 +53,7 @@ class TestDashboardAccessIntegration(unittest.TestCase):
         
         # Initialize session managers
         self.request_session_manager = RequestScopedSessionManager(self.db_manager)
-        self.session_manager = SessionManager(self.db_manager)
+        self.session_manager = UnifiedSessionManager(self.db_manager)
         
         # Create Flask app for testing
         self.app = Flask(__name__)

@@ -20,7 +20,7 @@ from contextlib import contextmanager
 from config import Config
 from database import DatabaseManager
 from models import User, PlatformConnection, UserSession, UserRole
-from session_manager import SessionManager, SessionDatabaseError, SessionError
+from unified_session_manager import UnifiedSessionManager as SessionManager, SessionDatabaseError, SessionError
 from tests.test_helpers import create_test_user_with_platforms, cleanup_test_user
 from sqlalchemy.exc import SQLAlchemyError, DisconnectionError, TimeoutError, InvalidRequestError
 
@@ -42,7 +42,7 @@ class TestSessionManagerContextManager(unittest.TestCase):
         self.db_manager.create_tables()
         
         # Initialize session manager
-        self.session_manager = SessionManager(self.db_manager)
+        self.session_manager = UnifiedSessionManager(self.db_manager)
         
         # Create test user with platforms
         self.test_user, self.user_helper = create_test_user_with_platforms(
@@ -234,7 +234,7 @@ class TestSessionDatabaseLifecycle(unittest.TestCase):
         self.db_manager.create_tables()
         
         # Initialize session manager
-        self.session_manager = SessionManager(self.db_manager)
+        self.session_manager = UnifiedSessionManager(self.db_manager)
         
         # Create test user with platforms
         self.test_user, self.user_helper = create_test_user_with_platforms(

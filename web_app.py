@@ -30,7 +30,7 @@ from activitypub_client import ActivityPubClient
 from ollama_caption_generator import OllamaCaptionGenerator
 from caption_quality_assessment import CaptionQualityManager
 from health_check import HealthChecker
-from session_manager import SessionManager, get_current_platform_context
+from session_manager import get_current_platform_context  # Using compatibility layer
 # Removed Flask session manager imports - using database sessions only
 from request_scoped_session_manager import RequestScopedSessionManager
 from session_aware_user import SessionAwareUser
@@ -261,8 +261,8 @@ create_session_monitoring_routes(app)
 app.unified_session_manager = unified_session_manager
 app.session_monitor = session_monitor
 
-# Keep old session manager for backward compatibility during transition
-session_manager = SessionManager(db_manager)
+# Legacy session manager removed - using unified_session_manager only
+# session_manager = SessionManager(db_manager)  # DEPRECATED
 # platform_middleware = PlatformContextMiddleware(app, session_manager)  # Removed - using DatabaseSessionMiddleware
 
 # Initialize request-scoped session manager for preventing DetachedInstanceError
@@ -298,8 +298,8 @@ from session_health_checker import get_session_health_checker
 from session_health_routes import register_session_health_routes
 from session_alerting_system import get_alerting_system
 
-# Initialize session health checker
-session_health_checker = get_session_health_checker(db_manager, session_manager)
+# Initialize session health checker with unified session manager
+session_health_checker = get_session_health_checker(db_manager, unified_session_manager)
 
 # Initialize alerting system
 session_alerting_system = get_alerting_system(session_health_checker)
@@ -308,7 +308,7 @@ session_alerting_system = get_alerting_system(session_health_checker)
 app.config['session_health_checker'] = session_health_checker
 app.config['session_alerting_system'] = session_alerting_system
 app.config['db_manager'] = db_manager
-app.config['session_manager'] = session_manager
+app.config['session_manager'] = unified_session_manager  # For backward compatibility
 
 # Register session health routes
 register_session_health_routes(app)

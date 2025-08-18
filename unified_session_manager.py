@@ -585,3 +585,142 @@ class UnifiedSessionManager:
                 )
         except Exception as e:
             logger.debug(f"Error creating security audit event: {e}")
+
+
+# Platform Context Functions
+# These functions provide the same interface as the legacy session_manager
+
+def get_current_platform_context() -> Optional[Dict[str, Any]]:
+    """
+    Get the current platform context from Flask's g object with fallback
+    
+    Returns:
+        Platform context dictionary or None
+    """
+    try:
+        from flask import g
+        
+        # First try to get from g object (set by middleware)
+        context = getattr(g, 'platform_context', None)
+        if context:
+            return context
+        
+        # Fallback: get from session cookie
+        try:
+            from flask import request, current_app
+            from session_cookie_manager import get_session_cookie_manager
+            
+            cookie_manager = get_session_cookie_manager()
+            session_id = cookie_manager.get_session_id_from_request(request)
+            
+            if session_id:
+                # Get unified session manager from app context
+                unified_session_manager = getattr(current_app, 'unified_session_manager', None)
+                if unified_session_manager:
+                    return unified_session_manager.get_session_context(session_id)
+        except Exception as e:
+            logger.debug(f"Error in platform context fallback: {e}")
+        
+        return None
+    except Exception as e:
+        logger.debug(f"Error getting platform context: {e}")
+        return None
+
+
+def get_current_platform() -> Optional['PlatformConnection']:
+    """
+    Get the current platform connection from context using fresh database query
+    
+    Returns:
+        PlatformConnection object or None
+    """
+    try:
+        context = get_current_platform_context()
+        if context and context.get('platform_connection_id'):
+            from flask import current_app
+            from models import PlatformConnection
+            
+            # Get db_manager from app context
+            db_manager = getattr(current_app, 'config', {}).get('db_manager')
+            if not db_manager:
+                # Fallback: try to get from unified_session_manager
+                unified_session_manager = getattr(current_app, 'unified_session_manager', None)
+                if unified_session_manager:
+                    db_manager = unified_session_manager.db_manager
+            
+            if not db_manager:
+                return None
+                
+            with db_manager.get_session() as db_session:
+                return db_session.query(PlatformConnection).filter_by(
+                    id=context['platform_connection_id'],
+                    is_active=True
+                ).first()
+    except Exception as e:
+        logger.debug(f"Error getting current platform: {e}")
+    
+    return None
+
+
+def get_current_user_from_context() -> Optional['User']:
+    """
+    Get the current user from platform context using fresh database query
+    
+    Returns:
+        User object or None
+    """
+    try:
+        context = get_current_platform_context()
+        if context and context.get('user_id'):
+            from flask import current_app
+            from models import User
+            
+            # Get db_manager from app context
+            db_manager = getattr(current_app, 'config', {}).get('db_manager')
+            if not db_manager:
+                # Fallback: try to get from unified_session_manager
+                unified_session_manager = getattr(current_app, 'unified_session_manager', None)
+                if unified_session_manager:
+                    db_manager = unified_session_manager.db_manager
+            
+            if not db_manager:
+                return None
+                
+            with db_manager.get_session() as db_session:
+                return db_session.query(User).filter_by(
+                    id=context['user_id'],
+                    is_active=True
+                ).first()
+    except Exception as e:
+        logger.debug(f"Error getting current user from context: {e}")
+    
+    return None
+
+
+def switch_platform_context(platform_connection_id: int) -> bool:
+    """
+    Switch the current session's platform context
+    
+    Args:
+        platform_connection_id: ID of platform to switch to
+        
+    Returns:
+        True if successful, False otherwise
+    """
+    try:
+        context = get_current_platform_context()
+        if not context:
+            return False
+        
+        from flask import current_app
+        unified_session_manager = getattr(current_app, 'unified_session_manager', None)
+        if not unified_session_manager:
+            return False
+        
+        return unified_session_manager.update_platform_context(
+            context['session_id'], 
+            platform_connection_id
+        )
+    except Exception as e:
+        logger.debug(f"Error switching platform context: {e}")
+        return False

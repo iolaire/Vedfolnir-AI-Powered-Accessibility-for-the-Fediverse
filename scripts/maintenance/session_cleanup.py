@@ -24,7 +24,7 @@ sys.path.insert(0, os.path.dirname(os.path.dirname(os.path.dirname(os.path.abspa
 
 from config import Config
 from database import DatabaseManager
-from session_manager import SessionManager
+from unified_session_manager import UnifiedSessionManager as SessionManager
 from session_monitoring import get_session_monitor
 from models import UserSession
 
@@ -36,7 +36,7 @@ class SessionCleanupService:
     def __init__(self, config: Config):
         self.config = config
         self.db_manager = DatabaseManager(config)
-        self.session_manager = SessionManager(self.db_manager)
+        self.session_manager = UnifiedSessionManager(self.db_manager)
         self.monitor = get_session_monitor(self.db_manager)
         self.running = False
         self.cleanup_interval = int(os.getenv('SESSION_CLEANUP_INTERVAL', '3600'))  # 1 hour default

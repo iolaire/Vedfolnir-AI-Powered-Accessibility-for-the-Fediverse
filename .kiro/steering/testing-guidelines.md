@@ -238,3 +238,144 @@ When updating existing tests to use mock user helpers:
 4. Ensure test isolation by using unique usernames
 
 This standardized approach ensures consistent test data, proper cleanup, and reliable test execution across all test suites involving user sessions and platforms.
+
+## Unified Session Testing
+
+**IMPORTANT**: All session-related tests must use the unified session manager. Legacy `SessionManager` has been deprecated.
+
+### Using UnifiedSessionManager in Tests
+
+```python
+import unittest
+from unified_session_manager import UnifiedSessionManager, get_current_platform_context
+from tests.test_helpers import create_test_user_with_platforms, cleanup_test_user
+from config import Config
+from database import DatabaseManager
+
+class TestUnifiedSessions(unittest.TestCase):
+    def setUp(self):
+        """Set up test fixtures with unified session manager"""
+        self.config = Config()
+        self.db_manager = DatabaseManager(self.config)
+        self.session_manager = UnifiedSessionManager(self.db_manager)
+        
+        # Create mock user with platforms for session testing
+        self.test_user, self.user_helper = create_test_user_with_platforms(
+            self.db_manager,
+            username="test_session_user",
+            role=UserRole.REVIEWER
+        )
+    
+    def tearDown(self):
+        """Clean up test fixtures"""
+        cleanup_test_user(self.user_helper)
+    
+    def test_session_creation(self):
+        """Test unified session creation"""
+        # Create session with user and platform
+        platform_id = self.test_user.platform_connections[0].id
+        session_id = self.session_manager.create_session(
+            self.test_user.id, 
+            platform_id
+        )
+        self.assertIsNotNone(session_id)
+        
+        # Test session context retrieval
+        context = self.session_manager.get_session_context(session_id)
+        self.assertEqual(context['user_id'], self.test_user.id)
+        self.assertEqual(context['platform_connection_id'], platform_id)
+    
+    def test_session_validation(self):
+        """Test session validation"""
+        # Create and validate session
+        session_id = self.session_manager.create_session(self.test_user.id)
+        self.assertTrue(self.session_manager.validate_session(session_id))
+        
+        # Test invalid session
+        self.assertFalse(self.session_manager.validate_session("invalid_session"))
+    
+    def test_platform_context_functions(self):
+        """Test platform context functions"""
+        # Note: These functions require Flask request context
+        # Use Flask test client for full integration testing
+        from unified_session_manager import (
+            get_current_platform_context,
+            get_current_platform,
+            get_current_user_from_context,
+            switch_platform_context
+        )
+        
+        # Verify functions are callable
+        self.assertTrue(callable(get_current_platform_context))
+        self.assertTrue(callable(get_current_platform))
+        self.assertTrue(callable(get_current_user_from_context))
+        self.assertTrue(callable(switch_platform_context))
+```
+
+### Session Integration Testing
+
+For tests that require Flask request context:
+
+```python
+import unittest
+from flask import Flask
+from unified_session_manager import UnifiedSessionManager
+
+class TestSessionIntegration(unittest.TestCase):
+    def setUp(self):
+        """Set up Flask app for integration testing"""
+        self.app = Flask(__name__)
+        self.app.config['TESTING'] = True
+        self.client = self.app.test_client()
+        
+        # Initialize session manager
+        self.config = Config()
+        self.db_manager = DatabaseManager(self.config)
+        self.session_manager = UnifiedSessionManager(self.db_manager)
+        
+        # Store in app context
+        self.app.unified_session_manager = self.session_manager
+    
+    def test_session_with_flask_context(self):
+        """Test session operations within Flask request context"""
+        with self.app.test_request_context():
+            # Test session operations that require Flask context
+            pass
+```
+
+### Migration Guidelines for Existing Tests
+
+When updating existing tests to use UnifiedSessionManager:
+
+1. **Replace Imports**:
+   ```python
+   # OLD
+   from session_manager import SessionManager
+   
+   # NEW
+   from unified_session_manager import UnifiedSessionManager
+   ```
+
+2. **Update Instantiation**:
+   ```python
+   # OLD
+   self.session_manager = SessionManager(self.db_manager)
+   
+   # NEW
+   self.session_manager = UnifiedSessionManager(self.db_manager)
+   ```
+
+3. **Update Method Calls**: Most methods remain the same, but verify signatures
+4. **Add Platform Context**: Include platform_connection_id in session creation
+5. **Use Mock Users**: Always use standardized mock user helpers
+
+### Required Test Dependencies
+
+```python
+# Core testing imports for unified sessions
+from unified_session_manager import UnifiedSessionManager
+from tests.test_helpers import create_test_user_with_platforms, cleanup_test_user
+from config import Config
+from database import DatabaseManager
+from models import UserRole
+```

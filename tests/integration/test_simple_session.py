@@ -9,7 +9,7 @@ sys.path.insert(0, os.path.dirname(os.path.abspath(__file__)))
 
 from config import Config
 from database import DatabaseManager
-from session_manager import SessionManager
+from unified_session_manager import UnifiedSessionManager as SessionManager
 from models import User, PlatformConnection
 
 def create_test_platform():
@@ -53,7 +53,7 @@ def test_session_with_platform():
     """Test session creation with the platform"""
     config = Config()
     db_manager = DatabaseManager(config)
-    session_manager = SessionManager(db_manager)
+    session_manager = UnifiedSessionManager(db_manager)
     
     # First create a platform
     platform_id = create_test_platform()

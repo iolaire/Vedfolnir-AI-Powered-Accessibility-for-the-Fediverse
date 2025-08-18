@@ -23,7 +23,7 @@ sys.path.insert(0, os.path.dirname(os.path.dirname(os.path.dirname(os.path.abspa
 
 from config import Config
 from database import DatabaseManager
-from session_manager import SessionManager
+from unified_session_manager import UnifiedSessionManager as SessionManager
 
 logger = getLogger(__name__)
 
@@ -33,7 +33,7 @@ class SessionDatabaseMaintenance:
     def __init__(self, config: Config):
         self.config = config
         self.db_manager = DatabaseManager(config)
-        self.session_manager = SessionManager(self.db_manager)
+        self.session_manager = UnifiedSessionManager(self.db_manager)
     
     def analyze_session_tables(self) -> Dict[str, Any]:
         """Analyze session tables for optimization opportunities"""

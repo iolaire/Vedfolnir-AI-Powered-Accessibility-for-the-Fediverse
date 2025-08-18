@@ -72,9 +72,14 @@ def ensure_platform_context(db_manager, session_manager) -> Tuple[Optional[Dict[
                     logger.error(f"Failed to update session context for user {sanitize_for_log(current_user.username)}")
                     return None, False
             else:
-                # Create new session using unified session manager
-                from unified_session_manager import UnifiedSessionManager
-                unified_session_manager = UnifiedSessionManager(db_manager)
+                # Create new session using unified session manager from app context
+                from flask import current_app
+                unified_session_manager = getattr(current_app, 'unified_session_manager', None)
+                if not unified_session_manager:
+                    # Fallback: create new instance
+                    from unified_session_manager import UnifiedSessionManager
+                    unified_session_manager = UnifiedSessionManager(db_manager)
+                
                 session_id = unified_session_manager.create_session(user_id, default_platform.id)
                 
                 if session_id:

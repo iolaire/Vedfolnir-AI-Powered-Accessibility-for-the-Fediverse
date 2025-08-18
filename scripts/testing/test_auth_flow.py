@@ -25,7 +25,7 @@ sys.path.insert(0, os.path.dirname(os.path.abspath(__file__)))
 from config import Config
 from database import DatabaseManager
 from models import User, UserRole, PlatformConnection
-from session_manager import SessionManager
+from unified_session_manager import UnifiedSessionManager as SessionManager
 
 # Set up logging
 logging.basicConfig(level=logging.INFO, format='%(asctime)s - %(levelname)s - %(message)s')
@@ -37,7 +37,7 @@ class AuthFlowTester:
     def __init__(self):
         self.config = Config()
         self.db_manager = DatabaseManager(self.config)
-        self.session_manager = SessionManager(self.db_manager)
+        self.session_manager = UnifiedSessionManager(self.db_manager)
         
     def test_user_creation(self):
         """Test creating users with different scenarios"""

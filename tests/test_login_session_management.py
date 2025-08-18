@@ -29,7 +29,7 @@ from config import Config
 from database import DatabaseManager
 from models import User, PlatformConnection, UserRole
 from request_scoped_session_manager import RequestScopedSessionManager
-from session_manager import SessionManager
+from unified_session_manager import UnifiedSessionManager as SessionManager
 from session_aware_user import SessionAwareUser
 from database_context_middleware import DatabaseContextMiddleware
 from tests.test_helpers.mock_user_helper import MockUserHelper
@@ -55,7 +55,7 @@ class TestLoginSessionManagement(unittest.TestCase):
         
         # Initialize session managers
         self.request_session_manager = RequestScopedSessionManager(self.db_manager)
-        self.session_manager = SessionManager(self.db_manager)
+        self.session_manager = UnifiedSessionManager(self.db_manager)
         
         # Create Flask app for testing
         self.app = Flask(__name__)
@@ -564,7 +564,7 @@ class TestLoginErrorRecovery(unittest.TestCase):
         
         # Initialize session managers
         self.request_session_manager = RequestScopedSessionManager(self.db_manager)
-        self.session_manager = SessionManager(self.db_manager)
+        self.session_manager = UnifiedSessionManager(self.db_manager)
         
         # Create mock user helper
         self.mock_user_helper = MockUserHelper(self.db_manager)

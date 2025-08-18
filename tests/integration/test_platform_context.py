@@ -13,7 +13,7 @@ sys.path.insert(0, os.path.dirname(os.path.abspath(__file__)))
 
 from config import Config
 from database import DatabaseManager
-from session_manager import SessionManager
+from unified_session_manager import UnifiedSessionManager as SessionManager
 from models import User, PlatformConnection
 from platform_context_utils import ensure_platform_context, validate_platform_context, refresh_platform_context
 
@@ -24,7 +24,7 @@ def test_platform_context():
     # Initialize components
     config = Config()
     db_manager = DatabaseManager(config)
-    session_manager = SessionManager(db_manager)
+    session_manager = UnifiedSessionManager(db_manager)
     
     # Get a test user
     db_session = db_manager.get_session()

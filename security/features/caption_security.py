@@ -170,7 +170,7 @@ def caption_generation_auth_required(f):
             return jsonify({'success': False, 'error': 'Authentication required'}), 401
         
         # Check if user has active platform
-        from session_manager import get_current_platform_context
+        from unified_session_manager import get_current_platform_context
         context = get_current_platform_context()
         if not context or not context.get('platform_connection_id'):
             return jsonify({'success': False, 'error': 'No active platform connection'}), 403
