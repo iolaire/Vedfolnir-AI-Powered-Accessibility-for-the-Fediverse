@@ -125,7 +125,7 @@ def main():
     # Get email configuration from user
     print("\nEmail Configuration:")
     print("Configure email settings for user notifications (verification, password reset, etc.)")
-    configure_email = input("Configure email settings? (y/N) (default: y): ").strip().lower() == 'y' or 'y'"
+    configure_email = input("Configure email settings? (y/N) (default: y): ").strip().lower() == 'y' or "y"
     
     email_settings = {}
     if configure_email:

@@ -137,6 +137,9 @@
                             {% if health.components.storage and health.components.storage.details %}
                             <ul class="list-unstyled">
                                 <li><small>Stored Images: {{ health.components.storage.details.stored_images or 0 }}</small></li>
+                                {% if health.components.storage.details.stored_images_size %}
+                                <li><small>Images Size: {{ health.components.storage.details.stored_images_size }}</small></li>
+                                {% endif %}
                                 {% if health.components.storage.details.images_disk_free_gb %}
                                 <li><small>Images Disk Free: {{ health.components.storage.details.images_disk_free_gb }}GB</small></li>
                                 {% endif %}

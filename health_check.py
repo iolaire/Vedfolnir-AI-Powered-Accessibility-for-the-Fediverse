@@ -373,14 +373,37 @@ class HealthChecker:
                 images_usage = shutil.disk_usage(images_dir)
                 db_usage = shutil.disk_usage(database_dir)
                 
-                # Count stored images
-                image_count = len([f for f in os.listdir(images_dir) 
-                                 if f.lower().endswith(('.jpg', '.jpeg', '.png', '.gif', '.webp'))])
+                # Count stored images and calculate total size
+                image_files = [f for f in os.listdir(images_dir) 
+                              if f.lower().endswith(('.jpg', '.jpeg', '.png', '.gif', '.webp'))]
+                image_count = len(image_files)
+                
+                # Calculate total size of stored images
+                total_image_size_bytes = 0
+                for image_file in image_files:
+                    try:
+                        image_path = os.path.join(images_dir, image_file)
+                        total_image_size_bytes += os.path.getsize(image_path)
+                    except (OSError, IOError):
+                        # Skip files that can't be accessed
+                        continue
+                
+                # Convert to human-readable format
+                if total_image_size_bytes >= 1024**3:  # GB
+                    image_size_display = f"{total_image_size_bytes / (1024**3):.2f}GB"
+                elif total_image_size_bytes >= 1024**2:  # MB
+                    image_size_display = f"{total_image_size_bytes / (1024**2):.1f}MB"
+                elif total_image_size_bytes >= 1024:  # KB
+                    image_size_display = f"{total_image_size_bytes / 1024:.1f}KB"
+                else:  # Bytes
+                    image_size_display = f"{total_image_size_bytes}B"
                 
                 details = {
                     "images_directory": images_dir,
                     "database_directory": database_dir,
                     "stored_images": image_count,
+                    "stored_images_size": image_size_display,
+                    "stored_images_size_bytes": total_image_size_bytes,
                     "images_disk_free_gb": round(images_usage.free / (1024**3), 2),
                     "images_disk_total_gb": round(images_usage.total / (1024**3), 2),
                     "db_disk_free_gb": round(db_usage.free / (1024**3), 2),
@@ -422,6 +445,130 @@ class HealthChecker:
                 last_check=datetime.now(timezone.utc),
                 details={"error": str(e)}
             )
+
+    async def check_session_health(self) -> ComponentHealth:
+        """Check Redis session storage health"""
+        start_time = time.time()
+        
+        try:
+            import redis
+            
+            # Get Redis configuration from environment
+            redis_host = os.getenv('REDIS_HOST', 'localhost')
+            redis_port = int(os.getenv('REDIS_PORT', '6379'))
+            redis_db = int(os.getenv('REDIS_DB', '0'))
+            redis_password = os.getenv('REDIS_PASSWORD', None)
+            
+            # Create Redis client
+            redis_client = redis.Redis(
+                host=redis_host,
+                port=redis_port,
+                db=redis_db,
+                password=redis_password,
+                decode_responses=True,
+                socket_timeout=5.0,
+                socket_connect_timeout=5.0
+            )
+            
+            # Test basic connectivity
+            redis_client.ping()
+            
+            # Get Redis server info
+            redis_info = redis_client.info()
+            
+            # Get session-related statistics
+            session_keys = redis_client.keys("session:*")
+            platform_keys = redis_client.keys("user_platforms:*")
+            platform_individual_keys = redis_client.keys("platform:*")
+            platform_stats_keys = redis_client.keys("platform_stats:*")
+            
+            # Get memory usage
+            memory_used = redis_info.get('used_memory_human', 'unknown')
+            memory_peak = redis_info.get('used_memory_peak_human', 'unknown')
+            
+            # Get connection info
+            connected_clients = redis_info.get('connected_clients', 0)
+            total_connections = redis_info.get('total_connections_received', 0)
+            
+            # Calculate response time
+            response_time = (time.time() - start_time) * 1000
+            
+            details = {
+                "redis_host": redis_host,
+                "redis_port": redis_port,
+                "redis_db": redis_db,
+                "redis_version": redis_info.get('redis_version', 'unknown'),
+                "session_keys": len(session_keys),
+                "platform_cache_keys": len(platform_keys),
+                "individual_platform_keys": len(platform_individual_keys),
+                "platform_stats_keys": len(platform_stats_keys),
+                "total_keys": len(session_keys) + len(platform_keys) + len(platform_individual_keys) + len(platform_stats_keys),
+                "memory_used": memory_used,
+                "memory_peak": memory_peak,
+                "connected_clients": connected_clients,
+                "total_connections": total_connections,
+                "uptime_seconds": redis_info.get('uptime_in_seconds', 0)
+            }
+            
+            # Determine health status
+            if response_time > 1000:  # 1 second
+                status = HealthStatus.DEGRADED
+                message = f"Redis responding slowly ({response_time:.0f}ms)"
+            elif connected_clients > 100:  # High connection count
+                status = HealthStatus.DEGRADED
+                message = f"High Redis connection count ({connected_clients})"
+            else:
+                status = HealthStatus.HEALTHY
+                total_keys = details["total_keys"]
+                message = f"Redis session storage healthy ({total_keys} cached items)"
+            
+            return ComponentHealth(
+                name="sessions",
+                status=status,
+                message=message,
+                response_time_ms=response_time,
+                last_check=datetime.now(timezone.utc),
+                details=details
+            )
+            
+        except redis.ConnectionError as e:
+            response_time = (time.time() - start_time) * 1000
+            logger.error(f"Redis connection failed: {e}")
+            
+            return ComponentHealth(
+                name="sessions",
+                status=HealthStatus.UNHEALTHY,
+                message=f"Redis connection failed: {str(e)}",
+                response_time_ms=response_time,
+                last_check=datetime.now(timezone.utc),
+                details={"error": str(e), "redis_host": redis_host, "redis_port": redis_port}
+            )
+            
+        except redis.TimeoutError as e:
+            response_time = (time.time() - start_time) * 1000
+            logger.error(f"Redis timeout: {e}")
+            
+            return ComponentHealth(
+                name="sessions",
+                status=HealthStatus.DEGRADED,
+                message=f"Redis timeout: {str(e)}",
+                response_time_ms=response_time,
+                last_check=datetime.now(timezone.utc),
+                details={"error": str(e), "redis_host": redis_host, "redis_port": redis_port}
+            )
+            
+        except Exception as e:
+            response_time = (time.time() - start_time) * 1000
+            logger.error(f"Session health check failed: {e}")
+            
+            return ComponentHealth(
+                name="sessions",
+                status=HealthStatus.UNHEALTHY,
+                message=f"Session health check failed: {str(e)}",
+                response_time_ms=response_time,
+                last_check=datetime.now(timezone.utc),
+                details={"error": str(e)}
+            )
     
     async def check_system_health(self) -> SystemHealth:
         """Perform comprehensive system health check"""
@@ -431,7 +578,8 @@ class HealthChecker:
         tasks = [
             self.check_database_health(),
             self.check_ollama_health(),
-            self.check_storage_health()
+            self.check_storage_health(),
+            self.check_session_health()
         ]
         
         component_results = await asyncio.gather(*tasks, return_exceptions=True)
@@ -442,7 +590,7 @@ class HealthChecker:
         for i, result in enumerate(component_results):
             if isinstance(result, Exception):
                 # Handle unexpected errors in health checks
-                component_name = ["database", "ollama", "storage"][i]
+                component_name = ["database", "ollama", "storage", "sessions"][i]
                 components[component_name] = ComponentHealth(
                     name=component_name,
                     status=HealthStatus.UNHEALTHY,

@@ -15,7 +15,7 @@ logger = logging.getLogger(__name__)
 
 
 class RequestScopedSessionManager:
-    """Manages database sessions scoped to Flask requests to prevent DetachedInstanceError"""
+    """Manages database sessions scoped to Flask requests to prevent DetachedInstanceError""" 
     
     def __init__(self, db_manager: DatabaseManager):
         """

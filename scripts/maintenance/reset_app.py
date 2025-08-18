@@ -38,6 +38,31 @@ class AppResetManager:
             self.config = Config()
             self.db_manager = DatabaseManager(self.config)
             self.cleanup_manager = DataCleanupManager(self.db_manager, self.config)
+            
+            # Initialize Redis connection for cache clearing
+            self.redis_client = None
+            try:
+                import redis
+                redis_host = os.getenv('REDIS_HOST', 'localhost')
+                redis_port = int(os.getenv('REDIS_PORT', '6379'))
+                redis_db = int(os.getenv('REDIS_DB', '0'))
+                redis_password = os.getenv('REDIS_PASSWORD', None)
+                
+                self.redis_client = redis.Redis(
+                    host=redis_host,
+                    port=redis_port,
+                    db=redis_db,
+                    password=redis_password,
+                    decode_responses=True
+                )
+                # Test connection
+                self.redis_client.ping()
+                logger.info("✅ Redis connection established for cache clearing")
+            except Exception as redis_error:
+                logger.warning(f"⚠️  Redis connection failed: {redis_error}")
+                logger.info("Redis cache clearing will be skipped")
+                self.redis_client = None
+                
         except Exception as e:
             logger.error(f"Failed to initialize configuration: {e}")
             logger.info("This might be due to missing environment variables.")
@@ -45,6 +70,74 @@ class AppResetManager:
             self.config = None
             self.db_manager = None
             self.cleanup_manager = None
+            self.redis_client = None
+    
+    def clear_redis_cache(self, dry_run=False):
+        """Clear Redis cache including sessions and platform data"""
+        if not self.redis_client:
+            logger.warning("⚠️  Redis client not available, skipping cache clear")
+            return True
+        
+        logger.info("🗑️  Clearing Redis cache (sessions and platform data)")
+        
+        if dry_run:
+            try:
+                # Count keys that would be deleted
+                session_keys = self.redis_client.keys("session:*")
+                platform_keys = self.redis_client.keys("user_platforms:*")
+                platform_individual_keys = self.redis_client.keys("platform:*")
+                platform_stats_keys = self.redis_client.keys("platform_stats:*")
+                
+                total_keys = len(session_keys) + len(platform_keys) + len(platform_individual_keys) + len(platform_stats_keys)
+                
+                logger.info(f"DRY RUN - Would clear {total_keys} Redis keys:")
+                logger.info(f"  - {len(session_keys)} session keys")
+                logger.info(f"  - {len(platform_keys)} user platform keys")
+                logger.info(f"  - {len(platform_individual_keys)} individual platform keys")
+                logger.info(f"  - {len(platform_stats_keys)} platform stats keys")
+                
+                return True
+            except Exception as e:
+                logger.error(f"❌ Failed to preview Redis cache clear: {e}")
+                return False
+        
+        try:
+            # Clear session data
+            session_keys = self.redis_client.keys("session:*")
+            if session_keys:
+                deleted_sessions = self.redis_client.delete(*session_keys)
+                logger.info(f"✅ Cleared {deleted_sessions} session keys")
+            
+            # Clear platform cache data
+            platform_keys = self.redis_client.keys("user_platforms:*")
+            if platform_keys:
+                deleted_platforms = self.redis_client.delete(*platform_keys)
+                logger.info(f"✅ Cleared {deleted_platforms} user platform cache keys")
+            
+            # Clear individual platform data
+            platform_individual_keys = self.redis_client.keys("platform:*")
+            if platform_individual_keys:
+                deleted_individual = self.redis_client.delete(*platform_individual_keys)
+                logger.info(f"✅ Cleared {deleted_individual} individual platform cache keys")
+            
+            # Clear platform statistics cache
+            platform_stats_keys = self.redis_client.keys("platform_stats:*")
+            if platform_stats_keys:
+                deleted_stats = self.redis_client.delete(*platform_stats_keys)
+                logger.info(f"✅ Cleared {deleted_stats} platform statistics cache keys")
+            
+            # Clear any other application-specific cache keys
+            other_keys = self.redis_client.keys("vedfolnir:*")
+            if other_keys:
+                deleted_other = self.redis_client.delete(*other_keys)
+                logger.info(f"✅ Cleared {deleted_other} other application cache keys")
+            
+            logger.info("✅ Redis cache cleared successfully")
+            return True
+            
+        except Exception as e:
+            logger.error(f"❌ Failed to clear Redis cache: {e}")
+            return False
     
     def reset_database_only(self, dry_run=False):
         """Reset only the database, keeping files"""
@@ -56,9 +149,15 @@ class AppResetManager:
         
         if dry_run:
             logger.info("DRY RUN - Database would be reset")
+            # Also preview Redis cache clearing
+            self.clear_redis_cache(dry_run=True)
             return True
         
         try:
+            # Clear Redis cache first (sessions and platform data)
+            if not self.clear_redis_cache(dry_run=False):
+                logger.warning("⚠️  Redis cache clearing failed, continuing with database reset")
+            
             # Drop and recreate all tables
             engine = create_engine(self.config.storage.database_url)
             Base.metadata.drop_all(engine)
@@ -301,6 +400,8 @@ Examples:
   %(prog)s --status                    # Show current application status
   %(prog)s --cleanup --dry-run         # Preview data cleanup (safe)
   %(prog)s --cleanup                   # Clean up old data using retention policies
+  %(prog)s --clear-redis --dry-run     # Preview Redis cache clear
+  %(prog)s --clear-redis               # Clear Redis cache (sessions and platforms)
   %(prog)s --reset-db --dry-run        # Preview database reset
   %(prog)s --reset-db                  # Reset database only (keep files)
   %(prog)s --reset-storage --dry-run   # Preview storage reset
@@ -317,6 +418,8 @@ Examples:
                        help='Show current application status')
     parser.add_argument('--cleanup', action='store_true',
                        help='Clean up old data using retention policies (safe)')
+    parser.add_argument('--clear-redis', action='store_true',
+                       help='Clear Redis cache (sessions and platform data)')
     parser.add_argument('--reset-db', action='store_true',
                        help='Reset database only (keep image files)')
     parser.add_argument('--reset-storage', action='store_true',
@@ -343,9 +446,11 @@ Examples:
         return 0
     
     # Confirmation for destructive operations
-    destructive_ops = [args.reset_db, args.reset_storage, args.reset_complete]
+    destructive_ops = [args.reset_db, args.reset_storage, args.reset_complete, args.clear_redis]
     if any(destructive_ops) and not args.dry_run and not args.force:
         print("\n⚠️  WARNING: This operation will permanently delete data!")
+        if args.clear_redis:
+            print("Redis cache clearing will remove all sessions and platform cache data.")
         print("Make sure you have backups if needed.")
         response = input("Are you sure you want to continue? (type 'yes' to confirm): ")
         if response.lower() != 'yes':
@@ -357,6 +462,9 @@ Examples:
     # Perform requested operations
     if args.cleanup:
         success &= reset_manager.cleanup_old_data(dry_run=args.dry_run)
+    
+    if args.clear_redis:
+        success &= reset_manager.clear_redis_cache(dry_run=args.dry_run)
     
     if args.reset_db:
         success &= reset_manager.reset_database_only(dry_run=args.dry_run)

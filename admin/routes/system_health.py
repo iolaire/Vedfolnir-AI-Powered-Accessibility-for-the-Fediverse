@@ -19,11 +19,49 @@ def register_routes(bp):
     @login_required
     @with_session_error_handling
     def health_check():
-        """Basic health check endpoint - checks both Redis sessions and database"""
+        """Comprehensive health check endpoint using HealthChecker"""
         if not current_user.role == UserRole.ADMIN:
             return jsonify({'error': 'Access denied'}), 403
             
         try:
+            # Use the comprehensive health checker
+            health_checker = current_app.config.get('health_checker')
+            
+            if health_checker:
+                # Use the full health check system
+                import asyncio
+                try:
+                    # Run the async health check
+                    loop = asyncio.new_event_loop()
+                    asyncio.set_event_loop(loop)
+                    try:
+                        system_health = loop.run_until_complete(health_checker.check_system_health())
+                        
+                        # Convert to API format
+                        health_status = {
+                            'status': system_health.status.value,
+                            'timestamp': system_health.timestamp.isoformat(),
+                            'service': 'vedfolnir',
+                            'components': {},
+                            'uptime_seconds': system_health.uptime_seconds,
+                            'version': system_health.version
+                        }
+                        
+                        # Add component details
+                        for name, component in system_health.components.items():
+                            health_status['components'][name] = component.status.value
+                            
+                        return jsonify(health_status)
+                        
+                    finally:
+                        loop.close()
+                        
+                except Exception as e:
+                    current_app.logger.error(f"Comprehensive health check failed: {e}")
+                    # Fall back to simple health check
+                    pass
+            
+            # Fallback to simple health check if comprehensive check fails
             db_manager = current_app.config['db_manager']
             unified_session_manager = current_app.unified_session_manager
             
@@ -48,6 +86,57 @@ def register_routes(bp):
                 health_status['status'] = 'degraded'
             
             # Check Redis session manager health
+            try:
+                if hasattr(unified_session_manager, 'get_session_stats'):
+                    # Redis session manager
+                    stats = unified_session_manager.get_session_stats()
+                    health_status['components']['sessions'] = 'healthy'
+                else:
+                    # Database session manager
+                    health_status['components']['sessions'] = 'healthy'
+            except Exception as e:
+                health_status['components']['sessions'] = f'unhealthy: {str(e)}'
+                health_status['status'] = 'degraded'
+            
+            # Simple Ollama check
+            try:
+                import httpx
+                import os
+                ollama_url = os.getenv('OLLAMA_URL', 'http://localhost:11434')
+                with httpx.Client(timeout=2.0) as client:
+                    response = client.get(f"{ollama_url}/api/tags")
+                    if response.status_code == 200:
+                        health_status['components']['ollama'] = 'healthy'
+                    else:
+                        health_status['components']['ollama'] = 'degraded'
+                        health_status['status'] = 'degraded'
+            except Exception as e:
+                health_status['components']['ollama'] = f'unhealthy: {str(e)}'
+                health_status['status'] = 'degraded'
+            
+            # Simple storage check
+            try:
+                import os
+                storage_dirs = ['storage', 'storage/database', 'storage/images']
+                storage_healthy = all(os.path.exists(d) for d in storage_dirs)
+                if storage_healthy:
+                    health_status['components']['storage'] = 'healthy'
+                else:
+                    health_status['components']['storage'] = 'degraded'
+                    health_status['status'] = 'degraded'
+            except Exception as e:
+                health_status['components']['storage'] = f'unhealthy: {str(e)}'
+                health_status['status'] = 'degraded'
+            
+            return jsonify(health_status)
+            
+        except Exception as e:
+            return jsonify({
+                'status': 'unhealthy',
+                'timestamp': datetime.now(timezone.utc).isoformat(),
+                'service': 'vedfolnir',
+                'error': f'Health check failed: {str(e)}'
+            }), 503
             try:
                 if hasattr(unified_session_manager, 'get_session_stats'):
                     # Redis session manager

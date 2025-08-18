@@ -5,96 +5,125 @@
 <!-- Admin Dashboard Component -->
 <!-- Requirements: 1.2, 1.3, 1.4, 1.5 -->
 
-<div class="admin-dashboard">
+<div class="container-fluid">
     <!-- Welcome Section -->
-    <div class="dashboard-header">
-        <h1 class="dashboard-title">Administrator Dashboard</h1>
-        <p class="dashboard-subtitle">System overview and management controls</p>
+    <div class="row mb-4">
+        <div class="col-12 text-center">
+            <h1 class="display-5 fw-bold text-primary mb-2">Administrator Dashboard</h1>
+            <p class="lead text-muted">System overview and management controls</p>
+        </div>
     </div>
 
     <!-- System Status Cards -->
-    <div class="status-grid">
-        <div class="status-card system-health">
-            <div class="status-icon">
-                <i class="icon-health" aria-hidden="true"></i>
-            </div>
-            <div class="status-content">
-                <div class="status-title">System Health</div>
-                <div class="status-value" id="system-health-status">
-                    Loading...
+    <div class="row g-4 mb-4">
+        <div class="col-lg-3 col-md-6">
+            <div class="card h-100 border-0 shadow-sm">
+                <div class="card-body">
+                    <h6 class="card-title text-muted text-uppercase small mb-2">System Health</h6>
+                    <div class="fw-bold fs-4 mb-1" id="system-health-status">
+                        <span class="spinner-border spinner-border-sm me-2" role="status"></span>
+                        Loading...
+                    </div>
+                    <small class="text-muted" id="system-health-details">
+                        Checking system components...
+                    </small>
                 </div>
-                <div class="status-subtitle" id="system-health-details">
-                    Checking system components...
+                <div class="card-footer bg-transparent border-0 pt-0">
+                    <a href="{{ url_for('admin.health_dashboard') }}" class="btn btn-outline-primary btn-sm">
+                        <i class="bi bi-arrow-right me-1"></i>Details
+                    </a>
                 </div>
             </div>
-            <div class="status-action">
-                <a href="{{ url_for('admin.health_dashboard') }}" class="btn btn-sm btn-outline-primary">Details</a>
+        </div>
+
+        <div class="col-lg-3 col-md-6">
+            <div class="card h-100 border-0 shadow-sm">
+                <div class="card-body">
+                    <h6 class="card-title text-muted text-uppercase small mb-2">Total Users</h6>
+                    <div class="fw-bold fs-4 mb-1">{{ stats.total_users or 0 }}</div>
+                    <small class="text-muted">{{ stats.active_users or 0 }} active</small>
+                </div>
+                <div class="card-footer bg-transparent border-0 pt-0">
+                    <a href="{{ url_for('admin.user_management') }}" class="btn btn-primary btn-sm">
+                        <i class="bi bi-gear me-1"></i>Manage
+                    </a>
+                </div>
             </div>
         </div>
 
-        <div class="status-card user-stats">
-            <div class="status-icon">
-                <i class="icon-users" aria-hidden="true"></i>
-            </div>
-            <div class="status-content">
-                <div class="status-title">Total Users</div>
-                <div class="status-value">{{ stats.total_users or 0 }}</div>
-                <div class="status-subtitle">{{ stats.active_users or 0 }} active</div>
-            </div>
-            <div class="status-action">
-                <a href="{{ url_for('admin.user_management') }}" class="btn btn-sm btn-primary">Manage</a>
-            </div>
-        </div>
-
-        <div class="status-card platform-stats">
-            <div class="status-icon">
-                <i class="icon-platform" aria-hidden="true"></i>
-            </div>
-            <div class="status-content">
-                <div class="status-title">Platforms</div>
-                <div class="status-value">{{ stats.total_platforms or 0 }}</div>
-                <div class="status-subtitle">Connected</div>
-            </div>
-            <div class="status-action">
-                <a href="{{ url_for('platform_management') }}" class="btn btn-sm btn-primary">Configure</a>
+        <div class="col-lg-3 col-md-6">
+            <div class="card h-100 border-0 shadow-sm">
+                <div class="card-body">
+                    <h6 class="card-title text-muted text-uppercase small mb-2">Platforms</h6>
+                    <div class="fw-bold fs-4 mb-1">{{ stats.total_platforms or 0 }}</div>
+                    <small class="text-muted">Connected</small>
+                </div>
+                <div class="card-footer bg-transparent border-0 pt-0">
+                    <a href="{{ url_for('platform_management') }}" class="btn btn-primary btn-sm">
+                        <i class="bi bi-plus-circle me-1"></i>Configure
+                    </a>
+                </div>
             </div>
         </div>
 
-        <div class="status-card content-stats">
-            <div class="status-icon">
-                <i class="icon-content" aria-hidden="true"></i>
-            </div>
-            <div class="status-content">
-                <div class="status-title">Images</div>
-                <div class="status-value">{{ stats.total_images or 0 }}</div>
-                <div class="status-subtitle">{{ stats.total_posts or 0 }} posts</div>
-            </div>
-            <div class="status-action">
-                <a href="{{ url_for('batch_review') }}" class="btn btn-sm btn-primary">Review</a>
+        <div class="col-lg-3 col-md-6">
+            <div class="card h-100 border-0 shadow-sm">
+                <div class="card-body">
+                    <h6 class="card-title text-muted text-uppercase small mb-2">Images</h6>
+                    <div class="fw-bold fs-4 mb-1">{{ stats.total_images or 0 }}</div>
+                    <small class="text-muted">{{ stats.total_posts or 0 }} posts</small>
+                </div>
+                <div class="card-footer bg-transparent border-0 pt-0">
+                    <a href="{{ url_for('batch_review') }}" class="btn btn-primary btn-sm">
+                        <i class="bi bi-eye me-1"></i>Review
+                    </a>
+                </div>
             </div>
         </div>
     </div>
 
     <!-- Quick Actions -->
-    <div class="quick-actions">
-        <h3>Quick Actions</h3>
-        <div class="action-grid">
-            <a href="{{ url_for('admin.user_management') }}" class="action-card">
-                <i class="icon-user-management" aria-hidden="true"></i>
-                <span>User Management</span>
-            </a>
-            <a href="{{ url_for('admin.health_dashboard') }}" class="action-card">
-                <i class="icon-health-dashboard" aria-hidden="true"></i>
-                <span>System Health</span>
-            </a>
-            <a href="{{ url_for('admin.security_audit_dashboard') }}" class="action-card">
-                <i class="icon-security" aria-hidden="true"></i>
-                <span>Security Audit</span>
-            </a>
-            <a href="{{ url_for('platform_management') }}" class="action-card">
-                <i class="icon-platform-config" aria-hidden="true"></i>
-                <span>Platform Config</span>
-            </a>
+    <div class="row">
+        <div class="col-12">
+            <div class="card border-0 shadow-sm">
+                <div class="card-header bg-white border-0 pb-0">
+                    <h5 class="card-title mb-0">
+                        <i class="bi bi-lightning me-2 text-primary"></i>Quick Actions
+                    </h5>
+                </div>
+                <div class="card-body">
+                    <div class="row g-3">
+                        <div class="col-lg-3 col-md-6">
+                            <a href="{{ url_for('admin.user_management') }}" class="btn btn-outline-primary w-100 h-100 d-flex flex-column align-items-center justify-content-center py-3 text-decoration-none">
+                                <i class="bi bi-person-gear fs-1 mb-2"></i>
+                                <span class="fw-semibold">User Management</span>
+                                <small class="text-muted mt-1">Manage user accounts</small>
+                            </a>
+                        </div>
+                        <div class="col-lg-3 col-md-6">
+                            <a href="{{ url_for('admin.health_dashboard') }}" class="btn btn-outline-success w-100 h-100 d-flex flex-column align-items-center justify-content-center py-3 text-decoration-none">
+                                <i class="bi bi-activity fs-1 mb-2"></i>
+                                <span class="fw-semibold">System Health</span>
+                                <small class="text-muted mt-1">Monitor system status</small>
+                            </a>
+                        </div>
+                        <div class="col-lg-3 col-md-6">
+                            <a href="{{ url_for('admin.security_audit_dashboard') }}" class="btn btn-outline-danger w-100 h-100 d-flex flex-column align-items-center justify-content-center py-3 text-decoration-none">
+                                <i class="bi bi-shield-check fs-1 mb-2"></i>
+                                <span class="fw-semibold">Security Audit</span>
+                                <small class="text-muted mt-1">Security monitoring</small>
+                            </a>
+                        </div>
+                        <div class="col-lg-3 col-md-6">
+                            <a href="{{ url_for('platform_management') }}" class="btn btn-outline-info w-100 h-100 d-flex flex-column align-items-center justify-content-center py-3 text-decoration-none">
+                                <i class="bi bi-gear-wide-connected fs-1 mb-2"></i>
+                                <span class="fw-semibold">Platform Config</span>
+                                <small class="text-muted mt-1">Configure platforms</small>
+                            </a>
+                        </div>
+                    </div>
+                </div>
+            </div>
         </div>
     </div>
 </div>
@@ -117,51 +146,60 @@
         fetch('/admin/health')
             .then(response => response.json())
             .then(data => {
+                console.log('Health check response:', data); // Debug logging
+                
                 if (data.status) {
                     const status = data.status;
                     const components = data.components || {};
                     
-                    // Update status display
-                    statusElement.textContent = status.charAt(0).toUpperCase() + status.slice(1);
+                    console.log('Components received:', Object.keys(components)); // Debug logging
                     
-                    // Set status color class
-                    statusElement.className = 'status-value';
+                    // Update status display
+                    statusElement.innerHTML = status.charAt(0).toUpperCase() + status.slice(1);
+                    
+                    // Set status color class using Bootstrap classes
+                    statusElement.className = 'fw-bold fs-4 mb-1';
                     if (status === 'healthy') {
-                        statusElement.classList.add('healthy');
+                        statusElement.classList.add('text-success');
                     } else if (status === 'degraded') {
-                        statusElement.classList.add('warning');
+                        statusElement.classList.add('text-warning');
                     } else {
-                        statusElement.classList.add('critical');
+                        statusElement.classList.add('text-danger');
                     }
                     
                     // Update details with component status
                     const componentNames = Object.keys(components);
+                    const expectedComponents = ['database', 'ollama', 'storage', 'sessions'];
+                    
                     if (componentNames.length > 0) {
-                        const healthyComponents = componentNames.filter(name => 
-                            components[name] === 'healthy' || 
-                            (typeof components[name] === 'string' && !components[name].includes('unhealthy'))
-                        );
+                        const healthyComponents = componentNames.filter(name => {
+                            const componentStatus = components[name];
+                            return componentStatus === 'healthy' || 
+                                   (typeof componentStatus === 'string' && !componentStatus.includes('unhealthy'));
+                        });
                         
-                        if (healthyComponents.length === componentNames.length) {
-                            detailsElement.textContent = `All ${componentNames.length} components healthy`;
+                        // Use expected component count for better display
+                        const totalComponents = Math.max(componentNames.length, expectedComponents.length);
+                        
+                        if (healthyComponents.length === totalComponents && totalComponents === expectedComponents.length) {
+                            detailsElement.textContent = `All ${totalComponents} components healthy`;
                         } else {
-                            const unhealthyCount = componentNames.length - healthyComponents.length;
-                            detailsElement.textContent = `${healthyComponents.length}/${componentNames.length} components healthy`;
+                            detailsElement.textContent = `${healthyComponents.length}/${totalComponents} components healthy`;
                         }
                     } else {
                         detailsElement.textContent = 'System operational';
                     }
                 } else {
                     // Handle error response
-                    statusElement.textContent = 'Unknown';
-                    statusElement.className = 'status-value warning';
+                    statusElement.innerHTML = 'Unknown';
+                    statusElement.className = 'fw-bold fs-5 mb-1 text-secondary';
                     detailsElement.textContent = 'Health check failed';
                 }
             })
             .catch(error => {
                 console.error('Error fetching system health:', error);
-                statusElement.textContent = 'Error';
-                statusElement.className = 'status-value critical';
+                statusElement.innerHTML = 'Error';
+                statusElement.className = 'fw-bold fs-5 mb-1 text-danger';
                 detailsElement.textContent = 'Unable to check health';
             });
     }
@@ -175,144 +213,3 @@
     });
 })();
 </script>
-
-<style>
-/* Admin Dashboard Component Styles */
-.admin-dashboard {
-    padding: 1rem;
-}
-
-.dashboard-header {
-    margin-bottom: 2rem;
-    text-align: center;
-}
-
-.dashboard-title {
-    font-size: 2rem;
-    font-weight: 600;
-    color: #2c3e50;
-    margin-bottom: 0.5rem;
-}
-
-.dashboard-subtitle {
-    color: #6c757d;
-    font-size: 1.1rem;
-}
-
-.status-grid {
-    display: grid;
-    grid-template-columns: repeat(auto-fit, minmax(280px, 1fr));
-    gap: 1.5rem;
-    margin-bottom: 2rem;
-}
-
-.status-card {
-    background: white;
-    border-radius: 8px;
-    padding: 1.5rem;
-    box-shadow: 0 2px 4px rgba(0,0,0,0.1);
-    border: 1px solid #e9ecef;
-    display: flex;
-    align-items: center;
-    gap: 1rem;
-}
-
-.status-icon {
-    font-size: 2rem;
-    color: #007bff;
-}
-
-.status-content {
-    flex: 1;
-}
-
-.status-title {
-    font-size: 0.9rem;
-    color: #6c757d;
-    text-transform: uppercase;
-    letter-spacing: 0.5px;
-    margin-bottom: 0.25rem;
-}
-
-.status-value {
-    font-size: 1.5rem;
-    font-weight: 600;
-    color: #2c3e50;
-    margin-bottom: 0.25rem;
-}
-
-.status-value.healthy {
-    color: #28a745;
-}
-
-.status-value.warning {
-    color: #ffc107;
-}
-
-.status-value.critical {
-    color: #dc3545;
-}
-
-.status-subtitle {
-    font-size: 0.85rem;
-    color: #6c757d;
-}
-
-.status-action {
-    margin-left: auto;
-}
-
-.quick-actions {
-    margin-top: 2rem;
-}
-
-.quick-actions h3 {
-    margin-bottom: 1rem;
-    color: #2c3e50;
-}
-
-.action-grid {
-    display: grid;
-    grid-template-columns: repeat(auto-fit, minmax(200px, 1fr));
-    gap: 1rem;
-}
-
-.action-card {
-    display: flex;
-    align-items: center;
-    gap: 0.75rem;
-    padding: 1rem;
-    background: white;
-    border: 1px solid #e9ecef;
-    border-radius: 6px;
-    text-decoration: none;
-    color: #2c3e50;
-    transition: all 0.2s ease;
-}
-
-.action-card:hover {
-    background: #f8f9fa;
-    border-color: #007bff;
-    color: #007bff;
-    text-decoration: none;
-}
-
-.action-card i {
-    font-size: 1.25rem;
-}
-
-/* Responsive adjustments */
-@media (max-width: 768px) {
-    .status-grid {
-        grid-template-columns: 1fr;
-    }
-    
-    .action-grid {
-        grid-template-columns: 1fr;
-    }
-    
-    .status-card {
-        padding: 1rem;
-    }
-}
-</style>
