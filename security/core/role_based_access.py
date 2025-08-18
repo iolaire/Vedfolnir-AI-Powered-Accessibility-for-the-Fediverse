@@ -211,22 +211,42 @@ def filter_user_platforms(user_id=None):
     target_user_id = user_id or current_user.id
     
     try:
-        session_manager = current_app.request_session_manager
-        with session_manager.session_scope() as db_session:
-            # Admin users can access all platforms if user_id is specified
-            if current_user.role == UserRole.ADMIN and user_id:
-                platforms = db_session.query(PlatformConnection).filter_by(
-                    user_id=target_user_id,
-                    is_active=True
-                ).all()
-            else:
-                # Viewer users can only access their own platforms
-                platforms = db_session.query(PlatformConnection).filter_by(
-                    user_id=current_user.id,
-                    is_active=True
-                ).all()
-            
-            return platforms
+        # Try unified session manager first
+        unified_session_manager = getattr(current_app, 'unified_session_manager', None)
+        if unified_session_manager:
+            with unified_session_manager.get_db_session() as db_session:
+                # Admin users can access all platforms if user_id is specified
+                if current_user.role == UserRole.ADMIN and user_id:
+                    platforms = db_session.query(PlatformConnection).filter_by(
+                        user_id=target_user_id,
+                        is_active=True
+                    ).all()
+                else:
+                    # Viewer users can only access their own platforms
+                    platforms = db_session.query(PlatformConnection).filter_by(
+                        user_id=current_user.id,
+                        is_active=True
+                    ).all()
+                
+                return platforms
+        else:
+            # Fallback to request session manager
+            session_manager = current_app.request_session_manager
+            with session_manager.session_scope() as db_session:
+                # Admin users can access all platforms if user_id is specified
+                if current_user.role == UserRole.ADMIN and user_id:
+                    platforms = db_session.query(PlatformConnection).filter_by(
+                        user_id=target_user_id,
+                        is_active=True
+                    ).all()
+                else:
+                    # Viewer users can only access their own platforms
+                    platforms = db_session.query(PlatformConnection).filter_by(
+                        user_id=current_user.id,
+                        is_active=True
+                    ).all()
+                
+                return platforms
             
     except Exception as e:
         logger.error(f"Error filtering user platforms: {e}")
@@ -300,10 +320,18 @@ def get_accessible_platform_ids():
     # Admin users can access all platforms
     if current_user.role == UserRole.ADMIN:
         try:
-            session_manager = current_app.request_session_manager
-            with session_manager.session_scope() as db_session:
-                platforms = db_session.query(PlatformConnection).filter_by(is_active=True).all()
-                return [p.id for p in platforms]
+            # Try unified session manager first
+            unified_session_manager = getattr(current_app, 'unified_session_manager', None)
+            if unified_session_manager:
+                with unified_session_manager.get_db_session() as db_session:
+                    platforms = db_session.query(PlatformConnection).filter_by(is_active=True).all()
+                    return [p.id for p in platforms]
+            else:
+                # Fallback to request session manager
+                session_manager = current_app.request_session_manager
+                with session_manager.session_scope() as db_session:
+                    platforms = db_session.query(PlatformConnection).filter_by(is_active=True).all()
+                    return [p.id for p in platforms]
         except Exception as e:
             logger.error(f"Error getting all platform IDs for admin: {e}")
             return []

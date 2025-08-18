@@ -203,8 +203,8 @@ quality_manager = CaptionQualityManager()
 health_checker = HealthChecker(config, db_manager)
 app.config['health_checker'] = health_checker
 
-# Initialize unified session management system
-from unified_session_manager import UnifiedSessionManager
+# Initialize session management system
+from session_factory import create_session_manager
 from session_cookie_manager import create_session_cookie_manager
 from database_session_middleware import DatabaseSessionMiddleware
 from session_security import create_session_security_manager
@@ -216,9 +216,9 @@ session_monitor = SessionMonitor(db_manager)
 # Create session security manager
 session_security_manager = create_session_security_manager(app.config, db_manager)
 
-# Create unified session manager with security and monitoring
-unified_session_manager = UnifiedSessionManager(
-    db_manager, 
+# Create session manager (Redis or Database based on configuration)
+unified_session_manager = create_session_manager(
+    db_manager=db_manager, 
     security_manager=session_security_manager,
     monitor=session_monitor
 )
