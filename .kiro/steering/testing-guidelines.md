@@ -369,11 +369,110 @@ When updating existing tests to use UnifiedSessionManager:
 4. **Add Platform Context**: Include platform_connection_id in session creation
 5. **Use Mock Users**: Always use standardized mock user helpers
 
-### Required Test Dependencies
+### Database Session Testing Patterns
+
+**IMPORTANT**: All database operations in tests should use unified session management patterns. Direct `db_manager.get_session()` usage is deprecated.
+
+#### Pattern 1: Testing with UnifiedSessionManager
+```python
+import unittest
+from unified_session_manager import UnifiedSessionManager
+from tests.test_helpers import create_test_user_with_platforms, cleanup_test_user
+from config import Config
+from database import DatabaseManager
+
+class TestDatabaseOperations(unittest.TestCase):
+    def setUp(self):
+        """Set up test fixtures with unified session manager"""
+        self.config = Config()
+        self.db_manager = DatabaseManager(self.config)
+        self.session_manager = UnifiedSessionManager(self.db_manager)
+        
+        # Create mock user with platforms for testing
+        self.test_user, self.user_helper = create_test_user_with_platforms(
+            self.db_manager,
+            username="test_user",
+            role=UserRole.REVIEWER
+        )
+    
+    def tearDown(self):
+        """Clean up test fixtures"""
+        cleanup_test_user(self.user_helper)
+    
+    def test_database_operation(self):
+        """Test database operations using unified session manager"""
+        with self.session_manager.get_db_session() as session:
+            # Database operations with automatic cleanup
+            result = session.query(Model).filter_by(user_id=self.test_user.id).all()
+            self.assertIsNotNone(result)
+```
+
+#### Pattern 2: Testing with RequestSessionManager
+```python
+from request_scoped_session_manager import RequestScopedSessionManager
+
+class TestSimpleOperations(unittest.TestCase):
+    def setUp(self):
+        self.config = Config()
+        self.db_manager = DatabaseManager(self.config)
+        self.request_session_manager = RequestScopedSessionManager(self.db_manager)
+    
+    def test_simple_query(self):
+        """Test simple database queries"""
+        with self.request_session_manager.session_scope() as session:
+            result = session.query(Model).count()
+            self.assertIsInstance(result, int)
+```
+
+#### Pattern 3: Testing Service Classes
+```python
+class TestServiceClass(unittest.TestCase):
+    def setUp(self):
+        self.config = Config()
+        self.db_manager = DatabaseManager(self.config)
+        self.session_manager = UnifiedSessionManager(self.db_manager)
+        self.service = SomeService(self.db_manager, self.session_manager)
+    
+    def test_service_operation(self):
+        """Test service operations with proper session management"""
+        result = self.service.get_data()
+        self.assertIsNotNone(result)
+```
+
+### Migration Guidelines for Tests
+
+When updating existing tests that use direct database sessions:
+
+1. **Replace Direct Usage**:
+   ```python
+   # OLD - Don't use
+   session = self.db_manager.get_session()
+   try:
+       result = session.query(Model).all()
+   finally:
+       session.close()
+   
+   # NEW - Use unified patterns
+   with self.session_manager.get_db_session() as session:
+       result = session.query(Model).all()
+   ```
+
+2. **Add Session Manager to setUp**:
+   ```python
+   def setUp(self):
+       self.config = Config()
+       self.db_manager = DatabaseManager(self.config)
+       self.session_manager = UnifiedSessionManager(self.db_manager)  # Add this
+   ```
+
+3. **Use Appropriate Pattern**: Choose between UnifiedSessionManager and RequestSessionManager based on test requirements
+
+### Required Test Dependencies for Database Sessions
 
 ```python
-# Core testing imports for unified sessions
+# Core testing imports for database sessions
 from unified_session_manager import UnifiedSessionManager
+from request_scoped_session_manager import RequestScopedSessionManager
 from tests.test_helpers import create_test_user_with_platforms, cleanup_test_user
 from config import Config
 from database import DatabaseManager

@@ -25,8 +25,9 @@ def register_routes(bp):
             
         try:
             db_manager = current_app.config['db_manager']
-            session = db_manager.get_session()
-            try:
+            unified_session_manager = current_app.unified_session_manager
+
+            with unified_session_manager.get_db_session() as session:
                 from sqlalchemy import text
                 session.execute(text("SELECT 1"))
                 return jsonify({
@@ -34,8 +35,6 @@ def register_routes(bp):
                     'timestamp': datetime.now(timezone.utc).isoformat(),
                     'service': 'vedfolnir'
                 }), 200
-            finally:
-                session.close()
         except Exception as e:
             return jsonify({
                 'status': 'unhealthy',

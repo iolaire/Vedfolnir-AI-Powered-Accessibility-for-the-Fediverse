@@ -432,8 +432,9 @@ def register_routes(bp):
             )
             
             # Handle additional status updates
-            session = db_manager.get_session()
-            try:
+            unified_session_manager = current_app.unified_session_manager
+
+            with unified_session_manager.get_db_session() as session:
                 user = session.query(User).filter_by(id=int(user_id)).first()
                 if user:
                     # Update email verification status
@@ -450,9 +451,6 @@ def register_routes(bp):
                         message += ", failed attempts reset"
                     
                     session.commit()
-                    
-            finally:
-                session.close()
             
             if success:
                 flash(message, 'success')

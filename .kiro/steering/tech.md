@@ -36,6 +36,100 @@ When creating any new source code file (.py, .js, .html, .css, .sh, .sql), ALWAY
 - **Session Middleware**: Automatic session validation and cleanup using unified manager
 - **Session Security**: Built-in fingerprinting, audit logging, and security validation
 
+### Database Session Patterns
+
+**IMPORTANT**: All database operations should use the unified session management patterns. Direct `db_manager.get_session()` usage is deprecated.
+
+#### Pattern 1: Web Routes with User Context
+```python
+@app.route('/some_route')
+@login_required
+def some_function():
+    with unified_session_manager.get_db_session() as session:
+        # Database operations with automatic session management
+        result = session.query(Model).filter_by(user_id=current_user.id).all()
+        return render_template('template.html', data=result)
+```
+
+#### Pattern 2: Request-Scoped Operations
+```python
+def some_function():
+    with request_session_manager.session_scope() as session:
+        # Simple database query with proper scope management
+        result = session.query(Model).all()
+        return result
+```
+
+#### Pattern 3: Service Layer Operations
+```python
+class SomeService:
+    def __init__(self, db_manager, session_manager=None):
+        self.db_manager = db_manager
+        self.session_manager = session_manager or self._get_unified_session_manager()
+    
+    def _get_unified_session_manager(self):
+        from flask import current_app
+        return getattr(current_app, 'unified_session_manager', None)
+    
+    def get_data(self):
+        if self.session_manager:
+            with self.session_manager.get_db_session() as session:
+                return session.query(Model).all()
+        else:
+            # Fallback for non-Flask contexts
+            session = self.db_manager.get_session()
+            try:
+                return session.query(Model).all()
+            finally:
+                session.close()
+```
+
+#### Pattern 4: Admin Routes
+```python
+@admin_bp.route('/admin_route')
+@login_required
+@require_admin
+def admin_function():
+    unified_session_manager = current_app.unified_session_manager
+    with unified_session_manager.get_db_session() as session:
+        # Admin operations with session context
+        result = session.query(Model).all()
+        return render_template('admin_template.html', data=result)
+```
+
+### Migration from Direct Database Sessions
+
+**Deprecated Pattern:**
+```python
+# DON'T USE - Direct db_manager usage
+session = db_manager.get_session()
+try:
+    result = session.query(Model).all()
+    return result
+finally:
+    session.close()
+```
+
+**Recommended Patterns:**
+```python
+# USE - Unified session manager for user-aware operations
+with unified_session_manager.get_db_session() as session:
+    result = session.query(Model).all()
+    return result
+
+# USE - Request session manager for simple operations
+with request_session_manager.session_scope() as session:
+    result = session.query(Model).all()
+    return result
+```
+
+### Benefits of Unified Session Management
+- **Consistent Error Handling**: Automatic rollback and cleanup
+- **Session Context Awareness**: User and platform context integration
+- **Security**: Built-in audit trails and validation
+- **Performance**: Optimized connection pooling and resource management
+- **Maintainability**: Single pattern for all database operations
+
 ### Key Session Features
 - **Platform Context**: Sessions maintain current platform selection
 - **Multi-Platform Support**: Users can switch between platforms within sessions

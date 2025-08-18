@@ -26,8 +26,9 @@ def register_routes(bp):
         db_manager = current_app.config['db_manager']
         
         # Get system overview stats
-        session = db_manager.get_session()
-        try:
+        unified_session_manager = current_app.unified_session_manager
+
+        with unified_session_manager.get_db_session() as session:
             from models import User, PlatformConnection, Image, Post
             
             stats = {
@@ -37,7 +38,5 @@ def register_routes(bp):
                 'total_images': session.query(Image).count(),
                 'total_posts': session.query(Post).count(),
             }
-        finally:
-            session.close()
         
         return render_template('dashboard.html', stats=stats)

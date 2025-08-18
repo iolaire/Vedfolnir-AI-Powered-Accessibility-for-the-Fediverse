@@ -473,47 +473,45 @@ def role_required(role):
             
             # SECURITY FIX: Always validate user permissions from server-side database
             # Never trust client-side session data for authorization
-            db_session = db_manager.get_session()
             try:
-                user_id = getattr(current_user, 'id', None)
-                if not user_id:
-                    app.logger.warning("User ID not accessible from current_user")
-                    flash('User authentication error. Please log in again.', 'error')
-                    logout_user()
-                    return redirect(url_for('user_management.login'))
+                with unified_session_manager.get_db_session() as session:
+                    user_id = getattr(current_user, 'id', None)
+                    if not user_id:
+                        app.logger.warning("User ID not accessible from current_user")
+                        flash('User authentication error. Please log in again.', 'error')
+                        logout_user()
+                        return redirect(url_for('user_management.login'))
+                        
+                    server_user = session.query(User).get(user_id)
+                    if not server_user:
+                        app.logger.warning(f"User account not found for ID: {user_id}")
+                        flash('User account not found.', 'error')
+                        logout_user()
+                        return redirect(url_for('user_management.login'))
+                    if not server_user.is_active:
+                        app.logger.warning(f"Inactive user attempted access: {sanitize_for_log(server_user.username)}")
+                        flash('Your account has been deactivated.', 'error')
+                        logout_user()
+                        return redirect(url_for('user_management.login'))
                     
-                server_user = db_session.query(User).get(user_id)
-                if not server_user:
-                    app.logger.warning(f"User account not found for ID: {user_id}")
-                    flash('User account not found.', 'error')
-                    logout_user()
-                    return redirect(url_for('user_management.login'))
-                if not server_user.is_active:
-                    app.logger.warning(f"Inactive user attempted access: {sanitize_for_log(server_user.username)}")
-                    flash('Your account has been deactivated.', 'error')
-                    logout_user()
-                    return redirect(url_for('user_management.login'))
-                
-                # Debug logging for role checking
-                app.logger.debug(f"Role check: user={server_user.username}, user_role={server_user.role}, required_role={role}")
-                app.logger.debug(f"Role check: user_role.value={server_user.role.value if server_user.role else 'None'}")
-                app.logger.debug(f"Role check: has_permission={server_user.has_permission(role)}")
-                
-                # Use server-side user data for role validation
-                if not server_user.has_permission(role):
-                    app.logger.warning(f"Access denied: user {sanitize_for_log(server_user.username)} (role: {sanitize_for_log(server_user.role.value if server_user.role else 'None')}) attempted to access {sanitize_for_log(role.value)} resource")
-                    flash('You do not have permission to access this page.', 'error')
-                    return redirect(url_for('index'))
-                
-                app.logger.debug(f"Access granted: user {sanitize_for_log(server_user.username)} has {sanitize_for_log(role.value)} permission")
-                # Store validated user role in g for this request
-                g.validated_user_role = server_user.role
+                    # Debug logging for role checking
+                    app.logger.debug(f"Role check: user={server_user.username}, user_role={server_user.role}, required_role={role}")
+                    app.logger.debug(f"Role check: user_role.value={server_user.role.value if server_user.role else 'None'}")
+                    app.logger.debug(f"Role check: has_permission={server_user.has_permission(role)}")
+                    
+                    # Use server-side user data for role validation
+                    if not server_user.has_permission(role):
+                        app.logger.warning(f"Access denied: user {sanitize_for_log(server_user.username)} (role: {sanitize_for_log(server_user.role.value if server_user.role else 'None')}) attempted to access {sanitize_for_log(role.value)} resource")
+                        flash('You do not have permission to access this page.', 'error')
+                        return redirect(url_for('index'))
+                    
+                    app.logger.debug(f"Access granted: user {sanitize_for_log(server_user.username)} has {sanitize_for_log(role.value)} permission")
+                    # Store validated user role in g for this request
+                    g.validated_user_role = server_user.role
             except SQLAlchemyError as e:
                 app.logger.error(f"Database error during authorization: {sanitize_for_log(str(e))}")
                 flash('Authorization error. Please try again.', 'error')
                 return redirect(url_for('user_management.login'))
-            finally:
-                db_session.close()
             
             return f(*args, **kwargs)
         return decorated_function
@@ -658,17 +656,14 @@ def first_time_setup():
         return redirect(url_for('index'))
     
     # Check if user already has platforms - redirect if they do
-    db_session = db_manager.get_session()
-    try:
-        user_platforms = db_session.query(PlatformConnection).filter_by(
+    with unified_session_manager.get_db_session() as session:
+        user_platforms = session.query(PlatformConnection).filter_by(
             user_id=current_user.id,
             is_active=True
         ).count()
         
         if user_platforms > 0:
             return redirect(url_for('index'))
-    finally:
-        db_session.close()
     
     return render_template('first_time_setup.html')
 
@@ -929,8 +924,7 @@ def review_list():
     page = request.args.get('page', 1, type=int)
     per_page = 12
     
-    session = db_manager.get_session()
-    try:
+    with unified_session_manager.get_db_session() as session:
         # Get current user's platform context
         current_platform = None
         user_platforms = session.query(PlatformConnection).filter_by(
@@ -1014,8 +1008,6 @@ def review_list():
                              current_platform=current_platform_dict,
                              user_platforms=user_platforms_dict,
                              selected_platform=platform_filter)
-    finally:
-        session.close()
 
 @app.route('/review/<int:image_id>')
 @login_required
@@ -1024,8 +1016,7 @@ def review_list():
 @with_session_error_handling
 def review_single(image_id):
     """Review a single image"""
-    session = db_manager.get_session()
-    try:
+    with unified_session_manager.get_db_session() as session:
         image = session.query(Image).options(
             joinedload(Image.platform_connection),
             joinedload(Image.post)
@@ -1039,8 +1030,6 @@ def review_single(image_id):
         form.caption.data = image.generated_caption or ""
         
         return render_template('review_single.html', image=image, form=form)
-    finally:
-        session.close()
 
 @app.route('/review/<int:image_id>', methods=['POST'])
 @login_required
@@ -1100,8 +1089,7 @@ def review_submit(image_id):
 @with_session_error_handling
 def batch_review():
     """Batch review interface with filtering, sorting, and pagination"""
-    session = db_manager.get_session()
-    try:
+    with unified_session_manager.get_db_session() as session:
         # Get current platform context
         context = get_current_platform_context()
         if not context or not context.get('platform_connection_id'):
@@ -1210,8 +1198,6 @@ def batch_review():
                               images=images, 
                               pagination=pagination,
                               filters=filters)
-    finally:
-        session.close()
 
 @app.route('/api/batch_review', methods=['POST'])
 @login_required
@@ -1282,10 +1268,10 @@ def api_update_caption(image_id):
     status = status_map[action]
     
     # First, get the image data we need
-    session = db_manager.get_session()
-    image_data = None
-    platform_config = None
-    try:
+    with unified_session_manager.get_db_session() as session:
+        image_data = None
+        platform_config = None
+        
         image = session.query(Image).options(
             joinedload(Image.platform_connection),
             joinedload(Image.post)
@@ -1319,15 +1305,6 @@ def api_update_caption(image_id):
                 'image_url': image.image_url,
                 'post_url': image.post.post_url if image.post else None
             }
-        
-        # Commit the changes
-        session.commit()
-    except Exception as e:
-        session.rollback()
-        app.logger.error(f"Error updating caption: {str(e)}")
-        return jsonify({'success': False, 'error': str(e)}), 500
-    finally:
-        session.close()
     
     # If approved and we have image data, post to platform
     posted = False
@@ -1409,8 +1386,7 @@ def api_update_caption(image_id):
 @with_session_error_handling
 def api_regenerate_caption(image_id):
     """API endpoint to regenerate caption for an image"""
-    session = db_manager.get_session()
-    try:
+    with unified_session_manager.get_db_session() as session:
         image = session.query(Image).options(
             joinedload(Image.platform_connection),
             joinedload(Image.post)
@@ -1515,16 +1491,6 @@ def api_regenerate_caption(image_id):
             # Clean up model resources
             if caption_generator:
                 caption_generator.cleanup()
-            
-    except Exception as e:
-        session.rollback()
-        app.logger.error(f"Error regenerating caption: {str(e)}")
-        return jsonify({
-            'success': False,
-            'error': str(e)
-        }), 500
-    finally:
-        session.close()
 
 @app.route('/post_approved')
 @login_required
@@ -1540,8 +1506,7 @@ def post_approved():
     platform_connection_id = context['platform_connection_id']
     
     # Get the image IDs first, so we don't keep the session open during async operations
-    session = db_manager.get_session()
-    try:
+    with unified_session_manager.get_db_session() as session:
         # Only get approved images for the current platform
         approved_images = session.query(Image).options(
             joinedload(Image.platform_connection),
@@ -1578,8 +1543,6 @@ def post_approved():
                 'image_url': image.image_url,
                 'post_url': image.post.post_url if image.post else None
             })
-    finally:
-        session.close()
     
     # Post captions to platform
     posted_count = 0
@@ -1654,22 +1617,15 @@ def post_approved():
     # Update the database with successful posts - use direct SQL update instead of ORM
     if successful_image_ids:
         try:
-            session = db_manager.get_session()
-            try:
+            with unified_session_manager.get_db_session() as session:
                 # Use direct SQL update to avoid ORM session issues
                 from sqlalchemy import text
                 ids_str = ','.join(str(id) for id in successful_image_ids)
                 sql = text(f"UPDATE images SET status = 'posted', posted_at = CURRENT_TIMESTAMP WHERE id IN ({ids_str})")
                 session.execute(sql)
-                session.commit()
                 app.logger.info(f"Successfully marked {sanitize_for_log(str(len(successful_image_ids)))} images as posted")
-            except Exception as e:
-                session.rollback()
-                app.logger.error(f"Error updating image status: {str(e)}")
-            finally:
-                session.close()
         except Exception as e:
-            app.logger.error(f"Error getting database session: {str(e)}")
+            app.logger.error(f"Error updating image status: {str(e)}")
     
     flash(f'Successfully posted {posted_count} of {len(image_data)} approved captions', 'success')
     return redirect(url_for('index'))
@@ -1717,8 +1673,7 @@ def update_platform_media_description(image_data, platform_config):
 @with_session_error_handling
 def platform_management():
     """Platform management interface"""
-    session = db_manager.get_session()
-    try:
+    with unified_session_manager.get_db_session() as session:
         # Get user's platform connections using role-based filtering
         platforms_query = session.query(PlatformConnection).filter_by(is_active=True)
         platforms_query = filter_platforms_for_user(platforms_query)
@@ -1769,8 +1724,6 @@ def platform_management():
                              user_platforms=user_platforms_dict,
                              current_platform=current_platform_dict,
                              platform_stats=platform_stats)
-    finally:
-        session.close()
 
 @app.route('/switch_platform/<int:platform_id>')
 @login_required
@@ -1896,8 +1849,7 @@ def api_add_platform():
             }), 400
         
         # Check for duplicate platform connections
-        session = db_manager.get_session()
-        try:
+        with unified_session_manager.get_db_session() as session:
             existing_platform = session.query(PlatformConnection).filter_by(
                 user_id=current_user.id,
                 name=name
@@ -1921,19 +1873,14 @@ def api_add_platform():
                     'success': False, 
                     'error': f'A connection to this instance with this username already exists'
                 }), 400
-        finally:
-            session.close()
         
         # Check if this is the user's first platform connection
-        session = db_manager.get_session()
-        try:
+        with unified_session_manager.get_db_session() as session:
             existing_platforms_count = session.query(PlatformConnection).filter_by(
                 user_id=current_user.id,
                 is_active=True
             ).count()
             is_first_platform = existing_platforms_count == 0
-        finally:
-            session.close()
         
         # Create platform connection (set as default if it's the first one)
         platform = db_manager.create_platform_connection(
@@ -1965,12 +1912,9 @@ def api_add_platform():
             
             if not success:
                 # Delete the platform if connection test fails
-                session = db_manager.get_session()
-                try:
+                with unified_session_manager.get_db_session() as session:
                     session.delete(platform)
                     session.commit()
-                finally:
-                    session.close()
                 from markupsafe import escape
                 return jsonify({'success': False, 'error': f'Connection test failed: {escape(message)}'}), 400
         else:
@@ -2113,81 +2057,75 @@ def api_switch_platform(platform_id):
 @with_session_error_handling
 def api_test_platform(platform_id):
     """Test a platform connection"""
-    session = db_manager.get_session()
     try:
-        # Verify platform belongs to current user
-        platform = session.query(PlatformConnection).filter_by(
-            id=platform_id,
-            user_id=current_user.id
-        ).first()
-        
-        if not platform:
-            return jsonify({'success': False, 'error': 'Platform not found or not accessible'}), 404
-        
-        # Test the connection
-        success, message = platform.test_connection()
-        
-        # Provide more detailed feedback
-        if success:
-            detailed_message = f"Connection successful! Verified access to {platform.instance_url}"
-            if platform.username:
-                detailed_message += f" as @{platform.username}"
-        else:
-            detailed_message = f"Connection failed: {message}"
-        
-        return jsonify({
-            'success': success,
-            'message': detailed_message,
-            'platform_info': {
-                'name': platform.name,
-                'type': platform.platform_type,
-                'instance': platform.instance_url
-            }
-        })
-        
+        with unified_session_manager.get_db_session() as session:
+            # Verify platform belongs to current user
+            platform = session.query(PlatformConnection).filter_by(
+                id=platform_id,
+                user_id=current_user.id
+            ).first()
+            
+            if not platform:
+                return jsonify({'success': False, 'error': 'Platform not found or not accessible'}), 404
+            
+            # Test the connection
+            success, message = platform.test_connection()
+            
+            # Provide more detailed feedback
+            if success:
+                detailed_message = f"Connection successful! Verified access to {platform.instance_url}"
+                if platform.username:
+                    detailed_message += f" as @{platform.username}"
+            else:
+                detailed_message = f"Connection failed: {message}"
+            
+            return jsonify({
+                'success': success,
+                'message': detailed_message,
+                'platform_info': {
+                    'name': platform.name,
+                    'type': platform.platform_type,
+                    'instance': platform.instance_url
+                }
+            })
     except Exception as e:
         app.logger.error(f"Error testing platform connection: {str(e)}")
         return jsonify({'success': False, 'error': str(e)}), 500
-    finally:
-        session.close()
 
 @app.route('/api/get_platform/<int:platform_id>', methods=['GET'])
 @login_required
 @with_session_error_handling
 def api_get_platform(platform_id):
     """Get platform connection data for editing"""
-    session = db_manager.get_session()
     try:
-        # Verify platform belongs to current user
-        platform = session.query(PlatformConnection).filter_by(
-            id=platform_id,
-            user_id=current_user.id
-        ).first()
-        
-        if not platform:
-            return jsonify({'success': False, 'error': 'Platform not found or not accessible'}), 404
-        
-        return jsonify({
-            'success': True,
-            'platform': {
-                'id': platform.id,
-                'name': platform.name,
-                'platform_type': platform.platform_type,
-                'instance_url': platform.instance_url,
-                'username': platform.username,
-                'access_token': platform.access_token,  # Note: This will be decrypted
-                'client_key': platform.client_key,
-                'client_secret': platform.client_secret,
-                'is_default': platform.is_default,
-                'is_active': platform.is_active
-            }
-        })
-        
+        with unified_session_manager.get_db_session() as session:
+            # Verify platform belongs to current user
+            platform = session.query(PlatformConnection).filter_by(
+                id=platform_id,
+                user_id=current_user.id
+            ).first()
+            
+            if not platform:
+                return jsonify({'success': False, 'error': 'Platform not found or not accessible'}), 404
+            
+            return jsonify({
+                'success': True,
+                'platform': {
+                    'id': platform.id,
+                    'name': platform.name,
+                    'platform_type': platform.platform_type,
+                    'instance_url': platform.instance_url,
+                    'username': platform.username,
+                    'access_token': platform.access_token,  # Note: This will be decrypted
+                    'client_key': platform.client_key,
+                    'client_secret': platform.client_secret,
+                    'is_default': platform.is_default,
+                    'is_active': platform.is_active
+                }
+            })
     except Exception as e:
         app.logger.error(f"Error getting platform connection: {str(e)}")
         return jsonify({'success': False, 'error': str(e)}), 500
-    finally:
-        session.close()
 
 @app.route('/api/edit_platform/<int:platform_id>', methods=['PUT'])
 @login_required
@@ -2250,8 +2188,7 @@ def api_edit_platform(platform_id):
             }), 400
         
         # Check for duplicate platform connections (excluding current platform)
-        session = db_manager.get_session()
-        try:
+        with unified_session_manager.get_db_session() as session:
             existing_platform = session.query(PlatformConnection).filter(
                 PlatformConnection.user_id == current_user.id,
                 PlatformConnection.name == name,
@@ -2277,8 +2214,6 @@ def api_edit_platform(platform_id):
                     'success': False, 
                     'error': f'A connection to this instance with this username already exists'
                 }), 400
-        finally:
-            session.close()
         
         # Update platform connection using database manager
         update_data = {
@@ -2304,8 +2239,7 @@ def api_edit_platform(platform_id):
             }), 400
         
         # Get updated platform for response
-        session = db_manager.get_session()
-        try:
+        with unified_session_manager.get_db_session() as session:
             updated_platform = session.query(PlatformConnection).filter_by(
                 id=platform_id,
                 user_id=current_user.id
@@ -2338,8 +2272,6 @@ def api_edit_platform(platform_id):
                     'is_default': updated_platform.is_default
                 }
             })
-        finally:
-            session.close()
         
     except Exception as e:
         app.logger.error(f"Error updating platform connection: {str(e)}")
@@ -2411,8 +2343,7 @@ def api_session_notify_logout():
 @with_session_error_handling
 def api_delete_platform(platform_id):
     """Delete a platform connection with comprehensive validation"""
-    session = db_manager.get_session()
-    try:
+    with unified_session_manager.get_db_session() as session:
         # First, verify the platform exists and belongs to the user
         platform = session.query(PlatformConnection).filter_by(
             id=platform_id,
@@ -2454,13 +2385,6 @@ def api_delete_platform(platform_id):
         # Log the deletion attempt
         app.logger.info(f"User {sanitize_for_log(current_user.username)} attempting to delete platform '{sanitize_for_log(platform_name)}' "
                        f"(ID: {sanitize_for_log(str(platform_id))}) with {sanitize_for_log(', '.join(data_info)) if data_info else 'no associated data'}")
-        
-    except Exception as e:
-        session.rollback()
-        app.logger.error(f"Error during platform deletion validation: {sanitize_for_log(str(e))}")
-        return jsonify({'success': False, 'error': 'Database error during validation'}), 500
-    finally:
-        session.close()
     
     try:
         # Use the database manager's delete method which includes proper validation
@@ -2573,18 +2497,15 @@ def caption_generation():
         
         # Get user's current settings
         user_settings = None
-        db_session = db_manager.get_session()
-        try:
+        with unified_session_manager.get_db_session() as session:
             from models import CaptionGenerationUserSettings
-            user_settings_record = db_session.query(CaptionGenerationUserSettings).filter_by(
+            user_settings_record = session.query(CaptionGenerationUserSettings).filter_by(
                 user_id=current_user.id,
                 platform_connection_id=platform_connection_id
             ).first()
             
             if user_settings_record:
                 user_settings = user_settings_record.to_settings_dataclass()
-        finally:
-            db_session.close()
         
         # Create form with current settings
         form = CaptionGenerationForm()
@@ -2874,10 +2795,9 @@ def caption_settings():
         platform_connection_id = context['platform_connection_id']
         
         # Get user's current settings
-        db_session = db_manager.get_session()
-        try:
+        with unified_session_manager.get_db_session() as session:
             from models import CaptionGenerationUserSettings
-            user_settings_record = db_session.query(CaptionGenerationUserSettings).filter_by(
+            user_settings_record = session.query(CaptionGenerationUserSettings).filter_by(
                 user_id=current_user.id,
                 platform_connection_id=platform_connection_id
             ).first()
@@ -2895,9 +2815,6 @@ def caption_settings():
             return render_template('caption_settings.html',
                                  form=form,
                                  user_settings=user_settings_record)
-                                 
-        finally:
-            db_session.close()
             
     except Exception as e:
         app.logger.error(f"Error loading caption settings page: {sanitize_for_log(str(e))}")
@@ -3368,12 +3285,11 @@ def api_update_user_settings():
                 return jsonify({'success': False, 'error': 'Max posts per run must be between 1 and 500'}), 400
         
         # Update or create user settings
-        db_session = db_manager.get_session()
-        try:
+        with unified_session_manager.get_db_session() as session:
             from models import CaptionGenerationUserSettings
             
             # Get existing settings or create new ones
-            user_settings = db_session.query(CaptionGenerationUserSettings).filter_by(
+            user_settings = session.query(CaptionGenerationUserSettings).filter_by(
                 user_id=current_user.id,
                 platform_connection_id=platform_connection_id
             ).first()
@@ -3390,14 +3306,14 @@ def api_update_user_settings():
                     reprocess_existing=False,
                     processing_delay=1.0
                 )
-                db_session.add(user_settings)
+                session.add(user_settings)
             else:
                 # Update existing settings
                 if max_posts_per_run is not None:
                     user_settings.max_posts_per_run = max_posts_per_run
                 user_settings.updated_at = datetime.now(timezone.utc)
             
-            db_session.commit()
+            session.commit()
             
             app.logger.info(f"Updated user settings for user {sanitize_for_log(str(current_user.id))} platform {sanitize_for_log(str(platform_connection_id))}")
             
@@ -3408,9 +3324,6 @@ def api_update_user_settings():
                     'max_posts_per_run': user_settings.max_posts_per_run
                 }
             })
-            
-        finally:
-            db_session.close()
             
     except Exception as e:
         app.logger.error(f"Error updating user settings: {sanitize_for_log(str(e))}")

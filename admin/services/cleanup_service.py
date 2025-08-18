@@ -16,6 +16,7 @@ class CleanupService:
     
     def get_cleanup_statistics(self) -> Dict[str, Any]:
         """Get statistics for cleanup operations"""
+        # Use direct database manager for service operations
         session = self.db_manager.get_session()
         try:
             stats = {
