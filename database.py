@@ -100,7 +100,7 @@ class DatabaseManager:
             connection = self.engine.connect()
             Base.metadata.create_all(connection)
             self._create_performance_indexes()
-            logger.info("Database tables and indexes created successfully")
+            # logger.info("Database tables and indexes created successfully")
         except Exception as e:
             logger.error(f"Error creating database tables: {e}")
             raise

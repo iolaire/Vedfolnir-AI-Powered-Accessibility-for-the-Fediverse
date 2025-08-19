@@ -87,8 +87,8 @@ class RedisSessionManager:
             )
             
             # Test Redis connection
-            self.redis_client.ping()
-            logger.info(f"Connected to Redis at {redis_host}:{redis_port}")
+            # self.redis_client.ping()
+            # logger.info(f"Connected to Redis at {redis_host}:{redis_port}")
             
         except Exception as e:
             logger.error(f"Failed to connect to Redis: {e}")
@@ -207,7 +207,7 @@ class RedisSessionManager:
                 }
             )
             
-            logger.info(f"Created Redis session {session_id} for user {user_id} with platform {platform_connection_id}")
+            # logger.info(f"Created Redis session {session_id} for user {user_id} with platform {platform_connection_id}")
             
             # Log to monitoring system
             if self.monitor:
@@ -390,7 +390,7 @@ class RedisSessionManager:
                 }
             )
             
-            logger.info(f"Updated session {session_id} to use platform {platform_connection_id}")
+            # logger.info(f"Updated session {session_id} to use platform {platform_connection_id}")
             return True
             
         except Exception as e:
@@ -432,7 +432,7 @@ class RedisSessionManager:
                 details={}
             )
             
-            logger.info(f"Destroyed Redis session {session_id}")
+            # logger.info(f"Destroyed Redis session {session_id}")
             
             # Log to monitoring system
             if self.monitor:
@@ -480,7 +480,7 @@ class RedisSessionManager:
                     expired_count += 1
             
             if expired_count > 0:
-                logger.info(f"Cleaned up {expired_count} expired Redis sessions")
+                # logger.info(f"Cleaned up {expired_count} expired Redis sessions")
                 
                 # Log to monitoring system
                 if self.monitor:
@@ -515,8 +515,8 @@ class RedisSessionManager:
                 if self.destroy_session(session_id):
                     count += 1
             
-            if count > 0:
-                logger.info(f"Cleaned up {count} Redis sessions for user {user_id}")
+            # if count > 0:
+            #     logger.info(f"Cleaned up {count} Redis sessions for user {user_id}")
             
             return count
             

@@ -332,8 +332,8 @@ class DatabaseConfig:
         pool_recycle=int(os.getenv("DB_POOL_RECYCLE", "1800"))
         query_logging=os.getenv("DB_QUERY_LOGGING", "false").lower() == "true"
         
-        logging.info(f"Database pool size loaded from environment: {pool_size}")
-        logging.info(f"Database max overflow loaded from environment: {max_overflow}")
+        # logging.info(f"Database pool size loaded from environment: {pool_size}")
+        # logging.info(f"Database max overflow loaded from environment: {max_overflow}")
 
         return cls(
             pool_size=pool_size,
