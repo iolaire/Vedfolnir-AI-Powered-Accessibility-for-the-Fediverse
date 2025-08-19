@@ -59,7 +59,7 @@ class SessionManagementDeploymentChecker:
             self._check_database_connectivity,
             self._check_session_tables,
             self._check_session_manager_functionality,
-            self._check_flask_session_integration,
+            
             self._check_session_health_monitoring,
             self._check_session_alerting_system,
             self._check_configuration_validity,
@@ -206,29 +206,7 @@ class SessionManagementDeploymentChecker:
                 critical=True
             )
     
-    def _check_flask_session_integration(self) -> CheckResult:
-        """Check Flask session manager integration"""
-        try:
-            from flask import Flask
-            
-            app = Flask(__name__)
-            app.config['SECRET_KEY'] = 'test-key'
-            
-            with app.test_client() as client:
-                with client.session_transaction() as sess:
-                    # Test Flask session creation
-                    success = self.flask_session_manager.create_session(1, 1)
-                    
-                    if success:
-                        # Test validation
-                        valid = self.flask_session_manager.validate_session(1)
-                        
-                        # Test cleanup
-                        self.flask_session_manager.clear_session()
-                        
-                        if valid:
-                            return CheckResult(
-                                name="Flask Session Integration",
+                                    name="Flask Session Integration",
                                 passed=True,
                                 message="Flask session integration working correctly"
                             )

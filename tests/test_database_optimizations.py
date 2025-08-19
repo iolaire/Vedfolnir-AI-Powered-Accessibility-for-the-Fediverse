@@ -11,7 +11,7 @@ import os
 import sys
 import time
 from unittest.mock import patch, MagicMock
-from datetime import datetime, timedelta
+from datetime import datetime, timedelta, timezone
 from sqlalchemy import create_engine, text
 from sqlalchemy.orm import sessionmaker
 
@@ -57,7 +57,6 @@ class TestDatabaseOptimizations(unittest.TestCase):
     
     def tearDown(self):
         """Clean up test database"""
-        self.db_manager.close_session()
         os.unlink(self.temp_db.name)
     
     def _create_test_data(self):
@@ -488,7 +487,7 @@ class TestDatabaseMigrations(unittest.TestCase):
         for table in expected_tables:
             self.assertIn(table, table_names)
         
-        db_manager.close_session()
+        db_manager.close_session(session)
     
     def test_schema_integrity(self):
         """Test that database schema has proper constraints and indexes"""
@@ -513,7 +512,7 @@ class TestDatabaseMigrations(unittest.TestCase):
             
         finally:
             session.close()
-            db_manager.close_session()
+            db_manager.close_session(session)
 
 
 if __name__ == "__main__":

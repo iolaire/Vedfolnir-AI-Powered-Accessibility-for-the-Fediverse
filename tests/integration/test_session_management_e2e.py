@@ -77,7 +77,7 @@ class SessionManagementE2ETest(unittest.TestCase):
         with self.app.test_client() as client:
             with self.app.app_context():
                 # 1. User login creates session
-                session_id = self.session_manager.create_user_session(
+                session_id = self.session_manager.create_session(
                     self.test_user.id, 
                     self.test_platform.id
                 )
@@ -113,7 +113,7 @@ class SessionManagementE2ETest(unittest.TestCase):
         # Create multiple sessions for same user (simulating multiple tabs)
         session_ids = []
         for i in range(3):
-            session_id = self.session_manager.create_user_session(
+            session_id = self.session_manager.create_session(
                 self.test_user.id, 
                 self.test_platform.id
             )
@@ -162,7 +162,7 @@ class SessionManagementE2ETest(unittest.TestCase):
     def test_session_expiration_handling(self):
         """Test session expiration and cleanup"""
         # Create session with short expiration
-        session_id = self.session_manager.create_user_session(
+        session_id = self.session_manager.create_session(
             self.test_user.id, 
             self.test_platform.id
         )
@@ -198,7 +198,7 @@ class SessionManagementE2ETest(unittest.TestCase):
         self.assertFalse(invalid_session_valid)
         
         # Test invalid user ID
-        session_id = self.session_manager.create_user_session(
+        session_id = self.session_manager.create_session(
             self.test_user.id, 
             self.test_platform.id
         )
@@ -232,7 +232,7 @@ class SessionManagementE2ETest(unittest.TestCase):
         
         def create_session_worker():
             try:
-                session_id = self.session_manager.create_user_session(
+                session_id = self.session_manager.create_session(
                     self.test_user.id, 
                     self.test_platform.id
                 )
@@ -251,7 +251,7 @@ class SessionManagementE2ETest(unittest.TestCase):
                 results.put(('validate', False, str(e)))
         
         # Create session first
-        main_session_id = self.session_manager.create_user_session(
+        main_session_id = self.session_manager.create_session(
             self.test_user.id, 
             self.test_platform.id
         )
@@ -370,7 +370,7 @@ class SessionManagementLoadTest(unittest.TestCase):
             # Create 10 sessions per user
             for _ in range(10):
                 try:
-                    session_id = self.session_manager.create_user_session(
+                    session_id = self.session_manager.create_session(
                         user.id, platform.id
                     )
                     if session_id:
@@ -423,7 +423,7 @@ class SessionManagementLoadTest(unittest.TestCase):
         # Create sessions for all test users
         session_ids = []
         for i, (user, platform) in enumerate(zip(self.test_users, self.test_platforms)):
-            session_id = self.session_manager.create_user_session(user.id, platform.id)
+            session_id = self.session_manager.create_session(user.id, platform.id)
             if session_id:
                 session_ids.append((session_id, user.id))
         

@@ -52,7 +52,7 @@ def test_platform_context():
         
         # Test session creation
         default_platform = next((p for p in platforms if p.is_default), platforms[0])
-        session_id = session_manager.create_user_session(user.id, default_platform.id)
+        session_id = session_manager.create_session(user.id, default_platform.id)
         
         if not session_id:
             print("❌ Failed to create user session")

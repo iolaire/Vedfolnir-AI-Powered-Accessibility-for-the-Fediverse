@@ -67,7 +67,7 @@ def test_session_with_platform():
         print(f"Testing session creation with user: {user.username}, platform: {platform_id}")
         
         # Create a session
-        session_id = session_manager.create_user_session(user.id, platform_id)
+        session_id = session_manager.create_session(user.id, platform_id)
         print(f"Created session: {session_id}")
         
         # Try to retrieve it

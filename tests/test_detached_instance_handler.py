@@ -313,14 +313,15 @@ class TestGlobalErrorHandlers(unittest.TestCase):
     
     def test_get_detached_instance_handler_not_configured(self):
         """Test exception when handler is not configured"""
-        with patch('detached_instance_handler.current_app') as mock_current_app:
-            # Configure mock to not have the handler attribute
-            type(mock_current_app).detached_instance_handler = Mock(side_effect=AttributeError)
-            
-            with self.assertRaises(RuntimeError) as context:
-                get_detached_instance_handler()
-            
-            self.assertIn("DetachedInstanceHandler not configured", str(context.exception))
+        with self.app.app_context():
+            with patch('detached_instance_handler.current_app') as mock_current_app:
+                # Configure mock to not have the handler attribute
+                type(mock_current_app).detached_instance_handler = Mock(side_effect=AttributeError)
+                
+                with self.assertRaises(RuntimeError) as context:
+                    get_detached_instance_handler()
+                
+                self.assertIn("DetachedInstanceHandler not configured", str(context.exception))
 
 
 class TestIntegrationWithMockUsers(unittest.TestCase):

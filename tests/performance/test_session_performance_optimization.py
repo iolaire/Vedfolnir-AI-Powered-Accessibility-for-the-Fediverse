@@ -113,7 +113,7 @@ class TestSessionPerformanceOptimizer(unittest.TestCase):
         from unified_session_manager import UnifiedSessionManager as SessionManager
         session_manager = UnifiedSessionManager(self.db_manager)
         
-        session_id = session_manager.create_user_session(
+        session_id = session_manager.create_session(
             self.test_user.id,
             self.test_user.platform_connections[0].id
         )
@@ -135,7 +135,7 @@ class TestSessionPerformanceOptimizer(unittest.TestCase):
         from unified_session_manager import UnifiedSessionManager as SessionManager
         session_manager = UnifiedSessionManager(self.db_manager)
         
-        session_id = session_manager.create_user_session(
+        session_id = session_manager.create_session(
             self.test_user.id,
             self.test_user.platform_connections[0].id
         )
@@ -163,7 +163,7 @@ class TestSessionPerformanceOptimizer(unittest.TestCase):
         # Create test sessions
         session_ids = []
         for i in range(3):
-            session_id = session_manager.create_user_session(
+            session_id = session_manager.create_session(
                 self.test_user.id,
                 self.test_user.platform_connections[0].id
             )
@@ -198,7 +198,7 @@ class TestSessionPerformanceOptimizer(unittest.TestCase):
         # Create multiple sessions
         session_ids = []
         for i in range(2):
-            session_id = session_manager.create_user_session(
+            session_id = session_manager.create_session(
                 self.test_user.id,
                 self.test_user.platform_connections[0].id
             )
@@ -219,7 +219,7 @@ class TestSessionPerformanceOptimizer(unittest.TestCase):
         from unified_session_manager import UnifiedSessionManager as SessionManager
         session_manager = UnifiedSessionManager(self.db_manager)
         
-        session_id = session_manager.create_user_session(
+        session_id = session_manager.create_session(
             self.test_user.id,
             self.test_user.platform_connections[0].id
         )
@@ -265,7 +265,7 @@ class TestSessionPerformanceOptimizer(unittest.TestCase):
         from unified_session_manager import UnifiedSessionManager as SessionManager
         session_manager = UnifiedSessionManager(self.db_manager)
         
-        session_id = session_manager.create_user_session(
+        session_id = session_manager.create_session(
             self.test_user.id,
             self.test_user.platform_connections[0].id
         )
@@ -340,7 +340,7 @@ class TestPerformanceImprovements(unittest.TestCase):
         session_manager = UnifiedSessionManager(self.db_manager)
         
         # Create test session
-        session_id = session_manager.create_user_session(
+        session_id = session_manager.create_session(
             self.test_user.id,
             self.test_user.platform_connections[0].id
         )
@@ -372,7 +372,7 @@ class TestPerformanceImprovements(unittest.TestCase):
         # Create many test sessions
         session_ids = []
         for i in range(20):
-            session_id = session_manager.create_user_session(
+            session_id = session_manager.create_session(
                 self.test_user.id,
                 self.test_user.platform_connections[0].id
             )

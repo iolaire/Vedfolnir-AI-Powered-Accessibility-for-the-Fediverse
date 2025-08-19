@@ -447,15 +447,16 @@ class TestSafeTemplateContext(unittest.TestCase):
     @patch('safe_template_context.current_app')
     def test_get_safe_user_context_missing_dependencies(self, mock_current_app):
         """Test get_safe_user_context with missing dependencies"""
-        mock_current_app.configure_mock(**{
-            'request_session_manager': None,
-            'detached_instance_handler': None
-        })
-        
-        result = get_safe_user_context(user_id=1)
-        
-        self.assertTrue(result['template_error'])
-        self.assertIsNone(result['current_user_safe'])
+        with self.app.app_context():
+            mock_current_app.configure_mock(**{
+                'request_session_manager': None,
+                'detached_instance_handler': None
+            })
+            
+            result = get_safe_user_context(user_id=1)
+            
+            self.assertTrue(result['template_error'])
+            self.assertIsNone(result['current_user_safe'])
 
 
 if __name__ == '__main__':

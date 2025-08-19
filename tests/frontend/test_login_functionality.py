@@ -229,7 +229,7 @@ def test_session_creation():
                 print(f"Testing session creation for user {user.username} with platform {platform.name}")
                 
                 # Test session creation
-                session_id = session_manager.create_user_session(user.id, platform.id)
+                session_id = session_manager.create_session(user.id, platform.id)
                 print(f"✅ Session created: {session_id}")
                 
                 # Test session context retrieval
@@ -397,21 +397,18 @@ def test_session_persistence():
                             print(f"   Latest session ID: {latest_session.session_id}")
                             print(f"   Session platform: {latest_session.active_platform_id}")
                             
-                            # Check if Flask session has the session ID
-                            with client.session_transaction() as sess:
-                                flask_session_id = sess.get('_id')
-                                print(f"   Flask session _id: {flask_session_id}")
-                                print(f"   Flask session keys: {list(sess.keys())}")
-                                
-                                if flask_session_id:
-                                    if flask_session_id == latest_session.session_id:
-                                        print("✅ Flask session matches database session")
-                                    else:
-                                        print("❌ Flask session ID doesn't match database session")
-                                        return False
+                            # Check if the session cookie was set
+                            session_cookie = next((cookie for cookie in client.cookie_jar if cookie.name == 'session_id'), None)
+                            if session_cookie:
+                                print(f"   Session cookie found: {session_cookie.value}")
+                                if latest_session.session_id == session_cookie.value:
+                                    print("✅ Session cookie matches database session")
                                 else:
-                                    print("❌ No session ID in Flask session")
+                                    print("❌ Session cookie ID doesn't match database session")
                                     return False
+                            else:
+                                print("❌ No session cookie found")
+                                return False
                         else:
                             print("❌ No session created in database")
                             return False

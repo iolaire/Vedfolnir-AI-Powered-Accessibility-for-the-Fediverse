@@ -300,7 +300,6 @@ class SessionErrorHandler:
                 # This ensures we use the correctly configured db_manager
                 if hasattr(current_app, 'unified_session_manager'):
                     current_app.unified_session_manager.destroy_session(session_id)
-                # Flask session cleanup removed - using database sessions only
             
             # Log out user
             logout_user()

@@ -18,7 +18,7 @@ import tempfile
 import os
 import sys
 from unittest.mock import Mock, patch, MagicMock
-from flask import Flask, session as flask_session
+# TODO: Refactor this test to not use flask_session - from flask import Flask
 from sqlalchemy.orm.exc import DetachedInstanceError
 from sqlalchemy.exc import SQLAlchemyError
 
@@ -29,7 +29,7 @@ from config import Config
 from database import DatabaseManager
 from models import User, PlatformConnection, UserRole, Post, Image, ProcessingStatus
 from request_scoped_session_manager import RequestScopedSessionManager
-from unified_session_manager import UnifiedSessionManager as SessionManager
+from redis_session_manager import RedisSessionManager as SessionManager
 from database_context_middleware import DatabaseContextMiddleware
 from session_aware_user import SessionAwareUser
 from tests.test_helpers.mock_user_helper import MockUserHelper
@@ -53,7 +53,8 @@ class TestDashboardAccessIntegration(unittest.TestCase):
         
         # Initialize session managers
         self.request_session_manager = RequestScopedSessionManager(self.db_manager)
-        self.session_manager = UnifiedSessionManager(self.db_manager)
+        with patch('redis.Redis', MagicMock()):
+            self.session_manager = SessionManager(self.db_manager)
         
         # Create Flask app for testing
         self.app = Flask(__name__)
@@ -240,10 +241,10 @@ class TestDashboardAccessIntegration(unittest.TestCase):
                         
                         if user_platforms:
                             default_platform = next((p for p in user_platforms if p.is_default), user_platforms[0])
-                            session_id = self.session_manager.create_user_session(user.id, default_platform.id)
-                            flask_session['_id'] = session_id
-                        
-                        return redirect(url_for('dashboard'))
+                            session_id = self.session_manager.create_session(user.id, default_platform.id)
+                            response = redirect(url_for('dashboard'))
+                            self.app.session_cookie_manager.set_session_cookie(response, session_id)
+                            return response
                     else:
                         flash('Invalid credentials', 'error')
             
@@ -266,14 +267,14 @@ class TestDashboardAccessIntegration(unittest.TestCase):
         @login_required
         def logout():
             """Logout route"""
-            # Clear database session
-            session_id = flask_session.get('_id')
+            session_id = self.app.session_cookie_manager.get_session_id_from_cookie()
             if session_id:
                 self.session_manager._cleanup_session(session_id)
             
-            flask_session.clear()
             logout_user()
-            return redirect(url_for('login'))
+            response = make_response(redirect(url_for('login')))
+            self.app.session_cookie_manager.clear_session_cookie(response)
+            return response
         
         @self.app.route('/')
         @self.app.route('/dashboard')
@@ -286,7 +287,7 @@ class TestDashboardAccessIntegration(unittest.TestCase):
                 # Use request-scoped session for all database queries
                 with self.request_session_manager.session_scope() as db_session:
                     # Get current platform context
-                    session_id = flask_session.get('_id')
+                    session_id = self.app.session_cookie_manager.get_session_id_from_cookie()
                     context = None
                     current_platform = None
                     
@@ -389,7 +390,7 @@ class TestDashboardAccessIntegration(unittest.TestCase):
                     return redirect(url_for('dashboard'))
                 
                 # Get current platform
-                session_id = flask_session.get('_id')
+                session_id = self.app.session_cookie_manager.get_session_id_from_cookie()
                 current_platform_id = None
                 if session_id:
                     context = self.session_manager.get_session_context(session_id)
@@ -413,8 +414,8 @@ class TestDashboardAccessIntegration(unittest.TestCase):
                             flash('Failed to switch platform', 'error')
                     else:
                         # Create new session with the platform
-                        new_session_id = self.session_manager.create_user_session(current_user.id, next_platform.id)
-                        flask_session['_id'] = new_session_id
+                        new_session_id = self.session_manager.create_session(current_user.id, next_platform.id)
+# TODO: Refactor this test to not use flask_session -                         flask_session['_id'] = new_session_id
                         flash(f'Switched to {next_platform.name}', 'success')
                 
                 return redirect(url_for('dashboard'))
@@ -546,8 +547,7 @@ class TestDashboardAccessIntegration(unittest.TestCase):
         self._login_user('integration_test_user', 'test_password_123')
         
         # Corrupt the session
-        with self.client.session_transaction() as sess:
-            sess['_id'] = 'invalid_session_id'
+        self.client.set_cookie('localhost', 'session_id', 'invalid_session_id')
         
         response = self.client.get('/dashboard')
         self.assertEqual(response.status_code, 200)

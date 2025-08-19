@@ -61,7 +61,7 @@ class TestConcurrentSessionOperations(unittest.TestCase):
             thread_results = []
             for _ in range(sessions_per_thread):
                 start_time = time.time()
-                session_id = self.session_manager.create_user_session(self.test_user.id)
+                session_id = self.session_manager.create_session(self.test_user.id)
                 end_time = time.time()
                 
                 thread_results.append({
@@ -91,7 +91,7 @@ class TestConcurrentSessionOperations(unittest.TestCase):
         # Create sessions first
         session_ids = []
         for i in range(20):
-            session_id = self.session_manager.create_user_session(self.test_user.id)
+            session_id = self.session_manager.create_session(self.test_user.id)
             session_ids.append(session_id)
             time.sleep(0.05)
         
@@ -135,7 +135,7 @@ class TestConcurrentSessionOperations(unittest.TestCase):
         # Create sessions
         session_ids = []
         for i in range(10):
-            session_id = self.session_manager.create_user_session(self.test_user.id)
+            session_id = self.session_manager.create_session(self.test_user.id)
             session_ids.append(session_id)
             time.sleep(0.1)
         
@@ -316,7 +316,7 @@ class TestCrossTabSynchronizationPerformance(unittest.TestCase):
         # Create sessions
         session_ids = []
         for i in range(15):
-            session_id = self.session_manager.create_user_session(self.test_user.id)
+            session_id = self.session_manager.create_session(self.test_user.id)
             session_ids.append(session_id)
             time.sleep(0.05)
         
@@ -371,7 +371,7 @@ class TestCrossTabSynchronizationPerformance(unittest.TestCase):
         # Create many sessions
         session_ids = []
         for i in range(30):
-            session_id = self.session_manager.create_user_session(self.test_user.id)
+            session_id = self.session_manager.create_session(self.test_user.id)
             session_ids.append(session_id)
             time.sleep(0.03)
         
@@ -424,7 +424,7 @@ class TestCrossTabSynchronizationPerformance(unittest.TestCase):
         # Create many sessions
         session_ids = []
         for i in range(50):
-            session_id = self.session_manager.create_user_session(self.test_user.id)
+            session_id = self.session_manager.create_session(self.test_user.id)
             session_ids.append(session_id)
             time.sleep(0.02)
         
@@ -480,7 +480,7 @@ class TestPerformanceMetrics(unittest.TestCase):
         for i in range(10):
             # Session creation
             start_time = time.time()
-            session_id = self.session_manager.create_user_session(self.test_user.id)
+            session_id = self.session_manager.create_session(self.test_user.id)
             create_duration = time.time() - start_time
             
             # Session validation
@@ -522,7 +522,7 @@ class TestPerformanceMetrics(unittest.TestCase):
         test_duration = 2.0  # 2 seconds
         
         while time.time() - start_time < test_duration:
-            session_id = self.session_manager.create_user_session(self.test_user.id)
+            session_id = self.session_manager.create_session(self.test_user.id)
             if session_id:
                 operations_completed += 1
             time.sleep(0.05)  # Small delay to avoid overwhelming

@@ -62,11 +62,11 @@ class TestImageProcessing(unittest.TestCase):
             processor = ImageProcessor(self.config)
             
             # Test valid JPG
-            result = processor._validate_image(self.valid_jpg_path)
+            result = processor.validate_image(self.valid_jpg_path)
             self.assertTrue(result)
             
             # Test valid PNG
-            result = processor._validate_image(self.valid_png_path)
+            result = processor.validate_image(self.valid_png_path)
             self.assertTrue(result)
     
     def test_image_validation_corrupted(self):
@@ -75,7 +75,7 @@ class TestImageProcessing(unittest.TestCase):
             processor = ImageProcessor(self.config)
             
             # Test corrupted image
-            result = processor._validate_image(self.corrupted_image_path)
+            result = processor.validate_image(self.corrupted_image_path)
             self.assertFalse(result)
     
     def test_image_validation_size_limits(self):
@@ -89,7 +89,7 @@ class TestImageProcessing(unittest.TestCase):
             img.save(large_image_path, format="JPEG")
             
             # Test with default size limits
-            result = processor._validate_image(large_image_path)
+            result = processor.validate_image(large_image_path)
             
             # The validation should still pass but log a warning
             # We're not testing the log here, just that it doesn't reject the image
@@ -97,7 +97,7 @@ class TestImageProcessing(unittest.TestCase):
             
             # Test with custom size limits
             processor.max_image_dimension = 5000
-            result = processor._validate_image(large_image_path)
+            result = processor.validate_image(large_image_path)
             self.assertFalse(result)
     
     def test_get_file_extension(self):

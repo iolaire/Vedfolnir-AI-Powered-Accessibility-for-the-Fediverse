@@ -157,7 +157,7 @@ class PlatformTestCase(unittest.TestCase):
     def tearDown(self):
         """Clean up test database"""
         self.session.close()
-        self.db_manager.close_session()
+        self.db_manager.close_session(self.session)
         os.close(self.db_fd)
         os.unlink(self.db_path)
     

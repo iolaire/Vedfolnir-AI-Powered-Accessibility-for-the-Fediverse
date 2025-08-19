@@ -6,7 +6,7 @@ import sys
 import os
 import json
 import traceback
-from datetime import datetime
+from datetime import datetime, timezone
 from typing import Dict, Any, Optional, List, Union
 
 # Define custom log levels for structured logging

@@ -15,9 +15,8 @@ from unittest.mock import patch, MagicMock
 from flask import Flask, g
 from datetime import datetime, timezone, timedelta
 
-from unified_session_manager import UnifiedSessionManager, SessionValidationError, SessionDatabaseError
-from session_cookie_manager import SessionCookieManager
-from redis_session_middleware import get_current_session_context, get_current_session_id, get_current_session_context, get_current_user_id, get_current_platform_id, is_session_authenticated
+from redis_session_manager import RedisSessionManager as SessionManager, SessionValidationError, RedisSessionError
+from redis_session_middleware import get_current_session_context, get_current_session_id, get_current_user_id, get_current_platform_id
 from database import DatabaseManager
 from models import User, PlatformConnection, UserSession
 
@@ -37,9 +36,10 @@ class SessionConsolidationFinalE2ETest(unittest.TestCase):
         self.mock_db_manager.get_session.return_value.__exit__.return_value = None
         
         # Initialize session components
-        self.session_manager = UnifiedSessionManager(self.mock_db_manager)
+        with patch('redis.Redis', MagicMock()):
+            self.session_manager = SessionManager(self.mock_db_manager)
         self.cookie_manager = SessionCookieManager()
-        self.middleware = DatabaseSessionMiddleware(self.app, self.session_manager, self.cookie_manager)
+        
         
         # Test data
         self.test_user_id = 123
@@ -170,7 +170,7 @@ class SessionConsolidationFinalE2ETest(unittest.TestCase):
                     context = get_current_session_context()
                     user_id = get_current_user_id()
                     platform_id = get_current_platform_id()
-                    authenticated = is_session_authenticated()
+                    authenticated = get_current_user_id() is not None
                     
                     return json.dumps({
                         'context': context,

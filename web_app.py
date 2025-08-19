@@ -76,40 +76,34 @@ app.config['SQLALCHEMY_TRACK_MODIFICATIONS'] = False
 app.config['PERMANENT_SESSION_LIFETIME'] = timedelta(seconds=config.auth.session_lifetime)
 app.config['REMEMBER_COOKIE_DURATION'] = timedelta(seconds=config.auth.remember_cookie_duration)
 
+# Define a NullSessionInterface to completely disable Flask's default session management
+from flask.sessions import SessionInterface, SessionMixin
+from werkzeug.datastructures import CallbackDict
 
+class NullSession(CallbackDict, SessionMixin):
+    def __init__(self, initial=None):
+        def on_update(self):
+            self.modified = True
+        CallbackDict.__init__(self, initial, on_update)
+        self.permanent = False
+        self.new = True
+        self.modified = False
 
-
-# Create a session interface that allows Flask-Login but blocks everything else
-from flask.sessions import SessionInterface, SecureCookieSessionInterface
-
-class FlaskLoginOnlySessionInterface(SecureCookieSessionInterface):
-    """Session interface that only allows Flask-Login keys, blocks everything else"""
-    
-    # Flask-Login keys that are allowed
-    ALLOWED_KEYS = {'_user_id', '_fresh', '_id', '_remember', '_remember_seconds'}
-    
+class NullSessionInterface(SessionInterface):
     def open_session(self, app, request):
-        """Open session normally"""
-        session = super().open_session(app, request)
-        if session:
-            # Remove any non-Flask-Login keys
-            keys_to_remove = [key for key in session.keys() if key not in self.ALLOWED_KEYS]
-            for key in keys_to_remove:
-                session.pop(key, None)
-        return session
-    
+        return NullSession()
     def save_session(self, app, session, response):
-        """Save session but only allow Flask-Login keys"""
-        if session:
-            # Remove any non-Flask-Login keys before saving
-            keys_to_remove = [key for key in session.keys() if key not in self.ALLOWED_KEYS]
-            for key in keys_to_remove:
-                session.pop(key, None)
-        
-        return super().save_session(app, session, response)
+        pass
 
-# Apply the Flask-Login only session interface
-app.session_interface = FlaskLoginOnlySessionInterface()
+# Set Flask's session interface to NullSessionInterface to prevent it from setting cookies
+app.session_interface = NullSessionInterface()
+
+app.logger.info("Flask's default session management has been disabled.")
+
+
+
+
+
 
 # Use Flask's default session interface but disable Flask-WTF CSRF completely
 # This allows Flask to access secret_key while preventing CSRF session creation

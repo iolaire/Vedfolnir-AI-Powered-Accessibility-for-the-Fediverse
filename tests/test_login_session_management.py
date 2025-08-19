@@ -18,7 +18,7 @@ import os
 import sys
 from datetime import datetime, timezone
 from unittest.mock import Mock, patch, MagicMock
-from flask import Flask, session as flask_session
+# TODO: Refactor this test to not use flask_session - from flask import Flask
 from werkzeug.test import Client
 from werkzeug.wrappers import Response
 
@@ -29,7 +29,8 @@ from config import Config
 from database import DatabaseManager
 from models import User, PlatformConnection, UserRole
 from request_scoped_session_manager import RequestScopedSessionManager
-from unified_session_manager import UnifiedSessionManager as SessionManager
+from redis_session_manager import RedisSessionManager as SessionManager
+from unified_session_manager import get_current_platform_context
 from session_aware_user import SessionAwareUser
 from database_context_middleware import DatabaseContextMiddleware
 from tests.test_helpers.mock_user_helper import MockUserHelper
@@ -55,7 +56,8 @@ class TestLoginSessionManagement(unittest.TestCase):
         
         # Initialize session managers
         self.request_session_manager = RequestScopedSessionManager(self.db_manager)
-        self.session_manager = UnifiedSessionManager(self.db_manager)
+        with patch('redis.Redis', MagicMock()):
+            self.session_manager = SessionManager(self.db_manager)
         
         # Create Flask app for testing
         self.app = Flask(__name__)
@@ -235,24 +237,18 @@ class TestLoginSessionManagement(unittest.TestCase):
                                 # Create database session with platform context
                                 session_id = self.session_manager.create_user_session(user_id, default_platform['id'])
                                 
-                                # Store session ID in Flask session
-                                flask_session['_id'] = session_id
-                                flask_session.permanent = True
-                                
+                                # Store session ID in the response cookie
+                                response = make_response(redirect(url_for('index')))
+                                self.app.session_cookie_manager.set_session_cookie(response, session_id)
+
                                 if session_id:
                                     # Welcome message with platform info
                                     flash(f'Welcome back! Connected to {default_platform["name"]} ({default_platform["platform_type"].title()})', 'success')
                                 else:
                                     flash('Login successful, but there was an issue setting up your platform context', 'warning')
-                                
+                                return response
                             except Exception as e:
-                                flash('Login successful, but there was an issue setting up your platform context', 'warning')
-                            
-                            # Redirect to the requested page or default to index with session context maintained
-                            next_page = request.args.get('next')
-                            if next_page and next_page.startswith('/'):  # Ensure the next page is relative
-                                return redirect(next_page)
-                            return redirect(url_for('index'))
+                                flash('An unexpected error occurred during login. Please try again.', 'error')
                         else:
                             flash('Invalid username or password', 'error')
                             
@@ -285,10 +281,9 @@ class TestLoginSessionManagement(unittest.TestCase):
         self.assertEqual(response.status_code, 200)
         self.assertIn(b'Welcome testuser_with_platforms!', response.data)
         
-        # Verify session was created
-        with self.client.session_transaction() as sess:
-            self.assertIn('_id', sess)
-            self.assertIsNotNone(sess['_id'])
+        # Verify session cookie was set
+        session_cookie = next((cookie for cookie in self.client.cookie_jar if cookie.name == 'session_id'), None)
+        self.assertIsNotNone(session_cookie)
     
     def test_successful_login_no_platforms(self):
         """Test successful login for user without platforms redirects to setup"""
@@ -365,14 +360,14 @@ class TestLoginSessionManagement(unittest.TestCase):
         self.assertEqual(response.status_code, 200)
         
         # Verify session context
-        with self.client.session_transaction() as sess:
-            session_id = sess.get('_id')
-            self.assertIsNotNone(session_id)
-            
-            # Verify session exists in database
-            context = self.session_manager.get_session_context(session_id)
-            self.assertIsNotNone(context)
-            self.assertEqual(context['user_id'], self.test_user_with_platforms.id)
+        session_cookie = next((cookie for cookie in self.client.cookie_jar if cookie.name == 'session_id'), None)
+        self.assertIsNotNone(session_cookie)
+        session_id = session_cookie.value
+        
+        # Verify session exists in database
+        context = self.session_manager.get_session_context(session_id)
+        self.assertIsNotNone(context)
+        self.assertEqual(context['user_id'], self.test_user_with_platforms.id)
     
     def test_login_last_login_updated(self):
         """Test that last_login timestamp is updated on successful login"""

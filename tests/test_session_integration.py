@@ -93,50 +93,15 @@ class TestSessionIntegration(unittest.TestCase):
         """Test that session is created when user logs in"""
         # Mock the session manager in the web app
         with patch('web_app.session_manager', self.session_manager):
-            # First, get the login page to obtain a CSRF token
-            with self.client.session_transaction() as sess:
-                # Set up a basic session
-                sess['_csrf_token'] = 'test-csrf-token'
-            
-            # Get CSRF token from the login form
-            login_page_response = self.client.get('/login')
-            self.assertEqual(login_page_response.status_code, 200)
-            
-            # Extract CSRF token from the login form
-            from bs4 import BeautifulSoup
-            soup = BeautifulSoup(login_page_response.data, 'html.parser')
-            csrf_input = soup.find('input', {'name': 'csrf_token'})
-            
-            csrf_token = None
-            if csrf_input:
-                csrf_token = csrf_input.get('value')
-            
-            # If no CSRF token in form, try to generate one using Flask-WTF
-            if not csrf_token:
-                with self.client.application.test_request_context():
-                    from flask_wtf.csrf import generate_csrf
-                    csrf_token = generate_csrf()
-            
-            # Attempt login with CSRF token
-            login_data = {
-                'username': 'testuser',
-                'password': 'testpass',
-                'remember': False
-            }
-            
-            if csrf_token:
-                login_data['csrf_token'] = csrf_token
-            
-            response = self.client.post('/login', data=login_data, follow_redirects=True)
-            
-            # Check that login was processed (may not be successful due to mock user, but should not be CSRF error)
-            # A 200 status means the form was processed, even if login failed
-            self.assertIn(response.status_code, [200, 302])  # Either success or redirect
-            
-            # Verify session was created (we can't easily test the Flask session here,
-            # but we can verify the session manager has sessions)
-            # This is a basic integration test - more detailed testing would require
-            # Flask test client session handling
+            # Verify session was created by checking the cookie in the response
+            session_cookie = next((cookie for cookie in self.client.cookie_jar if cookie.name == 'session_id'), None)
+            self.assertIsNotNone(session_cookie)
+            session_id = session_cookie.value
+
+            # Verify the session in the database
+            context = self.session_manager.get_session_context(session_id)
+            self.assertIsNotNone(context)
+            self.assertEqual(context['user_id'], self.user_id)
     
     def test_platform_context_injection(self):
         """Test that platform context is properly injected into templates"""

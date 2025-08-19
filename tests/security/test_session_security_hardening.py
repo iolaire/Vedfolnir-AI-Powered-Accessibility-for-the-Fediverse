@@ -40,9 +40,7 @@ class TestSessionSecurityHardening(unittest.TestCase):
         self.mock_request_patcher = patch('security.features.session_security.request', self.mock_request)
         self.mock_request_patcher.start()
         
-        # Mock Flask session
-        self.mock_session_patcher = patch('security.features.session_security.flask_session')
-        self.mock_flask_session = self.mock_session_patcher.start()
+        
     
     def tearDown(self):
         """Clean up test fixtures"""

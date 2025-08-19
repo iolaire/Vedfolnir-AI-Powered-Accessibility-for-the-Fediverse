@@ -16,7 +16,7 @@ from security.core.security_utils import sanitize_for_log
 import threading
 from typing import Dict, Optional, Tuple, Callable, Any
 from dataclasses import dataclass, field
-from datetime import datetime, timedelta
+from datetime import datetime, timedelta, timezone
 import threading
 from functools import wraps
 
@@ -557,7 +557,7 @@ class RateLimiter:
             Dictionary with rate limiting statistics
         """
         with self.stats_lock:
-            stats_age = (datetime.now() - self.last_reset_time).total_seconds()
+            stats_age = (datetime.now(timezone.utc) - self.last_reset_time).total_seconds()
             
             # Calculate rates
             requests_per_minute = (self.request_count / stats_age) * 60 if stats_age > 0 else 0

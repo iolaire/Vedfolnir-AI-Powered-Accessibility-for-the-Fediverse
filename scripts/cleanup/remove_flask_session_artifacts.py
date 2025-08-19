@@ -8,7 +8,7 @@ as part of the session consolidation cleanup.
 
 import os
 import sys
-import shutil
+import re
 from pathlib import Path
 
 # Add the project root to Python path
@@ -19,19 +19,14 @@ def remove_deprecated_files():
     """Remove deprecated Flask session files"""
     
     files_to_remove = [
-        # Migration scripts (no longer needed)
+        "database_session_middleware.py",
+        "security/validation/security_fixes.py",
         "migrate_to_flask_sessions.py",
-        
-        # Test files for deprecated functionality
         "tests/integration/test_flask_sessions.py",
-        
-        # Documentation for deprecated system
         "docs/session-management-api.md",
         "docs/session-management-examples.md", 
         "docs/session-management-troubleshooting.md",
         "docs/summary/FLASK_SESSION_MIGRATION.md",
-        
-        # Generated API docs for deprecated components
         "docs/api/generated/flask_session_manager.md",
         "docs/api/generated/migrate_to_flask_sessions.md",
         "docs/api/generated/test_flask_sessions.md",
@@ -62,6 +57,24 @@ def clean_flask_session_references():
         "tests/test_dashboard_session_management.py",
         "tests/test_session_decorators_integration.py",
         "scripts/deployment/session_management_deployment_checklist.py",
+        "database.py",
+        "redis_session_middleware.py",
+        "routes/user_management_routes.py",
+        "scripts/testing/run_session_consolidation_final_tests.py",
+        "scripts/testing/validate_session_consolidation.py",
+        "security/core/csrf_token_manager.py",
+        "security/core/enhanced_csrf_protection.py",
+        "security/tests/test_security_fixes.py",
+        "session_cookie_manager.py",
+        "session_error_handlers.py",
+        "tests/frontend/test_login_functionality.py",
+        "tests/security/test_session_security_hardening.py",
+        "tests/test_dashboard_access_integration.py",
+        "tests/test_login_session_management.py",
+        "tests/test_session_consolidation_final_e2e.py",
+        "tests/test_session_consolidation_integration.py",
+        "tests/test_session_integration.py",
+        "web_app.py"
     ]
     
     cleaned_files = []
@@ -73,6 +86,8 @@ def clean_flask_session_references():
                 with open(full_path, 'r', encoding='utf-8') as f:
                     content = f.read()
                 
+                original_content = content
+                
                 # Remove Flask session imports and references
                 lines = content.split('\n')
                 cleaned_lines = []
@@ -83,21 +98,43 @@ def clean_flask_session_references():
                         'from flask_session_manager import',
                         'import flask_session_manager',
                         'FlaskSessionManager',
-                        'FlaskPlatformContextMiddleware'
+                        'FlaskPlatformContextMiddleware',
+                        "from flask.sessions import SessionInterface, SecureCookieSessionInterface"
                     ]):
                         continue
+
+                    # Comment out lines with flask.session usage in tests
+                    if 'test' in file_path and "patch('flask.session'" in line:
+                        cleaned_lines.append(f"# TODO: Refactor this test to not use flask.session - {line}")
+                        continue
                     
+                    if 'test' in file_path and "flask_session" in line:
+                        cleaned_lines.append(f"# TODO: Refactor this test to not use flask_session - {line}")
+                        continue
+
                     # Skip comments about Flask session manager
                     if 'flask_session_manager' in line.lower() and line.strip().startswith('#'):
                         continue
                     
+                    # Remove outdated comments
+                    if "# User sessions indexes removed - using Flask sessions" in line:
+                        continue
+
+                    if "# Flask session cleanup removed - using database sessions only" in line:
+                        continue
+
                     cleaned_lines.append(line)
                 
+                content = '\n'.join(cleaned_lines)
+
+                # Remove the _check_flask_session_integration function
+                content = re.sub(r'def _check_flask_session_integration.*?return CheckResult.*?\n', '', content, flags=re.DOTALL)
+                content = re.sub(r'self._check_flask_session_integration,', '', content)
+
                 # Write back if changes were made
-                new_content = '\n'.join(cleaned_lines)
-                if new_content != content:
+                if content != original_content:
                     with open(full_path, 'w', encoding='utf-8') as f:
-                        f.write(new_content)
+                        f.write(content)
                     cleaned_files.append(file_path)
                     print(f"✓ Cleaned references in: {file_path}")
                 

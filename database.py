@@ -114,7 +114,6 @@ class DatabaseManager:
         try:
             from sqlalchemy import text
             connection = self.engine.connect()
-            # User sessions indexes removed - using Flask sessions
             
             connection.commit()
             logger.debug("Performance indexes created successfully")

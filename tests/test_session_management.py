@@ -14,7 +14,8 @@ from unittest.mock import Mock, patch
 from config import Config
 from database import DatabaseManager
 from models import User, PlatformConnection, UserSession, UserRole
-from unified_session_manager import UnifiedSessionManager as SessionManager, get_current_platform_context
+from redis_session_manager import RedisSessionManager as SessionManager
+from unified_session_manager import get_current_platform_context
 from sqlalchemy import create_engine
 from sqlalchemy.orm import sessionmaker
 
@@ -36,7 +37,8 @@ class TestSessionManagement(unittest.TestCase):
         self.db_manager.create_tables()
         
         # Initialize session manager
-        self.session_manager = UnifiedSessionManager(self.db_manager)
+        with patch('redis.Redis', MagicMock()):
+            self.session_manager = SessionManager(self.db_manager)
         
         # Create test user and platform
         self._create_test_data()

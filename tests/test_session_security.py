@@ -15,7 +15,7 @@ from unittest.mock import patch
 from config import Config
 from database import DatabaseManager
 from models import User, PlatformConnection, UserSession, UserRole
-from unified_session_manager import UnifiedSessionManager as SessionManager
+from redis_session_manager import RedisSessionManager as SessionManager
 
 
 class TestSessionSecurity(unittest.TestCase):
@@ -35,7 +35,8 @@ class TestSessionSecurity(unittest.TestCase):
         self.db_manager.create_tables()
         
         # Initialize session manager
-        self.session_manager = UnifiedSessionManager(self.db_manager)
+        with patch('redis.Redis', MagicMock()):
+            self.session_manager = SessionManager(self.db_manager)
         
         # Create test data
         self._create_test_data()

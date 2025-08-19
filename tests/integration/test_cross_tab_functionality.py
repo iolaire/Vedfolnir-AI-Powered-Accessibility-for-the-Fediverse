@@ -151,7 +151,7 @@ class TestCrossTabPlatformSwitching(unittest.TestCase):
         # Create sessions for all tabs
         session_ids = []
         for tab in self.tabs:
-            session_id = self.session_manager.create_user_session(self.test_user.id)
+            session_id = self.session_manager.create_session(self.test_user.id)
             session_ids.append(session_id)
             time.sleep(0.1)  # Avoid suspicious activity detection
         
@@ -185,7 +185,7 @@ class TestCrossTabPlatformSwitching(unittest.TestCase):
         """Test multiple rapid platform switches are synchronized correctly"""
         # Create sessions
         for tab in self.tabs:
-            session_id = self.session_manager.create_user_session(self.test_user.id)
+            session_id = self.session_manager.create_session(self.test_user.id)
             time.sleep(0.1)
         
         # Simulate multiple platform switches from different tabs
@@ -228,7 +228,7 @@ class TestCrossTabPlatformSwitching(unittest.TestCase):
     def test_platform_switch_cleanup(self):
         """Test that platform switch events are cleaned up after broadcast"""
         # Create session
-        session_id = self.session_manager.create_user_session(self.test_user.id)
+        session_id = self.session_manager.create_session(self.test_user.id)
         
         # Simulate platform switch with cleanup
         platform_switch_data = {
@@ -300,7 +300,7 @@ class TestCrossTabSessionExpiration(unittest.TestCase):
         # Create sessions for all tabs
         session_ids = []
         for tab in self.tabs:
-            session_id = self.session_manager.create_user_session(self.test_user.id)
+            session_id = self.session_manager.create_session(self.test_user.id)
             session_ids.append(session_id)
             time.sleep(0.1)
         
@@ -330,7 +330,7 @@ class TestCrossTabSessionExpiration(unittest.TestCase):
     def test_session_expiration_with_actual_expired_session(self):
         """Test session expiration notification with actual expired session"""
         # Create session
-        session_id = self.session_manager.create_user_session(self.test_user.id)
+        session_id = self.session_manager.create_session(self.test_user.id)
         
         # Manually expire the session
         with self.session_manager.get_db_session() as db_session:
@@ -362,7 +362,7 @@ class TestCrossTabSessionExpiration(unittest.TestCase):
     def test_session_expiration_cleanup(self):
         """Test that session expiration events are cleaned up"""
         # Create session
-        session_id = self.session_manager.create_user_session(self.test_user.id)
+        session_id = self.session_manager.create_session(self.test_user.id)
         
         # Simulate expiration with cleanup
         expiration_data = {
@@ -432,7 +432,7 @@ class TestCrossTabLogoutSynchronization(unittest.TestCase):
         # Create sessions for all tabs
         session_ids = []
         for tab in self.tabs:
-            session_id = self.session_manager.create_user_session(self.test_user.id)
+            session_id = self.session_manager.create_session(self.test_user.id)
             session_ids.append(session_id)
             time.sleep(0.1)
         
@@ -464,7 +464,7 @@ class TestCrossTabLogoutSynchronization(unittest.TestCase):
         # Create sessions
         session_ids = []
         for tab in self.tabs:
-            session_id = self.session_manager.create_user_session(self.test_user.id)
+            session_id = self.session_manager.create_session(self.test_user.id)
             session_ids.append(session_id)
             time.sleep(0.1)
         
@@ -496,7 +496,7 @@ class TestCrossTabLogoutSynchronization(unittest.TestCase):
     def test_logout_cleanup_storage(self):
         """Test that logout events are cleaned up from storage"""
         # Create session
-        session_id = self.session_manager.create_user_session(self.test_user.id)
+        session_id = self.session_manager.create_session(self.test_user.id)
         
         # Simulate logout with cleanup
         logout_data = {
@@ -518,7 +518,7 @@ class TestCrossTabLogoutSynchronization(unittest.TestCase):
         # Create sessions
         session_ids = []
         for tab in self.tabs:
-            session_id = self.session_manager.create_user_session(self.test_user.id)
+            session_id = self.session_manager.create_session(self.test_user.id)
             session_ids.append(session_id)
             time.sleep(0.1)
         
@@ -605,7 +605,7 @@ class TestCrossTabIntegrationScenarios(unittest.TestCase):
         """Test platform switch followed by logout across tabs"""
         # Create sessions
         for tab in self.tabs:
-            session_id = self.session_manager.create_user_session(self.test_user.id)
+            session_id = self.session_manager.create_session(self.test_user.id)
             time.sleep(0.1)
         
         # Platform switch from tab1
@@ -643,7 +643,7 @@ class TestCrossTabIntegrationScenarios(unittest.TestCase):
     def test_session_expiration_during_platform_switch(self):
         """Test session expiration occurring during platform switch"""
         # Create session
-        session_id = self.session_manager.create_user_session(self.test_user.id)
+        session_id = self.session_manager.create_session(self.test_user.id)
         
         # Start platform switch from tab1
         platform_switch_data = {
@@ -678,7 +678,7 @@ class TestCrossTabIntegrationScenarios(unittest.TestCase):
         """Test rapid events from multiple tabs"""
         # Create sessions
         for tab in self.tabs:
-            session_id = self.session_manager.create_user_session(self.test_user.id)
+            session_id = self.session_manager.create_session(self.test_user.id)
             time.sleep(0.1)
         
         events = []
