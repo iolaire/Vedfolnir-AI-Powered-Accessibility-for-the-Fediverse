@@ -186,7 +186,7 @@
                     </div>
                     {% else %}
                     <form id="caption-generation-form" method="POST" action="{{ url_for('start_caption_generation') }}">
-                        {{ form.hidden_tag() }}
+                        <input type="hidden" name="csrf_token" value="{{ csrf_token() }}">
                         
                         <div class="settings-form">
                             <h6><i class="bi bi-sliders"></i> Generation Settings</h6>

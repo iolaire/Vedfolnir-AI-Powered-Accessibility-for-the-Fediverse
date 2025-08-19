@@ -105,8 +105,8 @@ def check_unified_session_components():
     return missing_files
 
 def check_database_session_middleware_usage():
-    """Check that database session middleware functions are used"""
-    print("📡 Checking database session middleware usage...")
+    """Check that Redis session middleware functions are used"""
+    print("📡 Checking Redis session middleware usage...")
     
     # Look for usage of middleware functions
     middleware_functions = [
@@ -168,18 +168,18 @@ def validate_session_consolidation():
     usage = check_database_session_middleware_usage()
     middleware_used = any(files for files in usage.values())
     if middleware_used:
-        print("✅ Database session middleware functions in use")
+        print("✅ Redis session middleware functions in use")
         for func, files in usage.items():
             if files:
                 print(f"   {func}: {len(files)} files")
     else:
-        print("⚠ Database session middleware functions not found in use")
+        print("⚠ Redis session middleware functions not found in use")
     
     # 4. Basic import test
     try:
         from unified_session_manager import UnifiedSessionManager
         from session_cookie_manager import SessionCookieManager
-        from database_session_middleware import get_current_session_context
+        from redis_session_middleware import get_current_session_context
         print("✅ Unified session components can be imported")
     except ImportError as e:
         print(f"❌ Import error: {e}")

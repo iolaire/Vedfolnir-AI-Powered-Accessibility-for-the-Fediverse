@@ -5,14 +5,14 @@
 """
 Unit tests for DatabaseSessionMiddleware
 
-Tests the database session middleware that provides session context from database sessions.
+Tests the Redis session middleware that provides session context from Redis sessions.
 """
 
 import unittest
 from unittest.mock import Mock, patch, MagicMock
 from flask import Flask, g
-from database_session_middleware import (
-    DatabaseSessionMiddleware,
+from redis_session_middleware import (
+    DatabaseSessionMiddleware,  # Compatibility class
     get_current_session_context,
     get_current_session_id,
     get_current_user_id,
@@ -293,7 +293,7 @@ class TestSessionContextAccessFunctions(unittest.TestCase):
     
     def test_get_session_created_at(self):
         """Test get_session_created_at function"""
-        from database_session_middleware import get_session_created_at
+        from redis_session_middleware import get_session_created_at
         
         with self.app.test_request_context('/'):
             # Test with no context
@@ -305,7 +305,7 @@ class TestSessionContextAccessFunctions(unittest.TestCase):
     
     def test_get_session_last_activity(self):
         """Test get_session_last_activity function"""
-        from database_session_middleware import get_session_last_activity
+        from redis_session_middleware import get_session_last_activity
         
         with self.app.test_request_context('/'):
             # Test with no context

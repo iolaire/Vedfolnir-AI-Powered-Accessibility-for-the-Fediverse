@@ -12,14 +12,14 @@ using database sessions as the single source of truth.
 from logging import getLogger
 from datetime import datetime, timezone
 from flask import jsonify, request, g, make_response
-from flask_wtf.csrf import CSRFProtect
-from database_session_middleware import get_current_session_context, get_current_session_id, is_session_authenticated
+# Removed Flask-WTF CSRF import - using custom CSRF system
+from redis_session_middleware import get_current_session_context, get_current_session_id, validate_current_session as is_session_authenticated
 
 logger = getLogger(__name__)
 
 def create_session_state_routes(app):
     """Create session state API routes"""
-    csrf = app.extensions.get('csrf', None)
+    # Note: Session endpoints are exempt from custom CSRF protection in middleware
     
     @app.route('/api/session/state', methods=['GET', 'OPTIONS'])
     def api_session_state():
@@ -176,11 +176,8 @@ def create_session_state_routes(app):
                 'timestamp': datetime.now(timezone.utc).isoformat()
             }), 500
     
-    # Apply CSRF exemption to session endpoints
-    if csrf:
-        csrf.exempt(api_session_heartbeat)
-        csrf.exempt(api_session_state)
-        csrf.exempt(api_session_validate)
+    # Session endpoints are exempt from CSRF protection in custom middleware
+    # No Flask-WTF CSRF exemptions needed since we disabled Flask-WTF CSRF
   
     @app.route('/api/session/state/metrics', methods=['GET'])
     def api_session_state_metrics():

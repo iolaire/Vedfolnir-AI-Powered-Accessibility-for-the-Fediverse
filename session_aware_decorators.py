@@ -128,7 +128,7 @@ def require_platform_context(f):
                         return redirect(url_for('first_time_setup'))
                     
                     # Check for active platform context
-                    from database_session_middleware import get_current_session_context
+                    from redis_session_middleware import get_current_session_context
                     context = get_current_session_context()
                     
                     if not context or not context.get('platform_connection_id'):
@@ -143,7 +143,7 @@ def require_platform_context(f):
                             default_platform = user_platforms[0]  # Use first platform as fallback
                         
                         # Try to set platform context using database session
-                        from database_session_middleware import update_session_platform
+                        from redis_session_middleware import update_session_platform
                         success = update_session_platform(default_platform.id)
                         
                         if success:

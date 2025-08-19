@@ -230,7 +230,7 @@ class DatabaseContextMiddleware:
                 # Get active platform - check session context first
                 active_platform_id = None
                 try:
-                    from database_session_middleware import get_current_platform_id
+                    from redis_session_middleware import get_current_platform_id
                     active_platform_id = get_current_platform_id()
                 except Exception:
                     pass
@@ -311,7 +311,7 @@ class DatabaseContextMiddleware:
             # Find active platform - check session context first
             active_platform_id = None
             try:
-                from database_session_middleware import get_current_platform_id
+                from redis_session_middleware import get_current_platform_id
                 active_platform_id = get_current_platform_id()
             except Exception:
                 pass

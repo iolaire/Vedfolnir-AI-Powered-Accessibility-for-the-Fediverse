@@ -10,14 +10,15 @@ login, profile management, and password reset functionality.
 """
 
 from flask_wtf import FlaskForm
-from wtforms import StringField, PasswordField, BooleanField, SelectField, HiddenField, SubmitField, TextAreaField
+# Import regular WTForms Form class (no Flask-WTF CSRF)
+from wtforms import Form, StringField, PasswordField, BooleanField, SelectField, HiddenField, SubmitField, TextAreaField
 from wtforms.validators import DataRequired, Length, Email, EqualTo, Optional, ValidationError
 from models import UserRole, User
 from email_validator import validate_email, EmailNotValidError
 
 
-class UserRegistrationForm(FlaskForm):
-    """Form for user self-registration"""
+class UserRegistrationForm(Form):
+    """Form for user self-registration""" # Using regular WTForms (no Flask-WTF CSRF)
     
     username = StringField(
         'Username', 
@@ -170,8 +171,8 @@ class UserRegistrationForm(FlaskForm):
             raise ValidationError("Password must contain at least one letter and one number")
 
 
-class LoginForm(FlaskForm):
-    """Form for user authentication"""
+class LoginForm(Form):
+    """Form for user authentication""" # Using regular WTForms (no Flask-WTF CSRF)
     
     username_or_email = StringField(
         'Username or Email', 
@@ -207,8 +208,8 @@ class LoginForm(FlaskForm):
     )
 
 
-class ProfileEditForm(FlaskForm):
-    """Form for profile management"""
+class ProfileEditForm(Form):
+    """Form for profile management""" # Using regular WTForms (no Flask-WTF CSRF)
     
     first_name = StringField(
         'First Name',
@@ -267,8 +268,8 @@ class ProfileEditForm(FlaskForm):
             raise ValidationError(f"Invalid email address: {str(e)}")
 
 
-class PasswordChangeForm(FlaskForm):
-    """Form for password changes by authenticated users"""
+class PasswordChangeForm(Form):
+    """Form for password changes by authenticated users""" # Using regular WTForms (no Flask-WTF CSRF)
     
     current_password = PasswordField(
         'Current Password', 
@@ -323,8 +324,8 @@ class PasswordChangeForm(FlaskForm):
             raise ValidationError("Password must contain at least one letter and one number")
 
 
-class PasswordResetRequestForm(FlaskForm):
-    """Form for password reset initiation"""
+class PasswordResetRequestForm(Form):
+    """Form for password reset initiation""" # Using regular WTForms (no Flask-WTF CSRF)
     
     email = StringField(
         'Email Address', 
@@ -347,8 +348,8 @@ class PasswordResetRequestForm(FlaskForm):
     )
 
 
-class PasswordResetForm(FlaskForm):
-    """Form for password reset completion"""
+class PasswordResetForm(Form):
+    """Form for password reset completion""" # Using regular WTForms (no Flask-WTF CSRF)
     
     password = PasswordField(
         'New Password', 
@@ -393,8 +394,8 @@ class PasswordResetForm(FlaskForm):
             raise ValidationError("Password must contain at least one letter and one number")
 
 
-class ProfileDeleteForm(FlaskForm):
-    """Form for profile deletion confirmation"""
+class ProfileDeleteForm(Form):
+    """Form for profile deletion confirmation""" # Using regular WTForms (no Flask-WTF CSRF)
     
     confirmation = StringField(
         'Type "DELETE" to confirm',
@@ -428,8 +429,8 @@ class ProfileDeleteForm(FlaskForm):
             raise ValidationError("Please type DELETE exactly to confirm profile deletion")
 
 
-class EmailVerificationResendForm(FlaskForm):
-    """Form for resending email verification"""
+class EmailVerificationResendForm(Form):
+    """Form for resending email verification""" # Using regular WTForms (no Flask-WTF CSRF)
     
     submit = SubmitField(
         'Resend Verification Email',
@@ -438,8 +439,8 @@ class EmailVerificationResendForm(FlaskForm):
 
 
 # Admin forms (extending existing admin forms)
-class AdminUserCreateForm(FlaskForm):
-    """Form for admin user creation"""
+class AdminUserCreateForm(Form):
+    """Form for admin user creation""" # Using regular WTForms (no Flask-WTF CSRF)
     
     username = StringField(
         'Username', 
@@ -564,8 +565,8 @@ class AdminUserCreateForm(FlaskForm):
             raise ValidationError("Password must contain at least one letter and one number")
 
 
-class AdminUserEditForm(FlaskForm):
-    """Form for admin user editing"""
+class AdminUserEditForm(Form):
+    """Form for admin user editing""" # Using regular WTForms (no Flask-WTF CSRF)
     
     user_id = HiddenField('User ID', validators=[DataRequired()])
     
@@ -644,8 +645,8 @@ class AdminUserEditForm(FlaskForm):
     )
 
 
-class AdminPasswordResetForm(FlaskForm):
-    """Form for admin password reset"""
+class AdminPasswordResetForm(Form):
+    """Form for admin password reset""" # Using regular WTForms (no Flask-WTF CSRF)
     
     user_id = HiddenField('User ID', validators=[DataRequired()])
     

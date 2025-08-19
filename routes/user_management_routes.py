@@ -16,6 +16,13 @@ from flask import Blueprint, render_template, request, redirect, url_for, flash,
 from flask_login import login_user, logout_user, login_required, current_user
 from sqlalchemy.orm import joinedload
 
+def validate_form_submission(form):
+    """
+    Manual form validation replacement for validate_on_submit()
+    Since we're using regular WTForms instead of Flask-WTF
+    """
+    return request.method == 'POST' and form.validate()
+
 from forms.user_management_forms import (
     UserRegistrationForm, LoginForm, ProfileEditForm, PasswordChangeForm,
     PasswordResetRequestForm, PasswordResetForm, ProfileDeleteForm,
@@ -286,9 +293,9 @@ def login():
     if current_user.is_authenticated:
         return redirect(url_for('index'))
     
-    form = LoginForm()
+    form = LoginForm(request.form if request.method == 'POST' else None)
     
-    if form.validate_on_submit():
+    if validate_form_submission(form):
         # Get client information for audit logging
         ip_address = get_client_ip()
         user_agent = get_user_agent()
@@ -337,10 +344,7 @@ def login():
                     username = user.username
                     user_role = user.role
                     
-                    # Log in the user with Flask-Login
-                    login_user(user, remember=form.remember_me.data)
-                    
-                    # Create secure database session using enhanced authentication service
+                    # Create secure Redis session using enhanced authentication service
                     try:
                         session_success, session_message, session_id = auth_service.login_user_with_session(
                             user=user,
@@ -350,7 +354,7 @@ def login():
                         )
                         
                         if session_success and session_id:
-                            # Set session cookie
+                            # Set session cookie (Redis session only, no Flask session)
                             response = make_response(redirect(
                                 request.args.get('next') if request.args.get('next') and request.args.get('next').startswith('/') 
                                 else url_for('index')
@@ -358,21 +362,22 @@ def login():
                             
                             current_app.session_cookie_manager.set_session_cookie(response, session_id)
                             
+                            # Log in the user with Flask-Login (this will use our custom user loader)
+                            login_user(user, remember=form.remember_me.data)
+                            
                             # Success message
                             flash(f'Welcome back, {username}!', 'success')
-                            logger.info(f"User {sanitize_for_log(username)} logged in successfully with secure session")
+                            logger.info(f"User {sanitize_for_log(username)} logged in successfully with Redis session {session_id}")
                             
                             return response
                         else:
-                            # Session creation failed, but user is authenticated - log out for security
-                            logout_user()
+                            # Session creation failed
                             flash('Login failed due to session security error. Please try again.', 'error')
-                            logger.error(f"Failed to create secure session for user {sanitize_for_log(username)}: {session_message}")
+                            logger.error(f"Failed to create Redis session for user {sanitize_for_log(username)}: {session_message}")
                     
                     except Exception as e:
-                        # Session creation failed - log out for security
-                        logout_user()
-                        logger.error(f"Error creating secure session: {e}")
+                        # Session creation failed
+                        logger.error(f"Error creating Redis session: {e}")
                         flash('Login failed due to session error. Please try again.', 'error')
                 
                 else:
@@ -601,7 +606,7 @@ def change_password():
                     try:
                         session_manager = getattr(current_app, 'unified_session_manager', None)
                         if session_manager:
-                            current_session_id = current_app.session_cookie_manager.get_session_id_from_request()
+                            current_session_id = current_app.session_cookie_manager.get_session_id_from_cookie()
                             session_manager.cleanup_user_sessions(current_user.id, keep_current=current_session_id)
                             logger.info(f"Invalidated other sessions for user {sanitize_for_log(current_user.username)} after password change")
                     except Exception as e:
@@ -622,15 +627,17 @@ def change_password():
 @user_management_bp.route('/logout')
 @login_required
 def logout():
-    """User logout with database session cleanup"""
+    """User logout with Redis session cleanup"""
     try:
-        # Get session ID from cookie before logout
-        session_id = current_app.session_cookie_manager.get_session_id_from_request()
+        # Get Redis session ID from cookie
+        from redis_session_middleware import get_current_session_id
+        
+        session_id = get_current_session_id()
         
         if session_id:
-            # Clean up database session
+            # Clean up Redis session
             current_app.unified_session_manager.end_session(session_id)
-            logger.info(f"Database session {sanitize_for_log(session_id)} ended for user {sanitize_for_log(current_user.username)}")
+            logger.info(f"Redis session {sanitize_for_log(session_id)} ended for user {sanitize_for_log(current_user.username)}")
         
         # Log out from Flask-Login
         logout_user()

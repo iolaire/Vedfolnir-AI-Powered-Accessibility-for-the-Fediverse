@@ -15,7 +15,7 @@ from config import Config
 from database import DatabaseManager
 from models import User, PlatformConnection, UserSession, UserRole
 from session_manager import SessionManager, get_current_platform_context, get_current_platform
-from database_session_middleware import DatabaseSessionMiddleware
+from redis_session_middleware import get_current_session_context, get_current_session_id
 from web_app import app
 
 
@@ -270,7 +270,7 @@ class TestMiddlewareSimple(unittest.TestCase):
     def test_session_context_functions_work_correctly(self):
         """Test that session context utility functions work as expected"""
         from unified_session_manager import UnifiedSessionManager
-        from database_session_middleware import get_current_session_context
+        from redis_session_middleware import get_current_session_context
         
         # Create unified session manager
         unified_session_manager = UnifiedSessionManager(self.db_manager)

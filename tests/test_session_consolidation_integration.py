@@ -66,7 +66,7 @@ class TestSessionConsolidationIntegration(unittest.TestCase):
         from flask import Flask
         from unified_session_manager import UnifiedSessionManager
         from session_cookie_manager import create_session_cookie_manager
-        from database_session_middleware import DatabaseSessionMiddleware
+        from redis_session_middleware import get_current_session_context, get_current_session_id
         from session_security import create_session_security_manager
         from session_state_api import create_session_state_routes
         
@@ -96,7 +96,7 @@ class TestSessionConsolidationIntegration(unittest.TestCase):
         self.client = self.app.test_client()
     
     def test_login_creates_database_session_only(self):
-        """Test that login creates only database session, no Flask session"""
+        """Test that login creates only Redis session, no Flask session"""
         with self.app.test_request_context():
             # Create session directly (simulating login)
             platform_id = self.test_user.platform_connections[0].id
@@ -148,7 +148,7 @@ class TestSessionConsolidationIntegration(unittest.TestCase):
             self.assertEqual(data2['session_id'], session_id)
     
     def test_platform_switching_updates_database(self):
-        """Test that platform switching updates database session"""
+        """Test that platform switching updates Redis session"""
         # Create session with first platform
         platform1_id = self.test_user.platform_connections[0].id
         platform2_id = self.test_user.platform_connections[1].id if len(self.test_user.platform_connections) > 1 else platform1_id
@@ -172,7 +172,7 @@ class TestSessionConsolidationIntegration(unittest.TestCase):
         self.assertEqual(context['platform_connection_id'], platform2_id)
     
     def test_logout_clears_database_session(self):
-        """Test that logout removes database session"""
+        """Test that logout removes Redis session"""
         # Create session
         platform_id = self.test_user.platform_connections[0].id
         session_id = self.app.unified_session_manager.create_session(
@@ -454,7 +454,7 @@ if __name__ == '__main__':
 Integration tests for Session Consolidation
 
 Tests the complete session management system integration including login,
-platform switching, logout, and cross-tab synchronization using database sessions only.
+platform switching, logout, and cross-tab synchronization using Redis sessions only.
 """
 
 import unittest
@@ -505,7 +505,7 @@ class TestSessionConsolidationIntegration(unittest.TestCase):
         from flask import Flask
         from unified_session_manager import UnifiedSessionManager
         from session_cookie_manager import create_session_cookie_manager
-        from database_session_middleware import DatabaseSessionMiddleware
+        from redis_session_middleware import get_current_session_context, get_current_session_id
         from session_security import create_session_security_manager
         from session_state_api import create_session_state_routes
         
@@ -535,11 +535,11 @@ class TestSessionConsolidationIntegration(unittest.TestCase):
     def add_test_routes(self):
         """Add basic routes for testing"""
         from flask import jsonify, request, make_response
-        from database_session_middleware import get_current_session_context, get_current_session_id
+        from redis_session_middleware import get_current_session_context, get_current_session_id
         
         @self.app.route('/test_login', methods=['POST'])
         def test_login():
-            """Test login route that creates database session only"""
+            """Test login route that creates Redis session only"""
             data = request.get_json()
             username = data.get('username')
             password = data.get('password')
@@ -561,7 +561,7 @@ class TestSessionConsolidationIntegration(unittest.TestCase):
         
         @self.app.route('/test_logout', methods=['POST'])
         def test_logout():
-            """Test logout route that destroys database session"""
+            """Test logout route that destroys Redis session"""
             session_id = get_current_session_id()
             if session_id:
                 success = self.app.unified_session_manager.destroy_session(session_id)
@@ -586,7 +586,7 @@ class TestSessionConsolidationIntegration(unittest.TestCase):
         @self.app.route('/test_switch_platform', methods=['POST'])
         def test_switch_platform():
             """Test platform switching route"""
-            from database_session_middleware import update_session_platform
+            from redis_session_middleware import update_session_platform
             
             data = request.get_json()
             platform_id = data.get('platform_id')
@@ -605,7 +605,7 @@ class TestSessionConsolidationIntegration(unittest.TestCase):
             pass
     
     def test_login_creates_database_session_only(self):
-        """Test that login creates only database session, no Flask session"""
+        """Test that login creates only Redis session, no Flask session"""
         # Perform login
         response = self.client.post('/test_login', 
                                   json={'username': self.test_user.username, 'password': 'test_password'})
@@ -619,7 +619,7 @@ class TestSessionConsolidationIntegration(unittest.TestCase):
         cookies = response.headers.getlist('Set-Cookie')
         self.assertTrue(any('session_id=' in cookie for cookie in cookies))
         
-        # Verify database session was created
+        # Redis session was created
         session_id = data['session_id']
         with self.db_manager.get_session() as db_session:
             user_session = db_session.query(UserSession).filter_by(session_id=session_id).first()
@@ -650,7 +650,7 @@ class TestSessionConsolidationIntegration(unittest.TestCase):
         self.assertEqual(context['user_info']['username'], self.test_user.username)
     
     def test_platform_switching_updates_database_session(self):
-        """Test that platform switching updates database session"""
+        """Test that platform switching updates Redis session"""
         # Login first
         login_response = self.client.post('/test_login', 
                                         json={'username': self.test_user.username, 'password': 'test_password'})
@@ -683,7 +683,7 @@ class TestSessionConsolidationIntegration(unittest.TestCase):
             self.assertEqual(updated_context['platform_connection_id'], new_platform_id)
     
     def test_logout_destroys_database_session(self):
-        """Test that logout destroys database session"""
+        """Test that logout destroys Redis session"""
         # Login first
         login_response = self.client.post('/test_login', 
                                         json={'username': self.test_user.username, 'password': 'test_password'})
@@ -716,7 +716,7 @@ class TestSessionConsolidationIntegration(unittest.TestCase):
         self.assertIsNone(data['session_id'])
     
     def test_session_state_api_works_with_database_sessions(self):
-        """Test that session state API works with database sessions"""
+        """Test that session state API works with Redis sessions"""
         # Login first
         login_response = self.client.post('/test_login', 
                                         json={'username': self.test_user.username, 'password': 'test_password'})

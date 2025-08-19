@@ -12,7 +12,7 @@ import logging
 from functools import wraps
 from flask import request, abort, g, current_app
 from werkzeug.exceptions import BadRequest
-from flask_wtf.csrf import ValidationError
+# Removed Flask-WTF ValidationError import - using werkzeug exceptions
 from datetime import datetime, timedelta
 import hashlib
 import secrets
@@ -339,17 +339,36 @@ def require_https(f):
 
 
 def validate_csrf_token(f):
-    """Decorator to validate CSRF tokens"""
+    """Decorator to validate CSRF tokens using Redis session-aware validation"""
     @wraps(f)
     def decorated_function(*args, **kwargs):
         if request.method == 'POST':
-            from flask_wtf.csrf import validate_csrf
             try:
-                # Check for CSRF token in form data or headers
+                # Get CSRF token from form data or headers
                 csrf_token = request.form.get('csrf_token') or request.headers.get('X-CSRFToken')
-                validate_csrf(csrf_token)
-            except ValidationError:
-                logger.warning(f"CSRF validation failed from {request.remote_addr}")
+                
+                if not csrf_token:
+                    logger.warning(f"CSRF token missing from {request.remote_addr}")
+                    abort(403, description="CSRF token is required")
+                
+                # Use our Redis-aware CSRF token manager for validation
+                csrf_manager = getattr(current_app, 'csrf_token_manager', None)
+                if not csrf_manager:
+                    # Fallback: create a temporary CSRF manager
+                    from security.core.csrf_token_manager import CSRFTokenManager
+                    csrf_manager = CSRFTokenManager()
+                
+                # Validate token using Redis session ID
+                is_valid = csrf_manager.validate_token(csrf_token)
+                
+                if not is_valid:
+                    logger.warning(f"CSRF validation failed from {request.remote_addr}")
+                    abort(403, description="CSRF token validation failed")
+                    
+                logger.debug(f"CSRF token validated successfully for {request.endpoint}")
+                
+            except Exception as e:
+                logger.error(f"CSRF validation error: {e}")
                 abort(403, description="CSRF token validation failed")
         return f(*args, **kwargs)
     return decorated_function

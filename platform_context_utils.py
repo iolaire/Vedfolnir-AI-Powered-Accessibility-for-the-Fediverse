@@ -41,8 +41,8 @@ def ensure_platform_context(db_manager, session_manager) -> Tuple[Optional[Dict[
         return None, False
     
     try:
-        # Get session ID from database session context
-        from database_session_middleware import get_current_session_id
+        # Get session ID from Redis session context
+        from redis_session_middleware import get_current_session_id
         session_id = get_current_session_id()
         
         # Get user's platforms
@@ -65,9 +65,9 @@ def ensure_platform_context(db_manager, session_manager) -> Tuple[Optional[Dict[
             default_platform = next((p for p in user_platforms if p.is_default), user_platforms[0])
             
             # Create or update session context
-            if flask_session_id:
+            if session_id:
                 # Update existing session
-                success = session_manager.update_platform_context(flask_session_id, default_platform.id)
+                success = session_manager.update_platform_context(session_id, default_platform.id)
                 if not success:
                     logger.error(f"Failed to update session context for user {sanitize_for_log(current_user.username)}")
                     return None, False
@@ -90,7 +90,7 @@ def ensure_platform_context(db_manager, session_manager) -> Tuple[Optional[Dict[
                     # Note: This would need to be handled in a response context
             
             # Get the updated context
-            context = session_manager.get_session_context(flask_session_id)
+            context = session_manager.get_session_context(session_id)
             if context:
                 # Set in g for current request
                 g.platform_context = context
@@ -174,13 +174,13 @@ def refresh_platform_context(db_manager, session_manager) -> Optional[Dict[str, 
         Refreshed platform context or None
     """
     try:
-        from database_session_middleware import get_current_session_id
+        from redis_session_middleware import get_current_session_id
         session_id = get_current_session_id()
         if not session_id:
             return ensure_platform_context(db_manager, session_manager)[0]
         
         # Get fresh context from session manager
-        context = session_manager.get_session_context(flask_session_id)
+        context = session_manager.get_session_context(session_id)
         if context:
             # Validate the context
             if validate_platform_context(context, db_manager):

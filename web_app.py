@@ -5,21 +5,31 @@ import os
 import asyncio
 from datetime import datetime, timedelta, timezone
 
-# Security feature toggles from environment
+# Load environment variables FIRST before reading any settings
+from dotenv import load_dotenv
+load_dotenv()
+
+# Security feature toggles from environment (now loaded)
 CSRF_ENABLED = os.getenv('SECURITY_CSRF_ENABLED', 'true').lower() == 'true'
 RATE_LIMITING_ENABLED = os.getenv('SECURITY_RATE_LIMITING_ENABLED', 'true').lower() == 'true'
 INPUT_VALIDATION_ENABLED = os.getenv('SECURITY_INPUT_VALIDATION_ENABLED', 'true').lower() == 'true'
 SECURITY_HEADERS_ENABLED = os.getenv('SECURITY_HEADERS_ENABLED', 'true').lower() == 'true'
 SESSION_VALIDATION_ENABLED = os.getenv('SECURITY_SESSION_VALIDATION_ENABLED', 'true').lower() == 'true'
 ADMIN_CHECKS_ENABLED = os.getenv('SECURITY_ADMIN_CHECKS_ENABLED', 'true').lower() == 'true'
-from flask import Flask, render_template, request, jsonify, redirect, url_for, flash, send_from_directory, g, Response, make_response
+from flask import Flask, render_template, request, jsonify, redirect, url_for, flash, send_from_directory, g, Response, make_response, current_app
 # Removed Flask-SocketIO import - using SSE instead
 from flask_wtf import FlaskForm
-from flask_wtf.csrf import CSRFProtect
-
-from flask_login import LoginManager, UserMixin, login_user, logout_user, login_required, current_user
-from wtforms import TextAreaField, SelectField, SubmitField, HiddenField, StringField, PasswordField, BooleanField, IntegerField, FloatField
+# Import regular WTForms Form class (no Flask-WTF CSRF)
+from wtforms import Form, TextAreaField, SelectField, SubmitField, HiddenField, StringField, PasswordField, BooleanField, IntegerField, FloatField
 from wtforms.validators import DataRequired, Length, Email, EqualTo, ValidationError, NumberRange
+from flask_login import LoginManager, UserMixin, login_user, logout_user, login_required, current_user
+
+def validate_form_submission(form):
+    """
+    Manual form validation replacement for validate_on_submit()
+    Since we're using regular WTForms instead of Flask-WTF
+    """
+    return request.method == 'POST' and form.validate()
 from functools import wraps
 from config import Config
 from database import DatabaseManager
@@ -30,7 +40,8 @@ from activitypub_client import ActivityPubClient
 from ollama_caption_generator import OllamaCaptionGenerator
 from caption_quality_assessment import CaptionQualityManager
 from health_check import HealthChecker
-from session_manager import get_current_platform_context  # Using compatibility layer
+# Use Redis session middleware directly instead of deprecated compatibility layer
+from redis_session_middleware import get_current_session_context
 # Removed Flask session manager imports - using database sessions only
 from request_scoped_session_manager import RequestScopedSessionManager
 from session_aware_user import SessionAwareUser
@@ -68,10 +79,48 @@ app.config['REMEMBER_COOKIE_DURATION'] = timedelta(seconds=config.auth.remember_
 
 
 
-# Initialize CSRF protection (conditional)
+# Create a session interface that allows Flask-Login but blocks everything else
+from flask.sessions import SessionInterface, SecureCookieSessionInterface
+
+class FlaskLoginOnlySessionInterface(SecureCookieSessionInterface):
+    """Session interface that only allows Flask-Login keys, blocks everything else"""
+    
+    # Flask-Login keys that are allowed
+    ALLOWED_KEYS = {'_user_id', '_fresh', '_id', '_remember', '_remember_seconds'}
+    
+    def open_session(self, app, request):
+        """Open session normally"""
+        session = super().open_session(app, request)
+        if session:
+            # Remove any non-Flask-Login keys
+            keys_to_remove = [key for key in session.keys() if key not in self.ALLOWED_KEYS]
+            for key in keys_to_remove:
+                session.pop(key, None)
+        return session
+    
+    def save_session(self, app, session, response):
+        """Save session but only allow Flask-Login keys"""
+        if session:
+            # Remove any non-Flask-Login keys before saving
+            keys_to_remove = [key for key in session.keys() if key not in self.ALLOWED_KEYS]
+            for key in keys_to_remove:
+                session.pop(key, None)
+        
+        return super().save_session(app, session, response)
+
+# Apply the Flask-Login only session interface
+app.session_interface = FlaskLoginOnlySessionInterface()
+
+# Use Flask's default session interface but disable Flask-WTF CSRF completely
+# This allows Flask to access secret_key while preventing CSRF session creation
+app.config['WTF_CSRF_ENABLED'] = False  # Completely disable Flask-WTF CSRF
+
+# Initialize CSRF protection (conditional) - Using custom CSRF system only
 if CSRF_ENABLED:
-    csrf = CSRFProtect()
-    csrf.init_app(app)
+    # Disable Flask-WTF CSRF since we're using our custom Redis-aware CSRF system
+    app.config['WTF_CSRF_ENABLED'] = False
+    csrf = None  # No Flask-WTF CSRF protection
+    app.logger.info("Using custom Redis-aware CSRF protection (Flask-WTF CSRF disabled)")
 else:
     app.config['WTF_CSRF_ENABLED'] = False
     app.logger.warning("CSRF protection disabled - DO NOT USE IN PRODUCTION")
@@ -206,7 +255,8 @@ app.config['health_checker'] = health_checker
 # Initialize session management system
 from session_factory import create_session_manager
 from session_cookie_manager import create_session_cookie_manager
-from database_session_middleware import DatabaseSessionMiddleware
+# Redis session middleware replaces database session middleware
+from redis_session_middleware import get_current_session_id
 from session_security import create_session_security_manager
 from session_monitoring import SessionMonitor
 
@@ -230,8 +280,8 @@ app.unified_session_manager = unified_session_manager
 session_cookie_manager = create_session_cookie_manager(app.config)
 app.session_cookie_manager = session_cookie_manager
 
-# Initialize database session middleware
-database_session_middleware = DatabaseSessionMiddleware(app, unified_session_manager, session_cookie_manager)
+# Redis session middleware is handled through unified_session_manager
+# No separate middleware initialization needed - Redis sessions are managed directly
 
 # Initialize session error handler
 from session_error_handling import create_session_error_handler
@@ -435,12 +485,43 @@ login_manager.login_message_category = 'info'
 @login_manager.user_loader
 def load_user(user_id):
     """
-    Load user for Flask-Login with proper session attachment to prevent DetachedInstanceError.
-    Returns SessionAwareUser instance that maintains session context throughout request.
-    Only returns active users as required by Flask-Login security best practices.
+    Load user for Flask-Login using Redis session data.
+    This integrates Flask-Login with our Redis session management system.
     """
+    # During login process, Redis session might not be available via cookie yet
+    # Try to get user from Redis session first, but handle gracefully if not available
+    try:
+        from redis_session_middleware import get_current_session_context
+        session_context = get_current_session_context()
+        
+        if session_context and session_context.get('user_id'):
+            redis_user_id = session_context.get('user_id')
+            app.logger.debug(f"Loading user from Redis session: {redis_user_id}")
+            
+            # Use request-scoped session to prevent DetachedInstanceError
+            with request_session_manager.session_scope() as session:
+                user = session.query(User).options(
+                    joinedload(User.platform_connections),
+                    joinedload(User.sessions)
+                ).filter(
+                    User.id == redis_user_id,
+                    User.is_active == True
+                ).first()
+                
+                if user:
+                    app.logger.debug(f"User loaded from Redis session: {user.username} (ID: {user.id})")
+                    return SessionAwareUser(user, request_session_manager)
+                else:
+                    app.logger.warning(f"User {redis_user_id} from Redis session not found or inactive")
+                    return None
+    
+    except Exception as e:
+        # This is normal during login process when Redis session cookie isn't set yet
+        app.logger.debug(f"Could not load user from Redis session (normal during login): {e}")
+    
+    # Fallback to traditional Flask-Login user_id (used during login process)
     if not user_id:
-        app.logger.warning("load_user called with empty user_id")
+        app.logger.debug("No user_id provided to load_user")
         return None
     
     try:
@@ -449,23 +530,21 @@ def load_user(user_id):
         app.logger.warning(f"Invalid user_id format: {sanitize_for_log(str(user_id))}")
         return None
     
-    app.logger.debug(f"Loading user with ID: {user_id_int}")
+    app.logger.debug(f"Loading user with Flask-Login ID: {user_id_int} (fallback mode)")
     
     try:
         # Use request-scoped session to prevent DetachedInstanceError
         with request_session_manager.session_scope() as session:
-            # Use explicit joinedload for relationships to prevent lazy loading issues
             user = session.query(User).options(
                 joinedload(User.platform_connections),
                 joinedload(User.sessions)
             ).filter(
                 User.id == user_id_int,
-                User.is_active == True  # Only load active users
+                User.is_active == True
             ).first()
             
             if user:
                 app.logger.debug(f"User loaded successfully: {user.username} (ID: {user.id})")
-                # Return SessionAwareUser to maintain session attachment
                 return SessionAwareUser(user, request_session_manager)
             else:
                 app.logger.info(f"User not found or inactive for ID: {user_id_int}")
@@ -546,7 +625,7 @@ def platform_required(f):
             return redirect(url_for('user_management.login', next=request.url))
         
         # Check if user has platform context
-        context = get_current_platform_context()
+        context = get_current_session_context()
         
         if not context or not context.get('platform_connection_id'):
             # No platform context, check if user has any platforms
@@ -581,7 +660,7 @@ def platform_access_required(platform_type=None, instance_url=None):
                 return redirect(url_for('user_management.login', next=request.url))
             
             # Get current platform context and validate with fresh database query
-            context = get_current_platform_context()
+            context = get_current_session_context()
             if not context or not context.get('platform_connection_id'):
                 flash('No active platform connection found.', 'error')
                 return redirect(url_for('platform_management'))
@@ -636,13 +715,32 @@ def inject_user_role():
     """Make UserRole available in all templates"""
     return {'UserRole': UserRole}
 
+# Make CSRF token function available in all templates
+@app.context_processor
+def inject_csrf_token():
+    """Make CSRF token function available in all templates"""
+    def csrf_token():
+        """Generate CSRF token for templates"""
+        try:
+            csrf_manager = getattr(app, 'csrf_token_manager', None)
+            if csrf_manager:
+                return csrf_manager.generate_token()
+            else:
+                # Fallback to generate a basic token
+                return generate_secure_token()
+        except Exception as e:
+            app.logger.error(f"Error generating CSRF token in template: {str(e)}")
+            return ""
+    
+    return {'csrf_token': csrf_token}
+
 # Register admin blueprint
 from admin import create_admin_blueprint
 admin_bp = create_admin_blueprint(app)
 app.register_blueprint(admin_bp)
 
-class LoginForm(FlaskForm):
-    """Form for user login"""
+class LoginForm(Form):
+    """Form for user login - using regular WTForms (no Flask-WTF CSRF)"""
     username = StringField('Username', validators=[DataRequired()])
     password = PasswordField('Password', validators=[DataRequired()])
     remember = BooleanField('Remember Me')
@@ -650,8 +748,8 @@ class LoginForm(FlaskForm):
 
 
 
-class ReviewForm(FlaskForm):
-    """Form for reviewing image captions"""
+class ReviewForm(Form):
+    """Form for reviewing image captions - using regular WTForms (no Flask-WTF CSRF)"""
     image_id = HiddenField('Image ID', validators=[DataRequired()])
     caption = TextAreaField('Caption', validators=[DataRequired(), Length(max=security_config.MAX_CAPTION_LENGTH)], 
                           render_kw={"rows": 3, "placeholder": "Enter alt text description..."})
@@ -748,7 +846,7 @@ def index():
                 return redirect(url_for('first_time_setup'))
             
             # Get platform-specific statistics using session-aware context
-            context = get_current_platform_context()
+            context = get_current_session_context()
             current_platform = None
             
             if context and context.get('platform_connection_id'):
@@ -1041,7 +1139,7 @@ def review_single(image_id):
             flash(f'Image with ID {image_id} not found', 'error')
             return redirect(url_for('review_list'))
             
-        form = ReviewForm()
+        form = ReviewForm(request.form)
         form.image_id.data = image_id
         form.caption.data = image.generated_caption or ""
         
@@ -1055,9 +1153,9 @@ def review_single(image_id):
 @with_session_error_handling
 def review_submit(image_id):
     """Submit review for an image"""
-    form = ReviewForm()
+    form = ReviewForm(request.form)
     
-    if form.validate_on_submit():
+    if validate_form_submission(form):
         # Determine status based on action
         status_map = {
             'approve': ProcessingStatus.APPROVED,
@@ -1107,7 +1205,7 @@ def batch_review():
     """Batch review interface with filtering, sorting, and pagination"""
     with unified_session_manager.get_db_session() as session:
         # Get current platform context
-        context = get_current_platform_context()
+        context = get_current_session_context()
         if not context or not context.get('platform_connection_id'):
             flash('No active platform connection found.', 'error')
             return redirect(url_for('platform_management'))
@@ -1514,7 +1612,7 @@ def api_regenerate_caption(image_id):
 def post_approved():
     """Post approved captions to platform"""
     # Get current platform context
-    context = get_current_platform_context()
+    context = get_current_session_context()
     if not context or not context.get('platform_connection_id'):
         flash('No active platform connection found.', 'error')
         return redirect(url_for('platform_management'))
@@ -1841,8 +1939,8 @@ def switch_platform(platform_id):
             except Exception as e:
                 app.logger.error(f"Error handling active caption generation task during platform switch: {sanitize_for_log(str(e))}")
             
-            # Update database session platform context
-            from database_session_middleware import get_current_session_id, update_session_platform
+            # Update Redis session platform context
+            from redis_session_middleware import get_current_session_id, update_session_platform
             success = update_session_platform(platform_id)
             
             if success:
@@ -2001,8 +2099,8 @@ def api_add_platform():
         # If this is the first platform, automatically switch to it and update session context
         if is_first_platform:
             try:
-                # Create or update database session using unified session manager
-                from database_session_middleware import get_current_session_id, update_session_platform
+                # Create or update Redis session using unified session manager
+                from redis_session_middleware import get_current_session_id, update_session_platform
                 session_id = get_current_session_id()
                 db_session_success = False
                 
@@ -2068,64 +2166,100 @@ def api_add_platform():
 @validate_csrf_token
 @with_session_error_handling
 def api_switch_platform(platform_id):
-    """Switch to a different platform using database session management"""
+    """Switch to a different platform using Redis session management"""
+    
+    # DEBUG: Add detailed logging
+    app.logger.info(f"DEBUG: api_switch_platform called with platform_id={platform_id}")
+    app.logger.info(f"DEBUG: Request method={request.method}, path={request.path}")
+    app.logger.info(f"DEBUG: Request content_type={request.content_type}")
+    app.logger.info(f"DEBUG: Request data={request.get_data()}")
+    app.logger.info(f"DEBUG: Request form={dict(request.form)}")
+    app.logger.info(f"DEBUG: Request json={request.get_json(silent=True)}")
+    app.logger.info(f"DEBUG: Current user authenticated={current_user.is_authenticated}")
+    app.logger.info(f"DEBUG: Current user ID={getattr(current_user, 'id', 'N/A')}")
+    
+    # DEBUG: Check session ID retrieval
+    from redis_session_middleware import get_current_session_id
+    session_id = get_current_session_id()
+    app.logger.info(f"DEBUG: get_current_session_id() returned: {session_id}")
+    
+    # DEBUG: Check g object
+    app.logger.info(f"DEBUG: g.session_id = {getattr(g, 'session_id', 'NOT_SET')}")
+    
+    # DEBUG: Check session cookie
+    session_cookie_manager = getattr(current_app, 'session_cookie_manager', None)
+    if session_cookie_manager:
+        cookie_session_id = session_cookie_manager.get_session_id_from_cookie()
+        app.logger.info(f"DEBUG: Session ID from cookie: {cookie_session_id}")
+    else:
+        app.logger.info(f"DEBUG: No session_cookie_manager found")
+    
+    # DEBUG: Check unified session manager
+    unified_session_manager = getattr(current_app, 'unified_session_manager', None)
+    app.logger.info(f"DEBUG: unified_session_manager available: {unified_session_manager is not None}")
+    
     try:
-        # Use request-scoped session for all database operations
-        with request_session_manager.session_scope() as db_session:
-            # Verify platform belongs to current user and validate ownership
-            platform = db_session.query(PlatformConnection).filter_by(
-                id=platform_id,
-                user_id=current_user.id,
-                is_active=True
-            ).first()
+        # Use Redis platform manager to get platform data
+        platform_data = redis_platform_manager.get_platform_by_id(platform_id, current_user.id)
+        
+        if not platform_data:
+            app.logger.warning(f"Platform {platform_id} not found for user {current_user.id}")
+            return jsonify({'success': False, 'error': 'Platform not found or not accessible'}), 404
+        
+        # Verify platform is active
+        if not platform_data.get('is_active', False):
+            app.logger.warning(f"Platform {platform_id} is not active for user {current_user.id}")
+            return jsonify({'success': False, 'error': 'Platform is not active'}), 400
+        
+        # Check for active caption generation tasks and cancel them
+        try:
+            caption_service = WebCaptionGenerationService(db_manager)
+            active_task = caption_service.task_queue_manager.get_user_active_task(current_user.id)
             
-            if not platform:
-                return jsonify({'success': False, 'error': 'Platform not found or not accessible'}), 404
-            
-            # Extract platform data before session operations to avoid DetachedInstanceError
-            platform_data = {
-                'id': platform.id,
-                'name': platform.name,
-                'platform_type': platform.platform_type,
-                'instance_url': platform.instance_url,
-                'username': platform.username
-            }
-            
-            # Check for active caption generation tasks and cancel them
-            try:
-                caption_service = WebCaptionGenerationService(db_manager)
-                active_task = caption_service.task_queue_manager.get_user_active_task(current_user.id)
-                
-                if active_task:
-                    # Cancel the active task
-                    cancelled = caption_service.cancel_generation(active_task.id, current_user.id)
-                    if cancelled:
-                        app.logger.info(f"Cancelled active caption generation task {sanitize_for_log(active_task.id)} due to platform switch")
-                    else:
-                        app.logger.warning(f"Failed to cancel active caption generation task {sanitize_for_log(active_task.id)} during platform switch")
-            except Exception as e:
-                app.logger.error(f"Error handling active caption generation task during platform switch: {sanitize_for_log(str(e))}")
-            
-            # Update database session platform context
-            from database_session_middleware import update_session_platform
-            session_updated = update_session_platform(platform_id)
-            
-            # Also set as default platform in database for persistence
+            if active_task:
+                # Cancel the active task
+                cancelled = caption_service.cancel_generation(active_task.id, current_user.id)
+                if cancelled:
+                    app.logger.info(f"Cancelled active caption generation task {sanitize_for_log(active_task.id)} due to platform switch")
+                else:
+                    app.logger.warning(f"Failed to cancel active caption generation task {sanitize_for_log(active_task.id)} during platform switch")
+        except Exception as e:
+            app.logger.error(f"Error handling active caption generation task during platform switch: {sanitize_for_log(str(e))}")
+        
+        # Update Redis session platform context
+        from redis_session_middleware import update_session_platform
+        session_updated = update_session_platform(platform_id)
+        
+        # Also set as default platform in database for persistence
+        try:
             db_success = db_manager.set_default_platform(current_user.id, platform_id)
+            if not db_success:
+                app.logger.warning(f"Failed to set platform {platform_id} as default in database for user {current_user.id}")
+        except Exception as e:
+            app.logger.error(f"Error setting default platform in database: {sanitize_for_log(str(e))}")
+        
+        if session_updated:
+            # Invalidate Redis cache to ensure fresh data on next request
+            redis_platform_manager.invalidate_user_cache(current_user.id)
             
-            if session_updated:
-                app.logger.info(f"User {sanitize_for_log(current_user.username)} switched to platform {sanitize_for_log(platform_data['name'])} via database session management")
-                return jsonify({
-                    'success': True,
-                    'message': f'Successfully switched to {platform_data["name"]} ({platform_data["platform_type"].title()})',
-                    'platform': platform_data
-                })
-            else:
-                app.logger.warning(f"Failed to switch platform for user {sanitize_for_log(current_user.username)}")
-                return jsonify({'success': False, 'error': 'Failed to switch platform'}), 500
-                
+            app.logger.info(f"User {sanitize_for_log(current_user.username)} switched to platform {sanitize_for_log(platform_data['name'])} via Redis session management")
+            return jsonify({
+                'success': True,
+                'message': f'Successfully switched to {platform_data["name"]} ({platform_data["platform_type"].title()})',
+                'platform': {
+                    'id': platform_data['id'],
+                    'name': platform_data['name'],
+                    'platform_type': platform_data['platform_type'],
+                    'instance_url': platform_data['instance_url'],
+                    'username': platform_data.get('username')
+                }
+            })
+        else:
+            app.logger.warning(f"Failed to switch platform for user {sanitize_for_log(current_user.username)}")
+            return jsonify({'success': False, 'error': 'Failed to switch platform'}), 500
+            
     except Exception as e:
-        app.logger.error(f"Error switching platform with database session management: {sanitize_for_log(str(e))}")
+        app.logger.error(f"Error switching platform with Redis session management: {sanitize_for_log(str(e))}")
         return jsonify({'success': False, 'error': 'Failed to switch platform'}), 500
 
 @app.route('/api/test_platform/<int:platform_id>', methods=['POST'])
@@ -2393,11 +2527,11 @@ def api_session_notify_logout():
     """Notify other tabs about logout - for cross-tab session synchronization"""
     try:
         # This endpoint can be called without authentication since it's for logout notification
-        # Get user info from database session if available
-        from database_session_middleware import get_current_user_id
+        # Get user info from Redis session if available
+        from redis_session_middleware import get_current_user_id
         user_id = get_current_user_id()
         
-        # Database sessions are cleared through the unified session manager
+        # Redis sessions are cleared through the unified session manager
         # No Flask session data to clear
         
         app.logger.info(f"Logout notification processed for user {sanitize_for_log(str(user_id)) if user_id else 'unknown'}")
@@ -2497,8 +2631,8 @@ def api_delete_platform(platform_id):
         return jsonify({'success': False, 'error': str(e)}), 500
 
 # Caption Generation Forms
-class CaptionGenerationForm(FlaskForm):
-    """Form for starting caption generation"""
+class CaptionGenerationForm(Form):
+    """Form for starting caption generation - using regular WTForms (no Flask-WTF CSRF)"""
     max_posts_per_run = IntegerField('Max Posts Per Run', 
                                    validators=[DataRequired(), NumberRange(min=1, max=500)], 
                                    default=50)
@@ -2517,8 +2651,8 @@ class CaptionGenerationForm(FlaskForm):
                                 default=1.0)
     submit = SubmitField('Start Caption Generation')
 
-class CaptionSettingsForm(FlaskForm):
-    """Form for managing caption generation settings"""
+class CaptionSettingsForm(Form):
+    """Form for managing caption generation settings - using regular WTForms (no Flask-WTF CSRF)"""
     max_posts_per_run = IntegerField('Max Posts Per Run', 
                                    validators=[DataRequired(), NumberRange(min=1, max=500)], 
                                    default=50)
@@ -2547,7 +2681,7 @@ def caption_generation():
     """Caption generation page"""
     try:
         # Get current platform context
-        context = get_current_platform_context()
+        context = get_current_session_context()
         if not context or not context.get('platform_connection_id'):
             flash('No active platform connection found.', 'error')
             return redirect(url_for('platform_management'))
@@ -2573,20 +2707,46 @@ def caption_generation():
         except Exception as e:
             app.logger.error(f"Error getting task history: {sanitize_for_log(str(e))}")
         
-        # Get user's current settings
+        # Get user's current settings using Redis platform manager
         user_settings = None
-        with unified_session_manager.get_db_session() as session:
-            from models import CaptionGenerationUserSettings
-            user_settings_record = session.query(CaptionGenerationUserSettings).filter_by(
-                user_id=current_user.id,
-                platform_connection_id=platform_connection_id
-            ).first()
+        try:
+            # Use Redis platform manager for both platform data and user settings
+            platform_data = redis_platform_manager.get_platform_by_id(platform_connection_id, current_user.id)
+            if not platform_data:
+                app.logger.warning(f"Platform {platform_connection_id} not found in Redis cache for user {current_user.id}")
+                flash('Platform connection not found.', 'error')
+                return redirect(url_for('platform_management'))
             
-            if user_settings_record:
-                user_settings = user_settings_record.to_settings_dataclass()
+            # Get user settings from Redis (with database fallback)
+            user_settings_dict = redis_platform_manager.get_user_settings(current_user.id, platform_connection_id)
+            if user_settings_dict:
+                # Convert to dataclass if needed
+                from models import CaptionGenerationUserSettings
+                # Create a mock settings record to use the to_settings_dataclass method
+                mock_settings = CaptionGenerationUserSettings()
+                for key, value in user_settings_dict.items():
+                    if hasattr(mock_settings, key):
+                        setattr(mock_settings, key, value)
+                user_settings = mock_settings.to_settings_dataclass()
+                app.logger.debug(f"Retrieved user settings from Redis for user {current_user.id}, platform {platform_connection_id}")
+            else:
+                app.logger.info(f"No user settings found for user {current_user.id}, platform {platform_connection_id}")
+                
+        except Exception as e:
+            app.logger.error(f"Error getting platform data/settings from Redis: {sanitize_for_log(str(e))}")
+            # Fallback to database if Redis fails
+            with unified_session_manager.get_db_session() as session:
+                from models import CaptionGenerationUserSettings
+                user_settings_record = session.query(CaptionGenerationUserSettings).filter_by(
+                    user_id=current_user.id,
+                    platform_connection_id=platform_connection_id
+                ).first()
+                
+                if user_settings_record:
+                    user_settings = user_settings_record.to_settings_dataclass()
         
         # Create form with current settings
-        form = CaptionGenerationForm()
+        form = CaptionGenerationForm(request.form if request.method == 'POST' else None)
         if user_settings:
             form.max_posts_per_run.data = user_settings.max_posts_per_run
             form.max_caption_length.data = user_settings.max_caption_length
@@ -2617,12 +2777,12 @@ def caption_generation():
 @with_session_error_handling
 def start_caption_generation():
     """Start caption generation process"""
-    form = CaptionGenerationForm()
+    form = CaptionGenerationForm(request.form)
     
-    if form.validate_on_submit():
+    if validate_form_submission(form):
         try:
             # Get current platform context
-            context = get_current_platform_context()
+            context = get_current_session_context()
             if not context or not context.get('platform_connection_id'):
                 return jsonify({
                     'success': False,
@@ -2865,30 +3025,50 @@ def caption_settings():
     """Caption generation settings page"""
     try:
         # Get current platform context
-        context = get_current_platform_context()
+        context = get_current_session_context()
         if not context or not context.get('platform_connection_id'):
             flash('No active platform connection found.', 'error')
             return redirect(url_for('platform_management'))
         
         platform_connection_id = context['platform_connection_id']
         
-        # Get user's current settings
-        with unified_session_manager.get_db_session() as session:
-            from models import CaptionGenerationUserSettings
-            user_settings_record = session.query(CaptionGenerationUserSettings).filter_by(
-                user_id=current_user.id,
-                platform_connection_id=platform_connection_id
-            ).first()
+        # Get user's current settings using Redis platform manager
+        try:
+            # Get user settings from Redis (with database fallback)
+            user_settings_dict = redis_platform_manager.get_user_settings(current_user.id, platform_connection_id)
             
             # Create form with current settings
-            form = CaptionSettingsForm()
-            if user_settings_record:
-                form.max_posts_per_run.data = user_settings_record.max_posts_per_run
-                form.max_caption_length.data = user_settings_record.max_caption_length
-                form.optimal_min_length.data = user_settings_record.optimal_min_length
-                form.optimal_max_length.data = user_settings_record.optimal_max_length
-                form.reprocess_existing.data = user_settings_record.reprocess_existing
-                form.processing_delay.data = user_settings_record.processing_delay
+            form = CaptionSettingsForm(request.form if request.method == 'POST' else None)
+            if user_settings_dict:
+                form.max_posts_per_run.data = user_settings_dict.get('max_posts_per_run', 50)
+                form.max_caption_length.data = user_settings_dict.get('max_caption_length', 500)
+                form.optimal_min_length.data = user_settings_dict.get('optimal_min_length', 80)
+                form.optimal_max_length.data = user_settings_dict.get('optimal_max_length', 200)
+                form.reprocess_existing.data = user_settings_dict.get('reprocess_existing', False)
+                form.processing_delay.data = user_settings_dict.get('processing_delay', 1.0)
+                app.logger.debug(f"Retrieved user settings from Redis for caption settings form")
+            else:
+                app.logger.info(f"No user settings found in Redis, using defaults for caption settings form")
+                
+        except Exception as e:
+            app.logger.error(f"Error getting user settings from Redis: {sanitize_for_log(str(e))}")
+            # Fallback to database if Redis fails
+            with unified_session_manager.get_db_session() as session:
+                from models import CaptionGenerationUserSettings
+                user_settings_record = session.query(CaptionGenerationUserSettings).filter_by(
+                    user_id=current_user.id,
+                    platform_connection_id=platform_connection_id
+                ).first()
+                
+                # Create form with current settings
+                form = CaptionSettingsForm(request.form if request.method == 'POST' else None)
+                if user_settings_record:
+                    form.max_posts_per_run.data = user_settings_record.max_posts_per_run
+                    form.max_caption_length.data = user_settings_record.max_caption_length
+                    form.optimal_min_length.data = user_settings_record.optimal_min_length
+                    form.optimal_max_length.data = user_settings_record.optimal_max_length
+                    form.reprocess_existing.data = user_settings_record.reprocess_existing
+                    form.processing_delay.data = user_settings_record.processing_delay
             
             return render_template('caption_settings.html',
                                  form=form,
@@ -2908,7 +3088,7 @@ def api_get_caption_settings():
     """API endpoint to get caption generation settings"""
     try:
         # Get current platform context
-        context = get_current_platform_context()
+        context = get_current_session_context()
         if not context or not context.get('platform_connection_id'):
             return jsonify({'success': False, 'error': 'No active platform connection found'}), 400
         
@@ -2953,12 +3133,12 @@ def api_get_caption_settings():
 @with_session_error_handling
 def save_caption_settings():
     """Save caption generation settings"""
-    form = CaptionSettingsForm()
+    form = CaptionSettingsForm(request.form)
     
-    if form.validate_on_submit():
+    if validate_form_submission(form):
         try:
             # Get current platform context
-            context = get_current_platform_context()
+            context = get_current_session_context()
             if not context or not context.get('platform_connection_id'):
                 flash('No active platform connection found.', 'error')
                 return redirect(url_for('platform_management'))
@@ -3097,7 +3277,7 @@ def review_batches():
     """List recent caption generation batches for review"""
     try:
         # Get current platform context
-        context = get_current_platform_context()
+        context = get_current_session_context()
         if not context or not context.get('platform_connection_id'):
             flash('No active platform connection found.', 'error')
             return redirect(url_for('platform_management'))
@@ -3315,17 +3495,22 @@ def api_get_batch_statistics(batch_id):
 @rate_limit(limit=20, window_seconds=60)
 @with_session_error_handling
 def api_get_csrf_token():
-    """Get a fresh CSRF token for AJAX requests"""
+    """Get a fresh CSRF token for AJAX requests using Redis session-aware generation"""
     try:
-        from flask_wtf.csrf import generate_csrf
+        # Use our Redis-aware CSRF token manager
+        csrf_manager = getattr(app, 'csrf_token_manager', None)
+        if not csrf_manager:
+            # Fallback: create a temporary CSRF manager
+            from security.core.csrf_token_manager import CSRFTokenManager
+            csrf_manager = CSRFTokenManager()
         
-        # Generate new CSRF token
-        csrf_token = generate_csrf()
+        # Generate CSRF token using Redis session ID
+        csrf_token = csrf_manager.generate_token()
         
         return jsonify({
             'success': True,
             'csrf_token': csrf_token,
-            'expires_in': 3600  # 1 hour
+            'expires_in': csrf_manager.token_lifetime
         })
         
     except Exception as e:
@@ -3350,7 +3535,7 @@ def api_update_user_settings():
             return jsonify({'success': False, 'error': 'No data provided'}), 400
         
         # Get current platform context
-        context = get_current_platform_context()
+        context = get_current_session_context()
         if not context or not context.get('platform_connection_id'):
             return jsonify({'success': False, 'error': 'No active platform connection found'}), 400
         
@@ -3362,46 +3547,81 @@ def api_update_user_settings():
             if not isinstance(max_posts_per_run, int) or max_posts_per_run < 1 or max_posts_per_run > 500:
                 return jsonify({'success': False, 'error': 'Max posts per run must be between 1 and 500'}), 400
         
-        # Update or create user settings
-        with unified_session_manager.get_db_session() as session:
-            from models import CaptionGenerationUserSettings
+        # Update or create user settings using Redis platform manager
+        try:
+            # Prepare settings data
+            settings_data = {
+                'max_posts_per_run': max_posts_per_run or 50,
+                'max_caption_length': 500,
+                'optimal_min_length': 80,
+                'optimal_max_length': 200,
+                'reprocess_existing': False,
+                'processing_delay': 1.0
+            }
             
-            # Get existing settings or create new ones
-            user_settings = session.query(CaptionGenerationUserSettings).filter_by(
-                user_id=current_user.id,
-                platform_connection_id=platform_connection_id
-            ).first()
+            # Update settings using Redis platform manager
+            success = redis_platform_manager.update_user_settings(
+                current_user.id, 
+                platform_connection_id, 
+                settings_data
+            )
             
-            if not user_settings:
-                # Create new settings with defaults
-                user_settings = CaptionGenerationUserSettings(
-                    user_id=current_user.id,
-                    platform_connection_id=platform_connection_id,
-                    max_posts_per_run=max_posts_per_run or 50,
-                    max_caption_length=500,
-                    optimal_min_length=80,
-                    optimal_max_length=200,
-                    reprocess_existing=False,
-                    processing_delay=1.0
-                )
-                session.add(user_settings)
+            if success:
+                app.logger.info(f"Updated user settings via Redis for user {sanitize_for_log(str(current_user.id))} platform {sanitize_for_log(str(platform_connection_id))}")
+                
+                return jsonify({
+                    'success': True,
+                    'message': 'Settings updated successfully',
+                    'settings': {
+                        'max_posts_per_run': settings_data['max_posts_per_run']
+                    }
+                })
             else:
-                # Update existing settings
-                if max_posts_per_run is not None:
-                    user_settings.max_posts_per_run = max_posts_per_run
-                user_settings.updated_at = datetime.now(timezone.utc)
-            
-            session.commit()
-            
-            app.logger.info(f"Updated user settings for user {sanitize_for_log(str(current_user.id))} platform {sanitize_for_log(str(platform_connection_id))}")
-            
-            return jsonify({
-                'success': True,
-                'message': 'Settings updated successfully',
-                'settings': {
-                    'max_posts_per_run': user_settings.max_posts_per_run
-                }
-            })
+                # Fallback to database if Redis update fails
+                app.logger.warning("Redis settings update failed, falling back to database")
+                with unified_session_manager.get_db_session() as session:
+                    from models import CaptionGenerationUserSettings
+                    
+                    # Get existing settings or create new ones
+                    user_settings = session.query(CaptionGenerationUserSettings).filter_by(
+                        user_id=current_user.id,
+                        platform_connection_id=platform_connection_id
+                    ).first()
+                    
+                    if not user_settings:
+                        # Create new settings with defaults
+                        user_settings = CaptionGenerationUserSettings(
+                            user_id=current_user.id,
+                            platform_connection_id=platform_connection_id,
+                            max_posts_per_run=max_posts_per_run or 50,
+                            max_caption_length=500,
+                            optimal_min_length=80,
+                            optimal_max_length=200,
+                            reprocess_existing=False,
+                            processing_delay=1.0
+                        )
+                        session.add(user_settings)
+                    else:
+                        # Update existing settings
+                        if max_posts_per_run is not None:
+                            user_settings.max_posts_per_run = max_posts_per_run
+                        user_settings.updated_at = datetime.now(timezone.utc)
+                    
+                    session.commit()
+                    
+                    app.logger.info(f"Updated user settings via database fallback for user {sanitize_for_log(str(current_user.id))} platform {sanitize_for_log(str(platform_connection_id))}")
+                    
+                    return jsonify({
+                        'success': True,
+                        'message': 'Settings updated successfully',
+                        'settings': {
+                            'max_posts_per_run': user_settings.max_posts_per_run
+                        }
+                    })
+                    
+        except Exception as e:
+            app.logger.error(f"Error updating user settings via Redis: {sanitize_for_log(str(e))}")
+            return jsonify({'success': False, 'error': 'Failed to update settings'}), 500
             
     except Exception as e:
         app.logger.error(f"Error updating user settings: {sanitize_for_log(str(e))}")
@@ -3423,10 +3643,10 @@ def api_terminate_session(session_id):
     try:
         # For now, we only support terminating the current session
         # In a full implementation, you'd validate session ownership and terminate specific sessions
-        from database_session_middleware import get_current_session_id
+        from redis_session_middleware import get_current_session_id
         current_session_id = get_current_session_id()
         if session_id == 'current' or session_id == current_session_id:
-            # Destroy current database session
+            # Destroy current Redis session
             if current_session_id:
                 unified_session_manager.destroy_session(current_session_id)
             return jsonify({

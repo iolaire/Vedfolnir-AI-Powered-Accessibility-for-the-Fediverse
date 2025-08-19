@@ -293,7 +293,7 @@ class SessionErrorHandler:
         """
         try:
             # Clear database session if exists
-            from database_session_middleware import get_current_session_id
+            from redis_session_middleware import get_current_session_id
             session_id = get_current_session_id()
             if session_id:
                 # Use the existing session manager to destroy the session
@@ -445,7 +445,7 @@ def register_session_error_handlers(app, session_manager, detached_instance_hand
                     # Note: health_dashboard is admin-only and doesn't require platform context
                     if request.endpoint in ['review', 'batch_review', 'caption_generation']:
                         try:
-                            from database_session_middleware import get_current_session_context
+                            from redis_session_middleware import get_current_session_context
                             context = get_current_session_context()
                             
                             if not context or not context.get('platform_connection_id'):

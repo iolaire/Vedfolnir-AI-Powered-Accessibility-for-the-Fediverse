@@ -611,7 +611,7 @@ def get_current_platform_context() -> Optional[Dict[str, Any]]:
             from session_cookie_manager import get_session_cookie_manager
             
             cookie_manager = get_session_cookie_manager()
-            session_id = cookie_manager.get_session_id_from_request(request)
+            session_id = cookie_manager.get_session_id_from_cookie()
             
             if session_id:
                 # Get unified session manager from app context

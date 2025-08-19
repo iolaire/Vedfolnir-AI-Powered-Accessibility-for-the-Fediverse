@@ -15,7 +15,7 @@ from flask import Flask
 from sqlalchemy.orm import Session
 from security.core.security_middleware import SecurityMiddleware
 from security.core.enhanced_rate_limiter import EnhancedRateLimiter
-from security.core.enhanced_csrf_protection import EnhancedCSRFProtection
+# Removed EnhancedCSRFProtection import - using custom Redis-aware CSRF system
 from security.monitoring.security_event_logger import SecurityEventLogger
 from security.error_handling.user_management_error_handler import UserManagementErrorHandler
 from security.error_handling.system_recovery import HealthMonitor, health_monitor
@@ -194,9 +194,10 @@ class SecurityManager:
     def _init_csrf_protection(self, app: Flask, db_session: Optional[Session]):
         """Initialize CSRF protection"""
         if self.config.csrf_enabled:
-            self.csrf_protection = EnhancedCSRFProtection(app, db_session)
+            # Using custom Redis-aware CSRF system instead of EnhancedCSRFProtection
+            logger.info("CSRF protection enabled - using custom Redis-aware CSRF system")
             
-            # Configure CSRF settings
+            # Configure CSRF settings for compatibility
             app.config['WTF_CSRF_TIME_LIMIT'] = self.config.csrf_time_limit
             app.config['WTF_CSRF_SSL_STRICT'] = self.config.csrf_ssl_strict
             

@@ -13,7 +13,7 @@ import logging
 from typing import Set, List, Optional, Callable
 from functools import wraps
 from flask import request, g, current_app
-from flask_wtf.csrf import validate_csrf
+# Removed Flask-WTF validate_csrf import - using custom CSRF system only
 from werkzeug.exceptions import Forbidden
 from security.core.csrf_token_manager import get_csrf_token_manager, CSRFValidationContext
 from security.core.csrf_error_handler import get_csrf_error_handler
@@ -155,11 +155,24 @@ class CSRFMiddleware:
         return False
     
     def _validate_csrf_token(self):
-        """Validate CSRF token for current request"""
+        """Validate CSRF token for current request using our custom Redis session-aware validation"""
         try:
-            # Use Flask-WTF's built-in validation
-            validate_csrf(request.headers.get('X-CSRFToken') or 
-                         request.form.get('csrf_token'))
+            # Get CSRF token from headers or form
+            csrf_token = request.headers.get('X-CSRFToken') or request.form.get('csrf_token')
+            
+            if not csrf_token:
+                logger.warning(f"CSRF token missing for {request.endpoint}")
+                # Use werkzeug Forbidden instead of Flask-WTF CSRFError
+                raise Forbidden("CSRF token is required")
+            
+            # Use our Redis-aware CSRF token manager for validation
+            csrf_manager = get_csrf_token_manager()
+            is_valid = csrf_manager.validate_token(csrf_token)
+            
+            if not is_valid:
+                logger.warning(f"CSRF token validation failed for {request.endpoint}")
+                # Use werkzeug Forbidden instead of Flask-WTF CSRFError
+                raise Forbidden("CSRF token validation failed")
             
             logger.debug(f"CSRF validation successful for {request.endpoint}")
             
@@ -283,8 +296,18 @@ def require_csrf(f):
         # Force CSRF validation even for GET requests
         if not getattr(g, 'csrf_exempt', False):
             try:
-                validate_csrf(request.headers.get('X-CSRFToken') or 
-                             request.form.get('csrf_token'))
+                # Use our custom CSRF validation instead of Flask-WTF
+                csrf_token = request.headers.get('X-CSRFToken') or request.form.get('csrf_token')
+                if not csrf_token:
+                    raise Exception("CSRF token is required")
+                
+                # Use our Redis-aware CSRF token manager for validation
+                csrf_manager = get_csrf_token_manager()
+                is_valid = csrf_manager.validate_token(csrf_token)
+                
+                if not is_valid:
+                    raise Exception("CSRF token validation failed")
+                    
             except Exception as e:
                 context = CSRFValidationContext(
                     request_method=request.method,

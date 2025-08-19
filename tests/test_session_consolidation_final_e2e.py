@@ -5,7 +5,7 @@
 """
 Final end-to-end tests for session consolidation validation
 
-Tests complete session lifecycle using only database sessions,
+Tests complete session lifecycle using only Redis sessions,
 verifying Flask session elimination and unified session functionality.
 """
 
@@ -17,7 +17,7 @@ from datetime import datetime, timezone, timedelta
 
 from unified_session_manager import UnifiedSessionManager, SessionValidationError, SessionDatabaseError
 from session_cookie_manager import SessionCookieManager
-from database_session_middleware import DatabaseSessionMiddleware, get_current_session_context, get_current_user_id, get_current_platform_id, is_session_authenticated
+from redis_session_middleware import get_current_session_context, get_current_session_id, get_current_session_context, get_current_user_id, get_current_platform_id, is_session_authenticated
 from database import DatabaseManager
 from models import User, PlatformConnection, UserSession
 
@@ -49,7 +49,7 @@ class SessionConsolidationFinalE2ETest(unittest.TestCase):
         self.client = self.app.test_client()
     
     def test_complete_session_lifecycle_database_only(self):
-        """Test complete session lifecycle using only database sessions"""
+        """Test complete session lifecycle using only Redis sessions"""
         
         # Mock user and platform
         mock_user = MagicMock(spec=User)
@@ -194,7 +194,7 @@ class SessionConsolidationFinalE2ETest(unittest.TestCase):
         @self.app.route('/test_no_flask_session')
         def test_route():
             # This route should NOT use Flask session at all
-            # Only database session context should be available
+            # Redis session context should be available
             
             # Verify Flask session is not used
             from flask import session as flask_session
@@ -202,7 +202,7 @@ class SessionConsolidationFinalE2ETest(unittest.TestCase):
             # Flask session should be empty/unused
             flask_session_keys = list(flask_session.keys())
             
-            # Get database session context
+            # Redis session context
             context = get_current_session_context()
             
             return json.dumps({
@@ -211,7 +211,7 @@ class SessionConsolidationFinalE2ETest(unittest.TestCase):
                 'context_keys': list(context.keys()) if context else []
             })
         
-        # Mock database session context
+        # Redis session context
         mock_context = {
             'session_id': self.test_session_id,
             'user_id': self.test_user_id,

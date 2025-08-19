@@ -9,13 +9,14 @@ Forms for handling GDPR data subject rights and privacy management.
 """
 
 from flask_wtf import FlaskForm
-from wtforms import StringField, TextAreaField, BooleanField, SelectField, SubmitField, HiddenField
+# Import regular WTForms Form class (no Flask-WTF CSRF)
+from wtforms import Form, StringField, TextAreaField, BooleanField, SelectField, SubmitField, HiddenField
 from wtforms.validators import DataRequired, Email, Length, Optional
 from wtforms.widgets import TextArea
 
 
-class DataExportRequestForm(FlaskForm):
-    """Form for requesting personal data export (GDPR Article 20)"""
+class DataExportRequestForm(Form):
+    """Form for requesting personal data export (GDPR Article 20)""" # Using regular WTForms (no Flask-WTF CSRF)
     
     export_format = SelectField(
         'Export Format',
@@ -67,8 +68,8 @@ class DataExportRequestForm(FlaskForm):
     submit = SubmitField('Request Data Export')
 
 
-class DataRectificationForm(FlaskForm):
-    """Form for rectifying (correcting) personal data (GDPR Article 16)"""
+class DataRectificationForm(Form):
+    """Form for rectifying (correcting) personal data (GDPR Article 16)""" # Using regular WTForms (no Flask-WTF CSRF)
     
     first_name = StringField(
         'First Name',
@@ -104,8 +105,8 @@ class DataRectificationForm(FlaskForm):
     submit = SubmitField('Submit Rectification Request')
 
 
-class DataErasureRequestForm(FlaskForm):
-    """Form for requesting data erasure (GDPR Article 17)"""
+class DataErasureRequestForm(Form):
+    """Form for requesting data erasure (GDPR Article 17)""" # Using regular WTForms (no Flask-WTF CSRF)
     
     erasure_type = SelectField(
         'Erasure Type',
@@ -159,8 +160,8 @@ class DataErasureRequestForm(FlaskForm):
     submit = SubmitField('Request Data Erasure')
 
 
-class ConsentManagementForm(FlaskForm):
-    """Form for managing data processing consent (GDPR Article 7)"""
+class ConsentManagementForm(Form):
+    """Form for managing data processing consent (GDPR Article 7)""" # Using regular WTForms (no Flask-WTF CSRF)
     
     data_processing_consent = BooleanField(
         'I consent to the processing of my personal data',
@@ -192,8 +193,8 @@ class ConsentManagementForm(FlaskForm):
     submit = SubmitField('Update Consent Preferences')
 
 
-class PrivacyRequestForm(FlaskForm):
-    """Generic form for privacy-related requests"""
+class PrivacyRequestForm(Form):
+    """Generic form for privacy-related requests""" # Using regular WTForms (no Flask-WTF CSRF)
     
     request_type = SelectField(
         'Request Type',
@@ -252,8 +253,8 @@ class PrivacyRequestForm(FlaskForm):
     submit = SubmitField('Submit Privacy Request')
 
 
-class GDPRComplianceReportForm(FlaskForm):
-    """Form for requesting GDPR compliance report"""
+class GDPRComplianceReportForm(Form):
+    """Form for requesting GDPR compliance report""" # Using regular WTForms (no Flask-WTF CSRF)
     
     report_type = SelectField(
         'Report Type',
@@ -289,8 +290,8 @@ class GDPRComplianceReportForm(FlaskForm):
     submit = SubmitField('Generate Compliance Report')
 
 
-class DataPortabilityForm(FlaskForm):
-    """Form for data portability requests (GDPR Article 20)"""
+class DataPortabilityForm(Form):
+    """Form for data portability requests (GDPR Article 20)""" # Using regular WTForms (no Flask-WTF CSRF)
     
     destination_service = StringField(
         'Destination Service',

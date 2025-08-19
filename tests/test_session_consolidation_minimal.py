@@ -35,17 +35,12 @@ class TestSessionConsolidationMinimal(unittest.TestCase):
             self.fail(f"Failed to import SessionCookieManager: {e}")
     
     def test_database_session_middleware_import(self):
-        """Test that database session middleware can be imported"""
+        """Test that Redis session middleware can be imported"""
         try:
-            from database_session_middleware import (
-                get_current_session_context,
-                get_current_user_id,
-                get_current_platform_id,
-                is_session_authenticated
-            )
-            self.assertTrue(True, "Database session middleware imported successfully")
+            from redis_session_middleware import get_current_session_context, get_current_user_id, get_current_platform_id, validate_current_session as is_session_authenticated
+            self.assertTrue(True, "Redis session middleware imported successfully")
         except ImportError as e:
-            self.fail(f"Failed to import database session middleware: {e}")
+            self.fail(f"Failed to import Redis session middleware: {e}")
     
     def test_unified_session_manager_basic_functionality(self):
         """Test basic UnifiedSessionManager functionality with mocks"""
@@ -88,12 +83,7 @@ class TestSessionConsolidationMinimal(unittest.TestCase):
     def test_database_session_middleware_functions_exist(self):
         """Test that middleware functions exist and can be called"""
         try:
-            from database_session_middleware import (
-                get_current_session_context,
-                get_current_user_id,
-                get_current_platform_id,
-                is_session_authenticated
-            )
+            from redis_session_middleware import get_current_session_context, get_current_user_id, get_current_platform_id, validate_current_session as is_session_authenticated
             from flask import Flask
             
             # Create Flask app and context
@@ -120,14 +110,14 @@ class TestSessionConsolidationMinimal(unittest.TestCase):
                         self.assertTrue(authenticated)
                 
         except Exception as e:
-            self.fail(f"Database session middleware functions failed: {e}")
+            self.fail(f"Redis session middleware functions failed: {e}")
     
     def test_session_consolidation_components_integration(self):
         """Test that all components can work together"""
         try:
             from unified_session_manager import UnifiedSessionManager
             from session_cookie_manager import SessionCookieManager
-            from database_session_middleware import DatabaseSessionMiddleware
+            from redis_session_middleware import get_current_session_context, get_current_session_id
             from flask import Flask
             
             # Create Flask app

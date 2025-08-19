@@ -95,10 +95,16 @@ class CSRFTokenManager:
             
             token_session_id, timestamp_str, random_hex, signature = parts
             
-            # Verify session ID matches
-            if token_session_id != session_id:
-                logger.warning(f"CSRF token session mismatch: expected {session_id[:8]}..., got {token_session_id[:8]}...")
-                return False
+            # Verify session ID matches (Redis session or request-based)
+            current_session_id = self._get_current_session_id()
+            if token_session_id != current_session_id:
+                # For unauthenticated requests, allow request-based ID matching
+                request_based_id = self._generate_request_based_id()
+                if token_session_id != request_based_id:
+                    logger.warning(f"CSRF token session mismatch: token={token_session_id[:8]}..., current={current_session_id[:8]}..., request_based={request_based_id[:8]}...")
+                    return False
+                else:
+                    logger.debug("CSRF token validated using request-based session ID")
             
             # Verify signature
             payload = f"{token_session_id}:{timestamp_str}:{random_hex}"
@@ -219,25 +225,29 @@ class CSRFTokenManager:
             return {'error': f'Failed to extract token info: {e}'}
     
     def _get_current_session_id(self) -> str:
-        """Get current session ID from database session
+        """Get current session ID from Redis session, never from Flask sessions
         
         Returns:
-            Current session ID
+            Current Redis session ID or request-based ID
         """
         try:
-            # Try to get session ID from database session middleware
-            from database_session_middleware import get_current_session_id
+            # ALWAYS try Redis session first, never use Flask sessions
+            from redis_session_middleware import get_current_session_id
             session_id = get_current_session_id()
             
             if session_id:
+                # Verify this is not a Flask session ID
+                if session_id.startswith('.eJ') or session_id.startswith('eyJ'):
+                    logger.warning(f"Detected Flask session ID in Redis middleware: {session_id[:20]}... - using request-based ID instead")
+                    return self._generate_request_based_id()
                 return session_id
             else:
-                # No database session, generate request-based ID
-                logger.warning("No database session ID found, using request-based ID")
+                # No Redis session available - use request-based ID for CSRF protection
+                logger.debug("No Redis session ID found, using request-based ID for CSRF token")
                 return self._generate_request_based_id()
         except Exception as e:
-            logger.error(f"Failed to get database session ID: {e}")
-            # Fallback to request-based ID
+            logger.error(f"Failed to get Redis session ID: {e}")
+            # Always fallback to request-based ID, never Flask sessions
             return self._generate_request_based_id()
     
     def _generate_request_based_id(self) -> str:
@@ -354,9 +364,9 @@ class CSRFValidationContext:
         self.token_source: Optional[str] = None  # 'form', 'header', 'meta'
     
     def _get_session_id(self) -> str:
-        """Get session ID for context from database session"""
+        """Get session ID for context from Redis session"""
         try:
-            from database_session_middleware import get_current_session_id
+            from redis_session_middleware import get_current_session_id
             session_id = get_current_session_id()
             return session_id if session_id else 'no-session'
         except Exception:

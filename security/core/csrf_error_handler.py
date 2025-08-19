@@ -14,7 +14,7 @@ import logging
 from typing import Dict, Any, Optional, Tuple
 from datetime import datetime
 from flask import request, jsonify, render_template, redirect, url_for, flash
-from flask_wtf.csrf import CSRFError
+# Removed Flask-WTF CSRFError import - using werkzeug Forbidden
 from werkzeug.exceptions import Forbidden
 from security.core.security_utils import sanitize_for_log
 from security.core.csrf_token_manager import get_csrf_token_manager, CSRFValidationContext
@@ -373,10 +373,7 @@ def register_csrf_error_handlers(app):
     """
     csrf_handler = get_csrf_error_handler()
     
-    @app.errorhandler(CSRFError)
-    def handle_csrf_error(error):
-        """Handle Flask-WTF CSRF errors"""
-        return csrf_handler.handle_csrf_failure(error)
+    # Removed Flask-WTF CSRFError handler - using 403 Forbidden handler only
     
     @app.errorhandler(403)
     def handle_forbidden_error(error):

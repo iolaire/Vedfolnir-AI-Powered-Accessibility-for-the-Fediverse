@@ -14,7 +14,7 @@ Requirements: 1.2, 1.3, 1.4, 1.5
 
 import logging
 from functools import wraps
-from flask import current_app, redirect, url_for, flash, request, jsonify, session
+from flask import current_app, redirect, url_for, flash, request, jsonify
 from flask_login import current_user
 from models import UserRole, UserAuditLog
 from sqlalchemy.exc import SQLAlchemyError
@@ -25,7 +25,7 @@ logger = logging.getLogger(__name__)
 def admin_required(f):
     """
     Decorator to require admin role for admin interface access.
-    Includes session preservation and audit logging.
+    Includes Redis session preservation and audit logging.
     
     Requirements: 1.2, 1.3, 1.4, 1.5
     """
@@ -57,15 +57,36 @@ def admin_required(f):
             
             return redirect(url_for('index'))
         
-        # Preserve admin session context
+        # Preserve admin session context using Redis sessions
         try:
-            # Store current admin context if not already stored
-            if 'admin_session_context' not in session:
-                session['admin_session_context'] = {
-                    'user_id': current_user.id,
-                    'started_at': request.timestamp if hasattr(request, 'timestamp') else None,
-                    'original_url': request.url
-                }
+            # Get Redis session manager
+            unified_session_manager = getattr(current_app, 'unified_session_manager', None)
+            if unified_session_manager:
+                # Get current Redis session ID
+                from redis_session_middleware import get_current_session_id
+                session_id = get_current_session_id()
+                
+                if session_id:
+                    # Store admin context in Redis session
+                    admin_context = {
+                        'user_id': current_user.id,
+                        'started_at': request.timestamp if hasattr(request, 'timestamp') else None,
+                        'original_url': request.url,
+                        'is_admin_session': True
+                    }
+                    
+                    # Update Redis session with admin context
+                    try:
+                        unified_session_manager.update_session_data(session_id, {
+                            'admin_context': admin_context
+                        })
+                        logger.debug(f"Stored admin context in Redis session {session_id}")
+                    except Exception as redis_error:
+                        logger.warning(f"Failed to store admin context in Redis: {redis_error}")
+                else:
+                    logger.warning("No Redis session ID found for admin context storage")
+            else:
+                logger.warning("Unified session manager not available for admin context storage")
             
             # Log admin action
             try:
@@ -96,6 +117,7 @@ def admin_required(f):
 def admin_session_preservation(f):
     """
     Decorator to preserve admin session during user management operations.
+    Uses Redis sessions instead of Flask sessions.
     Ensures admin users don't lose their session when managing other users.
     
     Requirements: 1.3, 1.4
@@ -105,24 +127,47 @@ def admin_session_preservation(f):
         if not current_user.is_authenticated or current_user.role != UserRole.ADMIN:
             return redirect(url_for('user_management.login'))
         
-        # Store admin session state before operation
-        admin_session_backup = {
-            'user_id': current_user.id,
-            'session_id': session.get('session_id'),
-            'platform_context': session.get('platform_context'),
-            'admin_context': session.get('admin_session_context')
-        }
+        # Get Redis session manager and current session
+        unified_session_manager = getattr(current_app, 'unified_session_manager', None)
+        admin_session_backup = None
+        
+        if unified_session_manager:
+            try:
+                from redis_session_middleware import get_current_session_id
+                session_id = get_current_session_id()
+                
+                if session_id:
+                    # Backup current Redis session state
+                    session_context = unified_session_manager.get_session_context(session_id)
+                    if session_context:
+                        admin_session_backup = {
+                            'session_id': session_id,
+                            'user_id': session_context.get('user_id'),
+                            'platform_connection_id': session_context.get('platform_connection_id'),
+                            'admin_context': session_context.get('admin_context'),
+                            'session_data': session_context.copy()
+                        }
+                        logger.debug(f"Backed up admin session state for session {session_id}")
+                else:
+                    logger.warning("No Redis session ID found for admin session preservation")
+            except Exception as e:
+                logger.error(f"Failed to backup admin session state: {e}")
         
         try:
             result = f(*args, **kwargs)
             
-            # Restore admin session state after operation
-            if admin_session_backup['session_id']:
-                session['session_id'] = admin_session_backup['session_id']
-            if admin_session_backup['platform_context']:
-                session['platform_context'] = admin_session_backup['platform_context']
-            if admin_session_backup['admin_context']:
-                session['admin_session_context'] = admin_session_backup['admin_context']
+            # Restore admin session state after operation (if we have a backup)
+            if admin_session_backup and unified_session_manager:
+                try:
+                    session_id = admin_session_backup['session_id']
+                    # Restore the session context
+                    unified_session_manager.update_session_context(
+                        session_id, 
+                        admin_session_backup['session_data']
+                    )
+                    logger.debug(f"Restored admin session state for session {session_id}")
+                except Exception as restore_error:
+                    logger.error(f"Failed to restore admin session state: {restore_error}")
             
             return result
             
@@ -130,13 +175,16 @@ def admin_session_preservation(f):
             logger.error(f"Error in admin session preservation for {f.__name__}: {e}")
             
             # Attempt to restore session on error
-            try:
-                if admin_session_backup['session_id']:
-                    session['session_id'] = admin_session_backup['session_id']
-                if admin_session_backup['admin_context']:
-                    session['admin_session_context'] = admin_session_backup['admin_context']
-            except Exception as restore_error:
-                logger.error(f"Failed to restore admin session: {restore_error}")
+            if admin_session_backup and unified_session_manager:
+                try:
+                    session_id = admin_session_backup['session_id']
+                    unified_session_manager.update_session_context(
+                        session_id, 
+                        admin_session_backup['session_data']
+                    )
+                    logger.debug(f"Restored admin session state after error for session {session_id}")
+                except Exception as restore_error:
+                    logger.error(f"Failed to restore admin session after error: {restore_error}")
             
             flash('An error occurred during the admin operation.', 'error')
             return redirect(url_for('admin.user_management'))
@@ -312,6 +360,19 @@ def admin_context_processor():
                 from models import ProcessingStatus
                 total_pending_review = db_session.query(Image).filter_by(status=ProcessingStatus.PENDING).count()
                 
+                # Get admin context from Redis session instead of Flask session
+                admin_session_context = None
+                try:
+                    unified_session_manager = getattr(current_app, 'unified_session_manager', None)
+                    if unified_session_manager:
+                        from redis_session_middleware import get_current_session_id
+                        session_id = get_current_session_id()
+                        if session_id:
+                            session_context = unified_session_manager.get_session_context(session_id)
+                            admin_session_context = session_context.get('admin_context') if session_context else None
+                except Exception as e:
+                    logger.debug(f"Could not get admin context from Redis session: {e}")
+                
                 return {
                     'admin_stats': {
                         'total_users': total_users,
@@ -322,7 +383,7 @@ def admin_context_processor():
                         'total_pending_review': total_pending_review
                     },
                     'is_admin_interface': True,
-                    'admin_session_context': session.get('admin_session_context')
+                    'admin_session_context': admin_session_context
                 }
                 
         except Exception as e:

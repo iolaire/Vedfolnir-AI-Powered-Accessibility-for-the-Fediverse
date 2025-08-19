@@ -16,8 +16,10 @@ import logging
 from datetime import datetime, timedelta
 from typing import Optional, Dict, Any
 from functools import wraps
-from flask import request, session, g, abort, current_app
-from flask_wtf.csrf import CSRFProtect, ValidationError
+from flask import request, g, abort, current_app
+# REMOVED: Flask session import - using Redis sessions only
+# DISABLED: Flask-WTF CSRF imports - using custom Redis-aware CSRF system
+# from flask_wtf.csrf import CSRFProtect, ValidationError
 from sqlalchemy.orm import Session
 from security.monitoring.security_event_logger import get_security_event_logger, SecurityEventType
 
@@ -30,7 +32,9 @@ class EnhancedCSRFProtection:
     def __init__(self, app=None, db_session: Optional[Session] = None):
         self.app = app
         self.db_session = db_session
-        self.csrf = CSRFProtect()
+        # DISABLED: Flask-WTF CSRF - using custom Redis-aware CSRF system
+        # self.csrf = CSRFProtect()
+        self.csrf = None  # Disabled Flask-WTF CSRF
         self.security_logger = None
         
         # CSRF token storage (in production, use Redis or database)
@@ -315,19 +319,11 @@ def enhanced_csrf_protect(
                         
                 except Exception as e:
                     logger.error(f"Error in enhanced CSRF protection: {e}")
-                    # Fall back to standard CSRF protection
-                    from flask_wtf.csrf import validate_csrf
-                    try:
-                        # Get CSRF token for fallback validation
-                        fallback_csrf_token = (
-                            request.form.get('csrf_token') or
-                            request.headers.get('X-CSRFToken') or
-                            request.headers.get('X-CSRF-Token')
-                        )
-                        if fallback_csrf_token:
-                            validate_csrf(fallback_csrf_token)
-                    except ValidationError:
-                        abort(403, description="CSRF token validation failed")
+                    # DISABLED: Flask-WTF fallback - using custom Redis-aware system only
+                    # from flask_wtf.csrf import validate_csrf
+                    logger.warning("Enhanced CSRF protection disabled - using custom Redis-aware system")
+                    # No fallback to Flask-WTF CSRF
+                    abort(403, description="CSRF token validation failed")
             
             return f(*args, **kwargs)
         

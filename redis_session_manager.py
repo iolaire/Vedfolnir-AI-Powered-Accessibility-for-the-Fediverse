@@ -335,7 +335,7 @@ class RedisSessionManager:
     
     def update_platform_context(self, session_id: str, platform_connection_id: int) -> bool:
         """
-        Update active platform for session
+        Update active platform for session using Redis platform management
         
         Args:
             session_id: Session ID to update
@@ -355,21 +355,28 @@ class RedisSessionManager:
             
             user_id = int(session_data['user_id'])
             
-            # Verify platform belongs to the user using database
-            with self.db_manager.get_session() as db_session:
-                platform = db_session.query(PlatformConnection).filter_by(
-                    id=platform_connection_id,
-                    user_id=user_id,
-                    is_active=True
-                ).first()
-                
-                if not platform:
-                    logger.warning(f"Platform {platform_connection_id} not found or not accessible to user {user_id}")
-                    return False
-                
-                # Update platform's last used timestamp
-                platform.last_used = datetime.now(timezone.utc)
-                db_session.commit()
+            # Verify platform belongs to the user using Redis platform manager
+            # Import here to avoid circular imports
+            from redis_platform_manager import get_redis_platform_manager
+            import os
+            
+            encryption_key = os.getenv('PLATFORM_ENCRYPTION_KEY', 'default-key-change-in-production')
+            redis_platform_manager = get_redis_platform_manager(
+                self.redis_client,
+                self.db_manager,
+                encryption_key
+            )
+            
+            # Get platform data from Redis (with database fallback)
+            platform_data = redis_platform_manager.get_platform_by_id(platform_connection_id, user_id)
+            
+            if not platform_data:
+                logger.warning(f"Platform {platform_connection_id} not found or not accessible to user {user_id}")
+                return False
+            
+            if not platform_data.get('is_active', False):
+                logger.warning(f"Platform {platform_connection_id} is not active for user {user_id}")
+                return False
             
             # Update session in Redis
             now = datetime.now(timezone.utc)
@@ -379,6 +386,29 @@ class RedisSessionManager:
             pipe.hset(session_key, 'last_activity', now.isoformat())
             pipe.execute()
             
+            # Update platform's last used timestamp in database (background operation)
+            try:
+                # This is a background update - don't fail the session update if it fails
+                session = self.db_manager.get_session()
+                try:
+                    from models import PlatformConnection
+                    platform = session.query(PlatformConnection).filter_by(
+                        id=platform_connection_id,
+                        user_id=user_id
+                    ).first()
+                    
+                    if platform:
+                        platform.last_used = now
+                        session.commit()
+                        logger.debug(f"Updated last_used timestamp for platform {platform_connection_id}")
+                    
+                finally:
+                    self.db_manager.close_session(session)
+                    
+            except Exception as e:
+                # Log but don't fail the session update
+                logger.warning(f"Failed to update platform last_used timestamp: {e}")
+            
             # Create security audit event
             self._create_security_audit_event(
                 event_type='platform_switch',
@@ -386,11 +416,11 @@ class RedisSessionManager:
                 session_id=session_id,
                 details={
                     'platform_id': platform_connection_id,
-                    'platform_name': platform.name
+                    'platform_name': platform_data.get('name', 'Unknown')
                 }
             )
             
-            # logger.info(f"Updated session {session_id} to use platform {platform_connection_id}")
+            logger.info(f"Updated session {session_id[:8]}... platform context to {platform_connection_id}")
             return True
             
         except Exception as e:

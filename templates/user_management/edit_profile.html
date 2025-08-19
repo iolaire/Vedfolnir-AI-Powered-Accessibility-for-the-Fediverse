@@ -18,7 +18,7 @@
                 </div>
                 <div class="card-body">
                     <form method="POST" novalidate>
-                        {{ form.hidden_tag() }}
+                        <input type="hidden" name="csrf_token" value="{{ csrf_token() }}">
                         
                         <div class="mb-3">
                             {{ form.first_name.label(class="form-label") }}

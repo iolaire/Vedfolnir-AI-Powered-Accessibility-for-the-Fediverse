@@ -47,6 +47,18 @@ class RedisPlatformManager:
         self.db_manager = db_manager
         self.encryption_key = encryption_key
         self.cache_ttl = 3600  # 1 hour cache TTL
+    
+    def _safe_decode_redis_data(self, data) -> str:
+        """Safely decode Redis data that might be bytes or string"""
+        if data is None:
+            return None
+        if isinstance(data, bytes):
+            return data.decode('utf-8')
+        elif isinstance(data, str):
+            return data
+        else:
+            # Handle other types by converting to string
+            return str(data)
         
     def _get_user_platforms_key(self, user_id: int) -> str:
         """Get Redis key for user's platform connections"""
@@ -150,7 +162,8 @@ class RedisPlatformManager:
             if not force_refresh:
                 cached_data = self.redis_client.get(user_platforms_key)
                 if cached_data:
-                    platforms = json.loads(cached_data.decode())
+                    decoded_data = self._safe_decode_redis_data(cached_data)
+                    platforms = json.loads(decoded_data)
                     logger.debug(f"Retrieved {len(platforms)} platforms for user {user_id} from Redis cache")
                     return platforms
             
@@ -169,7 +182,10 @@ class RedisPlatformManager:
             # Try Redis first
             cached_data = self.redis_client.get(platform_key)
             if cached_data:
-                platform = json.loads(cached_data.decode())
+                # Handle both bytes and string data from Redis
+                decoded_data = self._safe_decode_redis_data(cached_data)
+                platform = json.loads(decoded_data)
+                    
                 # Verify user access if user_id provided
                 if user_id and platform.get('user_id') != user_id:
                     return None
@@ -222,7 +238,8 @@ class RedisPlatformManager:
             # Get current platforms to invalidate individual caches
             cached_data = self.redis_client.get(user_platforms_key)
             if cached_data:
-                platforms = json.loads(cached_data.decode())
+                decoded_data = self._safe_decode_redis_data(cached_data)
+                platforms = json.loads(decoded_data)
                 for platform in platforms:
                     platform_key = self._get_platform_key(platform['id'])
                     self.redis_client.delete(platform_key)
@@ -249,7 +266,8 @@ class RedisPlatformManager:
             cached_stats = self.redis_client.get(stats_key)
             
             if cached_stats:
-                return json.loads(cached_stats.decode())
+                decoded_stats = self._safe_decode_redis_data(cached_stats)
+                return json.loads(decoded_stats)
             
             # Calculate stats from database and cache
             stats = self._calculate_platform_stats(user_id, platform_id)
@@ -275,8 +293,8 @@ class RedisPlatformManager:
                 if not platform:
                     return {}
                 
-                # Calculate stats
-                total_images = session.query(Image).filter_by(user_id=user_id).count()
+                # Calculate stats - Images are linked to Posts, which have user_id
+                total_images = session.query(Image).join(Post).filter(Post.user_id == user_id).count()
                 total_posts = session.query(Post).filter_by(user_id=user_id).count()
                 
                 # Processing runs for this platform
@@ -300,6 +318,131 @@ class RedisPlatformManager:
         except Exception as e:
             logger.error(f"Error calculating platform stats: {e}")
             return {}
+    
+    def _get_user_settings_key(self, user_id: int, platform_id: int) -> str:
+        """Get Redis key for user's caption generation settings"""
+        return f"user_settings:{user_id}:{platform_id}"
+    
+    def get_user_settings(self, user_id: int, platform_id: int) -> Optional[Dict[str, Any]]:
+        """Get user's caption generation settings from Redis (with database fallback)"""
+        try:
+            settings_key = self._get_user_settings_key(user_id, platform_id)
+            
+            # Try Redis first
+            cached_data = self.redis_client.get(settings_key)
+            if cached_data:
+                decoded_data = self._safe_decode_redis_data(cached_data)
+                settings = json.loads(decoded_data)
+                logger.debug(f"Retrieved user settings for user {user_id}, platform {platform_id} from Redis cache")
+                return settings
+            
+            # Fallback to database
+            session = self.db_manager.get_session()
+            try:
+                from models import CaptionGenerationUserSettings
+                settings_record = session.query(CaptionGenerationUserSettings).filter_by(
+                    user_id=user_id,
+                    platform_connection_id=platform_id
+                ).first()
+                
+                if settings_record:
+                    settings_dict = {
+                        'id': settings_record.id,
+                        'user_id': settings_record.user_id,
+                        'platform_connection_id': settings_record.platform_connection_id,
+                        'max_posts_per_run': settings_record.max_posts_per_run,
+                        'max_caption_length': settings_record.max_caption_length,
+                        'optimal_min_length': settings_record.optimal_min_length,
+                        'optimal_max_length': settings_record.optimal_max_length,
+                        'reprocess_existing': settings_record.reprocess_existing,
+                        'processing_delay': settings_record.processing_delay,
+                        'created_at': settings_record.created_at.isoformat() if settings_record.created_at else None,
+                        'updated_at': settings_record.updated_at.isoformat() if settings_record.updated_at else None
+                    }
+                    
+                    # Cache in Redis for 1 hour
+                    self.redis_client.setex(settings_key, self.cache_ttl, json.dumps(settings_dict))
+                    logger.info(f"Loaded user settings for user {user_id}, platform {platform_id} to Redis")
+                    return settings_dict
+                
+                return None
+                
+            finally:
+                self.db_manager.close_session(session)
+                
+        except Exception as e:
+            logger.error(f"Error getting user settings for user {user_id}, platform {platform_id}: {e}")
+            return None
+    
+    def update_user_settings(self, user_id: int, platform_id: int, settings: Dict[str, Any]) -> bool:
+        """Update user's caption generation settings in both database and Redis"""
+        try:
+            session = self.db_manager.get_session()
+            try:
+                from models import CaptionGenerationUserSettings
+                from datetime import datetime, timezone
+                
+                # Get or create settings record
+                settings_record = session.query(CaptionGenerationUserSettings).filter_by(
+                    user_id=user_id,
+                    platform_connection_id=platform_id
+                ).first()
+                
+                if not settings_record:
+                    settings_record = CaptionGenerationUserSettings(
+                        user_id=user_id,
+                        platform_connection_id=platform_id,
+                        created_at=datetime.now(timezone.utc)
+                    )
+                    session.add(settings_record)
+                
+                # Update settings
+                settings_record.max_posts_per_run = settings.get('max_posts_per_run', 50)
+                settings_record.max_caption_length = settings.get('max_caption_length', 500)
+                settings_record.optimal_min_length = settings.get('optimal_min_length', 150)
+                settings_record.optimal_max_length = settings.get('optimal_max_length', 450)
+                settings_record.reprocess_existing = settings.get('reprocess_existing', False)
+                settings_record.processing_delay = settings.get('processing_delay', 1.0)
+                settings_record.updated_at = datetime.now(timezone.utc)
+                
+                session.commit()
+                
+                # Update Redis cache
+                settings_dict = {
+                    'id': settings_record.id,
+                    'user_id': settings_record.user_id,
+                    'platform_connection_id': settings_record.platform_connection_id,
+                    'max_posts_per_run': settings_record.max_posts_per_run,
+                    'max_caption_length': settings_record.max_caption_length,
+                    'optimal_min_length': settings_record.optimal_min_length,
+                    'optimal_max_length': settings_record.optimal_max_length,
+                    'reprocess_existing': settings_record.reprocess_existing,
+                    'processing_delay': settings_record.processing_delay,
+                    'created_at': settings_record.created_at.isoformat() if settings_record.created_at else None,
+                    'updated_at': settings_record.updated_at.isoformat() if settings_record.updated_at else None
+                }
+                
+                settings_key = self._get_user_settings_key(user_id, platform_id)
+                self.redis_client.setex(settings_key, self.cache_ttl, json.dumps(settings_dict))
+                
+                logger.info(f"Updated user settings for user {user_id}, platform {platform_id}")
+                return True
+                
+            finally:
+                self.db_manager.close_session(session)
+                
+        except Exception as e:
+            logger.error(f"Error updating user settings for user {user_id}, platform {platform_id}: {e}")
+            return False
+    
+    def invalidate_user_settings_cache(self, user_id: int, platform_id: int):
+        """Invalidate Redis cache for user's settings"""
+        try:
+            settings_key = self._get_user_settings_key(user_id, platform_id)
+            self.redis_client.delete(settings_key)
+            logger.info(f"Invalidated settings cache for user {user_id}, platform {platform_id}")
+        except Exception as e:
+            logger.error(f"Error invalidating settings cache for user {user_id}, platform {platform_id}: {e}")
 
 # Global instance
 _redis_platform_manager = None

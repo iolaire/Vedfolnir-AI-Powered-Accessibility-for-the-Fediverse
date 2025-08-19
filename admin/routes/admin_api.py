@@ -4,7 +4,7 @@
 
 """Admin API Routes"""
 
-from flask import jsonify, request, session
+from flask import jsonify, request
 from flask_login import current_user
 from models import UserRole
 from ..security.admin_access_control import admin_api_required
@@ -21,15 +21,14 @@ def register_api_routes(bp):
     def clear_platform_context():
         """Clear platform context for admin users"""
         try:
-            # Clear platform context from session
-            session.pop('platform_context', None)
-            session.pop('current_platform_id', None)
+            # Clear platform context from Redis session
+            from redis_session_middleware import clear_session_platform
+            success = clear_session_platform()
             
-            # Clear from database session if exists
-            from database_session_middleware import clear_session_platform
-            clear_session_platform()
-            
-            logger.info(f"Admin user {current_user.id} cleared platform context")
+            if success:
+                logger.info(f"Admin user {current_user.id} cleared platform context")
+            else:
+                logger.warning(f"Failed to clear platform context for admin user {current_user.id}")
             
             return jsonify({
                 'success': True,

@@ -139,7 +139,7 @@ class SessionMigrationValidation(unittest.TestCase):
     def test_database_session_middleware_uses_unified_manager(self):
         """Test that DatabaseSessionMiddleware uses UnifiedSessionManager"""
         try:
-            from database_session_middleware import DatabaseSessionMiddleware
+            from redis_session_middleware import get_current_session_context, get_current_session_id
             
             # Check the import in the file
             middleware_file = project_root / 'database_session_middleware.py'
@@ -189,7 +189,7 @@ class SessionMigrationValidation(unittest.TestCase):
         try:
             # Try importing all session-related modules
             from unified_session_manager import UnifiedSessionManager
-            from database_session_middleware import DatabaseSessionMiddleware
+            from redis_session_middleware import get_current_session_context, get_current_session_id
             from session_security import create_session_security_manager
             
             # If we get here without ImportError, circular imports are resolved
