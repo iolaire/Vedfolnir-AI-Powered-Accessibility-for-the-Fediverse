@@ -7,6 +7,23 @@
 ### Required Header for New Files
 When creating any new source code file (.py, .js, .html, .css, .sh, .sql), ALWAYS add the appropriate copyright header as the very first content using the correct comment syntax for that file type.
 
+## Development Practices
+
+### Test-Driven Development (TDD) - MANDATORY
+**Requirement:** All code must be developed using strict Test-Driven Development practices.
+
+#### TDD Cycle (Red-Green-Refactor)
+1. **Red:** Write a failing test that describes the desired behavior
+2. **Green:** Write the minimal code to make the test pass
+3. **Refactor:** Improve code quality while keeping tests green
+
+#### TDD Implementation Rules
+- **No Production Code:** Write no production code without a failing test
+- **Minimal Test Code:** Write only enough test code to demonstrate a failure
+- **Minimal Production Code:** Write only enough production code to pass the failing test
+- **Test First:** Always write tests before implementation code
+- **Full Test Suite:** The complete test suite MUST be passing before marking any task as complete
+
 ## Core Technologies
 - **Language**: Python 3
 - **Web Framework**: Flask
@@ -18,16 +35,19 @@ When creating any new source code file (.py, .js, .html, .css, .sh, .sql), ALWAY
 
 ## Session Management Architecture
 
-**IMPORTANT**: This application uses **Redis sessions** as the primary session storage with **database fallback** for all session operations. Flask sessions (secure cookies) are NOT used.
+**IMPORTANT**: This application uses **Redis** as the primary session storage backend with **Flask session cookies** for session ID management. This architecture provides high performance, scalability, and reliability.
+
+**📖 [Complete Redis Session Management Guide →](.kiro/steering/redis-session-management.md)**
 
 ### Redis Session Implementation
-- **Primary Storage**: Redis for high-performance session storage
-- **Fallback Storage**: UserSession table in the database for reliability
-- **Session Data**: All session state stored in Redis with database backup
-- **Session Tokens**: Secure tokens stored in HTTP-only cookies
-- **Cross-Tab Sync**: Real-time synchronization via Redis pub/sub
-- **Audit Trail**: Complete session activity logging in the database
-- **Dual Manager**: RedisSessionManager with UnifiedSessionManager fallback
+- **Session Storage**: Redis stores all session data on the server
+- **Session Identification**: Flask manages session cookies containing unique session IDs
+- **Session Retrieval**: Session IDs are used to retrieve corresponding session data from Redis
+- **Session Security**: HTTP-only, secure cookies with proper SameSite configuration
+- **Session Persistence**: Redis provides fast, in-memory session storage with optional persistence
+- **Cross-Tab Sync**: Real-time synchronization via Redis pub/sub mechanisms
+- **Fallback Storage**: Database fallback for session audit trails and recovery
+- **Session Manager**: RedisSessionManager handles all Redis operations
 
 ### Session Management Components
 - **UserSession Model**: Database table for session backup and audit trail
@@ -158,26 +178,39 @@ with request_session_manager.session_scope() as session:
 - **Security**: Secure token generation and validation
 - **Scalability**: Database sessions support multiple application instances
 
-### Session Configuration
+### Redis Configuration
 ```bash
-# Session timeout (seconds)
-SESSION_TIMEOUT=7200
-
-# Session cleanup interval (seconds)
-SESSION_CLEANUP_INTERVAL=3600
-
-# Session token length
-SESSION_TOKEN_LENGTH=32
-
-# Redis Configuration (for session storage)
+# Redis Connection Settings
 REDIS_URL=redis://localhost:6379/0
+REDIS_HOST=localhost
+REDIS_PORT=6379
+REDIS_DB=0
+REDIS_PASSWORD=  # Optional, leave empty for no auth
+REDIS_SSL=false
+
+# Redis Session Configuration
 REDIS_SESSION_PREFIX=vedfolnir:session:
-REDIS_SESSION_TIMEOUT=7200
+REDIS_SESSION_TIMEOUT=7200  # 2 hours
+REDIS_SESSION_CLEANUP_INTERVAL=3600  # 1 hour
+
+# Session Cookie Configuration (Flask)
+SESSION_COOKIE_NAME=session
+SESSION_COOKIE_HTTPONLY=true
+SESSION_COOKIE_SECURE=true  # Set to false for development over HTTP
+SESSION_COOKIE_SAMESITE=Lax
 
 # Database fallback settings
 DB_SESSION_FALLBACK=true
 DB_SESSION_SYNC=true
 ```
+
+### Session Architecture Benefits
+- **Performance**: Redis provides sub-millisecond session access times
+- **Scalability**: Supports horizontal scaling across multiple application instances
+- **Reliability**: Database fallback ensures session persistence during Redis outages
+- **Security**: Session data stored server-side, only session ID in client cookie
+- **Real-time**: Redis pub/sub enables instant cross-tab synchronization
+- **Memory Efficiency**: Redis optimized memory usage with automatic expiration
 
 ## Key Dependencies
 - **requests**: HTTP client for synchronous requests

@@ -4,6 +4,7 @@
 
 **CRITICAL**: All source code files in this project MUST include copyright and license headers. When creating or modifying any source code file, ensure it includes the proper header at the top using the correct comment syntax. See `.kiro/steering/copyright-license.md` for detailed requirements.
 
+
 ## Core Components
 
 ### Main Application
@@ -19,6 +20,17 @@
 ### Image Processing
 - `image_processor.py`: Handles image downloading, storage, and optimization
 - `ollama_caption_generator.py`: Generates image captions using Ollama with LLaVA model
+
+### Session Management
+- `redis_session_manager.py`: Primary session manager using Redis backend
+- `session_config.py`: Session configuration and settings management
+- `session_cookie_manager.py`: Flask session cookie handling and security
+- `session_performance_optimizer.py`: Session performance monitoring and optimization
+- `session_state_api.py`: Session state management API
+- `session_aware_user.py`: User context integration with sessions
+- `session_error_handlers.py`: Session-specific error handling
+- `redis_session_middleware.py`: Redis session middleware for Flask
+- `unified_session_manager.py`: Legacy session manager (database fallback)
 
 ### Web Interface
 - `web_app.py`: Main Flask web application for reviewing and managing captions
@@ -55,12 +67,16 @@
 - `__pycache__/`: Python bytecode cache (not tracked in version control)
 
 ## Data Flow
-1. The bot retrieves posts from Pixelfed via the ActivityPub API
-2. Images without alt text are identified and downloaded
-3. The Ollama LLaVA model generates captions for these images
-4. Generated captions are stored in the database
-5. Human reviewers approve, edit, or reject captions via the web interface
-6. Approved captions are posted back to Pixelfed via the API
+1. **User Authentication**: Users log in and receive a session cookie with unique session ID
+2. **Session Storage**: Session data is stored in Redis using the session ID as the key
+3. **Post Retrieval**: The bot retrieves posts from ActivityPub platforms via API
+4. **Image Processing**: Images without alt text are identified and downloaded
+5. **Caption Generation**: The Ollama LLaVA model generates captions for these images
+6. **Data Persistence**: Generated captions are stored in the database
+7. **Session Management**: User sessions are maintained in Redis with database fallback
+8. **Human Review**: Reviewers approve, edit, or reject captions via the web interface
+9. **Caption Publishing**: Approved captions are posted back to platforms via API
+10. **Session Cleanup**: Expired sessions are automatically cleaned up from Redis
 
 ## Development Patterns
 - **Configuration**: Environment variables with dotenv

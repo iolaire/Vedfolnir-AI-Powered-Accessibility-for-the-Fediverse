@@ -390,6 +390,36 @@ class AuthConfig:
         )
 
 @dataclass
+class RedisConfig:
+    """Configuration for Redis session storage"""
+    url: str = "redis://localhost:6379/0"
+    host: str = "localhost"
+    port: int = 6379
+    db: int = 0
+    password: Optional[str] = None
+    ssl: bool = False
+    
+    # Session-specific Redis settings
+    session_prefix: str = "vedfolnir:session:"
+    session_timeout: int = 7200  # 2 hours
+    cleanup_interval: int = 3600  # 1 hour
+    
+    @classmethod
+    def from_env(cls):
+        """Create a RedisConfig from environment variables"""
+        return cls(
+            url=os.getenv("REDIS_URL", "redis://localhost:6379/0"),
+            host=os.getenv("REDIS_HOST", "localhost"),
+            port=int(os.getenv("REDIS_PORT", "6379")),
+            db=int(os.getenv("REDIS_DB", "0")),
+            password=os.getenv("REDIS_PASSWORD") or None,
+            ssl=os.getenv("REDIS_SSL", "false").lower() == "true",
+            session_prefix=os.getenv("REDIS_SESSION_PREFIX", "vedfolnir:session:"),
+            session_timeout=int(os.getenv("REDIS_SESSION_TIMEOUT", "7200")),
+            cleanup_interval=int(os.getenv("REDIS_SESSION_CLEANUP_INTERVAL", "3600")),
+        )
+
+@dataclass
 class BatchUpdateConfig:
     """Configuration for batch update functionality"""
     enabled: bool = True
@@ -458,6 +488,7 @@ class Config:
         self.storage = StorageConfig.from_env()
         self.webapp = WebAppConfig.from_env()
         self.auth = AuthConfig.from_env()
+        self.redis = RedisConfig.from_env()
         self.batch_update = BatchUpdateConfig.from_env()
         
         # Initialize session configuration (lazy loading to avoid circular imports)

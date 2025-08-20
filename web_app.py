@@ -73,8 +73,7 @@ from sse_progress_handler import SSEProgressHandler
 
 app.config['SQLALCHEMY_DATABASE_URI'] = config.storage.database_url
 app.config['SQLALCHEMY_TRACK_MODIFICATIONS'] = False
-app.config['PERMANENT_SESSION_LIFETIME'] = timedelta(seconds=config.auth.session_lifetime)
-app.config['REMEMBER_COOKIE_DURATION'] = timedelta(seconds=config.auth.remember_cookie_duration)
+
 
 # Define a NullSessionInterface to completely disable Flask's default session management
 from flask.sessions import SessionInterface, SessionMixin
@@ -513,10 +512,7 @@ def load_user(user_id):
         # This is normal during login process when Redis session cookie isn't set yet
         app.logger.debug(f"Could not load user from Redis session (normal during login): {e}")
     
-    # Fallback to traditional Flask-Login user_id (used during login process)
-    if not user_id:
-        app.logger.debug("No user_id provided to load_user")
-        return None
+    # Flask-Login fallback removed as part of Redis session refactor.
     
     try:
         user_id_int = int(user_id)

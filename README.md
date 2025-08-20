@@ -20,13 +20,13 @@ An accessibility-focused tool that automatically generates and manages alt text 
 - **Enterprise-Grade Security**: 100% security score with comprehensive protection
 - **CSRF Protection**: Complete protection against Cross-Site Request Forgery attacks
 - **Input Validation**: Advanced sanitization against XSS and SQL injection
-- **Session Security**: Secure session management with proper cookie configuration
+- **Session Security**: Redis-based session management with secure cookie configuration
 - **Rate Limiting**: Protection against brute force and abuse
 - **Audit Logging**: Comprehensive security event logging
 
 ### Platform Management
 - **Multi-Account Support**: Manage multiple platform accounts from one interface
-- **Platform-Aware Sessions**: Seamless switching between different platforms
+- **Platform-Aware Sessions**: Redis-powered seamless switching between different platforms
 - **Credential Security**: Encrypted storage of platform credentials
 - **Connection Testing**: Built-in platform connection validation
 
@@ -42,6 +42,7 @@ An accessibility-focused tool that automatically generates and manages alt text 
 ### Prerequisites
 - Python 3.8 or higher
 - Ollama with LLaVA model installed
+- Redis server (for session management)
 - SQLite (included with Python)
 - Access to a Pixelfed or Mastodon instance
 
@@ -67,8 +68,9 @@ An accessibility-focused tool that automatically generates and manages alt text 
    # Use the automated setup script - this handles both environment setup and admin user creation
    python3 scripts/setup/generate_env_secrets.py
    
-   # Verify the setup
+   # Verify the setup including Redis session management
    python3 scripts/setup/verify_env_setup.py
+   python3 scripts/setup/verify_redis_session_setup.py
    ```
    
    **Manual Setup:**
@@ -186,6 +188,11 @@ OLLAMA_MODEL=llava:7b
 FLASK_SECRET_KEY=your-secret-key-here
 FLASK_DEBUG=false
 
+# Redis Session Storage
+REDIS_URL=redis://localhost:6379/0
+REDIS_SESSION_PREFIX=vedfolnir:session:
+REDIS_SESSION_TIMEOUT=7200
+
 # Security
 SESSION_TIMEOUT=7200
 CSRF_ENABLED=true
@@ -256,7 +263,7 @@ This project implements enterprise-grade security with a **100% security score**
 ### Security Features
 - **CSRF Protection**: Complete protection against Cross-Site Request Forgery
 - **Input Validation**: Advanced XSS and SQL injection prevention
-- **Session Security**: Secure cookie configuration and session management
+- **Session Security**: Redis session storage with secure cookie configuration and session management
 - **Rate Limiting**: Brute force and abuse protection
 - **Security Headers**: Comprehensive HTTP security headers
 - **Audit Logging**: Complete security event tracking
@@ -278,7 +285,7 @@ For detailed security information, including security feature toggles, see [Secu
 - **AI Integration**: Ollama with LLaVA model
 - **Platform Clients**: ActivityPub API clients
 - **Security Layer**: Comprehensive security middleware
-- **Session Management**: Platform-aware session handling
+- **Session Management**: Redis-based session storage with Flask cookie identification
 - **Background Processing**: Asynchronous task processing
 - **Real-time Updates**: Server-Sent Events (SSE) for live progress tracking
 
