@@ -345,86 +345,194 @@ class HealthChecker:
             )
     
     async def check_storage_health(self) -> ComponentHealth:
-        """Check file storage health"""
+        """Check storage health - database connection and file storage"""
         start_time = time.time()
         
         try:
-            # Check if storage directories exist and are writable
-            images_dir = self.config.storage.images_dir
-            database_dir = os.path.dirname(self.config.storage.database_url.replace("sqlite:///", ""))
-            
             issues = []
+            details = {}
             
-            # Check images directory
-            if not os.path.exists(images_dir):
-                issues.append(f"Images directory does not exist: {images_dir}")
-            elif not os.access(images_dir, os.W_OK):
-                issues.append(f"Images directory not writable: {images_dir}")
+            # Check database type and connection
+            database_url = self.config.storage.database_url
             
-            # Check database directory
-            if not os.path.exists(database_dir):
-                issues.append(f"Database directory does not exist: {database_dir}")
-            elif not os.access(database_dir, os.W_OK):
-                issues.append(f"Database directory not writable: {database_dir}")
-            
-            # Get storage statistics
-            try:
-                import shutil
-                images_usage = shutil.disk_usage(images_dir)
-                db_usage = shutil.disk_usage(database_dir)
-                
-                # Count stored images and calculate total size
-                image_files = [f for f in os.listdir(images_dir) 
-                              if f.lower().endswith(('.jpg', '.jpeg', '.png', '.gif', '.webp'))]
-                image_count = len(image_files)
-                
-                # Calculate total size of stored images
-                total_image_size_bytes = 0
-                for image_file in image_files:
+            if database_url.startswith('mysql'):
+                # MySQL/MariaDB database health check
+                try:
+                    session = self.db_manager.get_session()
                     try:
-                        image_path = os.path.join(images_dir, image_file)
-                        total_image_size_bytes += os.path.getsize(image_path)
-                    except (OSError, IOError):
-                        # Skip files that can't be accessed
-                        continue
-                
-                # Convert to human-readable format
-                if total_image_size_bytes >= 1024**3:  # GB
-                    image_size_display = f"{total_image_size_bytes / (1024**3):.2f}GB"
-                elif total_image_size_bytes >= 1024**2:  # MB
-                    image_size_display = f"{total_image_size_bytes / (1024**2):.1f}MB"
-                elif total_image_size_bytes >= 1024:  # KB
-                    image_size_display = f"{total_image_size_bytes / 1024:.1f}KB"
-                else:  # Bytes
-                    image_size_display = f"{total_image_size_bytes}B"
-                
-                details = {
-                    "images_directory": images_dir,
-                    "database_directory": database_dir,
-                    "stored_images": image_count,
-                    "stored_images_size": image_size_display,
-                    "stored_images_size_bytes": total_image_size_bytes,
-                    "images_disk_free_gb": round(images_usage.free / (1024**3), 2),
-                    "images_disk_total_gb": round(images_usage.total / (1024**3), 2),
-                    "db_disk_free_gb": round(db_usage.free / (1024**3), 2),
-                    "db_disk_total_gb": round(db_usage.total / (1024**3), 2)
-                }
-                
-                # Check disk space (warn if less than 1GB free)
-                if images_usage.free < 1024**3 or db_usage.free < 1024**3:
-                    issues.append("Low disk space (less than 1GB free)")
+                        from sqlalchemy import text
+                        
+                        # Test basic connectivity
+                        session.execute(text("SELECT 1"))
+                        
+                        # Get MySQL-specific information
+                        result = session.execute(text("SELECT VERSION()"))
+                        mysql_version = result.fetchone()[0]
+                        
+                        # Get database name
+                        result = session.execute(text("SELECT DATABASE()"))
+                        database_name = result.fetchone()[0]
+                        
+                        # Get database size (MySQL 5.0+)
+                        try:
+                            result = session.execute(text("""
+                                SELECT 
+                                    ROUND(SUM(data_length + index_length) / 1024 / 1024, 2) AS 'DB Size in MB'
+                                FROM information_schema.tables 
+                                WHERE table_schema = DATABASE()
+                            """))
+                            db_size_mb = result.fetchone()[0] or 0
+                        except Exception:
+                            db_size_mb = 0
+                        
+                        # Get table count
+                        result = session.execute(text("""
+                            SELECT COUNT(*) FROM information_schema.tables 
+                            WHERE table_schema = DATABASE()
+                        """))
+                        table_count = result.fetchone()[0]
+                        
+                        # Get connection info
+                        try:
+                            result = session.execute(text("SHOW STATUS LIKE 'Threads_connected'"))
+                            connections = result.fetchone()[1] if result.fetchone() else 0
+                        except Exception:
+                            connections = 0
+                        
+                        details.update({
+                            "database_type": "MySQL/MariaDB",
+                            "database_name": database_name,
+                            "mysql_version": mysql_version,
+                            "database_size_mb": db_size_mb,
+                            "table_count": table_count,
+                            "active_connections": connections,
+                            "connection_url": database_url.split("://")[0] + "://***"
+                        })
+                        
+                    finally:
+                        session.close()
+                        
+                except Exception as e:
+                    issues.append(f"MySQL database connection failed: {str(e)}")
+                    details["database_error"] = str(e)
                     
+            elif database_url.startswith('sqlite'):
+                # SQLite database health check
+                try:
+                    # Check if database directory exists and is writable
+                    database_path = database_url.replace("sqlite:///", "")
+                    database_dir = os.path.dirname(database_path)
+                    
+                    if not os.path.exists(database_dir):
+                        issues.append(f"Database directory does not exist: {database_dir}")
+                    elif not os.access(database_dir, os.W_OK):
+                        issues.append(f"Database directory not writable: {database_dir}")
+                    
+                    # Get database file size
+                    if os.path.exists(database_path):
+                        db_size_bytes = os.path.getsize(database_path)
+                        db_size_mb = round(db_size_bytes / (1024**2), 2)
+                    else:
+                        db_size_mb = 0
+                    
+                    # Get disk usage for database directory
+                    import shutil
+                    db_usage = shutil.disk_usage(database_dir)
+                    
+                    details.update({
+                        "database_type": "SQLite",
+                        "database_path": database_path,
+                        "database_size_mb": db_size_mb,
+                        "database_directory": database_dir,
+                        "db_disk_free_gb": round(db_usage.free / (1024**3), 2),
+                        "db_disk_total_gb": round(db_usage.total / (1024**3), 2)
+                    })
+                    
+                    # Check disk space (warn if less than 1GB free)
+                    if db_usage.free < 1024**3:
+                        issues.append("Low disk space for database (less than 1GB free)")
+                        
+                except Exception as e:
+                    issues.append(f"SQLite database check failed: {str(e)}")
+                    details["database_error"] = str(e)
+            
+            # Check images directory (common for both database types)
+            try:
+                images_dir = self.config.storage.images_dir
+                
+                if not os.path.exists(images_dir):
+                    issues.append(f"Images directory does not exist: {images_dir}")
+                elif not os.access(images_dir, os.W_OK):
+                    issues.append(f"Images directory not writable: {images_dir}")
+                else:
+                    # Get storage statistics for images
+                    import shutil
+                    images_usage = shutil.disk_usage(images_dir)
+                    
+                    # Count stored images and calculate total size
+                    image_files = [f for f in os.listdir(images_dir) 
+                                  if f.lower().endswith(('.jpg', '.jpeg', '.png', '.gif', '.webp'))]
+                    image_count = len(image_files)
+                    
+                    # Calculate total size of stored images
+                    total_image_size_bytes = 0
+                    for image_file in image_files:
+                        try:
+                            image_path = os.path.join(images_dir, image_file)
+                            total_image_size_bytes += os.path.getsize(image_path)
+                        except (OSError, IOError):
+                            # Skip files that can't be accessed
+                            continue
+                    
+                    # Convert to human-readable format
+                    if total_image_size_bytes >= 1024**3:  # GB
+                        image_size_display = f"{total_image_size_bytes / (1024**3):.2f}GB"
+                    elif total_image_size_bytes >= 1024**2:  # MB
+                        image_size_display = f"{total_image_size_bytes / (1024**2):.1f}MB"
+                    elif total_image_size_bytes >= 1024:  # KB
+                        image_size_display = f"{total_image_size_bytes / 1024:.1f}KB"
+                    else:  # Bytes
+                        image_size_display = f"{total_image_size_bytes}B"
+                    
+                    details.update({
+                        "images_directory": images_dir,
+                        "stored_images": image_count,
+                        "stored_images_size": image_size_display,
+                        "stored_images_size_bytes": total_image_size_bytes,
+                        "images_disk_free_gb": round(images_usage.free / (1024**3), 2),
+                        "images_disk_total_gb": round(images_usage.total / (1024**3), 2)
+                    })
+                    
+                    # Check disk space (warn if less than 1GB free)
+                    if images_usage.free < 1024**3:
+                        issues.append("Low disk space for images (less than 1GB free)")
+                        
             except Exception as e:
-                details = {"error": f"Could not get storage statistics: {str(e)}"}
+                issues.append(f"Images directory check failed: {str(e)}")
+                details["images_error"] = str(e)
             
             response_time = (time.time() - start_time) * 1000
             
+            # Determine health status
             if issues:
-                status = HealthStatus.UNHEALTHY if any("not exist" in issue or "not writable" in issue for issue in issues) else HealthStatus.DEGRADED
-                message = "; ".join(issues)
+                # Check for critical issues
+                critical_issues = [issue for issue in issues if 
+                                 "connection failed" in issue.lower() or 
+                                 "does not exist" in issue.lower() or 
+                                 "not writable" in issue.lower()]
+                
+                if critical_issues:
+                    status = HealthStatus.UNHEALTHY
+                    message = "; ".join(critical_issues)
+                else:
+                    status = HealthStatus.DEGRADED
+                    message = "; ".join(issues)
             else:
                 status = HealthStatus.HEALTHY
-                message = "Storage system healthy"
+                if database_url.startswith('mysql'):
+                    message = f"MySQL storage healthy ({details.get('database_name', 'unknown')} database)"
+                else:
+                    message = "SQLite storage healthy"
             
             return ComponentHealth(
                 name="storage",

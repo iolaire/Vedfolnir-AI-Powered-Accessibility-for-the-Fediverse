@@ -167,10 +167,33 @@ class SessionPerformanceOptimizer:
     def _get_existing_indexes(self, db_session) -> List[str]:
         """Get list of existing database indexes"""
         try:
-            result = db_session.execute(text(
-                "SELECT name FROM sqlite_master WHERE type='index' AND name LIKE 'idx_%'"
-            )).fetchall()
+            # Determine database type from the database URL
+            database_url = str(self.db_manager.engine.url)
+            
+            if database_url.startswith('mysql'):
+                # MySQL/MariaDB query to get indexes
+                result = db_session.execute(text("""
+                    SELECT DISTINCT INDEX_NAME 
+                    FROM INFORMATION_SCHEMA.STATISTICS 
+                    WHERE TABLE_SCHEMA = DATABASE() 
+                    AND INDEX_NAME LIKE 'idx_%'
+                    AND INDEX_NAME != 'PRIMARY'
+                """)).fetchall()
+            elif database_url.startswith('sqlite'):
+                # SQLite query to get indexes
+                result = db_session.execute(text(
+                    "SELECT name FROM sqlite_master WHERE type='index' AND name LIKE 'idx_%'"
+                )).fetchall()
+            else:
+                # PostgreSQL or other databases
+                result = db_session.execute(text("""
+                    SELECT indexname 
+                    FROM pg_indexes 
+                    WHERE indexname LIKE 'idx_%'
+                """)).fetchall()
+            
             return [row[0] for row in result]
+            
         except Exception as e:
             logger.error(f"Error getting existing indexes: {e}")
             return []

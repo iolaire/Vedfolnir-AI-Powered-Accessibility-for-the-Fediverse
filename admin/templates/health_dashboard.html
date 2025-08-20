@@ -136,13 +136,45 @@
                             <h6>Storage</h6>
                             {% if health.components.storage and health.components.storage.details %}
                             <ul class="list-unstyled">
+                                <!-- Database Information -->
+                                {% if health.components.storage.details.database_type %}
+                                <li><small><strong>{{ health.components.storage.details.database_type }}</strong></small></li>
+                                {% endif %}
+                                
+                                {% if health.components.storage.details.database_name %}
+                                <li><small>Database: {{ health.components.storage.details.database_name }}</small></li>
+                                {% endif %}
+                                
+                                {% if health.components.storage.details.mysql_version %}
+                                <li><small>Version: {{ health.components.storage.details.mysql_version }}</small></li>
+                                {% endif %}
+                                
+                                {% if health.components.storage.details.database_size_mb %}
+                                <li><small>DB Size: {{ health.components.storage.details.database_size_mb }}MB</small></li>
+                                {% endif %}
+                                
+                                {% if health.components.storage.details.table_count %}
+                                <li><small>Tables: {{ health.components.storage.details.table_count }}</small></li>
+                                {% endif %}
+                                
+                                {% if health.components.storage.details.active_connections %}
+                                <li><small>Connections: {{ health.components.storage.details.active_connections }}</small></li>
+                                {% endif %}
+                                
+                                <!-- Images Storage Information -->
+                                {% if health.components.storage.details.stored_images is defined %}
                                 <li><small>Stored Images: {{ health.components.storage.details.stored_images or 0 }}</small></li>
+                                {% endif %}
+                                
                                 {% if health.components.storage.details.stored_images_size %}
                                 <li><small>Images Size: {{ health.components.storage.details.stored_images_size }}</small></li>
                                 {% endif %}
+                                
                                 {% if health.components.storage.details.images_disk_free_gb %}
                                 <li><small>Images Disk Free: {{ health.components.storage.details.images_disk_free_gb }}GB</small></li>
                                 {% endif %}
+                                
+                                <!-- SQLite-specific information -->
                                 {% if health.components.storage.details.db_disk_free_gb %}
                                 <li><small>DB Disk Free: {{ health.components.storage.details.db_disk_free_gb }}GB</small></li>
                                 {% endif %}

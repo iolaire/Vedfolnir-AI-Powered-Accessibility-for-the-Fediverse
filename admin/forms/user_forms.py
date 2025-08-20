@@ -5,13 +5,12 @@
 """Admin User Management Forms"""
 
 from flask_wtf import FlaskForm
-# Import regular WTForms Form class (no Flask-WTF CSRF)
-from wtforms import Form, StringField, PasswordField, BooleanField, SelectField, HiddenField, SubmitField, TextAreaField
+from wtforms import StringField, PasswordField, BooleanField, SelectField, HiddenField, SubmitField, TextAreaField
 from wtforms.validators import DataRequired, Length, Email, EqualTo
 from models import UserRole
 
-class EditUserForm(Form):
-    """Form for editing an existing user""" # Using regular WTForms (no Flask-WTF CSRF)
+class EditUserForm(FlaskForm):
+    """Form for editing an existing user"""
     user_id = HiddenField('User ID')
     username = StringField('Username', validators=[DataRequired(), Length(min=3, max=64)])
     email = StringField('Email', validators=[DataRequired(), Email(), Length(max=120)])
@@ -26,13 +25,13 @@ class EditUserForm(Form):
     account_locked = BooleanField('Account Locked')
     submit = SubmitField('Save Changes')
 
-class DeleteUserForm(Form):
-    """Form for deleting a user""" # Using regular WTForms (no Flask-WTF CSRF)
+class DeleteUserForm(FlaskForm):
+    """Form for deleting a user"""
     user_id = HiddenField('User ID', validators=[DataRequired()])
     submit = SubmitField('Delete User')
 
-class AddUserForm(Form):
-    """Form for adding a new user""" # Using regular WTForms (no Flask-WTF CSRF)
+class AddUserForm(FlaskForm):
+    """Form for adding a new user"""
     username = StringField('Username', validators=[DataRequired(), Length(min=3, max=64)])
     email = StringField('Email', validators=[DataRequired(), Email(), Length(max=120)])
     first_name = StringField('First Name', validators=[Length(max=100)])
@@ -46,8 +45,8 @@ class AddUserForm(Form):
     send_notification = BooleanField('Send Welcome Email', default=True)
     submit = SubmitField('Add User')
 
-class ResetPasswordForm(Form):
-    """Form for admin password reset""" # Using regular WTForms (no Flask-WTF CSRF)
+class ResetPasswordForm(FlaskForm):
+    """Form for admin password reset"""
     user_id = HiddenField('User ID', validators=[DataRequired()])
     reset_method = SelectField('Reset Method', 
                               choices=[('email', 'Send temporary password via email'),
@@ -56,8 +55,8 @@ class ResetPasswordForm(Form):
     invalidate_sessions = BooleanField('Invalidate all existing user sessions', default=True)
     submit = SubmitField('Reset Password')
 
-class UserStatusForm(Form):
-    """Form for managing user status""" # Using regular WTForms (no Flask-WTF CSRF)
+class UserStatusForm(FlaskForm):
+    """Form for managing user status"""
     user_id = HiddenField('User ID', validators=[DataRequired()])
     is_active = BooleanField('Account Active')
     email_verified = BooleanField('Email Verified')
@@ -67,8 +66,8 @@ class UserStatusForm(Form):
     admin_notes = TextAreaField('Admin Notes', validators=[Length(max=500)])
     submit = SubmitField('Update Status')
 
-class RoleAssignmentForm(Form):
-    """Form for changing user roles""" # Using regular WTForms (no Flask-WTF CSRF)
+class RoleAssignmentForm(FlaskForm):
+    """Form for changing user roles"""
     user_id = HiddenField('User ID', validators=[DataRequired()])
     new_role = SelectField('New Role', 
                           choices=[(role.value, f"{role.value.capitalize()} - {role.name}") for role in UserRole],

@@ -20,6 +20,13 @@ from typing import List, Dict, Any, Optional
 
 Base = declarative_base()
 
+# MySQL-specific table options for utf8mb4 charset and proper collation
+mysql_table_args = {
+    'mysql_engine': 'InnoDB',
+    'mysql_charset': 'utf8mb4',
+    'mysql_collate': 'utf8mb4_unicode_ci'
+}
+
 class UserRole(Enum):
     ADMIN = "admin"
     MODERATOR = "moderator"
@@ -43,8 +50,9 @@ class TaskStatus(Enum):
 
 class Post(Base):
     __tablename__ = 'posts'
+    __table_args__ = mysql_table_args
     
-    id = Column(Integer, primary_key=True)
+    id = Column(Integer, primary_key=True, autoincrement=True)
     post_id = Column(String(500), nullable=False, index=True)
     user_id = Column(String(200), nullable=False)
     post_url = Column(String(500), nullable=False)
@@ -110,8 +118,9 @@ class Post(Base):
 
 class Image(Base):
     __tablename__ = 'images'
+    __table_args__ = mysql_table_args
     
-    id = Column(Integer, primary_key=True)
+    id = Column(Integer, primary_key=True, autoincrement=True)
     post_id = Column(Integer, ForeignKey('posts.id'), nullable=False)
     image_url = Column(String(1000), nullable=False)
     local_path = Column(String(500), nullable=False)
@@ -220,8 +229,9 @@ class Image(Base):
 
 class User(Base):
     __tablename__ = 'users'
+    __table_args__ = mysql_table_args
     
-    id = Column(Integer, primary_key=True)
+    id = Column(Integer, primary_key=True, autoincrement=True)
     username = Column(String(64), unique=True, nullable=False, index=True)
     email = Column(String(120), unique=True, nullable=False, index=True)
     password_hash = Column(String(256), nullable=False)
@@ -521,8 +531,9 @@ class User(Base):
 class UserAuditLog(Base):
     """Audit trail for user management actions"""
     __tablename__ = 'user_audit_log'
+    __table_args__ = mysql_table_args
     
-    id = Column(Integer, primary_key=True)
+    id = Column(Integer, primary_key=True, autoincrement=True)
     user_id = Column(Integer, ForeignKey('users.id'), nullable=True)
     action = Column(String(100), nullable=False)
     details = Column(Text, nullable=True)
@@ -557,8 +568,9 @@ class UserAuditLog(Base):
 class GDPRAuditLog(Base):
     """Audit trail specifically for GDPR compliance actions"""
     __tablename__ = 'gdpr_audit_log'
+    __table_args__ = mysql_table_args
     
-    id = Column(Integer, primary_key=True)
+    id = Column(Integer, primary_key=True, autoincrement=True)
     user_id = Column(Integer, ForeignKey('users.id'), nullable=True)
     action_type = Column(String(50), nullable=False)  # export, rectification, erasure, consent, etc.
     gdpr_article = Column(String(20), nullable=True)  # Article 15, 16, 17, etc.
@@ -620,8 +632,9 @@ class GDPRAuditLog(Base):
 
 class ProcessingRun(Base):
     __tablename__ = 'processing_runs'
+    __table_args__ = mysql_table_args
     
-    id = Column(Integer, primary_key=True)
+    id = Column(Integer, primary_key=True, autoincrement=True)
     user_id = Column(String(200), nullable=False)
     batch_id = Column(String(200), nullable=True)  # To group runs that are part of the same batch
     started_at = Column(DateTime, default=datetime.utcnow)
@@ -696,8 +709,9 @@ class ProcessingRun(Base):
 
 class PlatformConnection(Base):
     __tablename__ = 'platform_connections'
+    __table_args__ = mysql_table_args
     
-    id = Column(Integer, primary_key=True)
+    id = Column(Integer, primary_key=True, autoincrement=True)
     user_id = Column(Integer, ForeignKey('users.id'), nullable=False)
     name = Column(String(100), nullable=False)
     platform_type = Column(String(50), nullable=False)  # 'pixelfed', 'mastodon'
@@ -990,8 +1004,9 @@ class PlatformConnection(Base):
 class UserSession(Base):
     """User session tracking for platform-aware session management"""
     __tablename__ = 'user_sessions'
+    __table_args__ = mysql_table_args
     
-    id = Column(Integer, primary_key=True)
+    id = Column(Integer, primary_key=True, autoincrement=True)
     session_id = Column(String(255), unique=True, nullable=False, index=True)
     user_id = Column(Integer, ForeignKey('users.id'), nullable=False, index=True)
     active_platform_id = Column(Integer, ForeignKey('platform_connections.id'), nullable=True)
@@ -1249,8 +1264,9 @@ class CaptionGenerationTask(Base):
 
 class CaptionGenerationUserSettings(Base):
     __tablename__ = 'caption_generation_user_settings'
+    __table_args__ = mysql_table_args
     
-    id = Column(Integer, primary_key=True)
+    id = Column(Integer, primary_key=True, autoincrement=True)
     user_id = Column(Integer, ForeignKey('users.id'), nullable=False)
     platform_connection_id = Column(Integer, ForeignKey('platform_connections.id'), nullable=False)
     max_posts_per_run = Column(Integer, default=50)

@@ -39,21 +39,38 @@ class DatabaseManager:
         self.config = config
         db_config = config.storage.db_config
         
-        # Configure SQLAlchemy engine with optimized settings for SQLite
+        # Configure SQLAlchemy engine with database-specific settings
         engine_kwargs = {
             'echo': False,
             'pool_pre_ping': True,
             'pool_recycle': db_config.pool_recycle,
         }
         
-        # For SQLite, use different connection settings
+        # Database-specific configuration
         if 'sqlite' in config.storage.database_url:
+            # SQLite configuration
             engine_kwargs.update({
                 'poolclass': None,  # Disable connection pooling for SQLite
                 'connect_args': {
                     'check_same_thread': False,
                     'timeout': 30,  # 30 second timeout for SQLite
                     'isolation_level': None,  # Enable autocommit mode
+                }
+            })
+        elif 'mysql' in config.storage.database_url:
+            # MySQL configuration with connection pooling and charset
+            engine_kwargs.update({
+                'poolclass': QueuePool,
+                'pool_size': db_config.pool_size,
+                'max_overflow': db_config.max_overflow,
+                'pool_timeout': db_config.pool_timeout,
+                'connect_args': {
+                    'charset': 'utf8mb4',
+                    'use_unicode': True,
+                    'autocommit': False,
+                    'connect_timeout': 60,
+                    'read_timeout': 60,
+                    'write_timeout': 60,
                 }
             })
         else:

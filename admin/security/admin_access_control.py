@@ -77,7 +77,7 @@ def admin_required(f):
                     
                     # Update Redis session with admin context
                     try:
-                        unified_session_manager.update_session_data(session_id, {
+                        unified_session_manager.update_session(session_id, {
                             'admin_context': admin_context
                         })
                         logger.debug(f"Stored admin context in Redis session {session_id}")
@@ -138,14 +138,14 @@ def admin_session_preservation(f):
                 
                 if session_id:
                     # Backup current Redis session state
-                    session_context = unified_session_manager.get_session_context(session_id)
-                    if session_context:
+                    session_data = unified_session_manager.get_session_data(session_id)
+                    if session_data:
                         admin_session_backup = {
                             'session_id': session_id,
-                            'user_id': session_context.get('user_id'),
-                            'platform_connection_id': session_context.get('platform_connection_id'),
-                            'admin_context': session_context.get('admin_context'),
-                            'session_data': session_context.copy()
+                            'user_id': session_data.get('user_id'),
+                            'platform_connection_id': session_data.get('platform_connection_id'),
+                            'admin_context': session_data.get('admin_context'),
+                            'session_data': session_data.copy()
                         }
                         logger.debug(f"Backed up admin session state for session {session_id}")
                 else:
@@ -160,8 +160,8 @@ def admin_session_preservation(f):
             if admin_session_backup and unified_session_manager:
                 try:
                     session_id = admin_session_backup['session_id']
-                    # Restore the session context
-                    unified_session_manager.update_session_context(
+                    # Restore the session data
+                    unified_session_manager.update_session(
                         session_id, 
                         admin_session_backup['session_data']
                     )
@@ -178,7 +178,7 @@ def admin_session_preservation(f):
             if admin_session_backup and unified_session_manager:
                 try:
                     session_id = admin_session_backup['session_id']
-                    unified_session_manager.update_session_context(
+                    unified_session_manager.update_session(
                         session_id, 
                         admin_session_backup['session_data']
                     )
@@ -368,8 +368,8 @@ def admin_context_processor():
                         from redis_session_middleware import get_current_session_id
                         session_id = get_current_session_id()
                         if session_id:
-                            session_context = unified_session_manager.get_session_context(session_id)
-                            admin_session_context = session_context.get('admin_context') if session_context else None
+                            session_data = unified_session_manager.get_session_data(session_id)
+                            admin_session_context = session_data.get('admin_context') if session_data else None
                 except Exception as e:
                     logger.debug(f"Could not get admin context from Redis session: {e}")
                 

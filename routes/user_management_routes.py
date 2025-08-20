@@ -95,7 +95,7 @@ def register():
     
     form = UserRegistrationForm()
     
-    if form.validate_on_submit():
+    if validate_form_submission(form):
         # Get client information for audit logging
         ip_address = get_client_ip()
         user_agent = get_user_agent()
@@ -451,7 +451,7 @@ def forgot_password():
     
     form = PasswordResetRequestForm()
     
-    if form.validate_on_submit():
+    if validate_form_submission(form):
         # Get client information for audit logging
         ip_address = get_client_ip()
         user_agent = get_user_agent()
@@ -533,7 +533,7 @@ def reset_password(token):
             # Token is valid, show reset form
             form = PasswordResetForm()
             
-            if form.validate_on_submit():
+            if validate_form_submission(form):
                 # Reset password
                 reset_success, reset_message, reset_user = password_service.reset_password(
                     token=token,
@@ -578,7 +578,7 @@ def change_password():
     """Password change for authenticated users"""
     form = PasswordChangeForm()
     
-    if form.validate_on_submit():
+    if validate_form_submission(form):
         # Get client information for audit logging
         ip_address = get_client_ip()
         user_agent = get_user_agent()
@@ -722,7 +722,7 @@ def edit_profile():
                     flash(f'Failed to load profile data: {message}', 'error')
                     return redirect(url_for('user_management.profile'))
             
-            elif form.validate_on_submit():
+            elif validate_form_submission(form):
                 # Update profile
                 profile_data = {
                     'first_name': form.first_name.data,
@@ -777,7 +777,7 @@ def delete_profile():
     ip_address = get_client_ip()
     user_agent = get_user_agent()
     
-    if form.validate_on_submit():
+    if validate_form_submission(form):
         try:
             # Use request-scoped session manager for database operations
             request_session_manager = RequestScopedSessionManager(current_app.config['db_manager'])

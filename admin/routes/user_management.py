@@ -15,6 +15,13 @@ from ..forms.user_forms import EditUserForm, DeleteUserForm, AddUserForm, ResetP
 from ..services.user_service import UserService
 from ..security.admin_access_control import admin_required, admin_session_preservation, admin_user_management_access, ensure_admin_count
 
+def validate_form_submission(form):
+    """
+    Manual form validation replacement for validate_on_submit()
+    Since we're using regular WTForms instead of Flask-WTF
+    """
+    return request.method == 'POST' and form.validate()
+
 def register_routes(bp):
     """Register user management routes"""
     
@@ -114,7 +121,7 @@ def register_routes(bp):
             return jsonify({'success': False, 'error': 'Access denied'}), 403
             
         form = EditUserForm()
-        if form.validate_on_submit():
+        if validate_form_submission(form):
             db_manager = current_app.config['db_manager']
             session_manager = current_app.config.get('session_manager')
             user_service = UserService(db_manager, session_manager)
@@ -153,7 +160,7 @@ def register_routes(bp):
             return jsonify({'success': False, 'error': 'Access denied'}), 403
             
         form = DeleteUserForm()
-        if form.validate_on_submit():
+        if validate_form_submission(form):
             if int(form.user_id.data) == current_user.id:
                 flash('You cannot delete your own account', 'error')
                 return redirect(url_for('admin.user_management'))
@@ -197,7 +204,7 @@ def register_routes(bp):
             
         form = AddUserForm()
         
-        if form.validate_on_submit():
+        if validate_form_submission(form):
             db_manager = current_app.config['db_manager']
             session_manager = current_app.config.get('session_manager')
             user_service = UserService(db_manager, session_manager)

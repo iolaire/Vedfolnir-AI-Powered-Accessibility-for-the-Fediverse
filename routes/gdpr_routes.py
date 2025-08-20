@@ -19,6 +19,13 @@ from forms.gdpr_forms import (
     ConsentManagementForm, PrivacyRequestForm, GDPRComplianceReportForm,
     DataPortabilityForm
 )
+
+def validate_form_submission(form):
+    """
+    Manual form validation replacement for validate_on_submit()
+    Since we're using regular WTForms instead of Flask-WTF
+    """
+    return request.method == 'POST' and form.validate()
 from services.gdpr_service import GDPRDataSubjectService, GDPRPrivacyService
 from services.user_management_service import UserProfileService
 from request_scoped_session_manager import RequestScopedSessionManager
@@ -43,7 +50,7 @@ def data_export():
     """Handle personal data export requests (GDPR Article 20)"""
     form = DataExportRequestForm()
     
-    if form.validate_on_submit():
+    if validate_form_submission(form):
         try:
             request_session_manager = RequestScopedSessionManager(current_app.config['db_manager'])
             
@@ -133,7 +140,7 @@ def data_rectification():
         form.last_name.data = current_user.last_name
         form.email.data = current_user.email
     
-    if form.validate_on_submit():
+    if validate_form_submission(form):
         try:
             request_session_manager = RequestScopedSessionManager(current_app.config['db_manager'])
             
@@ -185,7 +192,7 @@ def data_erasure():
     """Handle data erasure requests (GDPR Article 17)"""
     form = DataErasureRequestForm()
     
-    if form.validate_on_submit():
+    if validate_form_submission(form):
         try:
             request_session_manager = RequestScopedSessionManager(current_app.config['db_manager'])
             
@@ -244,7 +251,7 @@ def consent_management():
         form.data_processing_consent.data = current_user.data_processing_consent
         # Add other consent fields as they are implemented
     
-    if form.validate_on_submit():
+    if validate_form_submission(form):
         try:
             request_session_manager = RequestScopedSessionManager(current_app.config['db_manager'])
             
@@ -294,7 +301,7 @@ def privacy_request():
     """Handle general privacy requests"""
     form = PrivacyRequestForm()
     
-    if form.validate_on_submit():
+    if validate_form_submission(form):
         try:
             request_session_manager = RequestScopedSessionManager(current_app.config['db_manager'])
             
@@ -331,7 +338,7 @@ def compliance_report():
     """Generate GDPR compliance report"""
     form = GDPRComplianceReportForm()
     
-    if form.validate_on_submit():
+    if validate_form_submission(form):
         try:
             request_session_manager = RequestScopedSessionManager(current_app.config['db_manager'])
             
@@ -376,7 +383,7 @@ def data_portability():
     """Handle data portability requests (GDPR Article 20)"""
     form = DataPortabilityForm()
     
-    if form.validate_on_submit():
+    if validate_form_submission(form):
         try:
             request_session_manager = RequestScopedSessionManager(current_app.config['db_manager'])
             

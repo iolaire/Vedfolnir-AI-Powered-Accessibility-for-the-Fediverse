@@ -836,7 +836,40 @@ def logout_all():
     
     # Create response with cleared session cookie
     response = make_response(redirect(url_for('user_management.login')))
-    session_cookie_manager.clear_session_cookie(response)
+    
+    # Clear session cookie based on session type
+    session_cookie_manager = getattr(app, 'session_cookie_manager', None)
+    if session_cookie_manager:
+        # Using fallback session manager - clear cookie
+        session_cookie_manager.clear_session_cookie(response)
+        app.logger.debug("Cleared session cookie using session_cookie_manager")
+    else:
+        # Using Redis sessions - clear Flask session and Redis session
+        from flask import session
+        session.clear()
+        
+        # Clear Redis session if we have a session ID
+        try:
+            from redis_session_middleware import get_current_session_id
+            current_session_id = get_current_session_id()
+            if current_session_id and hasattr(unified_session_manager, 'destroy_session'):
+                unified_session_manager.destroy_session(current_session_id)
+                app.logger.debug(f"Destroyed Redis session: {current_session_id}")
+        except Exception as redis_error:
+            app.logger.warning(f"Could not clear Redis session: {redis_error}")
+        
+        # Clear the session cookie manually for Redis sessions
+        response.set_cookie(
+            app.config.get('SESSION_COOKIE_NAME', 'session'),
+            '',
+            expires=0,
+            path=app.config.get('SESSION_COOKIE_PATH', '/'),
+            domain=app.config.get('SESSION_COOKIE_DOMAIN'),
+            secure=app.config.get('SESSION_COOKIE_SECURE', False),
+            httponly=app.config.get('SESSION_COOKIE_HTTPONLY', True),
+            samesite=app.config.get('SESSION_COOKIE_SAMESITE', 'Lax')
+        )
+        app.logger.debug("Cleared session cookie manually for Redis sessions")
     
     return response
 

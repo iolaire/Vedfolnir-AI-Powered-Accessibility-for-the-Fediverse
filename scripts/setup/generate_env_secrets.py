@@ -84,6 +84,41 @@ def create_admin_user(username, email, password):
         print(f"   ❌ Error creating admin user: {e}")
         return False
 
+def generate_redis_password():
+    """Generate a secure Redis password"""
+    return secrets.token_urlsafe(16)
+
+def test_mysql_connection(host, port, user, password, database, socket_path=None):
+    """Test MySQL connection with provided credentials"""
+    try:
+        import pymysql
+        
+        connect_args = {
+            'user': user,
+            'password': password,
+            'database': database,
+            'charset': 'utf8mb4'
+        }
+        
+        if socket_path:
+            connect_args['unix_socket'] = socket_path
+        else:
+            connect_args['host'] = host
+            connect_args['port'] = int(port)
+        
+        connection = pymysql.connect(**connect_args)
+        connection.close()
+        return True, "Connection successful"
+    except ImportError:
+        return False, "PyMySQL not installed. Run: pip install pymysql"
+    except Exception as e:
+        return False, str(e)
+
+def url_encode_password(password):
+    """URL encode password for database URL"""
+    import urllib.parse
+    return urllib.parse.quote(password, safe='')
+
 def main():
     print("🔐 Vedfolnir Environment Secrets Generator")
     print("=" * 50)
@@ -116,10 +151,118 @@ def main():
     flask_secret = generate_flask_secret_key()
     encryption_key = generate_platform_encryption_key()
     admin_password = generate_secure_password()
+    redis_password = generate_redis_password()
+    
+    # Database Configuration
+    print("Database Configuration:")
+    print("Choose database type:")
+    print("1. SQLite (default, good for development)")
+    print("2. MySQL/MariaDB (recommended for production)")
+    
+    while True:
+        db_choice = input("Enter choice (1-2) [1]: ").strip() or '1'
+        if db_choice in ['1', '2']:
+            break
+        print("Invalid choice. Please enter 1 or 2.")
+    
+    database_settings = {}
+    if db_choice == '2':
+        print("\nMySQL/MariaDB Configuration:")
+        
+        # Connection method
+        print("Choose connection method:")
+        print("1. Unix socket (recommended for local installations)")
+        print("2. TCP/IP (host and port)")
+        
+        while True:
+            conn_choice = input("Enter choice (1-2) [1]: ").strip() or '1'
+            if conn_choice in ['1', '2']:
+                break
+            print("Invalid choice. Please enter 1 or 2.")
+        
+        database_settings['DB_TYPE'] = 'mysql'
+        database_settings['DB_NAME'] = input("Database name (default: vedfolnir): ").strip() or "vedfolnir"
+        database_settings['DB_USER'] = input("Database username: ").strip()
+        
+        if not database_settings['DB_USER']:
+            print("Error: Database username is required")
+            sys.exit(1)
+        
+        database_settings['DB_PASSWORD'] = input("Database password: ").strip()
+        
+        if not database_settings['DB_PASSWORD']:
+            print("Error: Database password is required")
+            sys.exit(1)
+        
+        if conn_choice == '1':
+            # Unix socket
+            default_socket = "/tmp/mysql.sock"
+            database_settings['DB_UNIX_SOCKET'] = input(f"Unix socket path (default: {default_socket}): ").strip() or default_socket
+            
+            # Build connection URL for unix socket
+            encoded_password = url_encode_password(database_settings['DB_PASSWORD'])
+            database_settings['DATABASE_URL'] = f"mysql+pymysql://{database_settings['DB_USER']}:{encoded_password}@localhost/{database_settings['DB_NAME']}?unix_socket={database_settings['DB_UNIX_SOCKET']}&charset=utf8mb4"
+            
+            # Test connection
+            print("Testing MySQL connection...")
+            success, message = test_mysql_connection(
+                None, None, 
+                database_settings['DB_USER'], 
+                database_settings['DB_PASSWORD'], 
+                database_settings['DB_NAME'],
+                database_settings['DB_UNIX_SOCKET']
+            )
+            
+        else:
+            # TCP/IP
+            database_settings['DB_HOST'] = input("Database host (default: localhost): ").strip() or "localhost"
+            database_settings['DB_PORT'] = input("Database port (default: 3306): ").strip() or "3306"
+            
+            # Build connection URL for TCP/IP
+            encoded_password = url_encode_password(database_settings['DB_PASSWORD'])
+            database_settings['DATABASE_URL'] = f"mysql+pymysql://{database_settings['DB_USER']}:{encoded_password}@{database_settings['DB_HOST']}:{database_settings['DB_PORT']}/{database_settings['DB_NAME']}?charset=utf8mb4"
+            
+            # Test connection
+            print("Testing MySQL connection...")
+            success, message = test_mysql_connection(
+                database_settings['DB_HOST'], 
+                database_settings['DB_PORT'],
+                database_settings['DB_USER'], 
+                database_settings['DB_PASSWORD'], 
+                database_settings['DB_NAME']
+            )
+        
+        if success:
+            print("✅ MySQL connection successful!")
+        else:
+            print(f"❌ MySQL connection failed: {message}")
+            print("You can continue setup and fix the connection later.")
+            continue_anyway = input("Continue with setup anyway? (y/N): ").strip().lower()
+            if continue_anyway != 'y':
+                print("Setup aborted. Please fix MySQL connection and try again.")
+                sys.exit(1)
+        
+        # MySQL performance settings
+        print("\nMySQL Performance Settings:")
+        database_settings['DB_POOL_SIZE'] = input("Connection pool size (default: 20): ").strip() or "20"
+        database_settings['DB_MAX_OVERFLOW'] = input("Max overflow connections (default: 50): ").strip() or "50"
+        database_settings['DB_POOL_TIMEOUT'] = input("Pool timeout seconds (default: 30): ").strip() or "30"
+        database_settings['DB_POOL_RECYCLE'] = input("Pool recycle seconds (default: 3600): ").strip() or "3600"
+        
+    else:
+        # SQLite
+        database_settings = {
+            'DB_TYPE': 'sqlite',
+            'DATABASE_URL': 'sqlite:///storage/database/vedfolnir.db',
+            'DB_POOL_SIZE': '50',
+            'DB_MAX_OVERFLOW': '100',
+            'DB_POOL_TIMEOUT': '30',
+            'DB_POOL_RECYCLE': '1800'
+        }
     
     # Get Ollama configuration from user
-    print("Ollama Configuration:")
-    ollama_url = input("Ollama URL (default: http://10.0.0.1:11434): ").strip() or "http://10.0.0.1:11434"
+    print("\nOllama Configuration:")
+    ollama_url = input("Ollama URL (default: http://localhost:11434): ").strip() or "http://localhost:11434"
     ollama_model = input("Ollama model (default: llava:7b): ").strip() or "llava:7b"
     
     # Get email configuration from user
@@ -187,25 +330,40 @@ def main():
     # Get Redis configuration
     print("\nRedis Configuration:")
     print("Configure Redis for session management (recommended for production)")
-    configure_redis = input("Configure Redis settings? (Y/n) (default: Y): ").strip().lower() != 'n' or "Y"
+    configure_redis = input("Configure Redis settings? (Y/n) (default: Y): ").strip().lower() != 'n'
     
     redis_settings = {}
     if configure_redis:
         redis_settings['REDIS_HOST'] = input("Redis host (default: localhost): ").strip() or "localhost"
         redis_settings['REDIS_PORT'] = input("Redis port (default: 6379): ").strip() or "6379"
         redis_settings['REDIS_DB'] = input("Redis database number (default: 0): ").strip() or "0"
-        redis_settings['REDIS_PASSWORD'] = input("Redis password: ").strip() 
+        
+        # Ask if they want to use a password
+        use_redis_password = input("Use Redis password? (Y/n): ").strip().lower() != 'n'
+        if use_redis_password:
+            custom_password = input(f"Redis password (press Enter to generate: {redis_password[:8]}...): ").strip()
+            redis_settings['REDIS_PASSWORD'] = custom_password or redis_password
+        else:
+            redis_settings['REDIS_PASSWORD'] = ""
+        
         redis_settings['REDIS_SSL'] = input("Use SSL? (y/N): ").strip().lower() == 'y'
         redis_settings['SESSION_STORAGE'] = 'redis'
+        
+        # Build Redis URL
+        if redis_settings['REDIS_PASSWORD']:
+            redis_settings['REDIS_URL'] = f"redis://:{redis_settings['REDIS_PASSWORD']}@{redis_settings['REDIS_HOST']}:{redis_settings['REDIS_PORT']}/{redis_settings['REDIS_DB']}"
+        else:
+            redis_settings['REDIS_URL'] = f"redis://{redis_settings['REDIS_HOST']}:{redis_settings['REDIS_PORT']}/{redis_settings['REDIS_DB']}"
     else:
         # Set default Redis settings but use database for sessions
         redis_settings = {
             'REDIS_HOST': 'localhost',
             'REDIS_PORT': '6379',
             'REDIS_DB': '0',
-            'REDIS_PASSWORD': 'redis password',
+            'REDIS_PASSWORD': redis_password,
             'REDIS_SSL': False,
-            'SESSION_STORAGE': 'database'
+            'SESSION_STORAGE': 'database',
+            'REDIS_URL': f'redis://:{redis_password}@localhost:6379/0'
         }
     
     # Get admin details from user
@@ -229,6 +387,27 @@ def main():
     print(f"  Admin Username: {admin_username}")
     print(f"  Admin Email: {admin_email}")
     print(f"  Admin Password: {admin_password[:8]}... (24 chars)")
+    
+    # Show database configuration
+    if database_settings.get('DB_TYPE') == 'mysql':
+        print(f"  Database: MySQL - {database_settings['DB_NAME']}")
+        print(f"  DB User: {database_settings['DB_USER']}")
+        if 'DB_UNIX_SOCKET' in database_settings:
+            print(f"  Connection: Unix socket ({database_settings['DB_UNIX_SOCKET']})")
+        else:
+            print(f"  Connection: TCP/IP ({database_settings.get('DB_HOST', 'localhost')}:{database_settings.get('DB_PORT', '3306')})")
+    else:
+        print(f"  Database: SQLite")
+    
+    # Show Redis configuration
+    if configure_redis:
+        print(f"  Redis: {redis_settings['REDIS_HOST']}:{redis_settings['REDIS_PORT']}")
+        if redis_settings['REDIS_PASSWORD']:
+            print(f"  Redis Password: {redis_settings['REDIS_PASSWORD'][:8]}... ({len(redis_settings['REDIS_PASSWORD'])} chars)")
+        else:
+            print(f"  Redis Password: (none)")
+    
+    # Show email configuration
     if configure_email:
         print(f"  Email Server: {email_settings['MAIL_SERVER']}:{email_settings['MAIL_PORT']}")
         print(f"  Email Username: {email_settings['MAIL_USERNAME']}")
@@ -260,12 +439,76 @@ def main():
                 f"OLLAMA_MODEL={ollama_model}"
             )
             
-            # Apply security settings
+            # Update database configuration
             import re
+            if database_settings.get('DB_TYPE') == 'mysql':
+                # Replace DATABASE_URL
+                env_content = re.sub(
+                    r'^DATABASE_URL=.*$',
+                    f'DATABASE_URL={database_settings["DATABASE_URL"]}',
+                    env_content, flags=re.MULTILINE
+                )
+                
+                # Add MySQL-specific settings if not present
+                mysql_config_lines = []
+                if 'DB_TYPE=' not in env_content:
+                    mysql_config_lines.extend([
+                        f'DB_TYPE={database_settings["DB_TYPE"]}',
+                        f'DB_NAME={database_settings["DB_NAME"]}',
+                        f'DB_USER={database_settings["DB_USER"]}',
+                        f'DB_PASSWORD={database_settings["DB_PASSWORD"]}'
+                    ])
+                    
+                    if 'DB_UNIX_SOCKET' in database_settings:
+                        mysql_config_lines.append(f'DB_UNIX_SOCKET={database_settings["DB_UNIX_SOCKET"]}')
+                    else:
+                        mysql_config_lines.extend([
+                            f'DB_HOST={database_settings.get("DB_HOST", "localhost")}',
+                            f'DB_PORT={database_settings.get("DB_PORT", "3306")}'
+                        ])
+                    
+                    mysql_config_lines.extend([
+                        f'DB_POOL_SIZE={database_settings["DB_POOL_SIZE"]}',
+                        f'DB_MAX_OVERFLOW={database_settings["DB_MAX_OVERFLOW"]}',
+                        f'DB_POOL_TIMEOUT={database_settings["DB_POOL_TIMEOUT"]}',
+                        f'DB_POOL_RECYCLE={database_settings["DB_POOL_RECYCLE"]}'
+                    ])
+                    
+                    # Insert MySQL config after DATABASE_URL line
+                    mysql_config = '\n' + '\n'.join(mysql_config_lines) + '\n'
+                    env_content = re.sub(
+                        r'(^DATABASE_URL=.*$)',
+                        r'\1' + mysql_config,
+                        env_content, flags=re.MULTILINE
+                    )
+            
+            # Update Redis configuration
+            if 'REDIS_URL=' in env_content:
+                env_content = re.sub(
+                    r'^REDIS_URL=.*$',
+                    f'REDIS_URL={redis_settings["REDIS_URL"]}',
+                    env_content, flags=re.MULTILINE
+                )
+            
+            if 'REDIS_PASSWORD=' in env_content:
+                env_content = re.sub(
+                    r'^REDIS_PASSWORD=.*$',
+                    f'REDIS_PASSWORD={redis_settings["REDIS_PASSWORD"]}',
+                    env_content, flags=re.MULTILINE
+                )
+            
+            # Apply security settings
             for setting, value in security_settings.items():
                 pattern = f'^{setting}=.*$'
                 replacement = f'{setting}={value}'
                 env_content = re.sub(pattern, replacement, env_content, flags=re.MULTILINE)
+            
+            # Update email settings
+            for setting, value in email_settings.items():
+                if f'{setting}=' in env_content:
+                    pattern = f'^{setting}=.*$'
+                    replacement = f'{setting}={value}'
+                    env_content = re.sub(pattern, replacement, env_content, flags=re.MULTILINE)
             
             # Add email settings if not already present
             if 'MAIL_SERVER=' not in env_content:
@@ -281,6 +524,51 @@ MAIL_DEFAULT_SENDER={email_settings['MAIL_DEFAULT_SENDER']}
                 env_content += email_config
         else:
             # Create a basic .env file
+            database_config = ""
+            if database_settings.get('DB_TYPE') == 'mysql':
+                database_config = f"""
+# Database Configuration - MySQL
+DB_TYPE={database_settings['DB_TYPE']}
+DB_NAME={database_settings['DB_NAME']}
+DB_USER={database_settings['DB_USER']}
+DB_PASSWORD={database_settings['DB_PASSWORD']}"""
+                
+                if 'DB_UNIX_SOCKET' in database_settings:
+                    database_config += f"\nDB_UNIX_SOCKET={database_settings['DB_UNIX_SOCKET']}"
+                else:
+                    database_config += f"""
+DB_HOST={database_settings.get('DB_HOST', 'localhost')}
+DB_PORT={database_settings.get('DB_PORT', '3306')}"""
+                
+                database_config += f"""
+DATABASE_URL={database_settings['DATABASE_URL']}
+
+# Database Performance Configuration
+DB_POOL_SIZE={database_settings['DB_POOL_SIZE']}
+DB_MAX_OVERFLOW={database_settings['DB_MAX_OVERFLOW']}
+DB_POOL_TIMEOUT={database_settings['DB_POOL_TIMEOUT']}
+DB_POOL_RECYCLE={database_settings['DB_POOL_RECYCLE']}"""
+            else:
+                database_config = f"""
+# Database Configuration - SQLite
+DATABASE_URL={database_settings['DATABASE_URL']}
+
+# Database Performance Configuration
+DB_POOL_SIZE={database_settings['DB_POOL_SIZE']}
+DB_MAX_OVERFLOW={database_settings['DB_MAX_OVERFLOW']}
+DB_POOL_TIMEOUT={database_settings['DB_POOL_TIMEOUT']}
+DB_POOL_RECYCLE={database_settings['DB_POOL_RECYCLE']}"""
+            
+            redis_config = f"""
+# Redis Configuration
+REDIS_URL={redis_settings['REDIS_URL']}
+REDIS_HOST={redis_settings['REDIS_HOST']}
+REDIS_PORT={redis_settings['REDIS_PORT']}
+REDIS_DB={redis_settings['REDIS_DB']}
+REDIS_PASSWORD={redis_settings['REDIS_PASSWORD']}
+REDIS_SSL={'true' if redis_settings.get('REDIS_SSL') else 'false'}
+SESSION_STORAGE={redis_settings['SESSION_STORAGE']}"""
+            
             env_content = f"""# Vedfolnir Configuration
 # Generated automatically - DO NOT COMMIT TO VERSION CONTROL
 
@@ -294,8 +582,9 @@ PLATFORM_ENCRYPTION_KEY={encryption_key}
 FLASK_HOST=127.0.0.1
 FLASK_PORT=5000
 FLASK_DEBUG=false
-DATABASE_URL=sqlite:///storage/database/vedfolnir.db
 LOG_LEVEL=INFO
+{database_config}
+{redis_config}
 
 # Ollama Configuration
 OLLAMA_URL={ollama_url}
@@ -334,16 +623,47 @@ MAIL_DEFAULT_SENDER={email_settings['MAIL_DEFAULT_SENDER']}
         
         print()
         print("Next steps:")
-        print("1. Start the application:")
+        
+        if database_settings.get('DB_TYPE') == 'mysql':
+            print("1. Ensure MySQL/MariaDB is running and accessible")
+            print("2. Install MySQL connector: pip install pymysql")
+            print("3. Start the application:")
+        else:
+            print("1. Start the application:")
+        
         print("   python web_app.py")
         print()
         print("2. Log in with your admin credentials:")
         print(f"   Username: {admin_username}")
         print(f"   Password: {admin_password}")
         print()
+        
+        if database_settings.get('DB_TYPE') == 'mysql':
+            print("3. The application will automatically create MySQL tables on first startup")
+            print()
+        
         print("⚠️  IMPORTANT: Save your admin password securely!")
         print("   Consider using a password manager.")
         print()
+        
+        if database_settings.get('DB_TYPE') == 'mysql':
+            print("📋 Database Information:")
+            print(f"   Type: MySQL/MariaDB")
+            print(f"   Database: {database_settings['DB_NAME']}")
+            print(f"   User: {database_settings['DB_USER']}")
+            if 'DB_UNIX_SOCKET' in database_settings:
+                print(f"   Connection: Unix socket ({database_settings['DB_UNIX_SOCKET']})")
+            else:
+                print(f"   Connection: {database_settings.get('DB_HOST')}:{database_settings.get('DB_PORT')}")
+            print()
+        
+        if configure_redis and redis_settings['REDIS_PASSWORD']:
+            print("🔑 Redis Information:")
+            print(f"   Host: {redis_settings['REDIS_HOST']}:{redis_settings['REDIS_PORT']}")
+            print(f"   Password: {redis_settings['REDIS_PASSWORD']}")
+            print("   Make sure Redis is running with authentication enabled")
+            print()
+        
         print("📖 For more information, see: docs/security/environment-setup.md")
         
     except Exception as e:

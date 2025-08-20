@@ -117,13 +117,33 @@ def register_routes(bp):
             # Simple storage check
             try:
                 import os
-                storage_dirs = ['storage', 'storage/database', 'storage/images']
-                storage_healthy = all(os.path.exists(d) for d in storage_dirs)
-                if storage_healthy:
-                    health_status['components']['storage'] = 'healthy'
+                
+                # Check database type and connection
+                database_url = os.getenv('DATABASE_URL', 'sqlite:///storage/database/vedfolnir.db')
+                
+                if database_url.startswith('mysql'):
+                    # For MySQL, test the database connection itself
+                    try:
+                        session = db_manager.get_session()
+                        try:
+                            from sqlalchemy import text
+                            session.execute(text("SELECT 1"))
+                            health_status['components']['storage'] = 'healthy'
+                        finally:
+                            session.close()
+                    except Exception as e:
+                        health_status['components']['storage'] = f'unhealthy: MySQL connection failed - {str(e)}'
+                        health_status['status'] = 'degraded'
                 else:
-                    health_status['components']['storage'] = 'degraded'
-                    health_status['status'] = 'degraded'
+                    # For SQLite, check directories
+                    storage_dirs = ['storage', 'storage/database', 'storage/images']
+                    storage_healthy = all(os.path.exists(d) for d in storage_dirs)
+                    if storage_healthy:
+                        health_status['components']['storage'] = 'healthy'
+                    else:
+                        health_status['components']['storage'] = 'degraded'
+                        health_status['status'] = 'degraded'
+                        
             except Exception as e:
                 health_status['components']['storage'] = f'unhealthy: {str(e)}'
                 health_status['status'] = 'degraded'
