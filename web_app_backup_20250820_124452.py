@@ -40,8 +40,8 @@ from activitypub_client import ActivityPubClient
 from ollama_caption_generator import OllamaCaptionGenerator
 from caption_quality_assessment import CaptionQualityManager
 from health_check import HealthChecker
-# Use new Redis session middleware V2 for session context
-from session_middleware_v2 import get_current_session_context, get_current_session_id, get_current_user_id, update_session_platform
+# Use Redis session middleware directly instead of deprecated compatibility layer
+from redis_session_middleware import get_current_session_context
 # Removed Flask session manager imports - using database sessions only
 from request_scoped_session_manager import RequestScopedSessionManager
 from session_aware_user import SessionAwareUser
@@ -75,52 +75,29 @@ app.config['SQLALCHEMY_DATABASE_URI'] = config.storage.database_url
 app.config['SQLALCHEMY_TRACK_MODIFICATIONS'] = False
 
 
-# Initialize Redis Session Management System
-from flask_redis_session_interface import FlaskRedisSessionInterface
-from redis_session_backend import RedisSessionBackend
+# Define a NullSessionInterface to completely disable Flask's default session management
+from flask.sessions import SessionInterface, SessionMixin
+from werkzeug.datastructures import CallbackDict
 
-# Initialize Redis session backend
-try:
-    redis_backend = RedisSessionBackend.from_env()
-    app.logger.info("Redis session backend initialized successfully")
-    
-    # Set up Flask Redis session interface
-    redis_session_interface = FlaskRedisSessionInterface(
-        redis_client=redis_backend.redis,
-        key_prefix=os.getenv('REDIS_SESSION_PREFIX', 'vedfolnir:session:'),
-        session_timeout=int(os.getenv('REDIS_SESSION_TIMEOUT', '7200'))
-    )
-    app.session_interface = redis_session_interface
-    app.logger.info("Flask Redis session interface configured")
-    
-    # Store Redis backend for later use
-    app.redis_backend = redis_backend
-    
-except Exception as e:
-    app.logger.error(f"Failed to initialize Redis session system: {e}")
-    app.logger.warning("Falling back to NullSessionInterface")
-    
-    # Fallback to NullSessionInterface if Redis fails
-    from flask.sessions import SessionInterface, SessionMixin
-    from werkzeug.datastructures import CallbackDict
+class NullSession(CallbackDict, SessionMixin):
+    def __init__(self, initial=None):
+        def on_update(self):
+            self.modified = True
+        CallbackDict.__init__(self, initial, on_update)
+        self.permanent = False
+        self.new = True
+        self.modified = False
 
-    class NullSession(CallbackDict, SessionMixin):
-        def __init__(self, initial=None):
-            def on_update(self):
-                self.modified = True
-            CallbackDict.__init__(self, initial, on_update)
-            self.permanent = False
-            self.new = True
-            self.modified = False
+class NullSessionInterface(SessionInterface):
+    def open_session(self, app, request):
+        return NullSession()
+    def save_session(self, app, session, response):
+        pass
 
-    class NullSessionInterface(SessionInterface):
-        def open_session(self, app, request):
-            return NullSession()
-        def save_session(self, app, session, response):
-            pass
+# Set Flask's session interface to NullSessionInterface to prevent it from setting cookies
+app.session_interface = NullSessionInterface()
 
-    app.session_interface = NullSessionInterface()
-    app.redis_backend = None
+app.logger.info("Flask's default session management has been disabled.")
 
 
 
@@ -144,11 +121,6 @@ else:
 
 # Exempt session heartbeat from CSRF protection
 # Note: CSRF exemptions are applied after route registration
-
-# Initialize pre-authentication session handler for CSRF tokens
-from pre_auth_session import PreAuthSessionHandler
-pre_auth_handler = PreAuthSessionHandler(app)
-app.logger.info("Pre-authentication session handler initialized for CSRF tokens")
 
 # Initialize enhanced CSRF token manager
 from security.core.csrf_token_manager import initialize_csrf_token_manager
@@ -274,8 +246,10 @@ health_checker = HealthChecker(config, db_manager)
 app.config['health_checker'] = health_checker
 
 # Initialize session management system
-from session_manager_v2 import SessionManagerV2
-from session_middleware_v2 import SessionMiddleware
+from session_factory import create_session_manager
+from session_cookie_manager import create_session_cookie_manager
+# Redis session middleware replaces database session middleware
+from redis_session_middleware import get_current_session_id
 from session_security import create_session_security_manager
 from session_monitoring import SessionMonitor
 
@@ -285,49 +259,27 @@ session_monitor = SessionMonitor(db_manager)
 # Create session security manager
 session_security_manager = create_session_security_manager(app.config, db_manager)
 
-# Create Redis-based session manager
-if hasattr(app, 'redis_backend') and app.redis_backend:
-    unified_session_manager = SessionManagerV2(
-        db_manager=db_manager,
-        redis_backend=app.redis_backend,
-        session_timeout=int(os.getenv('REDIS_SESSION_TIMEOUT', '7200'))
-    )
-    app.logger.info("Redis-based session manager initialized")
-else:
-    # Fallback to old session manager if Redis not available
-    from session_factory import create_session_manager
-    unified_session_manager = create_session_manager(
-        db_manager=db_manager, 
-        security_manager=session_security_manager,
-        monitor=session_monitor
-    )
-    app.logger.warning("Using fallback session manager (Redis not available)")
+# Create session manager (Redis or Database based on configuration)
+unified_session_manager = create_session_manager(
+    db_manager=db_manager, 
+    security_manager=session_security_manager,
+    monitor=session_monitor
+)
 
 # Store unified_session_manager on app object for direct access
 app.unified_session_manager = unified_session_manager
-app.session_manager = unified_session_manager  # For compatibility
 
-# Initialize session middleware
-if hasattr(app, 'redis_backend') and app.redis_backend:
-    session_middleware = SessionMiddleware(app, unified_session_manager)
-    app.logger.info("Redis session middleware initialized")
-else:
-    # Keep existing cookie manager for fallback
-    from session_cookie_manager import create_session_cookie_manager
-    session_cookie_manager = create_session_cookie_manager(app.config)
-    app.session_cookie_manager = session_cookie_manager
-    app.logger.info("Using fallback session cookie manager")
+# Create session cookie manager
+session_cookie_manager = create_session_cookie_manager(app.config)
+app.session_cookie_manager = session_cookie_manager
+
+# Redis session middleware is handled through unified_session_manager
+# No separate middleware initialization needed - Redis sessions are managed directly
 
 # Initialize session error handler
 from session_error_handling import create_session_error_handler
-if hasattr(app, 'redis_backend') and app.redis_backend:
-    # For Redis sessions, we don't need the old session cookie manager
-    session_error_handler = None
-    app.logger.info("Session error handler skipped for Redis sessions")
-else:
-    # For fallback sessions, use the session cookie manager
-    session_error_handler = create_session_error_handler(session_cookie_manager)
-    app.session_error_handler = session_error_handler
+session_error_handler = create_session_error_handler(session_cookie_manager)
+app.session_error_handler = session_error_handler
 
 # Add CORS headers for API endpoints
 @app.after_request
@@ -408,31 +360,13 @@ app.config['session_manager'] = unified_session_manager  # For backward compatib
 from redis_platform_manager import get_redis_platform_manager
 import os
 encryption_key = os.getenv('PLATFORM_ENCRYPTION_KEY', 'default-key-change-in-production')
-
-if hasattr(app, 'redis_backend') and app.redis_backend:
-    # Use Redis backend's client for platform manager
-    redis_platform_manager = get_redis_platform_manager(
-        app.redis_backend.redis, 
-        db_manager, 
-        encryption_key
-    )
-    app.logger.info("Redis platform manager initialized with Redis backend")
-else:
-    # Fallback: try to get redis_client from unified_session_manager if available
-    redis_client = getattr(unified_session_manager, 'redis_client', None)
-    if redis_client:
-        redis_platform_manager = get_redis_platform_manager(
-            redis_client, 
-            db_manager, 
-            encryption_key
-        )
-        app.logger.info("Redis platform manager initialized with fallback client")
-    else:
-        redis_platform_manager = None
-        app.logger.warning("Redis platform manager not initialized - no Redis client available")
-
-if redis_platform_manager:
-    app.config['redis_platform_manager'] = redis_platform_manager
+redis_platform_manager = get_redis_platform_manager(
+    unified_session_manager.redis_client, 
+    db_manager, 
+    encryption_key
+)
+app.config['redis_platform_manager'] = redis_platform_manager
+app.logger.info("Redis platform manager initialized")
 
 # Register session health routes
 register_session_health_routes(app)
@@ -547,13 +481,46 @@ def load_user(user_id):
     Load user for Flask-Login using Redis session data.
     This integrates Flask-Login with our Redis session management system.
     """
+    # During login process, Redis session might not be available via cookie yet
+    # Try to get user from Redis session first, but handle gracefully if not available
+    try:
+        from redis_session_middleware import get_current_session_context
+        session_context = get_current_session_context()
+        
+        if session_context and session_context.get('user_id'):
+            redis_user_id = session_context.get('user_id')
+            app.logger.debug(f"Loading user from Redis session: {redis_user_id}")
+            
+            # Use request-scoped session to prevent DetachedInstanceError
+            with request_session_manager.session_scope() as session:
+                user = session.query(User).options(
+                    joinedload(User.platform_connections),
+                    joinedload(User.sessions)
+                ).filter(
+                    User.id == redis_user_id,
+                    User.is_active == True
+                ).first()
+                
+                if user:
+                    app.logger.debug(f"User loaded from Redis session: {user.username} (ID: {user.id})")
+                    return SessionAwareUser(user, request_session_manager)
+                else:
+                    app.logger.warning(f"User {redis_user_id} from Redis session not found or inactive")
+                    return None
+    
+    except Exception as e:
+        # This is normal during login process when Redis session cookie isn't set yet
+        app.logger.debug(f"Could not load user from Redis session (normal during login): {e}")
+    
+    # Flask-Login fallback removed as part of Redis session refactor.
+    
     try:
         user_id_int = int(user_id)
     except (ValueError, TypeError):
         app.logger.warning(f"Invalid user_id format: {sanitize_for_log(str(user_id))}")
         return None
     
-    app.logger.debug(f"Loading user with Flask-Login ID: {user_id_int}")
+    app.logger.debug(f"Loading user with Flask-Login ID: {user_id_int} (fallback mode)")
     
     try:
         # Use request-scoped session to prevent DetachedInstanceError
@@ -1963,7 +1930,7 @@ def switch_platform(platform_id):
                 app.logger.error(f"Error handling active caption generation task during platform switch: {sanitize_for_log(str(e))}")
             
             # Update Redis session platform context
-            # Using imported update_session_platform function
+            from redis_session_middleware import get_current_session_id, update_session_platform
             success = update_session_platform(platform_id)
             
             if success:
@@ -2123,7 +2090,7 @@ def api_add_platform():
         if is_first_platform:
             try:
                 # Create or update Redis session using unified session manager
-                # Using imported get_current_session_id and update_session_platform functions
+                from redis_session_middleware import get_current_session_id, update_session_platform
                 session_id = get_current_session_id()
                 db_session_success = False
                 
@@ -2202,7 +2169,7 @@ def api_switch_platform(platform_id):
     app.logger.info(f"DEBUG: Current user ID={getattr(current_user, 'id', 'N/A')}")
     
     # DEBUG: Check session ID retrieval
-    # Using imported get_current_session_id function
+    from redis_session_middleware import get_current_session_id
     session_id = get_current_session_id()
     app.logger.info(f"DEBUG: get_current_session_id() returned: {session_id}")
     
@@ -2250,7 +2217,7 @@ def api_switch_platform(platform_id):
             app.logger.error(f"Error handling active caption generation task during platform switch: {sanitize_for_log(str(e))}")
         
         # Update Redis session platform context
-        # Using imported update_session_platform function
+        from redis_session_middleware import update_session_platform
         session_updated = update_session_platform(platform_id)
         
         # Also set as default platform in database for persistence
@@ -2551,7 +2518,7 @@ def api_session_notify_logout():
     try:
         # This endpoint can be called without authentication since it's for logout notification
         # Get user info from Redis session if available
-        # Using imported get_current_user_id function
+        from redis_session_middleware import get_current_user_id
         user_id = get_current_user_id()
         
         # Redis sessions are cleared through the unified session manager
@@ -3666,7 +3633,7 @@ def api_terminate_session(session_id):
     try:
         # For now, we only support terminating the current session
         # In a full implementation, you'd validate session ownership and terminate specific sessions
-        # Using imported get_current_session_id function
+        from redis_session_middleware import get_current_session_id
         current_session_id = get_current_session_id()
         if session_id == 'current' or session_id == current_session_id:
             # Destroy current Redis session

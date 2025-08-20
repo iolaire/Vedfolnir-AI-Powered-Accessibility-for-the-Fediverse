@@ -25,3 +25,4 @@ python-dotenv>=1.0.0
 nltk>=3.8.1
 language-tool-python>=2.7.1
 redis>=4.5.0
+pymysql>=1.1.0

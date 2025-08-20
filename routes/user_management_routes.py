@@ -354,16 +354,22 @@ def login():
                         )
                         
                         if session_success and session_id:
-                            # Set session cookie (Redis session only, no Flask session)
+                            # Log in the user with Flask-Login (this will use our custom user loader)
+                            login_user(user, remember=form.remember_me.data)
+                            
+                            # Ensure Flask session is marked as modified to trigger save
+                            from flask import session as flask_session
+                            flask_session.permanent = True
+                            flask_session.modified = True
+                            
+                            # Debug: Check what Flask-Login stored in session
+                            current_app.logger.info(f"Flask session after login_user: {dict(flask_session)}")
+                            
+                            # Flask Redis session interface handles session cookies automatically
                             response = make_response(redirect(
                                 request.args.get('next') if request.args.get('next') and request.args.get('next').startswith('/') 
                                 else url_for('index')
                             ))
-                            
-                            current_app.session_cookie_manager.set_session_cookie(response, session_id)
-                            
-                            # Log in the user with Flask-Login (this will use our custom user loader)
-                            login_user(user, remember=form.remember_me.data)
                             
                             # Success message
                             flash(f'Welcome back, {username}!', 'success')
@@ -606,7 +612,9 @@ def change_password():
                     try:
                         session_manager = getattr(current_app, 'unified_session_manager', None)
                         if session_manager:
-                            current_session_id = current_app.session_cookie_manager.get_session_id_from_cookie()
+                            # Get current session ID from Redis session
+                            from session_middleware_v2 import get_current_session_id
+                            current_session_id = get_current_session_id()
                             session_manager.cleanup_user_sessions(current_user.id, keep_current=current_session_id)
                             logger.info(f"Invalidated other sessions for user {sanitize_for_log(current_user.username)} after password change")
                     except Exception as e:
@@ -629,34 +637,27 @@ def change_password():
 def logout():
     """User logout with Redis session cleanup"""
     try:
-        # Get Redis session ID from cookie
-        from redis_session_middleware import get_current_session_id
+        # Use new session middleware for logout
+        from session_middleware_v2 import destroy_current_session
         
-        session_id = get_current_session_id()
+        # Destroy current session (handles both Redis and Flask session)
+        session_destroyed = destroy_current_session()
         
-        if session_id:
-            # Clean up Redis session
-            current_app.unified_session_manager.end_session(session_id)
-            logger.info(f"Redis session {sanitize_for_log(session_id)} ended for user {sanitize_for_log(current_user.username)}")
+        if session_destroyed:
+            logger.info(f"Session destroyed for user {sanitize_for_log(current_user.username)}")
         
         # Log out from Flask-Login
         logout_user()
         
-        # Clear session cookie
-        response = make_response(redirect(url_for('user_management.login')))
-        current_app.session_cookie_manager.clear_session_cookie(response)
-        
         flash('You have been logged out successfully.', 'info')
-        return response
+        return redirect(url_for('user_management.login'))
         
     except Exception as e:
         logger.error(f"Error during logout: {e}")
         # Still log out even if session cleanup fails
         logout_user()
-        response = make_response(redirect(url_for('user_management.login')))
-        current_app.session_cookie_manager.clear_session_cookie(response)
         flash('You have been logged out.', 'info')
-        return response
+        return redirect(url_for('user_management.login'))
 
 
 @user_management_bp.route('/profile')
@@ -746,7 +747,7 @@ def edit_profile():
                         # Log out user if email changed to force re-verification
                         logout_user()
                         response = make_response(redirect(url_for('user_management.login')))
-                        current_app.session_cookie_manager.clear_session_cookie(response)
+                        # Flask Redis session interface handles session cleanup automatically
                         return response
                     else:
                         flash('Profile updated successfully!', 'success')
@@ -822,7 +823,7 @@ def delete_profile():
                     # Log out user immediately
                     logout_user()
                     response = make_response(redirect(url_for('user_management.login')))
-                    current_app.session_cookie_manager.clear_session_cookie(response)
+                    # Flask Redis session interface handles session cleanup automatically
                     
                     flash(
                         f'Your profile has been completely deleted. All your data has been removed from the system. '

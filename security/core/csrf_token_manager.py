@@ -225,29 +225,35 @@ class CSRFTokenManager:
             return {'error': f'Failed to extract token info: {e}'}
     
     def _get_current_session_id(self) -> str:
-        """Get current session ID from Redis session, never from Flask sessions
+        """Get current session ID for CSRF tokens
         
         Returns:
-            Current Redis session ID or request-based ID
+            Session ID suitable for CSRF token generation/validation
         """
         try:
-            # ALWAYS try Redis session first, never use Flask sessions
-            from redis_session_middleware import get_current_session_id
-            session_id = get_current_session_id()
+            # First try Redis session (for authenticated users)
+            from session_middleware_v2 import get_current_session_id
+            redis_session_id = get_current_session_id()
             
-            if session_id:
-                # Verify this is not a Flask session ID
-                if session_id.startswith('.eJ') or session_id.startswith('eyJ'):
-                    logger.warning(f"Detected Flask session ID in Redis middleware: {session_id[:20]}... - using request-based ID instead")
-                    return self._generate_request_based_id()
-                return session_id
-            else:
-                # No Redis session available - use request-based ID for CSRF protection
-                logger.debug("No Redis session ID found, using request-based ID for CSRF token")
-                return self._generate_request_based_id()
+            if redis_session_id and not redis_session_id.startswith('.eJ') and not redis_session_id.startswith('eyJ'):
+                return redis_session_id
+            
+            # For unauthenticated users, use Flask session cookie ID
+            from flask import request, current_app
+            cookie_name = getattr(current_app, 'session_cookie_name', 
+                                current_app.config.get('SESSION_COOKIE_NAME', 'session'))
+            flask_session_id = request.cookies.get(cookie_name)
+            
+            if flask_session_id:
+                # Use the Flask session cookie ID directly (without prefix for consistency)
+                return flask_session_id
+            
+            # No session available - generate request-based ID
+            logger.debug("No session ID available, using request-based ID for CSRF token")
+            return self._generate_request_based_id()
+            
         except Exception as e:
-            logger.error(f"Failed to get Redis session ID: {e}")
-            # Always fallback to request-based ID, never Flask sessions
+            logger.error(f"Failed to get session ID for CSRF: {e}")
             return self._generate_request_based_id()
     
     def _generate_request_based_id(self) -> str:
@@ -364,11 +370,23 @@ class CSRFValidationContext:
         self.token_source: Optional[str] = None  # 'form', 'header', 'meta'
     
     def _get_session_id(self) -> str:
-        """Get session ID for context from Redis session"""
+        """Get session ID for context"""
         try:
-            from redis_session_middleware import get_current_session_id
-            session_id = get_current_session_id()
-            return session_id if session_id else 'no-session'
+            # Try Redis session first
+            from session_middleware_v2 import get_current_session_id
+            redis_session_id = get_current_session_id()
+            if redis_session_id and not redis_session_id.startswith('.eJ') and not redis_session_id.startswith('eyJ'):
+                return redis_session_id
+            
+            # Fallback to Flask session cookie (without prefix for consistency)
+            from flask import request, current_app
+            cookie_name = getattr(current_app, 'session_cookie_name', 
+                                current_app.config.get('SESSION_COOKIE_NAME', 'session'))
+            flask_session_id = request.cookies.get(cookie_name)
+            if flask_session_id:
+                return flask_session_id
+            
+            return 'no-session'
         except Exception:
             return 'unknown-session'
     
