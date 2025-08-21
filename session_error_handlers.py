@@ -442,7 +442,8 @@ def register_session_error_handlers(app, session_manager, detached_instance_hand
                     
                     # For platform-dependent endpoints, validate platform context
                     # Note: health_dashboard is admin-only and doesn't require platform context
-                    if request.endpoint in ['review', 'batch_review', 'caption_generation']:
+                    # Note: caption_generation now handles platform context via global template context processor
+                    if request.endpoint in ['review', 'batch_review']:
                         try:
                             from redis_session_middleware import get_current_session_context
                             context = get_current_session_context()

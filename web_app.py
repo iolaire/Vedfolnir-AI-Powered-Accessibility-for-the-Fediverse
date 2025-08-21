@@ -404,6 +404,14 @@ app.config['session_alerting_system'] = session_alerting_system
 app.config['db_manager'] = db_manager
 app.config['session_manager'] = unified_session_manager  # For backward compatibility
 
+# Register debug routes (temporary for troubleshooting)
+try:
+    from debug_session_routes import register_debug_routes
+    register_debug_routes(app)
+    app.logger.info("Debug session routes registered")
+except ImportError:
+    app.logger.info("Debug session routes not available")
+
 # Initialize Redis platform manager
 from redis_platform_manager import get_redis_platform_manager
 import os
@@ -1842,87 +1850,28 @@ def update_platform_media_description(image_data, platform_config):
 @require_viewer_or_higher
 @with_session_error_handling
 def platform_management():
-    """Platform management interface with Redis caching"""
+    """Platform management interface using shared platform identification"""
     try:
-        # Get Redis platform manager for caching
-        redis_platform_manager = app.config.get('redis_platform_manager')
+        from platform_utils.platform_identification import identify_user_platform
         
-        # Try Redis cache first
-        if redis_platform_manager:
-            try:
-                user_platforms = redis_platform_manager.get_user_platforms(current_user.id)
-                current_platform = redis_platform_manager.get_default_platform(current_user.id)
-                platform_stats = {}
-                
-                if current_platform:
-                    platform_stats = redis_platform_manager.get_platform_stats(
-                        current_user.id, 
-                        current_platform['id']
-                    )
-                
-                # Convert dict platforms back to objects for template compatibility
-                class PlatformObj:
-                    def __init__(self, data):
-                        for key, value in data.items():
-                            setattr(self, key, value)
-                
-                platform_objects = [PlatformObj(p) for p in user_platforms]
-                current_platform_obj = PlatformObj(current_platform) if current_platform else None
-                
-                return render_template('platform_management.html', 
-                                     platforms=platform_objects,
-                                     current_platform=current_platform_obj,
-                                     platform_stats=platform_stats)
-                                     
-            except Exception as redis_error:
-                app.logger.warning(f"Redis platform cache failed, falling back to database: {redis_error}")
+        # Use shared 5-step platform identification
+        result = identify_user_platform(
+            current_user.id,
+            app.config.get('redis_platform_manager'),
+            db_manager,
+            include_stats=True
+        )
         
-        # Fallback to database with proper session management
-        session = db_manager.get_session()
-        try:
-            # Get user's platform connections using role-based filtering
-            platforms_query = session.query(PlatformConnection).filter_by(is_active=True)
-            platforms_query = filter_platforms_for_user(platforms_query)
-            user_platforms = platforms_query.order_by(PlatformConnection.is_default.desc(), PlatformConnection.name).all()
-            
-            # Get current platform (default or first available)
-            current_platform = None
-            for platform in user_platforms:
-                if platform.is_default:
-                    current_platform = platform
-                    break
-            if not current_platform and user_platforms:
-                current_platform = user_platforms[0]
-            
-            # Get platform statistics if we have a current platform
-            platform_stats = {}
-            if current_platform:
-                user_summary = db_manager.get_user_platform_summary(current_user.id)
-                platform_stats = {
-                    'total_images': user_summary.get('total_images', 0),
-                    'total_posts': user_summary.get('total_posts', 0),
-                    'platform_name': current_platform.name,
-                    'platform_type': current_platform.platform_type
-                }
-            
-            # Cache in Redis for next time
-            if redis_platform_manager:
-                try:
-                    redis_platform_manager.load_user_platforms_to_redis(current_user.id)
-                except Exception as cache_error:
-                    app.logger.warning(f"Failed to cache platforms in Redis: {cache_error}")
-            
-            return render_template('platform_management.html', 
-                                 platforms=user_platforms,
-                                 current_platform=current_platform,
-                                 platform_stats=platform_stats)
-                                 
-        finally:
-            db_manager.close_session(session)
-            
+        # Platform management always shows the interface, even if no platforms
+        # (unlike other routes that redirect when no platform is found)
+        return render_template('platform_management.html', 
+                             platforms=result.user_platforms or [],
+                             current_platform=result.current_platform,
+                             platform_stats=result.platform_stats or {})
+                             
     except Exception as e:
         app.logger.error(f"Error in platform management: {sanitize_for_log(str(e))}")
-        flash('Error loading platform management. Please try again.', 'error')
+        flash('An error occurred while loading platform management.', 'error')
         return redirect(url_for('index'))
         for platform_info in user_summary['platforms']:
             if platform_info['id'] == current_platform.id:
@@ -2727,22 +2676,23 @@ class CaptionSettingsForm(Form):
                                 default=1.0)
     submit = SubmitField('Save Settings')
 
+# Test route to verify routing works
+@app.route('/test_route')
+def test_route():
+    return "Test route works!"
+
 # Caption Generation Routes
 @app.route('/caption_generation')
 @login_required
-@platform_required
 @rate_limit(limit=10, window_seconds=60)
 @with_session_error_handling
 def caption_generation():
-    """Caption generation page"""
+    """Caption generation page - relies on global template context processor for platform data"""
     try:
-        # Get current platform context
-        context = get_current_session_context()
-        if not context or not context.get('platform_connection_id'):
-            flash('No active platform connection found.', 'error')
-            return redirect(url_for('platform_management'))
-        
-        platform_connection_id = context['platform_connection_id']
+        # The global template context processor (@app.context_processor) already provides:
+        # - current_platform: from platform_stats.get('default_platform')
+        # - user_platforms: from platform_stats.get('platforms', [])
+        # So we don't need to do platform identification here!
         
         # Initialize caption generation service
         caption_service = WebCaptionGenerationService(db_manager)
@@ -2763,43 +2713,206 @@ def caption_generation():
         except Exception as e:
             app.logger.error(f"Error getting task history: {sanitize_for_log(str(e))}")
         
-        # Get user's current settings using Redis platform manager
+        # Get user's current settings - we need to get the current platform ID from session context
         user_settings = None
-        try:
-            # Use Redis platform manager for both platform data and user settings
-            platform_data = redis_platform_manager.get_platform_by_id(platform_connection_id, current_user.id)
-            if not platform_data:
-                app.logger.warning(f"Platform {platform_connection_id} not found in Redis cache for user {current_user.id}")
-                flash('Platform connection not found.', 'error')
-                return redirect(url_for('platform_management'))
+        context = get_current_session_context()
+        platform_connection_id = context.get('platform_connection_id') if context else None
+        
+        if platform_connection_id:
+            try:
+                redis_platform_manager = app.config.get('redis_platform_manager')
+                if redis_platform_manager:
+                    user_settings_dict = redis_platform_manager.get_user_settings(current_user.id, platform_connection_id)
+                    if user_settings_dict:
+                        # Convert to dataclass if needed
+                        from models import CaptionGenerationUserSettings
+                        # Create a mock settings record to use the to_settings_dataclass method
+                        mock_settings = CaptionGenerationUserSettings()
+                        for key, value in user_settings_dict.items():
+                            if hasattr(mock_settings, key):
+                                setattr(mock_settings, key, value)
+                        user_settings = mock_settings.to_settings_dataclass()
+                        app.logger.debug(f"Retrieved user settings from Redis for user {current_user.id}, platform {platform_connection_id}")
+                    else:
+                        app.logger.info(f"No user settings found for user {current_user.id}, platform {platform_connection_id}")
+                
+            except Exception as e:
+                app.logger.error(f"Error getting user settings from Redis: {sanitize_for_log(str(e))}")
             
-            # Get user settings from Redis (with database fallback)
-            user_settings_dict = redis_platform_manager.get_user_settings(current_user.id, platform_connection_id)
-            if user_settings_dict:
-                # Convert to dataclass if needed
-                from models import CaptionGenerationUserSettings
-                # Create a mock settings record to use the to_settings_dataclass method
-                mock_settings = CaptionGenerationUserSettings()
-                for key, value in user_settings_dict.items():
-                    if hasattr(mock_settings, key):
-                        setattr(mock_settings, key, value)
-                user_settings = mock_settings.to_settings_dataclass()
-                app.logger.debug(f"Retrieved user settings from Redis for user {current_user.id}, platform {platform_connection_id}")
-            else:
-                app.logger.info(f"No user settings found for user {current_user.id}, platform {platform_connection_id}")
-                
+            # Fallback to database if Redis settings lookup failed
+            if not user_settings:
+                try:
+                    with unified_session_manager.get_db_session() as session:
+                        from models import CaptionGenerationUserSettings
+                        user_settings_record = session.query(CaptionGenerationUserSettings).filter_by(
+                            user_id=current_user.id,
+                            platform_connection_id=platform_connection_id
+                        ).first()
+                        
+                        if user_settings_record:
+                            user_settings = user_settings_record.to_settings_dataclass()
+                except Exception as e:
+                    app.logger.error(f"Error getting user settings from database: {sanitize_for_log(str(e))}")
+        
+        # Create form with current settings
+        form = CaptionGenerationForm(request.form if request.method == 'POST' else None)
+        if user_settings:
+            form.max_posts_per_run.data = user_settings.max_posts_per_run
+            form.max_caption_length.data = user_settings.max_caption_length
+            form.optimal_min_length.data = user_settings.optimal_min_length
+            form.optimal_max_length.data = user_settings.optimal_max_length
+            form.reprocess_existing.data = user_settings.reprocess_existing
+            form.processing_delay.data = user_settings.processing_delay
+        
+        return render_template('caption_generation.html',
+                             form=form,
+                             active_task=active_task,
+                             task_history=task_history,
+                             user_settings=user_settings)
+                             
+    except Exception as e:
+        app.logger.error(f"Error loading caption generation page: {sanitize_for_log(str(e))}")
+        flash('An error occurred while loading the caption generation page.', 'error')
+        return redirect(url_for('index'))
+        
+        # Initialize caption generation service
+        caption_service = WebCaptionGenerationService(db_manager)
+        
+        # Check if user has an active task
+        active_task = caption_service.task_queue_manager.get_user_active_task(current_user.id)
+        
+        # Get user's task history
+        task_history = []
+        try:
+            import asyncio
+            loop = asyncio.new_event_loop()
+            asyncio.set_event_loop(loop)
+            task_history = loop.run_until_complete(
+                caption_service.get_user_task_history(current_user.id, limit=5)
+            )
+            loop.close()
         except Exception as e:
-            app.logger.error(f"Error getting platform data/settings from Redis: {sanitize_for_log(str(e))}")
-            # Fallback to database if Redis fails
-            with unified_session_manager.get_db_session() as session:
-                from models import CaptionGenerationUserSettings
-                user_settings_record = session.query(CaptionGenerationUserSettings).filter_by(
-                    user_id=current_user.id,
-                    platform_connection_id=platform_connection_id
-                ).first()
-                
-                if user_settings_record:
-                    user_settings = user_settings_record.to_settings_dataclass()
+            app.logger.error(f"Error getting task history: {sanitize_for_log(str(e))}")
+        
+        # Get user's current settings using the platform we already identified
+        user_settings = None
+        redis_platform_manager = app.config.get('redis_platform_manager')
+        
+        try:
+            # We already have the platform data from our identification, so use it directly
+            # Get user settings from Redis (with database fallback)
+            if redis_platform_manager:
+                user_settings_dict = redis_platform_manager.get_user_settings(current_user.id, platform_connection_id)
+                if user_settings_dict:
+                    # Convert to dataclass if needed
+                    from models import CaptionGenerationUserSettings
+                    # Create a mock settings record to use the to_settings_dataclass method
+                    mock_settings = CaptionGenerationUserSettings()
+                    for key, value in user_settings_dict.items():
+                        if hasattr(mock_settings, key):
+                            setattr(mock_settings, key, value)
+                    user_settings = mock_settings.to_settings_dataclass()
+                    app.logger.debug(f"Retrieved user settings from Redis for user {current_user.id}, platform {platform_connection_id}")
+                else:
+                    app.logger.info(f"No user settings found for user {current_user.id}, platform {platform_connection_id}")
+            
+        except Exception as e:
+            app.logger.error(f"Error getting user settings from Redis: {sanitize_for_log(str(e))}")
+        
+        # Fallback to database if Redis settings lookup failed
+        if not user_settings:
+            try:
+                with unified_session_manager.get_db_session() as session:
+                    from models import CaptionGenerationUserSettings
+                    user_settings_record = session.query(CaptionGenerationUserSettings).filter_by(
+                        user_id=current_user.id,
+                        platform_connection_id=platform_connection_id
+                    ).first()
+                    
+                    if user_settings_record:
+                        user_settings = user_settings_record.to_settings_dataclass()
+            except Exception as e:
+                app.logger.error(f"Error getting user settings from database: {sanitize_for_log(str(e))}")
+        
+        # Create form with current settings
+        form = CaptionGenerationForm(request.form if request.method == 'POST' else None)
+        if user_settings:
+            form.max_posts_per_run.data = user_settings.max_posts_per_run
+            form.max_caption_length.data = user_settings.max_caption_length
+            form.optimal_min_length.data = user_settings.optimal_min_length
+            form.optimal_max_length.data = user_settings.optimal_max_length
+            form.reprocess_existing.data = user_settings.reprocess_existing
+            form.processing_delay.data = user_settings.processing_delay
+        
+        return render_template('caption_generation.html',
+                             form=form,
+                             active_task=active_task,
+                             task_history=task_history,
+                             user_settings=user_settings)
+                             
+    except Exception as e:
+        app.logger.error(f"Error loading caption generation page: {sanitize_for_log(str(e))}")
+        flash('An error occurred while loading the caption generation page.', 'error')
+        return redirect(url_for('index'))
+        
+        # Initialize caption generation service
+        caption_service = WebCaptionGenerationService(db_manager)
+        
+        # Check if user has an active task
+        active_task = caption_service.task_queue_manager.get_user_active_task(current_user.id)
+        
+        # Get user's task history
+        task_history = []
+        try:
+            import asyncio
+            loop = asyncio.new_event_loop()
+            asyncio.set_event_loop(loop)
+            task_history = loop.run_until_complete(
+                caption_service.get_user_task_history(current_user.id, limit=5)
+            )
+            loop.close()
+        except Exception as e:
+            app.logger.error(f"Error getting task history: {sanitize_for_log(str(e))}")
+        
+        # Get user's current settings using the platform we already identified
+        user_settings = None
+        redis_platform_manager = app.config.get('redis_platform_manager')
+        
+        try:
+            # We already have the platform data from our identification, so use it directly
+            # Get user settings from Redis (with database fallback)
+            if redis_platform_manager:
+                user_settings_dict = redis_platform_manager.get_user_settings(current_user.id, platform_connection_id)
+                if user_settings_dict:
+                    # Convert to dataclass if needed
+                    from models import CaptionGenerationUserSettings
+                    # Create a mock settings record to use the to_settings_dataclass method
+                    mock_settings = CaptionGenerationUserSettings()
+                    for key, value in user_settings_dict.items():
+                        if hasattr(mock_settings, key):
+                            setattr(mock_settings, key, value)
+                    user_settings = mock_settings.to_settings_dataclass()
+                    app.logger.debug(f"Retrieved user settings from Redis for user {current_user.id}, platform {platform_connection_id}")
+                else:
+                    app.logger.info(f"No user settings found for user {current_user.id}, platform {platform_connection_id}")
+            
+        except Exception as e:
+            app.logger.error(f"Error getting user settings from Redis: {sanitize_for_log(str(e))}")
+        
+        # Fallback to database if Redis settings lookup failed
+        if not user_settings:
+            try:
+                with unified_session_manager.get_db_session() as session:
+                    from models import CaptionGenerationUserSettings
+                    user_settings_record = session.query(CaptionGenerationUserSettings).filter_by(
+                        user_id=current_user.id,
+                        platform_connection_id=platform_connection_id
+                    ).first()
+                    
+                    if user_settings_record:
+                        user_settings = user_settings_record.to_settings_dataclass()
+            except Exception as e:
+                app.logger.error(f"Error getting user settings from database: {sanitize_for_log(str(e))}")
         
         # Create form with current settings
         form = CaptionGenerationForm(request.form if request.method == 'POST' else None)

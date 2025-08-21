@@ -55,7 +55,34 @@ class SessionMiddleware:
                 # Store session ID in g for easy access
                 g.session_id = session_id
                 
-                # Create session context from Flask session data
+                # Get fresh session data from Redis to ensure consistency
+                fresh_session_data = None
+                if self.session_manager and hasattr(self.session_manager, 'get_session_data'):
+                    try:
+                        fresh_session_data = self.session_manager.get_session_data(session_id)
+                        if fresh_session_data:
+                            logger.debug(f"Retrieved fresh session data from Redis: {fresh_session_data}")
+                            
+                            # Update Flask session with fresh data if there are discrepancies
+                            platform_keys = ['platform_connection_id', 'platform_name', 'platform_type', 'platform_instance_url']
+                            session_updated = False
+                            
+                            for key in platform_keys:
+                                if key in fresh_session_data:
+                                    flask_value = session.get(key)
+                                    redis_value = fresh_session_data[key]
+                                    if flask_value != redis_value:
+                                        logger.info(f"Syncing Flask session {key}: {flask_value} -> {redis_value}")
+                                        session[key] = redis_value
+                                        session_updated = True
+                            
+                            if session_updated:
+                                session.modified = True
+                                logger.info("Flask session updated with fresh Redis data")
+                    except Exception as e:
+                        logger.debug(f"Could not get fresh session data from Redis: {e}")
+                
+                # Create session context from Flask session data (with Redis sync)
                 g.session_context = {
                     'session_id': session_id,
                     'user_id': session.get('user_id'),
@@ -74,9 +101,12 @@ class SessionMiddleware:
                 # Remove None values
                 g.session_context = {k: v for k, v in g.session_context.items() if v is not None}
                 
+                logger.debug(f"Session context created: {g.session_context}")
+                
             else:
                 g.session_id = None
                 g.session_context = None
+                logger.debug("No session ID found, cleared session context")
                 
         except Exception as e:
             logger.debug(f"Error in session middleware before_request: {e}")
@@ -164,7 +194,7 @@ def get_current_platform_info() -> Optional[Dict[str, Any]]:
 
 def update_session_platform(platform_connection_id: int) -> bool:
     """
-    Update current session's platform context
+    Update current session's platform context with improved error handling
     
     Args:
         platform_connection_id: New platform connection ID
@@ -173,38 +203,80 @@ def update_session_platform(platform_connection_id: int) -> bool:
         True if successful, False otherwise
     """
     try:
+        logger.info(f"Starting platform update to {platform_connection_id}")
+        
         session_id = get_current_session_id()
         if not session_id:
+            logger.error("No current session ID found")
             return False
+        
+        logger.info(f"Current session ID: {session_id}")
         
         # Get session manager from app
         session_manager = getattr(current_app, 'session_manager', None)
         if not session_manager:
+            logger.error("No session manager found in app")
             return False
         
-        # Switch platform in session manager
+        # First, update the Redis session manager
+        logger.info("Updating Redis session manager...")
         success = session_manager.switch_platform(session_id, platform_connection_id)
         
-        if success:
-            # Update Flask session data (will be automatically saved by session interface)
-            session_data = session_manager.get_session_data(session_id)
-            if session_data:
-                # Update Flask session with new platform data
-                for key in ['platform_connection_id', 'platform_name', 'platform_type', 'platform_instance_url']:
-                    if key in session_data:
-                        session[key] = session_data[key]
-                
-                # Update g.session_context for current request
-                if hasattr(g, 'session_context') and g.session_context:
-                    g.session_context.update({
-                        k: v for k, v in session_data.items() 
-                        if k.startswith('platform_')
-                    })
+        if not success:
+            logger.error("Failed to update Redis session manager")
+            return False
         
-        return success
+        logger.info("Redis session manager updated successfully")
+        
+        # Get updated session data from Redis
+        session_data = session_manager.get_session_data(session_id)
+        if not session_data:
+            logger.error("Failed to get updated session data from Redis")
+            return False
+        
+        logger.info(f"Retrieved session data: {session_data}")
+        
+        # Update Flask session with new platform data
+        platform_keys = ['platform_connection_id', 'platform_name', 'platform_type', 'platform_instance_url']
+        updated_keys = []
+        
+        for key in platform_keys:
+            if key in session_data:
+                old_value = session.get(key)
+                new_value = session_data[key]
+                session[key] = new_value
+                updated_keys.append(key)
+                logger.info(f"Updated Flask session {key}: {old_value} -> {new_value}")
+        
+        if not updated_keys:
+            logger.error("No platform keys found in session data")
+            return False
+        
+        # CRITICAL: Mark Flask session as modified to ensure it gets saved
+        session.modified = True
+        logger.info("Marked Flask session as modified")
+        
+        # Update g.session_context for current request (if it exists)
+        if hasattr(g, 'session_context') and g.session_context:
+            platform_updates = {
+                k: v for k, v in session_data.items() 
+                if k.startswith('platform_')
+            }
+            g.session_context.update(platform_updates)
+            logger.info(f"Updated g.session_context with: {platform_updates}")
+        else:
+            logger.warning("g.session_context not available for update")
+        
+        # Validation: Verify the update was successful
+        if session.get('platform_connection_id') != platform_connection_id:
+            logger.error(f"Validation failed: Flask session platform_connection_id is {session.get('platform_connection_id')}, expected {platform_connection_id}")
+            return False
+        
+        logger.info(f"Platform update successful: {platform_connection_id}")
+        return True
         
     except Exception as e:
-        logger.error(f"Error updating session platform: {e}")
+        logger.error(f"Error updating session platform: {e}", exc_info=True)
         return False
 
 def create_user_session(user_id: int, platform_connection_id: Optional[int] = None) -> Optional[str]:
