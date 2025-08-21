@@ -16,7 +16,7 @@ INPUT_VALIDATION_ENABLED = os.getenv('SECURITY_INPUT_VALIDATION_ENABLED', 'true'
 SECURITY_HEADERS_ENABLED = os.getenv('SECURITY_HEADERS_ENABLED', 'true').lower() == 'true'
 SESSION_VALIDATION_ENABLED = os.getenv('SECURITY_SESSION_VALIDATION_ENABLED', 'true').lower() == 'true'
 ADMIN_CHECKS_ENABLED = os.getenv('SECURITY_ADMIN_CHECKS_ENABLED', 'true').lower() == 'true'
-from flask import Flask, render_template, request, jsonify, redirect, url_for, flash, send_from_directory, g, Response, make_response, current_app
+from flask import Flask, render_template, request, jsonify, redirect, url_for, flash, send_from_directory, g, Response, make_response, current_app, session
 # Removed Flask-SocketIO import - using SSE instead
 from flask_wtf import FlaskForm
 # Import regular WTForms Form class (no Flask-WTF CSRF)
@@ -160,10 +160,18 @@ platform_access_middleware = PlatformAccessMiddleware(app)
 # Template context processor for role-based access control
 @app.context_processor
 def inject_role_context():
-    """Inject role-based context into templates"""
+    """Inject role-based context into templates and auto-set default platform in session"""
     if current_user.is_authenticated:
         platform_stats = platform_access_middleware.get_user_platform_stats()
         content_stats = platform_access_middleware.get_user_content_stats()
+        
+        # Auto-set default platform in Flask session if not already set
+        default_platform = platform_stats.get('default_platform')
+        if default_platform and not session.get('platform_connection_id'):
+            session['platform_connection_id'] = default_platform.id
+            session['platform_name'] = default_platform.name
+            session.permanent = True
+            app.logger.info(f"Auto-selected default platform {default_platform.name} (ID: {default_platform.id}) for user {current_user.id}")
         
         context = {
             'user_role': current_user.role,
@@ -171,7 +179,7 @@ def inject_role_context():
             'is_viewer': current_user.role == UserRole.VIEWER,
             'user_platforms': platform_stats.get('platforms', []),
             'user_platform_count': platform_stats.get('platform_count', 0),
-            'current_platform': platform_stats.get('default_platform'),
+            'current_platform': default_platform,
             'pending_review_count': content_stats.get('pending_review', 0),
             'total_images_count': content_stats.get('total_images', 0)
         }
@@ -1944,11 +1952,16 @@ def switch_platform(platform_id):
             except Exception as e:
                 app.logger.error(f"Error handling active caption generation task during platform switch: {sanitize_for_log(str(e))}")
             
-            # Update Redis session platform context
-            # Using imported update_session_platform function
+            # Update both Redis session context AND Flask session
+            # Using imported update_session_platform function for Redis
             success = update_session_platform(platform_id)
             
             if success:
+                # Also update Flask session directly (since we removed old session context system)
+                session['platform_connection_id'] = platform_id
+                session['platform_name'] = platform_name
+                session.permanent = True  # Ensure session persists
+                
                 flash(f'Switched to platform: {platform_name}', 'success')
                 app.logger.info(f"User {sanitize_for_log(current_user.username)} switched to platform {sanitize_for_log(platform_name)}")
             else:

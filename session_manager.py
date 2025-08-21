@@ -76,7 +76,6 @@ class PlatformContextMiddleware:
         # Try to initialize the Redis session middleware
         try:
             # Redis session middleware is handled through unified_session_manager
-            from redis_session_middleware import get_current_session_context
             from session_cookie_manager import get_session_cookie_manager
             
             # Get or create session cookie manager

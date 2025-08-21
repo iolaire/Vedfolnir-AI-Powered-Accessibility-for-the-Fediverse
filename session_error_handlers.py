@@ -445,10 +445,10 @@ def register_session_error_handlers(app, session_manager, detached_instance_hand
                     # Note: caption_generation now handles platform context via global template context processor
                     if request.endpoint in ['review', 'batch_review']:
                         try:
-                            from redis_session_middleware import get_current_session_context
-                            context = get_current_session_context()
+                            from flask import session
+                            platform_connection_id = session.get('platform_connection_id')
                             
-                            if not context or not context.get('platform_connection_id'):
+                            if not platform_connection_id:
                                 # No platform context - redirect to platform management
                                 flash('Please select a platform to continue.', 'info')
                                 return redirect(url_for('platform_management'))

@@ -13,7 +13,7 @@ from logging import getLogger
 from datetime import datetime, timezone
 from flask import jsonify, request, g, make_response
 # Removed Flask-WTF CSRF import - using custom CSRF system
-from redis_session_middleware import get_current_session_context, get_current_session_id, validate_current_session as is_session_authenticated
+from redis_session_middleware import get_current_session_id, validate_current_session as is_session_authenticated
 
 logger = getLogger(__name__)
 
@@ -39,11 +39,11 @@ def create_session_state_routes(app):
             return response
             
         try:
-            # Get current session context
-            session_context = get_current_session_context()
+            # Get current session information using direct session access
+            from flask import session
             session_id = get_current_session_id()
             
-            if not session_context or not is_session_authenticated():
+            if not session or not is_session_authenticated():
                 response = jsonify({
                     'success': True,
                     'authenticated': False,
@@ -55,19 +55,25 @@ def create_session_state_routes(app):
                 response.headers['Access-Control-Allow-Headers'] = 'Content-Type, Accept, X-Requested-With'
                 return response
             
-            # Return session state for cross-tab sync
+            # Return session state for cross-tab sync using direct session access
             response_data = {
                 'success': True,
                 'authenticated': True,
                 'session_id': session_id,
-                'user': session_context.get('user_info'),
-                'platform': session_context.get('platform_info'),
-                'created_at': session_context.get('created_at'),
-                'last_activity': session_context.get('last_activity'),
+                'user': {
+                    'id': session.get('user_id'),
+                    'username': session.get('username')
+                },
+                'platform': {
+                    'id': session.get('platform_connection_id'),
+                    'name': session.get('platform_name')
+                },
+                'created_at': session.get('created_at'),
+                'last_activity': session.get('last_activity'),
                 'timestamp': datetime.now(timezone.utc).isoformat()
             }
             
-            logger.debug(f"Session state API called for user {session_context.get('user_id')}")
+            logger.debug(f"Session state API called for user {session.get('user_id')}")
             response = jsonify(response_data)
             # Add CORS headers
             response.headers['Access-Control-Allow-Origin'] = '*'
@@ -146,10 +152,10 @@ def create_session_state_routes(app):
             JSON response with heartbeat result
         """
         try:
-            session_context = get_current_session_context()
+            from flask import session
             session_id = get_current_session_id()
             
-            if not session_context or not session_id:
+            if not session or not session_id:
                 return jsonify({
                     'success': True,
                     'active': False,
@@ -163,8 +169,8 @@ def create_session_state_routes(app):
                 'success': True,
                 'active': True,
                 'session_id': session_id,
-                'user_id': session_context.get('user_id'),
-                'platform_id': session_context.get('platform_connection_id'),
+                'user_id': session.get('user_id'),
+                'platform_id': session.get('platform_connection_id'),
                 'timestamp': datetime.now(timezone.utc).isoformat()
             })
             
