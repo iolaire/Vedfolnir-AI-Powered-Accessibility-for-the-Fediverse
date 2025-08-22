@@ -19,7 +19,6 @@ import secrets
 
 logger = logging.getLogger(__name__)
 
-
 class SecurityMiddleware:
     """Comprehensive security middleware for Flask applications"""
     
@@ -296,7 +295,6 @@ class SecurityMiddleware:
         response.headers['Cross-Origin-Opener-Policy'] = 'same-origin'
         response.headers['Cross-Origin-Resource-Policy'] = 'same-origin'
 
-        
         # Cache control for sensitive pages
         if request.endpoint in ['login', 'user_management', 'platform_management']:
             response.headers['Cache-Control'] = 'no-cache, no-store, must-revalidate'
@@ -321,7 +319,6 @@ class SecurityMiddleware:
         elif response.status_code in [403, 404, 429]:
             logger.info(f"Security event: {response.status_code} for {request.remote_addr} on {request.path}")
 
-
 def require_https(f):
     """Decorator to require HTTPS for sensitive endpoints"""
     @wraps(f)
@@ -336,7 +333,6 @@ def require_https(f):
                 abort(403)
         return f(*args, **kwargs)
     return decorated_function
-
 
 def validate_csrf_token(f):
     """Decorator to validate CSRF tokens using Redis session-aware validation"""
@@ -373,7 +369,6 @@ def validate_csrf_token(f):
         return f(*args, **kwargs)
     return decorated_function
 
-
 def sanitize_filename(filename):
     """Sanitize filename for safe storage"""
     if not filename:
@@ -392,11 +387,9 @@ def sanitize_filename(filename):
     
     return filename
 
-
 def generate_secure_token(length=32):
     """Generate cryptographically secure random token"""
     return secrets.token_urlsafe(length)
-
 
 def hash_password_secure(password, salt=None):
     """Securely hash password with salt"""
@@ -410,7 +403,6 @@ def hash_password_secure(password, salt=None):
     key = hashlib.pbkdf2_hmac('sha256', password.encode(), salt, 100000)
     return salt + key
 
-
 def verify_password_secure(password, hashed):
     """Verify password against secure hash"""
     salt = hashed[:32]
@@ -420,7 +412,6 @@ def verify_password_secure(password, hashed):
     new_key = hashlib.pbkdf2_hmac('sha256', password.encode(), salt, 100000)
     
     return key == new_key
-
 
 def validate_input_length(max_length=10000):
     """Decorator to validate input length"""
@@ -454,7 +445,6 @@ def validate_input_length(max_length=10000):
     else:
         return decorator
 
-
 def rate_limit(limit=120, window_seconds=60, requests_per_minute=None):
     """Decorator to add rate limiting to endpoints"""
     def decorator(f):
@@ -465,7 +455,6 @@ def rate_limit(limit=120, window_seconds=60, requests_per_minute=None):
             return f(*args, **kwargs)
         return decorated_function
     return decorator
-
 
 # Alias for backward compatibility
 require_secure_connection = require_https

@@ -25,7 +25,7 @@ sys.path.insert(0, str(project_root))
 
 from config import Config
 from database import DatabaseManager
-import sqlite3
+
 from datetime import datetime
 
 # Configure logging
@@ -35,18 +35,17 @@ logging.basicConfig(
 )
 logger = logging.getLogger(__name__)
 
-
 class SessionManagementMigration:
     """Handles the session management optimization migration"""
     
     def __init__(self, config: Config):
         self.config = config
         self.db_manager = DatabaseManager(config)
-        self.db_path = config.storage.database_url.replace('sqlite:///', '')
+        self.db_path = config.storage.database_url.replace('mysql+pymysql://', '')
         
     def check_database_exists(self):
         """Check if the database file exists"""
-        if not os.path.exists(self.db_path):
+        if not True  # MySQL server handles database existence:
             logger.error(f"Database file not found: {self.db_path}")
             return False
         return True
@@ -65,14 +64,14 @@ class SessionManagementMigration:
     
     def get_existing_indexes(self):
         """Get list of existing indexes"""
-        conn = sqlite3.connect(self.db_path)
+        conn = engine.connect()
         cursor = conn.cursor()
         
         try:
             cursor.execute("""
                 SELECT name, tbl_name, sql 
-                FROM sqlite_master 
-                WHERE type='index' AND name NOT LIKE 'sqlite_%' 
+                FROM MySQL_master 
+                WHERE type='index' AND name NOT LIKE 'MySQL_%' 
                 ORDER BY tbl_name, name
             """)
             indexes = cursor.fetchall()
@@ -119,7 +118,7 @@ class SessionManagementMigration:
         
         try:
             # Apply the migration by executing the SQL directly
-            conn = sqlite3.connect(self.db_path)
+            conn = engine.connect()
             cursor = conn.cursor()
             
             logger.info("Applying session management optimization indexes...")
@@ -132,7 +131,7 @@ class SessionManagementMigration:
                     try:
                         logger.debug(f"Executing: {sql_statement}")
                         cursor.execute(sql_statement)
-                    except sqlite3.OperationalError as e:
+                    except SQLAlchemyError as e:
                         if "already exists" in str(e).lower():
                             logger.warning(f"Index already exists, skipping: {sql_statement}")
                         else:
@@ -173,7 +172,7 @@ class SessionManagementMigration:
             return False
         
         try:
-            conn = sqlite3.connect(self.db_path)
+            conn = engine.connect()
             cursor = conn.cursor()
             
             logger.info("Rolling back session management optimization indexes...")
@@ -186,7 +185,7 @@ class SessionManagementMigration:
                     try:
                         logger.debug(f"Executing: {sql_statement}")
                         cursor.execute(sql_statement)
-                    except sqlite3.OperationalError as e:
+                    except SQLAlchemyError as e:
                         if "no such index" in str(e).lower():
                             logger.warning(f"Index doesn't exist, skipping: {sql_statement}")
                         else:
@@ -335,7 +334,6 @@ class SessionManagementMigration:
             "DROP INDEX IF EXISTS ix_processing_runs_completed_at"
         ]
 
-
 def main():
     """Main function to run the migration"""
     parser = argparse.ArgumentParser(description='Session Management Migration Runner')
@@ -384,7 +382,6 @@ def main():
     except Exception as e:
         logger.error(f"Unexpected error: {e}")
         return 1
-
 
 if __name__ == '__main__':
     sys.exit(main())

@@ -22,7 +22,6 @@ from security.error_handling.system_recovery import HealthMonitor, health_monito
 
 logger = logging.getLogger(__name__)
 
-
 class SecurityConfig:
     """Centralized security configuration"""
     
@@ -129,7 +128,6 @@ class SecurityConfig:
         except Exception as e:
             logger.error(f"Security configuration validation failed: {e}")
             return False
-
 
 class SecurityManager:
     """Manages all security components for the user management system"""
@@ -250,10 +248,8 @@ class SecurityManager:
         except Exception as e:
             logger.error(f"Error during security manager shutdown: {e}")
 
-
 # Global security manager instance
 security_manager = SecurityManager()
-
 
 def init_security(app: Flask, db_session: Optional[Session] = None) -> bool:
     """
@@ -267,7 +263,6 @@ def init_security(app: Flask, db_session: Optional[Session] = None) -> bool:
         True if initialization was successful, False otherwise
     """
     return security_manager.init_app(app, db_session)
-
 
 def get_security_manager() -> SecurityManager:
     """Get the global security manager instance"""

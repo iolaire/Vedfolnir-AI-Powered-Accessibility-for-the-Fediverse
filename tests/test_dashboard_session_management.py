@@ -31,7 +31,6 @@ from database_context_middleware import DatabaseContextMiddleware
 from tests.test_helpers.mock_user_helper import MockUserHelper
 from sqlalchemy.exc import SQLAlchemyError
 
-
 class TestDashboardSessionManagement(unittest.TestCase):
     """Test dashboard route with session-aware decorators"""
     
@@ -42,7 +41,7 @@ class TestDashboardSessionManagement(unittest.TestCase):
         
         # Create test config
         self.config = Config()
-        self.config.storage.database_url = f'sqlite:///{self.db_path}'
+        self.config.storage.database_url = f'mysql+pymysql://{self.db_path}'
         
         # Initialize database manager
         self.db_manager = DatabaseManager(self.config)
@@ -407,7 +406,6 @@ class TestDashboardSessionManagement(unittest.TestCase):
             # Should handle error gracefully (may redirect to login or platform management)
             self.assertTrue(b'Login page' in response.data or b'Platform management page' in response.data)
 
-
 class TestDashboardDecorators(unittest.TestCase):
     """Test dashboard decorators functionality"""
     
@@ -458,7 +456,6 @@ class TestDashboardDecorators(unittest.TestCase):
         self.assertTrue(index_function_found, "index() function should be found in web_app.py")
         self.assertIn('@with_db_session', decorators_before_index, "@with_db_session should be applied to index function")
         self.assertIn('@require_platform_context', decorators_before_index, "@require_platform_context should be applied to index function")
-
 
 if __name__ == '__main__':
     unittest.main()

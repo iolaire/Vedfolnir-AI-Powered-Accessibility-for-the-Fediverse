@@ -34,7 +34,6 @@ from session_error_handlers import SessionErrorHandler, with_session_error_handl
 from detached_instance_handler import DetachedInstanceHandler
 from session_error_logger import SessionErrorLogger
 
-
 class FlaskDetachedInstanceFixTest(unittest.TestCase):
     """Test DetachedInstanceError fix with Flask application context"""
     
@@ -445,7 +444,6 @@ class FlaskDetachedInstanceFixTest(unittest.TestCase):
         self.assertEqual(len(errors), 0, f"Concurrent request errors: {errors}")
         self.assertEqual(len(results), 5, "Should have 5 successful concurrent requests")
 
-
 class FlaskDetachedInstanceFixAdvancedTest(unittest.TestCase):
     """Advanced Flask integration tests for DetachedInstanceError fix"""
     
@@ -640,7 +638,6 @@ class FlaskDetachedInstanceFixAdvancedTest(unittest.TestCase):
             # Should handle at least 10 operations per second
             self.assertGreater(ops_per_second, 10, 
                              f"Performance too slow: {ops_per_second:.1f} ops/sec")
-
 
 if __name__ == '__main__':
     # Run the tests

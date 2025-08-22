@@ -34,7 +34,6 @@ from database_context_middleware import DatabaseContextMiddleware
 from session_aware_user import SessionAwareUser
 from tests.test_helpers.mock_user_helper import MockUserHelper
 
-
 class TestDashboardAccessIntegration(unittest.TestCase):
     """Integration tests for dashboard access without DetachedInstanceError"""
     
@@ -45,7 +44,7 @@ class TestDashboardAccessIntegration(unittest.TestCase):
         
         # Create test config
         self.config = Config()
-        self.config.storage.database_url = f'sqlite:///{self.db_path}'
+        self.config.storage.database_url = f'mysql+pymysql://{self.db_path}'
         
         # Initialize database manager
         self.db_manager = DatabaseManager(self.config)
@@ -668,7 +667,6 @@ class TestDashboardAccessIntegration(unittest.TestCase):
             # Should either redirect to login or show dashboard with error handling
             # The dashboard should still render but may have fallback content
             self.assertTrue(b'Login' in response.data or b'Dashboard' in response.data)
-
 
 if __name__ == '__main__':
     unittest.main()

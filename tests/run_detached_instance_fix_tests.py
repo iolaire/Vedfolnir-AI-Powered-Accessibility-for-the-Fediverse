@@ -21,7 +21,6 @@ from typing import List, Optional
 project_root = os.path.dirname(os.path.dirname(os.path.abspath(__file__)))
 sys.path.insert(0, project_root)
 
-
 class DetachedInstanceFixTestRunner:
     """Test runner for DetachedInstanceError fix tests"""
     
@@ -239,7 +238,6 @@ class DetachedInstanceFixTestRunner:
                 for module in modules:
                     print(f"    - {module}")
 
-
 def main():
     """Main test runner function"""
     parser = argparse.ArgumentParser(
@@ -280,7 +278,6 @@ def main():
         success = runner.run_test_suite(args.suite, args.verbose)
     
     return 0 if success else 1
-
 
 if __name__ == '__main__':
     sys.exit(main())

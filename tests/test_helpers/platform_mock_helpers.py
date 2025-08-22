@@ -15,7 +15,6 @@ from datetime import datetime, timezone
 
 from models import PlatformConnection, User, UserRole
 
-
 class PlatformMockHelper:
     """Helper class for creating platform-specific mocks"""
     
@@ -225,7 +224,6 @@ class PlatformMockHelper:
         
         return adapter_mock
 
-
 class PlatformTestDataFactory:
     """Factory for creating test data for platform testing"""
     
@@ -322,7 +320,6 @@ class PlatformTestDataFactory:
         
         return posts
 
-
 # Convenience functions for common platform mock patterns
 def create_pixelfed_test_setup(user_id: int = 1, success: bool = True) -> tuple[Mock, Mock, AsyncMock]:
     """Create a complete Pixelfed test setup with user, connection, and client"""
@@ -340,7 +337,6 @@ def create_pixelfed_test_setup(user_id: int = 1, success: bool = True) -> tuple[
     
     return user_mock, connection_mock, client_mock
 
-
 def create_mastodon_test_setup(user_id: int = 1, success: bool = True) -> tuple[Mock, Mock, AsyncMock]:
     """Create a complete Mastodon test setup with user, connection, and client"""
     user_mock, platforms = PlatformTestDataFactory.create_test_user_with_platforms(
@@ -356,7 +352,6 @@ def create_mastodon_test_setup(user_id: int = 1, success: bool = True) -> tuple[
     )
     
     return user_mock, connection_mock, client_mock
-
 
 def create_multi_platform_test_setup(user_id: int = 1, success: bool = True) -> tuple[Mock, List[Mock], List[AsyncMock]]:
     """Create a multi-platform test setup with user, connections, and clients"""
@@ -376,7 +371,6 @@ def create_multi_platform_test_setup(user_id: int = 1, success: bool = True) -> 
     
     return user_mock, platforms, clients
 
-
 def patch_platform_context_manager(context_mock: Optional[Mock] = None) -> patch:
     """Create a patch for PlatformContextManager"""
     if context_mock is None:
@@ -389,7 +383,6 @@ def patch_platform_context_manager(context_mock: Optional[Mock] = None) -> patch
     manager_mock.clear_context.return_value = None
     
     return patch('platform_context.PlatformContextManager', return_value=manager_mock)
-
 
 def patch_activitypub_client(platform_type: str = 'pixelfed', success: bool = True) -> patch:
     """Create a patch for ActivityPub client"""

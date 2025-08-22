@@ -24,7 +24,6 @@ from unified_session_manager import UnifiedSessionManager as SessionManager, Ses
 from tests.test_helpers import create_test_user_with_platforms, cleanup_test_user
 from sqlalchemy.exc import SQLAlchemyError, DisconnectionError, TimeoutError, InvalidRequestError
 
-
 class TestSessionManagerContextManager(unittest.TestCase):
     """Test SessionManager context manager functionality (Requirements 1.1, 1.2)"""
     
@@ -35,7 +34,7 @@ class TestSessionManagerContextManager(unittest.TestCase):
         
         # Create test config
         self.config = Config()
-        self.config.storage.database_url = f'sqlite:///{self.db_path}'
+        self.config.storage.database_url = f'mysql+pymysql://{self.db_path}'
         
         # Initialize database manager and create tables
         self.db_manager = DatabaseManager(self.config)
@@ -216,7 +215,6 @@ class TestSessionManagerContextManager(unittest.TestCase):
         self.assertIsNotNone(inner_user_count)
         self.assertEqual(outer_user_count, inner_user_count)
 
-
 class TestSessionDatabaseLifecycle(unittest.TestCase):
     """Test database session lifecycle and error handling (Requirements 1.1, 1.2)"""
     
@@ -227,7 +225,7 @@ class TestSessionDatabaseLifecycle(unittest.TestCase):
         
         # Create test config
         self.config = Config()
-        self.config.storage.database_url = f'sqlite:///{self.db_path}'
+        self.config.storage.database_url = f'mysql+pymysql://{self.db_path}'
         
         # Initialize database manager and create tables
         self.db_manager = DatabaseManager(self.config)
@@ -440,7 +438,6 @@ class TestSessionDatabaseLifecycle(unittest.TestCase):
         # Test with invalid platform ID
         self.assertFalse(self.session_manager.update_platform_context(session_id, 99999))
 
-
 class TestSessionStateAPI(unittest.TestCase):
     """Test session state API endpoint with various authentication scenarios (Requirements 4.1, 4.2, 4.3)"""
     
@@ -451,7 +448,7 @@ class TestSessionStateAPI(unittest.TestCase):
         
         # Create test config
         self.config = Config()
-        self.config.storage.database_url = f'sqlite:///{self.db_path}'
+        self.config.storage.database_url = f'mysql+pymysql://{self.db_path}'
         
         # Initialize database manager and create tables
         self.db_manager = DatabaseManager(self.config)
@@ -828,7 +825,6 @@ class TestSessionStateAPI(unittest.TestCase):
             data = json.loads(response.data)
             self.assertTrue(data['success'])
             self.assertEqual(data['user']['id'], self.test_user.id)
-
 
 if __name__ == '__main__':
     unittest.main()

@@ -21,7 +21,6 @@ from security.monitoring.security_event_logger import get_security_event_logger,
 
 logger = logging.getLogger(__name__)
 
-
 class SystemRecoveryManager:
     """Manages system recovery operations and error recovery mechanisms"""
     
@@ -122,11 +121,29 @@ class SystemRecoveryManager:
         self.last_recovery_time[error_type] = current_time
     
     def _recover_database_connection(self, error: Exception, context: Dict[str, Any]) -> bool:
-        """Recover from database connection errors"""
+        """Recover from MySQL database connection errors"""
         try:
-            logger.info("Attempting database connection recovery")
+            logger.info("Attempting MySQL database connection recovery")
             
-            # Try to reconnect to database
+            # Handle MySQL-specific errors
+            mysql_error_code = None
+            if hasattr(error, 'orig') and hasattr(error.orig, 'args') and error.orig.args:
+                mysql_error_code = error.orig.args[0]
+            
+            # MySQL-specific recovery strategies
+            if mysql_error_code:
+                if mysql_error_code == 2006:  # MySQL server has gone away
+                    logger.info("MySQL server has gone away - attempting reconnection")
+                elif mysql_error_code == 2013:  # Lost connection to MySQL server
+                    logger.info("Lost connection to MySQL server - attempting reconnection")
+                elif mysql_error_code == 1205:  # Lock wait timeout exceeded
+                    logger.info("MySQL lock wait timeout - will retry after delay")
+                    time.sleep(1)  # Brief delay before retry
+                elif mysql_error_code == 1213:  # Deadlock found
+                    logger.info("MySQL deadlock detected - will retry transaction")
+                    time.sleep(0.1)  # Brief delay before retry
+            
+            # Try to reconnect to MySQL database
             if self.db_session:
                 try:
                     # Close existing session
@@ -136,21 +153,22 @@ class SystemRecoveryManager:
                     from database import get_db_session
                     new_session = get_db_session()
                     
-                    # Test connection
-                    new_session.execute("SELECT 1")
+                    # Test MySQL connection with version check
+                    result = new_session.execute("SELECT VERSION()")
+                    mysql_version = result.fetchone()[0]
                     new_session.close()
                     
-                    logger.info("Database connection recovery successful")
+                    logger.info(f"MySQL database connection recovery successful - Version: {mysql_version}")
                     return True
                     
                 except Exception as e:
-                    logger.error(f"Database connection recovery failed: {e}")
+                    logger.error(f"MySQL database connection recovery failed: {e}")
                     return False
             
             return False
             
         except Exception as e:
-            logger.error(f"Error in database connection recovery: {e}")
+            logger.error(f"Error in MySQL database connection recovery: {e}")
             return False
     
     def _recover_email_service(self, error: Exception, context: Dict[str, Any]) -> bool:
@@ -308,7 +326,6 @@ class SystemRecoveryManager:
         except Exception as e:
             logger.error(f"Error logging recovery result: {e}")
 
-
 def with_recovery(error_type: str, max_retries: int = 3, retry_delay: float = 1.0):
     """
     Decorator to add automatic recovery and retry logic to functions
@@ -356,7 +373,6 @@ def with_recovery(error_type: str, max_retries: int = 3, retry_delay: float = 1.
         
         return decorated_function
     return decorator
-
 
 def circuit_breaker(failure_threshold: int = 5, recovery_timeout: int = 60):
     """
@@ -412,7 +428,6 @@ def circuit_breaker(failure_threshold: int = 5, recovery_timeout: int = 60):
         return decorated_function
     return decorator
 
-
 def health_check_recovery():
     """Perform system health checks and recovery"""
     recovery_manager = SystemRecoveryManager()
@@ -435,7 +450,6 @@ def health_check_recovery():
         except Exception as e:
             logger.error(f"Error during health check for {check_name}: {e}")
 
-
 def _check_database_health() -> bool:
     """Check database health"""
     try:
@@ -446,7 +460,6 @@ def _check_database_health() -> bool:
         return True
     except Exception:
         return False
-
 
 def _check_file_system_health() -> bool:
     """Check file system health"""
@@ -462,7 +475,6 @@ def _check_file_system_health() -> bool:
     except Exception:
         return False
 
-
 def _check_email_service_health() -> bool:
     """Check email service health"""
     try:
@@ -476,7 +488,6 @@ def _check_email_service_health() -> bool:
         return True
     except Exception:
         return False
-
 
 # Background health monitoring
 class HealthMonitor:
@@ -513,7 +524,6 @@ class HealthMonitor:
             except Exception as e:
                 logger.error(f"Error in health monitoring loop: {e}")
                 time.sleep(60)  # Wait a minute before retrying
-
 
 # Global health monitor instance
 health_monitor = HealthMonitor()

@@ -24,7 +24,7 @@ def verify_mysql_connection():
         config = Config()
         
         # Check if we're using MySQL
-        if 'mysql' not in config.storage.database_url:
+        if database_url.startswith("mysql+pymysql://"):
             logger.error("Database URL is not configured for MySQL")
             return False
         

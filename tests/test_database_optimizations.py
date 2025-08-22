@@ -22,14 +22,13 @@ from database import DatabaseManager
 from models import Base, Post, Image, ProcessingRun, ProcessingStatus, User, UserRole
 from config import Config, StorageConfig, DatabaseConfig
 
-
 class TestDatabaseOptimizations(unittest.TestCase):
     """Test database optimization features"""
     
     def setUp(self):
         """Set up test database"""
         # Create temporary database for testing
-        self.temp_db = tempfile.NamedTemporaryFile(delete=False, suffix='.db')
+        self.temp_db = tempfile.NamedTemporaryFile(delete=False, suffix="MySQL database")
         self.temp_db.close()
         
         # Create test config
@@ -45,7 +44,7 @@ class TestDatabaseOptimizations(unittest.TestCase):
         )
         
         config.storage = StorageConfig(
-            database_url=f"sqlite:///{self.temp_db.name}",
+            database_url=f"mysql+pymysql://{self.temp_db.name}",
             db_config=db_config
         )
         
@@ -427,7 +426,7 @@ class TestDatabaseOptimizations(unittest.TestCase):
         process = psutil.Process(os.getpid())
         initial_memory = process.memory_info().rss
         
-        # Perform memory-intensive database operations
+        # Perform DATABASE_URL=mysql+pymysql://test_user:test_pass@localhost/test_db operations
         session = self.db_manager.get_session()
         
         try:
@@ -454,18 +453,17 @@ class TestDatabaseOptimizations(unittest.TestCase):
         # Memory increase should be reasonable (less than 50MB for test data)
         self.assertLess(memory_increase, 50 * 1024 * 1024)
 
-
 class TestDatabaseMigrations(unittest.TestCase):
     """Test database migration functionality"""
     
     def setUp(self):
         """Set up test environment"""
-        self.temp_db = tempfile.NamedTemporaryFile(delete=False, suffix='.db')
+        self.temp_db = tempfile.NamedTemporaryFile(delete=False, suffix="MySQL database")
         self.temp_db.close()
         
         # Create basic config
         self.config = Config()
-        self.config.storage = StorageConfig(database_url=f"sqlite:///{self.temp_db.name}")
+        self.config.storage = StorageConfig(database_url=f"mysql+pymysql://{self.temp_db.name}")
     
     def tearDown(self):
         """Clean up test database"""
@@ -480,7 +478,7 @@ class TestDatabaseMigrations(unittest.TestCase):
         
         # Get table names
         with engine.connect() as conn:
-            result = conn.execute(text("SELECT name FROM sqlite_master WHERE type='table'"))
+            result = conn.execute(text("SELECT table_name FROM information_schema.tables WHERE table_schema = DATABASE() WHERE type='table'"))
             table_names = [row[0] for row in result]
         
         expected_tables = ['posts', 'images', 'processing_runs', 'users']
@@ -513,7 +511,6 @@ class TestDatabaseMigrations(unittest.TestCase):
         finally:
             session.close()
             db_manager.close_session(session)
-
 
 if __name__ == "__main__":
     unittest.main()

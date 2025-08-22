@@ -14,7 +14,6 @@ from dataclasses import dataclass
 from activitypub_platforms import MastodonPlatform, PlatformAdapterError
 from config import ActivityPubConfig
 
-
 @dataclass
 class MockConfig:
     """Mock configuration for testing"""
@@ -24,7 +23,6 @@ class MockConfig:
     client_key: str = "test_client_key"
     client_secret: str = "test_client_secret"
     user_agent: str = "Vedfolnir/1.0"
-
 
 class TestMastodonAuthentication(unittest.TestCase):
     """Test cases for Mastodon authentication"""
@@ -332,7 +330,6 @@ class TestMastodonAuthentication(unittest.TestCase):
         # Should have called verify_credentials only once for validation
         self.assertEqual(self.mock_client._get_with_retry.call_count, 1)
 
-
 def run_async_test(coro):
     """Helper function to run async tests"""
     loop = asyncio.new_event_loop()
@@ -341,7 +338,6 @@ def run_async_test(coro):
         return loop.run_until_complete(coro)
     finally:
         loop.close()
-
 
 # Convert async test methods to sync for unittest
 class TestMastodonAuthenticationSync(TestMastodonAuthentication):
@@ -385,7 +381,6 @@ class TestMastodonAuthenticationSync(TestMastodonAuthentication):
         
     def test_authenticate_reuse_valid_token_sync(self):
         run_async_test(self.test_authenticate_reuse_valid_token())
-
 
 if __name__ == '__main__':
     unittest.main()

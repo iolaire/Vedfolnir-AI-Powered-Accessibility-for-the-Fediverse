@@ -14,7 +14,6 @@ from typing import Any, Callable, List, Optional, Union
 from unittest.mock import AsyncMock, Mock, patch
 import httpx
 
-
 class AsyncMockHelper:
     """Helper class for creating and configuring async mocks"""
     
@@ -261,7 +260,6 @@ class AsyncMockHelper:
         
         return client_mock
 
-
 class AsyncTestHelper:
     """Helper class for running async tests"""
     
@@ -303,7 +301,6 @@ class AsyncTestHelper:
         wrapper.__doc__ = func.__doc__
         return wrapper
 
-
 # Convenience functions for common async mock patterns
 def mock_async_http_success(json_data: dict) -> AsyncMock:
     """Create a successful async HTTP response mock"""
@@ -312,7 +309,6 @@ def mock_async_http_success(json_data: dict) -> AsyncMock:
         json_data=json_data
     )
 
-
 def mock_async_http_error(status_code: int = 500, error_message: str = "Server Error") -> AsyncMock:
     """Create a failed async HTTP response mock"""
     return AsyncMockHelper.create_async_http_response(
@@ -320,16 +316,13 @@ def mock_async_http_error(status_code: int = 500, error_message: str = "Server E
         json_data={'error': error_message}
     )
 
-
 def mock_async_connection_error() -> Exception:
     """Create a connection error for async HTTP mocks"""
     return httpx.ConnectError("Connection refused")
 
-
 def patch_httpx_client(client_mock: AsyncMock) -> patch:
     """Create a patch for httpx.AsyncClient"""
     return patch('httpx.AsyncClient', return_value=client_mock)
-
 
 def patch_ollama_client(success: bool = True, response_text: str = 'Test caption') -> patch:
     """Create a patch for Ollama client with standardized responses"""

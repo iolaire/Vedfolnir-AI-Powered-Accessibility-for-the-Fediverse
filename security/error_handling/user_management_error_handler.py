@@ -23,7 +23,6 @@ from security.core.security_utils import sanitize_for_log
 
 logger = logging.getLogger(__name__)
 
-
 class UserManagementError(Exception):
     """Base exception for user management operations"""
     
@@ -42,7 +41,6 @@ class UserManagementError(Exception):
         self.severity = severity
         super().__init__(message)
 
-
 class ValidationError(UserManagementError):
     """Validation error for user input"""
     
@@ -54,7 +52,6 @@ class ValidationError(UserManagementError):
             user_message=message,  # Validation errors are safe to show users
             **kwargs
         )
-
 
 class AuthenticationError(UserManagementError):
     """Authentication-related errors"""
@@ -68,7 +65,6 @@ class AuthenticationError(UserManagementError):
             **kwargs
         )
 
-
 class AuthorizationError(UserManagementError):
     """Authorization-related errors"""
     
@@ -80,7 +76,6 @@ class AuthorizationError(UserManagementError):
             severity="high",
             **kwargs
         )
-
 
 class RateLimitError(UserManagementError):
     """Rate limiting errors"""
@@ -95,7 +90,6 @@ class RateLimitError(UserManagementError):
             **kwargs
         )
 
-
 class DatabaseError(UserManagementError):
     """Database-related errors"""
     
@@ -107,7 +101,6 @@ class DatabaseError(UserManagementError):
             severity="high",
             **kwargs
         )
-
 
 class EmailError(UserManagementError):
     """Email service errors"""
@@ -121,7 +114,6 @@ class EmailError(UserManagementError):
             **kwargs
         )
 
-
 class SecurityError(UserManagementError):
     """Security-related errors"""
     
@@ -133,7 +125,6 @@ class SecurityError(UserManagementError):
             severity="critical",
             **kwargs
         )
-
 
 class UserManagementErrorHandler:
     """Comprehensive error handler for user management operations"""
@@ -425,7 +416,6 @@ class UserManagementErrorHandler:
         if hasattr(g, 'error_context'):
             delattr(g, 'error_context')
 
-
 def handle_user_management_errors(f):
     """
     Decorator to handle errors in user management operations
@@ -459,7 +449,6 @@ def handle_user_management_errors(f):
     
     return decorated_function
 
-
 def graceful_degradation(fallback_response=None, log_error=True):
     """
     Decorator for graceful degradation when operations fail
@@ -490,7 +479,6 @@ def graceful_degradation(fallback_response=None, log_error=True):
         return decorated_function
     return decorator
 
-
 def safe_operation(operation_name: str, default_return=None):
     """
     Decorator for safe operations that shouldn't fail the entire request
@@ -511,7 +499,6 @@ def safe_operation(operation_name: str, default_return=None):
         return decorated_function
     return decorator
 
-
 # Utility functions for error handling
 def create_user_friendly_error(error: Exception, context: str = None) -> str:
     """Create a user-friendly error message from an exception"""
@@ -527,7 +514,6 @@ def create_user_friendly_error(error: Exception, context: str = None) -> str:
         return "The system is temporarily unavailable. Please try again later."
     else:
         return "An unexpected error occurred. Please try again later."
-
 
 def log_error_with_context(error: Exception, context: Dict[str, Any] = None):
     """Log an error with additional context"""
@@ -548,7 +534,6 @@ def log_error_with_context(error: Exception, context: Dict[str, Any] = None):
         context['username'] = g.current_user.username
     
     logger.error(f"Error: {error}, Context: {context}")
-
 
 def is_safe_to_retry(error: Exception) -> bool:
     """Determine if an operation is safe to retry based on the error type"""

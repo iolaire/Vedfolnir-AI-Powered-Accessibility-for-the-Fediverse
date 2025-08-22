@@ -17,7 +17,6 @@ from database import DatabaseManager
 from models import User, PlatformConnection, UserSession, UserRole
 from redis_session_manager import RedisSessionManager as SessionManager
 
-
 class TestSessionSecurity(unittest.TestCase):
     """Test session validation prevents security issues"""
     
@@ -28,7 +27,7 @@ class TestSessionSecurity(unittest.TestCase):
         
         # Create test config
         self.config = Config()
-        self.config.storage.database_url = f'sqlite:///{self.db_path}'
+        self.config.storage.database_url = f'mysql+pymysql://{self.db_path}'
         
         # Initialize database manager
         self.db_manager = DatabaseManager(self.config)
@@ -377,7 +376,6 @@ class TestSessionSecurity(unittest.TestCase):
             # Verify get_session_context fails gracefully
             context = self.session_manager.get_session_context(session_id)
             self.assertIsNone(context)
-
 
 if __name__ == '__main__':
     unittest.main()

@@ -32,7 +32,6 @@ from config import Config
 from database import DatabaseManager
 from models import User, UserSession, UserAuditLog, UserRole
 
-
 @dataclass
 class AlertThreshold:
     """Configuration for monitoring alert thresholds"""
@@ -42,7 +41,6 @@ class AlertThreshold:
     time_window_minutes: int
     enabled: bool = True
 
-
 @dataclass
 class MonitoringMetric:
     """Container for monitoring metric data"""
@@ -51,7 +49,6 @@ class MonitoringMetric:
     timestamp: datetime
     status: str  # 'ok', 'warning', 'critical'
     details: Dict[str, Any]
-
 
 @dataclass
 class Alert:
@@ -63,7 +60,6 @@ class Alert:
     timestamp: datetime
     details: Dict[str, Any]
     resolved: bool = False
-
 
 class UserManagementMonitor:
     """
@@ -847,7 +843,6 @@ class UserManagementMonitor:
                 'timestamp': datetime.utcnow().isoformat()
             }
 
-
 def main():
     """Main monitoring script entry point"""
     import argparse
@@ -910,7 +905,6 @@ def main():
     except Exception as e:
         print(f"Monitoring error: {e}")
         return 1
-
 
 if __name__ == "__main__":
     sys.exit(main())

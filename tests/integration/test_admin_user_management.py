@@ -18,14 +18,18 @@ from services.user_management_service import UserRegistrationService, UserAuthen
 from admin.services.user_service import UserService
 from tests.test_helpers import create_test_user_with_platforms, cleanup_test_user
 
+# MySQL integration test imports
+from tests.mysql_test_base import MySQLIntegrationTestBase
+from tests.mysql_test_config import MySQLTestFixtures
 
-class TestAdminUserManagement(unittest.TestCase):
+
+class TestAdminUserManagement(MySQLIntegrationTestBase):
     """Test admin user management integration workflows"""
     
     def setUp(self):
         """Set up test fixtures"""
         self.config = Config()
-        self.db_manager = DatabaseManager(self.config)
+        self.db_manager = self.get_database_manager()
         
         # Create admin user for testing
         self.admin_user, self.admin_helper = create_test_user_with_platforms(
@@ -460,7 +464,6 @@ class TestAdminUserManagement(unittest.TestCase):
                 ).all()
                 self.assertEqual(len(audit_logs), 1)
                 self.assertEqual(audit_logs[0].admin_user_id, self.admin_user.id)
-
 
 if __name__ == '__main__':
     unittest.main()

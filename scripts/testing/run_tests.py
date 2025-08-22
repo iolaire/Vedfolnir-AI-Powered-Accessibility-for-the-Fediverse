@@ -14,7 +14,6 @@ import sys
 import subprocess
 import argparse
 
-
 def run_command(cmd, description):
     """Run a command and return the result"""
     print(f"\n{'='*60}")
@@ -24,7 +23,6 @@ def run_command(cmd, description):
     
     result = subprocess.run(cmd, capture_output=False)
     return result.returncode == 0
-
 
 def main():
     parser = argparse.ArgumentParser(description='Run Vedfolnir tests')
@@ -100,7 +98,6 @@ def main():
     else:
         print(f"\n❌ Test suite '{args.suite}' had failures")
         return 1
-
 
 if __name__ == '__main__':
     sys.exit(main())

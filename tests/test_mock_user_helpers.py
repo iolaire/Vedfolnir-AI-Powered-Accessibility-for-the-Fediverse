@@ -22,7 +22,6 @@ from tests.test_helpers import (
     TEST_PLATFORM_DEFAULTS
 )
 
-
 class TestMockUserHelpers(unittest.TestCase):
     """Test cases for mock user helper functionality"""
     
@@ -247,7 +246,6 @@ class TestMockUserHelpers(unittest.TestCase):
         self.assertEqual(TEST_USER_DEFAULTS['password'], 'test_password_123')
         self.assertEqual(TEST_USER_DEFAULTS['role'], UserRole.REVIEWER)
         self.assertTrue(TEST_USER_DEFAULTS['is_active'])
-
 
 if __name__ == '__main__':
     unittest.main()

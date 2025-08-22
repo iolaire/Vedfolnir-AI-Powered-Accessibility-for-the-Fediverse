@@ -24,7 +24,6 @@ from safe_template_context import (
     create_safe_template_context_processor
 )
 
-
 class MockUser:
     """Mock user class for testing"""
     def __init__(self, user_id=1, username="testuser", email="test@test.com", role="user", is_active=True):
@@ -37,7 +36,6 @@ class MockUser:
     
     def get_id(self):
         return str(self.id)
-
 
 class MockPlatform:
     """Mock platform class for testing"""
@@ -66,7 +64,6 @@ class MockPlatform:
             'created_at': self.created_at,
             'updated_at': self.updated_at
         }
-
 
 class TestSafeTemplateContextSimple(unittest.TestCase):
     """Simplified test cases for safe template context processor"""
@@ -334,7 +331,6 @@ class TestSafeTemplateContextSimple(unittest.TestCase):
         
         self.assertIsNotNone(result)
         self.assertEqual(result['name'], 'Test Platform')
-
 
 if __name__ == '__main__':
     unittest.main()

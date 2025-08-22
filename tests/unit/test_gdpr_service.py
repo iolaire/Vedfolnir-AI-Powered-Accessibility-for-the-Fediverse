@@ -19,14 +19,13 @@ from services.gdpr_service import GDPRService
 from config import Config
 from database import DatabaseManager
 
-
 class TestGDPRService(unittest.TestCase):
     """Test GDPR Service functionality"""
     
     def setUp(self):
         """Set up test fixtures"""
-        # Create in-memory SQLite database for testing
-        self.engine = create_engine('sqlite:///:memory:', echo=False)
+        # Create in-DATABASE_URL=mysql+pymysql://test_user:test_pass@localhost/test_db for testing
+        self.engine = create_engine('mysql+pymysql://DATABASE_URL=mysql+pymysql://test_user:test_pass@localhost/test_db', echo=False)
         Base.metadata.create_all(self.engine)
         
         # Create session
@@ -393,7 +392,6 @@ class TestGDPRService(unittest.TestCase):
         is_complete, remaining_data = self.service.verify_data_deletion_completeness(user_id)
         self.assertTrue(is_complete)
         self.assertEqual(len(remaining_data), 0)
-
 
 if __name__ == '__main__':
     unittest.main()

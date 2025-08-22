@@ -12,7 +12,6 @@ sys.path.insert(0, os.path.dirname(os.path.dirname(os.path.abspath(__file__))))
 from models import PlatformConnection, User
 from sqlalchemy.orm.exc import DetachedInstanceError
 
-
 class TestPlatformConnectionTask7(unittest.TestCase):
     """Test Task 7: Enhanced PlatformConnection model for session safety"""
     
@@ -321,7 +320,6 @@ class TestPlatformConnectionTask7(unittest.TestCase):
         repr_str = repr(self.platform)
         self.assertEqual(repr_str, "<PlatformConnection Test Platform (pixelfed)>")
 
-
 class TestPlatformConnectionSessionSafety(unittest.TestCase):
     """Test session safety features of PlatformConnection model"""
     
@@ -376,7 +374,6 @@ class TestPlatformConnectionSessionSafety(unittest.TestCase):
                     self.assertEqual(result, expected_fallback)
                 else:
                     self.assertIsNone(result)
-
 
 if __name__ == '__main__':
     unittest.main()

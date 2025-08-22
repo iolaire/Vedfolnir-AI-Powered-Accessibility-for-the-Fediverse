@@ -18,7 +18,6 @@ from pathlib import Path
 import inspect
 import importlib.util
 
-
 @dataclass
 class FunctionSignature:
     """Represents a function signature with metadata"""
@@ -33,7 +32,6 @@ class FunctionSignature:
     is_staticmethod: bool
     decorators: List[str]
 
-
 @dataclass
 class ClassSignature:
     """Represents a class signature with metadata"""
@@ -45,7 +43,6 @@ class ClassSignature:
     class_variables: List[str]
     decorators: List[str]
 
-
 @dataclass
 class ModuleSignature:
     """Represents a module signature with metadata"""
@@ -56,7 +53,6 @@ class ModuleSignature:
     classes: List[ClassSignature]
     imports: List[str]
     constants: List[str]
-
 
 class APIDocumentationGenerator:
     """Generates comprehensive API documentation from Python source files"""
@@ -415,7 +411,6 @@ class APIDocumentationGenerator:
         elif func_sig.is_method:
             f.write("**Type:** Instance method\n\n")
 
-
 def main():
     """Main function to generate API documentation"""
     if len(sys.argv) > 1:
@@ -436,7 +431,6 @@ def main():
     generator.generate_markdown_documentation(output_dir)
     
     print("API documentation generation complete!")
-
 
 if __name__ == '__main__':
     main()

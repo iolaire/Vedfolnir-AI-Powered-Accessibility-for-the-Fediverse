@@ -14,7 +14,6 @@ from activitypub_client import ActivityPubClient
 from activitypub_platforms import MastodonPlatform
 from config import ActivityPubConfig
 
-
 class TestMastodonAuthenticationIntegration(unittest.TestCase):
     """Integration tests for Mastodon authentication"""
     
@@ -197,7 +196,6 @@ class TestMastodonAuthenticationIntegration(unittest.TestCase):
             self.assertEqual(verify_headers['Authorization'], f'Bearer {self.config.access_token}')
             self.assertEqual(update_headers['Authorization'], f'Bearer {self.config.access_token}')
 
-
 def run_async_test(coro):
     """Helper function to run async tests"""
     loop = asyncio.new_event_loop()
@@ -206,7 +204,6 @@ def run_async_test(coro):
         return loop.run_until_complete(coro)
     finally:
         loop.close()
-
 
 # Convert async test methods to sync for unittest
 class TestMastodonAuthenticationIntegrationSync(TestMastodonAuthenticationIntegration):
@@ -220,7 +217,6 @@ class TestMastodonAuthenticationIntegrationSync(TestMastodonAuthenticationIntegr
         
     def test_mastodon_update_media_caption_with_authentication_sync(self):
         run_async_test(self.test_mastodon_update_media_caption_with_authentication())
-
 
 if __name__ == '__main__':
     unittest.main()

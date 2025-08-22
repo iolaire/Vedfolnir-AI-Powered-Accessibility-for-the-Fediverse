@@ -9,6 +9,11 @@ from database import DatabaseManager
 from unified_session_manager import UnifiedSessionManager
 from models import User, UserRole
 
+# MySQL integration test imports
+from tests.mysql_test_base import MySQLIntegrationTestBase
+from tests.mysql_test_config import MySQLTestFixtures
+
+
 def test_session_creation():
     """Test direct session creation to verify no database locks"""
     print("Testing session creation directly...")
@@ -16,7 +21,7 @@ def test_session_creation():
     try:
         # Initialize configuration and managers
         config = Config()
-        db_manager = DatabaseManager(config)
+        db_manager = self.get_database_manager()
         session_manager = UnifiedSessionManager(db_manager)
         
         print("✓ Managers initialized successfully")

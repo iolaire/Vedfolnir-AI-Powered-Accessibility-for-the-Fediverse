@@ -16,7 +16,6 @@ from database import DatabaseManager
 from models import User, PlatformConnection, UserSession, UserRole
 from redis_session_manager import RedisSessionManager as SessionManager
 
-
 class TestSessionCleanup(unittest.TestCase):
     """Test session cleanup maintains data integrity"""
     
@@ -27,7 +26,7 @@ class TestSessionCleanup(unittest.TestCase):
         
         # Create test config
         self.config = Config()
-        self.config.storage.database_url = f'sqlite:///{self.db_path}'
+        self.config.storage.database_url = f'mysql+pymysql://{self.db_path}'
         
         # Initialize database manager
         self.db_manager = DatabaseManager(self.config)
@@ -355,7 +354,6 @@ class TestSessionCleanup(unittest.TestCase):
         self.assertIsNotNone(context)
         self.assertEqual(context['user_id'], self.user1_id)
         self.assertEqual(context['platform_connection_id'], self.platform1_user1_id)
-
 
 if __name__ == '__main__':
     unittest.main()

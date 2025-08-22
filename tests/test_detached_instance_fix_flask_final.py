@@ -36,7 +36,6 @@ from session_error_handlers import SessionErrorHandler, with_session_error_handl
 from detached_instance_handler import DetachedInstanceHandler
 from session_error_logger import SessionErrorLogger
 
-
 class FinalFlaskDetachedInstanceFixTest(unittest.TestCase):
     """Final comprehensive Flask context tests for DetachedInstanceError fix"""
     
@@ -311,7 +310,6 @@ class FinalFlaskDetachedInstanceFixTest(unittest.TestCase):
                     self.assertTrue(platform.is_default)
                     self.assertIn('test-', platform.instance_url)
 
-
 class FinalFlaskPerformanceTest(unittest.TestCase):
     """Performance tests to ensure Flask context doesn't impact performance"""
     
@@ -370,7 +368,6 @@ class FinalFlaskPerformanceTest(unittest.TestCase):
             # Should handle at least 8 operations per second
             self.assertGreater(ops_per_second, 8, 
                              f"Performance too slow: {ops_per_second:.1f} ops/sec")
-
 
 def run_final_flask_tests():
     """Run final Flask context tests"""
@@ -440,7 +437,6 @@ def run_final_flask_tests():
         print("⚠️  Please review and fix remaining issues")
     
     return result.wasSuccessful()
-
 
 if __name__ == '__main__':
     import sys

@@ -19,14 +19,18 @@ from services.gdpr_service import GDPRService
 from services.user_management_service import UserProfileService
 from tests.test_helpers import create_test_user_with_platforms, cleanup_test_user
 
+# MySQL integration test imports
+from tests.mysql_test_base import MySQLIntegrationTestBase
+from tests.mysql_test_config import MySQLTestFixtures
 
-class TestGDPRCompliance(unittest.TestCase):
+
+class TestGDPRCompliance(MySQLIntegrationTestBase):
     """Test GDPR compliance integration workflows"""
     
     def setUp(self):
         """Set up test fixtures"""
         self.config = Config()
-        self.db_manager = DatabaseManager(self.config)
+        self.db_manager = self.get_database_manager()
         
         self.test_users_to_cleanup = []
     
@@ -517,7 +521,6 @@ class TestGDPRCompliance(unittest.TestCase):
             final_consent_info = gdpr_service.get_user_consent_status(test_user.id)
             self.assertTrue(final_consent_info['data_processing_consent'])
             self.assertIsNotNone(final_consent_info['consent_date'])
-
 
 if __name__ == '__main__':
     unittest.main()

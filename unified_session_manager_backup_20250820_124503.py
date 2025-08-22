@@ -526,9 +526,7 @@ class UnifiedSessionManager:
         except Exception as e:
             logger.error(f"Error cleaning up user sessions: {sanitize_for_log(str(e))}")
             return 0
-    
 
-    
     def _create_session_fingerprint(self) -> Optional[str]:
         """Create session fingerprint for security"""
         try:
@@ -586,7 +584,6 @@ class UnifiedSessionManager:
         except Exception as e:
             logger.debug(f"Error creating security audit event: {e}")
 
-
 # Platform Context Functions
 # These functions provide the same interface as the legacy session_manager
 
@@ -626,7 +623,6 @@ def get_current_platform_context() -> Optional[Dict[str, Any]]:
         logger.debug(f"Error getting platform context: {e}")
         return None
 
-
 def get_current_platform() -> Optional['PlatformConnection']:
     """
     Get the current platform connection from context using fresh database query
@@ -661,7 +657,6 @@ def get_current_platform() -> Optional['PlatformConnection']:
     
     return None
 
-
 def get_current_user_from_context() -> Optional['User']:
     """
     Get the current user from platform context using fresh database query
@@ -695,7 +690,6 @@ def get_current_user_from_context() -> Optional['User']:
         logger.debug(f"Error getting current user from context: {e}")
     
     return None
-
 
 def switch_platform_context(platform_connection_id: int) -> bool:
     """

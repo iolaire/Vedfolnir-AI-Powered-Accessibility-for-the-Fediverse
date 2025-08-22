@@ -13,7 +13,6 @@ from request_scoped_session_manager import RequestScopedSessionManager
 
 logger = logging.getLogger(__name__)
 
-
 class SessionAwareUser(UserMixin):
     """
     A session-aware wrapper for User objects that prevents DetachedInstanceError

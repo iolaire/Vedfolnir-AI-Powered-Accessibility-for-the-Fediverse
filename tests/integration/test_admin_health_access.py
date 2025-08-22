@@ -17,7 +17,7 @@ def test_admin_health_access():
     """Test that admin user can access health dashboard"""
     
     config = Config()
-    db_manager = DatabaseManager(config)
+    db_manager = self.get_database_manager()
     
     with app.app_context():
         # Get admin user from database
@@ -43,6 +43,11 @@ def test_admin_health_access():
             
             # Test the role_required decorator logic
             from web_app import role_required
+
+# MySQL integration test imports
+from tests.mysql_test_base import MySQLIntegrationTestBase
+from tests.mysql_test_config import MySQLTestFixtures
+
             
             # Simulate the role check that happens in the decorator
             server_user = session.query(User).get(admin_user.id)

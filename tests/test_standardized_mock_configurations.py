@@ -27,7 +27,6 @@ from tests.test_helpers import (
 )
 from models import User, PlatformConnection, CaptionGenerationTask, TaskStatus, UserRole
 
-
 class TestStandardizedMockConfigurations(unittest.TestCase):
     """Test standardized mock configurations"""
     
@@ -346,7 +345,6 @@ class TestStandardizedMockConfigurations(unittest.TestCase):
         self.assertTrue(hasattr(task_mock, 'id'))
         self.assertTrue(hasattr(task_mock, 'created_at'))
 
-
 class TestMockConfigurationIntegration(unittest.TestCase):
     """Test integration of mock configurations in realistic scenarios"""
     
@@ -414,7 +412,6 @@ class TestMockConfigurationIntegration(unittest.TestCase):
         # Test HTTP methods
         self.assertTrue(hasattr(client_mock, 'get'))
         self.assertTrue(hasattr(client_mock, 'post'))
-
 
 if __name__ == '__main__':
     unittest.main()

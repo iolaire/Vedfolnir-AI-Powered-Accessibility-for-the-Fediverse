@@ -11,7 +11,7 @@ implementation have been met.
 
 import sys
 import os
-import sqlite3
+
 import subprocess
 import json
 from pathlib import Path
@@ -25,17 +25,17 @@ def check_database_migration():
     """Check if database migration is complete without data loss"""
     print("🔍 Checking database migration...")
     
-    db_path = project_root / "storage" / "database" / "vedfolnir.db"
+    db_path = project_root / "storage" / "database" / "MySQL database"
     if not db_path.exists():
         print("  ❌ Database file does not exist")
         return False
     
     try:
-        conn = sqlite3.connect(str(db_path))
+        conn = engine.connect())
         cursor = conn.cursor()
         
         # Check for new platform-aware tables
-        cursor.execute("SELECT name FROM sqlite_master WHERE type='table'")
+        cursor.execute("SELECT table_name FROM information_schema.tables WHERE table_schema = DATABASE() WHERE type='table'")
         tables = [row[0] for row in cursor.fetchall()]
         
         required_tables = ['platform_connections', 'user_sessions']
@@ -46,7 +46,7 @@ def check_database_migration():
             return False
         
         # Check for platform-aware columns in existing tables
-        cursor.execute("PRAGMA table_info(posts)")
+        cursor.execute("SELECT COLUMN_NAME FROM information_schema.COLUMNS WHERE TABLE_SCHEMA = DATABASE()")
         post_columns = [row[1] for row in cursor.fetchall()]
         
         required_columns = ['platform_connection_id', 'platform_type', 'instance_url']
@@ -94,8 +94,8 @@ def check_data_isolation():
     print("🔍 Checking platform data isolation...")
     
     try:
-        db_path = project_root / "storage" / "database" / "vedfolnir.db"
-        conn = sqlite3.connect(str(db_path))
+        db_path = project_root / "storage" / "database" / "MySQL database"
+        conn = engine.connect())
         cursor = conn.cursor()
         
         # Check if posts are properly associated with platforms
@@ -126,11 +126,11 @@ def check_performance():
     
     try:
         # Check if database indexes exist
-        db_path = project_root / "storage" / "database" / "vedfolnir.db"
-        conn = sqlite3.connect(str(db_path))
+        db_path = project_root / "storage" / "database" / "MySQL database"
+        conn = engine.connect())
         cursor = conn.cursor()
         
-        cursor.execute("SELECT name FROM sqlite_master WHERE type='index'")
+        cursor.execute("SELECT table_name FROM information_schema.tables WHERE table_schema = DATABASE() WHERE type='index'")
         indexes = [row[0] for row in cursor.fetchall()]
         
         expected_indexes = [

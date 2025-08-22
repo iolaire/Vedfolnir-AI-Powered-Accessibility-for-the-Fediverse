@@ -24,14 +24,13 @@ from unified_session_manager import UnifiedSessionManager as SessionManager
 from request_scoped_session_manager import RequestScopedSessionManager
 from config import Config
 
-
-class SessionManagementE2ETest(unittest.TestCase):
+class SessionManagementE2ETest(MySQLIntegrationTestBase):
     """End-to-end tests for session management system"""
     
     def setUp(self):
         """Set up test environment"""
         self.config = Config()
-        self.db_manager = DatabaseManager(self.config)
+        self.db_manager = self.get_database_manager()
         self.session_manager = UnifiedSessionManager(self.db_manager)
         self.request_session_manager = RequestScopedSessionManager(self.db_manager)
         
@@ -297,17 +296,14 @@ class SessionManagementE2ETest(unittest.TestCase):
         for session_id in session_ids_to_cleanup:
             if session_id:
                 self.session_manager._cleanup_session(session_id)
-    
 
-
-
-class SessionManagementLoadTest(unittest.TestCase):
+class SessionManagementLoadTest(MySQLIntegrationTestBase):
     """Load testing for session management system"""
     
     def setUp(self):
         """Set up load test environment"""
         self.config = Config()
-        self.db_manager = DatabaseManager(self.config)
+        self.db_manager = self.get_database_manager()
         self.session_manager = UnifiedSessionManager(self.db_manager)
         
         # Create test users and platforms
@@ -430,6 +426,11 @@ class SessionManagementLoadTest(unittest.TestCase):
         # Perform validation load test
         import threading
         import time
+
+# MySQL integration test imports
+from tests.mysql_test_base import MySQLIntegrationTestBase
+from tests.mysql_test_config import MySQLTestFixtures
+
         
         validation_results = []
         start_time = time.time()
@@ -481,7 +482,6 @@ class SessionManagementLoadTest(unittest.TestCase):
         # Performance assertions
         self.assertGreaterEqual(validations_per_second, 100)  # At least 100 validations/sec
         self.assertLessEqual(total_duration, 15)              # Complete within 15 seconds
-
 
 if __name__ == '__main__':
     # Run end-to-end tests

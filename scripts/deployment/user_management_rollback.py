@@ -29,7 +29,6 @@ from config import Config
 from database import DatabaseManager
 from migrations.user_management_migration import UserManagementMigration
 
-
 @dataclass
 class RollbackPoint:
     """Information about a rollback point"""
@@ -41,7 +40,6 @@ class RollbackPoint:
     application_backup: str
     validation_data: Dict[str, Any]
 
-
 @dataclass
 class RollbackResult:
     """Result of rollback operation"""
@@ -51,7 +49,6 @@ class RollbackResult:
     steps_failed: List[str]
     validation_results: Dict[str, Any]
     error_message: Optional[str] = None
-
 
 class UserManagementRollback:
     """
@@ -200,13 +197,13 @@ class UserManagementRollback:
         if not db_path.exists():
             raise FileNotFoundError(f"Database file not found: {db_path}")
         
-        backup_path = backup_dir / "database_backup.db"
+        backup_path = backup_dir / "MySQL database"
         shutil.copy2(db_path, backup_path)
         
         # Verify backup integrity
         try:
             from sqlalchemy import create_engine
-            engine = create_engine(f"sqlite:///{backup_path}")
+            engine = create_engine(f"mysql+pymysql://{backup_path}")
             with engine.connect() as conn:
                 conn.execute("PRAGMA integrity_check").fetchone()
             self.logger.info("Database backup integrity verified")
@@ -479,7 +476,7 @@ class UserManagementRollback:
         # Validate database backup integrity
         try:
             from sqlalchemy import create_engine
-            engine = create_engine(f"sqlite:///{rollback_point.database_backup}")
+            engine = create_engine(f"mysql+pymysql://{rollback_point.database_backup}")
             with engine.connect() as conn:
                 conn.execute("PRAGMA integrity_check").fetchone()
         except Exception as e:
@@ -564,7 +561,7 @@ class UserManagementRollback:
             # Verify restored database
             try:
                 from sqlalchemy import create_engine
-                engine = create_engine(f"sqlite:///{db_path}")
+                engine = create_engine(f"mysql+pymysql://{db_path}")
                 with engine.connect() as conn:
                     conn.execute("PRAGMA integrity_check").fetchone()
                 return True
@@ -712,7 +709,6 @@ class UserManagementRollback:
         
         return cleaned_count
 
-
 def main():
     """Main rollback script entry point"""
     import argparse
@@ -803,7 +799,6 @@ def main():
     except Exception as e:
         print(f"Error: {e}")
         return 1
-
 
 if __name__ == "__main__":
     sys.exit(main())

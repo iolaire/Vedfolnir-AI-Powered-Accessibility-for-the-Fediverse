@@ -23,7 +23,6 @@ from config import OllamaConfig, RetryConfig
 logging.basicConfig(level=logging.INFO)
 logger = logging.getLogger(__name__)
 
-
 class TestFallbackConfig(unittest.TestCase):
     """Test FallbackConfig functionality"""
     
@@ -71,7 +70,6 @@ class TestFallbackConfig(unittest.TestCase):
             self.assertFalse(config.use_simplified_prompts)
             self.assertTrue(config.use_backup_model)
             self.assertEqual(config.backup_model_name, "llava:34b")
-
 
 class TestCaptionFallbackManager(unittest.TestCase):
     """Test CaptionFallbackManager functionality"""
@@ -244,7 +242,6 @@ class TestCaptionFallbackManager(unittest.TestCase):
             "needs_review": True
         })
         self.assertFalse(should_fallback)
-
 
 class TestOllamaCaptionGeneratorFallback(unittest.IsolatedAsyncioTestCase):
     """Test fallback mechanisms in OllamaCaptionGenerator"""
@@ -456,7 +453,6 @@ class TestOllamaCaptionGeneratorFallback(unittest.IsolatedAsyncioTestCase):
         self.assertEqual(models_used[0], "llava:7b")      # Original model
         self.assertEqual(models_used[1], "llava:7b")      # First fallback (same model, different prompt)
         self.assertEqual(models_used[2], "llava:13b-v1.6")  # Second fallback (backup model)
-
 
 if __name__ == "__main__":
     unittest.main()

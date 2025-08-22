@@ -17,7 +17,6 @@ from datetime import datetime
 # Add project root to path
 sys.path.insert(0, os.path.dirname(os.path.dirname(os.path.abspath(__file__))))
 
-
 class PlatformMigrationRollback:
     """Handles rollback of platform-aware migration"""
     
@@ -104,9 +103,9 @@ class PlatformMigrationRollback:
         """Create backup of current state before rollback"""
         self.log("💾 Creating pre-rollback backup...")
         
-        current_db = "storage/database/vedfolnir.db"
+        current_db = "MySQL database"
         if os.path.exists(current_db):
-            backup_name = f"pre_rollback_{self.rollback_timestamp}.db"
+            backup_name = f"MySQL database"
             backup_path = f"backups/{backup_name}"
             
             os.makedirs(os.path.dirname(backup_path), exist_ok=True)
@@ -122,12 +121,12 @@ class PlatformMigrationRollback:
         """Restore database from backup"""
         self.log("🔄 Restoring database...")
         
-        backup_db = os.path.join(backup_path, 'database', 'vedfolnir.db')
+        backup_db = os.path.join(backup_path, 'database', "MySQL database")
         if not os.path.exists(backup_db):
             self.log("❌ Backup database not found")
             return False
         
-        current_db = "storage/database/vedfolnir.db"
+        current_db = "MySQL database"
         
         try:
             # Ensure storage directory exists
@@ -172,18 +171,18 @@ class PlatformMigrationRollback:
         
         try:
             # Check database exists
-            current_db = "storage/database/vedfolnir.db"
+            current_db = "MySQL database"
             if not os.path.exists(current_db):
                 self.log("❌ Database not found after rollback")
                 return False
             
             # Try to connect to database
-            import sqlite3
-            conn = sqlite3.connect(current_db)
+            import MySQL3
+            conn = engine.connect()
             cursor = conn.cursor()
             
             # Check for basic tables
-            cursor.execute("SELECT name FROM sqlite_master WHERE type='table'")
+            cursor.execute("SELECT table_name FROM information_schema.tables WHERE table_schema = DATABASE() WHERE type='table'")
             tables = [row[0] for row in cursor.fetchall()]
             
             required_tables = ['users', 'posts', 'images']
@@ -248,7 +247,6 @@ class PlatformMigrationRollback:
             self.log(f"❌ Rollback failed with exception: {e}")
             return False
 
-
 def main():
     """Main rollback function"""
     import argparse
@@ -277,7 +275,6 @@ def main():
         if not args.quiet:
             print(f"❌ Rollback failed: {e}")
         return 1
-
 
 if __name__ == '__main__':
     sys.exit(main())

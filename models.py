@@ -20,11 +20,12 @@ from typing import List, Dict, Any, Optional
 
 Base = declarative_base()
 
-# MySQL-specific table options for utf8mb4 charset and proper collation
+# Enhanced MySQL-specific table options for optimal performance
 mysql_table_args = {
     'mysql_engine': 'InnoDB',
     'mysql_charset': 'utf8mb4',
-    'mysql_collate': 'utf8mb4_unicode_ci'
+    'mysql_collate': 'utf8mb4_unicode_ci',
+    'mysql_row_format': 'DYNAMIC',  # Better for variable-length columns
 }
 
 class UserRole(Enum):
@@ -61,7 +62,7 @@ class Post(Base):
     updated_at = Column(DateTime, default=datetime.utcnow, onupdate=datetime.utcnow)
     
     # Platform identification
-    platform_connection_id = Column(Integer, ForeignKey('platform_connections.id'), nullable=True)
+    platform_connection_id = Column(Integer, ForeignKey('platform_connections.id', ondelete='CASCADE'), nullable=True)
     platform_type = Column(String(50))  # For backward compatibility
     instance_url = Column(String(500))  # For backward compatibility
     
@@ -69,9 +70,18 @@ class Post(Base):
     images = relationship("Image", back_populates="post", cascade="all, delete-orphan")
     platform_connection = relationship("PlatformConnection")
     
-    # Table constraints - make post_id unique per platform
+    # Table constraints and indexes for MySQL optimization
     __table_args__ = (
         UniqueConstraint('post_id', 'platform_connection_id', name='uq_post_platform'),
+        Index('ix_post_platform_created', 'platform_connection_id', 'created_at'),
+        Index('ix_post_created_at', 'created_at'),
+        Index('ix_post_platform_type', 'platform_type'),
+        {
+            'mysql_engine': 'InnoDB',
+            'mysql_charset': 'utf8mb4',
+            'mysql_collate': 'utf8mb4_unicode_ci',
+            'mysql_row_format': 'DYNAMIC',
+        }
     )
     
     def validate_platform_consistency(self):
@@ -121,8 +131,8 @@ class Image(Base):
     __table_args__ = mysql_table_args
     
     id = Column(Integer, primary_key=True, autoincrement=True)
-    post_id = Column(Integer, ForeignKey('posts.id'), nullable=False)
-    image_url = Column(String(1000), nullable=False)
+    post_id = Column(Integer, ForeignKey('posts.id', ondelete='CASCADE'), nullable=False)
+    image_url = Column(Text, nullable=False)  # URLs can be very long, use TEXT
     local_path = Column(String(500), nullable=False)
     original_filename = Column(String(200))
     media_type = Column(String(100))
@@ -130,7 +140,7 @@ class Image(Base):
     attachment_index = Column(Integer, nullable=False)
     
     # Platform identification
-    platform_connection_id = Column(Integer, ForeignKey('platform_connections.id'), nullable=True)
+    platform_connection_id = Column(Integer, ForeignKey('platform_connections.id', ondelete='CASCADE'), nullable=True)
     platform_type = Column(String(50))  # For backward compatibility
     instance_url = Column(String(500))  # For backward compatibility
     
@@ -164,9 +174,21 @@ class Image(Base):
     post = relationship("Post", back_populates="images")
     platform_connection = relationship("PlatformConnection")
     
-    # Table constraints - ensure image_post_id is unique per platform
+    # Table constraints and indexes for MySQL optimization
     __table_args__ = (
         UniqueConstraint('image_post_id', 'platform_connection_id', name='uq_image_platform'),
+        UniqueConstraint('post_id', 'attachment_index', name='uq_post_attachment'),
+        Index('ix_image_post_attachment', 'post_id', 'attachment_index'),
+        Index('ix_image_platform_status', 'platform_connection_id', 'status'),
+        Index('ix_image_status_created', 'status', 'created_at'),
+        Index('ix_image_category', 'image_category'),
+        Index('ix_image_quality_score', 'caption_quality_score'),
+        {
+            'mysql_engine': 'InnoDB',
+            'mysql_charset': 'utf8mb4',
+            'mysql_collate': 'utf8mb4_unicode_ci',
+            'mysql_row_format': 'DYNAMIC',
+        }
     )
     
     def validate_platform_consistency(self):
@@ -229,7 +251,19 @@ class Image(Base):
 
 class User(Base):
     __tablename__ = 'users'
-    __table_args__ = mysql_table_args
+    __table_args__ = (
+        Index('ix_user_email_active', 'email', 'is_active'),
+        Index('ix_user_username_active', 'username', 'is_active'),
+        Index('ix_user_role_active', 'role', 'is_active'),
+        Index('ix_user_created_login', 'created_at', 'last_login'),
+        Index('ix_user_verification_status', 'email_verified', 'is_active'),
+        {
+            'mysql_engine': 'InnoDB',
+            'mysql_charset': 'utf8mb4',
+            'mysql_collate': 'utf8mb4_unicode_ci',
+            'mysql_row_format': 'DYNAMIC',
+        }
+    )
     
     id = Column(Integer, primary_key=True, autoincrement=True)
     username = Column(String(64), unique=True, nullable=False, index=True)
@@ -527,7 +561,6 @@ class User(Base):
     def __repr__(self):
         return f"<User {self.username}>"
 
-
 class UserAuditLog(Base):
     """Audit trail for user management actions"""
     __tablename__ = 'user_audit_log'
@@ -563,7 +596,6 @@ class UserAuditLog(Base):
         )
         session.add(audit_entry)
         return audit_entry
-
 
 class GDPRAuditLog(Base):
     """Audit trail specifically for GDPR compliance actions"""
@@ -629,10 +661,21 @@ class GDPRAuditLog(Base):
         session.commit()
         return self
 
-
 class ProcessingRun(Base):
     __tablename__ = 'processing_runs'
-    __table_args__ = mysql_table_args
+    __table_args__ = (
+        Index('ix_processing_run_user_started', 'user_id', 'started_at'),
+        Index('ix_processing_run_platform_status', 'platform_connection_id', 'status'),
+        Index('ix_processing_run_batch_id', 'batch_id'),
+        Index('ix_processing_run_status_started', 'status', 'started_at'),
+        UniqueConstraint('batch_id', 'platform_connection_id', name='uq_batch_platform'),
+        {
+            'mysql_engine': 'InnoDB',
+            'mysql_charset': 'utf8mb4',
+            'mysql_collate': 'utf8mb4_unicode_ci',
+            'mysql_row_format': 'DYNAMIC',
+        }
+    )
     
     id = Column(Integer, primary_key=True, autoincrement=True)
     user_id = Column(String(200), nullable=False)
@@ -646,7 +689,7 @@ class ProcessingRun(Base):
     status = Column(String(50), default="running")
     
     # Platform identification
-    platform_connection_id = Column(Integer, ForeignKey('platform_connections.id'), nullable=True)
+    platform_connection_id = Column(Integer, ForeignKey('platform_connections.id', ondelete='CASCADE'), nullable=True)
     platform_type = Column(String(50))  # For backward compatibility
     instance_url = Column(String(500))  # For backward compatibility
     
@@ -659,11 +702,6 @@ class ProcessingRun(Base):
     
     # Relationships
     platform_connection = relationship("PlatformConnection")
-    
-    # Table constraints - ensure batch_id is unique per platform if specified
-    __table_args__ = (
-        UniqueConstraint('batch_id', 'platform_connection_id', name='uq_batch_platform'),
-    )
     
     def validate_platform_consistency(self):
         """Validate that platform information is consistent"""
@@ -712,7 +750,7 @@ class PlatformConnection(Base):
     __table_args__ = mysql_table_args
     
     id = Column(Integer, primary_key=True, autoincrement=True)
-    user_id = Column(Integer, ForeignKey('users.id'), nullable=False)
+    user_id = Column(Integer, ForeignKey('users.id', ondelete='CASCADE'), nullable=False)
     name = Column(String(100), nullable=False)
     platform_type = Column(String(50), nullable=False)  # 'pixelfed', 'mastodon'
     instance_url = Column(String(500), nullable=False)
@@ -763,6 +801,14 @@ class PlatformConnection(Base):
         Index('ix_platform_user_active', 'user_id', 'is_active'),
         Index('ix_platform_type_active', 'platform_type', 'is_active'),
         Index('ix_platform_instance_type', 'instance_url', 'platform_type'),
+        Index('ix_platform_user_default', 'user_id', 'is_default'),
+        Index('ix_platform_last_used', 'last_used'),
+        {
+            'mysql_engine': 'InnoDB',
+            'mysql_charset': 'utf8mb4',
+            'mysql_collate': 'utf8mb4_unicode_ci',
+            'mysql_row_format': 'DYNAMIC',
+        }
     )
     
     # Encryption key (should be stored securely in production)
@@ -1192,10 +1238,22 @@ class GenerationResults:
 
 class CaptionGenerationTask(Base):
     __tablename__ = 'caption_generation_tasks'
+    __table_args__ = (
+        Index('ix_caption_task_user_status', 'user_id', 'status'),
+        Index('ix_caption_task_platform_status', 'platform_connection_id', 'status'),
+        Index('ix_caption_task_status_created', 'status', 'created_at'),
+        Index('ix_caption_task_created_at', 'created_at'),
+        {
+            'mysql_engine': 'InnoDB',
+            'mysql_charset': 'utf8mb4',
+            'mysql_collate': 'utf8mb4_unicode_ci',
+            'mysql_row_format': 'DYNAMIC',
+        }
+    )
     
     id = Column(String(36), primary_key=True, default=lambda: str(uuid.uuid4()))
-    user_id = Column(Integer, ForeignKey('users.id'), nullable=False)
-    platform_connection_id = Column(Integer, ForeignKey('platform_connections.id'), nullable=False)
+    user_id = Column(Integer, ForeignKey('users.id', ondelete='CASCADE'), nullable=False)
+    platform_connection_id = Column(Integer, ForeignKey('platform_connections.id', ondelete='CASCADE'), nullable=False)
     status = Column(SQLEnum(TaskStatus), default=TaskStatus.QUEUED)
     settings_json = Column(Text)  # Serialized CaptionGenerationSettings
     created_at = Column(DateTime, default=datetime.utcnow)
@@ -1264,11 +1322,21 @@ class CaptionGenerationTask(Base):
 
 class CaptionGenerationUserSettings(Base):
     __tablename__ = 'caption_generation_user_settings'
-    __table_args__ = mysql_table_args
+    __table_args__ = (
+        UniqueConstraint('user_id', 'platform_connection_id', name='uq_user_platform_settings'),
+        Index('ix_caption_settings_user', 'user_id'),
+        Index('ix_caption_settings_platform', 'platform_connection_id'),
+        {
+            'mysql_engine': 'InnoDB',
+            'mysql_charset': 'utf8mb4',
+            'mysql_collate': 'utf8mb4_unicode_ci',
+            'mysql_row_format': 'DYNAMIC',
+        }
+    )
     
     id = Column(Integer, primary_key=True, autoincrement=True)
-    user_id = Column(Integer, ForeignKey('users.id'), nullable=False)
-    platform_connection_id = Column(Integer, ForeignKey('platform_connections.id'), nullable=False)
+    user_id = Column(Integer, ForeignKey('users.id', ondelete='CASCADE'), nullable=False)
+    platform_connection_id = Column(Integer, ForeignKey('platform_connections.id', ondelete='CASCADE'), nullable=False)
     max_posts_per_run = Column(Integer, default=50)
     max_caption_length = Column(Integer, default=500)
     optimal_min_length = Column(Integer, default=80)

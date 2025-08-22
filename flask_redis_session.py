@@ -128,7 +128,6 @@ class RedisSession(CallbackDict, SessionMixin):
             logger.error(f"Failed to delete session from Redis: {e}")
             return False
 
-
 class RedisSessionInterface(SessionInterface):
     """Flask session interface that uses Redis for storage"""
     
@@ -182,7 +181,6 @@ class RedisSessionInterface(SessionInterface):
             
             logger.debug(f"Set session cookie for session {session.session_id}")
 
-
 def init_redis_session(app: Flask, redis_client=None, **kwargs) -> RedisSessionInterface:
     """Initialize Redis session management for Flask app"""
     
@@ -217,7 +215,6 @@ def init_redis_session(app: Flask, redis_client=None, **kwargs) -> RedisSessionI
     
     return session_interface
 
-
 def cleanup_expired_sessions(redis_client, prefix="session:"):
     """Clean up expired sessions from Redis"""
     try:
@@ -237,7 +234,6 @@ def cleanup_expired_sessions(redis_client, prefix="session:"):
     except Exception as e:
         logger.error(f"Failed to cleanup expired sessions: {e}")
         return 0
-
 
 def get_session_info(redis_client, session_id, prefix="session:"):
     """Get information about a session"""

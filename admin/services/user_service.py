@@ -22,9 +22,7 @@ class UserService:
         self.session_manager = session_manager  # Optional session manager parameter
         # Add unified session manager reference
         self._unified_session_manager = None
-    
 
-    
     def get_all_users(self) -> List[User]:
         """Get all users"""
         session = self.db_manager.get_session()

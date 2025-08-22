@@ -15,7 +15,6 @@ from datetime import datetime, timezone
 
 from models import User, PlatformConnection, CaptionGenerationTask, TaskStatus, UserRole
 
-
 class DatabaseMockHelper:
     """Helper class for creating and configuring database mocks"""
     
@@ -195,7 +194,6 @@ class DatabaseMockHelper:
         
         return model_mock
 
-
 class QueryMockBuilder:
     """Builder class for creating complex query mocks"""
     
@@ -278,7 +276,6 @@ class QueryMockBuilder:
         self.query_mock.count.return_value = result
         return self.query_mock
 
-
 # Convenience functions for common database mock patterns
 def create_user_query_mock(users: Union[User, List[User], None] = None) -> Mock:
     """Create a query mock for User model queries"""
@@ -289,7 +286,6 @@ def create_user_query_mock(users: Union[User, List[User], None] = None) -> Mock:
     
     return DatabaseMockHelper.create_query_chain_mock(users)
 
-
 def create_platform_query_mock(platforms: Union[PlatformConnection, List[PlatformConnection], None] = None) -> Mock:
     """Create a query mock for PlatformConnection model queries"""
     if platforms is None:
@@ -298,7 +294,6 @@ def create_platform_query_mock(platforms: Union[PlatformConnection, List[Platfor
         platforms = [platforms]
     
     return DatabaseMockHelper.create_query_chain_mock(platforms)
-
 
 def create_task_query_mock(tasks: Union[CaptionGenerationTask, List[CaptionGenerationTask], None] = None) -> Mock:
     """Create a query mock for CaptionGenerationTask model queries"""
@@ -309,7 +304,6 @@ def create_task_query_mock(tasks: Union[CaptionGenerationTask, List[CaptionGener
     
     return DatabaseMockHelper.create_query_chain_mock(tasks)
 
-
 def patch_database_manager(session_mock: Optional[Mock] = None) -> patch:
     """Create a patch for DatabaseManager with standardized configuration"""
     if session_mock is None:
@@ -317,7 +311,6 @@ def patch_database_manager(session_mock: Optional[Mock] = None) -> patch:
     
     db_manager_mock = DatabaseMockHelper.create_database_manager_mock(session_mock)
     return patch('database.DatabaseManager', return_value=db_manager_mock)
-
 
 def patch_session_scope(session_mock: Optional[Mock] = None) -> patch:
     """Create a patch for session_scope context manager"""

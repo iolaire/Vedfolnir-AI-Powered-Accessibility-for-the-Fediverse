@@ -70,10 +70,8 @@ app.config['SECRET_KEY'] = config.webapp.secret_key
 # Initialize SSE Progress Handler (replaces SocketIO)
 from sse_progress_handler import SSEProgressHandler
 
-
 app.config['SQLALCHEMY_DATABASE_URI'] = config.storage.database_url
 app.config['SQLALCHEMY_TRACK_MODIFICATIONS'] = False
-
 
 # Define a NullSessionInterface to completely disable Flask's default session management
 from flask.sessions import SessionInterface, SessionMixin
@@ -98,11 +96,6 @@ class NullSessionInterface(SessionInterface):
 app.session_interface = NullSessionInterface()
 
 app.logger.info("Flask's default session management has been disabled.")
-
-
-
-
-
 
 # Use Flask's default session interface but disable Flask-WTF CSRF completely
 # This allows Flask to access secret_key while preventing CSRF session creation
@@ -235,7 +228,6 @@ if SECURITY_HEADERS_ENABLED:
         return response
 else:
     app.logger.warning("Security headers disabled - DO NOT USE IN PRODUCTION")
-
 
 # Initialize database and quality manager
 db_manager = DatabaseManager(config)
@@ -408,8 +400,6 @@ detached_instance_handler = create_global_detached_instance_handler(app, request
 # Register comprehensive session error handlers
 register_session_error_handlers(app, request_session_manager, detached_instance_handler)
 
-
-
 # Initialize WebSocket progress handler components with proper resource management
 progress_tracker = ProgressTracker(db_manager)
 task_queue_manager = TaskQueueManager(db_manager)
@@ -430,7 +420,6 @@ except Exception as e:
 # Initialize Flask-Login
 login_manager = LoginManager()
 login_manager.init_app(app)
-
 
 def validate_favicon_assets():
     """Validate that required favicon and logo assets exist"""
@@ -455,7 +444,6 @@ def validate_favicon_assets():
     else:
         app.logger.info("All required favicon and logo assets are present")
         return True
-
 
 # Validate assets on startup
 validate_favicon_assets()
@@ -736,8 +724,6 @@ class LoginForm(Form):
     remember = BooleanField('Remember Me')
     submit = SubmitField('Login')
 
-
-
 class ReviewForm(Form):
     """Form for reviewing image captions - using regular WTForms (no Flask-WTF CSRF)"""
     image_id = HiddenField('Image ID', validators=[DataRequired()])
@@ -752,7 +738,6 @@ class ReviewForm(Form):
     submit = SubmitField('Submit')
 
 # Authentication routes - handled by user_management blueprint
-
 
 @app.route('/first_time_setup')
 @login_required
@@ -807,13 +792,8 @@ def logout_all():
     
     return response
 
-
-
 # Legacy routes - now handled by admin blueprint
 # These routes are kept for backward compatibility but should use /admin/ URLs
-
-
-
 
 @app.route('/')
 @login_required
@@ -1004,7 +984,6 @@ def index():
 # Admin cleanup routes are handled by the admin blueprint at /admin/cleanup
 
 # Admin cleanup routes are handled by the admin blueprint
-
 
 @app.route('/images/<path:filename>')
 def serve_image(filename):
@@ -2479,7 +2458,6 @@ def api_edit_platform(platform_id):
         app.logger.error(f"Error updating platform connection: {str(e)}")
         return jsonify({'success': False, 'error': str(e)}), 500
 
-
 @app.route('/api/session/cleanup', methods=['POST'])
 @login_required
 @validate_csrf_token
@@ -2509,7 +2487,6 @@ def api_session_cleanup():
         app.logger.error(f"Error in session cleanup: {sanitize_for_log(str(e))}")
         return jsonify({'success': False, 'error': 'Failed to cleanup sessions'}), 500
 
-
 @app.route('/api/session/notify_logout', methods=['POST'])
 @rate_limit(limit=10, window_seconds=60)
 @with_session_error_handling
@@ -2536,9 +2513,7 @@ def api_session_notify_logout():
         app.logger.error(f"Error processing logout notification: {sanitize_for_log(str(e))}")
         return jsonify({'success': False, 'error': 'Failed to process logout notification'}), 500
 
-
 # Removed duplicate route - handled by admin blueprint
-
 
 @app.route('/api/delete_platform/<int:platform_id>', methods=['DELETE'])
 @login_required
@@ -3653,9 +3628,6 @@ def api_terminate_session(session_id):
         app.logger.error(f"Error terminating session: {sanitize_for_log(str(e))}")
         return jsonify({'success': False, 'error': 'Failed to terminate session'}), 500
 
-
-
-
 # Favicon and static asset routes
 @app.route('/favicon.ico')
 @with_session_error_handling
@@ -3666,7 +3638,6 @@ def favicon():
         'favicon.ico',
         mimetype='image/vnd.microsoft.icon'
     )
-
 
 @app.after_request
 def add_favicon_cache_headers(response):
@@ -3681,7 +3652,6 @@ def add_favicon_cache_headers(response):
         response.cache_control.public = True
     return response
 
-
 # Register user management routes
 from routes.user_management_routes import register_user_management_routes
 register_user_management_routes(app)
@@ -3689,7 +3659,6 @@ register_user_management_routes(app)
 # Register GDPR routes
 from routes.gdpr_routes import gdpr_bp
 app.register_blueprint(gdpr_bp)
-
 
 if __name__ == '__main__':
     # Set up logging for web app

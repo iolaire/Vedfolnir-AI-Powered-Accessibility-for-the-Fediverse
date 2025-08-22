@@ -19,7 +19,6 @@ from unified_session_manager import get_current_platform_context
 from sqlalchemy import create_engine
 from sqlalchemy.orm import sessionmaker
 
-
 class TestSessionManagement(unittest.TestCase):
     """Test session management functionality"""
     
@@ -30,7 +29,7 @@ class TestSessionManagement(unittest.TestCase):
         
         # Create test config
         self.config = Config()
-        self.config.storage.database_url = f'sqlite:///{self.db_path}'
+        self.config.storage.database_url = f'mysql+pymysql://{self.db_path}'
         
         # Initialize database manager
         self.db_manager = DatabaseManager(self.config)
@@ -241,7 +240,6 @@ class TestSessionManagement(unittest.TestCase):
         
         # Verify session is gone
         self.assertIsNone(self.session_manager.get_session_context(session_id))
-
 
 if __name__ == '__main__':
     unittest.main()

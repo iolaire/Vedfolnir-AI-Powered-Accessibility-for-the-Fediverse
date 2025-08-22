@@ -20,14 +20,13 @@ from services.user_management_service import UserProfileService
 from config import Config
 from database import DatabaseManager
 
-
 class TestUserProfileService(unittest.TestCase):
     """Test UserProfileService functionality"""
     
     def setUp(self):
         """Set up test fixtures"""
-        # Create in-memory SQLite database for testing
-        self.engine = create_engine('sqlite:///:memory:', echo=False)
+        # Create in-DATABASE_URL=mysql+pymysql://test_user:test_pass@localhost/test_db for testing
+        self.engine = create_engine('mysql+pymysql://DATABASE_URL=mysql+pymysql://test_user:test_pass@localhost/test_db', echo=False)
         Base.metadata.create_all(self.engine)
         
         # Create session
@@ -372,7 +371,6 @@ class TestUserProfileService(unittest.TestCase):
         """Test activity summary for non-existent user"""
         summary = self.service.get_user_activity_summary(99999)
         self.assertIsNone(summary)
-
 
 if __name__ == '__main__':
     unittest.main()

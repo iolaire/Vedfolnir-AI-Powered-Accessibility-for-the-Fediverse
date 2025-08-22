@@ -272,7 +272,6 @@ class SessionErrorHandler:
             </html>
             """
 
-
 def create_session_error_handler(cookie_manager: SessionCookieManager) -> SessionErrorHandler:
     """
     Create session error handler
@@ -284,7 +283,6 @@ def create_session_error_handler(cookie_manager: SessionCookieManager) -> Sessio
         SessionErrorHandler instance
     """
     return SessionErrorHandler(cookie_manager)
-
 
 # Decorator for session error handling
 def with_session_error_handling(cookie_manager: SessionCookieManager):

@@ -12,7 +12,6 @@ from tests.fixtures.platform_fixtures import PlatformTestCase
 from models import User, UserRole, PlatformConnection
 from platform_context import PlatformContextManager, PlatformContextError
 
-
 class TestPlatformAccessControl(PlatformTestCase):
     """Test platform access control mechanisms"""
     
@@ -86,7 +85,6 @@ class TestPlatformAccessControl(PlatformTestCase):
         with self.assertRaises(PlatformContextError):
             context_manager.set_context(user.id, platform_id)
 
-
 class TestUnauthorizedAccessPrevention(PlatformTestCase):
     """Test prevention of unauthorized access attempts"""
     
@@ -147,7 +145,6 @@ class TestUnauthorizedAccessPrevention(PlatformTestCase):
         
         with self.assertRaises((PlatformContextError, ValueError, TypeError)):
             context_manager.set_context(user.id, malicious_platform_id)
-
 
 class TestDataAccessSecurity(PlatformTestCase):
     """Test security of data access operations"""
@@ -233,7 +230,6 @@ class TestDataAccessSecurity(PlatformTestCase):
         user2_platform_accessible = any(p.id == user2_platform.id for p in user1_platforms)
         self.assertFalse(user2_platform_accessible)
 
-
 class TestSecurityAuditValidation(PlatformTestCase):
     """Test security audit and validation mechanisms"""
     
@@ -300,7 +296,6 @@ class TestSecurityAuditValidation(PlatformTestCase):
         
         # Platform should belong to same user
         self.assertEqual(session.active_platform.user_id, user.id)
-
 
 if __name__ == '__main__':
     unittest.main()

@@ -12,7 +12,6 @@ from sqlalchemy.exc import SQLAlchemyError
 
 logger = logging.getLogger(__name__)
 
-
 def with_db_session(f):
     """
     Decorator to ensure view functions have proper database session and current_user attachment.
@@ -81,7 +80,6 @@ def with_db_session(f):
             return redirect(url_for('index'))
     
     return decorated_function
-
 
 def require_platform_context(f):
     """
@@ -170,7 +168,6 @@ def require_platform_context(f):
     
     return decorated_function
 
-
 def handle_detached_instance_error(f):
     """
     Decorator to handle DetachedInstanceError specifically.
@@ -210,7 +207,6 @@ def handle_detached_instance_error(f):
             return redirect(url_for('index'))
     
     return decorated_function
-
 
 def ensure_user_session_attachment(f):
     """

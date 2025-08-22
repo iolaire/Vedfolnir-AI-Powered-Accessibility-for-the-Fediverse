@@ -18,7 +18,6 @@ from models import Base, User, UserRole, PlatformConnection, UserSession, Post, 
 from config import Config
 from database import DatabaseManager
 
-
 class PlatformTestFixtures:
     """Provides test fixtures for platform-aware testing"""
     
@@ -120,7 +119,6 @@ class PlatformTestFixtures:
             }
         ]
 
-
 class PlatformTestCase(unittest.TestCase):
     """Base test case with platform-aware setup"""
     
@@ -128,7 +126,7 @@ class PlatformTestCase(unittest.TestCase):
         """Set up test database and fixtures"""
         # Create temporary database
         self.db_fd, self.db_path = tempfile.mkstemp()
-        self.db_url = f'sqlite:///{self.db_path}'
+        self.db_url = f'mysql+pymysql://{self.db_path}'
         
         # Set up test environment
         os.environ['DATABASE_URL'] = self.db_url

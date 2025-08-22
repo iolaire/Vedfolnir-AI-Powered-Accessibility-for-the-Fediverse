@@ -18,14 +18,13 @@ from sqlalchemy.orm import sessionmaker
 from models import Base, User, UserRole, UserAuditLog
 from services.user_management_service import UserRegistrationService, UserAuthenticationService
 
-
 class TestUserRegistrationService(unittest.TestCase):
     """Test cases for UserRegistrationService"""
     
     def setUp(self):
         """Set up test fixtures"""
-        # Create in-memory SQLite database for testing
-        self.engine = create_engine('sqlite:///:memory:', echo=False)
+        # Create in-DATABASE_URL=mysql+pymysql://test_user:test_pass@localhost/test_db for testing
+        self.engine = create_engine('mysql+pymysql://DATABASE_URL=mysql+pymysql://test_user:test_pass@localhost/test_db', echo=False)
         Base.metadata.create_all(self.engine)
         
         # Create session
@@ -238,14 +237,13 @@ class TestUserRegistrationService(unittest.TestCase):
         self.assertIn("expired", message)
         self.assertIsNone(verified_user)
 
-
 class TestUserAuthenticationService(unittest.TestCase):
     """Test cases for UserAuthenticationService"""
     
     def setUp(self):
         """Set up test fixtures"""
-        # Create in-memory SQLite database for testing
-        self.engine = create_engine('sqlite:///:memory:', echo=False)
+        # Create in-DATABASE_URL=mysql+pymysql://test_user:test_pass@localhost/test_db for testing
+        self.engine = create_engine('mysql+pymysql://DATABASE_URL=mysql+pymysql://test_user:test_pass@localhost/test_db', echo=False)
         Base.metadata.create_all(self.engine)
         
         # Create session
@@ -377,7 +375,6 @@ class TestUserAuthenticationService(unittest.TestCase):
         self.assertFalse(success)
         self.assertIn("locked", message)
         self.assertIsNone(user)
-
 
 if __name__ == '__main__':
     unittest.main()

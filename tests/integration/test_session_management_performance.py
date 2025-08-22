@@ -11,7 +11,7 @@ optimization migration by running common queries and measuring execution time.
 
 import sys
 import time
-import sqlite3
+
 from pathlib import Path
 
 # Add the project root to the Python path
@@ -22,22 +22,26 @@ from config import Config
 from database import DatabaseManager
 import logging
 
+# MySQL integration test imports
+from tests.mysql_test_base import MySQLIntegrationTestBase
+from tests.mysql_test_config import MySQLTestFixtures
+
+
 # Configure logging
 logging.basicConfig(level=logging.INFO, format='%(asctime)s - %(levelname)s - %(message)s')
 logger = logging.getLogger(__name__)
-
 
 class SessionManagementPerformanceTest:
     """Test performance of session management queries"""
     
     def __init__(self):
         self.config = Config()
-        self.db_manager = DatabaseManager(self.config)
-        self.db_path = self.config.storage.database_url.replace('sqlite:///', '')
+        self.db_manager = self.get_database_manager()
+        self.db_path = self.config.storage.database_url.replace('mysql+pymysql://', '')
     
     def time_query(self, query, description, params=None):
         """Time a query execution"""
-        conn = sqlite3.connect(self.db_path)
+        conn = engine.connect()
         cursor = conn.cursor()
         
         start_time = time.time()
@@ -199,7 +203,7 @@ class SessionManagementPerformanceTest:
         """Test query plans to verify index usage"""
         logger.info("\n=== QUERY PLAN ANALYSIS ===")
         
-        conn = sqlite3.connect(self.db_path)
+        conn = engine.connect()
         cursor = conn.cursor()
         
         test_queries = [
@@ -245,7 +249,6 @@ class SessionManagementPerformanceTest:
         logger.info(f"Total test execution time: {total_time:.2f}ms")
         logger.info("All session management optimization indexes are working correctly")
 
-
 def main():
     """Main function to run performance tests"""
     try:
@@ -255,7 +258,6 @@ def main():
     except Exception as e:
         logger.error(f"Performance test failed: {e}")
         return 1
-
 
 if __name__ == '__main__':
     sys.exit(main())

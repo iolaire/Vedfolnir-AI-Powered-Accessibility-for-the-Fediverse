@@ -139,7 +139,7 @@ class SessionCleanupService:
         """Optimize session-related database tables"""
         try:
             with self.session_manager.get_db_session() as db_session:
-                # SQLite-specific optimizations
+                # MySQL
                 from sqlalchemy import text
                 
                 optimizations = 0

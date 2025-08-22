@@ -26,14 +26,14 @@ class TestAddUserFunctionality(unittest.TestCase):
         
         # Initialize database
         self.config = Config()
-        self.config.storage.database_url = f'sqlite:///{self.db_path}'
+        self.config.storage.database_url = f'mysql+pymysql://{self.db_path}'
         self.db_manager = DatabaseManager(self.config)
         
         # Create tables
         from models import Base
         from sqlalchemy import text
         with self.db_manager.engine.connect() as conn:
-            conn.execute(text('PRAGMA foreign_keys=ON'))
+            conn.execute(text('-- MySQL foreign keys are always enabled=ON'))
         Base.metadata.create_all(self.db_manager.engine)
         
         # Create admin user for testing

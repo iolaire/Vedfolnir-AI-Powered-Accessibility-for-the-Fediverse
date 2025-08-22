@@ -29,7 +29,6 @@ from request_scoped_session_manager import RequestScopedSessionManager
 from detached_instance_handler import DetachedInstanceHandler
 from session_state_manager import SessionStateManager, get_session_state_manager
 
-
 class SessionManagementFixesIntegrationTest(unittest.TestCase):
     """Integration tests for session management fixes"""
     
@@ -334,7 +333,6 @@ class SessionManagementFixesIntegrationTest(unittest.TestCase):
             self.assertEqual(summary['total_errors'], 2)
             self.assertEqual(summary['errors_handled'], 2)
             self.assertGreater(len(summary['error_details']), 0)
-
 
 if __name__ == '__main__':
     unittest.main()

@@ -23,7 +23,6 @@ from services.email_service import email_service
 
 logger = logging.getLogger(__name__)
 
-
 class GDPRDataSubjectService:
     """Service for handling GDPR data subject rights"""
     
@@ -587,7 +586,6 @@ class GDPRDataSubjectService:
         except Exception as e:
             logger.error(f"Error sending data export email to {user.email}: {e}")
             return False, f"Error sending data export email: {str(e)}"
-
 
 class GDPRPrivacyService:
     """Service for handling GDPR privacy and consent management"""

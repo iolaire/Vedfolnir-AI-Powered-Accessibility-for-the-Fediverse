@@ -12,10 +12,15 @@ from database import DatabaseManager
 from unified_session_manager import UnifiedSessionManager as SessionManager
 from models import User, PlatformConnection
 
+# MySQL integration test imports
+from tests.mysql_test_base import MySQLIntegrationTestBase
+from tests.mysql_test_config import MySQLTestFixtures
+
+
 def create_test_platform():
     """Create a test platform for the admin user"""
     config = Config()
-    db_manager = DatabaseManager(config)
+    db_manager = self.get_database_manager()
     
     db_session = db_manager.get_session()
     try:
@@ -52,7 +57,7 @@ def create_test_platform():
 def test_session_with_platform():
     """Test session creation with the platform"""
     config = Config()
-    db_manager = DatabaseManager(config)
+    db_manager = self.get_database_manager()
     session_manager = UnifiedSessionManager(db_manager)
     
     # First create a platform

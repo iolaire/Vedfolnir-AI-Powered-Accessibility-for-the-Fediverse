@@ -36,13 +36,11 @@ logger = logging.getLogger(__name__)
 # Create GDPR blueprint
 gdpr_bp = Blueprint('gdpr', __name__, url_prefix='/gdpr')
 
-
 def get_client_info():
     """Get client IP and user agent for audit logging"""
     ip_address = request.environ.get('HTTP_X_FORWARDED_FOR', request.environ.get('REMOTE_ADDR'))
     user_agent = request.environ.get('HTTP_USER_AGENT', '')
     return ip_address, user_agent
-
 
 @gdpr_bp.route('/data-export', methods=['GET', 'POST'])
 @login_required
@@ -127,7 +125,6 @@ def data_export():
     
     return render_template('gdpr/data_export.html', form=form)
 
-
 @gdpr_bp.route('/data-rectification', methods=['GET', 'POST'])
 @login_required
 def data_rectification():
@@ -185,7 +182,6 @@ def data_rectification():
     
     return render_template('gdpr/data_rectification.html', form=form)
 
-
 @gdpr_bp.route('/data-erasure', methods=['GET', 'POST'])
 @login_required
 def data_erasure():
@@ -238,7 +234,6 @@ def data_erasure():
             flash('An error occurred while processing your data erasure request.', 'error')
     
     return render_template('gdpr/data_erasure.html', form=form)
-
 
 @gdpr_bp.route('/consent-management', methods=['GET', 'POST'])
 @login_required
@@ -294,7 +289,6 @@ def consent_management():
     
     return render_template('gdpr/consent_management.html', form=form)
 
-
 @gdpr_bp.route('/privacy-request', methods=['GET', 'POST'])
 @login_required
 def privacy_request():
@@ -330,7 +324,6 @@ def privacy_request():
             flash('An error occurred while submitting your privacy request.', 'error')
     
     return render_template('gdpr/privacy_request.html', form=form)
-
 
 @gdpr_bp.route('/compliance-report', methods=['GET', 'POST'])
 @login_required
@@ -375,7 +368,6 @@ def compliance_report():
             flash('An error occurred while generating your compliance report.', 'error')
     
     return render_template('gdpr/privacy_request.html', form=form)
-
 
 @gdpr_bp.route('/data-portability', methods=['GET', 'POST'])
 @login_required
@@ -452,12 +444,10 @@ def data_portability():
     
     return render_template('gdpr/data_export.html', form=form)
 
-
 @gdpr_bp.route('/privacy-policy')
 def privacy_policy():
     """Display privacy policy and data processing information"""
     return render_template('gdpr/privacy_policy.html')
-
 
 @gdpr_bp.route('/data-processing-info')
 @login_required
@@ -481,7 +471,6 @@ def data_processing_info():
         logger.error(f"Error retrieving data processing info: {e}")
         flash('An error occurred while retrieving data processing information.', 'error')
         return redirect(url_for('profile.profile'))
-
 
 @gdpr_bp.route('/rights-overview')
 def rights_overview():

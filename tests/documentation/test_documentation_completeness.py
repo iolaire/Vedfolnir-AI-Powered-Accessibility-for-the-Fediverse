@@ -90,7 +90,6 @@ class TestDocumentationCompleteness(unittest.TestCase):
         for keyword in api_keywords:
             self.assertIn(keyword, content, f"API documentation should include {keyword}")
 
-
 class TestDocumentationExamples(unittest.TestCase):
     """Test that documentation examples are valid"""
     
@@ -136,7 +135,6 @@ class TestDocumentationExamples(unittest.TestCase):
                 real_matches = [m for m in matches if not any(ex in m.lower() for ex in ['example', 'test', 'your_', 'abc123'])]
                 self.assertEqual(len(real_matches), 0, f"Potential real credentials in {doc_file.name}: {real_matches}")
 
-
 class TestDocumentationStructure(unittest.TestCase):
     """Test documentation structure and organization"""
     
@@ -171,7 +169,6 @@ class TestDocumentationStructure(unittest.TestCase):
         for doc_file in self.docs_dir.glob('*.md'):
             content = doc_file.read_text().strip()
             self.assertGreater(len(content), 100, f"{doc_file.name} should have substantial content")
-
 
 if __name__ == '__main__':
     unittest.main(verbosity=2)

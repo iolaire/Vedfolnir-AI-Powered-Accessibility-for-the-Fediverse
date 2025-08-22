@@ -22,19 +22,18 @@ from database import DatabaseManager
 from models import User, UserSession, PlatformConnection, UserRole
 from tests.test_helpers import create_test_user_with_platforms, cleanup_test_user
 
-
 class TestSessionConsolidationIntegration(unittest.TestCase):
     """Integration tests for session consolidation"""
     
     def setUp(self):
         """Set up test fixtures"""
         # Create temporary database
-        self.temp_db = tempfile.NamedTemporaryFile(delete=False, suffix='.db')
+        self.temp_db = tempfile.NamedTemporaryFile(delete=False, suffix="MySQL database")
         self.temp_db.close()
         
         # Set up test configuration
         self.config = Config()
-        self.config.storage.database_url = f'sqlite:///{self.temp_db.name}'
+        self.config.storage.database_url = f'mysql+pymysql://{self.temp_db.name}'
         
         # Initialize database manager
         self.db_manager = DatabaseManager(self.config)
@@ -399,7 +398,6 @@ class TestSessionConsolidationIntegration(unittest.TestCase):
         self.assertIsNotNone(self.app.unified_session_manager.get_session_context(session1_id))
         self.assertIsNotNone(self.app.unified_session_manager.get_session_context(session2_id))
 
-
 if __name__ == '__main__':
     unittest.main()# Copyright (C) 2025 iolaire mcfadden.
 # This program is free software: you can redistribute it and/or modify it under the terms of the GNU Affero General Public License as published by the Free Software Foundation, either version 3 of the License, or (at your option) any later version.
@@ -424,19 +422,18 @@ from database import DatabaseManager
 from models import User, UserSession, PlatformConnection, UserRole
 from tests.test_helpers import create_test_user_with_platforms, cleanup_test_user
 
-
 class TestSessionConsolidationIntegration(unittest.TestCase):
     """Integration tests for session consolidation"""
     
     def setUp(self):
         """Set up test fixtures"""
         # Create temporary database
-        self.temp_db = tempfile.NamedTemporaryFile(delete=False, suffix='.db')
+        self.temp_db = tempfile.NamedTemporaryFile(delete=False, suffix="MySQL database")
         self.temp_db.close()
         
         # Set up test configuration
         self.config = Config()
-        self.config.database.url = f'sqlite:///{self.temp_db.name}'
+        self.config.database.url = f'mysql+pymysql://{self.temp_db.name}'
         
         # Initialize database manager
         self.db_manager = DatabaseManager(self.config)
@@ -824,7 +821,6 @@ class TestSessionConsolidationIntegration(unittest.TestCase):
             # First session should be cleaned up
             self.assertIsNone(session1)
             self.assertIsNotNone(session2)
-
 
 if __name__ == '__main__':
     unittest.main()

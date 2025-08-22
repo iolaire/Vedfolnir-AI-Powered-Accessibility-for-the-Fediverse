@@ -21,7 +21,6 @@ from sqlalchemy.exc import SQLAlchemyError
 
 logger = logging.getLogger(__name__)
 
-
 class PlatformAccessMiddleware:
     """
     Middleware to handle platform-scoped access control for viewer users.
@@ -370,42 +369,34 @@ class PlatformAccessMiddleware:
                 'total_posts': 0
             }
 
-
 # Convenience functions for use in templates and views
 def get_accessible_platforms():
     """Get platforms accessible to current user."""
     return getattr(g, 'user_accessible_platforms', [])
 
-
 def get_accessible_platform_ids():
     """Get platform IDs accessible to current user."""
     return getattr(g, 'user_accessible_platform_ids', [])
-
 
 def is_platform_accessible(platform_id):
     """Check if a platform is accessible to current user."""
     return PlatformAccessMiddleware.check_platform_access(platform_id)
 
-
 def is_image_accessible(image_id):
     """Check if an image is accessible to current user."""
     return PlatformAccessMiddleware.check_image_access(image_id)
-
 
 def is_post_accessible(post_id):
     """Check if a post is accessible to current user."""
     return PlatformAccessMiddleware.check_post_access(post_id)
 
-
 def filter_images_for_user(query):
     """Filter images query for current user's access."""
     return PlatformAccessMiddleware.filter_images_query(query)
 
-
 def filter_posts_for_user(query):
     """Filter posts query for current user's access."""
     return PlatformAccessMiddleware.filter_posts_query(query)
-
 
 def filter_platforms_for_user(query):
     """Filter platforms query for current user's access."""

@@ -483,13 +483,7 @@ class OllamaCaptionGenerator:
             await asyncio.sleep(0.5)
         
         return results
-        
 
-        
-
-    
-
-        
     def get_retry_stats(self) -> Dict[str, Any]:
         """
         Get statistics about retry attempts

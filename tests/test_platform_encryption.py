@@ -19,7 +19,6 @@ from cryptography.fernet import Fernet, InvalidToken
 from tests.fixtures.platform_fixtures import PlatformTestCase
 from models import PlatformConnection
 
-
 class TestCredentialEncryption(PlatformTestCase):
     """Test credential encryption and decryption"""
     
@@ -148,7 +147,6 @@ class TestCredentialEncryption(PlatformTestCase):
         self.assertEqual(platform1.access_token, 'token_platform_1')
         self.assertEqual(platform2.access_token, 'token_platform_2')
 
-
 class TestEncryptionKeyManagement(unittest.TestCase):
     """Test encryption key management"""
     
@@ -214,7 +212,6 @@ class TestEncryptionKeyManagement(unittest.TestCase):
         mock_logging.warning.assert_called_once()
         warning_call = mock_logging.warning.call_args[0][0]
         self.assertIn('PLATFORM_ENCRYPTION_KEY', warning_call)
-
 
 class TestEncryptionSecurity(PlatformTestCase):
     """Test encryption security aspects"""
@@ -305,7 +302,6 @@ class TestEncryptionSecurity(PlatformTestCase):
         # Should handle Unicode correctly
         self.assertEqual(platform.access_token, unicode_token)
 
-
 class TestEncryptionErrorHandling(PlatformTestCase):
     """Test encryption error handling"""
     
@@ -373,7 +369,6 @@ class TestEncryptionErrorHandling(PlatformTestCase):
         mock_logging.error.assert_called()
         self.assertIsNone(decrypted)
 
-
 class TestEncryptionPerformance(PlatformTestCase):
     """Test encryption performance characteristics"""
     
@@ -414,7 +409,6 @@ class TestEncryptionPerformance(PlatformTestCase):
         # Verify all platforms have correct tokens
         for i, platform in enumerate(platforms):
             self.assertEqual(platform.access_token, f'token_{i}')
-
 
 if __name__ == '__main__':
     unittest.main()

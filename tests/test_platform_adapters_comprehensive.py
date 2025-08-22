@@ -26,7 +26,6 @@ from activitypub_platforms import (
     PlatformDetectionError
 )
 
-
 @dataclass
 class MockConfig:
     """Mock configuration for testing"""
@@ -37,7 +36,6 @@ class MockConfig:
     client_key: Optional[str] = None
     client_secret: Optional[str] = None
     user_agent: str = "Vedfolnir/1.0"
-
 
 class TestPixelfedPlatformAdapter(unittest.TestCase):
     """Test PixelfedPlatform adapter maintains existing functionality"""
@@ -272,7 +270,6 @@ class TestPixelfedPlatformAdapter(unittest.TestCase):
         
         self.assertEqual(rate_limit_info, {})
 
-
 class TestMastodonPlatformAdapter(unittest.TestCase):
     """Test MastodonPlatform adapter handles Mastodon API correctly"""
     
@@ -462,7 +459,6 @@ class TestMastodonPlatformAdapter(unittest.TestCase):
         self.assertEqual(images[0]["image_post_id"], "media1")
         self.assertEqual(images[0]["attachment_index"], 0)
 
-
 class TestPlatformDetectionAndFactory(unittest.TestCase):
     """Test platform detection and adapter factory"""
     
@@ -626,7 +622,6 @@ class TestPlatformDetectionAndFactory(unittest.TestCase):
         
         self.assertIsInstance(adapter, PixelfedPlatform)
 
-
 def run_async_test(coro):
     """Helper function to run async tests"""
     loop = asyncio.new_event_loop()
@@ -635,7 +630,6 @@ def run_async_test(coro):
         return loop.run_until_complete(coro)
     finally:
         loop.close()
-
 
 # Convert async test methods to sync for unittest
 class TestPixelfedPlatformAdapterSync(TestPixelfedPlatformAdapter):
@@ -653,7 +647,6 @@ class TestPixelfedPlatformAdapterSync(TestPixelfedPlatformAdapter):
     def test_pixelfed_update_media_caption_failure_sync(self):
         run_async_test(self.test_pixelfed_update_media_caption_failure())
 
-
 class TestMastodonPlatformAdapterSync(TestMastodonPlatformAdapter):
     """Synchronous wrapper for async Mastodon tests"""
     
@@ -668,7 +661,6 @@ class TestMastodonPlatformAdapterSync(TestMastodonPlatformAdapter):
     
     def test_mastodon_update_media_caption_success_sync(self):
         run_async_test(self.test_mastodon_update_media_caption_success())
-
 
 if __name__ == "__main__":
     unittest.main()

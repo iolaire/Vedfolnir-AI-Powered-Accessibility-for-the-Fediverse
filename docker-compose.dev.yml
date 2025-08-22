@@ -1,0 +1,207 @@
+# Docker Compose configuration for Vedfolnir development with MySQL
+# This configuration is optimized for development and testing
+
+version: '3.8'
+
+services:
+  # Development Vedfolnir application
+  vedfolnir-dev:
+    build:
+      context: .
+      dockerfile: Dockerfile.dev
+      args:
+        - BUILD_ENV=development
+    image: vedfolnir:dev
+    container_name: vedfolnir_dev_app
+    restart: unless-stopped
+    ports:
+      - "5000:5000"
+      - "5678:5678"  # Debug port
+    environment:
+      # Flask Configuration
+      - FLASK_ENV=development
+      - FLASK_DEBUG=true
+      - FLASK_HOST=0.0.0.0
+      - FLASK_PORT=5000
+      
+      # MySQL Configuration
+      - DATABASE_URL=mysql+pymysql://vedfolnir_dev:dev_password@mysql-dev:3306/vedfolnir_dev?charset=utf8mb4
+      - DB_TYPE=mysql
+      - DB_HOST=mysql-dev
+      - DB_PORT=3306
+      - DB_NAME=vedfolnir_dev
+      - DB_USER=vedfolnir_dev
+      - DB_PASSWORD=dev_password
+      
+      # Test Database Configuration
+      - TEST_DATABASE_URL=mysql+pymysql://vedfolnir_test:test_password@mysql-dev:3306/vedfolnir_test?charset=utf8mb4
+      
+      # Redis Configuration
+      - REDIS_URL=redis://redis-dev:6379/0
+      - REDIS_HOST=redis-dev
+      - REDIS_PORT=6379
+      - REDIS_PASSWORD=
+      
+      # Ollama Configuration
+      - OLLAMA_URL=http://ollama-dev:11434
+      - OLLAMA_MODEL=llava:7b
+      
+      # Security (development keys)
+      - FLASK_SECRET_KEY=dev-secret-key-not-for-production
+      - PLATFORM_ENCRYPTION_KEY=dev-encryption-key-not-for-production
+      
+      # Development Settings
+      - LOG_LEVEL=DEBUG
+      - DEVELOPMENT_MODE=true
+      - DOCKER_DEPLOYMENT=true
+      - DRY_RUN=true
+      - MYSQL_LOG_QUERIES=true
+      - DEBUG_TOOLBAR_ENABLED=true
+    volumes:
+      - .:/app  # Mount source code for development
+      - ./storage/dev:/app/storage
+      - ./logs/dev:/app/logs
+      - ./backups/dev:/app/backups
+    depends_on:
+      mysql-dev:
+        condition: service_healthy
+      redis-dev:
+        condition: service_healthy
+    networks:
+      - vedfolnir_dev_network
+    healthcheck:
+      test: ["CMD", "curl", "-f", "http://localhost:5000/health"]
+      interval: 30s
+      timeout: 10s
+      retries: 3
+      start_period: 30s
+
+  # Development MySQL Database
+  mysql-dev:
+    image: mysql:8.0
+    container_name: vedfolnir_mysql_dev
+    restart: unless-stopped
+    environment:
+      - MYSQL_ROOT_PASSWORD=dev_root_password
+      - MYSQL_DATABASE=vedfolnir_dev
+      - MYSQL_USER=vedfolnir_dev
+      - MYSQL_PASSWORD=dev_password
+    ports:
+      - "3307:3306"  # Different port to avoid conflicts
+    volumes:
+      - mysql_dev_data:/var/lib/mysql
+      - ./docker/mysql/dev-init:/docker-entrypoint-initdb.d:ro
+    command: >
+      --character-set-server=utf8mb4
+      --collation-server=utf8mb4_unicode_ci
+      --innodb-buffer-pool-size=128M
+      --max-connections=50
+      --slow-query-log=1
+      --long-query-time=1
+      --general-log=1
+      --general-log-file=/var/log/mysql/general.log
+    networks:
+      - vedfolnir_dev_network
+    healthcheck:
+      test: ["CMD", "mysqladmin", "ping", "-h", "localhost", "-u", "vedfolnir_dev", "-pdev_password"]
+      interval: 30s
+      timeout: 10s
+      retries: 5
+      start_period: 30s
+
+  # Development Redis
+  redis-dev:
+    image: redis:7-alpine
+    container_name: vedfolnir_redis_dev
+    restart: unless-stopped
+    ports:
+      - "6380:6379"  # Different port to avoid conflicts
+    volumes:
+      - redis_dev_data:/data
+    command: redis-server --appendonly yes --maxmemory 128mb --maxmemory-policy allkeys-lru
+    networks:
+      - vedfolnir_dev_network
+    healthcheck:
+      test: ["CMD", "redis-cli", "ping"]
+      interval: 30s
+      timeout: 10s
+      retries: 3
+
+  # Development Ollama (optional, can be resource intensive)
+  ollama-dev:
+    image: ollama/ollama:latest
+    container_name: vedfolnir_ollama_dev
+    restart: unless-stopped
+    ports:
+      - "11435:11434"  # Different port to avoid conflicts
+    volumes:
+      - ollama_dev_data:/root/.ollama
+    environment:
+      - OLLAMA_ORIGINS=*
+      - OLLAMA_HOST=0.0.0.0
+    networks:
+      - vedfolnir_dev_network
+    profiles:
+      - with-ollama  # Optional service for development
+    healthcheck:
+      test: ["CMD", "curl", "-f", "http://localhost:11434/api/version"]
+      interval: 60s
+      timeout: 30s
+      retries: 3
+      start_period: 120s
+
+  # Development Database Admin (phpMyAdmin)
+  phpmyadmin:
+    image: phpmyadmin/phpmyadmin:latest
+    container_name: vedfolnir_phpmyadmin
+    restart: unless-stopped
+    ports:
+      - "8080:80"
+    environment:
+      - PMA_HOST=mysql-dev
+      - PMA_PORT=3306
+      - PMA_USER=vedfolnir_dev
+      - PMA_PASSWORD=dev_password
+      - MYSQL_ROOT_PASSWORD=dev_root_password
+    depends_on:
+      - mysql-dev
+    networks:
+      - vedfolnir_dev_network
+    profiles:
+      - with-admin  # Optional service for database administration
+
+  # Redis Admin (RedisInsight)
+  redis-insight:
+    image: redislabs/redisinsight:latest
+    container_name: vedfolnir_redis_insight
+    restart: unless-stopped
+    ports:
+      - "8001:8001"
+    volumes:
+      - redis_insight_data:/db
+    depends_on:
+      - redis-dev
+    networks:
+      - vedfolnir_dev_network
+    profiles:
+      - with-admin  # Optional service for Redis administration
+
+# Development Volumes
+volumes:
+  mysql_dev_data:
+    driver: local
+  redis_dev_data:
+    driver: local
+  ollama_dev_data:
+    driver: local
+  redis_insight_data:
+    driver: local
+
+# Development Network
+networks:
+  vedfolnir_dev_network:
+    driver: bridge
+    ipam:
+      config:
+        - subnet: 172.21.0.0/16
+          gateway: 172.21.0.1

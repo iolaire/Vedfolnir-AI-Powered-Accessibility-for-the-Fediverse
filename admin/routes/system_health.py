@@ -119,7 +119,7 @@ def register_routes(bp):
                 import os
                 
                 # Check database type and connection
-                database_url = os.getenv('DATABASE_URL', 'sqlite:///storage/database/vedfolnir.db')
+                database_url = os.getenv('DATABASE_URL', "MySQL database")
                 
                 if database_url.startswith('mysql'):
                     # For MySQL, test the database connection itself
@@ -135,7 +135,7 @@ def register_routes(bp):
                         health_status['components']['storage'] = f'unhealthy: MySQL connection failed - {str(e)}'
                         health_status['status'] = 'degraded'
                 else:
-                    # For SQLite, check directories
+                    # For MySQL, check directories
                     storage_dirs = ['storage', 'storage/database', 'storage/images']
                     storage_healthy = all(os.path.exists(d) for d in storage_dirs)
                     if storage_healthy:

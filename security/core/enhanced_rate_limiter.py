@@ -20,7 +20,6 @@ from security.monitoring.security_event_logger import get_security_event_logger,
 
 logger = logging.getLogger(__name__)
 
-
 class RateLimitStrategy:
     """Base class for rate limiting strategies"""
     
@@ -31,7 +30,6 @@ class RateLimitStrategy:
     def is_allowed(self, key: str, storage: Dict[str, Any]) -> Tuple[bool, Dict[str, Any]]:
         """Check if request is allowed and return updated storage"""
         raise NotImplementedError
-
 
 class SlidingWindowRateLimit(RateLimitStrategy):
     """Sliding window rate limiting strategy"""
@@ -54,7 +52,6 @@ class SlidingWindowRateLimit(RateLimitStrategy):
         # Add current request
         storage[key].append(current_time)
         return True, storage
-
 
 class TokenBucketRateLimit(RateLimitStrategy):
     """Token bucket rate limiting strategy"""
@@ -88,7 +85,6 @@ class TokenBucketRateLimit(RateLimitStrategy):
         # Consume a token
         bucket['tokens'] -= 1
         return True, storage
-
 
 class AdaptiveRateLimit(RateLimitStrategy):
     """Adaptive rate limiting that adjusts based on user behavior"""
@@ -136,7 +132,6 @@ class AdaptiveRateLimit(RateLimitStrategy):
             data['violations'] = max(0, data['violations'] - 1)
         
         return True, storage
-
 
 class EnhancedRateLimiter:
     """Enhanced rate limiter with multiple strategies and user management focus"""
@@ -360,7 +355,6 @@ class EnhancedRateLimiter:
         except Exception as e:
             logger.error(f"Error logging rate limit violation: {e}")
 
-
 def rate_limit_user_management(
     operation: str,
     identifier: Optional[str] = None,
@@ -413,27 +407,22 @@ def rate_limit_user_management(
         return decorated_function
     return decorator
 
-
 # Convenience decorators for common operations
 def rate_limit_login(f):
     """Rate limit login attempts"""
     return rate_limit_user_management('login')(f)
 
-
 def rate_limit_registration(f):
     """Rate limit registration attempts"""
     return rate_limit_user_management('registration')(f)
-
 
 def rate_limit_password_reset(f):
     """Rate limit password reset requests"""
     return rate_limit_user_management('password_reset')(f)
 
-
 def rate_limit_profile_operations(f):
     """Rate limit profile operations"""
     return rate_limit_user_management('profile_update')(f)
-
 
 def rate_limit_admin_operations(operation: str):
     """Rate limit admin operations"""

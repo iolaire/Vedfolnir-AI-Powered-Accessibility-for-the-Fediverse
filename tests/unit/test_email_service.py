@@ -15,7 +15,6 @@ from flask_mailing import Message
 
 from services.email_service import EmailService, email_service
 
-
 class TestEmailService(unittest.TestCase):
     """Test EmailService functionality"""
     
@@ -361,7 +360,6 @@ class TestEmailService(unittest.TestCase):
         # Should have tried only once
         self.assertEqual(self.email_service.mail.send_message.call_count, 1)
 
-
 class TestEmailServiceIntegration(unittest.TestCase):
     """Test EmailService integration functionality"""
     
@@ -383,7 +381,6 @@ class TestEmailServiceIntegration(unittest.TestCase):
         self.assertIsInstance(service, EmailService)
         self.assertEqual(service.app, app)
         self.assertIsNotNone(service.mail)
-
 
 if __name__ == '__main__':
     unittest.main()

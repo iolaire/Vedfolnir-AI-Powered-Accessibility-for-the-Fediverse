@@ -17,7 +17,6 @@ from models import User, UserRole
 from services.user_management_service import PasswordManagementService
 from tests.test_helpers import create_test_user_with_platforms, cleanup_test_user
 
-
 class TestPasswordManagementService(unittest.TestCase):
     """Test password management service functionality"""
     
@@ -255,7 +254,6 @@ class TestPasswordManagementService(unittest.TestCase):
             self.assertIsNone(user.password_reset_token)
             self.assertIsNone(user.password_reset_sent_at)
             self.assertFalse(user.password_reset_used)
-
 
 if __name__ == '__main__':
     unittest.main()

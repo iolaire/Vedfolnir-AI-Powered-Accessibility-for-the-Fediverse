@@ -9,7 +9,6 @@ from unittest.mock import Mock, patch, MagicMock
 from session_performance_monitor import SessionPerformanceMonitor, SessionMetrics, RequestMetrics
 from session_performance_monitor import get_performance_monitor, initialize_performance_monitoring
 
-
 class TestSessionMetrics(unittest.TestCase):
     """Test SessionMetrics dataclass"""
     
@@ -33,7 +32,6 @@ class TestSessionMetrics(unittest.TestCase):
         self.assertEqual(len(metrics.session_creation_times), 0)
         self.assertEqual(len(metrics.session_cleanup_times), 0)
         self.assertEqual(len(metrics.recovery_times), 0)
-
 
 class TestRequestMetrics(unittest.TestCase):
     """Test RequestMetrics dataclass"""
@@ -60,7 +58,6 @@ class TestRequestMetrics(unittest.TestCase):
         self.assertEqual(metrics.successful_recoveries, 0)
         self.assertEqual(metrics.database_queries, 0)
         self.assertEqual(metrics.session_duration, 0.0)
-
 
 class TestSessionPerformanceMonitor(unittest.TestCase):
     """Test SessionPerformanceMonitor class"""
@@ -315,7 +312,6 @@ class TestSessionPerformanceMonitor(unittest.TestCase):
         self.assertEqual(self.monitor.metrics.session_closures, 500)
         self.assertEqual(self.monitor.metrics.session_commits, 500)
 
-
 class TestGlobalMonitorFunctions(unittest.TestCase):
     """Test global monitor functions"""
     
@@ -351,7 +347,6 @@ class TestGlobalMonitorFunctions(unittest.TestCase):
         mock_app.logger.info.assert_called_once_with("Session performance monitoring initialized")
         
         self.assertEqual(result, mock_monitor)
-
 
 class TestPerformanceMonitoringIntegration(unittest.TestCase):
     """Integration tests for performance monitoring"""
@@ -408,7 +403,6 @@ class TestPerformanceMonitoringIntegration(unittest.TestCase):
         self.assertGreater(metrics['performance_metrics']['avg_creation_time'], 1.0)
         self.assertGreater(metrics['performance_metrics']['avg_cleanup_time'], 1.0)
         self.assertGreater(metrics['performance_metrics']['avg_recovery_time'], 1.0)
-
 
 if __name__ == '__main__':
     unittest.main()

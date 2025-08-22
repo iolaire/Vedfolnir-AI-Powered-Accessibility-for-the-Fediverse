@@ -23,14 +23,12 @@ from security.audit.csrf_template_scanner import CSRFAuditResult, TemplateSecuri
 
 logger = logging.getLogger(__name__)
 
-
 class ComplianceLevel(Enum):
     """CSRF compliance levels"""
     EXCELLENT = "excellent"      # 90-100%
     GOOD = "good"               # 70-89%
     NEEDS_IMPROVEMENT = "needs_improvement"  # 50-69%
     POOR = "poor"               # 0-49%
-
 
 @dataclass
 class ComplianceReport:
@@ -42,7 +40,6 @@ class ComplianceReport:
     recommendations: List[str]
     templates: List[Dict[str, Any]]
     trends: Optional[Dict[str, Any]] = None
-
 
 class CSRFComplianceValidator:
     """Validates CSRF compliance and generates scores"""
@@ -430,7 +427,6 @@ class CSRFComplianceValidator:
         
         return recommendations
 
-
 class SecurityAuditReporter:
     """Generates automated security audit reports"""
     
@@ -715,7 +711,6 @@ class SecurityAuditReporter:
         </body>
         </html>
         """
-
 
 class ContinuousIntegrationValidator:
     """Validates CSRF compliance for CI/CD pipelines"""

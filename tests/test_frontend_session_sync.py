@@ -18,7 +18,6 @@ import json
 import sys
 from pathlib import Path
 
-
 class TestFrontendSessionSync(unittest.TestCase):
     """Test frontend JavaScript session synchronization functionality"""
     
@@ -278,7 +277,6 @@ class TestFrontendSessionSync(unittest.TestCase):
             if broken_test_file.exists():
                 broken_test_file.unlink()
 
-
 class TestFrontendTestInfrastructure(unittest.TestCase):
     """Test the frontend testing infrastructure itself"""
     
@@ -345,7 +343,6 @@ class TestFrontendTestInfrastructure(unittest.TestCase):
             
         except (subprocess.TimeoutExpired, FileNotFoundError):
             self.skipTest("Cannot validate JavaScript syntax - Node.js not available")
-
 
 if __name__ == '__main__':
     # Run the tests

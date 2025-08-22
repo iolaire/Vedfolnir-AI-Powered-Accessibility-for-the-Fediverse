@@ -17,7 +17,6 @@ from sqlalchemy.exc import SQLAlchemyError
 
 logger = logging.getLogger(__name__)
 
-
 def safe_template_context() -> Dict[str, Any]:
     """
     Provide safe template context with error handling for database objects.
@@ -72,7 +71,6 @@ def safe_template_context() -> Dict[str, Any]:
     
     return context
 
-
 def _get_safe_user_data(user, handler) -> Optional[Dict[str, Any]]:
     """
     Safely extract user data for template context.
@@ -101,7 +99,6 @@ def _get_safe_user_data(user, handler) -> Optional[Dict[str, Any]]:
             'role': 'user',
             'is_active': True
         }
-
 
 def _get_safe_platforms_data(user, handler, session_manager) -> Dict[str, Any]:
     """
@@ -160,7 +157,6 @@ def _get_safe_platforms_data(user, handler, session_manager) -> Dict[str, Any]:
     
     return platforms_data
 
-
 def _platform_to_safe_dict(platform, handler) -> Optional[Dict[str, Any]]:
     """
     Convert platform object to safe dictionary.
@@ -198,7 +194,6 @@ def _platform_to_safe_dict(platform, handler) -> Optional[Dict[str, Any]]:
         logger.error(f"Error converting platform to safe dict: {e}")
         return None
 
-
 def _query_platforms_fallback(user, handler, session_manager) -> List:
     """
     Fallback method to query platforms directly from database.
@@ -232,7 +227,6 @@ def _query_platforms_fallback(user, handler, session_manager) -> List:
     
     return []
 
-
 def _handle_detached_error_fallback(context: Dict[str, Any], session_manager) -> None:
     """
     Handle DetachedInstanceError by providing minimal fallback data.
@@ -264,7 +258,6 @@ def _handle_detached_error_fallback(context: Dict[str, Any], session_manager) ->
         'platform_count': 0
     })
 
-
 def create_safe_template_context_processor(app):
     """
     Register the safe template context processor with Flask app.
@@ -278,7 +271,6 @@ def create_safe_template_context_processor(app):
         return safe_template_context()
     
     logger.info("Safe template context processor registered")
-
 
 def get_safe_user_context(user_id: Optional[int] = None) -> Dict[str, Any]:
     """

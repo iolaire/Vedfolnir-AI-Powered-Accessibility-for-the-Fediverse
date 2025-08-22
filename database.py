@@ -7,7 +7,7 @@ import os
 import time
 from datetime import datetime, timezone
 from typing import Optional, List, Dict, Any, Tuple
-from sqlalchemy import create_engine, event, and_, or_, func
+from sqlalchemy import create_engine, event, and_, or_, func, text
 from sqlalchemy.orm import sessionmaker, scoped_session
 from sqlalchemy.exc import SQLAlchemyError
 from sqlalchemy.pool import QueuePool
@@ -18,11 +18,9 @@ from security.core.security_utils import sanitize_for_log
 
 logger = getLogger(__name__)
 
-
 class DatabaseOperationError(Exception):
     """Raised when database operations fail due to invalid conditions"""
     pass
-
 
 class PlatformValidationError(Exception):
     """Raised when platform-related validation fails"""
@@ -33,54 +31,36 @@ query_logger = getLogger('sqlalchemy.query')
 query_logger.setLevel(logging.INFO)
 
 class DatabaseManager:
-    """Handles platform-aware database operations"""
+    """Handles platform-aware MySQL database operations"""
     
     def __init__(self, config: Config):
         self.config = config
         db_config = config.storage.db_config
         
-        # Configure SQLAlchemy engine with database-specific settings
+        # Comprehensive MySQL connection validation
+        self._validate_mysql_connection_params(config.storage.database_url)
+        
+        # Configure SQLAlchemy engine with MySQL-optimized settings
         engine_kwargs = {
             'echo': False,
             'pool_pre_ping': True,
             'pool_recycle': db_config.pool_recycle,
+            'poolclass': QueuePool,
+            'pool_size': db_config.pool_size,
+            'max_overflow': db_config.max_overflow,
+            'pool_timeout': db_config.pool_timeout,
+            'connect_args': {
+                'charset': 'utf8mb4',
+                'use_unicode': True,
+                'autocommit': False,
+                'connect_timeout': 60,
+                'read_timeout': 60,
+                'write_timeout': 60,
+                # MySQL-specific optimizations
+                'sql_mode': 'STRICT_TRANS_TABLES,NO_ZERO_DATE,NO_ZERO_IN_DATE,ERROR_FOR_DIVISION_BY_ZERO',
+                'init_command': "SET SESSION sql_mode='STRICT_TRANS_TABLES,NO_ZERO_DATE,NO_ZERO_IN_DATE,ERROR_FOR_DIVISION_BY_ZERO'",
+            }
         }
-        
-        # Database-specific configuration
-        if 'sqlite' in config.storage.database_url:
-            # SQLite configuration
-            engine_kwargs.update({
-                'poolclass': None,  # Disable connection pooling for SQLite
-                'connect_args': {
-                    'check_same_thread': False,
-                    'timeout': 30,  # 30 second timeout for SQLite
-                    'isolation_level': None,  # Enable autocommit mode
-                }
-            })
-        elif 'mysql' in config.storage.database_url:
-            # MySQL configuration with connection pooling and charset
-            engine_kwargs.update({
-                'poolclass': QueuePool,
-                'pool_size': db_config.pool_size,
-                'max_overflow': db_config.max_overflow,
-                'pool_timeout': db_config.pool_timeout,
-                'connect_args': {
-                    'charset': 'utf8mb4',
-                    'use_unicode': True,
-                    'autocommit': False,
-                    'connect_timeout': 60,
-                    'read_timeout': 60,
-                    'write_timeout': 60,
-                }
-            })
-        else:
-            # For other databases, use connection pooling
-            engine_kwargs.update({
-                'poolclass': QueuePool,
-                'pool_size': db_config.pool_size,
-                'max_overflow': db_config.max_overflow,
-                'pool_timeout': db_config.pool_timeout,
-            })
         
         self.engine = create_engine(config.storage.database_url, **engine_kwargs)
         
@@ -88,7 +68,7 @@ class DatabaseManager:
         if db_config.query_logging:
             self._setup_query_logging()
         
-        # Use sessionmaker instead of scoped_session for better control
+        # Use sessionmaker for MySQL connection management
         self.SessionFactory = sessionmaker(bind=self.engine)
         
         # Initialize platform context manager
@@ -97,45 +77,141 @@ class DatabaseManager:
         # Create tables on initialization
         self.create_tables()
     
+    def _validate_mysql_connection_params(self, database_url: str):
+        """Validate MySQL connection parameters with comprehensive error reporting"""
+        try:
+            from mysql_connection_validator import validate_mysql_connection
+            
+            validation_result = validate_mysql_connection(database_url)
+            
+            if not validation_result['is_valid']:
+                error_messages = []
+                error_messages.append("MySQL connection validation failed:")
+                
+                for error in validation_result['errors']:
+                    error_messages.append(f"  ❌ {error}")
+                
+                if validation_result['warnings']:
+                    error_messages.append("Warnings:")
+                    for warning in validation_result['warnings']:
+                        error_messages.append(f"  ⚠️  {warning}")
+                
+                if validation_result['troubleshooting_tips']:
+                    error_messages.append("Troubleshooting tips:")
+                    for tip in validation_result['troubleshooting_tips']:
+                        error_messages.append(f"  💡 {tip}")
+                
+                error_message = "\n".join(error_messages)
+                logger.error(error_message)
+                raise DatabaseOperationError(f"Invalid MySQL connection parameters:\n{error_message}")
+            
+            # Log successful validation with any warnings
+            if validation_result['warnings']:
+                logger.warning("MySQL connection validation passed with warnings:")
+                for warning in validation_result['warnings']:
+                    logger.warning(f"  ⚠️  {warning}")
+            else:
+                logger.info("MySQL connection parameters validated successfully")
+                
+        except ImportError:
+            # Fallback to basic validation if validator module not available
+            if not database_url.startswith('mysql+pymysql://'):
+                raise DatabaseOperationError(
+                    f"Invalid database URL. Expected MySQL connection string starting with 'mysql+pymysql://', "
+                    f"got: {database_url[:20]}..."
+                )
+    
     def _setup_query_logging(self):
-        """Set up query logging for performance analysis"""
+        """Set up MySQL-specific query logging for performance analysis"""
         @event.listens_for(self.engine, "before_cursor_execute")
         def before_cursor_execute(conn, cursor, statement, parameters, context, executemany):
             conn.info.setdefault('query_start_time', []).append(time.time())
-            query_logger.debug("Start Query: %s", statement)
+            query_logger.debug("MySQL Query Start: %s", statement)
         
         @event.listens_for(self.engine, "after_cursor_execute")
         def after_cursor_execute(conn, cursor, statement, parameters, context, executemany):
             total = time.time() - conn.info['query_start_time'].pop(-1)
-            query_logger.info("Query Complete: %s", statement)
-            query_logger.info("Query Time: %f", total)
+            query_logger.info("MySQL Query Complete: %s", statement)
+            query_logger.info("MySQL Query Time: %f seconds", total)
+            
+            # Log slow queries (> 1 second) with additional detail
+            if total > 1.0:
+                query_logger.warning("Slow MySQL Query detected (%.2f seconds): %s", total, statement)
     
     def create_tables(self):
-        """Create database tables"""
+        """Create MySQL database tables with InnoDB engine and proper charset"""
         connection = None
         try:
             connection = self.engine.connect()
+            
+            # Set MySQL-specific session variables for table creation
+            connection.execute(text("SET SESSION sql_mode='STRICT_TRANS_TABLES,NO_ZERO_DATE,NO_ZERO_IN_DATE,ERROR_FOR_DIVISION_BY_ZERO'"))
+            connection.execute(text("SET SESSION default_storage_engine='InnoDB'"))
+            connection.execute(text("SET SESSION character_set_server='utf8mb4'"))
+            connection.execute(text("SET SESSION collation_server='utf8mb4_unicode_ci'"))
+            
+            # Create all tables with MySQL optimizations
             Base.metadata.create_all(connection)
+            
+            # Create MySQL-specific performance indexes
             self._create_performance_indexes()
-            # logger.info("Database tables and indexes created successfully")
+            
+            logger.info("MySQL database tables and indexes created successfully")
         except Exception as e:
-            logger.error(f"Error creating database tables: {e}")
-            raise
+            error_message = self.handle_mysql_error(e)
+            logger.error(f"Failed to create MySQL tables: {error_message}")
+            raise DatabaseOperationError(f"Failed to create MySQL database tables: {error_message}")
         finally:
             if connection:
                 connection.close()
     
     def _create_performance_indexes(self):
-        """Create additional indexes for better performance"""
+        """Create MySQL-specific performance indexes"""
         connection = None
         try:
             from sqlalchemy import text
             connection = self.engine.connect()
             
+            # MySQL-specific performance indexes
+            mysql_indexes = [
+                # Posts table indexes
+                "CREATE INDEX IF NOT EXISTS idx_posts_created_at ON posts(created_at)",
+                "CREATE INDEX IF NOT EXISTS idx_posts_user_id_created_at ON posts(user_id, created_at)",
+                "CREATE INDEX IF NOT EXISTS idx_posts_platform_connection_id ON posts(platform_connection_id)",
+                
+                # Images table indexes
+                "CREATE INDEX IF NOT EXISTS idx_images_post_id ON images(post_id)",
+                "CREATE INDEX IF NOT EXISTS idx_images_status ON images(status)",
+                "CREATE INDEX IF NOT EXISTS idx_images_created_at ON images(created_at)",
+                
+                # Users table indexes
+                "CREATE INDEX IF NOT EXISTS idx_users_username ON users(username)",
+                "CREATE INDEX IF NOT EXISTS idx_users_email ON users(email)",
+                "CREATE INDEX IF NOT EXISTS idx_users_created_at ON users(created_at)",
+                
+                # Platform connections indexes
+                "CREATE INDEX IF NOT EXISTS idx_platform_connections_user_id ON platform_connections(user_id)",
+                "CREATE INDEX IF NOT EXISTS idx_platform_connections_platform_name ON platform_connections(platform_name)",
+                "CREATE INDEX IF NOT EXISTS idx_platform_connections_is_default ON platform_connections(is_default)",
+                
+                # Processing runs indexes
+                "CREATE INDEX IF NOT EXISTS idx_processing_runs_user_id ON processing_runs(user_id)",
+                "CREATE INDEX IF NOT EXISTS idx_processing_runs_status ON processing_runs(status)",
+                "CREATE INDEX IF NOT EXISTS idx_processing_runs_created_at ON processing_runs(created_at)",
+            ]
+            
+            for index_sql in mysql_indexes:
+                try:
+                    connection.execute(text(index_sql))
+                    logger.debug(f"Created index: {index_sql}")
+                except Exception as e:
+                    # Index might already exist, which is fine
+                    logger.debug(f"Index creation skipped (likely already exists): {e}")
+            
             connection.commit()
-            logger.debug("Performance indexes created successfully")
+            logger.debug("MySQL performance indexes created successfully")
         except Exception as e:
-            logger.warning(f"Could not create performance indexes: {e}")
+            logger.warning(f"Could not create MySQL performance indexes: {e}")
         finally:
             # Ensure connection is properly closed
             if connection:
@@ -171,6 +247,371 @@ class DatabaseManager:
         """Clear platform context"""
         if self._context_manager:
             self._context_manager.clear_context()
+    
+    def handle_mysql_error(self, error: Exception) -> str:
+        """Handle MySQL-specific errors and provide comprehensive diagnostic information"""
+        error_message = str(error)
+        
+        # Enhanced MySQL error code mappings with detailed solutions
+        mysql_error_mappings = {
+            1045: {
+                'description': "Access denied - MySQL authentication failed",
+                'solution': "Check MySQL username and password in DATABASE_URL. Verify user exists and has correct permissions.",
+                'commands': [
+                    "mysql -u root -p",
+                    "CREATE USER 'username'@'localhost' IDENTIFIED BY 'password';",
+                    "GRANT ALL PRIVILEGES ON database_name.* TO 'username'@'localhost';",
+                    "FLUSH PRIVILEGES;"
+                ]
+            },
+            1049: {
+                'description': "Unknown database - specified database does not exist",
+                'solution': "Create the database or verify the database name in DATABASE_URL is correct.",
+                'commands': [
+                    "mysql -u root -p",
+                    "CREATE DATABASE database_name CHARACTER SET utf8mb4 COLLATE utf8mb4_unicode_ci;",
+                    "SHOW DATABASES;"
+                ]
+            },
+            2003: {
+                'description': "Can't connect to MySQL server - connection refused",
+                'solution': "Check if MySQL server is running and accessible on the specified host and port.",
+                'commands': [
+                    "sudo systemctl status mysql",
+                    "sudo systemctl start mysql",
+                    "netstat -tlnp | grep :3306",
+                    "telnet hostname 3306"
+                ]
+            },
+            1146: {
+                'description': "Table doesn't exist - required table is missing",
+                'solution': "Run database migrations to create missing tables.",
+                'commands': [
+                    "python scripts/setup/create_tables.py",
+                    "Check if Base.metadata.create_all() was called"
+                ]
+            },
+            1062: {
+                'description': "Duplicate entry - unique constraint violation",
+                'solution': "The record you're trying to insert already exists. Check for duplicate data.",
+                'commands': [
+                    "SELECT * FROM table_name WHERE unique_column = 'value';",
+                    "Use INSERT IGNORE or ON DUPLICATE KEY UPDATE"
+                ]
+            },
+            1452: {
+                'description': "Foreign key constraint fails - referenced record doesn't exist",
+                'solution': "Ensure the referenced record exists before creating the relationship.",
+                'commands': [
+                    "SELECT * FROM parent_table WHERE id = foreign_key_value;",
+                    "Check foreign key relationships and constraints"
+                ]
+            },
+            1205: {
+                'description': "Lock wait timeout exceeded - database is busy or deadlocked",
+                'solution': "Retry the operation. If persistent, check for long-running transactions.",
+                'commands': [
+                    "SHOW PROCESSLIST;",
+                    "SHOW ENGINE INNODB STATUS;",
+                    "SET innodb_lock_wait_timeout = 120;"
+                ]
+            },
+            1213: {
+                'description': "Deadlock found - transaction was rolled back automatically",
+                'solution': "Retry the transaction. Consider reordering operations to avoid deadlocks.",
+                'commands': [
+                    "SHOW ENGINE INNODB STATUS;",
+                    "Review transaction order and locking patterns"
+                ]
+            },
+            2006: {
+                'description': "MySQL server has gone away - connection was lost",
+                'solution': "Connection was lost due to timeout or server restart. Will automatically reconnect.",
+                'commands': [
+                    "Check MySQL server logs: sudo tail -f /var/log/mysql/error.log",
+                    "Verify max_allowed_packet and wait_timeout settings"
+                ]
+            },
+            2013: {
+                'description': "Lost connection to MySQL server - network or server issue",
+                'solution': "Network connectivity issue or server problem. Check network and server status.",
+                'commands': [
+                    "ping mysql_server_host",
+                    "telnet mysql_server_host 3306",
+                    "Check MySQL server status and logs"
+                ]
+            },
+            1040: {
+                'description': "Too many connections - MySQL connection limit reached",
+                'solution': "MySQL has reached its connection limit. Increase max_connections or reduce connection pool size.",
+                'commands': [
+                    "SHOW VARIABLES LIKE 'max_connections';",
+                    "SET GLOBAL max_connections = 200;",
+                    "SHOW PROCESSLIST;"
+                ]
+            },
+            1044: {
+                'description': "Access denied for user to database - insufficient privileges",
+                'solution': "User doesn't have permission to access the specified database.",
+                'commands': [
+                    "SHOW GRANTS FOR 'username'@'hostname';",
+                    "GRANT ALL PRIVILEGES ON database_name.* TO 'username'@'hostname';"
+                ]
+            }
+        }
+        
+        # Extract MySQL error code if present
+        mysql_error_code = None
+        if hasattr(error, 'orig') and hasattr(error.orig, 'args') and error.orig.args:
+            mysql_error_code = error.orig.args[0]
+        
+        if mysql_error_code and mysql_error_code in mysql_error_mappings:
+            error_info = mysql_error_mappings[mysql_error_code]
+            
+            diagnostic_parts = [
+                f"MySQL Error {mysql_error_code}: {error_info['description']}",
+                f"Solution: {error_info['solution']}",
+                "Suggested commands:"
+            ]
+            
+            for cmd in error_info['commands']:
+                diagnostic_parts.append(f"  {cmd}")
+            
+            diagnostic_message = "\n".join(diagnostic_parts)
+            logger.error(diagnostic_message)
+            return diagnostic_message
+        else:
+            # Generic MySQL error handling
+            diagnostic_message = f"MySQL database error: {error_message}"
+            
+            # Add general troubleshooting tips
+            troubleshooting_tips = [
+                "General MySQL troubleshooting steps:",
+                "1. Check MySQL server status: sudo systemctl status mysql",
+                "2. Review MySQL error logs: sudo tail -f /var/log/mysql/error.log",
+                "3. Test connection manually: mysql -u username -p -h host database",
+                "4. Verify DATABASE_URL format and credentials",
+                "5. Check network connectivity and firewall settings"
+            ]
+            
+            full_message = diagnostic_message + "\n" + "\n".join(troubleshooting_tips)
+            logger.error(full_message)
+            return full_message
+    
+    def test_mysql_connection(self) -> Tuple[bool, str]:
+        """Test MySQL connection and return status with diagnostic information"""
+        try:
+            with self.engine.connect() as connection:
+                # Test basic connectivity
+                result = connection.execute(text("SELECT VERSION()"))
+                mysql_version = result.fetchone()[0]
+                
+                # Test database access
+                result = connection.execute(text("SELECT DATABASE()"))
+                database_name = result.fetchone()[0]
+                
+                # Test connection pool
+                pool_status = self.engine.pool.status()
+                
+                success_message = (
+                    f"MySQL connection successful. "
+                    f"Version: {mysql_version}, "
+                    f"Database: {database_name}, "
+                    f"Pool status: {pool_status}"
+                )
+                logger.info(success_message)
+                return True, success_message
+                
+        except Exception as e:
+            error_message = self.handle_mysql_error(e)
+            return False, error_message
+    
+    def generate_mysql_troubleshooting_guide(self, error: Exception = None) -> str:
+        """Generate comprehensive MySQL troubleshooting guide"""
+        
+        guide_sections = [
+            "=== MySQL Connection Troubleshooting Guide ===\n"
+        ]
+        
+        # If specific error provided, add error-specific guidance
+        if error:
+            error_guidance = self.handle_mysql_error(error)
+            guide_sections.extend([
+                "🚨 CURRENT ERROR:",
+                error_guidance,
+                "\n" + "="*50 + "\n"
+            ])
+        
+        # General troubleshooting steps
+        guide_sections.extend([
+            "🔧 STEP-BY-STEP TROUBLESHOOTING:",
+            "",
+            "1️⃣ VERIFY MYSQL SERVER STATUS:",
+            "   sudo systemctl status mysql",
+            "   sudo systemctl start mysql  # if not running",
+            "",
+            "2️⃣ CHECK MYSQL SERVER LOGS:",
+            "   sudo tail -f /var/log/mysql/error.log",
+            "   # Look for connection errors, authentication failures, or crashes",
+            "",
+            "3️⃣ TEST MANUAL CONNECTION:",
+            "   mysql -u username -p -h hostname -P port database_name",
+            "   # This tests if credentials and network connectivity work",
+            "",
+            "4️⃣ VERIFY DATABASE EXISTS:",
+            "   mysql -u username -p",
+            "   SHOW DATABASES;",
+            "   # Ensure your target database is listed",
+            "",
+            "5️⃣ CHECK USER PERMISSIONS:",
+            "   mysql -u root -p",
+            "   SHOW GRANTS FOR 'username'@'hostname';",
+            "   # Verify user has necessary privileges",
+            "",
+            "6️⃣ VALIDATE DATABASE_URL FORMAT:",
+            "   Expected: mysql+pymysql://user:password@host:port/database?charset=utf8mb4",
+            f"   Current:  {self.config.storage.database_url[:50]}...",
+            "",
+            "7️⃣ TEST NETWORK CONNECTIVITY:",
+            "   ping hostname",
+            "   telnet hostname 3306",
+            "   # Ensure MySQL server is reachable",
+            "",
+            "8️⃣ CHECK FIREWALL SETTINGS:",
+            "   sudo ufw status",
+            "   sudo iptables -L | grep 3306",
+            "   # Ensure MySQL port (3306) is not blocked",
+            ""
+        ])
+        
+        # Common solutions
+        guide_sections.extend([
+            "💡 COMMON SOLUTIONS:",
+            "",
+            "🔐 CREATE MYSQL USER:",
+            "   mysql -u root -p",
+            "   CREATE USER 'vedfolnir_user'@'localhost' IDENTIFIED BY 'secure_password';",
+            "   GRANT ALL PRIVILEGES ON vedfolnir.* TO 'vedfolnir_user'@'localhost';",
+            "   FLUSH PRIVILEGES;",
+            "",
+            "🗄️ CREATE DATABASE:",
+            "   mysql -u root -p",
+            "   CREATE DATABASE vedfolnir CHARACTER SET utf8mb4 COLLATE utf8mb4_unicode_ci;",
+            "",
+            "⚙️ MYSQL CONFIGURATION TUNING:",
+            "   # Add to /etc/mysql/mysql.conf.d/mysqld.cnf:",
+            "   [mysqld]",
+            "   max_connections = 200",
+            "   innodb_lock_wait_timeout = 120",
+            "   wait_timeout = 600",
+            "   interactive_timeout = 600",
+            "",
+            "🔄 RESTART MYSQL AFTER CHANGES:",
+            "   sudo systemctl restart mysql",
+            ""
+        ])
+        
+        # Environment-specific guidance
+        guide_sections.extend([
+            "🌍 ENVIRONMENT-SPECIFIC GUIDANCE:",
+            "",
+            "🐳 DOCKER/CONTAINER SETUP:",
+            "   - Ensure MySQL container is running: docker ps",
+            "   - Check container logs: docker logs mysql_container",
+            "   - Verify network connectivity between containers",
+            "",
+            "☁️ CLOUD/REMOTE MYSQL:",
+            "   - Verify security groups/firewall rules allow port 3306",
+            "   - Check if SSL is required: add ssl_mode=REQUIRED to DATABASE_URL",
+            "   - Ensure IP whitelist includes your application server",
+            "",
+            "🏠 LOCAL DEVELOPMENT:",
+            "   - Install MySQL: sudo apt-get install mysql-server",
+            "   - Secure installation: sudo mysql_secure_installation",
+            "   - Create development database and user",
+            ""
+        ])
+        
+        # Performance optimization
+        guide_sections.extend([
+            "🚀 PERFORMANCE OPTIMIZATION:",
+            "",
+            "📊 CONNECTION POOL TUNING:",
+            f"   Current pool size: {self.config.storage.db_config.pool_size}",
+            f"   Current max overflow: {self.config.storage.db_config.max_overflow}",
+            "   Adjust DB_POOL_SIZE and DB_MAX_OVERFLOW in .env if needed",
+            "",
+            "⏱️ TIMEOUT CONFIGURATION:",
+            "   connect_timeout=60    # Connection establishment timeout",
+            "   read_timeout=60       # Query result reading timeout", 
+            "   write_timeout=60      # Query execution timeout",
+            "",
+            "🔍 MONITORING QUERIES:",
+            "   SET GLOBAL slow_query_log = 'ON';",
+            "   SET GLOBAL long_query_time = 2;",
+            "   # Monitor slow queries in /var/log/mysql/slow.log",
+            ""
+        ])
+        
+        # Contact and resources
+        guide_sections.extend([
+            "📚 ADDITIONAL RESOURCES:",
+            "",
+            "📖 MySQL Documentation:",
+            "   https://dev.mysql.com/doc/refman/8.0/en/problems-connecting.html",
+            "",
+            "🔧 PyMySQL Documentation:",
+            "   https://pymysql.readthedocs.io/en/latest/",
+            "",
+            "🐛 Common MySQL Error Codes:",
+            "   https://dev.mysql.com/doc/mysql-errors/8.0/en/",
+            "",
+            "💬 Get Help:",
+            "   - Check application logs in logs/webapp.log",
+            "   - Review MySQL error logs",
+            "   - Test connection parameters manually",
+            "   - Verify all troubleshooting steps above"
+        ])
+        
+        return "\n".join(guide_sections)
+    
+    def get_mysql_performance_stats(self) -> Dict[str, Any]:
+        """Get MySQL-specific performance statistics"""
+        try:
+            with self.engine.connect() as connection:
+                stats = {}
+                
+                # Connection pool statistics
+                pool = self.engine.pool
+                stats['connection_pool'] = {
+                    'size': pool.size(),
+                    'checked_in': pool.checkedin(),
+                    'checked_out': pool.checkedout(),
+                    'overflow': pool.overflow(),
+                }
+                
+                # Add invalid count if available (not all pool types support this)
+                try:
+                    stats['connection_pool']['invalid'] = pool.invalid()
+                except AttributeError:
+                    stats['connection_pool']['invalid'] = 'N/A'
+                
+                # MySQL server status
+                result = connection.execute(text("SHOW STATUS LIKE 'Threads_%'"))
+                mysql_threads = {row[0]: row[1] for row in result}
+                stats['mysql_threads'] = mysql_threads
+                
+                # MySQL connection statistics
+                result = connection.execute(text("SHOW STATUS LIKE 'Connections'"))
+                connections_row = result.fetchone()
+                if connections_row:
+                    stats['total_connections'] = connections_row[1]
+                
+                return stats
+                
+        except Exception as e:
+            logger.error(f"Failed to get MySQL performance stats: {e}")
+            return {'error': str(e)}
     
     def require_platform_context(self):
         """Require platform context for operations"""
@@ -595,7 +1036,6 @@ class DatabaseManager:
         finally:
             session.close()
 
-    
     def get_pending_images(self, limit: int = 50):
         """Get images pending review (platform-aware)"""
         session = self.get_session()

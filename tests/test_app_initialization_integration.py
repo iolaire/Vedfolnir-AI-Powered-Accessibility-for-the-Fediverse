@@ -20,7 +20,6 @@ from app_initialization import (
     get_session_management_info
 )
 
-
 class MockConfig:
     """Mock configuration for testing"""
     def __init__(self):
@@ -31,13 +30,12 @@ class MockConfig:
         self.webapp.debug = False
         
         self.storage = Mock()
-        self.storage.database_url = 'sqlite:///:memory:'
+        self.storage.database_url = 'mysql+pymysql://DATABASE_URL=mysql+pymysql://test_user:test_pass@localhost/test_db'
         
         self.ollama = Mock()
         self.ollama.url = 'http://localhost:11434'
         self.ollama.model_name = 'llava:7b'
         self.ollama.timeout = 30
-
 
 class TestAppInitializationIntegration(unittest.TestCase):
     """Integration test cases for app initialization"""
@@ -160,8 +158,7 @@ class TestAppInitializationIntegration(unittest.TestCase):
         # Verify config values are reasonable
         self.assertIsNotNone(self.config.webapp.secret_key)
         self.assertGreater(len(self.config.webapp.secret_key), 10)
-        self.assertIn('sqlite', self.config.storage.database_url)
-
+        self.assertIn('MySQL', self.config.storage.database_url)
 
 class TestAppInitializationErrorHandling(unittest.TestCase):
     """Test error handling in app initialization"""
@@ -208,7 +205,6 @@ class TestAppInitializationErrorHandling(unittest.TestCase):
             create_session_managed_app(self.config)
         
         self.assertIn("Middleware failed", str(context.exception))
-
 
 if __name__ == '__main__':
     unittest.main()

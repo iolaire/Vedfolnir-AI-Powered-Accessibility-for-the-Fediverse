@@ -24,7 +24,6 @@ from unified_session_manager import UnifiedSessionManager as SessionManager
 from session_health_checker import get_session_health_checker
 from session_alerting_system import get_alerting_system
 
-
 @dataclass
 class CheckResult:
     """Result of a deployment check"""
@@ -33,7 +32,6 @@ class CheckResult:
     message: str
     details: Dict[str, Any] = None
     critical: bool = False
-
 
 class SessionManagementDeploymentChecker:
     """Deployment checker for session management system"""
@@ -555,7 +553,6 @@ class SessionManagementDeploymentChecker:
             }
         }
 
-
 def create_rollback_script():
     """Create rollback script for session management deployment"""
     rollback_script = '''#!/bin/bash
@@ -598,7 +595,6 @@ echo "Rollback completed. Please verify application functionality."
     os.chmod('rollback_session_management.sh', 0o755)
     print("✅ Rollback script created: rollback_session_management.sh")
 
-
 def main():
     """Main deployment checker function"""
     print("🚀 Session Management Deployment Checker")
@@ -630,7 +626,6 @@ def main():
         print("\n⚠️  Session management system is NOT ready for deployment.")
         print("Please address the failed checks before proceeding.")
         sys.exit(1)
-
 
 if __name__ == '__main__':
     main()

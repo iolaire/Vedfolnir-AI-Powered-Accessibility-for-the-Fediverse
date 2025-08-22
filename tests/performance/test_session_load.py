@@ -25,7 +25,6 @@ from models import User, PlatformConnection, UserSession, UserRole
 from unified_session_manager import UnifiedSessionManager as SessionManager
 from tests.test_helpers import create_test_user_with_platforms, cleanup_test_user
 
-
 class TestConcurrentSessionOperations(unittest.TestCase):
     """Test concurrent session operations under load (Requirements 7.1, 7.2)"""
     
@@ -33,7 +32,7 @@ class TestConcurrentSessionOperations(unittest.TestCase):
         """Set up test fixtures"""
         self.db_fd, self.db_path = tempfile.mkstemp()
         self.config = Config()
-        self.config.storage.database_url = f'sqlite:///{self.db_path}'
+        self.config.storage.database_url = f'mysql+pymysql://{self.db_path}'
         
         self.db_manager = DatabaseManager(self.config)
         self.db_manager.create_tables()
@@ -175,7 +174,6 @@ class TestConcurrentSessionOperations(unittest.TestCase):
         self.assertLess(mean(durations), 0.1)  # Sub-100ms requirement
         self.assertLess(max(durations), 0.5)   # Max under 500ms
 
-
 class TestDatabaseConnectionPoolEfficiency(unittest.TestCase):
     """Test database connection pool efficiency (Requirements 7.3, 7.4)"""
     
@@ -183,7 +181,7 @@ class TestDatabaseConnectionPoolEfficiency(unittest.TestCase):
         """Set up test fixtures"""
         self.db_fd, self.db_path = tempfile.mkstemp()
         self.config = Config()
-        self.config.storage.database_url = f'sqlite:///{self.db_path}'
+        self.config.storage.database_url = f'mysql+pymysql://{self.db_path}'
         
         self.db_manager = DatabaseManager(self.config)
         self.db_manager.create_tables()
@@ -285,7 +283,6 @@ class TestDatabaseConnectionPoolEfficiency(unittest.TestCase):
         self.assertLess(mean(durations), 0.3)  # Average under 300ms
         self.assertLess(median(durations), 0.2)  # Median under 200ms
 
-
 class TestCrossTabSynchronizationPerformance(unittest.TestCase):
     """Test cross-tab synchronization performance metrics (Requirements 7.1, 7.2, 7.5)"""
     
@@ -293,7 +290,7 @@ class TestCrossTabSynchronizationPerformance(unittest.TestCase):
         """Set up test fixtures"""
         self.db_fd, self.db_path = tempfile.mkstemp()
         self.config = Config()
-        self.config.storage.database_url = f'sqlite:///{self.db_path}'
+        self.config.storage.database_url = f'mysql+pymysql://{self.db_path}'
         
         self.db_manager = DatabaseManager(self.config)
         self.db_manager.create_tables()
@@ -446,7 +443,6 @@ class TestCrossTabSynchronizationPerformance(unittest.TestCase):
         # Cleanup
         self.session_manager.cleanup_all_user_sessions(self.test_user.id)
 
-
 class TestPerformanceMetrics(unittest.TestCase):
     """Test performance metrics collection (Requirements 7.5)"""
     
@@ -454,7 +450,7 @@ class TestPerformanceMetrics(unittest.TestCase):
         """Set up test fixtures"""
         self.db_fd, self.db_path = tempfile.mkstemp()
         self.config = Config()
-        self.config.storage.database_url = f'sqlite:///{self.db_path}'
+        self.config.storage.database_url = f'mysql+pymysql://{self.db_path}'
         
         self.db_manager = DatabaseManager(self.config)
         self.db_manager.create_tables()
@@ -533,7 +529,6 @@ class TestPerformanceMetrics(unittest.TestCase):
         # Should handle at least 10 operations per second
         self.assertGreater(throughput, 10)
         self.assertGreater(operations_completed, 15)
-
 
 if __name__ == '__main__':
     unittest.main()

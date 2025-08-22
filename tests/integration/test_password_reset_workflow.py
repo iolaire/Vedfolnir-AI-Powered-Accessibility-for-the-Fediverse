@@ -17,14 +17,18 @@ from models import User, UserRole, UserAuditLog
 from services.user_management_service import PasswordManagementService, UserAuthenticationService
 from tests.test_helpers import create_test_user_with_platforms, cleanup_test_user
 
+# MySQL integration test imports
+from tests.mysql_test_base import MySQLIntegrationTestBase
+from tests.mysql_test_config import MySQLTestFixtures
 
-class TestPasswordResetWorkflow(unittest.TestCase):
+
+class TestPasswordResetWorkflow(MySQLIntegrationTestBase):
     """Test complete password reset workflow"""
     
     def setUp(self):
         """Set up test fixtures"""
         self.config = Config()
-        self.db_manager = DatabaseManager(self.config)
+        self.db_manager = self.get_database_manager()
         
         # Create test user
         self.test_user, self.user_helper = create_test_user_with_platforms(
@@ -415,7 +419,6 @@ class TestPasswordResetWorkflow(unittest.TestCase):
             self.assertIsNotNone(valid_user.password_reset_token)
             self.assertIsNotNone(valid_user.password_reset_sent_at)
             self.assertFalse(valid_user.password_reset_used)
-
 
 if __name__ == '__main__':
     unittest.main()

@@ -24,7 +24,6 @@ from services.email_service import email_service
 
 logger = logging.getLogger(__name__)
 
-
 class UserRegistrationService:
     """Service for handling user registration and email verification"""
     
@@ -307,7 +306,6 @@ class UserRegistrationService:
         except Exception as e:
             logger.error(f"Error getting user by ID: {e}")
             return None
-
 
 class UserAuthenticationService:
     """Service for handling user authentication with enhanced security"""
@@ -610,7 +608,6 @@ class UserAuthenticationService:
             logger.error(f"Error validating session security: {e}")
             return False
 
-
 class PasswordManagementService:
     """Service for handling password reset and management"""
     
@@ -875,7 +872,6 @@ class PasswordManagementService:
             self.db_session.rollback()
             logger.error(f"Error cleaning up expired reset tokens: {e}")
             return 0
-
 
 class UserProfileService:
     """Service for handling user profile management with GDPR compliance"""
@@ -1252,7 +1248,6 @@ class UserProfileService:
         except Exception as e:
             logger.error(f"Error exporting data for user {user_id}: {e}")
             return False, "Data export failed due to system error", None
-
 
 class UserDeletionService:
     """Service for handling complete user profile deletion with GDPR compliance"""

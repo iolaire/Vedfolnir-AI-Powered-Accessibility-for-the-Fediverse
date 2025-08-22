@@ -13,7 +13,6 @@ from models import User, PlatformConnection, UserSession, UserRole
 from sqlalchemy.orm.exc import DetachedInstanceError
 from sqlalchemy.ext.hybrid import hybrid_property
 
-
 class MockPlatformConnection:
     """Simple mock platform connection that doesn't interfere with SQLAlchemy"""
     def __init__(self, id, name, platform_type, is_active=True, is_default=False):
@@ -25,7 +24,6 @@ class MockPlatformConnection:
         self.is_active = is_active
         self.is_default = is_default
         self.created_at = datetime.utcnow()
-
 
 class TestUserModelEnhancements(unittest.TestCase):
     """Test enhanced User model with explicit relationship loading strategies"""
@@ -210,7 +208,6 @@ class TestUserModelEnhancements(unittest.TestCase):
         repr_str = repr(self.user)
         self.assertEqual(repr_str, "<User testuser>")
 
-
 class TestPlatformConnectionEnhancements(unittest.TestCase):
     """Test enhanced PlatformConnection model"""
     
@@ -266,7 +263,6 @@ class TestPlatformConnectionEnhancements(unittest.TestCase):
         repr_str = repr(self.platform)
         self.assertEqual(repr_str, "<PlatformConnection Test Platform (pixelfed)>")
 
-
 class TestUserSessionEnhancements(unittest.TestCase):
     """Test enhanced UserSession model"""
     
@@ -286,7 +282,6 @@ class TestUserSessionEnhancements(unittest.TestCase):
         """Test UserSession __repr__ method"""
         repr_str = repr(self.session)
         self.assertEqual(repr_str, "<UserSession test-session-123 - User 1>")
-
 
 class TestModelRelationshipLoadingStrategies(unittest.TestCase):
     """Test that model relationships use proper loading strategies"""
@@ -332,7 +327,6 @@ class TestModelRelationshipLoadingStrategies(unittest.TestCase):
         # Check active_platform relationship
         active_platform_rel = UserSession.active_platform.property
         self.assertEqual(active_platform_rel.lazy, 'select')
-
 
 if __name__ == '__main__':
     unittest.main()

@@ -29,7 +29,6 @@ from config import Config
 from database import DatabaseManager
 from models import User, UserSession, UserAuditLog, UserRole
 
-
 @dataclass
 class ValidationResult:
     """Result of a validation check"""
@@ -38,7 +37,6 @@ class ValidationResult:
     message: str
     details: Dict[str, Any]
     execution_time: float
-
 
 @dataclass
 class DeploymentValidationReport:
@@ -49,7 +47,6 @@ class DeploymentValidationReport:
     validation_results: List[ValidationResult]
     summary: Dict[str, Any]
     recommendations: List[str]
-
 
 class UserManagementDeploymentValidator:
     """
@@ -797,7 +794,6 @@ class UserManagementDeploymentValidator:
         
         return list(set(recommendations))  # Remove duplicates
 
-
 def main():
     """Main validation script entry point"""
     import argparse
@@ -899,7 +895,6 @@ def main():
     except Exception as e:
         print(f"Validation error: {e}")
         return 1
-
 
 if __name__ == "__main__":
     sys.exit(main())

@@ -19,7 +19,6 @@ sys.path.insert(0, os.path.abspath(os.path.join(os.path.dirname(__file__), '..')
 from utils import retry, async_retry, get_retry_stats_summary, reset_retry_stats, RetryConfig
 from rate_limiter import RateLimiter, RateLimitConfig, TokenBucket
 
-
 class TestRetryMechanism(unittest.TestCase):
     """Comprehensive tests for retry mechanism"""
     
@@ -217,7 +216,6 @@ class TestRetryMechanism(unittest.TestCase):
         # Later delays should be capped at max_delay
         self.assertEqual(delays[-1], 2.0)  # Should be capped at max_delay
 
-
 class TestAsyncRetryMechanism(unittest.IsolatedAsyncioTestCase):
     """Tests for async retry mechanism"""
     
@@ -300,7 +298,6 @@ class TestAsyncRetryMechanism(unittest.IsolatedAsyncioTestCase):
         # Should have waited at least 0.1 + 0.2 = 0.3 seconds for retries
         self.assertGreater(elapsed, 0.25)  # Allow for some timing variance
 
-
 class TestRetryStatistics(unittest.TestCase):
     """Tests for retry statistics tracking"""
     
@@ -364,7 +361,6 @@ class TestRetryStatistics(unittest.TestCase):
         summary = get_retry_stats_summary()
         # After reset, the summary should indicate no operations
         self.assertTrue("No operations recorded" in summary or "Operations with retries: 0" in summary)
-
 
 if __name__ == "__main__":
     unittest.main()

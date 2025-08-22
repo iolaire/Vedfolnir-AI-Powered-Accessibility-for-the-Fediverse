@@ -1,0 +1,62 @@
+=== Database Configuration Cleanup Validation Report ===
+Tests passed: 4/5
+Violations found: 50
+
+✅ PASS: Config Class Structure
+✅ PASS: Database Url Validation
+✅ PASS: Database Manager Integration
+❌ FAIL: File Patterns
+✅ PASS: Environment Variables
+
+🚨 VIOLATIONS FOUND:
+
+  - /Volumes/Gold/DevContainerTesting/vedfolnir/scripts/validate_success_criteria.py:28 - SQLite database path references: db_path = project_root / "storage" / "database" / "MySQL database"
+  - /Volumes/Gold/DevContainerTesting/vedfolnir/scripts/validate_success_criteria.py:29 - SQLite database path references: if not db_path.exists():
+  - /Volumes/Gold/DevContainerTesting/vedfolnir/scripts/validate_success_criteria.py:97 - SQLite database path references: db_path = project_root / "storage" / "database" / "MySQL database"
+  - /Volumes/Gold/DevContainerTesting/vedfolnir/scripts/validate_success_criteria.py:129 - SQLite database path references: db_path = project_root / "storage" / "database" / "MySQL database"
+  - /Volumes/Gold/DevContainerTesting/vedfolnir/scripts/backup_platform_data.py:48 - SQLite database path references: if os.path.exists(db_path):
+  - /Volumes/Gold/DevContainerTesting/vedfolnir/scripts/backup_platform_data.py:50 - SQLite database path references: shutil.copy2(db_path, backup_path)
+  - /Volumes/Gold/DevContainerTesting/vedfolnir/scripts/backup_platform_data.py:58 - SQLite database path references: def _create_database_info(self, db_path):
+  - /Volumes/Gold/DevContainerTesting/vedfolnir/scripts/backup_platform_data.py:81 - SQLite database path references: 'database_path': db_path,
+  - /Volumes/Gold/DevContainerTesting/vedfolnir/scripts/backup_platform_data.py:83 - SQLite database path references: 'backup_size_bytes': os.path.getsize(db_path)
+  - /Volumes/Gold/DevContainerTesting/vedfolnir/tests/fixtures/platform_fixtures.py:128 - SQLite database path references: self.db_fd, self.db_path = tempfile.mkstemp()
+  - /Volumes/Gold/DevContainerTesting/vedfolnir/tests/fixtures/platform_fixtures.py:129 - SQLite database path references: self.db_url = f'mysql+pymysql://{self.db_path}'
+  - /Volumes/Gold/DevContainerTesting/vedfolnir/tests/fixtures/platform_fixtures.py:160 - SQLite database path references: os.unlink(self.db_path)
+  - /Volumes/Gold/DevContainerTesting/vedfolnir/scripts/setup/migrate_to_platform_aware.py:55 - SQLite database path references: db_path = os.getenv('DATABASE_PATH', "MySQL database")
+  - /Volumes/Gold/DevContainerTesting/vedfolnir/scripts/setup/migrate_to_platform_aware.py:56 - SQLite database path references: return f'mysql+pymysql://{db_path}'
+  - /Volumes/Gold/DevContainerTesting/vedfolnir/scripts/deployment/user_management_deployment_validator.py:377 - SQLite database path references: db_path = Path(self.config.storage.database_path)
+  - /Volumes/Gold/DevContainerTesting/vedfolnir/scripts/deployment/user_management_deployment_validator.py:378 - SQLite database path references: db_dir = db_path.parent
+  - /Volumes/Gold/DevContainerTesting/vedfolnir/scripts/deployment/user_management_deployment_validator.py:381 - SQLite database path references: return False, f"Database directory does not exist: {db_dir}", {'db_path': str(db_path), 'db_dir': str(db_dir)}
+  - /Volumes/Gold/DevContainerTesting/vedfolnir/scripts/deployment/user_management_deployment_validator.py:384 - SQLite database path references: return False, f"Database directory is not writable: {db_dir}", {'db_path': str(db_path), 'db_dir': str(db_dir)}
+  - /Volumes/Gold/DevContainerTesting/vedfolnir/scripts/deployment/user_management_deployment_validator.py:386 - SQLite database path references: return True, f"Database configuration valid: {db_path}", {'db_path': str(db_path), 'db_dir': str(db_dir)}
+  - /Volumes/Gold/DevContainerTesting/vedfolnir/scripts/deployment/user_management_rollback.py:196 - SQLite database path references: db_path = Path(self.config.storage.database_path)
+  - /Volumes/Gold/DevContainerTesting/vedfolnir/scripts/deployment/user_management_rollback.py:197 - SQLite database path references: if not db_path.exists():
+  - /Volumes/Gold/DevContainerTesting/vedfolnir/scripts/deployment/user_management_rollback.py:198 - SQLite database path references: raise FileNotFoundError(f"Database file not found: {db_path}")
+  - /Volumes/Gold/DevContainerTesting/vedfolnir/scripts/deployment/user_management_rollback.py:201 - SQLite database path references: shutil.copy2(db_path, backup_path)
+  - /Volumes/Gold/DevContainerTesting/vedfolnir/scripts/deployment/user_management_rollback.py:208 - SQLite PRAGMA statements: conn.execute("PRAGMA integrity_check").fetchone()
+  - /Volumes/Gold/DevContainerTesting/vedfolnir/scripts/deployment/user_management_rollback.py:481 - SQLite PRAGMA statements: conn.execute("PRAGMA integrity_check").fetchone()
+  - /Volumes/Gold/DevContainerTesting/vedfolnir/scripts/deployment/user_management_rollback.py:550 - SQLite database path references: db_path = Path(self.config.storage.database_path)
+  - /Volumes/Gold/DevContainerTesting/vedfolnir/scripts/deployment/user_management_rollback.py:554 - SQLite database path references: current_backup = db_path.with_suffix('.db.pre_rollback')
+  - /Volumes/Gold/DevContainerTesting/vedfolnir/scripts/deployment/user_management_rollback.py:555 - SQLite database path references: if db_path.exists():
+  - /Volumes/Gold/DevContainerTesting/vedfolnir/scripts/deployment/user_management_rollback.py:556 - SQLite database path references: shutil.copy2(db_path, current_backup)
+  - /Volumes/Gold/DevContainerTesting/vedfolnir/scripts/deployment/user_management_rollback.py:559 - SQLite database path references: shutil.copy2(backup_path, db_path)
+  - /Volumes/Gold/DevContainerTesting/vedfolnir/scripts/deployment/user_management_rollback.py:564 - SQLite database path references: engine = create_engine(f"mysql+pymysql://{db_path}")
+  - /Volumes/Gold/DevContainerTesting/vedfolnir/scripts/deployment/user_management_rollback.py:566 - SQLite PRAGMA statements: conn.execute("PRAGMA integrity_check").fetchone()
+  - /Volumes/Gold/DevContainerTesting/vedfolnir/scripts/deployment/user_management_rollback.py:571 - SQLite database path references: shutil.copy2(current_backup, db_path)
+  - /Volumes/Gold/DevContainerTesting/vedfolnir/scripts/maintenance/empty_db.py:16 - SQLite database path references: db_path = os.path.join(os.getcwd(), "MySQL database")
+  - /Volumes/Gold/DevContainerTesting/vedfolnir/scripts/maintenance/empty_db.py:17 - SQLite database path references: print(f"Emptying database at {db_path}")
+  - /Volumes/Gold/DevContainerTesting/vedfolnir/scripts/maintenance/session_db_maintenance.py:267 - SQLite PRAGMA statements: db_session.execute(text("PRAGMA optimize"))
+  - /Volumes/Gold/DevContainerTesting/vedfolnir/scripts/maintenance/session_db_maintenance.py:268 - SQLite PRAGMA statements: results['operations_performed'].append("PRAGMA optimize")
+  - /Volumes/Gold/DevContainerTesting/vedfolnir/scripts/maintenance/session_db_maintenance.py:278 - SQLite PRAGMA statements: db_session.execute(text("PRAGMA incremental_vacuum"))
+  - /Volumes/Gold/DevContainerTesting/vedfolnir/scripts/maintenance/session_db_maintenance.py:279 - SQLite PRAGMA statements: results['operations_performed'].append("PRAGMA incremental_vacuum")
+  - /Volumes/Gold/DevContainerTesting/vedfolnir/scripts/maintenance/session_db_maintenance.py:311 - SQLite PRAGMA statements: integrity_result = db_session.execute(text("PRAGMA integrity_check")).fetchone()
+  - /Volumes/Gold/DevContainerTesting/vedfolnir/scripts/maintenance/session_db_maintenance.py:319 - SQLite PRAGMA statements: fk_result = db_session.execute(text("PRAGMA foreign_key_check")).fetchall()
+  - /Volumes/Gold/DevContainerTesting/vedfolnir/scripts/maintenance/session_db_maintenance.py:350 - SQLite PRAGMA statements: db_size_result = db_session.execute(text("PRAGMA page_count")).fetchone()
+  - /Volumes/Gold/DevContainerTesting/vedfolnir/scripts/maintenance/session_db_maintenance.py:351 - SQLite PRAGMA statements: page_size_result = db_session.execute(text("PRAGMA page_size")).fetchone()
+  - /Volumes/Gold/DevContainerTesting/vedfolnir/scripts/maintenance/reset_app.py:315 - SQLite database path references: db_path = self.config.storage.database_url.replace('mysql+pymysql://', '')
+  - /Volumes/Gold/DevContainerTesting/vedfolnir/scripts/maintenance/reset_app.py:316 - SQLite database path references: if os.path.exists(db_path):
+  - /Volumes/Gold/DevContainerTesting/vedfolnir/scripts/maintenance/reset_app.py:317 - SQLite database path references: db_size = os.path.getsize(db_path)
+  - /Volumes/Gold/DevContainerTesting/vedfolnir/scripts/maintenance/session_cleanup.py:152 - SQLite PRAGMA statements: db_session.execute(text("PRAGMA incremental_vacuum"))
+  - /Volumes/Gold/DevContainerTesting/vedfolnir/scripts/monitoring/user_management_monitoring.py:457 - SQLite database path references: db_path = self.config.storage.database_path
+  - /Volumes/Gold/DevContainerTesting/vedfolnir/scripts/monitoring/user_management_monitoring.py:458 - SQLite database path references: if os.path.exists(db_path):
+  - /Volumes/Gold/DevContainerTesting/vedfolnir/scripts/monitoring/user_management_monitoring.py:459 - SQLite database path references: db_size_mb = os.path.getsize(db_path) / (1024 * 1024)

@@ -39,8 +39,7 @@ class SessionConsolidationFinalE2ETest(unittest.TestCase):
         with patch('redis.Redis', MagicMock()):
             self.session_manager = SessionManager(self.mock_db_manager)
         self.cookie_manager = SessionCookieManager()
-        
-        
+
         # Test data
         self.test_user_id = 123
         self.test_platform_id = 456

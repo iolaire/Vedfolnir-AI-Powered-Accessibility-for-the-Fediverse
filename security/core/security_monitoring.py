@@ -20,7 +20,6 @@ import time
 
 logger = logging.getLogger(__name__)
 
-
 class SecurityEventType(Enum):
     """Types of security events"""
     LOGIN_SUCCESS = "login_success"
@@ -39,14 +38,12 @@ class SecurityEventType(Enum):
     CSRF_ATTACK = "csrf_attack"
     SECURITY_MISCONFIGURATION = "security_misconfiguration"
 
-
 class SecurityEventSeverity(Enum):
     """Severity levels for security events"""
     LOW = "low"
     MEDIUM = "medium"
     HIGH = "high"
     CRITICAL = "critical"
-
 
 @dataclass
 class SecurityEvent:
@@ -60,7 +57,6 @@ class SecurityEvent:
     user_agent: str
     details: Dict[str, Any]
     event_id: str
-
 
 class SecurityMonitor:
     """Comprehensive security monitoring system"""
@@ -381,10 +377,8 @@ class SecurityMonitor:
         
         return sorted(type_counts.items(), key=lambda x: x[1], reverse=True)[:limit]
 
-
 # Global security monitor instance
 security_monitor = SecurityMonitor()
-
 
 def log_security_event(event_type: SecurityEventType, severity: SecurityEventSeverity,
                       source_ip: str, endpoint: str, user_agent: str = "",

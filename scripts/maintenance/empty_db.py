@@ -13,7 +13,7 @@ def empty_database():
     config = Config()
     
     # Get database path
-    db_path = os.path.join(os.getcwd(), "storage/database/vedfolnir.db")
+    db_path = os.path.join(os.getcwd(), "MySQL database")
     print(f"Emptying database at {db_path}")
     
     # Create engine

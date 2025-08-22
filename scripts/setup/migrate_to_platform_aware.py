@@ -29,7 +29,6 @@ sys.path.insert(0, str(project_root))
 from migrations.platform_aware_migration import PlatformAwareMigration
 from config import Config
 
-
 def setup_logging(level=logging.INFO):
     """Set up logging configuration"""
     logging.basicConfig(
@@ -40,7 +39,6 @@ def setup_logging(level=logging.INFO):
             logging.FileHandler('migration.log')
         ]
     )
-
 
 def get_database_url_from_config():
     """Get database URL from configuration"""
@@ -53,10 +51,9 @@ def get_database_url_from_config():
         if db_url:
             return db_url
         
-        # Default SQLite database
-        db_path = os.getenv('DATABASE_PATH', 'storage/database/vedfolnir.db')
-        return f'sqlite:///{db_path}'
-
+        # Default MySQL database
+        db_path = os.getenv('DATABASE_PATH', "MySQL database")
+        return f'mysql+pymysql://{db_path}'
 
 def run_migration_up(database_url: str, verbose: bool = False) -> bool:
     """
@@ -103,7 +100,6 @@ def run_migration_up(database_url: str, verbose: bool = False) -> bool:
         logger.error(f"Migration error: {e}")
         return False
 
-
 def run_migration_down(database_url: str, verbose: bool = False) -> bool:
     """
     Rollback the migration to previous state.
@@ -144,7 +140,6 @@ def run_migration_down(database_url: str, verbose: bool = False) -> bool:
     except Exception as e:
         logger.error(f"Rollback error: {e}")
         return False
-
 
 def check_migration_status(database_url: str, verbose: bool = False) -> bool:
     """
@@ -192,7 +187,6 @@ def check_migration_status(database_url: str, verbose: bool = False) -> bool:
         logger.error(f"Status check error: {e}")
         return False
 
-
 def validate_migration(database_url: str, verbose: bool = False) -> bool:
     """
     Validate migration data integrity.
@@ -232,7 +226,6 @@ def validate_migration(database_url: str, verbose: bool = False) -> bool:
         logger.error(f"Validation error: {e}")
         return False
 
-
 def cleanup_backup_tables(database_url: str, verbose: bool = False) -> bool:
     """
     Clean up backup tables after successful migration.
@@ -266,7 +259,6 @@ def cleanup_backup_tables(database_url: str, verbose: bool = False) -> bool:
     except Exception as e:
         logger.error(f"Cleanup error: {e}")
         return False
-
 
 def main():
     """Main CLI entry point"""
@@ -323,7 +315,6 @@ Examples:
         success = cleanup_backup_tables(database_url, args.verbose)
     
     return 0 if success else 1
-
 
 if __name__ == '__main__':
     sys.exit(main())

@@ -27,9 +27,8 @@ def run_command(command_args):
 
 def init_migrations():
     """Initialize Alembic migrations"""
-    # Ensure the database directory exists
+    # MySQL doesn't require local database directory creation
     config = Config()
-    os.makedirs(config.storage.database_dir, exist_ok=True)
     
     # Check if migrations/versions directory exists
     if not os.path.exists("migrations/versions"):

@@ -10,7 +10,6 @@ sys.path.insert(0, os.path.dirname(os.path.dirname(os.path.abspath(__file__))))
 
 from models import User, PlatformConnection, UserSession, UserRole
 
-
 class TestTask6UserModelEnhancements(unittest.TestCase):
     """Test Task 6: Enhanced User model with explicit relationship loading strategies"""
     
@@ -219,7 +218,6 @@ class TestTask6UserModelEnhancements(unittest.TestCase):
             # If it raises an exception, that's also acceptable for this test
             # since we're testing that the property exists and is callable
             pass
-
 
 if __name__ == '__main__':
     unittest.main()

@@ -12,7 +12,6 @@ sys.path.insert(0, os.path.dirname(os.path.dirname(os.path.abspath(__file__))))
 from models import PlatformConnection
 from sqlalchemy.orm.exc import DetachedInstanceError
 
-
 class TestPlatformConnectionTask7Simple(unittest.TestCase):
     """Test Task 7: Enhanced PlatformConnection model for session safety (simplified)"""
     
@@ -284,7 +283,6 @@ class TestPlatformConnectionTask7Simple(unittest.TestCase):
         self.assertTrue(result['has_access_token'])
         self.assertTrue(result['has_client_key'])
         self.assertTrue(result['has_client_secret'])
-
 
 if __name__ == '__main__':
     unittest.main()

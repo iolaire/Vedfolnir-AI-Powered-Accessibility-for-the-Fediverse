@@ -98,7 +98,6 @@ class TestHealthMonitoringFunctionality(unittest.TestCase):
         except ImportError:
             self.skipTest("Platform health monitor not available")
 
-
 class TestBackupFunctionality(unittest.TestCase):
     """Test backup tool functionality"""
     
@@ -129,7 +128,6 @@ class TestBackupFunctionality(unittest.TestCase):
         
         # Should complete in dry run (may show help or warnings)
         self.assertIn(result.returncode, [0, 1, 2])
-
 
 class TestValidationFunctionality(unittest.TestCase):
     """Test configuration validation functionality"""
@@ -170,7 +168,6 @@ class TestValidationFunctionality(unittest.TestCase):
         # Should complete (may warn about connections)
         self.assertIn(result.returncode, [0, 1])
 
-
 class TestRollbackFunctionality(unittest.TestCase):
     """Test rollback tool functionality"""
     
@@ -197,7 +194,6 @@ class TestRollbackFunctionality(unittest.TestCase):
         
         # Should complete in dry run (may show help or warnings)
         self.assertIn(result.returncode, [0, 1, 2])
-
 
 if __name__ == '__main__':
     unittest.main(verbosity=2)

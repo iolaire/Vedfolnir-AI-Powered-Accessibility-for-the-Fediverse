@@ -21,7 +21,6 @@ logger = logging.getLogger(__name__)
 # Create blueprint for CSRF dashboard
 csrf_dashboard_bp = Blueprint('csrf_dashboard', __name__, url_prefix='/admin/security/csrf')
 
-
 @csrf_dashboard_bp.route('/dashboard')
 @login_required
 @admin_required
@@ -38,7 +37,6 @@ def csrf_dashboard():
     except Exception as e:
         logger.error(f"Error loading CSRF dashboard: {e}")
         return render_template('errors/500.html'), 500
-
 
 @csrf_dashboard_bp.route('/api/metrics')
 @login_required
@@ -82,7 +80,6 @@ def csrf_metrics_api():
             'message': str(e)
         }), 500
 
-
 @csrf_dashboard_bp.route('/api/violations')
 @login_required
 @admin_required
@@ -125,7 +122,6 @@ def csrf_violations_api():
             'error': 'Failed to fetch CSRF violations',
             'message': str(e)
         }), 500
-
 
 @csrf_dashboard_bp.route('/api/alerts')
 @login_required
@@ -176,7 +172,6 @@ def csrf_alerts_api():
             'error': 'Failed to fetch CSRF alerts',
             'message': str(e)
         }), 500
-
 
 def register_csrf_dashboard(app):
     """Register CSRF dashboard with Flask app

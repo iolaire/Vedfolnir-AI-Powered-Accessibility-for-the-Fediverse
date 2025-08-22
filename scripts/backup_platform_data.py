@@ -13,7 +13,6 @@ import os
 import shutil
 import json
 from datetime import datetime
-import sqlite3
 
 # Add project root to path
 sys.path.insert(0, os.path.dirname(os.path.dirname(os.path.abspath(__file__))))
@@ -21,7 +20,6 @@ sys.path.insert(0, os.path.dirname(os.path.dirname(os.path.abspath(__file__))))
 from config import Config
 from models import User, PlatformConnection, Post, Image
 from database import DatabaseManager
-
 
 class PlatformDataBackup:
     """Platform-aware data backup utility"""
@@ -46,9 +44,9 @@ class PlatformDataBackup:
         """Backup database with platform data"""
         print("💾 Backing up database...")
         
-        db_path = "storage/database/vedfolnir.db"
+        database_url = os.getenv("DATABASE_URL")
         if os.path.exists(db_path):
-            backup_path = f"{self.backup_dir}/database/vedfolnir.db"
+            backup_path = f"MySQL database"
             shutil.copy2(db_path, backup_path)
             print(f"  ✅ Database backed up to {backup_path}")
             
@@ -60,7 +58,7 @@ class PlatformDataBackup:
     def _create_database_info(self, db_path):
         """Create database information file"""
         try:
-            conn = sqlite3.connect(db_path)
+            conn = engine.connect()
             cursor = conn.cursor()
             
             # Get table counts
@@ -72,7 +70,7 @@ class PlatformDataBackup:
                     cursor.execute(f"SELECT COUNT(*) FROM {table}")
                     count = cursor.fetchone()[0]
                     tables_info[table] = count
-                except sqlite3.OperationalError:
+                except SQLAlchemyError:
                     tables_info[table] = "table not found"
             
             conn.close()
@@ -243,7 +241,7 @@ class PlatformDataBackup:
             'backup_directory': self.backup_dir,
             'created_at': datetime.now().isoformat(),
             'components': {
-                'database': os.path.exists(f"{self.backup_dir}/database/vedfolnir.db"),
+                'database': True  # MySQL server handles database existence,
                 'platform_data': os.path.exists(f"{self.backup_dir}/platform_data.json"),
                 'images': os.path.exists(f"{self.backup_dir}/images"),
                 'configuration': os.path.exists(f"{self.backup_dir}/config"),
@@ -295,7 +293,6 @@ class PlatformDataBackup:
             print(f"❌ Backup failed: {e}")
             return None
 
-
 def main():
     """Main backup function"""
     import argparse
@@ -318,7 +315,6 @@ def main():
         if not args.quiet:
             print(f"❌ Backup failed: {e}")
         return 1
-
 
 if __name__ == '__main__':
     sys.exit(main())

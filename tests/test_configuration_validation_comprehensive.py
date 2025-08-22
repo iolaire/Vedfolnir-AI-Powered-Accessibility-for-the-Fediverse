@@ -18,7 +18,6 @@ from typing import Optional
 from config import ActivityPubConfig, ConfigurationError
 from activitypub_platforms import PlatformAdapterFactory, PlatformAdapterError
 
-
 class TestActivityPubConfigValidation(unittest.TestCase):
     """Test ActivityPubConfig validation for both platforms"""
     
@@ -157,7 +156,6 @@ class TestActivityPubConfigValidation(unittest.TestCase):
         self.assertEqual(config.instance_url, '   ')  # Whitespace preserved
         self.assertEqual(config.access_token, 'test_token')
 
-
 class TestBackwardCompatibility(unittest.TestCase):
     """Test backward compatibility with existing Pixelfed configurations"""
     
@@ -279,7 +277,6 @@ class TestBackwardCompatibility(unittest.TestCase):
                 config = ActivityPubConfig.from_env()
                 self.assertEqual(config.api_type, expected_type)
 
-
 class TestConfigurationErrorMessages(unittest.TestCase):
     """Test error messages for invalid configurations"""
     
@@ -378,7 +375,6 @@ class TestConfigurationErrorMessages(unittest.TestCase):
         self.assertEqual(config.api_type, 'mastodon')
         self.assertEqual(config.access_token, 'test_token')
 
-
 class TestPlatformAdapterFactoryConfigValidation(unittest.TestCase):
     """Test platform adapter factory configuration validation"""
     
@@ -438,7 +434,6 @@ class TestPlatformAdapterFactoryConfigValidation(unittest.TestCase):
         
         # The adapter should be created (it's a PixelfedPlatform instance)
         self.assertEqual(adapter.platform_name, "pixelfed")
-
 
 class TestConfigurationIntegration(unittest.TestCase):
     """Test configuration integration with the overall system"""
@@ -531,7 +526,6 @@ class TestConfigurationIntegration(unittest.TestCase):
         
         self.assertEqual(config.instance_url, 'https://custom.pixelfed.com')
         self.assertEqual(config.access_token, 'custom_token')
-
 
 if __name__ == "__main__":
     unittest.main()

@@ -19,7 +19,6 @@ import logging
 
 logger = logging.getLogger(__name__)
 
-
 @dataclass
 class PlatformIdentificationResult:
     """
@@ -38,13 +37,11 @@ class PlatformIdentificationResult:
     platform_stats: Dict[str, Any] = None
     source: str = 'unknown'
 
-
 class PlatformObj:
     """Helper class to convert dictionary platform data to object for template compatibility"""
     def __init__(self, data: Dict[str, Any]):
         for key, value in data.items():
             setattr(self, key, value)
-
 
 def identify_user_platform(
     user_id: int,
@@ -140,7 +137,6 @@ def identify_user_platform(
     
     return result
 
-
 def _identify_platform_from_database(
     user_id: int,
     db_manager: Any,
@@ -218,7 +214,6 @@ def _identify_platform_from_database(
     
     return result
 
-
 def require_platform_selection(result: PlatformIdentificationResult) -> bool:
     """
     Check if platform selection is required based on identification result.
@@ -232,7 +227,6 @@ def require_platform_selection(result: PlatformIdentificationResult) -> bool:
     needs_selection = not result.current_platform or not result.platform_connection_id
     print(f"DEBUG: require_platform_selection - current_platform: {result.current_platform}, platform_connection_id: {result.platform_connection_id}, needs_selection: {needs_selection}")
     return needs_selection
-
 
 def _update_session_context_with_platform(platform_connection_id: int, platform_obj: Any) -> None:
     """
@@ -274,7 +268,6 @@ def _update_session_context_with_platform(platform_connection_id: int, platform_
     except Exception as e:
         logger.error(f"Failed to update session context with platform data: {e}")
         raise
-
 
 def get_platform_redirect_message(result: PlatformIdentificationResult) -> str:
     """

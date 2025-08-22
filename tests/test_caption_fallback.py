@@ -134,7 +134,6 @@ class TestCaptionFallback(unittest.TestCase):
         # Test unknown category
         self.assertEqual(self.fallback_manager._map_to_simplified_category("unknown"), "general")
 
-
 class TestOllamaCaptionGeneratorFallback(unittest.TestCase):
     """Test the fallback mechanisms in OllamaCaptionGenerator"""
     
@@ -251,7 +250,6 @@ class TestOllamaCaptionGeneratorFallback(unittest.TestCase):
                 self.assertEqual(self.generator.fallback_stats["fallback_attempts"], 2)
                 self.assertEqual(self.generator.fallback_stats["fallback_failures"], 1)
                 self.assertEqual(self.generator.fallback_stats["fallback_successes"], 0)
-
 
 if __name__ == "__main__":
     unittest.main()

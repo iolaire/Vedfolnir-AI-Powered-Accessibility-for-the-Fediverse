@@ -18,7 +18,6 @@ from session_manager import SessionManager, get_current_platform_context, get_cu
 from redis_session_middleware import get_current_session_context, get_current_session_id
 from web_app import app
 
-
 class TestMiddlewareContext(unittest.TestCase):
     """Test middleware applies context to all requests"""
     
@@ -29,7 +28,7 @@ class TestMiddlewareContext(unittest.TestCase):
         
         # Create test config
         self.config = Config()
-        self.config.storage.database_url = f'sqlite:///{self.db_path}'
+        self.config.storage.database_url = f'mysql+pymysql://{self.db_path}'
         
         # Initialize database manager
         self.db_manager = DatabaseManager(self.config)
@@ -350,7 +349,6 @@ class TestMiddlewareContext(unittest.TestCase):
             response = self.client.get('/test_error_handling')
             
             # Request should complete (may not have context, but shouldn't crash)
-
 
 if __name__ == '__main__':
     unittest.main()

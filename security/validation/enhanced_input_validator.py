@@ -21,7 +21,6 @@ from security.core.security_utils import sanitize_for_log
 
 logger = logging.getLogger(__name__)
 
-
 class ValidationError(Exception):
     """Custom validation error"""
     def __init__(self, message: str, field: str = None, validation_type: str = None):
@@ -29,7 +28,6 @@ class ValidationError(Exception):
         self.field = field
         self.validation_type = validation_type
         super().__init__(message)
-
 
 class InputSanitizer:
     """Advanced input sanitization with security focus"""
@@ -83,7 +81,8 @@ class InputSanitizer:
         max_length: int = 10000,
         allow_html: bool = False,
         strip_unicode: bool = True,
-        normalize_whitespace: bool = True
+        normalize_whitespace: bool = True,
+        skip_malicious_check: bool = False
     ) -> str:
         """
         Comprehensive text sanitization
@@ -94,6 +93,7 @@ class InputSanitizer:
             allow_html: Whether to allow HTML tags
             strip_unicode: Whether to strip dangerous unicode characters
             normalize_whitespace: Whether to normalize whitespace
+            skip_malicious_check: Whether to skip malicious pattern checking (for passwords)
             
         Returns:
             Sanitized text
@@ -119,8 +119,9 @@ class InputSanitizer:
         else:
             text = InputSanitizer._sanitize_html(text)
         
-        # Check for malicious patterns
-        InputSanitizer._check_malicious_patterns(text)
+        # Check for malicious patterns (skip for passwords and other sensitive fields)
+        if not skip_malicious_check:
+            InputSanitizer._check_malicious_patterns(text)
         
         return text.strip()
     
@@ -176,7 +177,7 @@ class InputSanitizer:
     
     @staticmethod
     def sanitize_password(password: str, min_length: int = 8) -> str:
-        """Validate password strength"""
+        """Validate password strength (without malicious pattern checking)"""
         if not password or not isinstance(password, str):
             raise ValidationError("Password is required", validation_type="required")
         
@@ -186,29 +187,33 @@ class InputSanitizer:
         if len(password) > 128:
             raise ValidationError("Password too long (maximum 128 characters)", validation_type="length")
         
-        # Strength validation
-        strength_checks = [
-            (r'[a-z]', "Password must contain lowercase letters"),
-            (r'[A-Z]', "Password must contain uppercase letters"),
-            (r'[0-9]', "Password must contain numbers"),
-            (r'[!@#$%^&*(),.?":{}|<>]', "Password must contain special characters"),
-        ]
+        # Strength validation (optional - can be disabled for admin passwords)
+        import os
+        if os.getenv('PASSWORD_STRENGTH_VALIDATION', 'true').lower() == 'true':
+            strength_checks = [
+                (r'[a-z]', "Password must contain lowercase letters"),
+                (r'[A-Z]', "Password must contain uppercase letters"),
+                (r'[0-9]', "Password must contain numbers"),
+                (r'[!@#$%^&*(),.?":{}|<>]', "Password must contain special characters"),
+            ]
+            
+            for pattern, message in strength_checks:
+                if not re.search(pattern, password):
+                    raise ValidationError(message, validation_type="strength")
+            
+            # Check for common weak patterns
+            weak_patterns = [
+                r'(.)\1{3,}',  # Repeated characters
+                r'(012|123|234|345|456|567|678|789|890)',  # Sequential numbers
+                r'(abc|bcd|cde|def|efg|fgh|ghi|hij|ijk|jkl|klm|lmn|mno|nop|opq|pqr|qrs|rst|stu|tuv|uvw|vwx|wxy|xyz)',  # Sequential letters
+            ]
+            
+            for pattern in weak_patterns:
+                if re.search(pattern, password.lower()):
+                    raise ValidationError("Password contains weak patterns", validation_type="strength")
         
-        for pattern, message in strength_checks:
-            if not re.search(pattern, password):
-                raise ValidationError(message, validation_type="strength")
-        
-        # Check for common weak patterns
-        weak_patterns = [
-            r'(.)\1{3,}',  # Repeated characters
-            r'(012|123|234|345|456|567|678|789|890)',  # Sequential numbers
-            r'(abc|bcd|cde|def|efg|fgh|ghi|hij|ijk|jkl|klm|lmn|mno|nop|opq|pqr|qrs|rst|stu|tuv|uvw|vwx|wxy|xyz)',  # Sequential letters
-        ]
-        
-        for pattern in weak_patterns:
-            if re.search(pattern, password.lower()):
-                raise ValidationError("Password contains weak patterns", validation_type="strength")
-        
+        # Note: We don't check for malicious patterns in passwords as they may contain
+        # legitimate special characters that could be flagged as SQL injection
         return password
     
     @staticmethod
@@ -344,7 +349,6 @@ class InputSanitizer:
             if cmd in text_lower:
                 raise ValidationError("Input contains potentially dangerous commands", validation_type="security")
 
-
 class EnhancedInputValidator:
     """Enhanced input validator with security event logging"""
     
@@ -416,7 +420,8 @@ class EnhancedInputValidator:
             # Default text validation
             max_length = rules.get('max_length', 10000)
             allow_html = rules.get('allow_html', False)
-            return self.sanitizer.sanitize_text(value, max_length, allow_html)
+            skip_malicious_check = rules.get('skip_malicious_check', False)
+            return self.sanitizer.sanitize_text(value, max_length, allow_html, skip_malicious_check=skip_malicious_check)
     
     def _log_validation_failure(self, field_name: str, validation_type: str, error_message: str):
         """Log validation failures for security monitoring"""
@@ -436,7 +441,6 @@ class EnhancedInputValidator:
         except Exception as e:
             logger.error(f"Error logging validation failure: {e}")
 
-
 def validate_user_input(validation_rules: Dict[str, Dict[str, Any]]):
     """
     Decorator for validating user input
@@ -448,6 +452,12 @@ def validate_user_input(validation_rules: Dict[str, Dict[str, Any]]):
         @wraps(f)
         def decorated_function(*args, **kwargs):
             try:
+                # Check if input validation is enabled
+                import os
+                if os.getenv('SECURITY_INPUT_VALIDATION_ENABLED', 'true').lower() != 'true':
+                    # Input validation is disabled, skip validation
+                    return f(*args, **kwargs)
+                
                 # Get database session
                 from database import DatabaseManager
                 from config import Config
@@ -484,7 +494,6 @@ def validate_user_input(validation_rules: Dict[str, Dict[str, Any]]):
         return decorated_function
     return decorator
 
-
 # Common validation rule sets
 USER_REGISTRATION_RULES = {
     'username': {'type': 'username', 'required': True},
@@ -496,7 +505,7 @@ USER_REGISTRATION_RULES = {
 
 USER_LOGIN_RULES = {
     'username_or_email': {'type': 'text', 'required': True, 'max_length': 254},
-    'password': {'type': 'text', 'required': True, 'max_length': 128},
+    'password': {'type': 'text', 'required': True, 'max_length': 128, 'skip_malicious_check': True},
 }
 
 PROFILE_UPDATE_RULES = {
@@ -506,9 +515,9 @@ PROFILE_UPDATE_RULES = {
 }
 
 PASSWORD_CHANGE_RULES = {
-    'current_password': {'type': 'text', 'required': True, 'max_length': 128},
+    'current_password': {'type': 'text', 'required': True, 'max_length': 128, 'skip_malicious_check': True},
     'new_password': {'type': 'password', 'required': True, 'min_length': 8},
-    'confirm_password': {'type': 'text', 'required': True, 'max_length': 128},
+    'confirm_password': {'type': 'text', 'required': True, 'max_length': 128, 'skip_malicious_check': True},
 }
 
 ADMIN_USER_CREATE_RULES = {

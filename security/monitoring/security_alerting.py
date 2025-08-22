@@ -17,14 +17,12 @@ from enum import Enum
 
 logger = logging.getLogger(__name__)
 
-
 class AlertSeverity(Enum):
     """Alert severity levels"""
     LOW = "low"
     MEDIUM = "medium"
     HIGH = "high"
     CRITICAL = "critical"
-
 
 @dataclass
 class SecurityAlert:
@@ -36,7 +34,6 @@ class SecurityAlert:
     details: Dict[str, Any]
     timestamp: datetime
     source: str
-
 
 class SecurityAlertManager:
     """Manages security alerts and notifications"""
@@ -168,10 +165,8 @@ class SecurityAlertManager:
             'high_alerts': severity_counts.get('high', 0)
         }
 
-
 # Global alert manager instance
 _security_alert_manager = None
-
 
 def get_security_alert_manager() -> SecurityAlertManager:
     """Get global security alert manager instance"""
@@ -179,7 +174,6 @@ def get_security_alert_manager() -> SecurityAlertManager:
     if _security_alert_manager is None:
         _security_alert_manager = SecurityAlertManager()
     return _security_alert_manager
-
 
 def trigger_csrf_violation_alert(violation_count: int, source_ip: str) -> str:
     """Convenience function to trigger CSRF violation alert"""

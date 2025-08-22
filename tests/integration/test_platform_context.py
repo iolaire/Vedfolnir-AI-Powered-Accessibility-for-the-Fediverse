@@ -17,13 +17,18 @@ from unified_session_manager import UnifiedSessionManager as SessionManager
 from models import User, PlatformConnection
 from platform_context_utils import ensure_platform_context, validate_platform_context, refresh_platform_context
 
+# MySQL integration test imports
+from tests.mysql_test_base import MySQLIntegrationTestBase
+from tests.mysql_test_config import MySQLTestFixtures
+
+
 def test_platform_context():
     """Test platform context functionality"""
     print("Testing platform context functionality...")
     
     # Initialize components
     config = Config()
-    db_manager = DatabaseManager(config)
+    db_manager = self.get_database_manager()
     session_manager = UnifiedSessionManager(db_manager)
     
     # Get a test user

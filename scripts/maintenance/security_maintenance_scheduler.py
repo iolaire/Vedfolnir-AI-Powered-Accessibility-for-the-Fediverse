@@ -25,7 +25,6 @@ sys.path.insert(0, str(project_root))
 logging.basicConfig(level=logging.INFO, format='%(asctime)s - %(levelname)s - %(message)s')
 logger = logging.getLogger(__name__)
 
-
 class SecurityMaintenanceScheduler:
     """Automated security maintenance task scheduler"""
     
@@ -203,7 +202,6 @@ class SecurityMaintenanceScheduler:
                 logger.error(f"Scheduler error: {e}")
                 time.sleep(300)  # Wait 5 minutes before retrying
 
-
 def main():
     """Main scheduler function"""
     try:
@@ -222,7 +220,6 @@ def main():
     except Exception as e:
         logger.error(f"Security maintenance scheduler failed: {e}")
         sys.exit(1)
-
 
 if __name__ == '__main__':
     main()

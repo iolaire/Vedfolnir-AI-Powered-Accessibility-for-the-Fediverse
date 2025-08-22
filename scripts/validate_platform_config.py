@@ -19,7 +19,6 @@ from config import Config
 from models import User, PlatformConnection
 from database import DatabaseManager
 
-
 class PlatformConfigValidator:
     """Validates platform configuration"""
     
@@ -159,7 +158,6 @@ class PlatformConfigValidator:
         
         return len(self.errors) == 0
 
-
 def main():
     """Main validation function"""
     validator = PlatformConfigValidator()
@@ -170,7 +168,6 @@ def main():
     except Exception as e:
         print(f"❌ Validation failed with exception: {e}")
         return 1
-
 
 if __name__ == '__main__':
     sys.exit(main())

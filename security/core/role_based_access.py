@@ -22,7 +22,6 @@ from sqlalchemy.exc import SQLAlchemyError
 
 logger = logging.getLogger(__name__)
 
-
 def require_role(required_role):
     """
     Decorator to require a specific user role or higher.
@@ -66,7 +65,6 @@ def require_role(required_role):
         return decorated_function
     return decorator
 
-
 def require_admin(f):
     """
     Decorator to require admin role.
@@ -75,7 +73,6 @@ def require_admin(f):
     """
     return require_role(UserRole.ADMIN)(f)
 
-
 def require_viewer_or_higher(f):
     """
     Decorator to require viewer role or higher.
@@ -83,7 +80,6 @@ def require_viewer_or_higher(f):
     Requirements: 8.1, 8.2, 8.3, 8.4, 8.5
     """
     return require_role(UserRole.VIEWER)(f)
-
 
 def platform_access_required(f):
     """
@@ -127,7 +123,6 @@ def platform_access_required(f):
         
         return f(*args, **kwargs)
     return decorated_function
-
 
 def content_access_required(f):
     """
@@ -192,7 +187,6 @@ def content_access_required(f):
         return f(*args, **kwargs)
     return decorated_function
 
-
 def filter_user_platforms(user_id=None):
     """
     Filter platforms based on user role and permissions.
@@ -252,7 +246,6 @@ def filter_user_platforms(user_id=None):
         logger.error(f"Error filtering user platforms: {e}")
         return []
 
-
 def filter_user_content(content_type='images', platform_id=None):
     """
     Filter content (images/posts) based on user role and permissions.
@@ -304,7 +297,6 @@ def filter_user_content(content_type='images', platform_id=None):
         logger.error(f"Error filtering user content: {e}")
         return None
 
-
 def get_accessible_platform_ids():
     """
     Get list of platform IDs that the current user can access.
@@ -340,7 +332,6 @@ def get_accessible_platform_ids():
     platforms = filter_user_platforms()
     return [p.id for p in platforms]
 
-
 def check_platform_ownership(platform_id):
     """
     Check if the current user owns or has access to a specific platform.
@@ -363,7 +354,6 @@ def check_platform_ownership(platform_id):
     # Check if platform belongs to current user
     accessible_platform_ids = get_accessible_platform_ids()
     return platform_id in accessible_platform_ids
-
 
 def check_content_ownership(content_id, content_type='image'):
     """
@@ -403,7 +393,6 @@ def check_content_ownership(content_id, content_type='image'):
     except Exception as e:
         logger.error(f"Error checking content ownership: {e}")
         return False
-
 
 def api_require_role(required_role):
     """
@@ -446,7 +435,6 @@ def api_require_role(required_role):
         return decorated_function
     return decorator
 
-
 def api_require_admin(f):
     """
     API version of admin requirement decorator.
@@ -454,7 +442,6 @@ def api_require_admin(f):
     Requirements: 1.2, 1.3, 1.4, 1.5
     """
     return api_require_role(UserRole.ADMIN)(f)
-
 
 def api_platform_access_required(f):
     """
@@ -479,7 +466,6 @@ def api_platform_access_required(f):
         
         return f(*args, **kwargs)
     return decorated_function
-
 
 def api_content_access_required(f):
     """

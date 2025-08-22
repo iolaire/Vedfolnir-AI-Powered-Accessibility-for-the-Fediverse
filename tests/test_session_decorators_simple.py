@@ -16,7 +16,6 @@ from session_aware_decorators import (
     ensure_user_session_attachment
 )
 
-
 class MockUser:
     """Simple mock user class to avoid AsyncMock issues"""
     def __init__(self, authenticated=True, user_id=1, platforms=None, active_platform=None, raise_detached=False):
@@ -38,7 +37,6 @@ class MockUser:
     
     def get_active_platform(self):
         return self._active_platform
-
 
 class TestSessionDecoratorsSimple(unittest.TestCase):
     
@@ -191,7 +189,6 @@ class TestSessionDecoratorsSimple(unittest.TestCase):
             with self.app.test_request_context():
                 response = self.client.get('/test')
                 self.assertEqual(response.status_code, 302)  # Should redirect to login
-
 
 if __name__ == '__main__':
     unittest.main()

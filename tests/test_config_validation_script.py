@@ -13,7 +13,6 @@ import subprocess
 import sys
 from unittest.mock import patch
 
-
 class TestConfigValidationScript(unittest.TestCase):
     """Test the validate_config.py script"""
     
@@ -32,7 +31,7 @@ class TestConfigValidationScript(unittest.TestCase):
         valid_config = {
             'FLASK_SECRET_KEY': 'test_secret_key_for_validation',
             'PLATFORM_ENCRYPTION_KEY': 'test_encryption_key_for_validation_32_chars',
-            'DATABASE_URL': 'sqlite:///test.db',
+            'DATABASE_URL': 'mysql+pymysql://DATABASE_URL=mysql+pymysql://test_user:test_pass@localhost/test_db',
             'OLLAMA_URL': 'http://localhost:11434',
             'OLLAMA_MODEL': 'llava:7b'
         }
@@ -103,7 +102,7 @@ class TestConfigValidationScript(unittest.TestCase):
         invalid_config = {
             'FLASK_SECRET_KEY': 'test_secret_key',
             'PLATFORM_ENCRYPTION_KEY': 'test_encryption_key_32_chars',
-            'DATABASE_URL': 'sqlite:///test.db',
+            'DATABASE_URL': 'mysql+pymysql://DATABASE_URL=mysql+pymysql://test_user:test_pass@localhost/test_db',
             # Include deprecated platform variables
             'ACTIVITYPUB_API_TYPE': 'mastodon',
             'ACTIVITYPUB_INSTANCE_URL': 'https://test.example.com',
@@ -126,7 +125,6 @@ class TestConfigValidationScript(unittest.TestCase):
         # Should provide helpful message about deprecated platform configuration
         self.assertIn("deprecated platform configuration", result.stdout)
         self.assertIn("web interface", result.stdout)
-
 
 if __name__ == '__main__':
     unittest.main()

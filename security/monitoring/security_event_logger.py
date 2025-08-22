@@ -20,7 +20,6 @@ from security.core.security_utils import sanitize_for_log, mask_sensitive_data
 
 logger = logging.getLogger(__name__)
 
-
 class SecurityEventType(Enum):
     """Types of security events"""
     LOGIN_SUCCESS = "login_success"
@@ -53,14 +52,12 @@ class SecurityEventType(Enum):
     SESSION_HIJACK_ATTEMPT = "session_hijack_attempt"
     BRUTE_FORCE_ATTEMPT = "brute_force_attempt"
 
-
 class SecurityEventSeverity(Enum):
     """Severity levels for security events"""
     LOW = "low"
     MEDIUM = "medium"
     HIGH = "high"
     CRITICAL = "critical"
-
 
 class SecurityEventLogger:
     """Comprehensive security event logging system"""
@@ -473,7 +470,6 @@ class SecurityEventLogger:
                     'time_window': '1_hour'
                 }
             )
-
 
 def get_security_event_logger(db_session: Session) -> SecurityEventLogger:
     """Get a security event logger instance"""

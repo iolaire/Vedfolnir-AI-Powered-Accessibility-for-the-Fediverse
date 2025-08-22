@@ -15,7 +15,6 @@ from typing import Optional, List, Any
 
 from models import CaptionGenerationTask, TaskStatus, CaptionGenerationSettings
 
-
 class MockTaskQueueHelper:
     """Helper class for creating standardized mock configurations for task queue tests"""
     
@@ -243,7 +242,6 @@ class MockTaskQueueHelper:
         query_mock.filter_by.return_value = filter_by_mock
         session_mock.query.return_value = query_mock
 
-
 class MockDatabaseErrorHelper:
     """Helper class for testing database error scenarios"""
     
@@ -283,7 +281,6 @@ class MockDatabaseErrorHelper:
         from sqlalchemy.exc import SQLAlchemyError
         session_mock.commit.side_effect = SQLAlchemyError(error_message)
 
-
 # Convenience functions for common test scenarios
 def create_successful_task_mock(task_id: str = "test-task-id", user_id: int = 1) -> Mock:
     """Create a mock task that can be successfully processed"""
@@ -294,7 +291,6 @@ def create_successful_task_mock(task_id: str = "test-task-id", user_id: int = 1)
         can_be_cancelled=True
     )
 
-
 def create_completed_task_mock(task_id: str = "completed-task-id", user_id: int = 1) -> Mock:
     """Create a mock task that is already completed"""
     return MockTaskQueueHelper.create_mock_task(
@@ -303,7 +299,6 @@ def create_completed_task_mock(task_id: str = "completed-task-id", user_id: int 
         status=TaskStatus.COMPLETED,
         can_be_cancelled=False
     )
-
 
 def create_running_task_mock(task_id: str = "running-task-id", user_id: int = 1) -> Mock:
     """Create a mock task that is currently running"""

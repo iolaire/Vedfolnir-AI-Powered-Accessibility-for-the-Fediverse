@@ -16,7 +16,6 @@ from session_aware_decorators import (
     ensure_user_session_attachment
 )
 
-
 class TestSessionAwareDecorators(unittest.TestCase):
     
     def setUp(self):
@@ -346,7 +345,6 @@ class TestSessionAwareDecorators(unittest.TestCase):
             response = self.client.get('/test-error')
             self.assertEqual(response.status_code, 302)
             mock_logger.warning.assert_called()
-
 
 if __name__ == '__main__':
     unittest.main()

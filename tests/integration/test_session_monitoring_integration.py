@@ -11,7 +11,6 @@ This script tests the complete session monitoring system.
 import time
 from session_performance_monitor import SessionPerformanceMonitor, get_performance_monitor
 
-
 def test_basic_monitoring():
     """Test basic monitoring functionality"""
     print("Testing basic monitoring functionality...")
@@ -36,7 +35,6 @@ def test_basic_monitoring():
     assert metrics['recovery_metrics']['session_reattachments'] == 1
     
     print("✅ Basic monitoring test passed")
-
 
 def test_performance_summary():
     """Test performance summary generation"""
@@ -63,7 +61,6 @@ def test_performance_summary():
     
     print("✅ Performance summary test passed")
 
-
 def test_error_scenarios():
     """Test error scenario monitoring"""
     print("Testing error scenario monitoring...")
@@ -86,7 +83,6 @@ def test_error_scenarios():
     
     print("✅ Error scenario test passed")
 
-
 def test_performance_thresholds():
     """Test performance threshold detection"""
     print("Testing performance threshold detection...")
@@ -107,7 +103,6 @@ def test_performance_thresholds():
     
     print("✅ Performance threshold test passed")
 
-
 def test_singleton_monitor():
     """Test global monitor singleton"""
     print("Testing global monitor singleton...")
@@ -125,7 +120,6 @@ def test_singleton_monitor():
     assert metrics['session_metrics']['creations'] >= 1
     
     print("✅ Singleton monitor test passed")
-
 
 def main():
     """Run all integration tests"""
@@ -150,7 +144,6 @@ def main():
     except Exception as e:
         print(f"❌ Integration test failed: {e}")
         raise
-
 
 if __name__ == "__main__":
     main()

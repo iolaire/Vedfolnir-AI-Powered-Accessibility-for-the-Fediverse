@@ -21,7 +21,6 @@ from sqlalchemy.exc import SQLAlchemyError
 
 logger = logging.getLogger(__name__)
 
-
 def admin_required(f):
     """
     Decorator to require admin role for admin interface access.
@@ -113,7 +112,6 @@ def admin_required(f):
     
     return decorated_function
 
-
 def admin_session_preservation(f):
     """
     Decorator to preserve admin session during user management operations.
@@ -191,7 +189,6 @@ def admin_session_preservation(f):
     
     return decorated_function
 
-
 def admin_api_required(f):
     """
     API version of admin requirement decorator for AJAX endpoints.
@@ -244,7 +241,6 @@ def admin_api_required(f):
     
     return decorated_function
 
-
 def admin_user_management_access(f):
     """
     Decorator specifically for user management operations.
@@ -285,7 +281,6 @@ def admin_user_management_access(f):
         return f(*args, **kwargs)
     
     return decorated_function
-
 
 def ensure_admin_count(f):
     """
@@ -336,7 +331,6 @@ def ensure_admin_count(f):
         return f(*args, **kwargs)
     
     return decorated_function
-
 
 def admin_context_processor():
     """
@@ -396,7 +390,6 @@ def admin_context_processor():
     
     return {}
 
-
 def get_admin_accessible_users():
     """
     Get all users accessible to admin (all users).
@@ -419,7 +412,6 @@ def get_admin_accessible_users():
         logger.error(f"Error getting admin accessible users: {e}")
         return []
 
-
 def get_admin_accessible_platforms():
     """
     Get all platforms accessible to admin (all platforms).
@@ -441,7 +433,6 @@ def get_admin_accessible_platforms():
     except Exception as e:
         logger.error(f"Error getting admin accessible platforms: {e}")
         return []
-
 
 def get_admin_system_stats():
     """

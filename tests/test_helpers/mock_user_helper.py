@@ -21,7 +21,6 @@ from config import Config
 
 logger = logging.getLogger(__name__)
 
-
 class MockUserHelper:
     """Helper class for creating and managing mock users in tests"""
     
@@ -314,7 +313,6 @@ class MockUserHelper:
         """Get the number of platforms created by this helper"""
         return len(self.created_platforms)
 
-
 # Convenience functions for easy use in tests
 def create_test_user_with_platforms(db_manager: DatabaseManager, 
                                    username: Optional[str] = None,
@@ -334,7 +332,6 @@ def create_test_user_with_platforms(db_manager: DatabaseManager,
     user = helper.create_mock_user(username=username, role=role, with_platforms=True)
     return user, helper
 
-
 def cleanup_test_user(helper: MockUserHelper):
     """
     Convenience function to clean up test users.
@@ -343,7 +340,6 @@ def cleanup_test_user(helper: MockUserHelper):
         helper: MockUserHelper instance to clean up
     """
     helper.cleanup_mock_users()
-
 
 # Test configuration constants
 TEST_USER_DEFAULTS = {

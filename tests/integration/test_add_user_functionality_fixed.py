@@ -14,18 +14,18 @@ from models import User, UserRole, PlatformConnection
 from database import DatabaseManager
 from config import Config
 
-class TestAddUserFunctionalityFixed(unittest.TestCase):
+class TestAddUserFunctionalityFixed(MySQLIntegrationTestBase):
     """Test the add user functionality with proper database manager patching"""
     
     def setUp(self):
         """Set up test environment"""
         # Create temporary database
-        self.db_fd, self.db_path = tempfile.mkstemp()
+        self.db_fd, self.db_path = tempfile.mkdtemp(prefix="mysql_integration_test_")
         
         # Create real database manager for test data
         self.config = Config()
-        self.config.storage.database_url = f'sqlite:///{self.db_path}'
-        self.real_db_manager = DatabaseManager(self.config)
+        self.config.storage.database_url = f'mysql+pymysql://{self.db_path}'
+        self.real_db_manager = self.get_database_manager()
         
         # Create tables
         from models import Base
@@ -125,6 +125,11 @@ class TestAddUserFunctionalityFixed(unittest.TestCase):
         
         with patch_web_app_database_manager():
             import web_app
+
+# MySQL integration test imports
+from tests.mysql_test_base import MySQLIntegrationTestBase
+from tests.mysql_test_config import MySQLTestFixtures
+
             
             with web_app.app.test_client() as client:
                 web_app.app.config['TESTING'] = True

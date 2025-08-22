@@ -43,7 +43,7 @@ def validate_core_config():
         'OLLAMA_URL': 'http://localhost:11434',
         'OLLAMA_MODEL': 'llava:7b',
         'LOG_LEVEL': 'INFO',
-        'DATABASE_URL': 'sqlite:///storage/database/vedfolnir.db'
+        'DATABASE_URL': 'mysql+pymysql://vedfolnir_user:vedfolnir_password@localhost/vedfolnir?charset=utf8mb4'
     }
     
     for var, default in recommended_vars.items():
@@ -62,8 +62,8 @@ def validate_core_config():
     
     # Check database URL format
     database_url = os.getenv('DATABASE_URL')
-    if database_url and not database_url.startswith('sqlite://'):
-        warnings.append("Only SQLite databases are currently supported")
+    if database_url and not database_url.startswith('MySQL://'):
+        warnings.append("Only MySQL databases are currently supported")
     
     # Validate numeric configuration values
     numeric_configs = {

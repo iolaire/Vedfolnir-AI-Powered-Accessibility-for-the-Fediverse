@@ -23,7 +23,6 @@ from sqlalchemy.orm.exc import DetachedInstanceError
 
 logger = logging.getLogger(__name__)
 
-
 class SessionState(Enum):
     """Session state enumeration"""
     CREATED = "created"
@@ -31,7 +30,6 @@ class SessionState(Enum):
     EXPIRED = "expired"
     TERMINATED = "terminated"
     ERROR = "error"
-
 
 @dataclass
 class SessionInfo:
@@ -46,7 +44,6 @@ class SessionInfo:
     error_messages: List[str] = field(default_factory=list)
     thread_id: Optional[int] = None
     request_count: int = 0
-
 
 class SessionStateManager:
     """Manages session state for concurrent sessions with proper isolation"""
@@ -358,10 +355,8 @@ class SessionStateManager:
             
             return conflicts
 
-
 # Global session state manager instance
 _session_state_manager = None
-
 
 def get_session_state_manager() -> SessionStateManager:
     """Get the global session state manager instance
@@ -373,7 +368,6 @@ def get_session_state_manager() -> SessionStateManager:
     if _session_state_manager is None:
         _session_state_manager = SessionStateManager()
     return _session_state_manager
-
 
 def initialize_session_state_management():
     """Initialize session state management"""

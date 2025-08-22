@@ -29,7 +29,6 @@ from security.monitoring.csrf_security_metrics import get_csrf_security_metrics
 logging.basicConfig(level=logging.INFO, format='%(asctime)s - %(levelname)s - %(message)s')
 logger = logging.getLogger(__name__)
 
-
 class ComprehensiveSecurityTester:
     """Comprehensive security testing framework"""
     
@@ -321,7 +320,6 @@ class ComprehensiveSecurityTester:
         except Exception as e:
             logger.error(f"Failed to save test results: {e}")
 
-
 def main():
     """Main testing function"""
     try:
@@ -349,7 +347,6 @@ def main():
     except Exception as e:
         logger.error(f"Security testing failed: {e}")
         sys.exit(1)
-
 
 if __name__ == '__main__':
     main()

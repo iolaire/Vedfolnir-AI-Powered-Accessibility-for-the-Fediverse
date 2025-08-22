@@ -19,7 +19,6 @@ from sqlalchemy.exc import IntegrityError
 from tests.fixtures.platform_fixtures import PlatformTestCase, PlatformTestFixtures
 from models import User, UserRole, PlatformConnection, UserSession, Post, Image, ProcessingStatus
 
-
 class TestPlatformConnectionModel(PlatformTestCase):
     """Test PlatformConnection model functionality"""
     
@@ -149,7 +148,6 @@ class TestPlatformConnectionModel(PlatformTestCase):
         ).all()
         self.assertEqual(len(platforms), 2)
 
-
 class TestUserModelPlatformMethods(PlatformTestCase):
     """Test User model platform-related methods"""
     
@@ -233,7 +231,6 @@ class TestUserModelPlatformMethods(PlatformTestCase):
         self.assertFalse(user.has_platform_access('pixelfed', 'https://other.test'))
         self.assertFalse(user.has_platform_access('other', 'https://pixelfed.test'))
 
-
 class TestPlatformAwareModels(PlatformTestCase):
     """Test platform awareness in Post and Image models"""
     
@@ -277,7 +274,6 @@ class TestPlatformAwareModels(PlatformTestCase):
         
         for image in platform_images:
             self.assertEqual(image.platform_connection_id, platform.id)
-
 
 class TestUserSessionModel(PlatformTestCase):
     """Test UserSession model functionality"""
@@ -342,7 +338,6 @@ class TestUserSessionModel(PlatformTestCase):
         with self.assertRaises(IntegrityError):
             self.session.commit()
 
-
 class TestModelValidation(PlatformTestCase):
     """Test model validation and constraints"""
     
@@ -400,7 +395,6 @@ class TestModelValidation(PlatformTestCase):
         # Test defaults
         self.assertTrue(platform.is_active)  # Should default to True
         self.assertFalse(platform.is_default)  # Should default to False
-
 
 if __name__ == '__main__':
     unittest.main()

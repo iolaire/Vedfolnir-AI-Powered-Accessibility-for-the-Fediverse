@@ -24,7 +24,6 @@ from security.audit.csrf_compliance_validator import (
     CSRFComplianceValidator, SecurityAuditReporter, ContinuousIntegrationValidator
 )
 
-
 def main():
     """Main CLI entry point"""
     parser = argparse.ArgumentParser(
@@ -251,7 +250,6 @@ Examples:
             import traceback
             traceback.print_exc()
         return 1
-
 
 if __name__ == '__main__':
     sys.exit(main())

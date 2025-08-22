@@ -23,7 +23,6 @@ import re
 
 from config import Config, ConfigurationError
 
-
 class TestConfigurationExamples(unittest.TestCase):
     """Test configuration example files"""
     
@@ -109,7 +108,7 @@ class TestConfigurationExamples(unittest.TestCase):
                                 # Basic config should load successfully
                                 self.assertIsNotNone(config)
                                 self.assertIsInstance(config.webapp.secret_key, str)
-                                self.assertIsInstance(config.storage.database_dir, str)
+                                self.assertIsInstance(config.storage.database_url, str)
                             except ConfigurationError as e:
                                 # Only fail if it's not due to expected placeholder values
                                 error_msg = str(e).lower()
@@ -142,7 +141,7 @@ class TestConfigurationExamples(unittest.TestCase):
                             self.assertTrue(url.startswith('http://') or url.startswith('https://'), 
                                           f"{url_var} in {name} should be a valid URL")
                         elif url_var == 'DATABASE_URL':
-                            self.assertTrue(url.startswith('sqlite://'), 
+                            self.assertTrue(url.startswith('MySQL://'), 
                                           f"{url_var} in {name} should be a valid database URL")
                 
                 # Test boolean values
@@ -206,7 +205,7 @@ class TestConfigurationExamples(unittest.TestCase):
         minimal_config = {
             'FLASK_SECRET_KEY': 'test_secret_key_for_testing_only',
             'PLATFORM_ENCRYPTION_KEY': 'test_encryption_key_for_testing_only_32_chars',
-            'DATABASE_URL': 'sqlite:///test.db'
+            'DATABASE_URL': 'mysql+pymysql://DATABASE_URL=mysql+pymysql://test_user:test_pass@localhost/test_db'
         }
         
         with patch.dict(os.environ, minimal_config, clear=True):
@@ -292,7 +291,6 @@ class TestConfigurationExamples(unittest.TestCase):
         for var in platform_specific_vars:
             self.assertNotIn(var, config_vars, 
                            f"Platform variable {var} should not be in .env.example - it's managed via database")
-
 
 if __name__ == '__main__':
     unittest.main()

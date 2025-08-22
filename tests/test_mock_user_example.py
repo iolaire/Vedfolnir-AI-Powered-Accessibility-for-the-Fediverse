@@ -16,7 +16,6 @@ from database import DatabaseManager
 from models import UserRole
 from tests.test_helpers import create_test_user_with_platforms, cleanup_test_user
 
-
 class TestMockUserExample(unittest.TestCase):
     """Example test class showing proper mock user usage"""
     
@@ -94,7 +93,6 @@ class TestMockUserExample(unittest.TestCase):
             # Platform should have proper URLs
             self.assertTrue(platform.instance_url.startswith("https://"))
             self.assertTrue("example.com" in platform.instance_url)
-
 
 if __name__ == '__main__':
     unittest.main()

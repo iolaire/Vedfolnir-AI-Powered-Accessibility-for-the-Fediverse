@@ -84,7 +84,7 @@ def test_database_manager_patching():
             # Create a new instance (this would be used in tests)
             from config import Config
             config = Config()
-            db_manager = DatabaseManager(config)
+            db_manager = self.get_database_manager()
             
             # Test the mock
             session = db_manager.get_session()
@@ -209,7 +209,7 @@ def create_test_database_manager_patch():
     
     return create_mock_db_manager
 
-class TestDatabaseManagerPatching(unittest.TestCase):
+class TestDatabaseManagerPatching(MySQLIntegrationTestBase):
     """Unit tests for database manager patching"""
     
     def setUp(self):
@@ -239,9 +239,14 @@ class TestDatabaseManagerPatching(unittest.TestCase):
             # Import and create instance
             from database import DatabaseManager
             from config import Config
+
+# MySQL integration test imports
+from tests.mysql_test_base import MySQLIntegrationTestBase
+from tests.mysql_test_config import MySQLTestFixtures
+
             
             config = Config()
-            db_manager = DatabaseManager(config)
+            db_manager = self.get_database_manager()
             
             # Test
             self.assertEqual(db_manager, mock_instance)

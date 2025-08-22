@@ -21,8 +21,12 @@ from routes.user_management_routes import register_user_management_routes
 from database import DatabaseManager
 from config import Config
 
+# MySQL integration test imports
+from tests.mysql_test_base import MySQLIntegrationTestBase
+from tests.mysql_test_config import MySQLTestFixtures
 
-class TestUserRegistrationRoutes(unittest.TestCase):
+
+class TestUserRegistrationRoutes(MySQLIntegrationTestBase):
     """Test cases for user registration routes"""
     
     def setUp(self):
@@ -33,13 +37,13 @@ class TestUserRegistrationRoutes(unittest.TestCase):
         self.app.config['WTF_CSRF_ENABLED'] = False  # Disable CSRF for testing
         self.app.config['TESTING'] = True
         
-        # Create in-memory database
-        self.engine = create_engine('sqlite:///:memory:', echo=False)
+        # Create in-DATABASE_URL=mysql+pymysql://test_user:test_pass@localhost/test_db
+        self.engine = create_engine('mysql+pymysql://DATABASE_URL=mysql+pymysql://test_user:test_pass@localhost/test_db', echo=False)
         Base.metadata.create_all(self.engine)
         
         # Create mock database manager
         self.db_manager = Mock()
-        Session = sessionmaker(bind=self.engine)
+        Session = self.get_test_session
         self.db_manager.get_session.return_value = Session()
         
         # Store in app config
@@ -137,7 +141,6 @@ class TestUserRegistrationRoutes(unittest.TestCase):
         # Should redirect to login with info message (placeholder implementation)
         self.assertEqual(response.status_code, 302)
         self.assertIn('/login', response.location)
-
 
 if __name__ == '__main__':
     unittest.main()

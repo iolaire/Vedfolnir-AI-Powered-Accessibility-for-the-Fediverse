@@ -30,7 +30,6 @@ from session_error_handlers import SessionErrorHandler
 from detached_instance_handler import DetachedInstanceHandler
 from session_error_logger import SessionErrorLogger
 
-
 class SimpleFlaskDetachedInstanceFixTest(unittest.TestCase):
     """Simple Flask context tests for DetachedInstanceError fix"""
     
@@ -294,7 +293,6 @@ class SimpleFlaskDetachedInstanceFixTest(unittest.TestCase):
                 user2_platform_ids = {p.id for p in user2_platforms}
                 self.assertNotEqual(user1_platform_ids, user2_platform_ids)
 
-
 class SimpleFlaskPerformanceTest(unittest.TestCase):
     """Simple performance tests with Flask context"""
     
@@ -354,7 +352,6 @@ class SimpleFlaskPerformanceTest(unittest.TestCase):
             # Should handle at least 5 operations per second
             self.assertGreater(ops_per_second, 5, 
                              f"Performance too slow: {ops_per_second:.1f} ops/sec")
-
 
 if __name__ == '__main__':
     unittest.main(verbosity=2)

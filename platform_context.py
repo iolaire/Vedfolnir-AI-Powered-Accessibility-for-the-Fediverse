@@ -23,7 +23,6 @@ from sqlalchemy import and_, or_
 from models import User, PlatformConnection, Post, Image, ProcessingRun
 from config import ActivityPubConfig, RetryConfig, RateLimitConfig
 
-
 @dataclass
 class PlatformContext:
     """Represents the current platform context for a user"""
@@ -63,7 +62,6 @@ class PlatformContext:
             'is_default': self.platform_connection.is_default
         }
 
-
 class PlatformContextError(Exception):
     """Raised when there are issues with platform context operations"""
     
@@ -77,7 +75,6 @@ class PlatformContextError(Exception):
         """
         super().__init__(message)
         self.context = kwargs
-
 
 class PlatformContextManager:
     """

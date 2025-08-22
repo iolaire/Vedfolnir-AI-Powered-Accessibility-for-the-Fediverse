@@ -14,7 +14,6 @@ from security.core.security_utils import sanitize_for_log
 
 logger = logging.getLogger(__name__)
 
-
 class DatabaseContextMiddleware:
     """
     Middleware to ensure proper database session lifecycle management for Flask requests.

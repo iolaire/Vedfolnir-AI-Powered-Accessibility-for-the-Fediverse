@@ -14,7 +14,6 @@ from flask import g, has_request_context, request
 from sqlalchemy.pool import Pool
 from sqlalchemy.engine import Engine
 
-
 @dataclass
 class SessionMetrics:
     """Container for session performance metrics"""
@@ -41,7 +40,6 @@ class SessionMetrics:
     pool_overflow: int = 0
     pool_checked_in: int = 0
 
-
 @dataclass
 class RequestMetrics:
     """Container for request-level performance metrics"""
@@ -55,7 +53,6 @@ class RequestMetrics:
     successful_recoveries: int = 0
     database_queries: int = 0
     session_duration: float = 0.0
-
 
 class SessionPerformanceMonitor:
     """
@@ -560,10 +557,8 @@ Active Requests: {metrics['active_requests']}
                 f"{recovery_success_rate:.1%} ({request_metric.successful_recoveries}/{request_metric.recovery_attempts})"
             )
 
-
 # Global monitor instance
 _global_monitor: Optional[SessionPerformanceMonitor] = None
-
 
 def get_performance_monitor() -> SessionPerformanceMonitor:
     """
@@ -576,7 +571,6 @@ def get_performance_monitor() -> SessionPerformanceMonitor:
     if _global_monitor is None:
         _global_monitor = SessionPerformanceMonitor()
     return _global_monitor
-
 
 def initialize_performance_monitoring(app, session_manager, engine):
     """

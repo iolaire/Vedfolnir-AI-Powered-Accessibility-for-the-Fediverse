@@ -18,7 +18,6 @@ from tests.fixtures.platform_fixtures import PlatformTestCase
 from platform_context import PlatformContextManager, PlatformContextError
 from models import User, PlatformConnection, Post, Image
 
-
 class TestPlatformContextManager(PlatformTestCase):
     """Test PlatformContextManager functionality"""
     
@@ -288,7 +287,6 @@ class TestPlatformContextManager(PlatformTestCase):
         self.assertGreaterEqual(stats['total_posts'], 0)
         self.assertGreaterEqual(stats['total_images'], 0)
 
-
 class TestPlatformContextError(unittest.TestCase):
     """Test PlatformContextError exception"""
     
@@ -306,7 +304,6 @@ class TestPlatformContextError(unittest.TestCase):
         self.assertEqual(str(error), "Test error")
         # Additional context should be accessible if needed
         self.assertTrue(hasattr(error, 'args'))
-
 
 class TestPlatformContextIntegration(PlatformTestCase):
     """Test platform context integration with other components"""
@@ -372,7 +369,6 @@ class TestPlatformContextIntegration(PlatformTestCase):
         
         self.assertEqual(context1.platform_connection_id, platform1.id)
         self.assertEqual(context2.platform_connection_id, platform2.id)
-
 
 if __name__ == '__main__':
     unittest.main()

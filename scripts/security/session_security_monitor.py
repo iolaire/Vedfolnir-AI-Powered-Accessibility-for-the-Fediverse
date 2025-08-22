@@ -23,7 +23,6 @@ from database import DatabaseManager
 from unified_session_manager import UnifiedSessionManager as SessionManager
 from security.features.session_security import SessionSecurityHardening
 
-
 def setup_database():
     """Set up database connection"""
     try:
@@ -34,7 +33,6 @@ def setup_database():
     except Exception as e:
         print(f"Error setting up database: {e}")
         sys.exit(1)
-
 
 def get_security_status(session_manager):
     """Get overall security status"""
@@ -75,7 +73,6 @@ def get_security_status(session_manager):
         print(f"Error getting security status: {e}")
         return False
 
-
 def list_session_metrics(session_manager, session_id=None):
     """List session security metrics"""
     try:
@@ -105,7 +102,6 @@ def list_session_metrics(session_manager, session_id=None):
         print(f"Error listing session metrics: {e}")
         return False
 
-
 def cleanup_expired_data(session_manager, max_age_hours=24):
     """Clean up expired security data"""
     try:
@@ -125,7 +121,6 @@ def cleanup_expired_data(session_manager, max_age_hours=24):
     except Exception as e:
         print(f"Error cleaning up expired data: {e}")
         return False
-
 
 def validate_session_security(session_manager, session_id, user_id):
     """Validate security for a specific session"""
@@ -152,7 +147,6 @@ def validate_session_security(session_manager, session_id, user_id):
         print(f"Error validating session security: {e}")
         return False
 
-
 def invalidate_suspicious_sessions(session_manager, user_id, reason):
     """Invalidate all sessions for a user due to suspicious activity"""
     try:
@@ -170,7 +164,6 @@ def invalidate_suspicious_sessions(session_manager, user_id, reason):
     except Exception as e:
         print(f"Error invalidating suspicious sessions: {e}")
         return False
-
 
 def show_suspicious_activity(session_manager):
     """Show sessions with suspicious activity"""
@@ -203,7 +196,6 @@ def show_suspicious_activity(session_manager):
     except Exception as e:
         print(f"Error showing suspicious activity: {e}")
         return False
-
 
 def main():
     """Main CLI function"""
@@ -267,7 +259,6 @@ def main():
         success = show_suspicious_activity(session_manager)
     
     sys.exit(0 if success else 1)
-
 
 if __name__ == '__main__':
     main()

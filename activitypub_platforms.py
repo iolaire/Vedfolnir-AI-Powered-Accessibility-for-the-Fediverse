@@ -188,7 +188,6 @@ class ActivityPubPlatform(abc.ABC):
         """Detailed string representation of the adapter"""
         return f"{self.__class__.__name__}(config={self.config})"
 
-
 class PixelfedPlatform(ActivityPubPlatform):
     """Adapter for Pixelfed platform"""
     
@@ -465,7 +464,6 @@ class PixelfedPlatform(ActivityPubPlatform):
             rate_limit_info['reset'] = int(response_headers['X-RateLimit-Reset'])
         
         return rate_limit_info
-
 
 class MastodonPlatform(ActivityPubPlatform):
     """Adapter for Mastodon platform"""
@@ -1314,7 +1312,6 @@ class MastodonPlatform(ActivityPubPlatform):
         
         return rate_limit_info
 
-
 class PleromaPlatform(ActivityPubPlatform):
     """Adapter for Pleroma platform"""
     
@@ -1555,7 +1552,6 @@ class PleromaPlatform(ActivityPubPlatform):
         except Exception as e:
             logger.error(f"Failed to update Pleroma post {post_id}: {e}")
             return False
-
 
 class PlatformAdapterFactory:
     """Factory class for creating platform adapters"""
@@ -1878,7 +1874,6 @@ def get_platform_adapter(config) -> ActivityPubPlatform:
         Platform adapter instance
     """
     return PlatformAdapterFactory.create_adapter(config)
-
 
 # Function to detect platform type from instance URL
 async def detect_platform_type(instance_url: str) -> str:

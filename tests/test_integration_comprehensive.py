@@ -27,7 +27,6 @@ from ollama_caption_generator import OllamaCaptionGenerator
 from post_service import PostingService
 from image_processor import ImageProcessor
 
-
 class MockPixelfedAPI:
     """Mock Pixelfed API for testing"""
     
@@ -119,19 +118,18 @@ class MockPixelfedAPI:
         response.json.return_value = {"error": "Not found"}
         return response
 
-
 class TestComponentIntegration(unittest.IsolatedAsyncioTestCase):
     """Test integration between different components"""
     
     def setUp(self):
         """Set up test environment"""
         # Create temporary database
-        self.temp_db = tempfile.NamedTemporaryFile(delete=False, suffix='.db')
+        self.temp_db = tempfile.NamedTemporaryFile(delete=False, suffix="MySQL database")
         self.temp_db.close()
         
         # Create test config
         self.config = Config()
-        self.config.storage.database_url = f"sqlite:///{self.temp_db.name}"
+        self.config.storage.database_url = f"mysql+pymysql://{self.temp_db.name}"
         
         # Initialize components
         self.db_manager = DatabaseManager(self.config)
@@ -442,17 +440,16 @@ class TestComponentIntegration(unittest.IsolatedAsyncioTestCase):
         finally:
             session.close()
 
-
 class TestDatabaseIntegration(unittest.TestCase):
     """Test database integration with various components"""
     
     def setUp(self):
         """Set up test environment"""
-        self.temp_db = tempfile.NamedTemporaryFile(delete=False, suffix='.db')
+        self.temp_db = tempfile.NamedTemporaryFile(delete=False, suffix="MySQL database")
         self.temp_db.close()
         
         self.config = Config()
-        self.config.storage.database_url = f"sqlite:///{self.temp_db.name}"
+        self.config.storage.database_url = f"mysql+pymysql://{self.temp_db.name}"
         
         self.db_manager = DatabaseManager(self.config)
     
@@ -646,7 +643,6 @@ class TestDatabaseIntegration(unittest.TestCase):
         # Verify deletion
         deleted_user = self.db_manager.get_user_by_username("integration_test")
         self.assertIsNone(deleted_user)
-
 
 if __name__ == "__main__":
     unittest.main()

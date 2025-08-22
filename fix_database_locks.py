@@ -1,73 +1,69 @@
 #!/usr/bin/env python3
 """
-Fix database lock issues by adjusting SQLite configuration and connection management.
+Database Lock Fix Script - MySQL Version
+
+This script was originally designed for SQLite database locks.
+With MySQL, database locks are handled differently and this script
+is largely obsolete. MySQL handles concurrent connections and locking
+automatically through its InnoDB storage engine.
+
+For MySQL connection issues, use the MySQL troubleshooting tools instead.
 """
 
 import os
-import sqlite3
+import sys
 import logging
-from pathlib import Path
+from config import Config
 
-def fix_database_locks():
-    """Fix database lock issues by optimizing SQLite configuration"""
-    
-    # Set up logging
+def main():
+    """Main function - now provides MySQL guidance instead of SQLite lock fixes"""
     logging.basicConfig(level=logging.INFO)
     logger = logging.getLogger(__name__)
     
-    # Database path
-    db_path = "storage/database/vedfolnir.db"
-    
-    if not os.path.exists(db_path):
-        logger.info("Database file does not exist, no locks to fix")
-        return
-    
-    logger.info(f"Fixing database locks for {db_path}")
+    logger.info("Database Lock Fix Script - MySQL Version")
+    logger.info("=" * 50)
     
     try:
-        # Connect to database with optimized settings
-        conn = sqlite3.connect(
-            db_path,
-            timeout=30.0,  # 30 second timeout
-            isolation_level=None,  # Autocommit mode
-            check_same_thread=False
-        )
+        config = Config()
+        database_url = config.storage.database_url
         
-        # Set SQLite pragmas for better concurrency
-        cursor = conn.cursor()
-        
-        # Enable WAL mode for better concurrency
-        cursor.execute("PRAGMA journal_mode=WAL")
-        
-        # Set busy timeout
-        cursor.execute("PRAGMA busy_timeout=30000")  # 30 seconds
-        
-        # Optimize synchronous mode
-        cursor.execute("PRAGMA synchronous=NORMAL")
-        
-        # Set cache size
-        cursor.execute("PRAGMA cache_size=10000")
-        
-        # Set temp store to memory
-        cursor.execute("PRAGMA temp_store=MEMORY")
-        
-        # Set locking mode to normal (not exclusive)
-        cursor.execute("PRAGMA locking_mode=NORMAL")
-        
-        # Commit changes
-        conn.commit()
-        
-        logger.info("Database configuration optimized for concurrency")
-        
-        # Close connection
-        cursor.close()
-        conn.close()
-        
-        logger.info("Database locks fixed successfully")
-        
+        if database_url.startswith("mysql+pymysql://"):
+            logger.info("✅ MySQL database detected")
+            logger.info("MySQL handles database locks automatically through InnoDB storage engine")
+            logger.info("If you're experiencing connection issues, try these MySQL troubleshooting steps:")
+            logger.info("")
+            logger.info("1. Check MySQL server status:")
+            logger.info("   sudo systemctl status mysql")
+            logger.info("")
+            logger.info("2. Check MySQL error logs:")
+            logger.info("   sudo tail -f /var/log/mysql/error.log")
+            logger.info("")
+            logger.info("3. Check for long-running queries:")
+            logger.info("   mysql -u root -p -e 'SHOW PROCESSLIST;'")
+            logger.info("")
+            logger.info("4. Check InnoDB status:")
+            logger.info("   mysql -u root -p -e 'SHOW ENGINE INNODB STATUS;'")
+            logger.info("")
+            logger.info("5. For connection pool issues, restart the application")
+            logger.info("")
+            logger.info("For comprehensive MySQL troubleshooting, use:")
+            logger.info("   python -c \"from database import DatabaseManager; from config import Config; dm = DatabaseManager(Config()); print(dm.generate_mysql_troubleshooting_guide())\"")
+            
+        else:
+            logger.warning("⚠️  Non-MySQL database detected")
+            logger.warning("This script is designed for MySQL databases only")
+            logger.warning(f"Current DATABASE_URL: {database_url[:50]}...")
+            
     except Exception as e:
-        logger.error(f"Error fixing database locks: {e}")
-        raise
+        logger.error(f"Error checking database configuration: {e}")
+        logger.error("Please ensure your .env file is properly configured with a MySQL DATABASE_URL")
+        sys.exit(1)
+    
+    logger.info("=" * 50)
+    logger.info("For MySQL-specific issues, consider using MySQL's built-in tools:")
+    logger.info("- mysqladmin processlist")
+    logger.info("- mysqladmin status")
+    logger.info("- MySQL Workbench for GUI management")
 
 if __name__ == "__main__":
-    fix_database_locks()
+    main()

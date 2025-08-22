@@ -17,7 +17,6 @@ from models import User, PlatformConnection, UserSession, UserRole
 from unified_session_manager import UnifiedSessionManager as SessionManager
 from web_app import app
 
-
 class TestPlatformSwitching(unittest.TestCase):
     """Test platform switching updates session immediately"""
     
@@ -28,7 +27,7 @@ class TestPlatformSwitching(unittest.TestCase):
         
         # Create test config
         self.config = Config()
-        self.config.storage.database_url = f'sqlite:///{self.db_path}'
+        self.config.storage.database_url = f'mysql+pymysql://{self.db_path}'
         
         # Initialize database manager
         self.db_manager = DatabaseManager(self.config)
@@ -274,7 +273,6 @@ class TestPlatformSwitching(unittest.TestCase):
         context = self.session_manager.get_session_context(session_id)
         self.assertEqual(context['platform_connection_id'], self.platform1_id)
         self.assertEqual(context['platform_connection'].name, 'Pixelfed Platform')
-
 
 if __name__ == '__main__':
     unittest.main()

@@ -37,7 +37,6 @@ from tests.test_helpers.mock_user_helper import MockUserHelper
 from sqlalchemy.exc import SQLAlchemyError
 from sqlalchemy.orm.exc import DetachedInstanceError
 
-
 class TestLoginSessionManagement(unittest.TestCase):
     """Test login route with proper session management"""
     
@@ -48,7 +47,7 @@ class TestLoginSessionManagement(unittest.TestCase):
         
         # Create test config
         self.config = Config()
-        self.config.storage.database_url = f'sqlite:///{self.db_path}'
+        self.config.storage.database_url = f'mysql+pymysql://{self.db_path}'
         
         # Initialize database manager
         self.db_manager = DatabaseManager(self.config)
@@ -540,7 +539,6 @@ class TestLoginSessionManagement(unittest.TestCase):
             self.assertIn('platform_connection_id', context)
             self.assertIsNotNone(context['platform_connection_id'])
 
-
 class TestLoginErrorRecovery(unittest.TestCase):
     """Test error recovery scenarios for login"""
     
@@ -551,7 +549,7 @@ class TestLoginErrorRecovery(unittest.TestCase):
         
         # Create test config
         self.config = Config()
-        self.config.storage.database_url = f'sqlite:///{self.db_path}'
+        self.config.storage.database_url = f'mysql+pymysql://{self.db_path}'
         
         # Initialize database manager
         self.db_manager = DatabaseManager(self.config)
@@ -609,7 +607,6 @@ class TestLoginErrorRecovery(unittest.TestCase):
                 self.session_manager.create_user_session(user.id, user.platform_connections[0].id)
             except Exception as e:
                 self.assertIn("Session creation failed", str(e))
-
 
 if __name__ == '__main__':
     unittest.main()

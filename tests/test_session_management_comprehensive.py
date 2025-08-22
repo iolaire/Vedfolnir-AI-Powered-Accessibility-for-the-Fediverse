@@ -27,7 +27,6 @@ from safe_template_context import safe_template_context, _get_safe_user_data, _g
 from models import User, PlatformConnection, UserRole
 from tests.test_helpers import create_test_user_with_platforms, cleanup_test_user
 
-
 class TestRequestScopedSessionManager(unittest.TestCase):
     """Test RequestScopedSessionManager functionality"""
     
@@ -238,7 +237,6 @@ class TestRequestScopedSessionManager(unittest.TestCase):
             }
             
             self.assertEqual(info, expected)
-
 
 class TestSessionAwareUser(unittest.TestCase):
     """Test SessionAwareUser class and property access"""
@@ -490,7 +488,6 @@ class TestSessionAwareUser(unittest.TestCase):
         self.assertIn("1", result)
         self.assertIn("testuser", result)
 
-
 class TestDetachedInstanceHandler(unittest.TestCase):
     """Test DetachedInstanceHandler recovery mechanisms"""
     
@@ -666,7 +663,6 @@ class TestDetachedInstanceHandler(unittest.TestCase):
         self.assertEqual(handler.session_manager, mock_session_manager)
         self.assertTrue(hasattr(app, 'detached_instance_handler'))
         self.assertEqual(app.detached_instance_handler, handler)
-
 
 class TestSafeTemplateContext(unittest.TestCase):
     """Test template context processor error handling"""
@@ -853,7 +849,6 @@ class TestSafeTemplateContext(unittest.TestCase):
         
         mock_fallback.assert_called_once_with(mock_user, mock_handler, mock_session_manager)
         self.assertEqual(len(result['user_platforms']), 2)
-
 
 if __name__ == '__main__':
     # Configure logging for tests

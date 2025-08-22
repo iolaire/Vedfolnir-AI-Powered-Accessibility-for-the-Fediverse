@@ -20,7 +20,6 @@ from database import DatabaseManager
 from models import User, UserRole, UserAuditLog
 from services.user_management_service import UserProfileService, UserDeletionService
 
-
 class TestUserProfileManagement(unittest.TestCase):
     """Test user profile management functionality"""
     
@@ -31,7 +30,7 @@ class TestUserProfileManagement(unittest.TestCase):
         
         # Create test config
         self.config = Config()
-        self.config.DATABASE_URL = f'sqlite:///{self.db_path}'
+        self.config.DATABASE_URL = f'mysql+pymysql://{self.db_path}'
         
         # Initialize database manager
         self.db_manager = DatabaseManager(self.config)
@@ -277,7 +276,6 @@ class TestUserProfileManagement(unittest.TestCase):
             self.assertEqual(audit_entry.user_agent, 'Test Browser')
             self.assertIn('first_name', audit_entry.details)
             self.assertIn('last_name', audit_entry.details)
-
 
 if __name__ == '__main__':
     unittest.main()

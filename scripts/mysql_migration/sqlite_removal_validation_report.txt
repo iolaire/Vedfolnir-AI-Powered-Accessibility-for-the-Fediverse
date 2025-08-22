@@ -1,0 +1,291 @@
+=== SQLite Removal Validation Report ===
+Files checked: 3354
+Violations found: 74
+
+❌ VIOLATIONS FOUND:
+The following SQLite references still exist and need to be addressed:
+
+📁 /Volumes/Gold/DevContainerTesting/vedfolnir/validate_config.py
+  Line 46: SQLite database file reference
+    Content: 'DATABASE_URL': 'MySQL:///storage/database/vedfolnir.db'
+    Pattern: \.db["\']?\s*$
+
+📁 /Volumes/Gold/DevContainerTesting/vedfolnir/fix_database_locks.py
+  Line 19: SQLite database file reference
+    Content: db_path = "storage/database/vedfolnir.db"
+    Pattern: \.db["\']?\s*$
+
+📁 /Volumes/Gold/DevContainerTesting/vedfolnir/migrations/README_session_management_optimization.md
+  Line 161: SQLite database file reference
+    Content: cp storage/database/vedfolnir.db.backup_YYYYMMDD_HHMMSS storage/database/vedfolnir.db
+    Pattern: \.db["\']?\s*$
+
+📁 /Volumes/Gold/DevContainerTesting/vedfolnir/security/SECURITY.md
+  Line 226: SQLite database URL
+    Content: DATABASE_URL=sqlite:///secure_path/vedfolnir.db
+    Pattern: sqlite:///.*\.db
+  Line 226: SQLite database file reference
+    Content: DATABASE_URL=sqlite:///secure_path/vedfolnir.db
+    Pattern: \.db["\']?\s*$
+  Line 227: SQLite database file reference
+    Content: chmod 600 secure_path/vedfolnir.db
+    Pattern: \.db["\']?\s*$
+  Line 292: SQLite database file reference
+    Content: chmod 600 /path/to/database.db
+    Pattern: \.db["\']?\s*$
+  Line 293: SQLite database file reference
+    Content: chown app:app /path/to/database.db
+    Pattern: \.db["\']?\s*$
+
+📁 /Volumes/Gold/DevContainerTesting/vedfolnir/docs/mysql_migration_guide.md
+  Line 236: SQLite database URL
+    Content: DATABASE_URL=sqlite:///storage/database/vedfolnir.db
+    Pattern: sqlite:///.*\.db
+  Line 236: SQLite database file reference
+    Content: DATABASE_URL=sqlite:///storage/database/vedfolnir.db
+    Pattern: \.db["\']?\s*$
+  Line 240: SQLite database file reference
+    Content: cp storage/database/vedfolnir.db.backup storage/database/vedfolnir.db
+    Pattern: \.db["\']?\s*$
+
+📁 /Volumes/Gold/DevContainerTesting/vedfolnir/docs/troubleshooting.md
+  Line 256: SQLite database file reference
+    Content: ls -la storage/database/vedfolnir.db
+    Pattern: \.db["\']?\s*$
+  Line 286: SQLite database file reference
+    Content: lsof storage/database/vedfolnir.db
+    Pattern: \.db["\']?\s*$
+  Line 302: SQLite database file reference
+    Content: sqlite3 storage/database/vedfolnir.db ".recover" | sqlite3 storage/database/vedfolnir_recovered.db
+    Pattern: \.db["\']?\s*$
+  Line 305: SQLite database file reference
+    Content: mv storage/database/vedfolnir_recovered.db storage/database/vedfolnir.db
+    Pattern: \.db["\']?\s*$
+  Line 311: SQLite database file reference
+    Content: ls -la storage/database/vedfolnir_backup_*.db
+    Pattern: \.db["\']?\s*$
+  Line 314: SQLite database file reference
+    Content: cp storage/database/vedfolnir_backup_YYYYMMDD_HHMMSS.db storage/database/vedfolnir.db
+    Pattern: \.db["\']?\s*$
+  Line 749: SQLite database file reference
+    Content: rm storage/database/vedfolnir.db
+    Pattern: \.db["\']?\s*$
+  Line 765: SQLite database file reference
+    Content: ls -la storage/database/vedfolnir_backup_*.db
+    Pattern: \.db["\']?\s*$
+  Line 768: SQLite database file reference
+    Content: cp storage/database/vedfolnir_backup_YYYYMMDD_HHMMSS.db storage/database/vedfolnir.db
+    Pattern: \.db["\']?\s*$
+
+📁 /Volumes/Gold/DevContainerTesting/vedfolnir/docs/user-management-troubleshooting.md
+  Line 1537: SQLite database file reference
+    Content: db_path = 'storage/database/vedfolnir.db'
+    Pattern: \.db["\']?\s*$
+  Line 1820: SQLite database file reference
+    Content: # cp storage/database/vedfolnir.db.backup.YYYY-MM-DD storage/database/vedfolnir.db
+    Pattern: \.db["\']?\s*$
+  Line 1845: SQLite database file reference
+    Content: rm storage/database/vedfolnir.db
+    Pattern: \.db["\']?\s*$
+
+📁 /Volumes/Gold/DevContainerTesting/vedfolnir/docs/TESTING.md
+  Line 142: SQLite database URL
+    Content: TEST_DATABASE_URL=sqlite:///test.db
+    Pattern: sqlite:///.*\.db
+  Line 142: SQLite database file reference
+    Content: TEST_DATABASE_URL=sqlite:///test.db
+    Pattern: \.db["\']?\s*$
+  Line 163: SQLite database URL
+    Content: config.database.url = "sqlite:///test.db"
+    Pattern: sqlite:///.*\.db
+  Line 163: SQLite database file reference
+    Content: config.database.url = "sqlite:///test.db"
+    Pattern: \.db["\']?\s*$
+  Line 536: SQLite database file reference
+    Content: rm -f test*.db
+    Pattern: \.db["\']?\s*$
+
+📁 /Volumes/Gold/DevContainerTesting/vedfolnir/docs/deployment.md
+  Line 531: SQLite database file reference
+    Content: "$BACKUP_DIR/database_$DATE.db"
+    Pattern: \.db["\']?\s*$
+  Line 538: SQLite database file reference
+    Content: gzip "$BACKUP_DIR/database_$DATE.db"
+    Pattern: \.db["\']?\s*$
+  Line 576: SQLite database file reference
+    Content: chmod 644 storage/database/*.db
+    Pattern: \.db["\']?\s*$
+
+📁 /Volumes/Gold/DevContainerTesting/vedfolnir/docs/migration_guide.md
+  Line 26: SQLite database file reference
+    Content: cp storage/database/vedfolnir.db storage/database/vedfolnir_backup_$(date +%Y%m%d_%H%M%S).db
+    Pattern: \.db["\']?\s*$
+  Line 254: SQLite database file reference
+    Content: cp storage/database/vedfolnir_backup_YYYYMMDD_HHMMSS.db storage/database/vedfolnir.db
+    Pattern: \.db["\']?\s*$
+
+📁 /Volumes/Gold/DevContainerTesting/vedfolnir/docs/USER_MANAGEMENT_TASK_1_SUMMARY.md
+  Line 192: Direct sqlite3 import
+    Content: import sqlite3
+    Pattern: import sqlite3
+  Line 193: sqlite3 module usage
+    Content: conn = sqlite3.connect('storage/database/vedfolnir.db')
+    Pattern: sqlite3\.
+  Line 195: SQLite PRAGMA statement
+    Content: cursor.execute('PRAGMA table_info(users)')
+    Pattern: PRAGMA table_info
+  Line 197: SQLite PRAGMA statement
+    Content: cursor.execute('PRAGMA table_info(user_audit_log)')
+    Pattern: PRAGMA table_info
+
+📁 /Volumes/Gold/DevContainerTesting/vedfolnir/scripts/rollback_platform_migration.py
+  Line 106: SQLite database file reference
+    Content: current_db = "storage/database/vedfolnir.db"
+    Pattern: \.db["\']?\s*$
+  Line 108: SQLite database file reference
+    Content: backup_name = f"pre_rollback_{self.rollback_timestamp}.db"
+    Pattern: \.db["\']?\s*$
+  Line 129: SQLite database file reference
+    Content: current_db = "storage/database/vedfolnir.db"
+    Pattern: \.db["\']?\s*$
+  Line 174: SQLite database file reference
+    Content: current_db = "storage/database/vedfolnir.db"
+    Pattern: \.db["\']?\s*$
+
+📁 /Volumes/Gold/DevContainerTesting/vedfolnir/scripts/validate_success_criteria.py
+  Line 28: SQLite database file reference
+    Content: db_path = project_root / "storage" / "database" / "vedfolnir.db"
+    Pattern: \.db["\']?\s*$
+  Line 97: SQLite database file reference
+    Content: db_path = project_root / "storage" / "database" / "vedfolnir.db"
+    Pattern: \.db["\']?\s*$
+  Line 129: SQLite database file reference
+    Content: db_path = project_root / "storage" / "database" / "vedfolnir.db"
+    Pattern: \.db["\']?\s*$
+
+📁 /Volumes/Gold/DevContainerTesting/vedfolnir/scripts/backup_platform_data.py
+  Line 47: SQLite database file reference
+    Content: db_path = "storage/database/vedfolnir.db"
+    Pattern: \.db["\']?\s*$
+  Line 49: SQLite database file reference
+    Content: backup_path = f"{self.backup_dir}/database/vedfolnir.db"
+    Pattern: \.db["\']?\s*$
+
+📁 /Volumes/Gold/DevContainerTesting/vedfolnir/specs/mysql-migration/requirements.md
+  Line 11: SQLite database URL
+    Content: - Default configuration still uses SQLite (`sqlite:///storage/database/vedfolnir.db`)
+    Pattern: sqlite:///.*\.db
+
+📁 /Volumes/Gold/DevContainerTesting/vedfolnir/specs/mysql-migration/task1-completion-summary.md
+  Line 23: SQLite database URL
+    Content: - From: `"sqlite:///storage/database/vedfolnir.db"`
+    Pattern: sqlite:///.*\.db
+
+📁 /Volumes/Gold/DevContainerTesting/vedfolnir/specs/mysql-migration/design.md
+  Line 28: SQLite database URL
+    Content: database_url: str = "sqlite:///storage/database/vedfolnir.db"
+    Pattern: sqlite:///.*\.db
+  Line 28: SQLite database file reference
+    Content: database_url: str = "sqlite:///storage/database/vedfolnir.db"
+    Pattern: \.db["\']?\s*$
+
+📁 /Volumes/Gold/DevContainerTesting/vedfolnir/docs/deployment/user-management-deployment-checklist.md
+  Line 112: SQLite database URL
+    Content: DATABASE_URL=sqlite:///storage/database/vedfolnir.db
+    Pattern: sqlite:///.*\.db
+  Line 112: SQLite database file reference
+    Content: DATABASE_URL=sqlite:///storage/database/vedfolnir.db
+    Pattern: \.db["\']?\s*$
+
+📁 /Volumes/Gold/DevContainerTesting/vedfolnir/docs/web-caption-generation/troubleshooting-guide.md
+  Line 305: SQLite database file reference
+    Content: ls -la storage/database/vedfolnir.db
+    Pattern: \.db["\']?\s*$
+  Line 351: SQLite database file reference
+    Content: cp storage/database/vedfolnir.db.backup storage/database/vedfolnir.db
+    Pattern: \.db["\']?\s*$
+  Line 524: SQLite database file reference
+    Content: BACKUP_FILE="backups/vedfolnir_${BACKUP_DATE}.db"
+    Pattern: \.db["\']?\s*$
+  Line 529: SQLite database file reference
+    Content: cp "$BACKUP_FILE" storage/database/vedfolnir.db
+    Pattern: \.db["\']?\s*$
+
+📁 /Volumes/Gold/DevContainerTesting/vedfolnir/docs/web-caption-generation/deployment-guide.md
+  Line 104: SQLite database URL
+    Content: DATABASE_URL=sqlite:///storage/database/vedfolnir.db
+    Pattern: sqlite:///.*\.db
+  Line 104: SQLite database file reference
+    Content: DATABASE_URL=sqlite:///storage/database/vedfolnir.db
+    Pattern: \.db["\']?\s*$
+  Line 537: SQLite database file reference
+    Content: cp storage/database/vedfolnir.db backups/vedfolnir_$DATE.db
+    Pattern: \.db["\']?\s*$
+
+📁 /Volumes/Gold/DevContainerTesting/vedfolnir/docs/summary/SESSION_PERFORMANCE_OPTIMIZER_MYSQL_FIX.md
+  Line 12: SQLite system table query
+    Content: [SQL: SELECT name FROM sqlite_master WHERE type='index' AND name LIKE 'idx_%%']
+    Pattern: SELECT name FROM sqlite_master
+  Line 26: SQLite system table query
+    Content: "SELECT name FROM sqlite_master WHERE type='index' AND name LIKE 'idx_%'"
+    Pattern: SELECT name FROM sqlite_master
+  Line 61: SQLite system table query
+    Content: "SELECT name FROM sqlite_master WHERE type='index' AND name LIKE 'idx_%'"
+    Pattern: SELECT name FROM sqlite_master
+
+📁 /Volumes/Gold/DevContainerTesting/vedfolnir/docs/summary/ENV_CLEANUP_SUMMARY.md
+  Line 1: SQLite database URL
+    Content: # Environment Files Cleanup Summary\n\n## 🧹 Environment Configuration Cleanup Complete\n\nThe Vedfolnir environment configuration has been successfully cleaned up, removing deprecated platform-specific settings and organizing files for better maintainability and security.\n\n## 📊 Changes Summary\n\n### ✅ Files Cleaned and Organized\n\n#### Active Environment Files (2 files)\n- ✅ `.env` - Current configuration (cleaned, deprecated settings removed)\n- ✅ `.env.example` - Template for new installations (cleaned and comprehensive)\n\n#### Backup Files (2 files)\n- ✅ `.env.backup_20250807_113341` - Timestamped backup of original .env\n- ✅ `.env.example.backup_20250807_113403` - Timestamped backup of original .env.example\n\n#### Deprecated Files Moved (3 files)\n- ✅ `.env.backup` → `scripts/setup/.env.backup.deprecated`\n- ✅ `.env.example.mastodon` → `scripts/setup/.env.example.mastodon.deprecated`\n- ✅ `.env.example.pixelfed` → `scripts/setup/.env.example.pixelfed.deprecated`\n\n### 🗑️ Deprecated Settings Removed\n\nThe following platform-specific settings have been removed from environment files as they are now stored securely in the database:\n\n#### Platform-Specific Settings (Now in Database)\n- **Platform URLs** → `PlatformConnection.instance_url`\n- **Access Tokens** → `PlatformConnection.access_token` (encrypted)\n- **Usernames** → `PlatformConnection.username`\n- **Client Keys** → `PlatformConnection.client_key` (encrypted)\n- **Client Secrets** → `PlatformConnection.client_secret` (encrypted)\n- **Platform Types** → `PlatformConnection.platform_type`\n\n#### Removed Environment Variables\n```bash\n# These are no longer needed in .env files:\nACTIVITYPUB_INSTANCE_URL=\nACTIVITYPUB_USERNAME=\nACTIVITYPUB_ACCESS_TOKEN=\nACTIVITYPUB_API_TYPE=\nMASTODON_CLIENT_KEY=\nMASTODON_CLIENT_SECRET=\nPRIVATE_KEY_PATH=\nPUBLIC_KEY_PATH=\n# Legacy deprecated settings also removed\n```\n\n## 🔧 Current Environment Configuration\n\n### Core Categories\n\n#### 1. Core Application Settings\n```bash\nFLASK_HOST=127.0.0.1\nFLASK_PORT=5000\nFLASK_DEBUG=false\nFLASK_SECRET_KEY=your-secret-key\nDATABASE_URL=sqlite:///storage/database/vedfolnir.db\n```\n\n#### 2. AI/ML Configuration\n```bash\nOLLAMA_URL=http://localhost:11434\nOLLAMA_MODEL=llava:latest\nOLLAMA_TIMEOUT=60.0\n```\n\n#### 3. Caption Generation Settings\n```bash\nCAPTION_MAX_LENGTH=500\nCAPTION_OPTIMAL_MIN_LENGTH=80\nCAPTION_OPTIMAL_MAX_LENGTH=200\nUSE_ENHANCED_CLASSIFICATION=true\nFALLBACK_ENABLED=true\n```\n\n#### 4. Processing Configuration\n```bash\nMAX_POSTS_PER_RUN=10\nMAX_USERS_PER_RUN=10\nBATCH_UPDATE_ENABLED=true\nBATCH_UPDATE_SIZE=5\n```\n\n#### 5. Retry and Rate Limiting\n```bash\nRETRY_MAX_ATTEMPTS=3\nRATE_LIMIT_REQUESTS_PER_MINUTE=60\nRATE_LIMIT_REQUESTS_PER_HOUR=1000\n```\n\n#### 6. Authentication and Security\n```bash\nAUTH_REQUIRE_AUTH=true\nAUTH_SESSION_LIFETIME=86400\nPLATFORM_ENCRYPTION_KEY=your-encryption-key\n```\n\n#### 7. Storage and Logging\n```bash\nSTORAGE_BASE_DIR=storage\nLOGS_DIR=logs\nLOG_LEVEL=INFO\nRETENTION_PROCESSING_RUNS=90\n```\n\n## 🔒 Security Improvements\n\n### Database-Stored Credentials\n- **Encrypted Storage**: Platform credentials now encrypted in database using `PlatformConnection` model\n- **Web Management**: Credentials managed through secure web interface\n- **No Plain Text**: No sensitive data in environment files\n- **Access Control**: Platform connections require authentication to manage\n\n### Environment Security\n- **Minimal Exposure**: Only necessary settings in environment files\n- **No Secrets**: No access tokens or API keys in .env files\n- **Clean Templates**: .env.example contains no sensitive data\n- **Proper Backup**: Original files backed up with timestamps\n\n## 📚 Documentation Created\n\n### New Documentation\n- ✅ `docs/environment-migration-guide.md` - Complete migration guide for existing installations\n- ✅ `docs/summary/ENV_CLEANUP_SUMMARY.md` - This cleanup summary\n\n### Migration Support\n- Step-by-step migration instructions\n- Platform connection setup guide\n- Troubleshooting information\n- Security benefits explanation\n\n## 🔄 Migration Process\n\n### For Existing Installations\n\nIf you had platform credentials in old .env files:\n\n1. **Note Credentials**: Check timestamped backup files or `scripts/setup/*.deprecated` files for old credentials\n2. **Web Interface**: Use Platform Management in web app to add connections\n3. **Test Connections**: Verify platform connections work through web interface\n4. **Remove Backups**: Once confirmed working, old backup files can be removed\n\n### For New Installations\n\n1. **Copy Template**: `cp .env.example .env`\n2. **Configure Settings**: Edit .env with your specific settings\n3. **Add Platforms**: Use web interface to add platform connections\n4. **Test Setup**: Verify everything works through the application\n\n## 🎯 Benefits Achieved\n\n### Organization\n- **Clean Structure**: Only necessary .env files remain\n- **Clear Purpose**: Each file has a specific, documented purpose\n- **No Duplication**: Removed redundant and conflicting files\n- **Proper Backup**: Safe cleanup with timestamped backup preservation\n\n### Security\n- **Encrypted Credentials**: Platform credentials now encrypted in database\n- **Reduced Attack Surface**: Fewer sensitive files in filesystem\n- **Better Access Control**: Credentials require web authentication to manage\n- **No Plain Text Secrets**: Environment files contain no sensitive data\n\n### Maintainability\n- **Simplified Configuration**: Fewer files to manage\n- **Clear Documentation**: Complete configuration and migration guides\n- **Easy Setup**: New installations have clear template\n- **Migration Support**: Existing installations have clear migration path\n\n## 📈 Before vs After\n\n### Before Cleanup\n```\n.env                     # Mixed settings, platform credentials in plain text\n.env.backup             # Old backup\n.env.example            # Outdated template with platform-specific settings\n.env.example.mastodon   # Platform-specific template (deprecated)\n.env.example.pixelfed   # Platform-specific template (deprecated)\n```\n\n### After Cleanup\n```\n.env                           # Clean, organized settings only\n.env.example                   # Comprehensive, clean template\n.env.backup_TIMESTAMP          # Timestamped backup of original\n.env.example.backup_TIMESTAMP  # Timestamped backup of original template\nscripts/setup/*.deprecated     # Archived deprecated files for reference\ndocs/environment-migration-guide.md  # Complete migration documentation\n```\n\n## ✅ Verification Checklist\n\n- [x] **Environment Files**: Only necessary files remain in root\n- [x] **Deprecated Settings**: Platform credentials removed from .env files\n- [x] **Backup Created**: Original files safely backed up with timestamps\n- [x] **Documentation**: Complete migration guide created\n- [x] **Migration Path**: Clear instructions for existing installations\n- [x] **Security**: No sensitive data in environment files\n- [x] **Organization**: Deprecated files properly archived\n- [x] **Template**: Clean .env.example with comprehensive documentation\n\n## 🚀 Next Steps\n\n### Immediate Actions\n1. **Review Configuration**: Check new .env file settings\n2. **Test Application**: Ensure application starts correctly\n3. **Add Platform Connections**: Use web interface to configure platforms\n4. **Verify Functionality**: Test caption generation with new setup\n\n### For Existing Users\n1. **Read Migration Guide**: Follow `docs/environment-migration-guide.md`\n2. **Note Old Credentials**: Check backup files for platform credentials\n3. **Configure via Web**: Add platform connections through web interface\n4. **Test Connections**: Verify platform connections work correctly\n\n### Ongoing Maintenance\n1. **Regular Reviews**: Periodically review environment configuration\n2. **Security Updates**: Keep security settings current\n3. **Documentation**: Update guides as configuration evolves\n4. **Backup Management**: Maintain current backups of configuration\n\n---\n\n## 🎉 Cleanup Complete\n\n**Environment Status**: ✅ Clean and Organized  \n**Security Status**: ✅ Enhanced (credentials in encrypted database)  \n**Documentation**: ✅ Complete with migration guide  \n**Migration Support**: ✅ Available for existing installations  \n\n**The Vedfolnir environment configuration is now clean, secure, and well-documented!**\n\n---\n\n*Environment cleanup completed on: August 7, 2025*  \n*Files processed: 5 environment files*  \n*Deprecated settings removed: 8 platform-specific variables*  \n*Status: ✅ COMPLETE - Ready for Production*
+    Pattern: sqlite:///.*\.db
+
+📁 /Volumes/Gold/DevContainerTesting/vedfolnir/docs/summary/MYSQL_MIGRATION_SUMMARY.md
+  Line 118: SQLite database URL
+    Content: DATABASE_URL=sqlite:///storage/database/vedfolnir.db
+    Pattern: sqlite:///.*\.db
+  Line 118: SQLite database file reference
+    Content: DATABASE_URL=sqlite:///storage/database/vedfolnir.db
+    Pattern: \.db["\']?\s*$
+
+📁 /Volumes/Gold/DevContainerTesting/vedfolnir/scripts/setup/migrate_env_to_file.py
+  Line 115: SQLite database file reference
+    Content: DATABASE_URL=MySQL:///storage/database/vedfolnir.db
+    Pattern: \.db["\']?\s*$
+
+📁 /Volumes/Gold/DevContainerTesting/vedfolnir/scripts/mysql_migration/validate_mysql_database_manager.py
+  Line 52: SQLite database URL
+    Content: os.environ["DATABASE_URL"] = "sqlite:///test.db"
+    Pattern: sqlite:///.*\.db
+  Line 52: SQLite database file reference
+    Content: os.environ["DATABASE_URL"] = "sqlite:///test.db"
+    Pattern: \.db["\']?\s*$
+
+📁 /Volumes/Gold/DevContainerTesting/vedfolnir/scripts/mysql_migration/validate_mysql_error_handling.py
+  Line 36: SQLite database URL
+    Content: invalid_url = "sqlite:///test.db"
+    Pattern: sqlite:///.*\.db
+  Line 36: SQLite database file reference
+    Content: invalid_url = "sqlite:///test.db"
+    Pattern: \.db["\']?\s*$
+
+📁 /Volumes/Gold/DevContainerTesting/vedfolnir/scripts/mysql_migration/validate_mysql_config.py
+  Line 77: SQLite database URL
+    Content: os.environ["DATABASE_URL"] = "sqlite:///test.db"
+    Pattern: sqlite:///.*\.db
+  Line 77: SQLite database file reference
+    Content: os.environ["DATABASE_URL"] = "sqlite:///test.db"
+    Pattern: \.db["\']?\s*$
+
+📁 /Volumes/Gold/DevContainerTesting/vedfolnir/scripts/deployment/user_management_rollback.py
+  Line 200: SQLite database file reference
+    Content: backup_path = backup_dir / "database_backup.db"
+    Pattern: \.db["\']?\s*$
+
+📁 /Volumes/Gold/DevContainerTesting/vedfolnir/.kiro/specs/archived/project-rename-vedfolnir/design.md
+  Line 104: SQLite database file reference
+    Content: storage/database/vedfolnir.db   → Keep existing, new installs use vedfolnir.db
+    Pattern: \.db["\']?\s*$
+
+=== Validation Summary ===
+Total files processed: 3354
+SQLite violations: 74
+Status: NEEDS ATTENTION

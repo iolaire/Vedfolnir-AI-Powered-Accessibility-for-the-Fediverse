@@ -8,7 +8,6 @@ from functools import wraps
 from session_performance_monitor import get_performance_monitor
 from models import UserRole
 
-
 def admin_required(f):
     """Decorator to require admin role for access."""
     @wraps(f)
@@ -22,10 +21,8 @@ def admin_required(f):
         return f(*args, **kwargs)
     return decorated_function
 
-
 # Create blueprint for session monitoring routes
 session_monitoring_bp = Blueprint('session_monitoring', __name__, url_prefix='/admin/session-monitoring')
-
 
 @session_monitoring_bp.route('/performance/status')
 @login_required
@@ -47,7 +44,6 @@ def monitoring_status():
             'status': 'error',
             'message': str(e)
         }), 500
-
 
 @session_monitoring_bp.route('/performance/summary')
 @login_required
@@ -72,7 +68,6 @@ def monitoring_summary():
             'status': 'error',
             'message': str(e)
         }), 500
-
 
 @session_monitoring_bp.route('/performance/alerts')
 @login_required
@@ -181,7 +176,6 @@ def monitoring_alerts():
             'message': str(e)
         }), 500
 
-
 @session_monitoring_bp.route('/performance/dashboard')
 @login_required
 @admin_required
@@ -198,7 +192,6 @@ def monitoring_dashboard():
     except Exception as e:
         current_app.logger.error(f"Error rendering monitoring dashboard: {e}")
         return render_template('errors/500.html'), 500
-
 
 @session_monitoring_bp.route('/performance/health')
 @login_required
@@ -255,7 +248,6 @@ def monitoring_health():
             'message': str(e),
             'timestamp': None
         }), 500
-
 
 def register_session_monitoring_routes(app):
     """Register session monitoring routes with the Flask app."""

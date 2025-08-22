@@ -18,7 +18,6 @@ from platform_context import PlatformContextError
 from models import User, PlatformConnection, Post, Image
 from config import Config
 
-
 class TestDatabaseErrorHandling(unittest.TestCase):
     """Test error handling for DatabaseManager platform operations"""
     
@@ -29,7 +28,7 @@ class TestDatabaseErrorHandling(unittest.TestCase):
         
         # Mock storage config
         storage_config = Mock()
-        storage_config.database_url = "sqlite:///:memory:"
+        storage_config.database_url = "mysql+pymysql://DATABASE_URL=mysql+pymysql://test_user:test_pass@localhost/test_db"
         
         # Mock db_config
         db_config = Mock()
@@ -265,7 +264,6 @@ class TestDatabaseErrorHandling(unittest.TestCase):
                 user_id=999,  # Non-existent user
                 platform_connection_id=1
             )
-
 
 if __name__ == '__main__':
     unittest.main()

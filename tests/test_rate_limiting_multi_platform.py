@@ -22,7 +22,6 @@ from rate_limiter import (
 )
 from config import Config
 
-
 class TestRateLimitConfig(unittest.TestCase):
     """Test RateLimitConfig with multi-platform support"""
     
@@ -109,7 +108,6 @@ class TestRateLimitConfig(unittest.TestCase):
             self.assertNotIn('minute', config.endpoint_limits['media'])
         if 'mastodon' in config.platform_limits:
             self.assertNotIn('minute', config.platform_limits['mastodon'])
-
 
 class TestRateLimiter(unittest.TestCase):
     """Test RateLimiter with multi-platform support"""
@@ -260,7 +258,6 @@ class TestRateLimiter(unittest.TestCase):
             self.rate_limiter.update_from_response_headers(headers, 'mastodon')
             mock_logger.warning.assert_called_once()
 
-
 class TestExtractEndpointFromUrl(unittest.TestCase):
     """Test endpoint extraction from URLs for both platforms"""
     
@@ -331,7 +328,6 @@ class TestExtractEndpointFromUrl(unittest.TestCase):
             with self.subTest(url=url):
                 result = extract_endpoint_from_url(url)
                 self.assertIsNone(result)
-
 
 class TestRateLimitedDecorator(unittest.TestCase):
     """Test the rate_limited decorator with multi-platform support"""
@@ -441,7 +437,6 @@ class TestRateLimitedDecorator(unittest.TestCase):
                 mock_update.assert_called_once_with(mock_response.headers, 'mastodon')
         
         asyncio.run(run_test())
-
 
 class TestIntegrationScenarios(unittest.TestCase):
     """Test integration scenarios with simulated rate limit scenarios"""
@@ -567,7 +562,6 @@ class TestIntegrationScenarios(unittest.TestCase):
         # Should be allowed again
         allowed, wait_time = new_rate_limiter.check_rate_limit()
         self.assertTrue(allowed)
-
 
 if __name__ == '__main__':
     unittest.main()

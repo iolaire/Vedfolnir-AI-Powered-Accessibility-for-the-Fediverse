@@ -22,7 +22,6 @@ from security.monitoring.csrf_security_metrics import track_csrf_violation
 
 logger = logging.getLogger(__name__)
 
-
 class CSRFErrorHandler:
     """Handles CSRF validation failures with comprehensive error processing"""
     
@@ -348,10 +347,8 @@ class CSRFErrorHandler:
         
         return ". ".join(guidance_parts) + "."
 
-
 # Global CSRF error handler instance
 _csrf_error_handler: Optional[CSRFErrorHandler] = None
-
 
 def get_csrf_error_handler() -> CSRFErrorHandler:
     """Get the global CSRF error handler instance
@@ -363,7 +360,6 @@ def get_csrf_error_handler() -> CSRFErrorHandler:
     if _csrf_error_handler is None:
         _csrf_error_handler = CSRFErrorHandler()
     return _csrf_error_handler
-
 
 def register_csrf_error_handlers(app):
     """Register CSRF error handlers with Flask app

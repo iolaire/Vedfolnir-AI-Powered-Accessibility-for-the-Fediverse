@@ -11,7 +11,6 @@ from unittest.mock import Mock, AsyncMock, patch
 import asyncio
 from activitypub_platforms import MastodonPlatform
 
-
 class TestMastodonStatusEdit(unittest.TestCase):
     """Test Mastodon status edit functionality"""
 
@@ -169,7 +168,6 @@ class TestMastodonStatusEdit(unittest.TestCase):
             self.platform.authenticate.assert_called_once_with(self.client)
         
         asyncio.run(run_test())
-
 
 if __name__ == '__main__':
     unittest.main()

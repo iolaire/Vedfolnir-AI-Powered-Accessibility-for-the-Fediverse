@@ -24,7 +24,6 @@ sys.path.insert(0, str(project_root))
 logging.basicConfig(level=logging.INFO, format='%(asctime)s - %(levelname)s - %(message)s')
 logger = logging.getLogger(__name__)
 
-
 class OWASPComplianceValidator:
     """OWASP Top 10 compliance validator"""
     
@@ -472,7 +471,6 @@ class OWASPComplianceValidator:
         except Exception as e:
             logger.error(f"Failed to save compliance results: {e}")
 
-
 def main():
     """Main validation function"""
     try:
@@ -503,7 +501,6 @@ def main():
     except Exception as e:
         logger.error(f"OWASP compliance validation failed: {e}")
         sys.exit(1)
-
 
 if __name__ == '__main__':
     main()

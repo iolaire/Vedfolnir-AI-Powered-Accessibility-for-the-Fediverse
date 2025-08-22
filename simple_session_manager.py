@@ -141,7 +141,6 @@ class SessionManager:
             'session_keys': list(session.keys())
         }
 
-
 # Global session manager instance
 _session_manager = None
 
@@ -151,7 +150,6 @@ def get_session_manager() -> SessionManager:
     if _session_manager is None:
         _session_manager = SessionManager()
     return _session_manager
-
 
 # Convenience functions
 def login_user(user_id: int, platform_id: Optional[int] = None) -> bool:
@@ -186,7 +184,6 @@ def get_session_info() -> Dict[str, Any]:
     """Get session information"""
     return get_session_manager().get_session_info()
 
-
 # Flask-Login integration helpers
 def get_current_user_from_session(db_manager):
     """Get current user object from session using database"""
@@ -215,7 +212,6 @@ def get_current_user_from_session(db_manager):
     except Exception as e:
         logger.error(f"Failed to get user from session: {e}")
         return None
-
 
 def get_current_platform_from_session(db_manager):
     """Get current platform object from session using database"""

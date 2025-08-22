@@ -20,7 +20,7 @@ def test_database_manager_initialization():
     print("\n1. Testing Flask app initialization pattern:")
     try:
         config = Config()
-        db_manager = DatabaseManager(config)
+        db_manager = self.get_database_manager()
         print(f"✓ Config created: {type(config)}")
         print(f"✓ DatabaseManager created: {type(db_manager)}")
         print(f"✓ Database URL: {config.storage.database_url}")
@@ -89,6 +89,11 @@ def test_database_manager_initialization():
     except Exception as e:
         print(f"✗ Error checking tables: {e}")
         import traceback
+
+# MySQL integration test imports
+from tests.mysql_test_base import MySQLIntegrationTestBase
+from tests.mysql_test_config import MySQLTestFixtures
+
         traceback.print_exc()
 
 if __name__ == "__main__":

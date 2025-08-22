@@ -15,7 +15,6 @@ from activitypub_client import ActivityPubClient
 from activitypub_platforms import PlatformAdapterFactory, PixelfedPlatform, MastodonPlatform
 from config import RetryConfig, RateLimitConfig
 
-
 @dataclass
 class MockConfig:
     """Mock configuration for testing"""
@@ -36,7 +35,6 @@ class MockConfig:
             self.retry = RetryConfig()
         if self.rate_limit is None:
             self.rate_limit = RateLimitConfig()
-
 
 class TestMainApplicationIntegration(unittest.TestCase):
     """Test integration with main application workflow"""
@@ -287,7 +285,6 @@ class TestMainApplicationIntegration(unittest.TestCase):
             self.assertEqual(info["api_type"], "mastodon")
             self.assertIn("instance_url", info)
 
-
     def test_pixelfed_main_workflow_sync(self):
         """Sync wrapper for async test"""
         asyncio.run(self.test_pixelfed_main_workflow())
@@ -299,7 +296,6 @@ class TestMainApplicationIntegration(unittest.TestCase):
     def test_platform_agnostic_error_handling_sync(self):
         """Sync wrapper for async test"""
         asyncio.run(self.test_platform_agnostic_error_handling())
-
 
 if __name__ == "__main__":
     unittest.main()

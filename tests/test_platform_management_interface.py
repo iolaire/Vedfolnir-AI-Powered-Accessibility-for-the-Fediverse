@@ -18,7 +18,6 @@ from unittest.mock import patch, MagicMock
 import sys
 sys.path.append(os.path.dirname(os.path.dirname(os.path.abspath(__file__))))
 
-
 class TestPlatformManagementInterface(unittest.TestCase):
     """Test platform management web interface"""
     
@@ -75,7 +74,6 @@ class TestPlatformManagementInterface(unittest.TestCase):
         """Test that the platform management template exists"""
         template_path = os.path.join('templates', 'platform_management.html')
         self.assertTrue(os.path.exists(template_path), "Platform management template should exist")
-
 
 if __name__ == '__main__':
     unittest.main()

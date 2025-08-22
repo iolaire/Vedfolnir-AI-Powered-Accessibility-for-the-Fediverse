@@ -13,7 +13,6 @@ from cryptography.fernet import Fernet, InvalidToken
 from tests.fixtures.platform_fixtures import PlatformTestCase
 from models import PlatformConnection
 
-
 class TestCredentialEncryptionSecurity(PlatformTestCase):
     """Test cryptographic security of credential encryption"""
     
@@ -104,7 +103,6 @@ class TestCredentialEncryptionSecurity(PlatformTestCase):
         # But decrypted values should be same
         self.assertEqual(platform1.access_token, platform2.access_token)
 
-
 class TestCredentialAccessControl(PlatformTestCase):
     """Test access control for platform credentials"""
     
@@ -168,7 +166,6 @@ class TestCredentialAccessControl(PlatformTestCase):
             if original_key:
                 os.environ['PLATFORM_ENCRYPTION_KEY'] = original_key
 
-
 class TestSessionSecurity(PlatformTestCase):
     """Test session security for platform context"""
     
@@ -212,7 +209,6 @@ class TestSessionSecurity(PlatformTestCase):
         
         self.assertTrue(validate_session(valid_session))
         self.assertFalse(validate_session(tampered_session))
-
 
 class TestDataIsolationSecurity(PlatformTestCase):
     """Test security of data isolation between platforms"""
@@ -263,7 +259,6 @@ class TestDataIsolationSecurity(PlatformTestCase):
         
         with self.assertRaises(PlatformContextError):
             context_manager.set_context(user1.id, user2_platform.id)
-
 
 if __name__ == '__main__':
     unittest.main()

@@ -288,7 +288,6 @@ class SessionSecurityManager:
             pass
         return None
 
-
 def create_session_security_manager(app_config: dict, db_manager: DatabaseManager) -> SessionSecurityManager:
     """
     Create session security manager from app configuration

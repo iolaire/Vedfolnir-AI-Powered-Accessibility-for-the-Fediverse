@@ -18,7 +18,6 @@ from security_middleware import SecurityMiddleware
 from secure_error_handlers import SecureErrorHandler
 from security_monitoring import SecurityMonitor, SecurityEventType, SecurityEventSeverity
 
-
 class TestComprehensiveSecurity(unittest.TestCase):
     """Comprehensive security regression tests"""
     
@@ -329,7 +328,6 @@ class TestComprehensiveSecurity(unittest.TestCase):
         self.assertGreaterEqual(dashboard_data['total_events_24h'], 2)
         self.assertGreaterEqual(dashboard_data['high_events_24h'], 1)
 
-
 class TestSecurityRegression(unittest.TestCase):
     """Security regression tests to prevent reintroduction of vulnerabilities"""
     
@@ -396,7 +394,6 @@ class TestSecurityRegression(unittest.TestCase):
         # Test that sensitive endpoints require HTTPS
         # Implementation depends on your HTTPS enforcement setup
         pass
-
 
 if __name__ == '__main__':
     unittest.main()

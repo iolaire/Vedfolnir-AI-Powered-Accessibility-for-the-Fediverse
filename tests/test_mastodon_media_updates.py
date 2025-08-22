@@ -16,7 +16,6 @@ from activitypub_client import ActivityPubClient
 from activitypub_platforms import MastodonPlatform, PlatformAdapterError
 from config import ActivityPubConfig
 
-
 class TestMastodonMediaUpdates(unittest.TestCase):
     """Test Mastodon media update functionality"""
     
@@ -488,7 +487,6 @@ class TestMastodonMediaUpdates(unittest.TestCase):
                     # Should fail due to network error
                     self.assertFalse(result)
 
-
 def run_async_test(coro):
     """Helper function to run async tests"""
     loop = asyncio.new_event_loop()
@@ -497,7 +495,6 @@ def run_async_test(coro):
         return loop.run_until_complete(coro)
     finally:
         loop.close()
-
 
 # Convert async test methods to sync for unittest
 class TestMastodonMediaUpdatesSync(TestMastodonMediaUpdates):
@@ -538,7 +535,6 @@ class TestMastodonMediaUpdatesSync(TestMastodonMediaUpdates):
     
     def test_network_error_handling_sync(self):
         run_async_test(self.test_network_error_handling())
-
 
 if __name__ == '__main__':
     unittest.main()

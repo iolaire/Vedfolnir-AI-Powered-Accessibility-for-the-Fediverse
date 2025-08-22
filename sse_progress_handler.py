@@ -26,7 +26,6 @@ from security.core.security_utils import sanitize_for_log
 
 logger = logging.getLogger(__name__)
 
-
 class SSEProgressHandler:
     """Handles Server-Sent Events for real-time progress updates"""
     

@@ -17,7 +17,6 @@ import subprocess
 from unittest.mock import patch, MagicMock, AsyncMock, mock_open
 from datetime import datetime, timedelta
 import requests
-import sqlite3
 
 # Add parent directory to path to import modules
 sys.path.append(os.path.dirname(os.path.dirname(os.path.abspath(__file__))))
@@ -31,14 +30,13 @@ from post_service import PostingService
 from image_processor import ImageProcessor
 import main
 
-
 class EndToEndTestBase(unittest.TestCase):
     """Base class for end-to-end tests"""
     
     def setUp(self):
         """Set up test environment"""
         # Create temporary database
-        self.temp_db = tempfile.NamedTemporaryFile(delete=False, suffix='.db')
+        self.temp_db = tempfile.NamedTemporaryFile(delete=False, suffix="MySQL database")
         self.temp_db.close()
         
         # Create temporary image directory
@@ -46,7 +44,7 @@ class EndToEndTestBase(unittest.TestCase):
         
         # Create test config
         self.config = Config()
-        self.config.storage.database_url = f"sqlite:///{self.temp_db.name}"
+        self.config.storage.database_url = f"mysql+pymysql://{self.temp_db.name}"
         self.config.storage.images_dir = self.temp_images_dir
         
         # Initialize database
@@ -54,7 +52,7 @@ class EndToEndTestBase(unittest.TestCase):
         
         # Create test user with environment-based credentials
         test_password = os.getenv('TEST_USER_PASSWORD', 'test_password_123')
-        self.test_user = self.db_manager.create_user(
+        self.DATABASE_URL=mysql+pymysql://test_user:test_pass@localhost/test_db_manager.create_user(
             username="testuser",
             email="test@test.com", 
             password=test_password,
@@ -69,7 +67,6 @@ class EndToEndTestBase(unittest.TestCase):
         # Clean up temp images directory
         import shutil
         shutil.rmtree(self.temp_images_dir, ignore_errors=True)
-
 
 class TestCompleteWorkflows(EndToEndTestBase):
     """Test complete end-to-end workflows"""
@@ -481,7 +478,6 @@ class TestCompleteWorkflows(EndToEndTestBase):
                 self.assertEqual(call_count, 2)
                 self.assertEqual(generation_call_count, 2)
 
-
 class TestPerformanceBenchmarks(EndToEndTestBase):
     """Performance benchmark tests"""
     
@@ -697,7 +693,6 @@ class TestPerformanceBenchmarks(EndToEndTestBase):
         except ImportError:
             self.skipTest("psutil not available for memory benchmarking")
 
-
 class TestWebInterfaceEndToEnd(EndToEndTestBase):
     """End-to-end tests for web interface (without browser automation)"""
     
@@ -815,7 +810,6 @@ class TestWebInterfaceEndToEnd(EndToEndTestBase):
         updated_user = self.db_manager.get_user_by_username("webuser")
         self.assertEqual(updated_user.email, "newemail@test.com")
         self.assertEqual(updated_user.role, UserRole.ADMIN)
-
 
 if __name__ == "__main__":
     # Run tests with verbose output

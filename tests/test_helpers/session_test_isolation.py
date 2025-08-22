@@ -18,7 +18,6 @@ from flask_login import LoginManager
 
 logger = logging.getLogger(__name__)
 
-
 class SessionTestIsolation:
     """Manages test isolation for session management tests"""
     
@@ -112,7 +111,6 @@ class SessionTestIsolation:
         finally:
             self.teardown_contexts()
 
-
 class SessionTestCase(unittest.TestCase):
     """Base test case with session management isolation"""
     
@@ -167,7 +165,6 @@ class SessionTestCase(unittest.TestCase):
             # Request context will be cleaned up in tearDown
             pass
 
-
 def isolate_session_test(test_func):
     """Decorator to isolate session management tests
     
@@ -195,7 +192,6 @@ def isolate_session_test(test_func):
     
     return wrapper
 
-
 def create_isolated_flask_app() -> Flask:
     """Create an isolated Flask app for session testing
     
@@ -207,7 +203,7 @@ def create_isolated_flask_app() -> Flask:
         'TESTING': True,
         'SECRET_KEY': 'test_secret_key_' + str(hash('session_test')),
         'WTF_CSRF_ENABLED': False,
-        'SQLALCHEMY_DATABASE_URI': 'sqlite:///:memory:',
+        'SQLALCHEMY_DATABASE_URI': 'mysql+pymysql://:memory:',
         'SQLALCHEMY_TRACK_MODIFICATIONS': False
     })
     
@@ -217,7 +213,6 @@ def create_isolated_flask_app() -> Flask:
     login_manager.user_loader(lambda user_id: None)  # Dummy user loader
     
     return app
-
 
 def safe_current_user_access(default_value=None):
     """Safely access current_user in tests
@@ -238,7 +233,6 @@ def safe_current_user_access(default_value=None):
         pass
     
     return default_value
-
 
 def mock_current_user_for_test(user_id: int, username: str = "test_user", is_authenticated: bool = True):
     """Create a mock current_user for testing
@@ -261,7 +255,6 @@ def mock_current_user_for_test(user_id: int, username: str = "test_user", is_aut
     mock_user.is_anonymous = False
     
     return mock_user
-
 
 class SessionErrorTestMixin:
     """Mixin for testing session error handling"""

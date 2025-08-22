@@ -8,12 +8,10 @@ from flask import current_app
 from flask.cli import with_appcontext
 from session_performance_monitor import get_performance_monitor
 
-
 @click.group()
 def session_monitoring():
     """Session performance monitoring commands."""
     pass
-
 
 @session_monitoring.command()
 @with_appcontext
@@ -74,7 +72,6 @@ def status():
     except Exception as e:
         click.echo(f"Error retrieving session performance status: {e}", err=True)
 
-
 @session_monitoring.command()
 @with_appcontext
 def summary():
@@ -85,7 +82,6 @@ def summary():
         click.echo(summary)
     except Exception as e:
         click.echo(f"Error retrieving performance summary: {e}", err=True)
-
 
 @session_monitoring.command()
 @with_appcontext
@@ -123,7 +119,6 @@ def metrics(format):
                 
     except Exception as e:
         click.echo(f"Error retrieving metrics: {e}", err=True)
-
 
 @session_monitoring.command()
 @with_appcontext
@@ -185,7 +180,6 @@ def alerts(threshold):
     except Exception as e:
         click.echo(f"Error checking alerts: {e}", err=True)
 
-
 @session_monitoring.command()
 @with_appcontext
 @click.option('--interval', type=int, default=300,
@@ -207,7 +201,6 @@ def enable_periodic_logging(interval):
         
     except Exception as e:
         click.echo(f"Error configuring periodic logging: {e}", err=True)
-
 
 def register_session_monitoring_commands(app):
     """Register session monitoring CLI commands with the Flask app."""

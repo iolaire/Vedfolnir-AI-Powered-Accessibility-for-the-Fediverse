@@ -53,7 +53,6 @@ logger = logging.getLogger(__name__)
 # Create blueprint for user management routes
 user_management_bp = Blueprint('user_management', __name__)
 
-
 def get_client_ip():
     """Get client IP address from request"""
     try:
@@ -67,7 +66,6 @@ def get_client_ip():
     except Exception:
         return None
 
-
 def get_user_agent():
     """Get user agent from request"""
     try:
@@ -75,11 +73,9 @@ def get_user_agent():
     except Exception:
         return ''
 
-
 def get_base_url():
     """Get base URL for email links"""
     return request.url_root.rstrip('/')
-
 
 @user_management_bp.route('/register', methods=['GET', 'POST'])
 @rate_limit_user_management('registration')
@@ -180,7 +176,6 @@ def register():
     
     return render_template('user_management/register.html', form=form)
 
-
 @user_management_bp.route('/verify-email/<token>')
 @conditional_rate_limit(limit=10, window_seconds=3600)  # 10 verification attempts per hour per IP
 def verify_email(token):
@@ -230,7 +225,6 @@ def verify_email(token):
         flash('Email verification failed due to a system error. Please try again.', 'error')
         return redirect(url_for('user_management.login'))
 
-
 @user_management_bp.route('/resend-verification', methods=['POST'])
 @login_required
 @conditional_rate_limit(limit=3, window_seconds=300)  # 3 resends per 5 minutes per user
@@ -279,7 +273,6 @@ def resend_verification():
         flash('Failed to send verification email due to a system error.', 'error')
     
     return redirect(url_for('index'))
-
 
 @user_management_bp.route('/login', methods=['GET', 'POST'])
 @rate_limit_user_management('login')
@@ -438,7 +431,6 @@ def login():
     
     return render_template('user_management/login.html', form=form)
 
-
 @user_management_bp.route('/forgot-password', methods=['GET', 'POST'])
 @rate_limit_user_management('password_reset')
 @conditional_validate_csrf_token
@@ -495,7 +487,6 @@ def forgot_password():
             flash('Password reset request failed due to a system error. Please try again.', 'error')
     
     return render_template('user_management/forgot_password.html', form=form)
-
 
 @user_management_bp.route('/reset-password/<token>', methods=['GET', 'POST'])
 @conditional_rate_limit(limit=5, window_seconds=3600)  # 5 attempts per hour per IP
@@ -569,7 +560,6 @@ def reset_password(token):
         flash('Password reset failed due to a system error. Please try again.', 'error')
         return redirect(url_for('user_management.forgot_password'))
 
-
 @user_management_bp.route('/change-password', methods=['GET', 'POST'])
 @login_required
 @conditional_rate_limit(limit=5, window_seconds=3600)  # 5 attempts per hour per user
@@ -631,7 +621,6 @@ def change_password():
     
     return render_template('user_management/change_password.html', form=form)
 
-
 @user_management_bp.route('/logout')
 @login_required
 def logout():
@@ -659,7 +648,6 @@ def logout():
         flash('You have been logged out.', 'info')
         return redirect(url_for('user_management.login'))
 
-
 @user_management_bp.route('/profile')
 @login_required
 def profile():
@@ -686,7 +674,6 @@ def profile():
         logger.error(f"Error loading profile for user {current_user.id}: {e}")
         flash('Failed to load profile due to a system error.', 'error')
         return redirect(url_for('index'))
-
 
 @user_management_bp.route('/profile/edit', methods=['GET', 'POST'])
 @login_required
@@ -763,7 +750,6 @@ def edit_profile():
         flash('Failed to update profile due to a system error.', 'error')
     
     return render_template('user_management/edit_profile.html', form=form)
-
 
 @user_management_bp.route('/profile/delete', methods=['GET', 'POST'])
 @login_required
@@ -842,7 +828,6 @@ def delete_profile():
     
     return render_template('user_management/delete_profile.html', form=form)
 
-
 @user_management_bp.route('/profile/export')
 @login_required
 @conditional_rate_limit(limit=5, window_seconds=3600)  # 5 exports per hour
@@ -894,10 +879,6 @@ def export_profile_data():
         logger.error(f"Error exporting data for user {current_user.id}: {e}")
         flash('Data export failed due to a system error.', 'error')
         return redirect(url_for('user_management.profile'))
-
-
-
-
 
 def register_user_management_routes(app):
     """Register user management routes with the Flask app"""

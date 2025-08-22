@@ -13,7 +13,6 @@ from tests.fixtures.platform_fixtures import PlatformTestCase
 from models import Post, Image, PlatformConnection
 from platform_context import PlatformContextManager
 
-
 class TestPlatformQueryPerformance(PlatformTestCase):
     """Test performance of platform-filtered queries"""
     
@@ -144,7 +143,6 @@ class TestPlatformQueryPerformance(PlatformTestCase):
         self.assertIsInstance(stats, dict)
         self.assertIn('total_posts', stats)
 
-
 class TestQueryOptimization(PlatformTestCase):
     """Test query optimization for platform operations"""
     
@@ -208,7 +206,6 @@ class TestQueryOptimization(PlatformTestCase):
         self.assertLess(pagination_time, 0.3)
         self.assertLessEqual(len(posts), 50)
 
-
 class TestConcurrentQueryPerformance(PlatformTestCase):
     """Test performance under concurrent query load"""
     
@@ -267,7 +264,6 @@ class TestConcurrentQueryPerformance(PlatformTestCase):
         
         # Rapid switching should be efficient
         self.assertLess(switching_time, 2.0)
-
 
 if __name__ == '__main__':
     unittest.main()

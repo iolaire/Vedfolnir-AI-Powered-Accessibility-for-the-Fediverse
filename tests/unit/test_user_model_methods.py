@@ -16,14 +16,13 @@ from models import Base, User, UserRole, UserAuditLog
 from config import Config
 from database import DatabaseManager
 
-
 class TestUserModelMethods(unittest.TestCase):
     """Test User model methods and validation"""
     
     def setUp(self):
         """Set up test fixtures"""
-        # Create in-memory SQLite database for testing
-        self.engine = create_engine('sqlite:///:memory:', echo=False)
+        # Create in-DATABASE_URL=mysql+pymysql://test_user:test_pass@localhost/test_db for testing
+        self.engine = create_engine('mysql+pymysql://DATABASE_URL=mysql+pymysql://test_user:test_pass@localhost/test_db', echo=False)
         Base.metadata.create_all(self.engine)
         
         # Create session
@@ -246,14 +245,13 @@ class TestUserModelMethods(unittest.TestCase):
         # The actual repr only includes username, not email
         self.assertIn("User", user_str)
 
-
 class TestUserAuditLog(unittest.TestCase):
     """Test UserAuditLog model functionality"""
     
     def setUp(self):
         """Set up test fixtures"""
-        # Create in-memory SQLite database for testing
-        self.engine = create_engine('sqlite:///:memory:', echo=False)
+        # Create in-DATABASE_URL=mysql+pymysql://test_user:test_pass@localhost/test_db for testing
+        self.engine = create_engine('mysql+pymysql://DATABASE_URL=mysql+pymysql://test_user:test_pass@localhost/test_db', echo=False)
         Base.metadata.create_all(self.engine)
         
         # Create session
@@ -391,7 +389,6 @@ class TestUserAuditLog(unittest.TestCase):
         
         self.assertIn("test_action", log_str)
         self.assertIn(str(self.test_user.id), log_str)
-
 
 if __name__ == '__main__':
     unittest.main()

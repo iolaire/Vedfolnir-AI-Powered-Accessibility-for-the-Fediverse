@@ -9,16 +9,15 @@ Tests performance characteristics of platform-aware operations.
 
 import unittest
 import time
-from tests.fixtures.platform_fixtures import PlatformTestCase
+from tests.mysql_test_base import MySQLIntegrationTestBase
 from models import Post, Image, PlatformConnection
 from platform_context import PlatformContextManager
 
-
-class TestPlatformQueryPerformance(PlatformTestCase):
+class TestPlatformQueryPerformance(MySQLIntegrationTestBase):
     """Test performance of platform-filtered queries"""
     
     def setUp(self):
-        """Set up test with context manager and performance data"""
+        """Set up integration test with MySQL"""
         super().setUp()
         self.context_manager = PlatformContextManager(self.session)
         self._create_performance_test_data()
@@ -171,8 +170,7 @@ class TestPlatformQueryPerformance(PlatformTestCase):
         # Platform switching should be fast
         self.assertLess(switching_time, 1.0)
 
-
-class TestPlatformLoadTesting(PlatformTestCase):
+class TestPlatformLoadTesting(MySQLIntegrationTestBase):
     """Test system performance under load"""
     
     def test_multiple_users_platform_operations(self):
@@ -281,6 +279,11 @@ class TestPlatformLoadTesting(PlatformTestCase):
         """Test memory usage during platform operations"""
         import psutil
         import os
+
+# MySQL integration test imports
+from tests.mysql_test_base import MySQLIntegrationTestBase
+from tests.mysql_test_config import MySQLTestFixtures
+
         
         # Get initial memory usage
         process = psutil.Process(os.getpid())
@@ -313,8 +316,7 @@ class TestPlatformLoadTesting(PlatformTestCase):
         # Memory increase should be reasonable (less than 50MB for test operations)
         self.assertLess(memory_increase, 50 * 1024 * 1024)
 
-
-class TestPlatformConcurrencyPerformance(PlatformTestCase):
+class TestPlatformConcurrencyPerformance(MySQLIntegrationTestBase):
     """Test performance under concurrent access"""
     
     def test_concurrent_context_switching(self):
@@ -388,7 +390,6 @@ class TestPlatformConcurrencyPerformance(PlatformTestCase):
             posts1_ids = {post.id for post in posts1}
             posts2_ids = {post.id for post in posts2}
             self.assertEqual(len(posts1_ids.intersection(posts2_ids)), 0)
-
 
 if __name__ == '__main__':
     unittest.main()

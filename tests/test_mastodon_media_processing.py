@@ -12,7 +12,6 @@ import unittest
 from unittest.mock import MagicMock, patch
 from activitypub_platforms import MastodonPlatform, PixelfedPlatform, PlatformAdapterError
 
-
 class TestMastodonMediaProcessing(unittest.TestCase):
     """Test Mastodon media attachment processing functionality"""
     
@@ -661,7 +660,6 @@ class TestMastodonMediaProcessing(unittest.TestCase):
         expected_count = len([i for i in range(0, 100, 2) if i % 3 == 0])
         self.assertEqual(len(images), expected_count)
 
-
 if __name__ == '__main__':
     unittest.main()
 
@@ -1000,7 +998,6 @@ class TestMastodonMediaProcessingIntegration(unittest.TestCase):
                         
                 except Exception as e:
                     self.fail(f"Media processing should not raise exception for case {case['name']}: {e}")
-
 
 if __name__ == '__main__':
     unittest.main()

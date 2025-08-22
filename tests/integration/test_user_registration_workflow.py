@@ -18,14 +18,18 @@ from services.user_management_service import UserRegistrationService, UserAuthen
 from services.email_service import EmailService
 from tests.test_helpers import create_test_user_with_platforms, cleanup_test_user
 
+# MySQL integration test imports
+from tests.mysql_test_base import MySQLIntegrationTestBase
+from tests.mysql_test_config import MySQLTestFixtures
 
-class TestUserRegistrationWorkflow(unittest.TestCase):
+
+class TestUserRegistrationWorkflow(MySQLIntegrationTestBase):
     """Test complete user registration and verification workflow"""
     
     def setUp(self):
         """Set up test fixtures"""
         self.config = Config()
-        self.db_manager = DatabaseManager(self.config)
+        self.db_manager = self.get_database_manager()
         
         # Initialize services
         with self.db_manager.get_session() as db_session:
@@ -398,7 +402,6 @@ class TestUserRegistrationWorkflow(unittest.TestCase):
             self.assertFalse(auth_success)
             self.assertIn("locked", auth_message)
             self.assertIsNone(auth_user)
-
 
 if __name__ == '__main__':
     unittest.main()

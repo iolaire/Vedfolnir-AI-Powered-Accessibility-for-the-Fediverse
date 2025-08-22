@@ -16,7 +16,6 @@ from security.features.session_security import (
     SuspiciousActivityType, validate_session_security, create_session_fingerprint
 )
 
-
 class TestSessionSecurityHardening(unittest.TestCase):
     """Test session security hardening functionality"""
     
@@ -39,9 +38,7 @@ class TestSessionSecurityHardening(unittest.TestCase):
         # Mock Flask request context
         self.mock_request_patcher = patch('security.features.session_security.request', self.mock_request)
         self.mock_request_patcher.start()
-        
-        
-    
+
     def tearDown(self):
         """Clean up test fixtures"""
         self.mock_request_patcher.stop()
@@ -380,7 +377,6 @@ class TestSessionSecurityHardening(unittest.TestCase):
         is_valid, reason = self.security.validate_session_fingerprint(session_id, new_fingerprint)
         self.assertIsInstance(is_valid, bool)
 
-
 class TestSessionSecurityIntegration(unittest.TestCase):
     """Integration tests for session security with session manager"""
     
@@ -427,7 +423,6 @@ class TestSessionSecurityIntegration(unittest.TestCase):
         
         # Should have logged security events
         self.assertTrue(mock_log_event.called)
-
 
 if __name__ == '__main__':
     unittest.main()

@@ -214,9 +214,7 @@ class ActivityPubConfig:
             pass
         else:
             raise ConfigurationError(f"Unsupported ACTIVITYPUB_API_TYPE: {self.api_type}. Supported types: 'pixelfed', 'mastodon'")
-    
 
-    
     @classmethod
     def from_env(cls):
         # Get API type from environment variable, default to 'pixelfed' for backward compatibility
@@ -317,23 +315,23 @@ class OllamaConfig:
 
 @dataclass
 class DatabaseConfig:
-    """Configuration for database connection and performance"""
-    pool_size: int = 9
-    max_overflow: int = 19
-    pool_timeout: int = 39
-    pool_recycle: int = 1800  # 30 minutes
+    """Configuration for MySQL database connection and performance"""
+    pool_size: int = 20
+    max_overflow: int = 50
+    pool_timeout: int = 30
+    pool_recycle: int = 3600  # 1 hour - MySQL optimized
     query_logging: bool = False
     
     @classmethod
     def from_env(cls):
-        pool_size=int(os.getenv("DB_POOL_SIZE", "7"))
-        max_overflow=int(os.getenv("DB_MAX_OVERFLOW", "17"))
-        pool_timeout=int(os.getenv("DB_POOL_TIMEOUT", "37"))
-        pool_recycle=int(os.getenv("DB_POOL_RECYCLE", "1800"))
+        pool_size=int(os.getenv("DB_POOL_SIZE", "20"))
+        max_overflow=int(os.getenv("DB_MAX_OVERFLOW", "50"))
+        pool_timeout=int(os.getenv("DB_POOL_TIMEOUT", "30"))
+        pool_recycle=int(os.getenv("DB_POOL_RECYCLE", "3600"))
         query_logging=os.getenv("DB_QUERY_LOGGING", "false").lower() == "true"
         
-        # logging.info(f"Database pool size loaded from environment: {pool_size}")
-        # logging.info(f"Database max overflow loaded from environment: {max_overflow}")
+        logging.info(f"MySQL database pool size loaded from environment: {pool_size}")
+        logging.info(f"MySQL database max overflow loaded from environment: {max_overflow}")
 
         return cls(
             pool_size=pool_size,
@@ -345,19 +343,17 @@ class DatabaseConfig:
 
 @dataclass
 class StorageConfig:
-    """Configuration for storage paths"""
+    """Configuration for storage paths and MySQL database"""
     base_dir: str = "storage"
     images_dir: str = "storage/images"
-    database_dir: str = "storage/database"
     logs_dir: str = "logs"
-    database_url: str = "sqlite:///storage/database/vedfolnir.db"
+    database_url: str = "mysql+pymysql://vedfolnir_user:vedfolnir_password@localhost/vedfolnir?charset=utf8mb4"
     db_config: DatabaseConfig = None
     
     def __post_init__(self):
-        # Create directories if they don't exist
+        # Create directories if they don't exist (MySQL doesn't need database_dir)
         os.makedirs(self.base_dir, exist_ok=True)
         os.makedirs(self.images_dir, exist_ok=True)
-        os.makedirs(self.database_dir, exist_ok=True)
         os.makedirs(self.logs_dir, exist_ok=True)
         
         # Initialize database config if not provided
@@ -369,9 +365,8 @@ class StorageConfig:
         return cls(
             base_dir=os.getenv("STORAGE_BASE_DIR", "storage"),
             images_dir=os.getenv("STORAGE_IMAGES_DIR", "storage/images"),
-            database_dir=os.getenv("STORAGE_DATABASE_DIR", "storage/database"),
             logs_dir=os.getenv("LOGS_DIR", "logs"),
-            database_url=os.getenv("DATABASE_URL", "sqlite:///storage/database/vedfolnir.db")
+            database_url=os.getenv("DATABASE_URL", "mysql+pymysql://vedfolnir_user:vedfolnir_password@localhost/vedfolnir?charset=utf8mb4")
         )
 
 @dataclass
@@ -538,6 +533,27 @@ class Config:
                 errors.append("FLASK_SECRET_KEY is required")
         except ConfigurationError as e:
             errors.append(f"WebApp configuration: {str(e)}")
+        
+        # Validate MySQL database configuration
+        try:
+            database_url = self.storage.database_url
+            if not database_url:
+                errors.append("DATABASE_URL is required")
+            elif not database_url.startswith("mysql+pymysql://"):
+                if database_url.startswith("MySQL://"):
+                    errors.append("MySQL is deprecated. Please use MySQL database. Set DATABASE_URL to a MySQL connection string.")
+                else:
+                    errors.append("DATABASE_URL must be a MySQL connection string starting with 'mysql+pymysql://'")
+            else:
+                # Validate MySQL URL format
+                if "charset=utf8mb4" not in database_url:
+                    logging.warning("MySQL DATABASE_URL should include 'charset=utf8mb4' for proper Unicode support")
+                
+                # Check for required MySQL connection parameters
+                if "@" not in database_url or "/" not in database_url.split("@")[-1]:
+                    errors.append("DATABASE_URL must include host and database name in format: mysql+pymysql://user:password@host/database")
+        except Exception as e:
+            errors.append(f"MySQL database configuration: {str(e)}")
         
         # Validate other critical configuration
         try:

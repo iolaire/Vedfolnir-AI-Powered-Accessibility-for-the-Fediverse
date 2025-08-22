@@ -13,7 +13,6 @@ sys.path.insert(0, os.path.abspath(os.path.join(os.path.dirname(__file__), '..')
 from config import CaptionConfig
 from caption_quality_assessment import SimpleCaptionQualityAssessor, CaptionQualityManager
 
-
 class TestCaptionConfigIntegration(unittest.TestCase):
     """Test caption configuration integration with quality assessment"""
     
@@ -238,7 +237,6 @@ class TestCaptionConfigIntegration(unittest.TestCase):
         self.assertEqual(assessor._assess_length(just_below_min), 60)      # Short but acceptable
         self.assertEqual(assessor._assess_length(just_above_max_optimal), 80)  # Long but acceptable
         self.assertEqual(assessor._assess_length(just_above_max), 40)      # Too long
-
 
 if __name__ == '__main__':
     unittest.main()

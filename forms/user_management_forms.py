@@ -16,7 +16,6 @@ from wtforms.validators import DataRequired, Length, Email, EqualTo, Optional, V
 from models import UserRole, User
 from email_validator import validate_email, EmailNotValidError
 
-
 class UserRegistrationForm(Form):
     """Form for user self-registration""" # Using regular WTForms (no Flask-WTF CSRF)
     
@@ -170,7 +169,6 @@ class UserRegistrationForm(Form):
         if not (has_letter and has_number):
             raise ValidationError("Password must contain at least one letter and one number")
 
-
 class LoginForm(Form):
     """Form for user authentication""" # Using regular WTForms (no Flask-WTF CSRF)
     
@@ -206,7 +204,6 @@ class LoginForm(Form):
         'Login',
         render_kw={"class": "btn btn-primary"}
     )
-
 
 class ProfileEditForm(Form):
     """Form for profile management""" # Using regular WTForms (no Flask-WTF CSRF)
@@ -267,7 +264,6 @@ class ProfileEditForm(Form):
         except EmailNotValidError as e:
             raise ValidationError(f"Invalid email address: {str(e)}")
 
-
 class PasswordChangeForm(Form):
     """Form for password changes by authenticated users""" # Using regular WTForms (no Flask-WTF CSRF)
     
@@ -323,7 +319,6 @@ class PasswordChangeForm(Form):
         if not (has_letter and has_number):
             raise ValidationError("Password must contain at least one letter and one number")
 
-
 class PasswordResetRequestForm(Form):
     """Form for password reset initiation""" # Using regular WTForms (no Flask-WTF CSRF)
     
@@ -346,7 +341,6 @@ class PasswordResetRequestForm(Form):
         'Send Reset Link',
         render_kw={"class": "btn btn-primary"}
     )
-
 
 class PasswordResetForm(Form):
     """Form for password reset completion""" # Using regular WTForms (no Flask-WTF CSRF)
@@ -393,7 +387,6 @@ class PasswordResetForm(Form):
         if not (has_letter and has_number):
             raise ValidationError("Password must contain at least one letter and one number")
 
-
 class ProfileDeleteForm(Form):
     """Form for profile deletion confirmation""" # Using regular WTForms (no Flask-WTF CSRF)
     
@@ -428,7 +421,6 @@ class ProfileDeleteForm(Form):
         if field.data != "DELETE":
             raise ValidationError("Please type DELETE exactly to confirm profile deletion")
 
-
 class EmailVerificationResendForm(Form):
     """Form for resending email verification""" # Using regular WTForms (no Flask-WTF CSRF)
     
@@ -436,7 +428,6 @@ class EmailVerificationResendForm(Form):
         'Resend Verification Email',
         render_kw={"class": "btn btn-secondary"}
     )
-
 
 # Admin forms (extending existing admin forms)
 class AdminUserCreateForm(Form):
@@ -564,7 +555,6 @@ class AdminUserCreateForm(Form):
         if not (has_letter and has_number):
             raise ValidationError("Password must contain at least one letter and one number")
 
-
 class AdminUserEditForm(Form):
     """Form for admin user editing""" # Using regular WTForms (no Flask-WTF CSRF)
     
@@ -643,7 +633,6 @@ class AdminUserEditForm(Form):
         'Update User',
         render_kw={"class": "btn btn-primary"}
     )
-
 
 class AdminPasswordResetForm(Form):
     """Form for admin password reset""" # Using regular WTForms (no Flask-WTF CSRF)

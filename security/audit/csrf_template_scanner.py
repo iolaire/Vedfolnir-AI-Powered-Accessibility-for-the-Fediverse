@@ -19,7 +19,6 @@ from jinja2 import Environment, meta
 
 logger = logging.getLogger(__name__)
 
-
 @dataclass
 class TemplateSecurityIssue:
     """Represents a security issue found in a template"""
@@ -31,7 +30,6 @@ class TemplateSecurityIssue:
     code_snippet: Optional[str] = None
     recommendation: Optional[str] = None
 
-
 @dataclass
 class CSRFAuditResult:
     """Results of CSRF template audit"""
@@ -42,7 +40,6 @@ class CSRFAuditResult:
     issues: List[TemplateSecurityIssue]
     compliance_score: float
     recommendations: List[str]
-
 
 class CSRFTemplateScanner:
     """Scanner for CSRF vulnerabilities in templates"""

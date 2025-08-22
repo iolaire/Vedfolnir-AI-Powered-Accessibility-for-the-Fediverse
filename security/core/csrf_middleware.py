@@ -21,7 +21,6 @@ from security.core.security_utils import sanitize_for_log
 
 logger = logging.getLogger(__name__)
 
-
 class CSRFMiddleware:
     """CSRF validation middleware for Flask applications"""
     
@@ -264,7 +263,6 @@ class CSRFMiddleware:
             'callbacks': len(self.validation_callbacks)
         }
 
-
 def csrf_exempt(f):
     """Decorator to exempt a route from CSRF validation
     
@@ -280,7 +278,6 @@ def csrf_exempt(f):
         return f(*args, **kwargs)
     
     return decorated_function
-
 
 def require_csrf(f):
     """Decorator to explicitly require CSRF validation for a route
@@ -325,7 +322,6 @@ def require_csrf(f):
     
     return decorated_function
 
-
 def initialize_csrf_middleware(app) -> CSRFMiddleware:
     """Initialize CSRF middleware for Flask app
     
@@ -359,10 +355,8 @@ def initialize_csrf_middleware(app) -> CSRFMiddleware:
     logger.info("CSRF middleware initialized with application-specific configuration")
     return middleware
 
-
 # Global middleware instance
 _csrf_middleware: Optional[CSRFMiddleware] = None
-
 
 def get_csrf_middleware() -> Optional[CSRFMiddleware]:
     """Get the global CSRF middleware instance
@@ -372,7 +366,6 @@ def get_csrf_middleware() -> Optional[CSRFMiddleware]:
     """
     global _csrf_middleware
     return _csrf_middleware
-
 
 def set_csrf_middleware(middleware: CSRFMiddleware):
     """Set the global CSRF middleware instance

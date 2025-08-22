@@ -21,7 +21,6 @@ from config import Config
 from models import User, PlatformConnection
 from database import DatabaseManager
 
-
 class PlatformHealthMonitor:
     """Monitors platform health and connectivity"""
     
@@ -256,7 +255,6 @@ class PlatformHealthMonitor:
         
         print("=" * 60)
 
-
 def main():
     """Main monitoring function"""
     import argparse
@@ -299,7 +297,6 @@ def main():
     except Exception as e:
         print(f"❌ Health monitoring failed: {e}")
         return 1
-
 
 if __name__ == '__main__':
     sys.exit(main())

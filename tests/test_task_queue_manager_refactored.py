@@ -24,7 +24,6 @@ from tests.test_helpers import (
     QueryMockBuilder
 )
 
-
 class TestTaskQueueManagerRefactored(unittest.TestCase):
     """Refactored test cases using standardized mock configurations"""
     
@@ -338,7 +337,6 @@ class TestTaskQueueManagerRefactored(unittest.TestCase):
             'active': 3
         }
         self.assertEqual(result, expected)
-
 
 if __name__ == '__main__':
     unittest.main()

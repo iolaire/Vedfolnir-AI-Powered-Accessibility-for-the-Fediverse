@@ -20,7 +20,6 @@ import threading
 
 logger = logging.getLogger(__name__)
 
-
 class VulnerabilityStatus(Enum):
     """Vulnerability remediation status"""
     OPEN = "open"
@@ -29,14 +28,12 @@ class VulnerabilityStatus(Enum):
     ACCEPTED_RISK = "accepted_risk"
     FALSE_POSITIVE = "false_positive"
 
-
 class AuditType(Enum):
     """Types of security audits"""
     CSRF_COMPLIANCE = "csrf_compliance"
     TEMPLATE_SECURITY = "template_security"
     COMPREHENSIVE = "comprehensive"
     VULNERABILITY_SCAN = "vulnerability_scan"
-
 
 @dataclass
 class VulnerabilityRecord:
@@ -53,7 +50,6 @@ class VulnerabilityRecord:
     resolution_notes: Optional[str]
     last_updated: datetime
 
-
 @dataclass
 class AuditReport:
     """Security audit report"""
@@ -69,7 +65,6 @@ class AuditReport:
     recommendations: List[str]
     next_audit_due: datetime
     report_data: Dict[str, Any]
-
 
 class SecurityAuditSystem:
     """Comprehensive security audit reporting system"""
@@ -528,9 +523,7 @@ class SecurityAuditSystem:
         except Exception as e:
             logger.error(f"Error loading audit history: {e}")
 
-
 _security_audit_system: Optional[SecurityAuditSystem] = None
-
 
 def get_security_audit_system() -> SecurityAuditSystem:
     """Get the global security audit system instance"""

@@ -21,7 +21,6 @@ import logging
 
 logger = logging.getLogger(__name__)
 
-
 class CSRFTokenManager:
     """Centralized CSRF token management system"""
     
@@ -343,11 +342,9 @@ class CSRFTokenManager:
         
         return True
 
-
 class CSRFTokenError(Exception):
     """Exception raised for CSRF token errors"""
     pass
-
 
 class CSRFValidationContext:
     """Context information for CSRF validation"""
@@ -407,10 +404,8 @@ class CSRFValidationContext:
             'token_source': self.token_source
         }
 
-
 # Global CSRF token manager instance
 _csrf_token_manager: Optional[CSRFTokenManager] = None
-
 
 def get_csrf_token_manager() -> CSRFTokenManager:
     """Get the global CSRF token manager instance
@@ -422,7 +417,6 @@ def get_csrf_token_manager() -> CSRFTokenManager:
     if _csrf_token_manager is None:
         _csrf_token_manager = CSRFTokenManager()
     return _csrf_token_manager
-
 
 def initialize_csrf_token_manager(app) -> CSRFTokenManager:
     """Initialize CSRF token manager for Flask app

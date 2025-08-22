@@ -235,10 +235,8 @@ class RetryStats:
         """Reset all statistics"""
         self.__init__()
 
-
 # Global retry statistics tracker
 retry_stats = RetryStats()
-
 
 def extract_endpoint_from_args(args, kwargs) -> Optional[str]:
     """
@@ -268,7 +266,6 @@ def extract_endpoint_from_args(args, kwargs) -> Optional[str]:
     
     return None
 
-
 def get_retry_stats_summary() -> str:
     """
     Get a summary of retry statistics
@@ -278,7 +275,6 @@ def get_retry_stats_summary() -> str:
     """
     return retry_stats.get_summary()
 
-
 def get_retry_stats_detailed() -> Dict[str, Any]:
     """
     Get detailed retry statistics in dictionary format
@@ -287,7 +283,6 @@ def get_retry_stats_detailed() -> Dict[str, Any]:
         A dictionary with detailed retry statistics
     """
     return retry_stats.get_detailed_report()
-
 
 def reset_retry_stats() -> None:
     """Reset all retry statistics"""

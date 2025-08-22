@@ -19,7 +19,6 @@ from forms.user_management_forms import (
 )
 from models import UserRole
 
-
 class TestUserManagementForms(unittest.TestCase):
     """Test user management forms validation and functionality"""
     
@@ -35,7 +34,6 @@ class TestUserManagementForms(unittest.TestCase):
     def tearDown(self):
         """Clean up test fixtures"""
         self.app_context.pop()
-
 
 class TestUserRegistrationForm(TestUserManagementForms):
     """Test UserRegistrationForm"""
@@ -187,7 +185,6 @@ class TestUserRegistrationForm(TestUserManagementForms):
         self.assertFalse(form.validate())
         self.assertIn('consent to data processing', str(form.data_processing_consent.errors))
 
-
 class TestLoginForm(TestUserManagementForms):
     """Test LoginForm"""
     
@@ -223,7 +220,6 @@ class TestLoginForm(TestUserManagementForms):
         form = LoginForm(data=form_data)
         self.assertFalse(form.validate())
         self.assertIn('Password is required', str(form.password.errors))
-
 
 class TestProfileEditForm(TestUserManagementForms):
     """Test ProfileEditForm"""
@@ -261,7 +257,6 @@ class TestProfileEditForm(TestUserManagementForms):
         
         form = ProfileEditForm(data=form_data)
         self.assertTrue(form.validate())
-
 
 class TestPasswordChangeForm(TestUserManagementForms):
     """Test PasswordChangeForm"""
@@ -301,7 +296,6 @@ class TestPasswordChangeForm(TestUserManagementForms):
         self.assertFalse(form.validate())
         self.assertIn('at least one letter and one number', str(form.new_password.errors))
 
-
 class TestPasswordResetRequestForm(TestUserManagementForms):
     """Test PasswordResetRequestForm"""
     
@@ -323,7 +317,6 @@ class TestPasswordResetRequestForm(TestUserManagementForms):
         form = PasswordResetRequestForm(data=form_data)
         self.assertFalse(form.validate())
         self.assertTrue(any('valid email address' in str(error) for error in form.email.errors))
-
 
 class TestPasswordResetForm(TestUserManagementForms):
     """Test PasswordResetForm"""
@@ -360,7 +353,6 @@ class TestPasswordResetForm(TestUserManagementForms):
         self.assertFalse(form.validate())
         self.assertIn('at least one letter and one number', str(form.password.errors))
 
-
 class TestProfileDeleteForm(TestUserManagementForms):
     """Test ProfileDeleteForm"""
     
@@ -396,7 +388,6 @@ class TestProfileDeleteForm(TestUserManagementForms):
         self.assertFalse(form.validate())
         self.assertIn('Current password is required', str(form.password.errors))
 
-
 class TestEmailVerificationResendForm(TestUserManagementForms):
     """Test EmailVerificationResendForm"""
     
@@ -405,7 +396,6 @@ class TestEmailVerificationResendForm(TestUserManagementForms):
         form = EmailVerificationResendForm()
         # This form has no validation requirements, just a submit button
         self.assertTrue(form.validate())
-
 
 class TestAdminUserCreateForm(TestUserManagementForms):
     """Test AdminUserCreateForm"""
@@ -456,7 +446,6 @@ class TestAdminUserCreateForm(TestUserManagementForms):
         self.assertFalse(form.validate())
         self.assertIn('at least one letter and one number', str(form.password.errors))
 
-
 class TestAdminUserEditForm(TestUserManagementForms):
     """Test AdminUserEditForm"""
     
@@ -490,7 +479,6 @@ class TestAdminUserEditForm(TestUserManagementForms):
         form = AdminUserEditForm(data=form_data)
         self.assertFalse(form.validate())
         self.assertIn('This field is required', str(form.user_id.errors))
-
 
 class TestAdminPasswordResetForm(TestUserManagementForms):
     """Test AdminPasswordResetForm"""
@@ -532,7 +520,6 @@ class TestAdminPasswordResetForm(TestUserManagementForms):
         form = AdminPasswordResetForm(data=form_data)
         self.assertFalse(form.validate())
         self.assertIn('at least one letter and one number', str(form.new_password.errors))
-
 
 if __name__ == '__main__':
     unittest.main()

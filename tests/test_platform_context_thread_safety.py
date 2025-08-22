@@ -17,7 +17,6 @@ from sqlalchemy.orm import Session
 from platform_context import PlatformContextManager, PlatformContext, PlatformContextError
 from models import User, PlatformConnection
 
-
 class TestPlatformContextThreadSafety(unittest.TestCase):
     """Test thread safety of PlatformContextManager"""
     
@@ -379,7 +378,6 @@ class TestPlatformContextThreadSafety(unittest.TestCase):
             # Verify data injection used correct platform
             self.assertEqual(result['injected_platform_id'], result['expected_platform_id'])
             self.assertEqual(result['injected_platform_type'], result['expected_platform_type'])
-
 
 if __name__ == '__main__':
     unittest.main()

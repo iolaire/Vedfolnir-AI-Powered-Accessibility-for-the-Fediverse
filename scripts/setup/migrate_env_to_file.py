@@ -14,7 +14,6 @@ import os
 import sys
 from pathlib import Path
 
-
 def main():
     print("🔄 Environment Variable to .env File Migration")
     print("=" * 50)
@@ -113,7 +112,7 @@ PLATFORM_ENCRYPTION_KEY={found_vars.get('PLATFORM_ENCRYPTION_KEY', 'CHANGE_ME_TO
 FLASK_HOST=127.0.0.1
 FLASK_PORT=5000
 FLASK_DEBUG=false
-DATABASE_URL=sqlite:///storage/database/vedfolnir.db
+DATABASE_URL=mysql+pymysql://storage/database/vedfolnir.db
 LOG_LEVEL=INFO
 """
         
@@ -154,7 +153,6 @@ LOG_LEVEL=INFO
     except Exception as e:
         print(f"❌ Error creating .env file: {e}")
         sys.exit(1)
-
 
 if __name__ == "__main__":
     main()

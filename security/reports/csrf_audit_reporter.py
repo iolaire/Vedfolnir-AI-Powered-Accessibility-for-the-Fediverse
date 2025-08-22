@@ -19,7 +19,6 @@ import logging
 
 logger = logging.getLogger(__name__)
 
-
 @dataclass
 class ComplianceReport:
     """CSRF compliance report data"""
@@ -32,7 +31,6 @@ class ComplianceReport:
     low_issues: int
     recommendations: List[str]
     generated_at: datetime
-
 
 class CSRFAuditReporter:
     """Generates comprehensive CSRF security audit reports"""
@@ -668,7 +666,6 @@ class CSRFAuditReporter:
             'Test CSRF token expiration and refresh functionality'
         ]
 
-
 def main():
     """Main function for generating CSRF audit reports"""
     import argparse
@@ -695,7 +692,6 @@ def main():
     print(f"Overall Risk Level: {report['executive_summary']['overall_risk_level']}")
     print(f"Protection Rate: {report['executive_summary']['protection_rate']:.1%}")
     print(f"Total Vulnerabilities: {report['executive_summary']['total_vulnerabilities']}")
-
 
 if __name__ == '__main__':
     main()

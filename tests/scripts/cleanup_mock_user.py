@@ -40,7 +40,6 @@ logging.basicConfig(
 )
 logger = logging.getLogger(__name__)
 
-
 def cleanup_last_created_user():
     """Clean up the last created user based on saved info"""
     cleanup_info_file = project_root / "tests" / "scripts" / ".last_created_user.txt"
@@ -91,7 +90,6 @@ def cleanup_last_created_user():
         logger.error(f"Failed to clean up last created user: {e}")
         return False
 
-
 def cleanup_specific_user(user_id):
     """Clean up a specific user by ID"""
     try:
@@ -126,7 +124,6 @@ def cleanup_specific_user(user_id):
     except Exception as e:
         logger.error(f"Failed to clean up user {user_id}: {e}")
         return False
-
 
 def cleanup_all_test_users():
     """Clean up all users that appear to be test users"""
@@ -179,7 +176,6 @@ def cleanup_all_test_users():
     except Exception as e:
         logger.error(f"Failed to clean up all test users: {e}")
         return False
-
 
 def main():
     """Main function for command line usage"""
@@ -234,7 +230,6 @@ Examples:
     
     if not success:
         sys.exit(1)
-
 
 if __name__ == '__main__':
     main()

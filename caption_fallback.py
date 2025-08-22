@@ -29,7 +29,6 @@ class FallbackConfig:
             backup_model_name=os.getenv("FALLBACK_BACKUP_MODEL", "llava:13b-v1.6"),
         )
 
-
 class CaptionFallbackManager:
     """
     Manages fallback mechanisms for caption generation
@@ -80,9 +79,7 @@ class CaptionFallbackManager:
     
     # Ultra-simplified fallback prompt as last resort
     ULTRA_SIMPLIFIED_PROMPT = "Describe what you see in this image in a single sentence."
-    
 
-    
     def get_fallback_prompt(self, original_category: str, fallback_attempt: int) -> str:
         """
         Get a fallback prompt based on the original category and attempt number

@@ -156,7 +156,7 @@ def main():
     # Database Configuration
     print("Database Configuration:")
     print("Choose database type:")
-    print("1. SQLite (default, good for development)")
+    print("1. MySQL (default, good for development)")
     print("2. MySQL/MariaDB (recommended for production)")
     
     while True:
@@ -249,11 +249,66 @@ def main():
         database_settings['DB_POOL_TIMEOUT'] = input("Pool timeout seconds (default: 30): ").strip() or "30"
         database_settings['DB_POOL_RECYCLE'] = input("Pool recycle seconds (default: 3600): ").strip() or "3600"
         
+        # MySQL advanced configuration from Tasks 13-20
+        print("\nMySQL Advanced Configuration (Tasks 13-20):")
+        
+        # Security hardening settings
+        print("Security Hardening Settings:")
+        database_settings['MYSQL_PASSWORD_MIN_LENGTH'] = input("Minimum password length (default: 12): ").strip() or "12"
+        database_settings['MYSQL_MAX_FAILED_LOGINS'] = input("Max failed logins (default: 5): ").strip() or "5"
+        database_settings['MYSQL_SESSION_TIMEOUT'] = input("Session timeout seconds (default: 3600): ").strip() or "3600"
+        database_settings['MYSQL_CERT_EXPIRY_WARNING_DAYS'] = input("Certificate expiry warning days (default: 30): ").strip() or "30"
+        database_settings['MYSQL_SECURITY_KEY_FILE'] = input("Security key file (default: .mysql_security_key): ").strip() or ".mysql_security_key"
+        
+        # Backup and recovery settings
+        print("\nBackup and Recovery Settings:")
+        database_settings['MYSQL_BACKUP_DIR'] = input("Backup directory (default: ./backups): ").strip() or "./backups"
+        database_settings['MYSQL_BACKUP_RETENTION_DAYS'] = input("Backup retention days (default: 30): ").strip() or "30"
+        database_settings['MYSQL_BACKUP_COMPRESSION_LEVEL'] = input("Backup compression level 1-9 (default: 6): ").strip() or "6"
+        database_settings['MYSQL_MAX_BACKUP_SIZE_GB'] = input("Max backup size GB (default: 10): ").strip() or "10"
+        database_settings['MYSQL_BACKUP_TIMEOUT_MINUTES'] = input("Backup timeout minutes (default: 60): ").strip() or "60"
+        database_settings['MYSQL_PARALLEL_BACKUP_JOBS'] = input("Parallel backup jobs (default: 2): ").strip() or "2"
+        database_settings['MYSQL_BACKUP_ENCRYPTION_KEY_FILE'] = input("Backup encryption key file (default: .mysql_backup_key): ").strip() or ".mysql_backup_key"
+        
+        # Cloud storage for backups
+        configure_s3_backup = input("Configure AWS S3 for backups? (y/N): ").strip().lower() == 'y'
+        if configure_s3_backup:
+            database_settings['MYSQL_BACKUP_S3_BUCKET'] = input("S3 bucket name for backups: ").strip()
+            database_settings['AWS_ACCESS_KEY_ID'] = input("AWS Access Key ID: ").strip()
+            database_settings['AWS_SECRET_ACCESS_KEY'] = input("AWS Secret Access Key: ").strip()
+            database_settings['AWS_DEFAULT_REGION'] = input("AWS region (default: us-east-1): ").strip() or "us-east-1"
+        
+        # Performance monitoring settings
+        print("\nPerformance Monitoring Settings:")
+        database_settings['MYSQL_MONITORING_INTERVAL'] = input("Monitoring interval seconds (default: 300): ").strip() or "300"
+        database_settings['MYSQL_AUTO_OPTIMIZE_INTERVAL'] = input("Auto-optimize interval seconds (default: 3600): ").strip() or "3600"
+        database_settings['MYSQL_AUTO_OPTIMIZE_ENABLED'] = input("Enable auto-optimization? (y/N): ").strip().lower() == 'y'
+        database_settings['MYSQL_SLOW_QUERY_THRESHOLD_MS'] = input("Slow query threshold ms (default: 1000): ").strip() or "1000"
+        database_settings['MYSQL_QUERY_CACHE_SIZE'] = input("Query cache size (default: 100): ").strip() or "100"
+        
+        # Dashboard settings
+        print("\nDashboard Settings:")
+        database_settings['MYSQL_DASHBOARD_UPDATE_INTERVAL'] = input("Dashboard update interval seconds (default: 30): ").strip() or "30"
+        database_settings['MYSQL_DASHBOARD_RETENTION_HOURS'] = input("Dashboard data retention hours (default: 168): ").strip() or "168"
+        database_settings['MYSQL_DASHBOARD_REAL_TIME'] = input("Enable real-time dashboard? (Y/n): ").strip().lower() != 'n'
+        database_settings['MYSQL_DASHBOARD_MAX_CHART_POINTS'] = input("Max chart points (default: 100): ").strip() or "100"
+        
+        # Connection usage thresholds
+        print("\nPerformance Thresholds:")
+        database_settings['MYSQL_CONNECTION_USAGE_CRITICAL'] = input("Connection usage critical % (default: 90): ").strip() or "90"
+        database_settings['MYSQL_CONNECTION_USAGE_WARNING'] = input("Connection usage warning % (default: 75): ").strip() or "75"
+        database_settings['MYSQL_SLOW_QUERY_RATIO_CRITICAL'] = input("Slow query ratio critical % (default: 20): ").strip() or "20"
+        database_settings['MYSQL_SLOW_QUERY_RATIO_WARNING'] = input("Slow query ratio warning % (default: 10): ").strip() or "10"
+        database_settings['MYSQL_AVG_QUERY_TIME_CRITICAL'] = input("Avg query time critical ms (default: 2000): ").strip() or "2000"
+        database_settings['MYSQL_AVG_QUERY_TIME_WARNING'] = input("Avg query time warning ms (default: 1000): ").strip() or "1000"
+        database_settings['MYSQL_BUFFER_POOL_HIT_RATIO_CRITICAL'] = input("Buffer pool hit ratio critical % (default: 90): ").strip() or "90"
+        database_settings['MYSQL_BUFFER_POOL_HIT_RATIO_WARNING'] = input("Buffer pool hit ratio warning % (default: 95): ").strip() or "95"
+        
     else:
-        # SQLite
+        # MySQL
         database_settings = {
-            'DB_TYPE': 'sqlite',
-            'DATABASE_URL': 'sqlite:///storage/database/vedfolnir.db',
+            'DB_TYPE': 'MySQL',
+            'DATABASE_URL': "MySQL database",
             'DB_POOL_SIZE': '50',
             'DB_MAX_OVERFLOW': '100',
             'DB_POOL_TIMEOUT': '30',
@@ -397,7 +452,7 @@ def main():
         else:
             print(f"  Connection: TCP/IP ({database_settings.get('DB_HOST', 'localhost')}:{database_settings.get('DB_PORT', '3306')})")
     else:
-        print(f"  Database: SQLite")
+        print(f"  Database: MySQL")
     
     # Show Redis configuration
     if configure_redis:
@@ -547,17 +602,107 @@ DATABASE_URL={database_settings['DATABASE_URL']}
 DB_POOL_SIZE={database_settings['DB_POOL_SIZE']}
 DB_MAX_OVERFLOW={database_settings['DB_MAX_OVERFLOW']}
 DB_POOL_TIMEOUT={database_settings['DB_POOL_TIMEOUT']}
-DB_POOL_RECYCLE={database_settings['DB_POOL_RECYCLE']}"""
+DB_POOL_RECYCLE={database_settings['DB_POOL_RECYCLE']}
+
+# MySQL Security Hardening (Tasks 13-20)
+MYSQL_PASSWORD_MIN_LENGTH={database_settings['MYSQL_PASSWORD_MIN_LENGTH']}
+MYSQL_MAX_FAILED_LOGINS={database_settings['MYSQL_MAX_FAILED_LOGINS']}
+MYSQL_SESSION_TIMEOUT={database_settings['MYSQL_SESSION_TIMEOUT']}
+MYSQL_CERT_EXPIRY_WARNING_DAYS={database_settings['MYSQL_CERT_EXPIRY_WARNING_DAYS']}
+MYSQL_SECURITY_KEY_FILE={database_settings['MYSQL_SECURITY_KEY_FILE']}
+
+# MySQL Backup and Recovery
+MYSQL_BACKUP_DIR={database_settings['MYSQL_BACKUP_DIR']}
+MYSQL_BACKUP_RETENTION_DAYS={database_settings['MYSQL_BACKUP_RETENTION_DAYS']}
+MYSQL_BACKUP_COMPRESSION_LEVEL={database_settings['MYSQL_BACKUP_COMPRESSION_LEVEL']}
+MYSQL_MAX_BACKUP_SIZE_GB={database_settings['MYSQL_MAX_BACKUP_SIZE_GB']}
+MYSQL_BACKUP_TIMEOUT_MINUTES={database_settings['MYSQL_BACKUP_TIMEOUT_MINUTES']}
+MYSQL_PARALLEL_BACKUP_JOBS={database_settings['MYSQL_PARALLEL_BACKUP_JOBS']}
+MYSQL_BACKUP_ENCRYPTION_KEY_FILE={database_settings['MYSQL_BACKUP_ENCRYPTION_KEY_FILE']}"""
+                
+                # Add S3 backup settings if configured
+                if database_settings.get('MYSQL_BACKUP_S3_BUCKET'):
+                    database_config += f"""
+
+# AWS S3 Backup Configuration
+MYSQL_BACKUP_S3_BUCKET={database_settings['MYSQL_BACKUP_S3_BUCKET']}
+AWS_ACCESS_KEY_ID={database_settings['AWS_ACCESS_KEY_ID']}
+AWS_SECRET_ACCESS_KEY={database_settings['AWS_SECRET_ACCESS_KEY']}
+AWS_DEFAULT_REGION={database_settings['AWS_DEFAULT_REGION']}"""
+                
+                database_config += f"""
+
+# MySQL Performance Monitoring
+MYSQL_MONITORING_INTERVAL={database_settings['MYSQL_MONITORING_INTERVAL']}
+MYSQL_AUTO_OPTIMIZE_INTERVAL={database_settings['MYSQL_AUTO_OPTIMIZE_INTERVAL']}
+MYSQL_AUTO_OPTIMIZE_ENABLED={'true' if database_settings['MYSQL_AUTO_OPTIMIZE_ENABLED'] else 'false'}
+MYSQL_SLOW_QUERY_THRESHOLD_MS={database_settings['MYSQL_SLOW_QUERY_THRESHOLD_MS']}
+MYSQL_QUERY_CACHE_SIZE={database_settings['MYSQL_QUERY_CACHE_SIZE']}
+
+# MySQL Dashboard Configuration
+MYSQL_DASHBOARD_UPDATE_INTERVAL={database_settings['MYSQL_DASHBOARD_UPDATE_INTERVAL']}
+MYSQL_DASHBOARD_RETENTION_HOURS={database_settings['MYSQL_DASHBOARD_RETENTION_HOURS']}
+MYSQL_DASHBOARD_REAL_TIME={'true' if database_settings['MYSQL_DASHBOARD_REAL_TIME'] else 'false'}
+MYSQL_DASHBOARD_MAX_CHART_POINTS={database_settings['MYSQL_DASHBOARD_MAX_CHART_POINTS']}
+
+# MySQL Performance Thresholds
+MYSQL_CONNECTION_USAGE_CRITICAL={database_settings['MYSQL_CONNECTION_USAGE_CRITICAL']}
+MYSQL_CONNECTION_USAGE_WARNING={database_settings['MYSQL_CONNECTION_USAGE_WARNING']}
+MYSQL_SLOW_QUERY_RATIO_CRITICAL={database_settings['MYSQL_SLOW_QUERY_RATIO_CRITICAL']}
+MYSQL_SLOW_QUERY_RATIO_WARNING={database_settings['MYSQL_SLOW_QUERY_RATIO_WARNING']}
+MYSQL_AVG_QUERY_TIME_CRITICAL={database_settings['MYSQL_AVG_QUERY_TIME_CRITICAL']}
+MYSQL_AVG_QUERY_TIME_WARNING={database_settings['MYSQL_AVG_QUERY_TIME_WARNING']}
+MYSQL_BUFFER_POOL_HIT_RATIO_CRITICAL={database_settings['MYSQL_BUFFER_POOL_HIT_RATIO_CRITICAL']}
+MYSQL_BUFFER_POOL_HIT_RATIO_WARNING={database_settings['MYSQL_BUFFER_POOL_HIT_RATIO_WARNING']}"""
             else:
                 database_config = f"""
-# Database Configuration - SQLite
+# Database Configuration - MySQL
 DATABASE_URL={database_settings['DATABASE_URL']}
 
 # Database Performance Configuration
 DB_POOL_SIZE={database_settings['DB_POOL_SIZE']}
 DB_MAX_OVERFLOW={database_settings['DB_MAX_OVERFLOW']}
 DB_POOL_TIMEOUT={database_settings['DB_POOL_TIMEOUT']}
-DB_POOL_RECYCLE={database_settings['DB_POOL_RECYCLE']}"""
+DB_POOL_RECYCLE={database_settings['DB_POOL_RECYCLE']}
+
+# MySQL Security Hardening (Tasks 13-20)
+MYSQL_PASSWORD_MIN_LENGTH=12
+MYSQL_MAX_FAILED_LOGINS=5
+MYSQL_SESSION_TIMEOUT=3600
+MYSQL_CERT_EXPIRY_WARNING_DAYS=30
+MYSQL_SECURITY_KEY_FILE=.mysql_security_key
+
+# MySQL Backup and Recovery
+MYSQL_BACKUP_DIR=./backups
+MYSQL_BACKUP_RETENTION_DAYS=30
+MYSQL_BACKUP_COMPRESSION_LEVEL=6
+MYSQL_MAX_BACKUP_SIZE_GB=10
+MYSQL_BACKUP_TIMEOUT_MINUTES=60
+MYSQL_PARALLEL_BACKUP_JOBS=2
+MYSQL_BACKUP_ENCRYPTION_KEY_FILE=.mysql_backup_key
+
+# MySQL Performance Monitoring
+MYSQL_MONITORING_INTERVAL=300
+MYSQL_AUTO_OPTIMIZE_INTERVAL=3600
+MYSQL_AUTO_OPTIMIZE_ENABLED=false
+MYSQL_SLOW_QUERY_THRESHOLD_MS=1000
+MYSQL_QUERY_CACHE_SIZE=100
+
+# MySQL Dashboard Configuration
+MYSQL_DASHBOARD_UPDATE_INTERVAL=30
+MYSQL_DASHBOARD_RETENTION_HOURS=168
+MYSQL_DASHBOARD_REAL_TIME=true
+MYSQL_DASHBOARD_MAX_CHART_POINTS=100
+
+# MySQL Performance Thresholds
+MYSQL_CONNECTION_USAGE_CRITICAL=90
+MYSQL_CONNECTION_USAGE_WARNING=75
+MYSQL_SLOW_QUERY_RATIO_CRITICAL=20
+MYSQL_SLOW_QUERY_RATIO_WARNING=10
+MYSQL_AVG_QUERY_TIME_CRITICAL=2000
+MYSQL_AVG_QUERY_TIME_WARNING=1000
+MYSQL_BUFFER_POOL_HIT_RATIO_CRITICAL=90
+MYSQL_BUFFER_POOL_HIT_RATIO_WARNING=95"""
             
             redis_config = f"""
 # Redis Configuration

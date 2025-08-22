@@ -312,7 +312,7 @@ class AppResetManager:
         
         # Check database
         if self.config:
-            db_path = self.config.storage.database_url.replace('sqlite:///', '')
+            db_path = self.config.storage.database_url.replace('mysql+pymysql://', '')
             if os.path.exists(db_path):
                 db_size = os.path.getsize(db_path)
                 logger.info(f"✅ Database: Exists ({db_size / 1024 / 1024:.1f} MB)")

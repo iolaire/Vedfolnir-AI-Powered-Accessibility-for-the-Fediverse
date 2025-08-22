@@ -21,7 +21,6 @@ from models import User, UserRole, GDPRAuditLog
 from services.gdpr_service import GDPRDataSubjectService, GDPRPrivacyService
 from tests.test_helpers import create_test_user_with_platforms, cleanup_test_user
 
-
 class TestGDPRCompliance(unittest.TestCase):
     """Test GDPR compliance functionality"""
     
@@ -283,7 +282,6 @@ class TestGDPRCompliance(unittest.TestCase):
         self.assertFalse(self.test_user.is_active)
         self.assertFalse(self.test_user.data_processing_consent)
 
-
 class TestGDPRFormsValidation(unittest.TestCase):
     """Test GDPR forms validation"""
     
@@ -308,7 +306,6 @@ class TestGDPRFormsValidation(unittest.TestCase):
             
         except ImportError as e:
             self.fail(f"Failed to import GDPR forms: {e}")
-
 
 if __name__ == '__main__':
     unittest.main()

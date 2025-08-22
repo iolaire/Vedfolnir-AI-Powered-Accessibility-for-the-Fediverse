@@ -14,7 +14,7 @@ from models import User, UserRole
 
 def test_admin_access():
     config = Config()
-    db_manager = DatabaseManager(config)
+    db_manager = self.get_database_manager()
     
     with app.test_client() as client:
         # Get an admin user
@@ -39,6 +39,11 @@ def test_admin_access():
         # For this test, we'll just check if the route exists and doesn't crash
         with app.app_context():
             from flask import url_for
+
+# MySQL integration test imports
+from tests.mysql_test_base import MySQLIntegrationTestBase
+from tests.mysql_test_config import MySQLTestFixtures
+
             health_url = url_for('health_dashboard')
             print(f"Health dashboard URL: {health_url}")
 

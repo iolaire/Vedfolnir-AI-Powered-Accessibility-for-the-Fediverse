@@ -28,7 +28,7 @@ class TestMultiUserProcessing(unittest.TestCase):
         
         # Mock the storage attribute
         self.config.storage = MagicMock()
-        self.config.storage.database_url = "sqlite:///:memory:"
+        self.config.storage.database_url = "mysql+pymysql://DATABASE_URL=mysql+pymysql://test_user:test_pass@localhost/test_db"
         
         # Create a mock database manager
         self.db_mock = MagicMock()
@@ -78,7 +78,7 @@ class TestMultiUserProcessingAsync(unittest.TestCase):
         
         # Mock the storage attribute
         self.config.storage = MagicMock()
-        self.config.storage.database_url = "sqlite:///:memory:"
+        self.config.storage.database_url = "mysql+pymysql://DATABASE_URL=mysql+pymysql://test_user:test_pass@localhost/test_db"
         
         # Create a mock database manager
         self.db_mock = MagicMock()

@@ -192,7 +192,6 @@ class TestRateLimiter(unittest.TestCase):
         self.assertEqual(stats["requests"]["total"], 0)
         self.assertEqual(len(stats["endpoints"]), 0)
 
-
 class TestAsyncRateLimiter(unittest.IsolatedAsyncioTestCase):
     """Test cases for async rate limiter functionality"""
     
@@ -271,7 +270,6 @@ class TestAsyncRateLimiter(unittest.IsolatedAsyncioTestCase):
         # Check that config values were set correctly
         self.assertEqual(limiter1.config.requests_per_minute, 15)
         self.assertEqual(limiter1.config.max_burst, 7)
-
 
 if __name__ == "__main__":
     unittest.main()

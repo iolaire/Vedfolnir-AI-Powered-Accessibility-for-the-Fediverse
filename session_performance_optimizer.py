@@ -25,7 +25,6 @@ from models import UserSession, User, PlatformConnection
 
 logger = logging.getLogger(__name__)
 
-
 class SessionCache:
     """Request-scoped session context cache"""
     
@@ -65,7 +64,6 @@ class SessionCache:
     def size(self) -> int:
         """Get cache size"""
         return len(self._cache)
-
 
 class SessionPerformanceOptimizer:
     """Optimizes database session performance"""
@@ -179,10 +177,10 @@ class SessionPerformanceOptimizer:
                     AND INDEX_NAME LIKE 'idx_%'
                     AND INDEX_NAME != 'PRIMARY'
                 """)).fetchall()
-            elif database_url.startswith('sqlite'):
-                # SQLite query to get indexes
+            elif database_url.startswith('MySQL'):
+                # MySQL
                 result = db_session.execute(text(
-                    "SELECT name FROM sqlite_master WHERE type='index' AND name LIKE 'idx_%'"
+                    "SELECT table_name FROM information_schema.tables WHERE table_schema = DATABASE() WHERE type='index' AND name LIKE 'idx_%'"
                 )).fetchall()
             else:
                 # PostgreSQL or other databases
@@ -516,10 +514,8 @@ class SessionPerformanceOptimizer:
         self.request_cache.invalidate(session_id)
         logger.debug(f"Session cache invalidated for {session_id[:8]}...")
 
-
 # Global optimizer instance
 _global_optimizer: Optional[SessionPerformanceOptimizer] = None
-
 
 def get_session_optimizer(db_manager: DatabaseManager) -> SessionPerformanceOptimizer:
     """Get global session performance optimizer instance"""
@@ -532,7 +528,6 @@ def get_session_optimizer(db_manager: DatabaseManager) -> SessionPerformanceOpti
     
     return _global_optimizer
 
-
 def initialize_session_optimizations(db_manager: DatabaseManager) -> Dict[str, Any]:
     """Initialize session performance optimizations"""
     optimizer = get_session_optimizer(db_manager)
@@ -540,7 +535,6 @@ def initialize_session_optimizations(db_manager: DatabaseManager) -> Dict[str, A
     
     logger.info(f"Session optimizations initialized: {results}")
     return results
-
 
 @contextmanager
 def optimized_session_context(session_id: str, db_manager: DatabaseManager = None):

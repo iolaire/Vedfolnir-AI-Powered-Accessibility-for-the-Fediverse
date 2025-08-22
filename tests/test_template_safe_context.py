@@ -27,7 +27,6 @@ from detached_instance_handler import DetachedInstanceHandler
 from database_context_middleware import DatabaseContextMiddleware
 # from app_initialization import create_session_managed_app
 
-
 class TestTemplateSafeContext(unittest.TestCase):
     """Test template safe context implementation"""
     
@@ -356,7 +355,6 @@ class TestTemplateSafeContext(unittest.TestCase):
         mock_session.query.assert_called_once()
         mock_query.filter_by.assert_called_once_with(user_id=1, is_active=True)
 
-
 class TestTemplateIntegration(unittest.TestCase):
     """Test template integration with safe context"""
     
@@ -440,7 +438,6 @@ class TestTemplateIntegration(unittest.TestCase):
                 self.assertIn('Current: Platform 1', result)
                 self.assertIn('Platform 1 - pixelfed', result)
                 self.assertIn('Platform 2 - mastodon', result)
-
 
 if __name__ == '__main__':
     unittest.main()

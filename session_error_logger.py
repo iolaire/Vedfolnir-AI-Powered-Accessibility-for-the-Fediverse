@@ -19,7 +19,6 @@ from flask import request
 from flask_login import current_user
 from security.core.security_utils import sanitize_for_log
 
-
 class SessionErrorLogger:
     """Specialized logger for session-related errors with structured logging"""
     
@@ -264,7 +263,6 @@ class SessionErrorLogger:
         
         return error_context
 
-
 class JsonFormatter(logging.Formatter):
     """JSON formatter for structured logging"""
     
@@ -292,10 +290,8 @@ class JsonFormatter(logging.Formatter):
         
         return json.dumps(log_entry, default=str)
 
-
 # Global session error logger instance
 _session_error_logger = None
-
 
 def get_session_error_logger() -> SessionErrorLogger:
     """Get the global session error logger instance
@@ -307,7 +303,6 @@ def get_session_error_logger() -> SessionErrorLogger:
     if _session_error_logger is None:
         _session_error_logger = SessionErrorLogger()
     return _session_error_logger
-
 
 def initialize_session_error_logging(app):
     """Initialize session error logging for Flask app

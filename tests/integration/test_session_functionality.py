@@ -33,7 +33,7 @@ def test_user_authentication():
         
         # Initialize components
         config = Config()
-        db_manager = DatabaseManager(config)
+        db_manager = self.get_database_manager()
         redis_backend = RedisSessionBackend.from_env()
         session_manager = SessionManagerV2(db_manager, redis_backend)
         
@@ -106,7 +106,7 @@ def test_platform_switching():
         
         # Initialize components
         config = Config()
-        db_manager = DatabaseManager(config)
+        db_manager = self.get_database_manager()
         redis_backend = RedisSessionBackend.from_env()
         session_manager = SessionManagerV2(db_manager, redis_backend)
         
@@ -199,7 +199,7 @@ def test_session_persistence():
         
         # Initialize components
         config = Config()
-        db_manager = DatabaseManager(config)
+        db_manager = self.get_database_manager()
         redis_backend = RedisSessionBackend.from_env()
         session_manager = SessionManagerV2(db_manager, redis_backend, session_timeout=10)  # 10 second timeout for testing
         
@@ -266,7 +266,7 @@ def test_session_stats():
         
         # Initialize components
         config = Config()
-        db_manager = DatabaseManager(config)
+        db_manager = self.get_database_manager()
         redis_backend = RedisSessionBackend.from_env()
         session_manager = SessionManagerV2(db_manager, redis_backend)
         
@@ -322,6 +322,11 @@ def test_session_stats():
     except Exception as e:
         print(f"❌ Session statistics test failed: {e}")
         import traceback
+
+# MySQL integration test imports
+from tests.mysql_test_base import MySQLIntegrationTestBase
+from tests.mysql_test_config import MySQLTestFixtures
+
         traceback.print_exc()
         return False
 

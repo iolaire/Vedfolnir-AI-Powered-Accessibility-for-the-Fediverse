@@ -11,7 +11,6 @@ log injection prevention, and other security measures.
 import re
 from typing import Any, Optional
 
-
 def sanitize_for_log(value: Any) -> str:
     """
     Sanitize a value for safe logging to prevent log injection attacks.
@@ -52,7 +51,6 @@ def sanitize_for_log(value: Any) -> str:
     
     return str_value
 
-
 def sanitize_filename(filename: str) -> str:
     """
     Sanitize a filename to prevent directory traversal and other file system attacks.
@@ -90,7 +88,6 @@ def sanitize_filename(filename: str) -> str:
     
     return filename or "unnamed"
 
-
 def validate_url(url: str) -> bool:
     """
     Validate that a URL is safe and well-formed.
@@ -126,7 +123,6 @@ def validate_url(url: str) -> bool:
     
     return True
 
-
 def sanitize_html_input(text: str) -> str:
     """
     Sanitize HTML input to prevent XSS attacks.
@@ -152,7 +148,6 @@ def sanitize_html_input(text: str) -> str:
         import html
         return html.escape(text, quote=True)
 
-
 def validate_image_extension(filename: str) -> bool:
     """
     Validate that a filename has a safe image extension.
@@ -176,7 +171,6 @@ def validate_image_extension(filename: str) -> bool:
     ext = '.' + ext if ext else ''
     
     return ext in safe_extensions
-
 
 def truncate_text(text: str, max_length: int = 500, suffix: str = "...") -> str:
     """
@@ -205,7 +199,6 @@ def truncate_text(text: str, max_length: int = 500, suffix: str = "...") -> str:
         truncated = truncated[:last_space]
     
     return truncated + suffix
-
 
 def validate_user_input(text: str, max_length: int = 1000, allow_html: bool = False) -> Optional[str]:
     """
@@ -239,7 +232,6 @@ def validate_user_input(text: str, max_length: int = 1000, allow_html: bool = Fa
     
     return text.strip()
 
-
 def generate_safe_id(prefix: str = "", length: int = 12) -> str:
     """
     Generate a safe identifier string.
@@ -265,7 +257,6 @@ def generate_safe_id(prefix: str = "", length: int = 12) -> str:
     
     return random_part
 
-
 def is_safe_path(path: str, base_dir: str) -> bool:
     """
     Check if a file path is safe (within the base directory).
@@ -288,7 +279,6 @@ def is_safe_path(path: str, base_dir: str) -> bool:
         return abs_path.startswith(abs_base + os.sep) or abs_path == abs_base
     except (OSError, ValueError):
         return False
-
 
 def mask_sensitive_data(data: str, mask_char: str = "*", visible_chars: int = 4) -> str:
     """

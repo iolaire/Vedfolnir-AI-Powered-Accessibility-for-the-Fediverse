@@ -24,7 +24,6 @@ from security.monitoring.security_alerting import get_security_alert_manager
 logging.basicConfig(level=logging.INFO, format='%(asctime)s - %(levelname)s - %(message)s')
 logger = logging.getLogger(__name__)
 
-
 def validate_environment_variables():
     """Validate required environment variables"""
     required_vars = [
@@ -43,7 +42,6 @@ def validate_environment_variables():
     
     logger.info("All required environment variables are set")
     return True
-
 
 def deploy_security_configuration():
     """Deploy production security configuration"""
@@ -84,7 +82,6 @@ def deploy_security_configuration():
     logger.info("Security configuration deployment completed successfully")
     return True
 
-
 def main():
     """Main deployment function"""
     try:
@@ -100,7 +97,6 @@ def main():
     except Exception as e:
         logger.error(f"Deployment error: {e}")
         sys.exit(1)
-
 
 if __name__ == '__main__':
     main()

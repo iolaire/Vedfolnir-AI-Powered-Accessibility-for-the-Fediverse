@@ -10,7 +10,6 @@ from request_scoped_session_manager import RequestScopedSessionManager
 from models import User, PlatformConnection
 from sqlalchemy.orm.exc import DetachedInstanceError
 
-
 class TestDatabaseContextMiddleware(unittest.TestCase):
     """Test cases for DatabaseContextMiddleware"""
     
@@ -322,7 +321,6 @@ class TestDatabaseContextMiddleware(unittest.TestCase):
             
             # Verify refresh_platforms was called
             mock_user.refresh_platforms.assert_called_once()
-
 
 if __name__ == '__main__':
     unittest.main()

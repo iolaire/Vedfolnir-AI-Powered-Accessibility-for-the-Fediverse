@@ -14,7 +14,6 @@ from wtforms import Form, StringField, TextAreaField, BooleanField, SelectField,
 from wtforms.validators import DataRequired, Email, Length, Optional
 from wtforms.widgets import TextArea
 
-
 class DataExportRequestForm(Form):
     """Form for requesting personal data export (GDPR Article 20)""" # Using regular WTForms (no Flask-WTF CSRF)
     
@@ -67,7 +66,6 @@ class DataExportRequestForm(Form):
     
     submit = SubmitField('Request Data Export')
 
-
 class DataRectificationForm(Form):
     """Form for rectifying (correcting) personal data (GDPR Article 16)""" # Using regular WTForms (no Flask-WTF CSRF)
     
@@ -103,7 +101,6 @@ class DataRectificationForm(Form):
     )
     
     submit = SubmitField('Submit Rectification Request')
-
 
 class DataErasureRequestForm(Form):
     """Form for requesting data erasure (GDPR Article 17)""" # Using regular WTForms (no Flask-WTF CSRF)
@@ -159,7 +156,6 @@ class DataErasureRequestForm(Form):
     
     submit = SubmitField('Request Data Erasure')
 
-
 class ConsentManagementForm(Form):
     """Form for managing data processing consent (GDPR Article 7)""" # Using regular WTForms (no Flask-WTF CSRF)
     
@@ -191,7 +187,6 @@ class ConsentManagementForm(Form):
     )
     
     submit = SubmitField('Update Consent Preferences')
-
 
 class PrivacyRequestForm(Form):
     """Generic form for privacy-related requests""" # Using regular WTForms (no Flask-WTF CSRF)
@@ -252,7 +247,6 @@ class PrivacyRequestForm(Form):
     
     submit = SubmitField('Submit Privacy Request')
 
-
 class GDPRComplianceReportForm(Form):
     """Form for requesting GDPR compliance report""" # Using regular WTForms (no Flask-WTF CSRF)
     
@@ -288,7 +282,6 @@ class GDPRComplianceReportForm(Form):
     )
     
     submit = SubmitField('Generate Compliance Report')
-
 
 class DataPortabilityForm(Form):
     """Form for data portability requests (GDPR Article 20)""" # Using regular WTForms (no Flask-WTF CSRF)

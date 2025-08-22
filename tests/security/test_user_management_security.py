@@ -22,7 +22,6 @@ from services.user_management_service import (
 from forms.user_management_forms import UserRegistrationForm, LoginForm
 from tests.test_helpers import create_test_user_with_platforms, cleanup_test_user
 
-
 class TestUserManagementSecurity(unittest.TestCase):
     """Test security aspects of user management"""
     
@@ -512,7 +511,6 @@ class TestUserManagementSecurity(unittest.TestCase):
                 self.assertNotIn("<script>", user.first_name or "")
                 self.assertNotIn("DROP TABLE", user.last_name or "")
                 self.assertNotIn("alert", user.first_name or "")
-
 
 if __name__ == '__main__':
     unittest.main()

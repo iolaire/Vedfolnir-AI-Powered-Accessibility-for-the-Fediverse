@@ -40,7 +40,6 @@ logging.basicConfig(
 )
 logger = logging.getLogger(__name__)
 
-
 def create_mock_user(username=None, role=UserRole.REVIEWER, with_platforms=True):
     """
     Create a mock user for testing.
@@ -93,7 +92,6 @@ def create_mock_user(username=None, role=UserRole.REVIEWER, with_platforms=True)
     except Exception as e:
         logger.error(f"Failed to create mock user: {e}")
         sys.exit(1)
-
 
 def main():
     """Main function for command line usage"""
@@ -153,7 +151,6 @@ Examples:
         role=role,
         with_platforms=not args.no_platforms
     )
-
 
 if __name__ == '__main__':
     main()

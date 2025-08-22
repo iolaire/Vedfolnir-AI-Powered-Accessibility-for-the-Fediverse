@@ -13,7 +13,6 @@ import unittest
 from unittest.mock import patch
 from config import ActivityPubConfig, Config, ConfigurationError
 
-
 class TestActivityPubConfigMultiPlatform(unittest.TestCase):
     """Test ActivityPub configuration for multi-platform support"""
     
@@ -234,7 +233,6 @@ class TestActivityPubConfigMultiPlatform(unittest.TestCase):
             
             self.assertEqual(config.api_type, 'mastodon')
 
-
 class TestConfigIntegration(unittest.TestCase):
     """Integration tests for configuration loading in different deployment scenarios"""
     
@@ -353,7 +351,6 @@ class TestConfigIntegration(unittest.TestCase):
         }):
             with self.assertRaises(ConfigurationError):
                 Config()
-
 
 if __name__ == '__main__':
     unittest.main()

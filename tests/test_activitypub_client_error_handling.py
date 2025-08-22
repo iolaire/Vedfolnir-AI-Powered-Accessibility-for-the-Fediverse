@@ -24,7 +24,6 @@ from activitypub_platforms import (
 )
 from config import ActivityPubConfig, RetryConfig, RateLimitConfig
 
-
 @dataclass
 class MockConfig:
     """Mock configuration for testing"""
@@ -45,7 +44,6 @@ class MockConfig:
             self.retry = RetryConfig()
         if self.rate_limit is None:
             self.rate_limit = RateLimitConfig()
-
 
 class TestActivityPubClientErrorHandling(unittest.TestCase):
     """Test error handling in ActivityPub client"""
@@ -204,7 +202,6 @@ class TestActivityPubClientErrorHandling(unittest.TestCase):
         with self.assertRaisesRegex(PlatformAdapterError, r"Failed to extract images from post"):
             client.extract_images_from_post({})
 
-
 class TestActivityPubClientRetryLogic(unittest.TestCase):
     """Test retry logic for different platforms"""
     
@@ -296,7 +293,6 @@ class TestActivityPubClientRetryLogic(unittest.TestCase):
         
         # Should have tried max_attempts times
         self.assertEqual(mock_adapter.update_post.call_count, 3)
-
 
 class TestActivityPubClientPlatformSpecificErrors(unittest.TestCase):
     """Test platform-specific error scenarios"""
@@ -393,7 +389,6 @@ class TestActivityPubClientPlatformSpecificErrors(unittest.TestCase):
                 with self.assertRaisesRegex(PlatformAdapterError, r"Failed to update media caption for media123"):
                     await client.update_media_caption("media123", "Test caption")
 
-
 class TestActivityPubClientConcurrentErrors(unittest.TestCase):
     """Test error handling in concurrent scenarios"""
     
@@ -443,10 +438,6 @@ class TestActivityPubClientConcurrentErrors(unittest.TestCase):
             self.fail("Expected an error but none was raised")
         except PlatformAdapterError as e:
             return e
-
-
-
-
 
 if __name__ == "__main__":
     unittest.main()

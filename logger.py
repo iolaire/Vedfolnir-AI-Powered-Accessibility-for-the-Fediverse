@@ -97,7 +97,6 @@ class StructuredFormatter(logging.Formatter):
             
             return base
 
-
 class ErrorCollector:
     """
     Collects error information during processing for summary reporting
@@ -207,10 +206,8 @@ class ErrorCollector:
         """Reset the error collector"""
         self.__init__()
 
-
 # Global error collector
 error_collector = ErrorCollector()
-
 
 def setup_logging(log_level: str = "INFO", 
                  log_file: Optional[str] = "logs/vedfolnir.log",
@@ -267,7 +264,6 @@ def setup_logging(log_level: str = "INFO",
         file_handler.setFormatter(formatter)
         root_logger.addHandler(file_handler)
 
-
 def log_with_context(logger: logging.Logger, level: int, msg: str, 
                     extra: Optional[Dict[str, Any]] = None, **kwargs) -> None:
     """
@@ -300,7 +296,6 @@ def log_with_context(logger: logging.Logger, level: int, msg: str,
     
     # Log the record
     logger.handle(record)
-
 
 def log_error(logger: logging.Logger, error_type: str, message: str, 
              component: str, details: Optional[Dict[str, Any]] = None,
@@ -336,7 +331,6 @@ def log_error(logger: logging.Logger, error_type: str, message: str,
     
     logger.error(message, extra=extra, exc_info=exception)
 
-
 def log_error_summary(logger: logging.Logger) -> None:
     """
     Log a summary of collected errors
@@ -349,7 +343,6 @@ def log_error_summary(logger: logging.Logger) -> None:
     for line in summary.split("\n"):
         logger.log(ERROR_SUMMARY, line)
 
-
 def get_error_summary() -> str:
     """
     Get a summary of collected errors
@@ -359,7 +352,6 @@ def get_error_summary() -> str:
     """
     return error_collector.get_summary()
 
-
 def get_error_report() -> Dict[str, Any]:
     """
     Get a detailed report of collected errors
@@ -368,7 +360,6 @@ def get_error_report() -> Dict[str, Any]:
         Dictionary with error information
     """
     return error_collector.get_detailed_report()
-
 
 def reset_error_collector() -> None:
     """Reset the error collector"""

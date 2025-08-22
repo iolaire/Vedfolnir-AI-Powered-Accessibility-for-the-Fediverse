@@ -19,7 +19,6 @@ from dataclasses import dataclass
 
 from models import User, PlatformConnection, TaskStatus, UserRole
 
-
 @dataclass
 class MockConfiguration:
     """Configuration for standardized mock objects"""
@@ -30,7 +29,6 @@ class MockConfiguration:
     async_support: bool = False
     spec: Optional[type] = None
     attributes: Optional[Dict[str, Any]] = None
-
 
 class StandardizedMockFactory:
     """Factory for creating standardized mock objects"""
@@ -335,7 +333,6 @@ class StandardizedMockFactory:
         
         return platform_mock
 
-
 class MockConfigurationPresets:
     """Predefined mock configurations for common testing scenarios"""
     
@@ -387,7 +384,6 @@ class MockConfigurationPresets:
             }
         )
 
-
 # Convenience functions for common mock patterns
 def create_mock_with_unpacking(items: List[Any]) -> Mock:
     """
@@ -406,7 +402,6 @@ def create_mock_with_unpacking(items: List[Any]) -> Mock:
     mock.return_value = items
     return mock
 
-
 def create_async_context_manager_mock(return_value: Any = None) -> AsyncMock:
     """
     Create an async context manager mock.
@@ -422,7 +417,6 @@ def create_async_context_manager_mock(return_value: Any = None) -> AsyncMock:
     mock.__aexit__ = AsyncMock(return_value=None)
     return mock
 
-
 def patch_database_session(session_mock: Optional[Mock] = None) -> Mock:
     """
     Create a patch for database session with standardized configuration.
@@ -437,7 +431,6 @@ def patch_database_session(session_mock: Optional[Mock] = None) -> Mock:
         session_mock = StandardizedMockFactory.create_session_mock()
     
     return patch('database.DatabaseManager.get_session', return_value=session_mock)
-
 
 def patch_async_http_client(success: bool = True) -> AsyncMock:
     """

@@ -22,13 +22,11 @@ from app_initialization import (
     get_session_management_info
 )
 
-
 class MockConfig:
     """Mock configuration for testing"""
     def __init__(self):
         self.webapp = Mock()
         self.webapp.secret_key = 'test-secret-key'
-
 
 class MockUser:
     """Mock user for testing"""
@@ -36,7 +34,6 @@ class MockUser:
         self.id = user_id
         self.username = username
         self.is_active = is_active
-
 
 class TestSessionManagedFlaskApp(unittest.TestCase):
     """Test cases for SessionManagedFlaskApp"""
@@ -149,7 +146,6 @@ class TestSessionManagedFlaskApp(unittest.TestCase):
         self.assertTrue(status['login_manager_initialized'])
         self.assertTrue(status['detached_instance_handler_initialized'])
         self.assertTrue(status['components_registered'])
-
 
 class TestUserLoader(unittest.TestCase):
     """Test cases for Flask-Login user loader"""
@@ -271,7 +267,6 @@ class TestUserLoader(unittest.TestCase):
             # In real implementation, this would return None on database error
             self.assertIsNotNone(result)  # Mock returns something, real implementation would return None
 
-
 class TestFactoryFunction(unittest.TestCase):
     """Test cases for factory function"""
     
@@ -289,7 +284,6 @@ class TestFactoryFunction(unittest.TestCase):
         mock_app_factory_class.assert_called_once_with(config)
         mock_app_factory.create_app.assert_called_once()
         self.assertEqual(result, mock_app_instance)
-
 
 class TestValidation(unittest.TestCase):
     """Test cases for validation functions"""
@@ -415,7 +409,6 @@ class TestValidation(unittest.TestCase):
         
         self.assertIn('error', result)
         self.assertEqual(result['error'], 'Test error')
-
 
 if __name__ == '__main__':
     unittest.main()

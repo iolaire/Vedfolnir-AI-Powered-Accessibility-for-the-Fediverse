@@ -21,7 +21,6 @@ from typing import Dict, List, Any
 # Add project root to path
 sys.path.insert(0, os.path.dirname(os.path.dirname(os.path.dirname(__file__))))
 
-
 class SessionManagementTestRunner:
     """Comprehensive test runner for session management system"""
     
@@ -332,7 +331,6 @@ class SessionManagementTestRunner:
                     if result.get('errors', 0) > 0:
                         print(f"   Errors: {result['errors']}")
 
-
 def main():
     """Main test runner function"""
     runner = SessionManagementTestRunner()
@@ -362,7 +360,6 @@ def main():
     except Exception as e:
         print(f"\n💥 Test runner failed with error: {str(e)}")
         sys.exit(1)
-
 
 if __name__ == '__main__':
     main()

@@ -20,7 +20,6 @@ from sqlalchemy.exc import SQLAlchemyError, InvalidRequestError
 
 logger = logging.getLogger(__name__)
 
-
 class SessionErrorTestHelper:
     """Helper for testing session error scenarios with meaningful messages"""
     
@@ -191,7 +190,6 @@ class SessionErrorTestHelper:
         if not has_actionable_info:
             logger.warning(f"Error message may not be actionable: '{error_message}' {context}")
 
-
 class ConcurrentSessionTestHelper:
     """Helper for testing concurrent session scenarios"""
     
@@ -271,7 +269,6 @@ class ConcurrentSessionTestHelper:
         """
         return self.session_states.copy()
 
-
 def create_mock_flask_app_with_session_management() -> Flask:
     """Create a mock Flask app with session management components for testing
     
@@ -306,7 +303,6 @@ def create_mock_flask_app_with_session_management() -> Flask:
         logger.warning("Flask-Login not available for session management testing")
     
     return app
-
 
 def assert_session_error_recovery(test_case: unittest.TestCase, 
                                 error_handler, 

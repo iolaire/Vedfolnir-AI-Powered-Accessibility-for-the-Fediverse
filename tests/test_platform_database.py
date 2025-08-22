@@ -18,7 +18,6 @@ from tests.fixtures.platform_fixtures import PlatformTestCase
 from database import DatabaseManager, PlatformValidationError, DatabaseOperationError
 from models import User, PlatformConnection, Post, Image, ProcessingStatus
 
-
 class TestPlatformConnectionCRUD(PlatformTestCase):
     """Test platform connection CRUD operations"""
     
@@ -181,7 +180,6 @@ class TestPlatformConnectionCRUD(PlatformTestCase):
         self.assertEqual(len(default_platforms), 1)
         self.assertEqual(default_platforms[0].id, new_default.id)
 
-
 class TestPlatformFiltering(PlatformTestCase):
     """Test platform filtering in database queries"""
     
@@ -259,7 +257,6 @@ class TestPlatformFiltering(PlatformTestCase):
             self.assertEqual(image.platform_connection_id, platform.id)
             self.assertEqual(image.status, ProcessingStatus.APPROVED)
 
-
 class TestPlatformStatistics(PlatformTestCase):
     """Test platform-specific statistics"""
     
@@ -335,7 +332,6 @@ class TestPlatformStatistics(PlatformTestCase):
             self.assertIn('total_posts', platform_stats)
             self.assertIn('total_images', platform_stats)
 
-
 class TestDataIsolation(PlatformTestCase):
     """Test data isolation between platforms"""
     
@@ -401,7 +397,6 @@ class TestDataIsolation(PlatformTestCase):
         # Should pass validation
         self.assertTrue(validation_results['validation_passed'])
         self.assertEqual(len(validation_results['isolation_issues']), 0)
-
 
 class TestPlatformOperations(PlatformTestCase):
     """Test platform-aware database operations"""
@@ -494,7 +489,6 @@ class TestPlatformOperations(PlatformTestCase):
         
         # Should return boolean
         self.assertIsInstance(is_processed, bool)
-
 
 if __name__ == '__main__':
     unittest.main()

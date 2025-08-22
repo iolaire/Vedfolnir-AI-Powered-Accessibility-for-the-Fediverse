@@ -12,7 +12,6 @@ import logging
 
 logger = logging.getLogger(__name__)
 
-
 def register_api_routes(bp):
     """Register admin API routes"""
     

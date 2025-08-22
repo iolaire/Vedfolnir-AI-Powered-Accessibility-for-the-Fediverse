@@ -15,7 +15,6 @@ sys.path.insert(0, os.path.abspath(os.path.join(os.path.dirname(__file__), '..')
 from ollama_caption_generator import OllamaCaptionGenerator
 from config import OllamaConfig, RetryConfig
 
-
 class TestOllamaIntegration(unittest.TestCase):
     """Test cases for Ollama integration"""
 
@@ -230,11 +229,9 @@ class TestOllamaIntegration(unittest.TestCase):
         self.assertIn("2 failures", summary)
         self.assertIn("80.0%", summary)  # Success rate
 
-
 def run_tests():
     """Run the tests"""
     unittest.main()
-
 
 if __name__ == "__main__":
     # Run the async tests

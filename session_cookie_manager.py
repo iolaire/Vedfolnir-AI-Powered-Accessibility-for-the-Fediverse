@@ -132,7 +132,6 @@ class SessionCookieManager:
         self.set_session_cookie(response, session_id)
         logger.debug(f"Refreshed session cookie for session {session_id[:8]}...")
 
-
 def create_session_cookie_manager(app_config: dict) -> SessionCookieManager:
     """
     Create session cookie manager from Flask app configuration

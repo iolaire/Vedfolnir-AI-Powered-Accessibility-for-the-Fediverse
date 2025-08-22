@@ -8,7 +8,6 @@ from unittest.mock import patch, MagicMock
 from flask import Flask
 from web_app import app, validate_favicon_assets
 
-
 class TestFaviconLogoIntegration(unittest.TestCase):
     """Test favicon and logo integration functionality"""
 
@@ -172,7 +171,6 @@ class TestFaviconLogoIntegration(unittest.TestCase):
                 self.assertIn('navbar-logo', response_data)
                 self.assertIn('navbar-brand-text', response_data)
                 self.assertIn('d-flex align-items-center', response_data)
-
 
 if __name__ == '__main__':
     unittest.main()

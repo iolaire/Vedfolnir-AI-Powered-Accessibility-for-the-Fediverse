@@ -12,7 +12,6 @@ from session_aware_decorators import with_db_session, require_platform_context
 from request_scoped_session_manager import RequestScopedSessionManager
 from session_aware_user import SessionAwareUser
 
-
 class TestSessionDecoratorsIntegration(unittest.TestCase):
     
     def setUp(self):
@@ -339,7 +338,6 @@ class TestSessionDecoratorsIntegration(unittest.TestCase):
             with patch('session_aware_decorators.current_user', mock_user):
                 response = self.client.get('/app_management')
                 self.assertEqual(response.status_code, 302)  # Should redirect to login
-
 
 if __name__ == '__main__':
     unittest.main()

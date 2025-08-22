@@ -27,7 +27,6 @@ from database import DatabaseManager
 from config import Config
 from models import User, UserRole
 
-
 class TestLogInjectionFixes(unittest.TestCase):
     """Test that log injection vulnerabilities are fixed"""
     
@@ -86,7 +85,6 @@ class TestLogInjectionFixes(unittest.TestCase):
         # Clean up
         security_logger.logger.removeHandler(handler)
 
-
 class TestXSSFixes(unittest.TestCase):
     """Test that XSS vulnerabilities are fixed"""
     
@@ -133,17 +131,16 @@ class TestXSSFixes(unittest.TestCase):
         self.assertIn("\\'", safe)
         self.assertNotIn("'; alert('xss'); //", safe)
 
-
 class TestSQLInjectionFixes(unittest.TestCase):
     """Test that SQL injection vulnerabilities are fixed"""
     
     def setUp(self):
         """Set up test database"""
-        self.temp_db = tempfile.NamedTemporaryFile(delete=False, suffix='.db')
+        self.temp_db = tempfile.NamedTemporaryFile(delete=False, suffix="MySQL database")
         self.temp_db.close()
         
         self.config = Config()
-        self.config.storage.database_url = f"sqlite:///{self.temp_db.name}"
+        self.config.storage.database_url = f"mysql+pymysql://{self.temp_db.name}"
         
         self.db_manager = DatabaseManager(self.config)
     
@@ -186,7 +183,6 @@ class TestSQLInjectionFixes(unittest.TestCase):
         for input_text, expected in test_cases:
             sanitized = sanitize_for_sql_like(input_text)
             self.assertEqual(sanitized, expected)
-
 
 class TestInputValidationFixes(unittest.TestCase):
     """Test that input validation prevents malicious input"""
@@ -270,7 +266,6 @@ class TestInputValidationFixes(unittest.TestCase):
         self.assertEqual(safe_float(None), 0.0)
         self.assertEqual(safe_float("invalid", default=3.14), 3.14)
 
-
 class TestResourceLeakFixes(unittest.TestCase):
     """Test that resource leaks are fixed"""
     
@@ -301,7 +296,6 @@ class TestResourceLeakFixes(unittest.TestCase):
         
         asyncio.run(test_cleanup())
 
-
 class TestCommandInjectionFixes(unittest.TestCase):
     """Test that command injection vulnerabilities are fixed"""
     
@@ -316,7 +310,6 @@ class TestCommandInjectionFixes(unittest.TestCase):
         # Should not contain the full malicious command
         self.assertLess(len(safe_error), len(malicious_traceback))
         self.assertIn("Error:", safe_error)
-
 
 class TestSecurityConfiguration(unittest.TestCase):
     """Test security configuration and settings"""
@@ -351,17 +344,16 @@ class TestSecurityConfiguration(unittest.TestCase):
         # In real code, we should never log passwords
         # This test demonstrates the need for careful logging practices
 
-
 class TestSecurityIntegration(unittest.TestCase):
     """Integration tests for security fixes"""
     
     def setUp(self):
         """Set up test environment"""
-        self.temp_db = tempfile.NamedTemporaryFile(delete=False, suffix='.db')
+        self.temp_db = tempfile.NamedTemporaryFile(delete=False, suffix="MySQL database")
         self.temp_db.close()
         
         self.config = Config()
-        self.config.storage.database_url = f"sqlite:///{self.temp_db.name}"
+        self.config.storage.database_url = f"mysql+pymysql://{self.temp_db.name}"
         
         self.db_manager = DatabaseManager(self.config)
     
@@ -397,7 +389,6 @@ class TestSecurityIntegration(unittest.TestCase):
         # Username should be sanitized
         self.assertNotIn('<script>', user.username)
         self.assertIn('&lt;script&gt;', user.username)
-
 
 if __name__ == '__main__':
     # Run security tests

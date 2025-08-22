@@ -25,7 +25,6 @@ from security.core.security_monitoring import (
 
 logger = logging.getLogger(__name__)
 
-
 class CSRFViolationType(Enum):
     """Types of CSRF violations"""
     MISSING_TOKEN = "missing_token"
@@ -36,14 +35,12 @@ class CSRFViolationType(Enum):
     REPLAY_ATTACK = "replay_attack"
     SESSION_MISMATCH = "session_mismatch"
 
-
 class CSRFComplianceLevel(Enum):
     """CSRF compliance levels"""
     EXCELLENT = "excellent"  # 95%+ compliance
     GOOD = "good"           # 85-94% compliance
     FAIR = "fair"           # 70-84% compliance
     POOR = "poor"           # <70% compliance
-
 
 @dataclass
 class CSRFViolationEvent:
@@ -59,7 +56,6 @@ class CSRFViolationEvent:
     error_details: Dict[str, Any]
     event_id: str
 
-
 @dataclass
 class CSRFComplianceMetrics:
     """CSRF compliance metrics"""
@@ -73,7 +69,6 @@ class CSRFComplianceMetrics:
     violations_by_ip: Dict[str, int]
     time_period: str
     last_updated: datetime
-
 
 class CSRFSecurityMetrics:
     """CSRF security metrics and monitoring system"""
@@ -369,10 +364,8 @@ class CSRFSecurityMetrics:
         except Exception as e:
             logger.error(f"Error generating CSRF periodic reports: {e}")
 
-
 # Global CSRF security metrics instance
 _csrf_security_metrics: Optional[CSRFSecurityMetrics] = None
-
 
 def get_csrf_security_metrics() -> CSRFSecurityMetrics:
     """Get the global CSRF security metrics instance"""
@@ -380,7 +373,6 @@ def get_csrf_security_metrics() -> CSRFSecurityMetrics:
     if _csrf_security_metrics is None:
         _csrf_security_metrics = CSRFSecurityMetrics()
     return _csrf_security_metrics
-
 
 def track_csrf_violation(violation_type: str, source_ip: str, endpoint: str,
                         user_agent: str = "", user_id: str = None,
@@ -393,7 +385,6 @@ def track_csrf_violation(violation_type: str, source_ip: str, endpoint: str,
         violation_enum, source_ip, endpoint, user_agent,
         user_id, session_id, request_method, error_details
     )
-
 
 def track_csrf_protection(endpoint: str, protected: bool = True):
     """Convenience function to track CSRF protection usage"""

@@ -148,3 +148,12 @@ tests/scripts/.last_created_user.txt
 
 # Person setup file
 scripts/setup/generate_env_secrets_ILM.py
+
+#promptz.dev kiro specs for Amazon Q Developer
+.amazonq
+specs
+
+#Amazon Q Developer prompt logs
+.q
+.q/chat_history
+

@@ -141,7 +141,6 @@ class RateLimitConfig:
         
         return config
 
-
 class TokenBucket:
     """
     Token bucket implementation for rate limiting.
@@ -243,7 +242,6 @@ class TokenBucket:
                 else:
                     # Wait time too long, don't wait
                     return False
-
 
 class RateLimiter:
     """
@@ -672,7 +670,6 @@ class RateLimiter:
         except (ValueError, KeyError) as e:
             logger.debug(f"Error parsing rate limit headers: {e}")
 
-
 # Global rate limiter instance
 _rate_limiter: Optional[RateLimiter] = None
 
@@ -694,7 +691,6 @@ def get_rate_limiter(config: Optional[RateLimitConfig] = None) -> RateLimiter:
         _rate_limiter = RateLimiter(config)
     
     return _rate_limiter
-
 
 def extract_endpoint_from_url(url: str) -> Optional[str]:
     """
@@ -745,7 +741,6 @@ def extract_endpoint_from_url(url: str) -> Optional[str]:
         return "AUTH"
     
     return None
-
 
 def rate_limited(func: Optional[Callable] = None, endpoint: Optional[str] = None, platform: Optional[str] = None):
     """

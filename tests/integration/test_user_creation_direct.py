@@ -4,10 +4,15 @@ from database import DatabaseManager
 from config import Config
 from models import User, UserRole
 
+# MySQL integration test imports
+from tests.mysql_test_base import MySQLIntegrationTestBase
+from tests.mysql_test_config import MySQLTestFixtures
+
+
 def test_user_creation_functionality():
     """Test that the user creation functionality works at the database level"""
     config = Config()
-    db_manager = DatabaseManager(config)
+    db_manager = self.get_database_manager()
     session = db_manager.get_session()
     
     try:

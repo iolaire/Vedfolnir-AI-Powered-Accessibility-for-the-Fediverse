@@ -20,7 +20,6 @@ from models import User
 
 logger = logging.getLogger(__name__)
 
-
 class SessionManagedFlaskApp:
     """
     Flask application factory with integrated session management.
@@ -199,7 +198,6 @@ class SessionManagedFlaskApp:
             'components_registered': hasattr(self.app, 'request_session_manager') if self.app else False
         }
 
-
 def create_session_managed_app(config) -> Flask:
     """
     Factory function to create a Flask app with session management.
@@ -212,7 +210,6 @@ def create_session_managed_app(config) -> Flask:
     """
     app_factory = SessionManagedFlaskApp(config)
     return app_factory.create_app()
-
 
 def validate_session_management_setup(app: Flask) -> dict:
     """
@@ -291,7 +288,6 @@ def validate_session_management_setup(app: Flask) -> dict:
     logger.info(f"Session management validation completed: {'PASSED' if validation_results['valid'] else 'FAILED'}")
     
     return validation_results
-
 
 def get_session_management_info(app: Flask) -> dict:
     """

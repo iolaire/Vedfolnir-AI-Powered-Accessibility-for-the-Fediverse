@@ -22,7 +22,6 @@ from security.core.security_monitoring import SecurityEventType, SecurityEventSe
 
 logger = logging.getLogger(__name__)
 
-
 class SuspiciousActivityType(Enum):
     """Types of suspicious session activities"""
     RAPID_PLATFORM_SWITCHING = "rapid_platform_switching"
@@ -32,7 +31,6 @@ class SuspiciousActivityType(Enum):
     GEOGRAPHIC_ANOMALY = "geographic_anomaly"
     USER_AGENT_CHANGE = "user_agent_change"
     IP_ADDRESS_CHANGE = "ip_address_change"
-
 
 @dataclass
 class SessionFingerprint:
@@ -80,7 +78,6 @@ class SessionFingerprint:
         data = json.loads(fingerprint_str)
         return cls.from_dict(data)
 
-
 @dataclass
 class SecurityAuditEvent:
     """Security audit event for session operations"""
@@ -106,7 +103,6 @@ class SecurityAuditEvent:
             'user_agent': self.user_agent,
             'details': self.details
         }
-
 
 class SessionSecurityHardening:
     """Enhanced session security with fingerprinting and suspicious activity detection"""
@@ -591,10 +587,8 @@ class SessionSecurityHardening:
         except Exception as e:
             logger.error(f"Error logging audit event: {e}")
 
-
 # Global instance for easy access
 session_security = SessionSecurityHardening()
-
 
 def initialize_session_security(session_manager):
     """Initialize session security with session manager"""
@@ -602,16 +596,13 @@ def initialize_session_security(session_manager):
     session_security.session_manager = session_manager
     return session_security
 
-
 def validate_session_security(session_id: str, user_id: int) -> Tuple[bool, List[str]]:
     """Convenience function for session security validation"""
     return session_security.validate_session_security(session_id, user_id)
 
-
 def create_session_fingerprint(request_data: Optional[Dict[str, Any]] = None) -> SessionFingerprint:
     """Convenience function for creating session fingerprint"""
     return session_security.create_session_fingerprint(request_data)
-
 
 def detect_suspicious_activity(session_id: str, user_id: int, activity_type: str, details: Dict[str, Any] = None) -> bool:
     """Convenience function for detecting suspicious activity"""

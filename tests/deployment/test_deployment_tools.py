@@ -38,7 +38,6 @@ class TestDeploymentScript(unittest.TestCase):
                               capture_output=True, text=True)
         self.assertEqual(result.returncode, 0, f"Syntax error: {result.stderr}")
 
-
 class TestConfigurationValidation(unittest.TestCase):
     """Test configuration validation tool"""
     
@@ -54,7 +53,6 @@ class TestConfigurationValidation(unittest.TestCase):
         result = subprocess.run([sys.executable, '-m', 'py_compile', self.validator_path], 
                               capture_output=True, text=True)
         self.assertEqual(result.returncode, 0, f"Syntax error: {result.stderr}")
-
 
 class TestPlatformHealth(unittest.TestCase):
     """Test platform health monitoring"""
@@ -72,7 +70,6 @@ class TestPlatformHealth(unittest.TestCase):
                               capture_output=True, text=True)
         self.assertEqual(result.returncode, 0, f"Syntax error: {result.stderr}")
 
-
 class TestBackupTool(unittest.TestCase):
     """Test platform-aware backup tool"""
     
@@ -88,7 +85,6 @@ class TestBackupTool(unittest.TestCase):
         result = subprocess.run([sys.executable, '-m', 'py_compile', self.backup_path], 
                               capture_output=True, text=True)
         self.assertEqual(result.returncode, 0, f"Syntax error: {result.stderr}")
-
 
 class TestRollbackTool(unittest.TestCase):
     """Test migration rollback tool"""
@@ -106,7 +102,6 @@ class TestRollbackTool(unittest.TestCase):
                               capture_output=True, text=True)
         self.assertEqual(result.returncode, 0, f"Syntax error: {result.stderr}")
 
-
 class TestDeploymentIntegration(unittest.TestCase):
     """Integration tests for deployment tools"""
     
@@ -123,7 +118,6 @@ class TestDeploymentIntegration(unittest.TestCase):
         for tool in tools:
             tool_path = os.path.join(os.path.dirname(__file__), '..', '..', tool)
             self.assertTrue(os.path.exists(tool_path), f"Missing tool: {tool}")
-
 
 if __name__ == '__main__':
     unittest.main(verbosity=2)

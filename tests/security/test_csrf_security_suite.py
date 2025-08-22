@@ -41,7 +41,6 @@ from config import Config
 from database import DatabaseManager
 from models import UserRole
 
-
 class TestCSRFTokenGeneration(unittest.TestCase):
     """Test CSRF token generation and entropy validation"""
     
@@ -212,7 +211,6 @@ class TestCSRFTokenGeneration(unittest.TestCase):
             self.assertEqual(info['entropy_bits'], 256)  # 64 hex chars * 4 bits
             self.assertTrue(info['signature_valid'])
 
-
 class TestCSRFTokenValidation(unittest.TestCase):
     """Test CSRF token validation logic"""
     
@@ -313,7 +311,6 @@ class TestCSRFTokenValidation(unittest.TestCase):
             self.assertIn('user_id', context_dict)
             self.assertIn('timestamp', context_dict)
 
-
 class TestCSRFFormProtection(unittest.TestCase):
     """Test CSRF protection for form submissions"""
     
@@ -394,7 +391,6 @@ class TestCSRFFormProtection(unittest.TestCase):
         
         # Should fail with CSRF error
         self.assertEqual(response.status_code, 403)
-
 
 class TestCSRFAjaxProtection(unittest.TestCase):
     """Test CSRF protection for AJAX requests"""
@@ -497,7 +493,6 @@ class TestCSRFAjaxProtection(unittest.TestCase):
         data = response.get_json()
         self.assertTrue(data['success'])
 
-
 class TestCSRFMiddleware(unittest.TestCase):
     """Test CSRF middleware functionality"""
     
@@ -566,7 +561,6 @@ class TestCSRFMiddleware(unittest.TestCase):
         # Check callback was added
         exemptions = self.middleware.get_exemptions()
         self.assertEqual(exemptions['callbacks'], 1)
-
 
 class TestCSRFErrorHandling(unittest.TestCase):
     """Test CSRF error handling and user experience"""
@@ -678,7 +672,6 @@ class TestCSRFErrorHandling(unittest.TestCase):
             
             recovered = self.error_handler.recover_preserved_data()
             self.assertEqual(recovered, test_data)
-
 
 if __name__ == '__main__':
     unittest.main(verbosity=2)

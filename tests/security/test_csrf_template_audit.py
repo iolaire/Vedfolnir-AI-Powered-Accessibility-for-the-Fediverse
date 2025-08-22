@@ -24,7 +24,6 @@ from jinja2 import Environment, FileSystemLoader, meta
 from security.audit.csrf_template_scanner import CSRFTemplateScanner
 from security.audit.security_auditor import SecurityAuditor
 
-
 @dataclass
 class TemplateSecurityIssue:
     """Represents a security issue found in a template"""
@@ -36,7 +35,6 @@ class TemplateSecurityIssue:
     code_snippet: Optional[str] = None
     recommendation: Optional[str] = None
 
-
 @dataclass
 class CSRFAuditResult:
     """Results of CSRF template audit"""
@@ -47,7 +45,6 @@ class CSRFAuditResult:
     issues: List[TemplateSecurityIssue]
     compliance_score: float
     recommendations: List[str]
-
 
 class TestCSRFTemplateScanner(unittest.TestCase):
     """Test CSRF template scanning functionality"""
@@ -281,7 +278,6 @@ class TestCSRFTemplateScanner(unittest.TestCase):
         ]
         self.assertGreater(len(exposure_issues), 0)
 
-
 class TestRealTemplateAudit(unittest.TestCase):
     """Test CSRF audit on real application templates"""
     
@@ -414,7 +410,6 @@ class TestRealTemplateAudit(unittest.TestCase):
                                 f"Modal form in {template_path.name} missing CSRF protection"
                             )
 
-
 class TestCSRFSecurityRegression(unittest.TestCase):
     """Security regression tests to prevent future CSRF vulnerabilities"""
     
@@ -533,7 +528,6 @@ class TestCSRFSecurityRegression(unittest.TestCase):
             print(f"Warning: Found AJAX requests without CSRF headers:\n" + 
                  "\n".join(f"  - {v}" for v in violations))
 
-
 class TestCSRFComplianceScoring(unittest.TestCase):
     """Test CSRF compliance scoring system"""
     
@@ -627,7 +621,6 @@ class TestCSRFComplianceScoring(unittest.TestCase):
         # Should recommend using hidden_tag
         hidden_tag_rec = any('hidden_tag' in rec.lower() for rec in recommendations)
         self.assertTrue(hidden_tag_rec)
-
 
 if __name__ == '__main__':
     unittest.main(verbosity=2)

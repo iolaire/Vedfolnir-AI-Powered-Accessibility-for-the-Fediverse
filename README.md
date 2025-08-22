@@ -43,7 +43,7 @@ An accessibility-focused tool that automatically generates and manages alt text 
 - Python 3.8 or higher
 - Ollama with LLaVA model installed
 - Redis server (for session management)
-- SQLite (included with Python)
+- MySQL server (for application data)
 - Access to a Pixelfed or Mastodon instance
 
 ### Installation
@@ -54,12 +54,29 @@ An accessibility-focused tool that automatically generates and manages alt text 
    cd vedfolnir
    ```
 
-2. **Install dependencies**:
+2. **Set up MySQL database**:
+   ```bash
+   # Create database and user (run as MySQL root user)
+   mysql -u root -p
+   ```
+   ```sql
+   CREATE DATABASE vedfolnir CHARACTER SET utf8mb4 COLLATE utf8mb4_unicode_ci;
+   CREATE USER 'vedfolnir_user'@'localhost' IDENTIFIED BY 'vedfolnir_password';
+   GRANT ALL PRIVILEGES ON vedfolnir.* TO 'vedfolnir_user'@'localhost';
+   FLUSH PRIVILEGES;
+   EXIT;
+   ```
+   
+   **Note**: Replace `vedfolnir_password` with a secure password of your choice.
+   
+   **📖 [Detailed MySQL Installation Guide →](docs/mysql-installation-guide.md)**
+
+3. **Install dependencies**:
    ```bash
    pip install -r requirements.txt
    ```
 
-3. **Configure environment and create admin user**:
+4. **Configure environment and create admin user**:
    
    ⚠️ **Security Notice**: Sensitive settings including admin credentials are configured as environment variables for security and should never be stored in configuration files.
    
@@ -87,14 +104,14 @@ An accessibility-focused tool that automatically generates and manages alt text 
    
    **📖 [Complete Security Setup Guide →](docs/security/environment-setup.md)**
 
-4. **Start the application**:
+5. **Start the application**:
    ```bash
    python web_app.py
    ```
    
    *Note: Database tables are created automatically on first startup*
 
-5. **Access the web interface**:
+6. **Access the web interface**:
    Open http://localhost:5000 in your browser
 
 ### First-Time Setup
@@ -105,6 +122,29 @@ An accessibility-focused tool that automatically generates and manages alt text 
 4. Start generating captions through the web interface
 
 **Note**: Admin credentials are created during the environment setup process (step 3) and stored securely in the database, not in configuration files.
+
+### MySQL Migration (For Existing Users)
+
+If you're upgrading from a previous version that used SQLite, comprehensive migration scripts are available:
+
+```bash
+# Check available migration scripts
+ls scripts/mysql_migration/
+
+# Run migration with backup (recommended)
+python scripts/mysql_migration/migrate_to_mysql.py --backup
+
+# Verify migration results
+python scripts/mysql_migration/verify_migration.py
+```
+
+**Migration Features:**
+- Automatic data migration from SQLite to MySQL
+- Column width optimization (VARCHAR(255) for usernames, emails, etc.)
+- Comprehensive data validation and integrity checks
+- Rollback capabilities with automatic backups
+
+For detailed migration procedures, see [Migration Guide](docs/migration_guide.md).
 
 ## 🔧 Quick Commands
 
@@ -178,7 +218,7 @@ Key configuration options in `.env`:
 
 ```bash
 # Database
-DATABASE_URL=sqlite:///storage/database/vedfolnir.db
+DATABASE_URL=mysql+pymysql://vedfolnir_user:vedfolnir_password@localhost/vedfolnir?charset=utf8mb4
 
 # Ollama Configuration
 OLLAMA_URL=http://localhost:11434
@@ -281,7 +321,7 @@ For detailed security information, including security feature toggles, see [Secu
 
 ### System Components
 - **Web Application**: Flask-based web interface
-- **Database Layer**: SQLAlchemy ORM with SQLite
+- **Database Layer**: SQLAlchemy ORM with MySQL
 - **AI Integration**: Ollama with LLaVA model
 - **Platform Clients**: ActivityPub API clients
 - **Security Layer**: Comprehensive security middleware
@@ -293,7 +333,7 @@ For detailed security information, including security feature toggles, see [Secu
 - **Backend**: Python 3.8+, Flask, SQLAlchemy
 - **Frontend**: HTML5, Bootstrap 5, JavaScript
 - **AI/ML**: Ollama, LLaVA vision-language model
-- **Database**: SQLite with migration support
+- **Database**: MySQL with migration support
 - **Security**: Flask-WTF, comprehensive middleware
 - **Real-time**: WebSocket support for live updates
 

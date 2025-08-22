@@ -17,7 +17,6 @@ from models import User, PlatformConnection, UserRole
 from unified_session_manager import UnifiedSessionManager as SessionManager, get_current_platform_context
 from web_app import app
 
-
 class TestSessionIntegration(unittest.TestCase):
     """Test session management integration with web app"""
     
@@ -28,7 +27,7 @@ class TestSessionIntegration(unittest.TestCase):
         
         # Create test config
         self.config = Config()
-        self.config.storage.database_url = f'sqlite:///{self.db_path}'
+        self.config.storage.database_url = f'mysql+pymysql://{self.db_path}'
         
         # Initialize database manager
         self.db_manager = DatabaseManager(self.config)
@@ -158,7 +157,6 @@ class TestSessionIntegration(unittest.TestCase):
         # Verify switch
         context = self.session_manager.get_session_context(session_id)
         self.assertEqual(context['platform_connection_id'], platform2_id)
-
 
 if __name__ == '__main__':
     unittest.main()

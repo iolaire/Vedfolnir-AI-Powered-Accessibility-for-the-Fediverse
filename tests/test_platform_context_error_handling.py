@@ -16,7 +16,6 @@ from sqlalchemy.exc import SQLAlchemyError
 from platform_context import PlatformContextManager, PlatformContext, PlatformContextError
 from models import User, PlatformConnection
 
-
 class TestPlatformContextErrorHandling(unittest.TestCase):
     """Test error handling for PlatformContextManager"""
     
@@ -416,7 +415,6 @@ class TestPlatformContextErrorHandling(unittest.TestCase):
             PlatformContext(user_id=0)
         
         self.assertIn("user_id is required", str(cm.exception))
-
 
 if __name__ == '__main__':
     unittest.main()

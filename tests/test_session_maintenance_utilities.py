@@ -32,12 +32,12 @@ class TestSessionMaintenanceUtilities(unittest.TestCase):
         os.environ['PLATFORM_ENCRYPTION_KEY'] = Fernet.generate_key().decode()
         
         # Create temporary database
-        self.temp_db = tempfile.NamedTemporaryFile(delete=False, suffix='.db')
+        self.temp_db = tempfile.NamedTemporaryFile(delete=False, suffix="MySQL database")
         self.temp_db.close()
         
         # Create test config
         self.config = Config()
-        self.config.DATABASE_URL = f"sqlite:///{self.temp_db.name}"
+        self.config.DATABASE_URL = f"mysql+pymysql://{self.temp_db.name}"
         
         # Initialize database
         self.db_manager = DatabaseManager(self.config)
@@ -369,12 +369,12 @@ class TestSessionMaintenanceIntegration(unittest.TestCase):
         os.environ['PLATFORM_ENCRYPTION_KEY'] = Fernet.generate_key().decode()
         
         # Create temporary database
-        self.temp_db = tempfile.NamedTemporaryFile(delete=False, suffix='.db')
+        self.temp_db = tempfile.NamedTemporaryFile(delete=False, suffix="MySQL database")
         self.temp_db.close()
         
         # Create test config
         self.config = Config()
-        self.config.DATABASE_URL = f"sqlite:///{self.temp_db.name}"
+        self.config.DATABASE_URL = f"mysql+pymysql://{self.temp_db.name}"
         
         # Initialize database
         self.db_manager = DatabaseManager(self.config)

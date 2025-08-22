@@ -21,7 +21,6 @@ from services.user_management_service import (
 )
 from tests.test_helpers import create_test_user_with_platforms, cleanup_test_user
 
-
 class TestUserManagementPerformance(unittest.TestCase):
     """Test performance aspects of user management operations"""
     
@@ -395,7 +394,6 @@ class TestUserManagementPerformance(unittest.TestCase):
             
             print(f"Audit log creation: {avg_log_time:.5f} seconds per log")
             print(f"Audit log retrieval: {retrieval_time:.4f} seconds for {num_logs} logs")
-
 
 if __name__ == '__main__':
     unittest.main()

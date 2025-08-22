@@ -25,6 +25,10 @@ from models import User, PlatformConnection, UserSession, UserRole
 from unified_session_manager import UnifiedSessionManager as SessionManager
 from tests.test_helpers import create_test_user_with_platforms, cleanup_test_user
 
+# MySQL integration test imports
+from tests.mysql_test_base import MySQLIntegrationTestBase
+from tests.mysql_test_config import MySQLTestFixtures
+
 
 class MockTab:
     """Mock tab for simulating cross-tab functionality"""
@@ -98,21 +102,20 @@ class MockTab:
             except (json.JSONDecodeError, TypeError):
                 pass
 
-
-class TestCrossTabPlatformSwitching(unittest.TestCase):
+class TestCrossTabPlatformSwitching(MySQLIntegrationTestBase):
     """Test platform switching synchronization across multiple tabs (Requirements 2.1, 2.2, 2.3, 3.4, 3.5)"""
     
     def setUp(self):
         """Set up test fixtures"""
         # Create temporary database
-        self.db_fd, self.db_path = tempfile.mkstemp()
+        self.db_fd, self.db_path = tempfile.mkdtemp(prefix="mysql_integration_test_")
         
         # Create test config
         self.config = Config()
-        self.config.storage.database_url = f'sqlite:///{self.db_path}'
+        self.config.storage.database_url = f'mysql+pymysql://{self.db_path}'
         
         # Initialize database manager and create tables
-        self.db_manager = DatabaseManager(self.config)
+        self.db_manager = self.get_database_manager()
         self.db_manager.create_tables()
         
         # Initialize session manager
@@ -247,21 +250,20 @@ class TestCrossTabPlatformSwitching(unittest.TestCase):
         # Verify storage is cleaned up
         self.assertIsNone(self.tab1.get_storage('vedfolnir_platform_switch'))
 
-
-class TestCrossTabSessionExpiration(unittest.TestCase):
+class TestCrossTabSessionExpiration(MySQLIntegrationTestBase):
     """Test session expiration notification to all tabs (Requirements 2.2, 2.3)"""
     
     def setUp(self):
         """Set up test fixtures"""
         # Create temporary database
-        self.db_fd, self.db_path = tempfile.mkstemp()
+        self.db_fd, self.db_path = tempfile.mkdtemp(prefix="mysql_integration_test_")
         
         # Create test config
         self.config = Config()
-        self.config.storage.database_url = f'sqlite:///{self.db_path}'
+        self.config.storage.database_url = f'mysql+pymysql://{self.db_path}'
         
         # Initialize database manager and create tables
-        self.db_manager = DatabaseManager(self.config)
+        self.db_manager = self.get_database_manager()
         self.db_manager.create_tables()
         
         # Initialize session manager
@@ -379,21 +381,20 @@ class TestCrossTabSessionExpiration(unittest.TestCase):
         # Verify storage is cleaned up
         self.assertIsNone(self.tab1.get_storage('vedfolnir_session_expired'))
 
-
-class TestCrossTabLogoutSynchronization(unittest.TestCase):
+class TestCrossTabLogoutSynchronization(MySQLIntegrationTestBase):
     """Test logout synchronization and cleanup across tabs (Requirements 2.2, 2.3)"""
     
     def setUp(self):
         """Set up test fixtures"""
         # Create temporary database
-        self.db_fd, self.db_path = tempfile.mkstemp()
+        self.db_fd, self.db_path = tempfile.mkdtemp(prefix="mysql_integration_test_")
         
         # Create test config
         self.config = Config()
-        self.config.storage.database_url = f'sqlite:///{self.db_path}'
+        self.config.storage.database_url = f'mysql+pymysql://{self.db_path}'
         
         # Initialize database manager and create tables
-        self.db_manager = DatabaseManager(self.config)
+        self.db_manager = self.get_database_manager()
         self.db_manager.create_tables()
         
         # Initialize session manager
@@ -553,21 +554,20 @@ class TestCrossTabLogoutSynchronization(unittest.TestCase):
         self.assertEqual(len(self.tab2.logouts), 1)
         self.assertEqual(self.tab2.logouts[0]['tabId'], self.tab1.tab_id)
 
-
-class TestCrossTabIntegrationScenarios(unittest.TestCase):
+class TestCrossTabIntegrationScenarios(MySQLIntegrationTestBase):
     """Test complex cross-tab integration scenarios (Requirements 2.1, 2.2, 2.3, 3.4, 3.5)"""
     
     def setUp(self):
         """Set up test fixtures"""
         # Create temporary database
-        self.db_fd, self.db_path = tempfile.mkstemp()
+        self.db_fd, self.db_path = tempfile.mkdtemp(prefix="mysql_integration_test_")
         
         # Create test config
         self.config = Config()
-        self.config.storage.database_url = f'sqlite:///{self.db_path}'
+        self.config.storage.database_url = f'mysql+pymysql://{self.db_path}'
         
         # Initialize database manager and create tables
-        self.db_manager = DatabaseManager(self.config)
+        self.db_manager = self.get_database_manager()
         self.db_manager.create_tables()
         
         # Initialize session manager
@@ -707,7 +707,6 @@ class TestCrossTabIntegrationScenarios(unittest.TestCase):
         # Each event should be received by 2 tabs (all except the sender)
         expected_total = 5 * 2  # 5 events * 2 receiving tabs each
         self.assertEqual(total_switches, expected_total)
-
 
 if __name__ == '__main__':
     unittest.main()

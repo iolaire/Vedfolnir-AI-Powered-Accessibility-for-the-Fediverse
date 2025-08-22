@@ -14,7 +14,6 @@ from tests.fixtures.platform_fixtures import PlatformTestCase
 from models import User, UserRole, PlatformConnection, Post, Image
 from platform_context import PlatformContextManager
 
-
 class TestPlatformLoadTesting(PlatformTestCase):
     """Test system performance under load"""
     
@@ -191,7 +190,6 @@ class TestPlatformLoadTesting(PlatformTestCase):
         except ImportError:
             self.skipTest("psutil not available for memory testing")
 
-
 class TestScalabilityTesting(PlatformTestCase):
     """Test system scalability with increasing load"""
     
@@ -289,7 +287,6 @@ class TestScalabilityTesting(PlatformTestCase):
             for result_count in results:
                 self.assertGreaterEqual(result_count, 0)
 
-
 class TestStressTestingPlatforms(PlatformTestCase):
     """Stress testing for platform operations"""
     
@@ -348,7 +345,6 @@ class TestStressTestingPlatforms(PlatformTestCase):
         
         # Should handle stress queries
         self.assertLess(stress_time, 15.0)
-
 
 if __name__ == '__main__':
     unittest.main()

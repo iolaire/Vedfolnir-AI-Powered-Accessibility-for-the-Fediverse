@@ -27,7 +27,6 @@ from activitypub_platforms import (
 )
 from config import ActivityPubConfig, RetryConfig, RateLimitConfig
 
-
 @dataclass
 class MockConfig:
     """Mock configuration for testing"""
@@ -48,7 +47,6 @@ class MockConfig:
             self.retry = RetryConfig()
         if self.rate_limit is None:
             self.rate_limit = RateLimitConfig()
-
 
 class MockPlatformAdapter(ActivityPubPlatform):
     """Mock platform adapter for testing"""
@@ -92,7 +90,6 @@ class MockPlatformAdapter(ActivityPubPlatform):
     @classmethod
     def detect_platform(cls, instance_url: str) -> bool:
         return True
-
 
 class TestActivityPubClientInitialization:
     """Test ActivityPub client initialization with different platforms"""
@@ -138,7 +135,6 @@ class TestActivityPubClientInitialization:
             
             with self.assertRaisesRegex(PlatformAdapterError, r"Failed to initialize platform adapter"):
                 ActivityPubClient(config)
-
 
 class TestActivityPubClientMethods:
     """Test ActivityPub client methods with platform adapters"""
@@ -307,7 +303,6 @@ class TestActivityPubClientMethods:
         
         self.assertTrue(result)  # Should return True when no authentication required
 
-
 class TestActivityPubClientPlatformSpecific:
     """Test platform-specific functionality"""
     
@@ -340,7 +335,6 @@ class TestActivityPubClientPlatformSpecific:
                 "api_type": "mastodon"
             }
             self.assertEqual(info, expected_info)
-
 
 class TestActivityPubClientCleanup:
     """Test client cleanup and resource management"""
@@ -393,7 +387,6 @@ class TestActivityPubClientCleanup:
             
             mock_adapter.cleanup_mock.assert_called_once()
 
-
 class TestActivityPubClientRetryAndStats:
     """Test retry mechanisms and statistics"""
     
@@ -435,7 +428,6 @@ class TestActivityPubClientRetryAndStats:
                 self.assertEqual(stats["endpoints"], {"/api/v1/statuses": 10, "/api/v1/media": 5})
                 self.assertEqual(stats["status_codes"], {"429": 2, "500": 1})
                 self.assertEqual(stats["common_errors"], {"TimeoutError": 2})
-
 
 class TestActivityPubClientRegressionTests:
     """Regression tests to ensure existing functionality is maintained"""
@@ -510,7 +502,6 @@ class TestActivityPubClientRegressionTests:
                 
                 images = client.extract_images_from_post({"attachment": []})
                 self.assertEqual(images, [])
-
 
 if __name__ == "__main__":
     unittest.main()

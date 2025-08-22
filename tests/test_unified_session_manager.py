@@ -27,19 +27,18 @@ from unified_session_manager import (
 )
 from tests.test_helpers import create_test_user_with_platforms, cleanup_test_user
 
-
 class TestUnifiedSessionManager(unittest.TestCase):
     """Test cases for UnifiedSessionManager"""
     
     def setUp(self):
         """Set up test fixtures"""
         # Create temporary database
-        self.temp_db = tempfile.NamedTemporaryFile(delete=False, suffix='.db')
+        self.temp_db = tempfile.NamedTemporaryFile(delete=False, suffix="MySQL database")
         self.temp_db.close()
         
         # Set up test configuration
         self.config = Config()
-        self.config.storage.database_url = f'sqlite:///{self.temp_db.name}'
+        self.config.storage.database_url = f'mysql+pymysql://{self.temp_db.name}'
         
         # Initialize database manager
         self.db_manager = DatabaseManager(self.config)
@@ -488,7 +487,6 @@ class TestUnifiedSessionManager(unittest.TestCase):
         # Test validation with empty string
         is_valid = self.session_manager.validate_session('')
         self.assertFalse(is_valid)
-
 
 if __name__ == '__main__':
     unittest.main()

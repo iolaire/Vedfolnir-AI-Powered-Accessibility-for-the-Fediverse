@@ -1183,7 +1183,6 @@ def get_session_monitor(db_manager: DatabaseManager, config: Optional[SessionCon
                 'session_type': 'database_only'
             }
 
-
 def create_database_session_monitor(db_manager: DatabaseManager, config: Optional[SessionConfig] = None) -> SessionMonitor:
     """
     Create session monitor for database sessions

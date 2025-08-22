@@ -13,7 +13,6 @@ from pathlib import Path
 from unittest.mock import patch, mock_open
 from config import Config, ConfigurationError, AuthConfig, WebAppConfig
 
-
 class TestEnvConfigValidation(unittest.TestCase):
     """Test configuration loading with .env file approach"""
     
@@ -176,7 +175,6 @@ class TestEnvConfigValidation(unittest.TestCase):
         self.assertIsNotNone(config.auth)
         self.assertIsNotNone(config.storage)
         self.assertIsNotNone(config.ollama)
-
 
 if __name__ == '__main__':
     unittest.main()

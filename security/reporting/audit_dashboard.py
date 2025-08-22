@@ -21,7 +21,6 @@ logger = logging.getLogger(__name__)
 
 audit_dashboard_bp = Blueprint('audit_dashboard', __name__, url_prefix='/admin/security/audit')
 
-
 @audit_dashboard_bp.route('/dashboard')
 @login_required
 @admin_required
@@ -45,7 +44,6 @@ def audit_dashboard():
         logger.error(f"Error loading audit dashboard: {e}")
         flash('Error loading security audit dashboard', 'error')
         return redirect(url_for('index'))
-
 
 @audit_dashboard_bp.route('/api/generate-report')
 @login_required
@@ -77,7 +75,6 @@ def generate_audit_report():
             'message': str(e)
         }), 500
 
-
 @audit_dashboard_bp.route('/api/vulnerabilities')
 @login_required
 @admin_required
@@ -100,7 +97,6 @@ def get_vulnerabilities():
             'error': 'Failed to fetch vulnerabilities',
             'message': str(e)
         }), 500
-
 
 @audit_dashboard_bp.route('/api/compliance')
 @login_required
@@ -125,7 +121,6 @@ def get_compliance_data():
             'message': str(e)
         }), 500
 
-
 @audit_dashboard_bp.route('/api/remediation')
 @login_required
 @admin_required
@@ -148,7 +143,6 @@ def get_remediation_data():
             'error': 'Failed to fetch remediation data',
             'message': str(e)
         }), 500
-
 
 @audit_dashboard_bp.route('/api/vulnerability/<vulnerability_id>/update', methods=['POST'])
 @login_required
@@ -185,7 +179,6 @@ def update_vulnerability(vulnerability_id):
             'message': str(e)
         }), 500
 
-
 @audit_dashboard_bp.route('/api/vulnerability/track', methods=['POST'])
 @login_required
 @admin_required
@@ -215,7 +208,6 @@ def track_new_vulnerability():
             'error': 'Failed to track vulnerability',
             'message': str(e)
         }), 500
-
 
 def register_audit_dashboard(app):
     """Register audit dashboard with Flask app"""

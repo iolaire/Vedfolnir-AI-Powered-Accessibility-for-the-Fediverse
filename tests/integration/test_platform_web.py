@@ -9,14 +9,13 @@ Tests end-to-end web interface functionality for platform management.
 
 import unittest
 from unittest.mock import patch, MagicMock
-from tests.fixtures.platform_fixtures import PlatformTestCase
+from tests.mysql_test_base import MySQLIntegrationTestBase
 
-
-class TestWebInterfacePlatformOperations(PlatformTestCase):
+class TestWebInterfacePlatformOperations(MySQLIntegrationTestBase):
     """Test web interface platform operations end-to-end"""
     
     def setUp(self):
-        """Set up test with web app context"""
+        """Set up integration test with MySQL"""
         super().setUp()
         
         # Mock Flask app for testing
@@ -143,6 +142,11 @@ class TestWebInterfacePlatformOperations(PlatformTestCase):
         
         # Create additional platform for deletion
         from models import PlatformConnection
+
+# MySQL integration test imports
+from tests.mysql_test_base import MySQLIntegrationTestBase
+from tests.mysql_test_config import MySQLTestFixtures
+
         platform_to_delete = PlatformConnection(
             user_id=user.id,
             name='Platform to Delete',
@@ -246,8 +250,7 @@ class TestWebInterfacePlatformOperations(PlatformTestCase):
         self.assertFalse(result['success'])
         self.assertIn('Missing credentials', result['message'])
 
-
-class TestWebInterfaceResponsiveness(PlatformTestCase):
+class TestWebInterfaceResponsiveness(MySQLIntegrationTestBase):
     """Test web interface responsiveness and user experience"""
     
     def test_responsive_design_platform_info(self):
@@ -320,8 +323,7 @@ class TestWebInterfaceResponsiveness(PlatformTestCase):
             else:
                 self.assertEqual(status_data['status'], 'inactive')
 
-
-class TestWebInterfaceErrorHandling(PlatformTestCase):
+class TestWebInterfaceErrorHandling(MySQLIntegrationTestBase):
     """Test web interface error handling"""
     
     def test_form_error_display(self):
@@ -390,7 +392,6 @@ class TestWebInterfaceErrorHandling(PlatformTestCase):
             # Messages should be helpful
             self.assertGreater(len(scenario['message']), 0)
             self.assertGreater(len(scenario['user_action']), 0)
-
 
 if __name__ == '__main__':
     unittest.main()

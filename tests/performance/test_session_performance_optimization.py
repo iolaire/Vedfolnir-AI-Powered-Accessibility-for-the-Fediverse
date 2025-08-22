@@ -18,7 +18,6 @@ from session_performance_optimizer import SessionPerformanceOptimizer, SessionCa
 from models import User, UserSession, PlatformConnection, UserRole
 from tests.test_helpers import create_test_user_with_platforms, cleanup_test_user
 
-
 class TestSessionCache(unittest.TestCase):
     """Test session caching functionality"""
     
@@ -78,7 +77,6 @@ class TestSessionCache(unittest.TestCase):
         
         self.cache.clear()
         self.assertEqual(self.cache.size(), 0)
-
 
 class TestSessionPerformanceOptimizer(unittest.TestCase):
     """Test session performance optimizer"""
@@ -290,7 +288,6 @@ class TestSessionPerformanceOptimizer(unittest.TestCase):
         cached_after_cleanup = self.optimizer.request_cache.get(session_id)
         self.assertIsNone(cached_after_cleanup)
 
-
 class TestGlobalOptimizer(unittest.TestCase):
     """Test global optimizer instance"""
     
@@ -311,7 +308,6 @@ class TestGlobalOptimizer(unittest.TestCase):
         optimizer = get_session_optimizer(db_manager)
         self.assertIsInstance(optimizer, SessionPerformanceOptimizer)
         self.assertEqual(optimizer.db_manager, db_manager)
-
 
 class TestPerformanceImprovements(unittest.TestCase):
     """Test actual performance improvements"""
@@ -396,7 +392,6 @@ class TestPerformanceImprovements(unittest.TestCase):
         self.assertEqual(cleaned_count, 20)
         # Cleanup should complete in reasonable time
         self.assertLess(cleanup_time, 2.0)  # Should complete within 2 seconds
-
 
 if __name__ == '__main__':
     unittest.main()

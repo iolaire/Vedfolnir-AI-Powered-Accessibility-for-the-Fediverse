@@ -33,7 +33,6 @@ from session_error_handlers import register_session_error_handlers
 from detached_instance_handler import create_global_detached_instance_handler
 from session_error_logger import initialize_session_error_logging
 
-
 class WebRoutesDetachedInstanceFixTest(unittest.TestCase):
     """Test web routes with DetachedInstanceError fix"""
     
@@ -357,7 +356,6 @@ class WebRoutesDetachedInstanceFixTest(unittest.TestCase):
                 else:
                     self.fail(f"Unexpected status code: {response.status_code}")
 
-
 class WebRoutesAdvancedTest(unittest.TestCase):
     """Advanced web routes tests"""
     
@@ -582,7 +580,6 @@ class WebRoutesAdvancedTest(unittest.TestCase):
         # Verify results
         self.assertEqual(len(errors), 0, f"Concurrent errors: {errors}")
         self.assertEqual(len(results), 3, "Should have 3 concurrent results")
-
 
 if __name__ == '__main__':
     unittest.main(verbosity=2)

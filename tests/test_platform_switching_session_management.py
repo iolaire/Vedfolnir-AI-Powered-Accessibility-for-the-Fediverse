@@ -8,7 +8,6 @@ import unittest
 from unittest.mock import Mock, patch
 import inspect
 
-
 class TestPlatformSwitchingSessionManagement(unittest.TestCase):
     """Test platform switching API with proper session management"""
     
@@ -137,7 +136,6 @@ class TestPlatformSwitchingSessionManagement(unittest.TestCase):
             
         except ImportError as e:
             self.fail(f"Required session management components not available: {e}")
-
 
 if __name__ == '__main__':
     unittest.main()

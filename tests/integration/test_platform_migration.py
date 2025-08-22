@@ -10,27 +10,31 @@ Tests migration functionality with various data scenarios.
 import unittest
 import tempfile
 import os
-from tests.fixtures.platform_fixtures import PlatformTestCase
+from tests.mysql_test_base import MySQLIntegrationTestBase
 from models import User, PlatformConnection, Post, Image
 
-
-class TestPlatformMigrationScenarios(PlatformTestCase):
+class TestPlatformMigrationScenarios(MySQLIntegrationTestBase):
     """Test migration with various data scenarios"""
     
     def test_migration_with_empty_database(self):
         """Test migration works with empty database"""
         # Create fresh database
-        db_fd, db_path = tempfile.mkstemp()
+        db_fd, db_path = tempfile.mkdtemp(prefix="mysql_integration_test_")
         
         try:
             # Simulate migration on empty database
             from database import DatabaseManager
             from config import Config
+
+# MySQL integration test imports
+from tests.mysql_test_base import MySQLIntegrationTestBase
+from tests.mysql_test_config import MySQLTestFixtures
+
             
             config = Config()
-            config.storage.database_url = f'sqlite:///{db_path}'
+            config.storage.database_url = f'mysql+pymysql://{db_path}'
             
-            db_manager = DatabaseManager(config)
+            db_manager = self.get_database_manager()
             
             # Should create tables without error
             session = db_manager.get_session()
@@ -150,8 +154,7 @@ class TestPlatformMigrationScenarios(PlatformTestCase):
         for post in created_posts:
             self.assertEqual(post.platform_connection_id, platform.id)
 
-
-class TestMigrationRollback(PlatformTestCase):
+class TestMigrationRollback(MySQLIntegrationTestBase):
     """Test migration rollback functionality"""
     
     def test_migration_rollback_preserves_data(self):
@@ -199,8 +202,7 @@ class TestMigrationRollback(PlatformTestCase):
         self.assertEqual(initial_users, final_users)
         self.assertEqual(initial_platforms, final_platforms)
 
-
-class TestMigrationPerformance(PlatformTestCase):
+class TestMigrationPerformance(MySQLIntegrationTestBase):
     """Test migration performance characteristics"""
     
     def test_migration_performance_indexes(self):
@@ -246,8 +248,7 @@ class TestMigrationPerformance(PlatformTestCase):
                 self.assertEqual(post.platform_connection_id, platform.id)
                 self.assertIsNotNone(post.platform_connection)
 
-
-class TestMigrationValidation(PlatformTestCase):
+class TestMigrationValidation(MySQLIntegrationTestBase):
     """Test migration validation and error handling"""
     
     def test_migration_validates_platform_consistency(self):
@@ -306,7 +307,6 @@ class TestMigrationValidation(PlatformTestCase):
             if platform._client_secret:
                 decrypted_secret = platform.client_secret
                 self.assertIsNotNone(decrypted_secret)
-
 
 if __name__ == '__main__':
     unittest.main()

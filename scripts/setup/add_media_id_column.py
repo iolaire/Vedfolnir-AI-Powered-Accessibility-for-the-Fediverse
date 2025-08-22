@@ -1,39 +1,61 @@
-#!/usr/bin/env python3
 # Copyright (C) 2025 iolaire mcfadden.
 # This program is free software: you can redistribute it and/or modify it under the terms of the GNU Affero General Public License as published by the Free Software Foundation, either version 3 of the License, or (at your option) any later version.
 # THE SOFTWARE IS PROVIDED "AS IS", WITHOUT WARRANTY OF ANY KIND, EXPRESS OR IMPLIED, INCLUDING BUT NOT LIMITED TO THE WARRANTIES OF MERCHANTABILITY, FITNESS FOR A PARTICULAR PURPOSE AND NONINFRINGEMENT. IN NO EVENT SHALL THE AUTHORS OR COPYRIGHT HOLDERS BE LIABLE FOR ANY CLAIM, DAMAGES OR OTHER LIABILITY, WHETHER IN AN ACTION OF CONTRACT, TORT OR OTHERWISE, ARISING FROM, OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE SOFTWARE.
 
-import sqlite3
 import os
+import sys
+sys.path.append(os.path.dirname(os.path.dirname(os.path.dirname(os.path.abspath(__file__)))))
+
+from sqlalchemy import create_engine, text
+from sqlalchemy.exc import SQLAlchemyError
 from config import Config
 
-def add_id_column():
-    """Add id column to images table"""
+def add_media_id_column():
+    """Add media_id column to images table in MySQL database"""
+    
     config = Config()
-    db_path = os.path.join(os.getcwd(), "storage/database/vedfolnir.db")
+    database_url = config.storage.database_url
     
-    print(f"Adding id column to images table in {db_path}")
+    if not database_url.startswith("mysql+pymysql://"):
+        raise ValueError("This script requires a MySQL database URL")
     
-    conn = sqlite3.connect(db_path)
-    cursor = conn.cursor()
+    print(f"Adding media_id column to images table in MySQL database")
     
-    try:
-        # Check if column exists
-        cursor.execute("PRAGMA table_info(images)")
-        columns = [col[1] for col in cursor.fetchall()]
-        
-        if 'id' not in columns:
-            print("Adding id column...")
-            cursor.execute("ALTER TABLE images ADD COLUMN id TEXT")
-            conn.commit()
-            print("Column added successfully")
-        else:
-            print("id column already exists")
+    engine = create_engine(database_url)
+    
+    with engine.connect() as connection:
+        try:
+            # Check if media_id column already exists
+            result = connection.execute(text("""
+                SELECT COUNT(*) FROM information_schema.COLUMNS 
+                WHERE TABLE_SCHEMA = DATABASE() 
+                AND TABLE_NAME = 'images' 
+                AND COLUMN_NAME = 'media_id'
+            """))
             
-    except Exception as e:
-        print(f"Error: {e}")
-    finally:
-        conn.close()
+            column_exists = result.fetchone()[0] > 0
+            
+            if not column_exists:
+                # Add the media_id column
+                connection.execute(text("""
+                    ALTER TABLE images 
+                    ADD COLUMN media_id VARCHAR(255)
+                """))
+                
+                # Create index for better performance
+                connection.execute(text("""
+                    CREATE INDEX idx_images_media_id ON images(media_id)
+                """))
+                
+                connection.commit()
+                print("Successfully added media_id column and index to images table")
+            else:
+                print("media_id column already exists in images table")
+                
+        except SQLAlchemyError as e:
+            print(f"Error adding media_id column: {e}")
+            connection.rollback()
+            raise
 
 if __name__ == "__main__":
-    add_id_column()
+    add_media_id_column()

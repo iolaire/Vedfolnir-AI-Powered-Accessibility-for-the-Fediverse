@@ -21,7 +21,6 @@ from activitypub_platforms import MastodonPlatform, PlatformAdapterFactory
 from config import ActivityPubConfig
 from main import Vedfolnir
 
-
 @dataclass
 class MockMastodonConfig:
     """Mock Mastodon configuration for testing"""
@@ -38,7 +37,6 @@ class MockMastodonConfig:
     max_users_per_run: int = 10
     max_posts_per_run: int = 50
     user_processing_delay: int = 5
-
 
 class TestMastodonAPIEndpointMocking(unittest.TestCase):
     """Test mocking of Mastodon API endpoints"""
@@ -193,7 +191,6 @@ class TestMastodonAPIEndpointMocking(unittest.TestCase):
         self.assertIn("/api/v1/media/media123", call_args[0][0])
         self.assertEqual(call_args[1]["json"]["description"], "Updated alt text description")
 
-
 class TestMastodonWorkflowIntegration(unittest.TestCase):
     """Test complete workflow with Mastodon configuration"""
     
@@ -332,7 +329,6 @@ class TestMastodonWorkflowIntegration(unittest.TestCase):
                         mock_image_processor.download_and_store_image.assert_called_once()
                         mock_caption_generator.generate_caption.assert_called_once()
                         mock_db_manager.save_image.assert_called_once()
-
 
 class TestMastodonErrorHandling(unittest.TestCase):
     """Test error handling for Mastodon-specific scenarios"""
@@ -570,7 +566,6 @@ class TestMastodonErrorHandling(unittest.TestCase):
         # Should return posts from successful page, handle error gracefully
         self.assertEqual(len(posts), 1)
 
-
 def run_async_test(coro):
     """Helper function to run async tests"""
     loop = asyncio.new_event_loop()
@@ -579,7 +574,6 @@ def run_async_test(coro):
         return loop.run_until_complete(coro)
     finally:
         loop.close()
-
 
 # Convert async test methods to sync for unittest
 class TestMastodonAPIEndpointMockingSync(TestMastodonAPIEndpointMocking):
@@ -597,7 +591,6 @@ class TestMastodonAPIEndpointMockingSync(TestMastodonAPIEndpointMocking):
     def test_mock_mastodon_media_update_endpoint_sync(self):
         run_async_test(self.test_mock_mastodon_media_update_endpoint())
 
-
 class TestMastodonWorkflowIntegrationSync(TestMastodonWorkflowIntegration):
     """Synchronous wrapper for async Mastodon workflow tests"""
     
@@ -606,7 +599,6 @@ class TestMastodonWorkflowIntegrationSync(TestMastodonWorkflowIntegration):
     
     def test_mastodon_end_to_end_workflow_mock_sync(self):
         run_async_test(self.test_mastodon_end_to_end_workflow_mock())
-
 
 class TestMastodonErrorHandlingSync(TestMastodonErrorHandling):
     """Synchronous wrapper for async Mastodon error handling tests"""
@@ -640,7 +632,6 @@ class TestMastodonErrorHandlingSync(TestMastodonErrorHandling):
     
     def test_mastodon_pagination_error_handling_sync(self):
         run_async_test(self.test_mastodon_pagination_error_handling())
-
 
 if __name__ == "__main__":
     unittest.main()

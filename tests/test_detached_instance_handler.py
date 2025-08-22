@@ -14,7 +14,6 @@ from sqlalchemy.orm.exc import DetachedInstanceError
 from sqlalchemy.exc import InvalidRequestError, SQLAlchemyError
 from models import User, PlatformConnection
 
-
 class MockSessionManager:
     """Mock session manager for testing"""
     
@@ -24,7 +23,6 @@ class MockSessionManager:
     def get_request_session(self):
         return self.mock_session
 
-
 class MockSQLAlchemyObject:
     """Mock SQLAlchemy object for testing"""
     
@@ -32,7 +30,6 @@ class MockSQLAlchemyObject:
         self.id = id
         self.name = name
         self.test_relationship = []
-
 
 class TestDetachedInstanceHandler(unittest.TestCase):
     """Test DetachedInstanceHandler functionality"""
@@ -270,7 +267,6 @@ class TestDetachedInstanceHandler(unittest.TestCase):
         self.assertEqual(result, recovered_obj)
         custom_session.merge.assert_called_once_with(self.mock_obj)
 
-
 class TestGlobalErrorHandlers(unittest.TestCase):
     """Test global error handler creation and functionality"""
     
@@ -322,7 +318,6 @@ class TestGlobalErrorHandlers(unittest.TestCase):
                     get_detached_instance_handler()
                 
                 self.assertIn("DetachedInstanceHandler not configured", str(context.exception))
-
 
 class TestIntegrationWithMockUsers(unittest.TestCase):
     """Test DetachedInstanceHandler integration with mock users"""
@@ -412,7 +407,6 @@ class TestIntegrationWithMockUsers(unittest.TestCase):
         
         self.assertEqual(result, recovered_user)
         self.session_manager.mock_session.merge.assert_called_once_with(self.mock_user)
-
 
 if __name__ == '__main__':
     unittest.main()

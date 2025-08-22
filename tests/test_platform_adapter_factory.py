@@ -23,7 +23,6 @@ from activitypub_platforms import (
     PleromaPlatform
 )
 
-
 @dataclass
 class MockConfig:
     """Mock configuration for testing"""
@@ -33,7 +32,6 @@ class MockConfig:
     platform_type: Optional[str] = None
     client_key: Optional[str] = None
     client_secret: Optional[str] = None
-
 
 class TestPlatformAdapterFactory(unittest.TestCase):
     """Test PlatformAdapterFactory functionality"""
@@ -170,7 +168,6 @@ class TestPlatformAdapterFactory(unittest.TestCase):
         
         self.assertTrue(isinstance(adapter, MastodonPlatform))
 
-
 class TestPlatformAdapterRegistration(unittest.TestCase):
     """Test platform adapter registration functionality"""
     
@@ -214,7 +211,6 @@ class TestPlatformAdapterRegistration(unittest.TestCase):
         finally:
             # Restore original adapters
             PlatformAdapterFactory._adapters = original_adapters
-
 
 class TestPlatformDetection(unittest.TestCase):
     """Test platform detection methods"""
@@ -335,7 +331,6 @@ class TestPlatformDetection(unittest.TestCase):
             self.assertFalse(PixelfedPlatform.detect_platform(url))
             self.assertFalse(MastodonPlatform.detect_platform(url))
             self.assertFalse(PleromaPlatform.detect_platform(url))
-
 
 if __name__ == "__main__":
     unittest.main()

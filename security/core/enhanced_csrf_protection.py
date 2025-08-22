@@ -25,7 +25,6 @@ from security.monitoring.security_event_logger import get_security_event_logger,
 
 logger = logging.getLogger(__name__)
 
-
 class EnhancedCSRFProtection:
     """Enhanced CSRF protection with additional security measures"""
     
@@ -265,7 +264,6 @@ class EnhancedCSRFProtection:
             'message': 'Your session has expired or the request is invalid. Please refresh the page and try again.'
         }, 403
 
-
 def enhanced_csrf_protect(
     operation: Optional[str] = None,
     strict_validation: bool = True,
@@ -330,11 +328,9 @@ def enhanced_csrf_protect(
         return decorated_function
     return decorator
 
-
 def csrf_protect_user_management(operation: str):
     """CSRF protection specifically for user management operations"""
     return enhanced_csrf_protect(operation=operation, strict_validation=True, require_user=True)
-
 
 def csrf_protect_admin_operation(operation: str):
     """CSRF protection for admin operations"""
@@ -349,11 +345,9 @@ def csrf_protect_admin_operation(operation: str):
         return decorated_function
     return decorator
 
-
 def csrf_protect_sensitive_operation(operation: str):
     """CSRF protection for sensitive operations with maximum security"""
     return enhanced_csrf_protect(operation=operation, strict_validation=True, require_user=True)
-
 
 # Template helper function
 def generate_csrf_token_for_template(operation: Optional[str] = None) -> str:

@@ -86,7 +86,7 @@ class SessionDatabaseMaintenance:
             
             result = db_session.execute(stats_query).fetchone()
             
-            # Get table size information (SQLite specific)
+            # Get table size information (MySQL specific)
             size_query = text(f"SELECT COUNT(*) * 1024 as estimated_size FROM {table_name}")
             size_result = db_session.execute(size_query).fetchone()
             
@@ -107,12 +107,12 @@ class SessionDatabaseMaintenance:
         try:
             from sqlalchemy import text
             
-            # SQLite specific query for indexes
+            # MySQL
             index_query = text(f"""
                 SELECT name, sql, unique_flag
-                FROM sqlite_master 
+                FROM MySQL_master 
                 WHERE type='index' AND tbl_name='{table_name}'
-                AND name NOT LIKE 'sqlite_%'
+                AND name NOT LIKE 'MySQL_%'
             """)
             
             results = db_session.execute(index_query).fetchall()
@@ -307,7 +307,7 @@ class SessionDatabaseMaintenance:
                     'recommendations': []
                 }
                 
-                # SQLite integrity check
+                # MySQL
                 integrity_result = db_session.execute(text("PRAGMA integrity_check")).fetchone()
                 if integrity_result and integrity_result[0] == 'ok':
                     results['integrity_check'] = 'passed'

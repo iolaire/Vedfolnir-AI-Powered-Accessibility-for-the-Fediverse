@@ -13,7 +13,6 @@ from database import DatabaseManager
 
 logger = logging.getLogger(__name__)
 
-
 class RequestScopedSessionManager:
     """Manages database sessions scoped to Flask requests to prevent DetachedInstanceError""" 
     

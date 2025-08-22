@@ -1,0 +1,383 @@
+=== SQLite Reference Removal Report ===
+Files processed: 0
+Files modified: 0
+Total changes: 249
+
+Modified files:
+  /Volumes/Gold/DevContainerTesting/vedfolnir/session_performance_optimizer.py
+    - SELECT name FROM sqlite_master
+    - # SQLite query to get indexes
+    - sqlite
+  /Volumes/Gold/DevContainerTesting/vedfolnir/session_cookie_manager.py
+  /Volumes/Gold/DevContainerTesting/vedfolnir/session_config.py
+  /Volumes/Gold/DevContainerTesting/vedfolnir/detached_instance_handler.py
+  /Volumes/Gold/DevContainerTesting/vedfolnir/simple_session_manager.py
+  /Volumes/Gold/DevContainerTesting/vedfolnir/web_app.py
+  /Volumes/Gold/DevContainerTesting/vedfolnir/config.py
+    - sqlite
+    - SQLite
+  /Volumes/Gold/DevContainerTesting/vedfolnir/session_aware_user.py
+  /Volumes/Gold/DevContainerTesting/vedfolnir/models.py
+  /Volumes/Gold/DevContainerTesting/vedfolnir/app_initialization.py
+  /Volumes/Gold/DevContainerTesting/vedfolnir/session_error_handlers.py
+  /Volumes/Gold/DevContainerTesting/vedfolnir/unified_session_manager.py
+  /Volumes/Gold/DevContainerTesting/vedfolnir/database_context_middleware.py
+  /Volumes/Gold/DevContainerTesting/vedfolnir/session_monitoring_cli.py
+  /Volumes/Gold/DevContainerTesting/vedfolnir/database.py
+  /Volumes/Gold/DevContainerTesting/vedfolnir/rate_limiter.py
+  /Volumes/Gold/DevContainerTesting/vedfolnir/request_scoped_session_manager.py
+  /Volumes/Gold/DevContainerTesting/vedfolnir/caption_fallback.py
+  /Volumes/Gold/DevContainerTesting/vedfolnir/logger.py
+  /Volumes/Gold/DevContainerTesting/vedfolnir/run_session_management_migration.py
+    - import sqlite3
+    - sqlite3.connect(self.db_path)
+    - sqlite3.connect(self.db_path)
+    ... and 6 more
+  /Volumes/Gold/DevContainerTesting/vedfolnir/session_error_handling.py
+  /Volumes/Gold/DevContainerTesting/vedfolnir/session_performance_monitor.py
+  /Volumes/Gold/DevContainerTesting/vedfolnir/ollama_caption_generator.py
+  /Volumes/Gold/DevContainerTesting/vedfolnir/session_state_manager.py
+  /Volumes/Gold/DevContainerTesting/vedfolnir/session_monitoring.py
+  /Volumes/Gold/DevContainerTesting/vedfolnir/session_aware_decorators.py
+  /Volumes/Gold/DevContainerTesting/vedfolnir/unified_session_manager_backup_20250820_124503.py
+  /Volumes/Gold/DevContainerTesting/vedfolnir/activitypub_platforms.py
+  /Volumes/Gold/DevContainerTesting/vedfolnir/sse_progress_handler.py
+  /Volumes/Gold/DevContainerTesting/vedfolnir/health_check.py
+    - # SQLite database health check
+    - sqlite
+    - sqlite
+    ... and 3 more
+  /Volumes/Gold/DevContainerTesting/vedfolnir/validate_config.py
+    - sqlite
+    - sqlite
+    - SQLite
+  /Volumes/Gold/DevContainerTesting/vedfolnir/session_monitoring_routes.py
+  /Volumes/Gold/DevContainerTesting/vedfolnir/main.py
+  /Volumes/Gold/DevContainerTesting/vedfolnir/web_app_backup_20250820_124452.py
+  /Volumes/Gold/DevContainerTesting/vedfolnir/session_security.py
+  /Volumes/Gold/DevContainerTesting/vedfolnir/fix_database_locks.py
+    - import sqlite3
+    - sqlite3.connect(
+            db_path,
+            timeout=30.0,  # 30 second timeout
+            isolation_level=None,  # Autocommit mode
+            check_same_thread=False
+        )
+    - SQLite
+    ... and 2 more
+  /Volumes/Gold/DevContainerTesting/vedfolnir/platform_context.py
+  /Volumes/Gold/DevContainerTesting/vedfolnir/flask_redis_session.py
+  /Volumes/Gold/DevContainerTesting/vedfolnir/session_error_logger.py
+  /Volumes/Gold/DevContainerTesting/vedfolnir/safe_template_context.py
+  /Volumes/Gold/DevContainerTesting/vedfolnir/migrations/env.py
+  /Volumes/Gold/DevContainerTesting/vedfolnir/migrations/platform_aware_migration.py
+  /Volumes/Gold/DevContainerTesting/vedfolnir/migrations/user_management_migration.py
+  /Volumes/Gold/DevContainerTesting/vedfolnir/migrations/gdpr_compliance_migration.py
+  /Volumes/Gold/DevContainerTesting/vedfolnir/forms/user_management_forms.py
+  /Volumes/Gold/DevContainerTesting/vedfolnir/forms/gdpr_forms.py
+  /Volumes/Gold/DevContainerTesting/vedfolnir/tests/test_frontend_session_sync.py
+  /Volumes/Gold/DevContainerTesting/vedfolnir/tests/test_platform_adapter_factory.py
+  /Volumes/Gold/DevContainerTesting/vedfolnir/tests/test_config_validation_script.py
+    - sqlite
+    - sqlite
+  /Volumes/Gold/DevContainerTesting/vedfolnir/tests/test_detached_instance_fix_web_routes.py
+  /Volumes/Gold/DevContainerTesting/vedfolnir/tests/test_platform_switching.py
+    - sqlite
+  /Volumes/Gold/DevContainerTesting/vedfolnir/tests/test_database_context_middleware.py
+  /Volumes/Gold/DevContainerTesting/vedfolnir/tests/test_middleware_context.py
+    - sqlite
+  /Volumes/Gold/DevContainerTesting/vedfolnir/tests/test_caption_fallback_comprehensive.py
+  /Volumes/Gold/DevContainerTesting/vedfolnir/tests/test_mastodon_authentication_integration.py
+  /Volumes/Gold/DevContainerTesting/vedfolnir/tests/test_mock_user_example.py
+  /Volumes/Gold/DevContainerTesting/vedfolnir/tests/test_user_model_enhancements_simple.py
+  /Volumes/Gold/DevContainerTesting/vedfolnir/tests/test_activitypub_client_multi_platform.py
+  /Volumes/Gold/DevContainerTesting/vedfolnir/tests/test_safe_template_context.py
+  /Volumes/Gold/DevContainerTesting/vedfolnir/tests/test_session_management_fixes_integration.py
+  /Volumes/Gold/DevContainerTesting/vedfolnir/tests/test_session_security.py
+    - sqlite
+  /Volumes/Gold/DevContainerTesting/vedfolnir/tests/test_detached_instance_fix_flask_integration.py
+  /Volumes/Gold/DevContainerTesting/vedfolnir/tests/test_rate_limiting_multi_platform.py
+  /Volumes/Gold/DevContainerTesting/vedfolnir/tests/test_unified_session_manager.py
+    - sqlite
+  /Volumes/Gold/DevContainerTesting/vedfolnir/tests/test_platform_context.py
+  /Volumes/Gold/DevContainerTesting/vedfolnir/tests/test_mastodon_authentication.py
+  /Volumes/Gold/DevContainerTesting/vedfolnir/tests/test_integration_comprehensive.py
+    - sqlite
+    - sqlite
+  /Volumes/Gold/DevContainerTesting/vedfolnir/tests/test_user_model_task6.py
+  /Volumes/Gold/DevContainerTesting/vedfolnir/tests/test_session_management_comprehensive.py
+  /Volumes/Gold/DevContainerTesting/vedfolnir/tests/test_session_performance_monitoring.py
+  /Volumes/Gold/DevContainerTesting/vedfolnir/tests/test_platform_connection_task7_simple.py
+  /Volumes/Gold/DevContainerTesting/vedfolnir/tests/test_session_aware_decorators.py
+  /Volumes/Gold/DevContainerTesting/vedfolnir/tests/test_user_model_enhancements.py
+  /Volumes/Gold/DevContainerTesting/vedfolnir/tests/test_gdpr_compliance.py
+  /Volumes/Gold/DevContainerTesting/vedfolnir/tests/test_session_cleanup.py
+    - sqlite
+  /Volumes/Gold/DevContainerTesting/vedfolnir/tests/test_retry_mechanism_comprehensive.py
+  /Volumes/Gold/DevContainerTesting/vedfolnir/tests/test_mastodon_media_updates.py
+  /Volumes/Gold/DevContainerTesting/vedfolnir/tests/test_configuration_examples.py
+    - sqlite
+    - sqlite
+  /Volumes/Gold/DevContainerTesting/vedfolnir/tests/test_activitypub_client_error_handling.py
+  /Volumes/Gold/DevContainerTesting/vedfolnir/tests/test_platform_context_thread_safety.py
+  /Volumes/Gold/DevContainerTesting/vedfolnir/tests/test_middleware_simple.py
+    - sqlite
+  /Volumes/Gold/DevContainerTesting/vedfolnir/tests/test_detached_instance_handler_simple.py
+  /Volumes/Gold/DevContainerTesting/vedfolnir/tests/test_mastodon_media_updates_integration.py
+  /Volumes/Gold/DevContainerTesting/vedfolnir/tests/test_mock_user_helpers.py
+  /Volumes/Gold/DevContainerTesting/vedfolnir/tests/test_end_to_end.py
+    - import sqlite3
+
+    - sqlite
+  /Volumes/Gold/DevContainerTesting/vedfolnir/tests/test_config_multi_platform.py
+  /Volumes/Gold/DevContainerTesting/vedfolnir/tests/test_database_error_handling.py
+    - sqlite
+  /Volumes/Gold/DevContainerTesting/vedfolnir/tests/test_favicon_logo_integration.py
+  /Volumes/Gold/DevContainerTesting/vedfolnir/tests/test_template_safe_context.py
+  /Volumes/Gold/DevContainerTesting/vedfolnir/tests/test_login_session_management.py
+    - sqlite
+    - sqlite
+  /Volumes/Gold/DevContainerTesting/vedfolnir/tests/test_platform_connection_task7.py
+  /Volumes/Gold/DevContainerTesting/vedfolnir/tests/test_platform_management_interface.py
+  /Volumes/Gold/DevContainerTesting/vedfolnir/tests/test_mastodon_media_processing.py
+  /Volumes/Gold/DevContainerTesting/vedfolnir/tests/test_platform_switching_session_management.py
+  /Volumes/Gold/DevContainerTesting/vedfolnir/tests/test_detached_instance_fix_simple_flask.py
+  /Volumes/Gold/DevContainerTesting/vedfolnir/tests/test_security_fixes.py
+    - sqlite
+    - sqlite
+  /Volumes/Gold/DevContainerTesting/vedfolnir/tests/test_task_queue_manager_refactored.py
+  /Volumes/Gold/DevContainerTesting/vedfolnir/tests/test_dashboard_session_management.py
+    - sqlite
+  /Volumes/Gold/DevContainerTesting/vedfolnir/tests/test_platform_context_error_handling.py
+  /Volumes/Gold/DevContainerTesting/vedfolnir/tests/test_dashboard_access_integration.py
+    - sqlite
+  /Volumes/Gold/DevContainerTesting/vedfolnir/tests/test_session_maintenance_utilities.py
+    - sqlite
+    - sqlite
+  /Volumes/Gold/DevContainerTesting/vedfolnir/tests/test_database_optimizations.py
+    - SELECT name FROM sqlite_master
+    - sqlite
+    - sqlite
+  /Volumes/Gold/DevContainerTesting/vedfolnir/tests/test_detached_instance_handler.py
+  /Volumes/Gold/DevContainerTesting/vedfolnir/tests/test_user_profile_management.py
+    - sqlite
+  /Volumes/Gold/DevContainerTesting/vedfolnir/tests/test_platform_adapter_architecture.py
+  /Volumes/Gold/DevContainerTesting/vedfolnir/tests/test_main_integration_multi_platform.py
+  /Volumes/Gold/DevContainerTesting/vedfolnir/tests/test_session_management_backend.py
+    - sqlite
+    - sqlite
+    - sqlite
+  /Volumes/Gold/DevContainerTesting/vedfolnir/tests/test_mastodon_status_edit.py
+  /Volumes/Gold/DevContainerTesting/vedfolnir/tests/test_session_decorators_simple.py
+  /Volumes/Gold/DevContainerTesting/vedfolnir/tests/test_app_initialization_integration.py
+    - sqlite
+    - sqlite
+  /Volumes/Gold/DevContainerTesting/vedfolnir/tests/test_session_consolidation_final_e2e.py
+  /Volumes/Gold/DevContainerTesting/vedfolnir/tests/test_caption_fallback.py
+  /Volumes/Gold/DevContainerTesting/vedfolnir/tests/test_session_integration.py
+    - sqlite
+  /Volumes/Gold/DevContainerTesting/vedfolnir/tests/test_rate_limiter.py
+  /Volumes/Gold/DevContainerTesting/vedfolnir/tests/test_session_management.py
+    - sqlite
+  /Volumes/Gold/DevContainerTesting/vedfolnir/tests/test_session_cookie_manager.py
+  /Volumes/Gold/DevContainerTesting/vedfolnir/tests/test_safe_template_context_simple.py
+  /Volumes/Gold/DevContainerTesting/vedfolnir/tests/test_caption_config_integration.py
+  /Volumes/Gold/DevContainerTesting/vedfolnir/tests/test_platform_database.py
+  /Volumes/Gold/DevContainerTesting/vedfolnir/tests/test_platform_encryption.py
+  /Volumes/Gold/DevContainerTesting/vedfolnir/tests/run_detached_instance_fix_tests.py
+  /Volumes/Gold/DevContainerTesting/vedfolnir/tests/test_activitypub_client_rate_limiting.py
+  /Volumes/Gold/DevContainerTesting/vedfolnir/tests/test_multi_user.py
+    - sqlite
+    - sqlite
+  /Volumes/Gold/DevContainerTesting/vedfolnir/tests/test_platform_adapters_comprehensive.py
+  /Volumes/Gold/DevContainerTesting/vedfolnir/tests/test_session_consolidation_integration.py
+    - sqlite
+    - sqlite
+  /Volumes/Gold/DevContainerTesting/vedfolnir/tests/test_add_user_functionality.py
+    - PRAGMA foreign_keys
+    - sqlite
+  /Volumes/Gold/DevContainerTesting/vedfolnir/tests/test_env_config_validation.py
+  /Volumes/Gold/DevContainerTesting/vedfolnir/tests/test_standardized_mock_configurations.py
+  /Volumes/Gold/DevContainerTesting/vedfolnir/tests/test_mastodon_integration_comprehensive.py
+  /Volumes/Gold/DevContainerTesting/vedfolnir/tests/test_app_initialization.py
+  /Volumes/Gold/DevContainerTesting/vedfolnir/tests/test_ollama_integration.py
+  /Volumes/Gold/DevContainerTesting/vedfolnir/tests/test_detached_instance_fix_flask_final.py
+  /Volumes/Gold/DevContainerTesting/vedfolnir/tests/test_platform_models.py
+  /Volumes/Gold/DevContainerTesting/vedfolnir/tests/test_session_decorators_integration.py
+  /Volumes/Gold/DevContainerTesting/vedfolnir/tests/test_configuration_validation_comprehensive.py
+  /Volumes/Gold/DevContainerTesting/vedfolnir/scripts/validate_platform_config.py
+  /Volumes/Gold/DevContainerTesting/vedfolnir/scripts/rollback_platform_migration.py
+    - sqlite3.connect(current_db)
+    - SELECT name FROM sqlite_master
+    - sqlite
+  /Volumes/Gold/DevContainerTesting/vedfolnir/scripts/validate_success_criteria.py
+    - import sqlite3
+    - sqlite3.connect(str(db_path)
+    - sqlite3.connect(str(db_path)
+    ... and 4 more
+  /Volumes/Gold/DevContainerTesting/vedfolnir/scripts/backup_platform_data.py
+    - import sqlite3
+
+    - sqlite3.connect(db_path)
+    - sqlite3.OperationalError
+  /Volumes/Gold/DevContainerTesting/vedfolnir/platform_utils/platform_identification.py
+  /Volumes/Gold/DevContainerTesting/vedfolnir/monitoring/platform_health.py
+  /Volumes/Gold/DevContainerTesting/vedfolnir/routes/gdpr_routes.py
+  /Volumes/Gold/DevContainerTesting/vedfolnir/routes/user_management_routes.py
+  /Volumes/Gold/DevContainerTesting/vedfolnir/services/gdpr_service.py
+  /Volumes/Gold/DevContainerTesting/vedfolnir/services/user_management_service.py
+  /Volumes/Gold/DevContainerTesting/vedfolnir/services/email_service.py
+  /Volumes/Gold/DevContainerTesting/vedfolnir/migrations/versions/session_management_optimization.py
+  /Volumes/Gold/DevContainerTesting/vedfolnir/migrations/versions/add_indexes.py
+  /Volumes/Gold/DevContainerTesting/vedfolnir/security/middleware/platform_access_middleware.py
+  /Volumes/Gold/DevContainerTesting/vedfolnir/security/reporting/audit_dashboard.py
+  /Volumes/Gold/DevContainerTesting/vedfolnir/security/reporting/security_audit_system.py
+  /Volumes/Gold/DevContainerTesting/vedfolnir/security/core/security_monitoring.py
+  /Volumes/Gold/DevContainerTesting/vedfolnir/security/core/csrf_middleware.py
+  /Volumes/Gold/DevContainerTesting/vedfolnir/security/core/csrf_token_manager.py
+  /Volumes/Gold/DevContainerTesting/vedfolnir/security/core/enhanced_rate_limiter.py
+  /Volumes/Gold/DevContainerTesting/vedfolnir/security/core/security_middleware.py
+  /Volumes/Gold/DevContainerTesting/vedfolnir/security/core/csrf_error_handler.py
+  /Volumes/Gold/DevContainerTesting/vedfolnir/security/core/role_based_access.py
+  /Volumes/Gold/DevContainerTesting/vedfolnir/security/core/enhanced_csrf_protection.py
+  /Volumes/Gold/DevContainerTesting/vedfolnir/security/core/security_utils.py
+  /Volumes/Gold/DevContainerTesting/vedfolnir/security/config/production_security_config.py
+  /Volumes/Gold/DevContainerTesting/vedfolnir/security/config/security_config.py
+  /Volumes/Gold/DevContainerTesting/vedfolnir/security/features/session_security.py
+  /Volumes/Gold/DevContainerTesting/vedfolnir/security/error_handling/system_recovery.py
+  /Volumes/Gold/DevContainerTesting/vedfolnir/security/error_handling/user_management_error_handler.py
+  /Volumes/Gold/DevContainerTesting/vedfolnir/security/audit/csrf_compliance_validator.py
+  /Volumes/Gold/DevContainerTesting/vedfolnir/security/audit/csrf_template_scanner.py
+  /Volumes/Gold/DevContainerTesting/vedfolnir/security/monitoring/security_event_logger.py
+  /Volumes/Gold/DevContainerTesting/vedfolnir/security/monitoring/security_alerting.py
+  /Volumes/Gold/DevContainerTesting/vedfolnir/security/monitoring/csrf_security_metrics.py
+  /Volumes/Gold/DevContainerTesting/vedfolnir/security/monitoring/csrf_dashboard.py
+  /Volumes/Gold/DevContainerTesting/vedfolnir/security/validation/enhanced_input_validator.py
+  /Volumes/Gold/DevContainerTesting/vedfolnir/security/reports/csrf_audit_reporter.py
+  /Volumes/Gold/DevContainerTesting/vedfolnir/tests/documentation/test_documentation_completeness.py
+  /Volumes/Gold/DevContainerTesting/vedfolnir/tests/unit/test_password_management.py
+  /Volumes/Gold/DevContainerTesting/vedfolnir/tests/unit/test_user_registration_service.py
+    - SQLite
+    - sqlite
+    - SQLite
+    ... and 1 more
+  /Volumes/Gold/DevContainerTesting/vedfolnir/tests/unit/test_user_profile_service.py
+    - SQLite
+    - sqlite
+  /Volumes/Gold/DevContainerTesting/vedfolnir/tests/unit/test_gdpr_service.py
+    - SQLite
+    - sqlite
+  /Volumes/Gold/DevContainerTesting/vedfolnir/tests/unit/test_email_service.py
+  /Volumes/Gold/DevContainerTesting/vedfolnir/tests/unit/test_user_model_methods.py
+    - SQLite
+    - sqlite
+    - SQLite
+    ... and 1 more
+  /Volumes/Gold/DevContainerTesting/vedfolnir/tests/unit/test_user_management_forms.py
+  /Volumes/Gold/DevContainerTesting/vedfolnir/tests/security/test_user_management_security.py
+  /Volumes/Gold/DevContainerTesting/vedfolnir/tests/security/test_csrf_security_suite.py
+  /Volumes/Gold/DevContainerTesting/vedfolnir/tests/security/test_comprehensive_security.py
+  /Volumes/Gold/DevContainerTesting/vedfolnir/tests/security/test_csrf_compliance_validation.py
+  /Volumes/Gold/DevContainerTesting/vedfolnir/tests/security/test_csrf_template_audit.py
+  /Volumes/Gold/DevContainerTesting/vedfolnir/tests/security/test_session_security_simple.py
+  /Volumes/Gold/DevContainerTesting/vedfolnir/tests/security/test_platform_access.py
+  /Volumes/Gold/DevContainerTesting/vedfolnir/tests/security/test_credential_security.py
+  /Volumes/Gold/DevContainerTesting/vedfolnir/tests/security/test_session_security_hardening.py
+  /Volumes/Gold/DevContainerTesting/vedfolnir/tests/integration/test_platform_switching.py
+  /Volumes/Gold/DevContainerTesting/vedfolnir/tests/integration/test_admin_user_management.py
+  /Volumes/Gold/DevContainerTesting/vedfolnir/tests/integration/test_session_management_performance.py
+    - import sqlite3
+    - sqlite3.connect(self.db_path)
+    - sqlite3.connect(self.db_path)
+    ... and 1 more
+  /Volumes/Gold/DevContainerTesting/vedfolnir/tests/integration/test_platform_web.py
+  /Volumes/Gold/DevContainerTesting/vedfolnir/tests/integration/test_session_monitoring_integration.py
+  /Volumes/Gold/DevContainerTesting/vedfolnir/tests/integration/test_gdpr_compliance.py
+  /Volumes/Gold/DevContainerTesting/vedfolnir/tests/integration/test_password_reset_workflow.py
+  /Volumes/Gold/DevContainerTesting/vedfolnir/tests/integration/test_platform_performance.py
+  /Volumes/Gold/DevContainerTesting/vedfolnir/tests/integration/test_user_registration_routes.py
+    - sqlite
+  /Volumes/Gold/DevContainerTesting/vedfolnir/tests/integration/test_platform_migration.py
+    - sqlite
+  /Volumes/Gold/DevContainerTesting/vedfolnir/tests/integration/test_session_management_e2e.py
+  /Volumes/Gold/DevContainerTesting/vedfolnir/tests/integration/test_cross_tab_functionality.py
+    - sqlite
+    - sqlite
+    - sqlite
+    ... and 1 more
+  /Volumes/Gold/DevContainerTesting/vedfolnir/tests/integration/test_add_user_functionality_fixed.py
+    - sqlite
+  /Volumes/Gold/DevContainerTesting/vedfolnir/tests/integration/test_user_registration_workflow.py
+  /Volumes/Gold/DevContainerTesting/vedfolnir/tests/deployment/test_monitoring_functionality.py
+  /Volumes/Gold/DevContainerTesting/vedfolnir/tests/deployment/test_deployment_tools.py
+  /Volumes/Gold/DevContainerTesting/vedfolnir/tests/scripts/cleanup_mock_user.py
+  /Volumes/Gold/DevContainerTesting/vedfolnir/tests/scripts/create_mock_user.py
+  /Volumes/Gold/DevContainerTesting/vedfolnir/tests/fixtures/platform_fixtures.py
+    - sqlite
+  /Volumes/Gold/DevContainerTesting/vedfolnir/tests/performance/test_platform_queries.py
+  /Volumes/Gold/DevContainerTesting/vedfolnir/tests/performance/test_session_load.py
+    - sqlite
+    - sqlite
+    - sqlite
+    ... and 1 more
+  /Volumes/Gold/DevContainerTesting/vedfolnir/tests/performance/test_session_performance_optimization.py
+  /Volumes/Gold/DevContainerTesting/vedfolnir/tests/performance/test_platform_load.py
+  /Volumes/Gold/DevContainerTesting/vedfolnir/tests/performance/test_user_management_performance.py
+  /Volumes/Gold/DevContainerTesting/vedfolnir/tests/test_helpers/mock_user_helper.py
+  /Volumes/Gold/DevContainerTesting/vedfolnir/tests/test_helpers/async_mock_helpers.py
+  /Volumes/Gold/DevContainerTesting/vedfolnir/tests/test_helpers/session_test_isolation.py
+    - sqlite
+  /Volumes/Gold/DevContainerTesting/vedfolnir/tests/test_helpers/session_error_helpers.py
+  /Volumes/Gold/DevContainerTesting/vedfolnir/tests/test_helpers/mock_configurations.py
+  /Volumes/Gold/DevContainerTesting/vedfolnir/tests/test_helpers/mock_task_queue_helpers.py
+  /Volumes/Gold/DevContainerTesting/vedfolnir/tests/test_helpers/database_mock_helpers.py
+  /Volumes/Gold/DevContainerTesting/vedfolnir/tests/test_helpers/platform_mock_helpers.py
+  /Volumes/Gold/DevContainerTesting/vedfolnir/admin/security/admin_access_control.py
+  /Volumes/Gold/DevContainerTesting/vedfolnir/admin/routes/admin_api.py
+  /Volumes/Gold/DevContainerTesting/vedfolnir/admin/routes/system_health.py
+    - sqlite
+    - SQLite
+  /Volumes/Gold/DevContainerTesting/vedfolnir/admin/services/user_service.py
+  /Volumes/Gold/DevContainerTesting/vedfolnir/admin/services/monitoring_service.py
+  /Volumes/Gold/DevContainerTesting/vedfolnir/docs/api/generate_api_docs.py
+  /Volumes/Gold/DevContainerTesting/vedfolnir/scripts/security/comprehensive_security_test.py
+  /Volumes/Gold/DevContainerTesting/vedfolnir/scripts/security/run_csrf_audit.py
+  /Volumes/Gold/DevContainerTesting/vedfolnir/scripts/security/session_security_monitor.py
+  /Volumes/Gold/DevContainerTesting/vedfolnir/scripts/security/owasp_compliance_validator.py
+  /Volumes/Gold/DevContainerTesting/vedfolnir/scripts/setup/generate_env_secrets.py
+    - # SQLite
+    - SQLite
+    - sqlite
+    ... and 3 more
+  /Volumes/Gold/DevContainerTesting/vedfolnir/scripts/setup/migrate_to_platform_aware.py
+    - SQLite
+    - sqlite
+  /Volumes/Gold/DevContainerTesting/vedfolnir/scripts/setup/update_admin_user.py
+  /Volumes/Gold/DevContainerTesting/vedfolnir/scripts/setup/migrate_env_to_file.py
+    - sqlite
+  /Volumes/Gold/DevContainerTesting/vedfolnir/scripts/setup/generate_env_secrets_ILM.py
+    - # SQLite
+    - SQLite
+    - sqlite
+    ... and 3 more
+  /Volumes/Gold/DevContainerTesting/vedfolnir/scripts/testing/run_tests.py
+  /Volumes/Gold/DevContainerTesting/vedfolnir/scripts/testing/run_session_management_e2e_tests.py
+  /Volumes/Gold/DevContainerTesting/vedfolnir/scripts/deployment/user_management_deployment_validator.py
+  /Volumes/Gold/DevContainerTesting/vedfolnir/scripts/deployment/session_management_deployment_checklist.py
+  /Volumes/Gold/DevContainerTesting/vedfolnir/scripts/deployment/deploy_security_config.py
+  /Volumes/Gold/DevContainerTesting/vedfolnir/scripts/deployment/user_management_rollback.py
+    - sqlite
+    - sqlite
+    - sqlite
+  /Volumes/Gold/DevContainerTesting/vedfolnir/scripts/maintenance/retry_stats.py
+  /Volumes/Gold/DevContainerTesting/vedfolnir/scripts/maintenance/session_db_maintenance.py
+    - # SQLite specific query for indexes
+    - # SQLite integrity check
+    - SQLite
+    ... and 2 more
+  /Volumes/Gold/DevContainerTesting/vedfolnir/scripts/maintenance/reset_app.py
+    - sqlite
+  /Volumes/Gold/DevContainerTesting/vedfolnir/scripts/maintenance/security_maintenance_scheduler.py
+  /Volumes/Gold/DevContainerTesting/vedfolnir/scripts/maintenance/session_cleanup.py
+    - # SQLite-specific optimizations
+  /Volumes/Gold/DevContainerTesting/vedfolnir/scripts/monitoring/user_management_monitoring.py

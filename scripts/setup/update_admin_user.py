@@ -30,12 +30,10 @@ logging.basicConfig(
 )
 logger = logging.getLogger(__name__)
 
-
 def generate_secure_password(length=24):
     """Generate a secure password"""
     chars = string.ascii_letters + string.digits + "!@#$%^&*()_+-=[]{}|;:,.<>?"
     return ''.join(secrets.choice(chars) for _ in range(length))
-
 
 def list_admin_users(db_manager):
     """List all admin users"""
@@ -52,7 +50,6 @@ def list_admin_users(db_manager):
             print(f"  {i}. {user.username} ({user.email}) - {status}")
         
         return admin_users
-
 
 def create_admin_user(db_manager):
     """Create a new admin user interactively"""
@@ -132,7 +129,6 @@ def create_admin_user(db_manager):
         print(f"❌ Error creating user: {e}")
         return False
 
-
 def update_admin_user(db_manager, admin_users):
     """Update an existing admin user"""
     if not admin_users:
@@ -206,7 +202,6 @@ def update_admin_user(db_manager, admin_users):
         print(f"❌ Error updating user: {e}")
         return False
 
-
 def main():
     print("👤 Vedfolnir Admin User Management")
     print("=" * 40)
@@ -253,7 +248,6 @@ def main():
     except Exception as e:
         print(f"❌ Error: {e}")
         sys.exit(1)
-
 
 if __name__ == "__main__":
     main()

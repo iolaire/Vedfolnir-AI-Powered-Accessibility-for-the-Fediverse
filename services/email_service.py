@@ -20,7 +20,6 @@ from jinja2 import Template
 
 logger = logging.getLogger(__name__)
 
-
 class EmailService:
     """Service for sending emails using flask-mailing"""
     
@@ -417,10 +416,8 @@ class EmailService:
         
         return await self.send_email_with_retry(message)
 
-
 # Global email service instance
 email_service = EmailService()
-
 
 def init_email_service(app: Flask) -> EmailService:
     """Initialize and return email service"""

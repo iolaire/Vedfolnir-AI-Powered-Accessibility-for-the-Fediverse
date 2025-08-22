@@ -16,7 +16,6 @@ from sqlalchemy.orm.exc import DetachedInstanceError
 from sqlalchemy.orm import Session
 from flask import current_app, request, redirect, url_for, flash
 
-
 class DetachedInstanceHandler:
     """Handler for DetachedInstanceError recovery with session manager integration"""
     
@@ -216,7 +215,6 @@ class DetachedInstanceHandler:
         except Exception as e:
             self.logger.debug(f"Failed to record recovery metrics: {e}")
 
-
 def create_global_detached_instance_handler(app, session_manager):
     """Create global error handler for DetachedInstanceError exceptions
     
@@ -260,7 +258,6 @@ def create_global_detached_instance_handler(app, session_manager):
     app.detached_instance_handler = handler
     
     return handler
-
 
 def get_detached_instance_handler():
     """Get the current application's DetachedInstanceHandler

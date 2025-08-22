@@ -15,7 +15,6 @@ from security.features.session_security import (
     SuspiciousActivityType
 )
 
-
 class TestSessionSecurityBasic(unittest.TestCase):
     """Basic tests for session security hardening functionality"""
     
@@ -341,7 +340,6 @@ class TestSessionSecurityBasic(unittest.TestCase):
         # Test consistency
         hash3 = self.security._hash_value('test_value')
         self.assertEqual(hash1, hash3)
-
 
 if __name__ == '__main__':
     unittest.main()

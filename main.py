@@ -21,7 +21,6 @@ from logger import (
     get_error_summary, get_error_report, reset_error_collector
 )
 
-
 # Logger will be configured in main() based on command line arguments
 logger = getLogger(__name__)
 
@@ -391,7 +390,6 @@ class Vedfolnir:
         # If there were any retries, add a note about checking the database for more details
         if retry_detailed['summary']['retry_attempts'] > 0:
             logger.info(f"Detailed retry statistics stored in database for processing run {self.current_run.id}")
-    
 
     def _print_statistics(self):
         """Print execution statistics"""

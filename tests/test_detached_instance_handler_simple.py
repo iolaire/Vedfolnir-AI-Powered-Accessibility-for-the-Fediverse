@@ -13,7 +13,6 @@ from detached_instance_handler import DetachedInstanceHandler, create_global_det
 from sqlalchemy.orm.exc import DetachedInstanceError
 from sqlalchemy.exc import InvalidRequestError, SQLAlchemyError
 
-
 class MockSessionManager:
     """Mock session manager for testing"""
     
@@ -23,7 +22,6 @@ class MockSessionManager:
     def get_request_session(self):
         return self.mock_session
 
-
 class MockSQLAlchemyObject:
     """Mock SQLAlchemy object for testing"""
     
@@ -31,7 +29,6 @@ class MockSQLAlchemyObject:
         self.id = id
         self.name = name
         self.test_relationship = []
-
 
 class TestDetachedInstanceHandlerSimple(unittest.TestCase):
     """Test DetachedInstanceHandler core functionality (simplified)"""
@@ -186,7 +183,6 @@ class TestDetachedInstanceHandlerSimple(unittest.TestCase):
         self.assertEqual(result, recovered_obj)
         custom_session.merge.assert_called_once_with(self.mock_obj)
 
-
 class TestGlobalErrorHandlersSimple(unittest.TestCase):
     """Test global error handler creation (simplified)"""
     
@@ -286,7 +282,6 @@ class TestGlobalErrorHandlersSimple(unittest.TestCase):
         result = handler.safe_access(obj_no_id, 'name', 'default')
         # Should return the actual attribute or default
         self.assertIsNotNone(result)
-
 
 if __name__ == '__main__':
     unittest.main()

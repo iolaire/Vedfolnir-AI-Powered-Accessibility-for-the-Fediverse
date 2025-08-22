@@ -279,9 +279,7 @@ class AdminMonitoringService:
                 })
             
             return result
-            
 
-            
         except Exception as e:
             logger.error(f"Error getting user activity: {sanitize_for_log(str(e))}")
             return []

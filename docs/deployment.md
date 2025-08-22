@@ -7,7 +7,8 @@ This guide covers deploying the Vedfolnir in various environments, from developm
 The Vedfolnir consists of several components:
 - **Main Bot**: Processes posts and generates captions
 - **Web Interface**: Flask application for reviewing captions
-- **Database**: SQLite database for storing data
+- **Database**: MySQL database for storing data
+- **Redis**: Session storage and caching
 - **Ollama**: AI service for caption generation
 - **Storage**: File system storage for images and logs
 
@@ -49,8 +50,36 @@ Docker provides the easiest and most consistent deployment method.
        environment:
          - FLASK_HOST=0.0.0.0
          - OLLAMA_URL=http://ollama:11434
+         - DATABASE_URL=mysql+pymysql://vedfolnir:vedfolnir_password@mysql:3306/vedfolnir?charset=utf8mb4
+         - REDIS_URL=redis://redis:6379/0
        depends_on:
+         - mysql
+         - redis
          - ollama
+       restart: unless-stopped
+   
+     mysql:
+       image: mysql:8.0
+       environment:
+         MYSQL_ROOT_PASSWORD: root_password
+         MYSQL_DATABASE: vedfolnir
+         MYSQL_USER: vedfolnir
+         MYSQL_PASSWORD: vedfolnir_password
+       ports:
+         - "3306:3306"
+       volumes:
+         - mysql_data:/var/lib/mysql
+         - ./mysql/init:/docker-entrypoint-initdb.d
+       command: --character-set-server=utf8mb4 --collation-server=utf8mb4_unicode_ci
+       restart: unless-stopped
+   
+     redis:
+       image: redis:7-alpine
+       ports:
+         - "6379:6379"
+       volumes:
+         - redis_data:/data
+       command: redis-server --appendonly yes
        restart: unless-stopped
    
      ollama:
@@ -76,6 +105,8 @@ Docker provides the easiest and most consistent deployment method.
        restart: unless-stopped
    
    volumes:
+     mysql_data:
+     redis_data:
      ollama_data:
    ```
 
@@ -83,9 +114,13 @@ Docker provides the easiest and most consistent deployment method.
    ```dockerfile
    FROM python:3.11-slim
    
-   # Install system dependencies
+   # Install system dependencies including MySQL client
    RUN apt-get update && apt-get install -y \
        curl \
+       default-mysql-client \
+       pkg-config \
+       default-libmysqlclient-dev \
+       build-essential \
        && rm -rf /var/lib/apt/lists/*
    
    WORKDIR /app
@@ -98,13 +133,14 @@ Docker provides the easiest and most consistent deployment method.
    COPY . .
    
    # Create necessary directories
-   RUN mkdir -p storage/images storage/database logs
+   RUN mkdir -p storage/images logs
    
    # Set permissions
    RUN chmod +x *.py
    
-   # Initialize database (will be skipped if already exists)
-   RUN python init_migrations.py || true
+   # Wait for MySQL and initialize database
+   COPY docker/wait-for-mysql.sh /usr/local/bin/
+   RUN chmod +x /usr/local/bin/wait-for-mysql.sh
    
    # Health check
    HEALTHCHECK --interval=30s --timeout=10s --start-period=5s --retries=3 \
@@ -112,10 +148,52 @@ Docker provides the easiest and most consistent deployment method.
    
    EXPOSE 5000
    
-   CMD ["python", "web_app.py"]
+   CMD ["/usr/local/bin/wait-for-mysql.sh", "mysql", "python", "web_app.py"]
    ```
 
-4. **Create nginx.conf:**
+4. **Create MySQL initialization script:**
+   ```bash
+   # Create mysql directory
+   mkdir -p mysql/init
+   
+   # Create initialization script
+   cat > mysql/init/01-init.sql << 'EOF'
+   -- Ensure proper character set and collation
+   ALTER DATABASE vedfolnir CHARACTER SET utf8mb4 COLLATE utf8mb4_unicode_ci;
+   
+   -- Grant additional privileges if needed
+   GRANT ALL PRIVILEGES ON vedfolnir.* TO 'vedfolnir'@'%';
+   FLUSH PRIVILEGES;
+   EOF
+   ```
+
+5. **Create Docker wait script:**
+   ```bash
+   # Create docker directory
+   mkdir -p docker
+   
+   # Create wait-for-mysql.sh
+   cat > docker/wait-for-mysql.sh << 'EOF'
+   #!/bin/bash
+   set -e
+   
+   host="$1"
+   shift
+   cmd="$@"
+   
+   until mysql -h"$host" -u"vedfolnir" -p"vedfolnir_password" -e 'SELECT 1' vedfolnir; do
+     >&2 echo "MySQL is unavailable - sleeping"
+     sleep 1
+   done
+   
+   >&2 echo "MySQL is up - executing command"
+   exec $cmd
+   EOF
+   
+   chmod +x docker/wait-for-mysql.sh
+   ```
+
+6. **Create nginx.conf:**
    ```nginx
    events {
        worker_connections 1024;
@@ -166,22 +244,39 @@ Docker provides the easiest and most consistent deployment method.
    }
    ```
 
-5. **Configure environment:**
+7. **Configure environment:**
    ```bash
    # Copy example configuration
    cp .env.example .env
    
-   # Edit .env with your settings
+   # Edit .env with your MySQL settings
    nano .env
+   
+   # Key MySQL-related settings:
+   DATABASE_URL=mysql+pymysql://vedfolnir:vedfolnir_password@mysql:3306/vedfolnir?charset=utf8mb4
+   REDIS_URL=redis://redis:6379/0
    ```
 
-6. **Deploy:**
+8. **Deploy:**
    ```bash
+   # Start MySQL and Redis first
+   docker-compose up -d mysql redis
+   
+   # Wait for MySQL to be ready
+   docker-compose exec mysql mysql -u root -proot_password -e "SHOW DATABASES;"
+   
    # Pull Ollama model
    docker-compose run --rm ollama ollama pull llava:7b
    
-   # Start services
+   # Start all services
    docker-compose up -d
+   
+   # Initialize database tables (first time only)
+   docker-compose exec vedfolnir python -c "
+   from database import init_db
+   init_db()
+   print('Database initialized successfully')
+   "
    
    # Check status
    docker-compose ps
@@ -197,21 +292,42 @@ Docker provides the easiest and most consistent deployment method.
 docker-compose pull
 docker-compose up -d --build
 
-# Backup data
-docker-compose exec vedfolnir python -c "
-import shutil
-shutil.copy('storage/database/vedfolnir.db', 'storage/database/backup.db')
-"
+# MySQL database operations
+# Backup MySQL database
+docker-compose exec mysql mysqldump -u vedfolnir -pvedfolnir_password vedfolnir > backup_$(date +%Y%m%d_%H%M%S).sql
+
+# Restore MySQL database
+docker-compose exec -T mysql mysql -u vedfolnir -pvedfolnir_password vedfolnir < backup_file.sql
+
+# Access MySQL shell
+docker-compose exec mysql mysql -u vedfolnir -pvedfolnir_password vedfolnir
+
+# Redis operations
+# Access Redis CLI
+docker-compose exec redis redis-cli
+
+# Backup Redis data
+docker-compose exec redis redis-cli BGSAVE
+
+# Clear Redis cache
+docker-compose exec redis redis-cli FLUSHDB
 
 # Access application shell
 docker-compose exec vedfolnir bash
 
 # View logs
 docker-compose logs -f vedfolnir
+docker-compose logs -f mysql
+docker-compose logs -f redis
 docker-compose logs -f ollama
 
 # Restart services
 docker-compose restart vedfolnir
+docker-compose restart mysql
+docker-compose restart redis
+
+# Monitor resource usage
+docker-compose exec vedfolnir python scripts/monitoring/system_health_check.py
 ```
 
 ### 2. Manual Deployment
@@ -220,6 +336,8 @@ For more control or when Docker isn't available.
 
 #### Prerequisites
 - Python 3.8+
+- MySQL 8.0+ server
+- Redis server
 - Virtual environment support
 - Systemd (Linux) or equivalent service manager
 - Nginx or Apache (optional, for reverse proxy)
@@ -232,7 +350,31 @@ For more control or when Docker isn't available.
    sudo su - alttext
    ```
 
-2. **Clone and setup application:**
+2. **Setup MySQL and Redis:**
+   ```bash
+   # Install MySQL and Redis (Ubuntu/Debian)
+   sudo apt update
+   sudo apt install mysql-server redis-server
+   
+   # Start services
+   sudo systemctl start mysql redis-server
+   sudo systemctl enable mysql redis-server
+   
+   # Secure MySQL installation
+   sudo mysql_secure_installation
+   
+   # Create database and user
+   sudo mysql -u root -p
+   ```
+   ```sql
+   CREATE DATABASE vedfolnir CHARACTER SET utf8mb4 COLLATE utf8mb4_unicode_ci;
+   CREATE USER 'vedfolnir'@'localhost' IDENTIFIED BY 'secure_password_here';
+   GRANT ALL PRIVILEGES ON vedfolnir.* TO 'vedfolnir'@'localhost';
+   FLUSH PRIVILEGES;
+   EXIT;
+   ```
+
+3. **Clone and setup application:**
    ```bash
    git clone <repository-url> vedfolnir
    cd vedfolnir
@@ -242,21 +384,33 @@ For more control or when Docker isn't available.
    pip install -r requirements.txt
    ```
 
-3. **Configure environment:**
+4. **Configure environment:**
    ```bash
    cp .env.example .env
    nano .env
    
-   # Set production values
+   # Set production values with MySQL
    FLASK_DEBUG=false
    FLASK_HOST=0.0.0.0
    FLASK_SECRET_KEY=$(python -c "import secrets; print(secrets.token_hex(32))")
+   DATABASE_URL=mysql+pymysql://vedfolnir:secure_password_here@localhost/vedfolnir?charset=utf8mb4
+   REDIS_URL=redis://localhost:6379/0
    ```
 
-4. **Initialize database:**
+5. **Initialize database:**
    ```bash
-   python init_migrations.py
-   python init_admin_user.py
+   # Install MySQL Python dependencies
+   pip install pymysql cryptography
+   
+   # Initialize database tables
+   python -c "
+   from database import init_db
+   init_db()
+   print('Database initialized successfully')
+   "
+   
+   # Create admin user
+   python scripts/setup/init_admin_user.py
    ```
 
 5. **Test the setup:**
@@ -518,25 +672,67 @@ Configure log rotation to prevent disk space issues:
 
 ```bash
 #!/bin/bash
-# backup.sh - Daily backup script
+# backup.sh - Daily backup script for MySQL deployment
 
 BACKUP_DIR="/backup/vedfolnir"
 DATE=$(date +%Y%m%d_%H%M%S)
+DB_USER="vedfolnir"
+DB_PASSWORD="secure_password_here"
+DB_NAME="vedfolnir"
 
 # Create backup directory
 mkdir -p "$BACKUP_DIR"
 
-# Backup database
-cp /home/alttext/vedfolnir/storage/database/vedfolnir.db \
-   "$BACKUP_DIR/database_$DATE.db"
+# Backup MySQL database
+mysqldump -u "$DB_USER" -p"$DB_PASSWORD" \
+  --single-transaction \
+  --routines \
+  --triggers \
+  "$DB_NAME" > "$BACKUP_DIR/database_$DATE.sql"
+
+# Backup Redis data (if using persistence)
+redis-cli BGSAVE
+cp /var/lib/redis/dump.rdb "$BACKUP_DIR/redis_$DATE.rdb"
 
 # Backup configuration
 cp /home/alttext/vedfolnir/.env \
    "$BACKUP_DIR/config_$DATE.env"
 
-# Compress and remove old backups
-gzip "$BACKUP_DIR/database_$DATE.db"
+# Backup storage directory (images, logs)
+tar -czf "$BACKUP_DIR/storage_$DATE.tar.gz" \
+    /home/alttext/vedfolnir/storage
+
+# Compress database backup and remove old backups
+gzip "$BACKUP_DIR/database_$DATE.sql"
 find "$BACKUP_DIR" -name "*.gz" -mtime +30 -delete
+find "$BACKUP_DIR" -name "*.rdb" -mtime +30 -delete
+
+# Log backup completion
+echo "$(date): Backup completed successfully" >> "$BACKUP_DIR/backup.log"
+```
+
+**Automated Backup Setup:**
+```bash
+# Add to crontab for daily backups at 2 AM
+crontab -e
+
+# Add this line:
+0 2 * * * /home/alttext/vedfolnir/backup.sh
+```
+
+**Restore Procedures:**
+```bash
+# Restore MySQL database
+mysql -u vedfolnir -p vedfolnir < backup_file.sql
+
+# Restore Redis data (stop Redis first)
+sudo systemctl stop redis-server
+sudo cp backup_file.rdb /var/lib/redis/dump.rdb
+sudo chown redis:redis /var/lib/redis/dump.rdb
+sudo systemctl start redis-server
+
+# Restore storage files
+tar -xzf storage_backup.tar.gz -C /
 ```
 
 ### Performance Monitoring
@@ -622,15 +818,24 @@ python validate_config.py
 
 **Database issues:**
 ```bash
-# Check database permissions
-ls -la storage/database/
+# Check MySQL service status
+systemctl status mysql
 
-# Test database connection
-python check_db.py
+# Test MySQL connection
+mysql -u vedfolnir -p vedfolnir -e "SELECT 1;"
 
-# Recreate database if corrupted
-mv storage/database/vedfolnir.db storage/database/vedfolnir.db.backup
-python init_migrations.py
+# Check MySQL error logs
+sudo tail -f /var/log/mysql/error.log
+
+# Verify database and tables exist
+mysql -u vedfolnir -p vedfolnir -e "SHOW TABLES;"
+
+# Check Redis connection
+redis-cli ping
+
+# Monitor MySQL performance
+mysql -u vedfolnir -p vedfolnir -e "SHOW PROCESSLIST;"
+mysql -u vedfolnir -p vedfolnir -e "SHOW ENGINE INNODB STATUS\G"
 ```
 
 **Ollama connectivity:**
@@ -663,3 +868,28 @@ ollama pull llava:7b
 - Monitor API usage
 
 This deployment guide should help you successfully deploy the Vedfolnir in various environments. Choose the deployment method that best fits your infrastructure and requirements.
+
+## Additional MySQL Deployment Resources
+
+For comprehensive MySQL deployment guidance, see these specialized guides:
+
+- **[MySQL Deployment Guide](deployment/mysql-deployment-guide.md)** - Complete MySQL server setup, configuration, and optimization
+- **[Docker MySQL Deployment](deployment/docker-mysql-deployment.md)** - Docker-based deployment with MySQL and Redis containers
+- **[MySQL Backup and Maintenance](deployment/mysql-backup-maintenance.md)** - Comprehensive backup strategies and maintenance procedures
+
+## Migration from SQLite
+
+If you're upgrading from a previous SQLite-based installation:
+
+```bash
+# Use the comprehensive migration tools
+python scripts/mysql_migration/migrate_to_mysql.py --backup --verify
+
+# Verify migration results
+python scripts/mysql_migration/verify_migration.py
+
+# Update deployment configuration
+# Follow the MySQL deployment guides above for production setup
+```
+
+For detailed migration procedures, see the [Migration Guide](migration_guide.md).

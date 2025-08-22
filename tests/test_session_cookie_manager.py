@@ -13,7 +13,6 @@ from unittest.mock import Mock, patch
 from flask import Flask, Response
 from session_cookie_manager import SessionCookieManager, create_session_cookie_manager
 
-
 class TestSessionCookieManager(unittest.TestCase):
     """Test cases for SessionCookieManager"""
     
@@ -176,7 +175,6 @@ class TestSessionCookieManager(unittest.TestCase):
             # Should log error
             mock_logger.error.assert_called()
 
-
 class TestCreateSessionCookieManager(unittest.TestCase):
     """Test cases for create_session_cookie_manager function"""
     
@@ -217,7 +215,6 @@ class TestCreateSessionCookieManager(unittest.TestCase):
         # Should still create manager but log warning
         self.assertIsNotNone(manager)
         mock_logger.warning.assert_called()
-
 
 if __name__ == '__main__':
     unittest.main()

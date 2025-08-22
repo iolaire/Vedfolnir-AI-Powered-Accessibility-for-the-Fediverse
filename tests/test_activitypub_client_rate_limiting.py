@@ -19,7 +19,6 @@ from activitypub_client import ActivityPubClient
 from config import ActivityPubConfig, RateLimitConfig
 from rate_limiter import get_rate_limiter
 
-
 class TestActivityPubClientRateLimiting(unittest.TestCase):
     """Test ActivityPub client integration with multi-platform rate limiting"""
     
@@ -288,7 +287,6 @@ class TestActivityPubClientRateLimiting(unittest.TestCase):
                         mock_wait.assert_called_once()
                     
                     asyncio.run(run_test())
-
 
 if __name__ == '__main__':
     unittest.main()

@@ -16,7 +16,6 @@ from flask import Flask
 
 logger = logging.getLogger(__name__)
 
-
 class ProductionSecurityConfig:
     """Production security configuration manager"""
     
@@ -104,7 +103,6 @@ class ProductionSecurityConfig:
             },
             'overall_status': all(validation.values())
         }
-
 
 def configure_production_security(app: Flask) -> ProductionSecurityConfig:
     """Configure production security for Flask app"""

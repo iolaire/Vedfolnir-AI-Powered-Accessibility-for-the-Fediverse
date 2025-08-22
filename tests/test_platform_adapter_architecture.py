@@ -18,7 +18,6 @@ from activitypub_platforms import (
     PlatformAdapterError, UnsupportedPlatformError, PlatformDetectionError
 )
 
-
 class MockPlatformAdapter(ActivityPubPlatform):
     """Mock platform adapter for testing abstract base class compliance"""
     
@@ -40,7 +39,6 @@ class MockPlatformAdapter(ActivityPubPlatform):
     
     async def update_post(self, client, post_id: str, updated_post) -> bool:
         return True
-
 
 class TestAbstractBaseClass(unittest.TestCase):
     """Test the abstract base class interface compliance"""
@@ -131,7 +129,6 @@ class TestAbstractBaseClass(unittest.TestCase):
         # Run the async test
         asyncio.run(run_test())
 
-
 class TestPixelfedPlatformAdapter(unittest.TestCase):
     """Test PixelfedPlatform adapter maintains all existing functionality"""
     
@@ -221,7 +218,6 @@ class TestPixelfedPlatformAdapter(unittest.TestCase):
         
         # extract_images_from_post should not be async
         self.assertFalse(asyncio.iscoroutinefunction(adapter.extract_images_from_post))
-
 
 class TestMastodonPlatformAdapter(unittest.TestCase):
     """Test MastodonPlatform adapter implements all required methods"""
@@ -337,7 +333,6 @@ class TestMastodonPlatformAdapter(unittest.TestCase):
         
         # extract_images_from_post should not be async
         self.assertFalse(asyncio.iscoroutinefunction(adapter.extract_images_from_post))
-
 
 class TestPlatformAdapterFactory(unittest.TestCase):
     """Test platform adapter factory creates correct adapter based on configuration"""
@@ -504,7 +499,6 @@ class TestPlatformAdapterFactory(unittest.TestCase):
         with self.assertRaises(ValueError):
             PlatformAdapterFactory.register_adapter('invalid', InvalidAdapter)
 
-
 class TestBackwardCompatibility(unittest.TestCase):
     """Test backward compatibility function"""
     
@@ -518,7 +512,6 @@ class TestBackwardCompatibility(unittest.TestCase):
         
         adapter = get_platform_adapter(config)
         self.assertIsInstance(adapter, PixelfedPlatform)
-
 
 class TestIntegrationAndBasicFunctionality(unittest.TestCase):
     """Test adapter instantiation and basic functionality"""
@@ -564,7 +557,6 @@ class TestIntegrationAndBasicFunctionality(unittest.TestCase):
         
         # Run the async test
         asyncio.run(test_cleanup())
-
 
 class TestInterfaceConsistency(unittest.TestCase):
     """Test interface consistency between adapters"""
@@ -634,7 +626,6 @@ class TestInterfaceConsistency(unittest.TestCase):
                 repr_str = repr(adapter)
                 self.assertIsInstance(repr_str, str)
                 self.assertTrue(len(repr_str) > 0)
-
 
 if __name__ == '__main__':
     unittest.main()

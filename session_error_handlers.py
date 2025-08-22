@@ -32,7 +32,6 @@ from session_error_logger import get_session_error_logger
 
 logger = logging.getLogger(__name__)
 
-
 class SessionErrorHandler:
     """Comprehensive handler for database session errors and recovery"""
     
@@ -356,7 +355,6 @@ class SessionErrorHandler:
         """
         return self.error_counts.copy()
 
-
 def with_session_error_handling(f: Callable) -> Callable:
     """Decorator to add comprehensive session error handling to view functions
     
@@ -396,7 +394,6 @@ def with_session_error_handling(f: Callable) -> Callable:
                 return redirect(url_for('admin.health_dashboard') if current_user.is_authenticated else url_for('login'))
     
     return decorated_function
-
 
 def register_session_error_handlers(app, session_manager, detached_instance_handler):
     """Register comprehensive session error handlers with Flask app
@@ -490,7 +487,6 @@ def register_session_error_handlers(app, session_manager, detached_instance_hand
             pass
     
     logger.info("Session error handlers registered successfully")
-
 
 def get_session_error_handler():
     """Get the current application's SessionErrorHandler

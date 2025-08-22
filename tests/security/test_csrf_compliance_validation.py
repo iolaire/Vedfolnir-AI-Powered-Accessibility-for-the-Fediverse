@@ -24,7 +24,6 @@ from security.audit.csrf_compliance_validator import (
 )
 from security.audit.csrf_template_scanner import CSRFTemplateScanner, CSRFAuditResult, TemplateSecurityIssue
 
-
 class TestCSRFComplianceScoring(unittest.TestCase):
     """Test CSRF compliance scoring system"""
     
@@ -164,7 +163,6 @@ class TestCSRFComplianceScoring(unittest.TestCase):
             recommendations=[]
         )
 
-
 class TestSecurityAuditReporting(unittest.TestCase):
     """Test automated security audit reporting"""
     
@@ -286,7 +284,6 @@ class TestSecurityAuditReporting(unittest.TestCase):
             compliance_score=score,
             recommendations=[]
         )
-
 
 class TestContinuousIntegrationValidation(unittest.TestCase):
     """Test continuous integration security checks"""
@@ -468,7 +465,6 @@ class TestContinuousIntegrationValidation(unittest.TestCase):
             recommendations=[]
         )
 
-
 class TestComplianceIntegration(unittest.TestCase):
     """Integration tests for compliance validation system"""
     
@@ -555,7 +551,6 @@ class TestComplianceIntegration(unittest.TestCase):
             compliance_score=score,
             recommendations=[]
         )
-
 
 if __name__ == '__main__':
     unittest.main(verbosity=2)

@@ -416,44 +416,51 @@ class HealthChecker:
                     issues.append(f"MySQL database connection failed: {str(e)}")
                     details["database_error"] = str(e)
                     
-            elif database_url.startswith('sqlite'):
-                # SQLite database health check
+            elif database_url.startswith('MySQL'):
+                # MySQL
                 try:
-                    # Check if database directory exists and is writable
-                    database_path = database_url.replace("sqlite:///", "")
-                    database_dir = os.path.dirname(database_path)
+                    # Test MySQL connection and get database information
+                    from database import DatabaseManager
+                    from config import Config
                     
-                    if not os.path.exists(database_dir):
-                        issues.append(f"Database directory does not exist: {database_dir}")
-                    elif not os.access(database_dir, os.W_OK):
-                        issues.append(f"Database directory not writable: {database_dir}")
+                    config = Config()
+                    db_manager = DatabaseManager(config)
                     
-                    # Get database file size
-                    if os.path.exists(database_path):
-                        db_size_bytes = os.path.getsize(database_path)
-                        db_size_mb = round(db_size_bytes / (1024**2), 2)
-                    else:
-                        db_size_mb = 0
+                    # Test MySQL connection
+                    is_connected, connection_message = db_manager.test_mysql_connection()
                     
-                    # Get disk usage for database directory
-                    import shutil
-                    db_usage = shutil.disk_usage(database_dir)
+                    if not is_connected:
+                        issues.append(f"MySQL connection failed: {connection_message}")
                     
-                    details.update({
-                        "database_type": "SQLite",
-                        "database_path": database_path,
-                        "database_size_mb": db_size_mb,
-                        "database_directory": database_dir,
-                        "db_disk_free_gb": round(db_usage.free / (1024**3), 2),
-                        "db_disk_total_gb": round(db_usage.total / (1024**3), 2)
-                    })
+                    # Get MySQL performance stats
+                    try:
+                        mysql_stats = db_manager.get_mysql_performance_stats()
+                        if 'error' in mysql_stats:
+                            issues.append(f"MySQL stats error: {mysql_stats['error']}")
+                        else:
+                            details.update({
+                                "database_type": "MySQL",
+                                "connection_status": "Connected" if is_connected else "Failed",
+                                "connection_message": connection_message,
+                                "connection_pool": mysql_stats.get('connection_pool', {}),
+                                "mysql_threads": mysql_stats.get('mysql_threads', {}),
+                                "total_connections": mysql_stats.get('total_connections', 'Unknown')
+                            })
+                    except Exception as e:
+                        issues.append(f"Failed to get MySQL performance stats: {e}")
+                        details.update({
+                            "database_type": "MySQL",
+                            "connection_status": "Connected" if is_connected else "Failed",
+                            "connection_message": connection_message,
+                            "stats_error": str(e)
+                        })
                     
                     # Check disk space (warn if less than 1GB free)
                     if db_usage.free < 1024**3:
                         issues.append("Low disk space for database (less than 1GB free)")
                         
                 except Exception as e:
-                    issues.append(f"SQLite database check failed: {str(e)}")
+                    issues.append(f"MySQL database check failed: {str(e)}")
                     details["database_error"] = str(e)
             
             # Check images directory (common for both database types)
@@ -532,7 +539,7 @@ class HealthChecker:
                 if database_url.startswith('mysql'):
                     message = f"MySQL storage healthy ({details.get('database_name', 'unknown')} database)"
                 else:
-                    message = "SQLite storage healthy"
+                    message = "MySQL storage healthy"
             
             return ComponentHealth(
                 name="storage",

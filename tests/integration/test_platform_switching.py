@@ -8,16 +8,20 @@ Tests complete platform switching scenarios with data isolation validation.
 """
 
 import unittest
-from tests.fixtures.platform_fixtures import PlatformTestCase
+from tests.mysql_test_base import MySQLIntegrationTestBase
 from models import Post, Image, ProcessingStatus
 from platform_context import PlatformContextManager
 
+# MySQL integration test imports
+from tests.mysql_test_base import MySQLIntegrationTestBase
+from tests.mysql_test_config import MySQLTestFixtures
 
-class TestPlatformSwitchingWorkflows(PlatformTestCase):
+
+class TestPlatformSwitchingWorkflows(MySQLIntegrationTestBase):
     """Test complete platform switching workflows"""
     
     def setUp(self):
-        """Set up test with context manager"""
+        """Set up integration test with MySQL"""
         super().setUp()
         self.context_manager = PlatformContextManager(self.session)
     
@@ -99,12 +103,11 @@ class TestPlatformSwitchingWorkflows(PlatformTestCase):
             for post in posts:
                 self.assertEqual(post.platform_connection_id, platform.id)
 
-
-class TestDataIsolationValidation(PlatformTestCase):
+class TestDataIsolationValidation(MySQLIntegrationTestBase):
     """Test data isolation between platforms"""
     
     def setUp(self):
-        """Set up test with context manager"""
+        """Set up integration test with MySQL"""
         super().setUp()
         self.context_manager = PlatformContextManager(self.session)
     
@@ -179,12 +182,11 @@ class TestDataIsolationValidation(PlatformTestCase):
         post_ids2 = {post.id for post in posts2}
         self.assertEqual(len(post_ids1.intersection(post_ids2)), 0)
 
-
-class TestPlatformWorkflowIntegration(PlatformTestCase):
+class TestPlatformWorkflowIntegration(MySQLIntegrationTestBase):
     """Test integration of platform workflows with database operations"""
     
     def setUp(self):
-        """Set up test with context manager"""
+        """Set up integration test with MySQL"""
         super().setUp()
         self.context_manager = PlatformContextManager(self.session)
     
@@ -300,7 +302,6 @@ class TestPlatformWorkflowIntegration(PlatformTestCase):
         
         # Should match initial data
         self.assertEqual(initial_ids, restored_ids)
-
 
 if __name__ == '__main__':
     unittest.main()
