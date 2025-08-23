@@ -1,0 +1,209 @@
+<!-- Copyright (C) 2025 iolaire mcfadden. -->
+<!-- This program is free software: you can redistribute it and/or modify it under the terms of the GNU Affero General Public License as published by the Free Software Foundation, either version 3 of the License, or (at your option) any later version. -->
+<!-- THE SOFTWARE IS PROVIDED "AS IS", WITHOUT WARRANTY OF ANY KIND, EXPRESS OR IMPLIED, INCLUDING BUT NOT LIMITED TO THE WARRANTIES OF MERCHANTABILITY, FITNESS FOR A PARTICULAR PURPOSE AND NONINFRINGEMENT. IN NO EVENT SHALL THE AUTHORS OR COPYRIGHT HOLDERS BE LIABLE FOR ANY CLAIM, DAMAGES OR OTHER LIABILITY, WHETHER IN AN ACTION OF CONTRACT, TORT OR OTHERWISE, ARISING FROM, OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE SOFTWARE. -->
+
+<!-- Admin Context Switcher Component -->
+<div class="admin-context-switcher" id="adminContextSwitcher">
+    <div class="context-indicator">
+        <div class="d-flex align-items-center">
+            <div class="context-icon me-2">
+                <i class="bi bi-shield-check text-warning" id="adminModeIcon" style="display: {{ 'block' if admin_mode else 'none' }}"></i>
+                <i class="bi bi-person-circle text-primary" id="userModeIcon" style="display: {{ 'none' if admin_mode else 'block' }}"></i>
+            </div>
+            <div class="context-info">
+                <div class="context-mode fw-bold" id="contextMode">
+                    {{ 'Administrator Mode' if admin_mode else 'Personal Mode' }}
+                </div>
+                <div class="context-description small text-muted" id="contextDescription">
+                    {{ 'Managing system and user jobs' if admin_mode else 'Managing your personal jobs' }}
+                </div>
+            </div>
+        </div>
+    </div>
+    
+    <div class="context-controls ms-3">
+        <div class="btn-group" role="group" aria-label="Context switcher">
+            <button type="button" 
+                    class="btn btn-sm {{ 'btn-outline-primary' if admin_mode else 'btn-primary' }}" 
+                    id="personalModeBtn"
+                    onclick="switchToPersonalMode()"
+                    {{ 'disabled' if not admin_mode else '' }}>
+                <i class="bi bi-person"></i> Personal
+            </button>
+            <button type="button" 
+                    class="btn btn-sm {{ 'btn-warning' if admin_mode else 'btn-outline-warning' }}" 
+                    id="adminModeBtn"
+                    onclick="switchToAdminMode()"
+                    {{ 'disabled' if admin_mode else '' }}>
+                <i class="bi bi-shield-check"></i> Admin
+            </button>
+        </div>
+    </div>
+</div>
+
+<style>
+.admin-context-switcher {
+    background: linear-gradient(135deg, #f8f9fa 0%, #e9ecef 100%);
+    border: 1px solid #dee2e6;
+    border-radius: 8px;
+    padding: 12px 16px;
+    margin-bottom: 20px;
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    box-shadow: 0 2px 4px rgba(0,0,0,0.05);
+    transition: all 0.3s ease;
+}
+
+.admin-context-switcher.admin-mode {
+    background: linear-gradient(135deg, #fff3cd 0%, #ffeaa7 100%);
+    border-color: #ffc107;
+}
+
+.admin-context-switcher.personal-mode {
+    background: linear-gradient(135deg, #d1ecf1 0%, #b8daff 100%);
+    border-color: #0dcaf0;
+}
+
+.context-icon i {
+    font-size: 1.5rem;
+}
+
+.context-mode {
+    font-size: 1rem;
+    line-height: 1.2;
+}
+
+.context-description {
+    font-size: 0.85rem;
+    line-height: 1.1;
+}
+
+.context-controls .btn {
+    min-width: 80px;
+}
+
+.context-controls .btn:disabled {
+    opacity: 1;
+}
+
+.context-controls .btn-warning {
+    color: #000;
+}
+
+.context-controls .btn-outline-warning:hover {
+    color: #000;
+}
+
+@media (max-width: 768px) {
+    .admin-context-switcher {
+        flex-direction: column;
+        gap: 12px;
+        text-align: center;
+    }
+    
+    .context-controls {
+        margin-left: 0 !important;
+    }
+}
+</style>
+
+<script>
+// Admin context switching functionality
+let currentAdminMode = {{ 'true' if admin_mode else 'false' }};
+
+function switchToPersonalMode() {
+    if (!currentAdminMode) return;
+    
+    updateContextMode(false);
+    
+    // Store preference
+    localStorage.setItem('vedfolnir_admin_mode', 'false');
+    
+    // Notify other components
+    window.dispatchEvent(new CustomEvent('adminModeChanged', {
+        detail: { adminMode: false }
+    }));
+    
+    // Show notification
+    if (window.errorHandler) {
+        window.errorHandler.showNotification('Switched to Personal Mode', 'info');
+    }
+}
+
+function switchToAdminMode() {
+    if (currentAdminMode) return;
+    
+    updateContextMode(true);
+    
+    // Store preference
+    localStorage.setItem('vedfolnir_admin_mode', 'true');
+    
+    // Notify other components
+    window.dispatchEvent(new CustomEvent('adminModeChanged', {
+        detail: { adminMode: true }
+    }));
+    
+    // Show notification
+    if (window.errorHandler) {
+        window.errorHandler.showNotification('Switched to Administrator Mode', 'warning');
+    }
+}
+
+function updateContextMode(adminMode) {
+    currentAdminMode = adminMode;
+    
+    const switcher = document.getElementById('adminContextSwitcher');
+    const adminIcon = document.getElementById('adminModeIcon');
+    const userIcon = document.getElementById('userModeIcon');
+    const contextMode = document.getElementById('contextMode');
+    const contextDescription = document.getElementById('contextDescription');
+    const personalBtn = document.getElementById('personalModeBtn');
+    const adminBtn = document.getElementById('adminModeBtn');
+    
+    if (adminMode) {
+        // Switch to admin mode
+        switcher.className = 'admin-context-switcher admin-mode';
+        adminIcon.style.display = 'block';
+        userIcon.style.display = 'none';
+        contextMode.textContent = 'Administrator Mode';
+        contextDescription.textContent = 'Managing system and user jobs';
+        
+        personalBtn.className = 'btn btn-sm btn-outline-primary';
+        personalBtn.disabled = false;
+        adminBtn.className = 'btn btn-sm btn-warning';
+        adminBtn.disabled = true;
+    } else {
+        // Switch to personal mode
+        switcher.className = 'admin-context-switcher personal-mode';
+        adminIcon.style.display = 'none';
+        userIcon.style.display = 'block';
+        contextMode.textContent = 'Personal Mode';
+        contextDescription.textContent = 'Managing your personal jobs';
+        
+        personalBtn.className = 'btn btn-sm btn-primary';
+        personalBtn.disabled = true;
+        adminBtn.className = 'btn btn-sm btn-outline-warning';
+        adminBtn.disabled = false;
+    }
+}
+
+// Initialize context mode from localStorage on page load
+document.addEventListener('DOMContentLoaded', function() {
+    const savedMode = localStorage.getItem('vedfolnir_admin_mode');
+    if (savedMode !== null) {
+        const adminMode = savedMode === 'true';
+        if (adminMode !== currentAdminMode) {
+            updateContextMode(adminMode);
+        }
+    }
+});
+
+// Export functions for global access
+window.adminContextSwitcher = {
+    switchToPersonalMode,
+    switchToAdminMode,
+    getCurrentMode: () => currentAdminMode,
+    updateContextMode
+};
+</script>

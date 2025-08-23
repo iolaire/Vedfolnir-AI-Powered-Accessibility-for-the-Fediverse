@@ -16,16 +16,11 @@ def create_admin_blueprint(app):
     import os
     admin_bp = Blueprint('admin', __name__, 
                         url_prefix='/admin',
-                        template_folder=os.path.join(os.path.dirname(__file__), 'templates'))
+                        template_folder=os.path.join(os.path.dirname(__file__), 'templates'),
+                        static_folder=os.path.join(os.path.dirname(__file__), 'static'))
     
-    # Import and register route modules
-    from .routes import dashboard, user_management, system_health, cleanup, monitoring, admin_api
-    
-    dashboard.register_routes(admin_bp)
-    user_management.register_routes(admin_bp)
-    system_health.register_routes(admin_bp)
-    cleanup.register_routes(admin_bp)
-    monitoring.register_routes(admin_bp)
-    admin_api.register_api_routes(admin_bp)
+    # Import and register all route modules
+    from .routes import register_all_routes
+    register_all_routes(admin_bp)
     
     return admin_bp

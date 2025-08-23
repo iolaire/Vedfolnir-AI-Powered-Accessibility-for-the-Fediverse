@@ -25,13 +25,16 @@ When creating any new source code file (.py, .js, .html, .css, .sh, .sql), ALWAY
 - **Full Test Suite:** The complete test suite MUST be passing before marking any task as complete
 
 ## Core Technologies
-- **Language**: Python 3
-- **Web Framework**: Flask
-- **Database**: SQLAlchemy with SQLite backend
+- **Language**: Python 3.8+
+- **Web Framework**: Flask 2.0+
+- **Database**: MySQL/MariaDB with SQLAlchemy ORM
 - **Session Management**: Redis sessions with database fallback (NOT Flask sessions)
 - **AI Model**: Ollama with LLaVA model for image caption generation
 - **HTTP Client**: httpx for async HTTP requests
 - **Image Processing**: Pillow (PIL)
+- **Security**: Enterprise-grade security with CSRF protection, input validation, and rate limiting
+- **Performance Monitoring**: Built-in performance tracking and optimization
+- **Multi-Platform Support**: ActivityPub platforms (Pixelfed, Mastodon)
 
 ## Session Management Architecture
 
@@ -60,93 +63,85 @@ When creating any new source code file (.py, .js, .html, .css, .sh, .sql), ALWAY
 
 ### Database Session Patterns
 
-**IMPORTANT**: After the Redis session manager implementation, database operations should use `db_manager` directly. The unified session management patterns are deprecated for database operations due to Redis compatibility issues.
+**IMPORTANT**: After the MySQL migration and Redis session manager implementation, database operations should use `db_manager` directly for optimal performance and compatibility.
 
-#### Pattern 1: Web Routes with User Context
+#### Pattern 1: Web Routes with User Context (Recommended)
 ```python
 @app.route('/some_route')
 @login_required
 def some_function():
-    session = db_manager.get_session()
-    try:
+    with db_manager.get_session() as session:
         # Database operations with proper session management
         result = session.query(Model).filter_by(user_id=current_user.id).all()
         return render_template('template.html', data=result)
-    finally:
-        db_manager.close_session(session)
 ```
 
-#### Pattern 2: Request-Scoped Operations
-```python
-def some_function():
-    with request_session_manager.session_scope() as session:
-        # Simple database query with proper scope management
-        result = session.query(Model).all()
-        return result
-```
-
-#### Pattern 3: Service Layer Operations
+#### Pattern 2: Service Layer Operations (Recommended)
 ```python
 class SomeService:
-    def __init__(self, db_manager, session_manager=None):
+    def __init__(self, db_manager):
         self.db_manager = db_manager
-        self.session_manager = session_manager or self._get_unified_session_manager()
-    
-    def _get_unified_session_manager(self):
-        from flask import current_app
-        return getattr(current_app, 'unified_session_manager', None)
     
     def get_data(self):
-        if self.session_manager:
-            with self.session_manager.get_db_session() as session:
-                return session.query(Model).all()
-        else:
-            # Fallback for non-Flask contexts
-            session = self.db_manager.get_session()
-            try:
-                return session.query(Model).all()
-            finally:
-                session.close()
+        with self.db_manager.get_session() as session:
+            return session.query(Model).all()
 ```
 
-#### Pattern 4: Admin Routes
+#### Pattern 3: Admin Routes with Error Handling
 ```python
 @admin_bp.route('/admin_route')
 @login_required
 @require_admin
 def admin_function():
-    unified_session_manager = current_app.unified_session_manager
-    with unified_session_manager.get_db_session() as session:
-        # Admin operations with session context
-        result = session.query(Model).all()
-        return render_template('admin_template.html', data=result)
+    try:
+        with db_manager.get_session() as session:
+            result = session.query(Model).all()
+            return render_template('admin_template.html', data=result)
+    except Exception as e:
+        logger.error(f"Admin operation failed: {e}")
+        flash("Operation failed. Please try again.", "error")
+        return redirect(url_for('admin.dashboard'))
 ```
 
-### Migration from Direct Database Sessions
-
-**Deprecated Pattern:**
+#### Pattern 4: Batch Operations with Transaction Management
 ```python
-# DON'T USE - Direct db_manager usage
-session = db_manager.get_session()
-try:
-    result = session.query(Model).all()
-    return result
-finally:
-    session.close()
+def batch_operation(items):
+    with db_manager.get_session() as session:
+        try:
+            for item in items:
+                # Process each item
+                session.add(process_item(item))
+            session.commit()
+            return True
+        except Exception as e:
+            session.rollback()
+            logger.error(f"Batch operation failed: {e}")
+            return False
 ```
 
-**Recommended Patterns:**
+### Migration from Legacy Patterns
+
+**Deprecated Pattern (No longer recommended):**
 ```python
-# USE - Unified session manager for user-aware operations
+# DON'T USE - Unified session manager for database operations
 with unified_session_manager.get_db_session() as session:
     result = session.query(Model).all()
-    return result
-
-# USE - Request session manager for simple operations
-with request_session_manager.session_scope() as session:
-    result = session.query(Model).all()
-    return result
 ```
+
+**Current Best Practice:**
+```python
+# USE - Direct db_manager usage with context manager
+with db_manager.get_session() as session:
+    result = session.query(Model).all()
+```
+
+### Benefits of Current Database Patterns
+- **MySQL Optimization**: Optimized for MySQL connection pooling and performance
+- **Error Handling**: Automatic rollback and cleanup with proper exception handling
+- **Resource Management**: Efficient connection pool utilization
+- **Security**: Built-in audit trails and validation
+- **Performance**: Optimized for high-volume operations
+- **Maintainability**: Consistent patterns across the application
 
 ### Redis Session Manager Migration
 
@@ -213,6 +208,7 @@ DB_SESSION_SYNC=true
 - **Memory Efficiency**: Redis optimized memory usage with automatic expiration
 
 ## Key Dependencies
+- **pymysql**: MySQL database connector for Python
 - **requests**: HTTP client for synchronous requests
 - **httpx**: Async HTTP client
 - **Pillow**: Image processing and optimization
@@ -221,16 +217,61 @@ DB_SESSION_SYNC=true
 - **python-dotenv**: Environment variable management
 - **asyncio**: Asynchronous I/O
 - **aiofiles**: Asynchronous file operations
+- **redis**: Redis client for session management
+- **cryptography**: Encryption for platform credentials
+- **werkzeug**: WSGI utilities and security
+- **flask-login**: User session management
 
 ## Environment Configuration
 The application uses environment variables for configuration, loaded from a `.env` file:
-- `ACTIVITYPUB_INSTANCE_URL`: URL of the Pixelfed instance
-- `ACTIVITYPUB_USERNAME`: User name of the Pixelfed user 
-- `ACTIVITYPUB_ACCESS_TOKEN`: Access token for the Pixelfed API
+
+### Database Configuration (MySQL)
+- `DATABASE_URL`: MySQL connection string (e.g., `mysql+pymysql://user:password@localhost/vedfolnir?charset=utf8mb4`)
+- `DB_TYPE`: Database type (always `mysql`)
+- `DB_NAME`: MySQL database name
+- `DB_USER`: MySQL username
+- `DB_PASSWORD`: MySQL password
+- `DB_HOST`: MySQL host (default: localhost)
+- `DB_PORT`: MySQL port (default: 3306)
+- `DB_POOL_SIZE`: Connection pool size (default: 20)
+- `DB_MAX_OVERFLOW`: Maximum overflow connections (default: 30)
+
+### Platform Configuration
+- Platform connections are now managed through the web interface for security
+- `PLATFORM_ENCRYPTION_KEY`: Key for encrypting stored platform credentials
+- Supports multiple ActivityPub platforms (Pixelfed, Mastodon)
+
+### Redis Session Configuration
+- `REDIS_URL`: Redis connection string
+- `REDIS_SESSION_PREFIX`: Session key prefix
+- `REDIS_SESSION_TIMEOUT`: Session timeout in seconds
+- `SESSION_COOKIE_HTTPONLY`: HTTP-only cookies (true)
+- `SESSION_COOKIE_SECURE`: Secure cookies for HTTPS (true)
+
+### Security Configuration
+- `FLASK_SECRET_KEY`: Flask secret key for session security
+- `SECURITY_CSRF_ENABLED`: Enable CSRF protection
+- `SECURITY_RATE_LIMITING_ENABLED`: Enable rate limiting
+- `SECURITY_INPUT_VALIDATION_ENABLED`: Enable input validation
+- `SECURITY_HEADERS_ENABLED`: Enable security headers
+
+### AI/ML Configuration
+- `OLLAMA_URL`: Ollama server URL (default: http://localhost:11434)
+- `OLLAMA_MODEL`: LLaVA model name (default: llava:7b)
+- `OLLAMA_TIMEOUT`: Request timeout in seconds
+
+### Processing Configuration
 - `MAX_POSTS_PER_RUN`: Maximum number of posts to process per user
 - `MAX_USERS_PER_RUN`: Maximum number of users to process in a batch
 - `USER_PROCESSING_DELAY`: Delay in seconds between processing users
-- `LOG_LEVEL`: Logging level
+- `CAPTION_MAX_LENGTH`: Maximum caption length (default: 500)
+- `CAPTION_OPTIMAL_MIN_LENGTH`: Minimum optimal length (default: 150)
+- `CAPTION_OPTIMAL_MAX_LENGTH`: Maximum optimal length (default: 450)
+
+### Logging and Monitoring
+- `LOG_LEVEL`: Logging level (INFO, DEBUG, WARNING, ERROR)
+- `HEALTH_CHECK_ENABLED`: Enable health checks
+- `METRICS_ENABLED`: Enable metrics collection
 
 ## Common Commands
 
@@ -239,11 +280,19 @@ The application uses environment variables for configuration, loaded from a `.en
 # Install dependencies
 pip install -r requirements.txt
 
-# Set up environment
-cp .env.example .env
+# Set up MySQL database (see docs/mysql-installation-guide.md)
+mysql -u root -p
+CREATE DATABASE vedfolnir CHARACTER SET utf8mb4 COLLATE utf8mb4_unicode_ci;
+CREATE USER 'vedfolnir_user'@'localhost' IDENTIFIED BY 'secure_password';
+GRANT ALL PRIVILEGES ON vedfolnir.* TO 'vedfolnir_user'@'localhost';
+FLUSH PRIVILEGES;
 
-# Run database migrations
-python add_batch_id_column.py
+# Set up environment and create admin user
+python scripts/setup/generate_env_secrets.py
+
+# Verify setup
+python scripts/setup/verify_env_setup.py
+python scripts/setup/verify_redis_session_setup.py
 ```
 
 ### Running the Bot
@@ -287,21 +336,65 @@ python web_app.py & sleep 10
 
 ### Database Management
 ```bash
-# Check database contents
-python check_db.py
+# Check database contents and user status
+python -c "
+from dotenv import load_dotenv
+load_dotenv()
+from config import Config
+from database import DatabaseManager
+from models import User
+config = Config()
+db_manager = DatabaseManager(config)
+with db_manager.get_session() as session:
+    users = session.query(User).all()
+    print(f'Found {len(users)} users in database')
+    for user in users:
+        print(f'  - {user.username} ({user.email}) - Role: {user.role.value}')
+"
 
-# Empty the database (caution!)
-python empty_db.py
+# Reset and cleanup options
+python scripts/maintenance/reset_app.py --status          # Check application status
+python scripts/maintenance/reset_app.py --cleanup        # Clean up old data
+python scripts/maintenance/reset_app.py --reset-complete # Complete reset (nuclear option)
 
-# Data cleanup options
-python data_cleanup.py --help                    # Show all cleanup options
-python data_cleanup.py --all --dry-run          # Full cleanup (dry run)
-python data_cleanup.py --all                    # Full cleanup (database, storage, logs)
-python data_cleanup.py --storage --dry-run      # Clean storage/images only (dry run)
-python data_cleanup.py --logs --dry-run         # Clean logs/ directory only (dry run)
+# MySQL migration (for existing SQLite users)
+python scripts/mysql_migration/migrate_to_mysql.py --backup
+python scripts/mysql_migration/verify_migration.py
 
-# Migrate existing log files to logs directory
-python migrate_logs.py
+# Admin user management
+python scripts/setup/init_admin_user.py                  # Create/update admin user
+python scripts/setup/update_admin_user.py               # Update admin credentials
+```
+
+## Recent Major Updates
+
+### MySQL Migration (2025)
+- **Complete migration from SQLite to MySQL/MariaDB**
+- **Performance improvements**: Significantly faster queries and concurrent access
+- **Enterprise features**: Connection pooling, advanced indexing, and optimization
+- **Migration tools**: Comprehensive migration scripts with backup and verification
+- **Backward compatibility**: Migration tools for existing SQLite users
+
+### Security Enhancements (2025)
+- **Enterprise-grade security**: 100% security score with comprehensive protection
+- **CSRF Protection**: Complete protection against Cross-Site Request Forgery attacks
+- **Input Validation**: Advanced sanitization against XSS and SQL injection
+- **Rate Limiting**: Protection against brute force and abuse
+- **Audit Logging**: Comprehensive security event logging
+- **Encrypted Credentials**: Platform credentials encrypted with Fernet encryption
+
+### Performance Optimization (2025)
+- **Redis Session Management**: High-performance session storage with database fallback
+- **Connection Pooling**: Optimized MySQL connection management
+- **Performance Monitoring**: Built-in performance tracking and optimization
+- **Health Checks**: Comprehensive system health monitoring
+- **Metrics Collection**: Real-time performance metrics and alerting
+
+### Multi-Platform Support (2025)
+- **ActivityPub Platforms**: Support for Pixelfed, Mastodon, and other ActivityPub platforms
+- **Platform Management**: Web-based platform connection management
+- **Multi-Account Support**: Multiple platform accounts per user
+- **Unified Interface**: Single interface for managing multiple platforms
 
 ## Caption Configuration
 

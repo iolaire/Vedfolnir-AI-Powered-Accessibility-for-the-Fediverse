@@ -1,0 +1,640 @@
+<!-- Copyright (C) 2025 iolaire mcfadden. -->
+<!-- This program is free software: you can redistribute it and/or modify it under the terms of the GNU Affero General Public License as published by the Free Software Foundation, either version 3 of the License, or (at your option) any later version. -->
+<!-- THE SOFTWARE IS PROVIDED "AS IS", WITHOUT WARRANTY OF ANY KIND, EXPRESS OR IMPLIED, INCLUDING BUT NOT LIMITED TO THE WARRANTIES OF MERCHANTABILITY, FITNESS FOR A PARTICULAR PURPOSE AND NONINFRINGEMENT. IN NO EVENT SHALL THE AUTHORS OR COPYRIGHT HOLDERS BE LIABLE FOR ANY CLAIM, DAMAGES OR OTHER LIABILITY, WHETHER IN AN ACTION OF CONTRACT, TORT OR OTHERWISE, ARISING FROM, OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE SOFTWARE. -->
+
+<!-- Admin Job History Modal -->
+<div class="modal fade" id="adminJobHistoryModal" tabindex="-1" aria-labelledby="adminJobHistoryModalLabel" aria-hidden="true">
+    <div class="modal-dialog modal-xl">
+        <div class="modal-content">
+            <div class="modal-header">
+                <h5 class="modal-title" id="adminJobHistoryModalLabel">
+                    <i class="bi bi-clock-history"></i> Job History
+                </h5>
+                <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
+            </div>
+            <div class="modal-body">
+                <!-- History Type Selector -->
+                <div class="row mb-4">
+                    <div class="col-12">
+                        <div class="btn-group w-100" role="group" aria-label="History type selector">
+                            <button type="button" class="btn btn-outline-warning active" id="adminHistoryBtn" onclick="showAdminHistory()">
+                                <i class="bi bi-shield-check"></i> Administrative Actions
+                                <span class="badge bg-warning text-dark ms-2" id="adminHistoryCount">0</span>
+                            </button>
+                            <button type="button" class="btn btn-outline-info" id="personalHistoryBtn" onclick="showPersonalHistory()">
+                                <i class="bi bi-person-circle"></i> Personal Jobs
+                                <span class="badge bg-info text-dark ms-2" id="personalHistoryCount">0</span>
+                            </button>
+                            <button type="button" class="btn btn-outline-secondary" id="allHistoryBtn" onclick="showAllHistory()">
+                                <i class="bi bi-list-ul"></i> All History
+                                <span class="badge bg-secondary ms-2" id="allHistoryCount">0</span>
+                            </button>
+                        </div>
+                    </div>
+                </div>
+                
+                <!-- Filters -->
+                <div class="row mb-3">
+                    <div class="col-md-3">
+                        <label for="historyDateRange" class="form-label">Date Range</label>
+                        <select class="form-select" id="historyDateRange" onchange="filterHistory()">
+                            <option value="today">Today</option>
+                            <option value="week" selected>Last 7 days</option>
+                            <option value="month">Last 30 days</option>
+                            <option value="all">All time</option>
+                        </select>
+                    </div>
+                    <div class="col-md-3">
+                        <label for="historyStatus" class="form-label">Status</label>
+                        <select class="form-select" id="historyStatus" onchange="filterHistory()">
+                            <option value="all">All statuses</option>
+                            <option value="completed">Completed</option>
+                            <option value="failed">Failed</option>
+                            <option value="cancelled">Cancelled</option>
+                        </select>
+                    </div>
+                    <div class="col-md-3">
+                        <label for="historyUser" class="form-label">User</label>
+                        <select class="form-select" id="historyUser" onchange="filterHistory()">
+                            <option value="all">All users</option>
+                            <!-- Users will be populated dynamically -->
+                        </select>
+                    </div>
+                    <div class="col-md-3">
+                        <label for="historySearch" class="form-label">Search</label>
+                        <input type="text" class="form-control" id="historySearch" placeholder="Search jobs..." onkeyup="filterHistory()">
+                    </div>
+                </div>
+                
+                <!-- Administrative Actions History -->
+                <div id="adminHistorySection" class="history-section">
+                    <div class="admin-alert alert d-flex align-items-center mb-3">
+                        <i class="bi bi-shield-exclamation alert-icon"></i>
+                        <div>
+                            <strong>Administrative Actions History</strong><br>
+                            <small>This shows all administrative interventions you've performed on user jobs. These actions are logged for audit purposes.</small>
+                        </div>
+                    </div>
+                    
+                    <div class="table-responsive">
+                        <table class="table table-hover" id="adminHistoryTable">
+                            <thead class="table-warning">
+                                <tr>
+                                    <th>Date/Time</th>
+                                    <th>Action</th>
+                                    <th>Job ID</th>
+                                    <th>User</th>
+                                    <th>Platform</th>
+                                    <th>Reason/Notes</th>
+                                    <th>Result</th>
+                                </tr>
+                            </thead>
+                            <tbody id="adminHistoryBody">
+                                <!-- Admin history will be populated here -->
+                            </tbody>
+                        </table>
+                    </div>
+                </div>
+                
+                <!-- Personal Jobs History -->
+                <div id="personalHistorySection" class="history-section" style="display: none;">
+                    <div class="personal-alert alert d-flex align-items-center mb-3">
+                        <i class="bi bi-person-check alert-icon"></i>
+                        <div>
+                            <strong>Your Personal Jobs History</strong><br>
+                            <small>This shows your own caption generation jobs, separate from any administrative actions.</small>
+                        </div>
+                    </div>
+                    
+                    <div class="table-responsive">
+                        <table class="table table-hover" id="personalHistoryTable">
+                            <thead class="table-info">
+                                <tr>
+                                    <th>Date/Time</th>
+                                    <th>Job ID</th>
+                                    <th>Platform</th>
+                                    <th>Status</th>
+                                    <th>Results</th>
+                                    <th>Duration</th>
+                                    <th>Actions</th>
+                                </tr>
+                            </thead>
+                            <tbody id="personalHistoryBody">
+                                <!-- Personal history will be populated here -->
+                            </tbody>
+                        </table>
+                    </div>
+                </div>
+                
+                <!-- All History -->
+                <div id="allHistorySection" class="history-section" style="display: none;">
+                    <div class="alert alert-secondary d-flex align-items-center mb-3">
+                        <i class="bi bi-list-check alert-icon"></i>
+                        <div>
+                            <strong>Complete Job History</strong><br>
+                            <small>This shows all jobs and administrative actions in chronological order.</small>
+                        </div>
+                    </div>
+                    
+                    <div class="table-responsive">
+                        <table class="table table-hover" id="allHistoryTable">
+                            <thead class="table-secondary">
+                                <tr>
+                                    <th>Date/Time</th>
+                                    <th>Type</th>
+                                    <th>Job ID</th>
+                                    <th>User</th>
+                                    <th>Platform</th>
+                                    <th>Status/Action</th>
+                                    <th>Details</th>
+                                </tr>
+                            </thead>
+                            <tbody id="allHistoryBody">
+                                <!-- All history will be populated here -->
+                            </tbody>
+                        </table>
+                    </div>
+                </div>
+                
+                <!-- Empty State -->
+                <div id="historyEmptyState" class="text-center py-5" style="display: none;">
+                    <i class="bi bi-inbox" style="font-size: 3rem; color: #6c757d; opacity: 0.5;"></i>
+                    <h5 class="mt-3 text-muted">No History Found</h5>
+                    <p class="text-muted">No jobs or actions match your current filters.</p>
+                </div>
+                
+                <!-- Loading State -->
+                <div id="historyLoadingState" class="text-center py-5" style="display: none;">
+                    <div class="spinner-border text-primary" role="status">
+                        <span class="visually-hidden">Loading...</span>
+                    </div>
+                    <h5 class="mt-3">Loading History...</h5>
+                </div>
+            </div>
+            <div class="modal-footer">
+                <div class="me-auto">
+                    <small class="text-muted">
+                        <i class="bi bi-info-circle"></i>
+                        History is retained for <strong>90 days</strong> for audit purposes.
+                    </small>
+                </div>
+                <button type="button" class="btn btn-outline-secondary" onclick="exportHistory()">
+                    <i class="bi bi-download"></i> Export
+                </button>
+                <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Close</button>
+            </div>
+        </div>
+    </div>
+</div>
+
+<style>
+.history-section {
+    min-height: 400px;
+}
+
+.table th {
+    font-weight: 600;
+    font-size: 0.9rem;
+    border-bottom: 2px solid #dee2e6;
+}
+
+.table td {
+    font-size: 0.85rem;
+    vertical-align: middle;
+}
+
+.admin-history-row {
+    background: linear-gradient(135deg, rgba(255, 243, 205, 0.3) 0%, rgba(255, 234, 167, 0.1) 100%);
+    border-left: 3px solid #ffc107;
+}
+
+.personal-history-row {
+    background: linear-gradient(135deg, rgba(209, 236, 241, 0.3) 0%, rgba(184, 218, 255, 0.1) 100%);
+    border-left: 3px solid #0dcaf0;
+}
+
+.action-badge {
+    font-size: 0.7rem;
+    padding: 2px 6px;
+    border-radius: 3px;
+    font-weight: bold;
+    text-transform: uppercase;
+}
+
+.action-badge.admin-action {
+    background: #ffc107;
+    color: #000;
+}
+
+.action-badge.personal-action {
+    background: #0dcaf0;
+    color: #000;
+}
+
+.status-badge {
+    font-size: 0.75rem;
+    padding: 3px 8px;
+    border-radius: 4px;
+    font-weight: 500;
+}
+
+.job-id-code {
+    font-family: 'Courier New', monospace;
+    font-size: 0.8rem;
+    background: #f8f9fa;
+    padding: 2px 4px;
+    border-radius: 3px;
+    border: 1px solid #dee2e6;
+}
+
+.duration-text {
+    font-size: 0.8rem;
+    color: #6c757d;
+}
+
+.result-summary {
+    font-size: 0.8rem;
+}
+
+.result-summary .text-success {
+    color: #198754 !important;
+}
+
+.result-summary .text-danger {
+    color: #dc3545 !important;
+}
+
+.btn-group .btn.active {
+    font-weight: 600;
+}
+
+.modal-xl .modal-dialog {
+    max-width: 1200px;
+}
+
+@media (max-width: 768px) {
+    .modal-xl .modal-dialog {
+        max-width: 95%;
+        margin: 10px auto;
+    }
+    
+    .table-responsive {
+        font-size: 0.8rem;
+    }
+    
+    .btn-group {
+        flex-direction: column;
+    }
+    
+    .btn-group .btn {
+        border-radius: 0.375rem !important;
+        margin-bottom: 2px;
+    }
+}
+</style>
+
+<script>
+// Job History Modal Management
+let currentHistoryType = 'admin';
+let historyData = {
+    admin: [],
+    personal: [],
+    all: []
+};
+
+function showAdminJobHistoryModal() {
+    const modal = new bootstrap.Modal(document.getElementById('adminJobHistoryModal'));
+    loadHistoryData();
+    modal.show();
+}
+
+function showAdminHistory() {
+    currentHistoryType = 'admin';
+    updateHistoryButtons();
+    document.getElementById('adminHistorySection').style.display = 'block';
+    document.getElementById('personalHistorySection').style.display = 'none';
+    document.getElementById('allHistorySection').style.display = 'none';
+    populateAdminHistory();
+}
+
+function showPersonalHistory() {
+    currentHistoryType = 'personal';
+    updateHistoryButtons();
+    document.getElementById('adminHistorySection').style.display = 'none';
+    document.getElementById('personalHistorySection').style.display = 'block';
+    document.getElementById('allHistorySection').style.display = 'none';
+    populatePersonalHistory();
+}
+
+function showAllHistory() {
+    currentHistoryType = 'all';
+    updateHistoryButtons();
+    document.getElementById('adminHistorySection').style.display = 'none';
+    document.getElementById('personalHistorySection').style.display = 'none';
+    document.getElementById('allHistorySection').style.display = 'block';
+    populateAllHistory();
+}
+
+function updateHistoryButtons() {
+    const buttons = ['adminHistoryBtn', 'personalHistoryBtn', 'allHistoryBtn'];
+    buttons.forEach(btnId => {
+        const btn = document.getElementById(btnId);
+        btn.classList.remove('active');
+        if (btnId === currentHistoryType + 'HistoryBtn') {
+            btn.classList.add('active');
+        }
+    });
+}
+
+function loadHistoryData() {
+    showLoadingState();
+    
+    // Load admin history
+    fetch('/admin/api/job-history/admin', {
+        headers: {
+            'X-CSRFToken': document.querySelector('meta[name="csrf-token"]').getAttribute('content')
+        }
+    })
+    .then(response => response.json())
+    .then(data => {
+        historyData.admin = data.history || [];
+        document.getElementById('adminHistoryCount').textContent = historyData.admin.length;
+        
+        // Load personal history
+        return fetch('/admin/api/job-history/personal', {
+            headers: {
+                'X-CSRFToken': document.querySelector('meta[name="csrf-token"]').getAttribute('content')
+            }
+        });
+    })
+    .then(response => response.json())
+    .then(data => {
+        historyData.personal = data.history || [];
+        document.getElementById('personalHistoryCount').textContent = historyData.personal.length;
+        
+        // Combine for all history
+        historyData.all = [...historyData.admin, ...historyData.personal]
+            .sort((a, b) => new Date(b.timestamp) - new Date(a.timestamp));
+        document.getElementById('allHistoryCount').textContent = historyData.all.length;
+        
+        hideLoadingState();
+        populateCurrentHistory();
+    })
+    .catch(error => {
+        console.error('Error loading history data:', error);
+        hideLoadingState();
+        showEmptyState();
+    });
+}
+
+function populateCurrentHistory() {
+    switch (currentHistoryType) {
+        case 'admin':
+            populateAdminHistory();
+            break;
+        case 'personal':
+            populatePersonalHistory();
+            break;
+        case 'all':
+            populateAllHistory();
+            break;
+    }
+}
+
+function populateAdminHistory() {
+    const tbody = document.getElementById('adminHistoryBody');
+    tbody.innerHTML = '';
+    
+    if (historyData.admin.length === 0) {
+        showEmptyState();
+        return;
+    }
+    
+    hideEmptyState();
+    
+    historyData.admin.forEach(action => {
+        const row = document.createElement('tr');
+        row.className = 'admin-history-row';
+        row.innerHTML = `
+            <td>
+                <div>${formatDateTime(action.timestamp)}</div>
+                <small class="text-muted">${formatTimeAgo(action.timestamp)}</small>
+            </td>
+            <td>
+                <span class="action-badge admin-action">${action.action}</span>
+            </td>
+            <td>
+                <code class="job-id-code">${action.job_id.substring(0, 8)}...</code>
+            </td>
+            <td>
+                <strong>${action.target_username}</strong><br>
+                <small class="text-muted">${action.target_user_email}</small>
+            </td>
+            <td>
+                <span class="badge bg-secondary">${action.platform_type}</span><br>
+                <small>${action.platform_name}</small>
+            </td>
+            <td>
+                <div class="text-wrap" style="max-width: 200px;">
+                    ${action.reason || action.notes || '-'}
+                </div>
+            </td>
+            <td>
+                <span class="status-badge bg-${action.success ? 'success' : 'danger'}">
+                    ${action.success ? 'Success' : 'Failed'}
+                </span>
+                ${action.result_message ? `<br><small class="text-muted">${action.result_message}</small>` : ''}
+            </td>
+        `;
+        tbody.appendChild(row);
+    });
+}
+
+function populatePersonalHistory() {
+    const tbody = document.getElementById('personalHistoryBody');
+    tbody.innerHTML = '';
+    
+    if (historyData.personal.length === 0) {
+        showEmptyState();
+        return;
+    }
+    
+    hideEmptyState();
+    
+    historyData.personal.forEach(job => {
+        const row = document.createElement('tr');
+        row.className = 'personal-history-row';
+        row.innerHTML = `
+            <td>
+                <div>${formatDateTime(job.timestamp)}</div>
+                <small class="text-muted">${formatTimeAgo(job.timestamp)}</small>
+            </td>
+            <td>
+                <code class="job-id-code">${job.job_id.substring(0, 8)}...</code>
+            </td>
+            <td>
+                <span class="badge bg-secondary">${job.platform_type}</span><br>
+                <small>${job.platform_name}</small>
+            </td>
+            <td>
+                <span class="status-badge bg-${getStatusColor(job.status)}">${job.status}</span>
+            </td>
+            <td>
+                <div class="result-summary">
+                    ${job.results ? `
+                        <span class="text-success">${job.results.captions_generated || 0} captions</span><br>
+                        <span class="text-info">${job.results.images_processed || 0} images</span>
+                        ${job.results.errors_count > 0 ? `<br><span class="text-danger">${job.results.errors_count} errors</span>` : ''}
+                    ` : '-'}
+                </div>
+            </td>
+            <td>
+                <span class="duration-text">
+                    ${job.duration ? formatDuration(job.duration) : '-'}
+                </span>
+            </td>
+            <td>
+                <div class="btn-group btn-group-sm">
+                    <button class="btn btn-outline-info btn-sm" onclick="viewJobDetails('${job.job_id}', false)" title="View Details">
+                        <i class="bi bi-eye"></i>
+                    </button>
+                    ${job.status === 'completed' ? `
+                        <a href="/review" class="btn btn-outline-primary btn-sm" title="Review Captions">
+                            <i class="bi bi-eye-fill"></i>
+                        </a>
+                    ` : ''}
+                </div>
+            </td>
+        `;
+        tbody.appendChild(row);
+    });
+}
+
+function populateAllHistory() {
+    const tbody = document.getElementById('allHistoryBody');
+    tbody.innerHTML = '';
+    
+    if (historyData.all.length === 0) {
+        showEmptyState();
+        return;
+    }
+    
+    hideEmptyState();
+    
+    historyData.all.forEach(item => {
+        const row = document.createElement('tr');
+        row.className = item.type === 'admin_action' ? 'admin-history-row' : 'personal-history-row';
+        row.innerHTML = `
+            <td>
+                <div>${formatDateTime(item.timestamp)}</div>
+                <small class="text-muted">${formatTimeAgo(item.timestamp)}</small>
+            </td>
+            <td>
+                <span class="action-badge ${item.type === 'admin_action' ? 'admin-action' : 'personal-action'}">
+                    ${item.type === 'admin_action' ? 'ADMIN' : 'PERSONAL'}
+                </span>
+            </td>
+            <td>
+                <code class="job-id-code">${item.job_id.substring(0, 8)}...</code>
+            </td>
+            <td>
+                <strong>${item.username || item.target_username}</strong>
+                ${item.user_email || item.target_user_email ? `<br><small class="text-muted">${item.user_email || item.target_user_email}</small>` : ''}
+            </td>
+            <td>
+                <span class="badge bg-secondary">${item.platform_type}</span><br>
+                <small>${item.platform_name}</small>
+            </td>
+            <td>
+                ${item.type === 'admin_action' ? 
+                    `<span class="status-badge bg-warning text-dark">${item.action}</span>` :
+                    `<span class="status-badge bg-${getStatusColor(item.status)}">${item.status}</span>`
+                }
+            </td>
+            <td>
+                <div class="text-wrap" style="max-width: 200px;">
+                    ${item.type === 'admin_action' ? 
+                        (item.reason || item.notes || '-') :
+                        (item.results ? `${item.results.captions_generated || 0} captions, ${item.results.images_processed || 0} images` : '-')
+                    }
+                </div>
+            </td>
+        `;
+        tbody.appendChild(row);
+    });
+}
+
+function filterHistory() {
+    // TODO: Implement filtering logic
+    console.log('Filtering history...');
+}
+
+function exportHistory() {
+    // TODO: Implement history export
+    console.log('Exporting history...');
+}
+
+function showLoadingState() {
+    document.getElementById('historyLoadingState').style.display = 'block';
+    document.getElementById('historyEmptyState').style.display = 'none';
+    document.querySelectorAll('.history-section').forEach(section => {
+        section.style.display = 'none';
+    });
+}
+
+function hideLoadingState() {
+    document.getElementById('historyLoadingState').style.display = 'none';
+}
+
+function showEmptyState() {
+    document.getElementById('historyEmptyState').style.display = 'block';
+    hideLoadingState();
+}
+
+function hideEmptyState() {
+    document.getElementById('historyEmptyState').style.display = 'none';
+}
+
+// Utility functions
+function formatDateTime(timestamp) {
+    return new Date(timestamp).toLocaleString();
+}
+
+function formatTimeAgo(timestamp) {
+    const now = new Date();
+    const time = new Date(timestamp);
+    const diffMs = now - time;
+    const diffMins = Math.floor(diffMs / 60000);
+    const diffHours = Math.floor(diffMins / 60);
+    const diffDays = Math.floor(diffHours / 24);
+    
+    if (diffMins < 1) return 'Just now';
+    if (diffMins < 60) return `${diffMins}m ago`;
+    if (diffHours < 24) return `${diffHours}h ago`;
+    return `${diffDays}d ago`;
+}
+
+function formatDuration(seconds) {
+    const hours = Math.floor(seconds / 3600);
+    const minutes = Math.floor((seconds % 3600) / 60);
+    const secs = seconds % 60;
+    
+    if (hours > 0) return `${hours}h ${minutes}m`;
+    if (minutes > 0) return `${minutes}m ${secs}s`;
+    return `${secs}s`;
+}
+
+function getStatusColor(status) {
+    switch (status) {
+        case 'completed': return 'success';
+        case 'failed': return 'danger';
+        case 'cancelled': return 'warning';
+        case 'running': return 'primary';
+        case 'queued': return 'secondary';
+        default: return 'secondary';
+    }
+}
+
+// Export function for global access
+window.showAdminJobHistoryModal = showAdminJobHistoryModal;
+</script>

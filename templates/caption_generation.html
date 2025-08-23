@@ -6,6 +6,7 @@
 {% block title %}Generate Captions - Vedfolnir{% endblock %}
 
 {% block head %}
+<script src="{{ url_for('static', filename='js/caption_generation.js') }}"></script>
 <style>
     .progress-container {
         display: none;
@@ -100,6 +101,63 @@
             gap: 0;
         }
     }
+    
+    /* Enhanced UI styles */
+    .error-display {
+        position: relative;
+    }
+    
+    .error-display .btn-link {
+        text-decoration: none;
+        color: #dc3545;
+    }
+    
+    .error-display .btn-link:hover {
+        color: #b02a37;
+    }
+    
+    .task-item {
+        transition: all 0.3s ease;
+    }
+    
+    .task-item:hover {
+        box-shadow: 0 2px 8px rgba(0,0,0,0.1);
+        transform: translateY(-1px);
+    }
+    
+    .btn-group .btn.active {
+        background-color: #0d6efd;
+        border-color: #0d6efd;
+        color: white;
+    }
+    
+    .progress-details .row {
+        font-size: 0.85em;
+    }
+    
+    .progress-details strong {
+        font-weight: 600;
+    }
+    
+    .modal-body .alert {
+        border-left: 4px solid;
+    }
+    
+    .modal-body .alert-danger {
+        border-left-color: #dc3545;
+    }
+    
+    .modal-body .alert-info {
+        border-left-color: #0dcaf0;
+    }
+    
+    .modal-body .alert-success {
+        border-left-color: #198754;
+    }
+    
+    .modal-body .alert-warning {
+        border-left-color: #ffc107;
+    }
 </style>
 {% endblock %}
 
@@ -159,7 +217,22 @@
                             </div>
                         </div>
                         <div class="progress-details" id="progress-details">
-                            Started: {{ active_task.created_at.strftime('%Y-%m-%d %H:%M:%S') if active_task.created_at else 'Unknown' }}
+                            <div class="row">
+                                <div class="col-sm-6">
+                                    <small><strong>Started:</strong> {{ active_task.created_at.strftime('%Y-%m-%d %H:%M:%S') if active_task.created_at else 'Unknown' }}</small>
+                                </div>
+                                <div class="col-sm-6">
+                                    <small><strong>Estimated completion:</strong> <span id="estimated-completion">Calculating...</span></small>
+                                </div>
+                            </div>
+                            <div class="row mt-1">
+                                <div class="col-sm-6">
+                                    <small><strong>Images processed:</strong> <span id="images-processed">0</span></small>
+                                </div>
+                                <div class="col-sm-6">
+                                    <small><strong>Processing rate:</strong> <span id="processing-rate">-</span></small>
+                                </div>
+                            </div>
                         </div>
                     </div>
                     <div>
@@ -248,20 +321,30 @@
         <div class="col-lg-4">
             <!-- Task History -->
             <div class="card">
-                <div class="card-header">
-                    <h5><i class="bi bi-clock-history"></i> Recent Tasks</h5>
+                <div class="card-header d-flex justify-content-between align-items-center">
+                    <h5><i class="bi bi-clock-history"></i> Task History</h5>
+                    <div class="btn-group btn-group-sm" role="group">
+                        <button type="button" class="btn btn-outline-secondary" onclick="filterTasks('all')" id="filter-all">All</button>
+                        <button type="button" class="btn btn-outline-secondary" onclick="filterTasks('completed')" id="filter-completed">Completed</button>
+                        <button type="button" class="btn btn-outline-secondary" onclick="filterTasks('failed')" id="filter-failed">Failed</button>
+                    </div>
                 </div>
                 <div class="card-body">
                     {% if task_history %}
                     <div class="task-history">
                         {% for task in task_history %}
-                        <div class="task-item">
+                        <div class="task-item" data-status="{{ task.status }}">
                             <div class="d-flex justify-content-between align-items-start">
                                 <div>
                                     <strong>{{ task.task_id[:8] }}...</strong>
                                     <span class="badge bg-{{ 'success' if task.status == 'completed' else 'danger' if task.status == 'failed' else 'warning' if task.status == 'cancelled' else 'primary' }}">
                                         {{ task.status|title }}
                                     </span>
+                                    {% if task.status == 'failed' %}
+                                    <button type="button" class="btn btn-sm btn-outline-primary ms-2" onclick="retryTask('{{ task.task_id }}')" title="Retry this task">
+                                        <i class="bi bi-arrow-clockwise"></i>
+                                    </button>
+                                    {% endif %}
                                 </div>
                                 <small class="text-muted">
                                     {{ task.created_at[:19] if task.created_at else 'Unknown' }}
@@ -284,9 +367,15 @@
                             
                             {% if task.error_message %}
                             <div class="mt-2">
-                                <small class="text-danger">
-                                    <i class="bi bi-exclamation-circle"></i> {{ task.error_message[:100] }}{% if task.error_message|length > 100 %}...{% endif %}
-                                </small>
+                                <div class="error-display">
+                                    <small class="text-danger">
+                                        <i class="bi bi-exclamation-circle"></i> 
+                                        <span class="error-message">{{ task.error_message[:100] }}{% if task.error_message|length > 100 %}...{% endif %}</span>
+                                    </small>
+                                    <button type="button" class="btn btn-sm btn-link p-0 ms-1" onclick="showErrorDetails('{{ task.task_id }}')" title="Show error details">
+                                        <i class="bi bi-info-circle"></i>
+                                    </button>
+                                </div>
                             </div>
                             {% endif %}
                         </div>
@@ -301,306 +390,8 @@
     </div>
 </div>
 
-<!-- AJAX polling for real-time updates -->
-<script>
-let currentTaskId = {{ active_task.id|tojson if active_task else 'null' }};
-
-// Initialize progress monitoring using AJAX polling (like admin monitoring)
-function initializeProgressMonitoring() {
-    if (!currentTaskId) {
-        console.log('No active task, skipping progress monitoring');
-        return;
-    }
-    
-    console.log('Starting progress monitoring for task:', currentTaskId);
-    
-    // Start polling for progress updates
-    startProgressPolling();
-}
-
-let progressPollingInterval = null;
-
-function startProgressPolling() {
-    // Clear any existing interval
-    if (progressPollingInterval) {
-        clearInterval(progressPollingInterval);
-    }
-    
-    // Poll every 2 seconds for progress updates
-    progressPollingInterval = setInterval(async () => {
-        if (!currentTaskId) {
-            stopProgressPolling();
-            return;
-        }
-        
-        try {
-            const response = await fetch(`/api/caption_generation/status/${currentTaskId}`);
-            const data = await response.json();
-            
-            if (data.success && data.status) {
-                updateProgressFromStatus(data.status);
-                
-                // Check if task is completed
-                if (data.status.status === 'completed') {
-                    handleTaskCompletion(data.status);
-                    stopProgressPolling();
-                } else if (data.status.status === 'failed') {
-                    handleTaskError(data.status);
-                    stopProgressPolling();
-                } else if (data.status.status === 'cancelled') {
-                    handleTaskCancellation(data.status);
-                    stopProgressPolling();
-                }
-            } else {
-                console.log('No status data available for task:', currentTaskId);
-            }
-        } catch (error) {
-            console.error('Error polling for progress:', error);
-        }
-    }, 2000); // Poll every 2 seconds
-}
-
-function stopProgressPolling() {
-    if (progressPollingInterval) {
-        clearInterval(progressPollingInterval);
-        progressPollingInterval = null;
-        console.log('Stopped progress polling');
-    }
-}
-
-function updateProgressFromStatus(status) {
-    const progressData = {
-        task_id: status.task_id,
-        progress_percent: status.progress_percent || 0,
-        current_step: status.current_step || 'Processing',
-        details: status.progress_details || {}
-    };
-    
-    updateProgress(progressData);
-}
-
-// Update progress display
-function updateProgress(data) {
-    if (data.task_id && data.task_id !== currentTaskId) return;
-    
-    const progressBar = document.getElementById('progress-bar');
-    const progressText = document.getElementById('progress-text');
-    const currentStep = document.getElementById('current-step');
-    const progressDetails = document.getElementById('progress-details');
-    
-    if (progressBar) {
-        progressBar.style.width = data.progress_percent + '%';
-        progressBar.setAttribute('aria-valuenow', data.progress_percent);
-    }
-    
-    if (progressText) {
-        progressText.textContent = data.progress_percent + '%';
-    }
-    
-    if (currentStep) {
-        currentStep.textContent = data.current_step || 'Processing';
-    }
-    
-    if (progressDetails && data.details) {
-        let detailsText = '';
-        if (data.details.current_post && data.details.total_posts) {
-            detailsText += `Post ${data.details.current_post} of ${data.details.total_posts}`;
-        }
-        if (data.details.images_processed) {
-            detailsText += ` • ${data.details.images_processed} images processed`;
-        }
-        if (detailsText) {
-            progressDetails.innerHTML = detailsText;
-        }
-    }
-}
-
-// Handle task completion
-function handleTaskCompletion(status) {
-    if (status.task_id !== currentTaskId) return;
-    
-    const statusDiv = document.getElementById('active-task-status');
-    if (statusDiv) {
-        statusDiv.className = 'task-status completed';
-        
-        const currentStep = document.getElementById('current-step');
-        if (currentStep) {
-            currentStep.textContent = 'Completed';
-        }
-        
-        const progressBar = document.getElementById('progress-bar');
-        if (progressBar) {
-            progressBar.style.width = '100%';
-            progressBar.className = 'progress-bar bg-success';
-        }
-        
-        const progressText = document.getElementById('progress-text');
-        if (progressText) {
-            progressText.textContent = '100%';
-        }
-    }
-    
-    showAlert('Caption generation completed successfully! Redirecting to review...', 'success');
-    
-    // Redirect to review batches after completion
-    setTimeout(() => {
-        window.location.href = '/review/batches';
-    }, 2000);
-}
-
-// Handle task error
-function handleTaskError(status) {
-    if (status.task_id !== currentTaskId) return;
-    
-    const statusDiv = document.getElementById('active-task-status');
-    if (statusDiv) {
-        statusDiv.className = 'task-status failed';
-        
-        const currentStep = document.getElementById('current-step');
-        if (currentStep) {
-            currentStep.textContent = 'Failed';
-        }
-    }
-    
-    showAlert('Caption generation failed: ' + (status.error_message || 'Unknown error'), 'danger');
-}
-
-// Handle task cancellation
-function handleTaskCancellation(status) {
-    if (status.task_id !== currentTaskId) return;
-    
-    const statusDiv = document.getElementById('active-task-status');
-    if (statusDiv) {
-        statusDiv.className = 'task-status cancelled';
-        
-        const currentStep = document.getElementById('current-step');
-        if (currentStep) {
-            currentStep.textContent = 'Cancelled';
-        }
-    }
-    
-    showAlert('Caption generation was cancelled.', 'warning');
-    
-    // Refresh page after a short delay
-    setTimeout(() => {
-        window.location.reload();
-    }, 1500);
-}
-
-// Start caption generation
-const captionForm = document.getElementById('caption-generation-form');
-if (captionForm) {
-    captionForm.addEventListener('submit', function(e) {
-    e.preventDefault();
-    
-    const formData = new FormData(this);
-    const submitBtn = document.getElementById('start-generation-btn');
-    
-    // Disable submit button
-    submitBtn.disabled = true;
-    submitBtn.innerHTML = '<i class="bi bi-hourglass-split"></i> Starting...';
-    
-    // Use secure fetch with automatic CSRF handling
-    window.csrfHandler.secureFetch(this.action, {
-        method: 'POST',
-        body: formData
-    })
-    .then(response => response.json())
-    .then(data => {
-        if (data.success) {
-            currentTaskId = data.task_id;
-            showAlert(data.message, 'success');
-            
-            // Progress monitoring will start automatically when page reloads
-            
-            // Refresh page to show active task
-            setTimeout(() => {
-                window.location.reload();
-            }, 1000);
-        } else {
-            showAlert(data.error, 'danger');
-            submitBtn.disabled = false;
-            submitBtn.innerHTML = '<i class="bi bi-play-circle"></i> Start Caption Generation';
-        }
-    })
-    .catch(error => {
-        console.error('Error:', error);
-        showAlert('An error occurred while starting caption generation.', 'danger');
-        submitBtn.disabled = false;
-        submitBtn.innerHTML = '<i class="bi bi-play-circle"></i> Start Caption Generation';
-    });
-    });
-}
-
-// Cancel task
-function cancelTask(taskId) {
-    if (!confirm('Are you sure you want to cancel this caption generation task?')) {
-        return;
-    }
-    
-    window.csrfHandler.secureFetch(`/api/caption_generation/cancel/${taskId}`, {
-        method: 'POST',
-        headers: {
-            'Content-Type': 'application/json'
-        }
-    })
-    .then(response => response.json())
-    .then(data => {
-        if (data.success) {
-            showAlert(data.message, 'success');
-        } else {
-            showAlert(data.error, 'danger');
-        }
-    })
-    .catch(error => {
-        console.error('Error:', error);
-        showAlert('An error occurred while cancelling the task.', 'danger');
-    });
-}
-
-// Show alert message
-function showAlert(message, type) {
-    const alertDiv = document.createElement('div');
-    alertDiv.className = `alert alert-${type} alert-dismissible fade show`;
-    alertDiv.innerHTML = `
-        ${message}
-        <button type="button" class="btn-close" data-bs-dismiss="alert"></button>
-    `;
-    
-    const container = document.querySelector('.container');
-    container.insertBefore(alertDiv, container.firstChild);
-    
-    // Auto-dismiss after 5 seconds
-    setTimeout(() => {
-        if (alertDiv.parentNode) {
-            alertDiv.remove();
-        }
-    }, 5000);
-}
-
-// Cleanup function to stop progress polling
-function cleanupProgressMonitoring() {
-    stopProgressPolling();
-}
-
-// Initialize when page loads
-document.addEventListener('DOMContentLoaded', function() {
-    initializeProgressMonitoring();
-});
-
-// Cleanup when page unloads
-window.addEventListener('beforeunload', function() {
-    cleanupProgressMonitoring();
-});
-
-// Cleanup when page becomes hidden (mobile/tab switching)
-document.addEventListener('visibilitychange', function() {
-    if (document.hidden) {
-        cleanupProgressMonitoring();
-    } else if (currentTaskId && !progressPollingInterval) {
-        // Restart monitoring when page becomes visible again
-        initializeProgressMonitoring();
-    }
-});
-</script>
+<!-- Task ID for JavaScript -->
+{% if active_task %}
+<div data-current-task-id="{{ active_task.id }}" style="display: none;"></div>
+{% endif %}
 {% endblock %}

@@ -1,114 +1,438 @@
+<!-- Copyright (C) 2025 iolaire mcfadden. -->
+<!-- This program is free software: you can redistribute it and/or modify it under the terms of the GNU Affero General Public License as published by the Free Software Foundation, either version 3 of the License, or (at your option) any later version. -->
+<!-- THE SOFTWARE IS PROVIDED "AS IS", WITHOUT WARRANTY OF ANY KIND, EXPRESS OR IMPLIED, INCLUDING BUT NOT LIMITED TO THE WARRANTIES OF MERCHANTABILITY, FITNESS FOR A PARTICULAR PURPOSE AND NONINFRINGEMENT. IN NO EVENT SHALL THE AUTHORS OR COPYRIGHT HOLDERS BE LIABLE FOR ANY CLAIM, DAMAGES OR OTHER LIABILITY, WHETHER IN AN ACTION OF CONTRACT, TORT OR OTHERWISE, ARISING FROM, OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE SOFTWARE. -->
+
 {% extends "base_admin.html" %}
 
 {% block title %}Admin Dashboard - Vedfolnir{% endblock %}
 
+{% block extra_head %}
+<style>
+    .job-status-badge {
+        font-size: 0.75rem;
+        padding: 0.25rem 0.5rem;
+    }
+    .system-metric {
+        font-size: 1.2rem;
+        font-weight: bold;
+    }
+    .alert-item {
+        border-left: 4px solid;
+        padding: 0.75rem;
+        margin-bottom: 0.5rem;
+    }
+    .alert-critical { border-left-color: #dc3545; }
+    .alert-warning { border-left-color: #ffc107; }
+    .alert-info { border-left-color: #17a2b8; }
+    .job-controls .btn {
+        padding: 0.25rem 0.5rem;
+        font-size: 0.75rem;
+    }
+    .real-time-indicator {
+        display: inline-block;
+        width: 8px;
+        height: 8px;
+        background-color: #28a745;
+        border-radius: 50%;
+        animation: pulse 2s infinite;
+    }
+    @keyframes pulse {
+        0% { opacity: 1; }
+        50% { opacity: 0.5; }
+        100% { opacity: 1; }
+    }
+    .disconnected { background-color: #dc3545; }
+</style>
+{% endblock %}
+
 {% block content %}
 <div class="d-flex justify-content-between flex-wrap flex-md-nowrap align-items-center pt-3 pb-2 mb-3 border-bottom">
-    <h1 class="h2">Admin Dashboard</h1>
-</div>
-
-<div class="row">
-    <div class="col-md-3">
-        <div class="card text-white bg-primary mb-3">
-            <div class="card-header">Total Users</div>
-            <div class="card-body">
-                <h4 class="card-title">{{ stats.total_users or 0 }}</h4>
-                <p class="card-text">{{ stats.active_users or 0 }} active</p>
-            </div>
-        </div>
-    </div>
-    
-    <div class="col-md-3">
-        <div class="card text-white bg-success mb-3">
-            <div class="card-header">Platform Connections</div>
-            <div class="card-body">
-                <h4 class="card-title">{{ stats.total_platforms or 0 }}</h4>
-            </div>
-        </div>
-    </div>
-    
-    <div class="col-md-3">
-        <div class="card text-white bg-info mb-3">
-            <div class="card-header">Total Images</div>
-            <div class="card-body">
-                <h4 class="card-title">{{ stats.total_images or 0 }}</h4>
-            </div>
-        </div>
-    </div>
-    
-    <div class="col-md-3">
-        <div class="card text-white bg-warning mb-3">
-            <div class="card-header">Total Posts</div>
-            <div class="card-body">
-                <h4 class="card-title">{{ stats.total_posts or 0 }}</h4>
-            </div>
+    <h1 class="h2">
+        Multi-Tenant Caption Management Dashboard
+        <span class="real-time-indicator" id="connectionStatus" title="Real-time updates active"></span>
+    </h1>
+    <div class="btn-toolbar mb-2 mb-md-0">
+        <div class="btn-group me-2">
+            <button type="button" class="btn btn-sm btn-outline-secondary" onclick="refreshDashboard()">
+                <i class="bi bi-arrow-clockwise"></i> Refresh
+            </button>
+            <button type="button" class="btn btn-sm btn-outline-primary" onclick="toggleAutoRefresh()">
+                <i class="bi bi-play-circle" id="autoRefreshIcon"></i> <span id="autoRefreshText">Start Auto-refresh</span>
+            </button>
         </div>
     </div>
 </div>
 
-<div class="row mt-4">
+<!-- System Overview Cards -->
+<div class="row mb-4">
+    <div class="col-md-3">
+        <div class="card text-white bg-primary">
+            <div class="card-header d-flex justify-content-between align-items-center">
+                <span>Active Jobs</span>
+                <i class="bi bi-play-circle"></i>
+            </div>
+            <div class="card-body">
+                <h4 class="card-title system-metric" id="activeJobsCount">{{ system_metrics.active_jobs or 0 }}</h4>
+                <p class="card-text">
+                    <small>{{ system_metrics.queued_jobs or 0 }} queued</small>
+                </p>
+            </div>
+        </div>
+    </div>
+    
+    <div class="col-md-3">
+        <div class="card text-white bg-success">
+            <div class="card-header d-flex justify-content-between align-items-center">
+                <span>Completed Today</span>
+                <i class="bi bi-check-circle"></i>
+            </div>
+            <div class="card-body">
+                <h4 class="card-title system-metric" id="completedTodayCount">{{ system_metrics.completed_today or 0 }}</h4>
+                <p class="card-text">
+                    <small>{{ system_metrics.success_rate or 0 }}% success rate</small>
+                </p>
+            </div>
+        </div>
+    </div>
+    
+    <div class="col-md-3">
+        <div class="card text-white bg-warning">
+            <div class="card-header d-flex justify-content-between align-items-center">
+                <span>Failed Jobs</span>
+                <i class="bi bi-exclamation-triangle"></i>
+            </div>
+            <div class="card-body">
+                <h4 class="card-title system-metric" id="failedJobsCount">{{ system_metrics.failed_jobs or 0 }}</h4>
+                <p class="card-text">
+                    <small>{{ system_metrics.error_rate or 0 }}% error rate</small>
+                </p>
+            </div>
+        </div>
+    </div>
+    
+    <div class="col-md-3">
+        <div class="card text-white bg-info">
+            <div class="card-header d-flex justify-content-between align-items-center">
+                <span>System Load</span>
+                <i class="bi bi-cpu"></i>
+            </div>
+            <div class="card-body">
+                <h4 class="card-title system-metric" id="systemLoadValue">{{ system_metrics.system_load or 0 }}%</h4>
+                <p class="card-text">
+                    <small>{{ system_metrics.avg_processing_time or 0 }}s avg time</small>
+                </p>
+            </div>
+        </div>
+    </div>
+</div>
+
+<!-- Active Jobs Management -->
+<div class="row mb-4">
+    <div class="col-12">
+        <div class="card">
+            <div class="card-header d-flex justify-content-between align-items-center">
+                <h5 class="mb-0">
+                    <i class="bi bi-list-task"></i> Active Caption Generation Jobs
+                </h5>
+                <div class="btn-group btn-group-sm">
+                    <button type="button" class="btn btn-outline-secondary" onclick="refreshActiveJobs()">
+                        <i class="bi bi-arrow-clockwise"></i>
+                    </button>
+                    <button type="button" class="btn btn-outline-danger" onclick="showBulkActions()">
+                        <i class="bi bi-gear"></i> Bulk Actions
+                    </button>
+                </div>
+            </div>
+            <div class="card-body">
+                <div class="table-responsive">
+                    <table class="table table-hover" id="activeJobsTable">
+                        <thead>
+                            <tr>
+                                <th>
+                                    <input type="checkbox" id="selectAllJobs" onchange="toggleAllJobSelection()">
+                                </th>
+                                <th>Job ID</th>
+                                <th>User</th>
+                                <th>Platform</th>
+                                <th>Status</th>
+                                <th>Progress</th>
+                                <th>Started</th>
+                                <th>Est. Completion</th>
+                                <th>Actions</th>
+                            </tr>
+                        </thead>
+                        <tbody id="activeJobsBody">
+                            {% for job in active_jobs %}
+                            <tr data-job-id="{{ job.task_id }}">
+                                <td>
+                                    <input type="checkbox" class="job-checkbox" value="{{ job.task_id }}">
+                                </td>
+                                <td>
+                                    <code class="small">{{ job.task_id[:8] }}...</code>
+                                </td>
+                                <td>
+                                    <strong>{{ job.username }}</strong>
+                                    <br><small class="text-muted">{{ job.user_email }}</small>
+                                </td>
+                                <td>
+                                    <span class="badge bg-secondary">{{ job.platform_type }}</span>
+                                    <br><small>{{ job.platform_name }}</small>
+                                </td>
+                                <td>
+                                    <span class="badge job-status-badge 
+                                        {% if job.status == 'running' %}bg-primary
+                                        {% elif job.status == 'queued' %}bg-secondary
+                                        {% elif job.status == 'completed' %}bg-success
+                                        {% elif job.status == 'failed' %}bg-danger
+                                        {% else %}bg-warning{% endif %}">
+                                        {{ job.status|title }}
+                                    </span>
+                                </td>
+                                <td>
+                                    <div class="progress" style="height: 20px;">
+                                        <div class="progress-bar" role="progressbar" 
+                                             style="width: {{ job.progress_percentage or 0 }}%"
+                                             aria-valuenow="{{ job.progress_percentage or 0 }}" 
+                                             aria-valuemin="0" aria-valuemax="100">
+                                            {{ job.progress_percentage or 0 }}%
+                                        </div>
+                                    </div>
+                                    <small class="text-muted">{{ job.current_step or 'Initializing' }}</small>
+                                </td>
+                                <td>
+                                    <small>{{ job.created_at.strftime('%H:%M:%S') if job.created_at else 'N/A' }}</small>
+                                </td>
+                                <td>
+                                    <small>{{ job.estimated_completion or 'Calculating...' }}</small>
+                                </td>
+                                <td>
+                                    <div class="job-controls">
+                                        {% if job.status in ['running', 'queued'] %}
+                                        <button class="btn btn-outline-danger btn-sm" 
+                                                onclick="cancelJob('{{ job.task_id }}', '{{ job.username }}')"
+                                                title="Cancel Job">
+                                            <i class="bi bi-stop-circle"></i>
+                                        </button>
+                                        <button class="btn btn-outline-warning btn-sm" 
+                                                onclick="setPriority('{{ job.task_id }}', 'high')"
+                                                title="Set High Priority">
+                                            <i class="bi bi-arrow-up-circle"></i>
+                                        </button>
+                                        {% endif %}
+                                        {% if job.status == 'failed' %}
+                                        <button class="btn btn-outline-success btn-sm" 
+                                                onclick="restartJob('{{ job.task_id }}')"
+                                                title="Restart Job">
+                                            <i class="bi bi-arrow-clockwise"></i>
+                                        </button>
+                                        {% endif %}
+                                        <button class="btn btn-outline-info btn-sm" 
+                                                onclick="viewJobDetails('{{ job.task_id }}')"
+                                                title="View Details">
+                                            <i class="bi bi-eye"></i>
+                                        </button>
+                                    </div>
+                                </td>
+                            </tr>
+                            {% else %}
+                            <tr>
+                                <td colspan="9" class="text-center text-muted py-4">
+                                    <i class="bi bi-inbox"></i> No active jobs at this time
+                                </td>
+                            </tr>
+                            {% endfor %}
+                        </tbody>
+                    </table>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+
+<!-- System Alerts and User Management Row -->
+<div class="row mb-4">
+    <!-- System Alerts -->
     <div class="col-md-6">
         <div class="card">
-            <div class="card-header">
-                <h5>Quick Actions</h5>
+            <div class="card-header d-flex justify-content-between align-items-center">
+                <h5 class="mb-0">
+                    <i class="bi bi-bell"></i> System Alerts
+                </h5>
+                <button type="button" class="btn btn-outline-secondary btn-sm" onclick="refreshAlerts()">
+                    <i class="bi bi-arrow-clockwise"></i>
+                </button>
             </div>
-            <div class="card-body">
-                <div class="d-grid gap-2">
-                    <a href="{{ url_for('admin.user_management') }}" class="btn btn-outline-primary">
-                        <i class="bi bi-people"></i> Manage Users
-                    </a>
-                    <a href="{{ url_for('admin.health_dashboard') }}" class="btn btn-outline-success">
-                        <i class="bi bi-heart-pulse"></i> System Health
-                    </a>
-                    <a href="{{ url_for('admin.csrf_security_dashboard') }}" class="btn btn-outline-info">
-                        <i class="bi bi-shield-check"></i> CSRF Security
-                    </a>
-                    <a href="{{ url_for('admin.security_audit_dashboard') }}" class="btn btn-outline-danger">
-                        <i class="bi bi-shield-exclamation"></i> Security Audit
-                    </a>
-                    <a href="{{ url_for('admin.session_health_dashboard') }}" class="btn btn-outline-secondary">
-                        <i class="bi bi-activity"></i> Session Health
-                    </a>
-                    <a href="{{ url_for('admin.session_monitoring_dashboard') }}" class="btn btn-outline-dark">
-                        <i class="bi bi-eye"></i> Session Monitoring
-                    </a>
-                    <a href="{{ url_for('admin.cleanup') }}" class="btn btn-outline-warning">
-                        <i class="bi bi-trash"></i> Data Cleanup
-                    </a>
-                    <a href="{{ url_for('admin.monitoring_dashboard') }}" class="btn btn-outline-info">
-                        <i class="bi bi-graph-up"></i> System Monitoring
-                    </a>
+            <div class="card-body" style="max-height: 300px; overflow-y: auto;">
+                <div id="alertsList">
+                    {% for alert in system_alerts %}
+                    <div class="alert-item alert-{{ alert.severity }}" data-alert-id="{{ alert.id }}">
+                        <div class="d-flex justify-content-between align-items-start">
+                            <div>
+                                <strong>{{ alert.title }}</strong>
+                                <p class="mb-1">{{ alert.message }}</p>
+                                <small class="text-muted">{{ alert.created_at.strftime('%Y-%m-%d %H:%M:%S') if alert.created_at else 'N/A' }}</small>
+                            </div>
+                            <button class="btn btn-sm btn-outline-secondary" 
+                                    onclick="acknowledgeAlert('{{ alert.id }}')"
+                                    title="Acknowledge">
+                                <i class="bi bi-check"></i>
+                            </button>
+                        </div>
+                    </div>
+                    {% else %}
+                    <div class="text-center text-muted py-3">
+                        <i class="bi bi-check-circle"></i> No active alerts
+                    </div>
+                    {% endfor %}
                 </div>
             </div>
         </div>
     </div>
     
+    <!-- Quick User Management -->
     <div class="col-md-6">
         <div class="card">
-            <div class="card-header">
-                <h5>System Status</h5>
+            <div class="card-header d-flex justify-content-between align-items-center">
+                <h5 class="mb-0">
+                    <i class="bi bi-people"></i> User Management
+                </h5>
+                <a href="{{ url_for('admin.user_management') }}" class="btn btn-outline-primary btn-sm">
+                    <i class="bi bi-gear"></i> Full Management
+                </a>
             </div>
             <div class="card-body">
                 <div class="row">
                     <div class="col-6">
                         <div class="text-center">
-                            <div class="text-success">
-                                <i class="fas fa-check-circle fa-2x"></i>
-                            </div>
-                            <small>Database</small>
+                            <div class="h4 text-primary">{{ stats.total_users or 0 }}</div>
+                            <small>Total Users</small>
                         </div>
                     </div>
                     <div class="col-6">
                         <div class="text-center">
-                            <div class="text-success">
-                                <i class="fas fa-check-circle fa-2x"></i>
-                            </div>
-                            <small>Web Server</small>
+                            <div class="h4 text-success">{{ stats.active_users or 0 }}</div>
+                            <small>Active Users</small>
                         </div>
                     </div>
+                </div>
+                <hr>
+                <div class="d-grid gap-2">
+                    <button type="button" class="btn btn-outline-primary btn-sm" onclick="showUserLimitsModal()">
+                        <i class="bi bi-sliders"></i> Set User Limits
+                    </button>
+                    <button type="button" class="btn btn-outline-warning btn-sm" onclick="showSystemMaintenanceModal()">
+                        <i class="bi bi-tools"></i> System Maintenance
+                    </button>
                 </div>
             </div>
         </div>
     </div>
 </div>
+
+<!-- System Configuration and Quick Actions -->
+<div class="row">
+    <div class="col-md-8">
+        <div class="card">
+            <div class="card-header">
+                <h5 class="mb-0">
+                    <i class="bi bi-gear"></i> System Configuration
+                </h5>
+            </div>
+            <div class="card-body">
+                <form id="systemConfigForm">
+                    <div class="row">
+                        <div class="col-md-6">
+                            <div class="mb-3">
+                                <label for="maxConcurrentJobs" class="form-label">Max Concurrent Jobs</label>
+                                <input type="number" class="form-control" id="maxConcurrentJobs" 
+                                       value="{{ system_config.max_concurrent_jobs or 5 }}" min="1" max="20">
+                            </div>
+                            <div class="mb-3">
+                                <label for="jobTimeoutMinutes" class="form-label">Job Timeout (minutes)</label>
+                                <input type="number" class="form-control" id="jobTimeoutMinutes" 
+                                       value="{{ system_config.job_timeout_minutes or 30 }}" min="5" max="120">
+                            </div>
+                        </div>
+                        <div class="col-md-6">
+                            <div class="mb-3">
+                                <label for="maxRetries" class="form-label">Max Retries</label>
+                                <input type="number" class="form-control" id="maxRetries" 
+                                       value="{{ system_config.max_retries or 3 }}" min="0" max="10">
+                            </div>
+                            <div class="mb-3">
+                                <label for="alertThreshold" class="form-label">Alert Threshold (%)</label>
+                                <input type="number" class="form-control" id="alertThreshold" 
+                                       value="{{ system_config.alert_threshold or 80 }}" min="50" max="100">
+                            </div>
+                        </div>
+                    </div>
+                    <div class="d-flex justify-content-end">
+                        <button type="button" class="btn btn-outline-secondary me-2" onclick="resetSystemConfig()">
+                            Reset
+                        </button>
+                        <button type="button" class="btn btn-primary" onclick="saveSystemConfig()">
+                            <i class="bi bi-save"></i> Save Configuration
+                        </button>
+                    </div>
+                </form>
+            </div>
+        </div>
+    </div>
+    
+    <div class="col-md-4">
+        <div class="card">
+            <div class="card-header">
+                <h5 class="mb-0">
+                    <i class="bi bi-lightning"></i> Quick Actions
+                </h5>
+            </div>
+            <div class="card-body">
+                <div class="d-grid gap-2">
+                    <a href="{{ url_for('admin.health_dashboard') }}" class="btn btn-outline-success btn-sm">
+                        <i class="bi bi-heart-pulse"></i> System Health
+                    </a>
+                    <a href="{{ url_for('admin.monitoring_dashboard') }}" class="btn btn-outline-info btn-sm">
+                        <i class="bi bi-graph-up"></i> Performance Metrics
+                    </a>
+                    <a href="{{ url_for('admin.security_audit_dashboard') }}" class="btn btn-outline-danger btn-sm">
+                        <i class="bi bi-shield-exclamation"></i> Security Audit
+                    </a>
+                    <a href="{{ url_for('admin.cleanup') }}" class="btn btn-outline-warning btn-sm">
+                        <i class="bi bi-trash"></i> Data Cleanup
+                    </a>
+                    <button type="button" class="btn btn-outline-dark btn-sm" onclick="exportSystemReport()">
+                        <i class="bi bi-download"></i> Export Report
+                    </button>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+
+<!-- Modals -->
+{% include 'components/job_details_modal.html' %}
+{% include 'components/bulk_actions_modal.html' %}
+{% include 'components/user_limits_modal.html' %}
+{% include 'components/system_maintenance_modal.html' %}
+
+{% endblock %}
+
+{% block extra_js %}
+<script src="{{ url_for('admin.static', filename='js/admin_dashboard.js') }}"></script>
+<script>
+    // Initialize dashboard
+    document.addEventListener('DOMContentLoaded', function() {
+        initializeDashboard();
+        
+        // Connect to WebSocket for real-time updates
+        connectWebSocket();
+        
+        // Set up periodic refresh fallback
+        setInterval(function() {
+            if (!isWebSocketConnected()) {
+                refreshDashboard();
+            }
+        }, 30000); // 30 seconds
+    });
+</script>
 {% endblock %}

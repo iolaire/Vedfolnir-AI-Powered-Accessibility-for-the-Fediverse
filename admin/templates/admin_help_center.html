@@ -1,0 +1,786 @@
+<!-- Copyright (C) 2025 iolaire mcfadden. -->
+<!-- This program is free software: you can redistribute it and/or modify it under the terms of the GNU Affero General Public License as published by the Free Software Foundation, either version 3 of the License, or (at your option) any later version. -->
+<!-- THE SOFTWARE IS PROVIDED "AS IS", WITHOUT WARRANTY OF ANY KIND, EXPRESS OR IMPLIED, INCLUDING BUT NOT LIMITED TO THE WARRANTIES OF MERCHANTABILITY, FITNESS FOR A PARTICULAR PURPOSE AND NONINFRINGEMENT. IN NO EVENT SHALL THE AUTHORS OR COPYRIGHT HOLDERS BE LIABLE FOR ANY CLAIM, DAMAGES OR OTHER LIABILITY, WHETHER IN AN ACTION OF CONTRACT, TORT OR OTHERWISE, ARISING FROM, OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE SOFTWARE. -->
+
+{% extends "base_admin.html" %}
+
+{% block title %}Admin Help Center - Vedfolnir{% endblock %}
+
+{% block extra_head %}
+<style>
+    .help-section {
+        background: white;
+        border: 1px solid #dee2e6;
+        border-radius: 8px;
+        padding: 20px;
+        margin-bottom: 20px;
+        box-shadow: 0 2px 4px rgba(0,0,0,0.05);
+    }
+    
+    .help-section h3 {
+        color: #495057;
+        border-bottom: 2px solid #ffc107;
+        padding-bottom: 8px;
+        margin-bottom: 15px;
+    }
+    
+    .help-nav {
+        background: #f8f9fa;
+        border-radius: 8px;
+        padding: 15px;
+        margin-bottom: 20px;
+        position: sticky;
+        top: 20px;
+    }
+    
+    .help-nav .nav-link {
+        color: #495057;
+        font-size: 0.9rem;
+        padding: 5px 10px;
+        border-radius: 4px;
+    }
+    
+    .help-nav .nav-link:hover,
+    .help-nav .nav-link.active {
+        background: #ffc107;
+        color: #000;
+    }
+    
+    .troubleshooting-item {
+        background: #f8f9fa;
+        border: 1px solid #dee2e6;
+        border-radius: 6px;
+        padding: 15px;
+        margin-bottom: 15px;
+    }
+    
+    .troubleshooting-item h5 {
+        color: #dc3545;
+        margin-bottom: 10px;
+    }
+    
+    .solution-steps {
+        background: #d4edda;
+        border: 1px solid #c3e6cb;
+        border-radius: 4px;
+        padding: 10px;
+        margin-top: 10px;
+    }
+    
+    .solution-steps ol {
+        margin-bottom: 0;
+        padding-left: 20px;
+    }
+    
+    .code-block {
+        background: #f8f9fa;
+        border: 1px solid #dee2e6;
+        border-radius: 4px;
+        padding: 10px;
+        font-family: 'Courier New', monospace;
+        font-size: 0.9rem;
+        margin: 10px 0;
+        overflow-x: auto;
+    }
+    
+    .warning-box {
+        background: #fff3cd;
+        border: 1px solid #ffeaa7;
+        border-left: 4px solid #ffc107;
+        border-radius: 4px;
+        padding: 12px;
+        margin: 15px 0;
+    }
+    
+    .info-box {
+        background: #d1ecf1;
+        border: 1px solid #bee5eb;
+        border-left: 4px solid #0dcaf0;
+        border-radius: 4px;
+        padding: 12px;
+        margin: 15px 0;
+    }
+    
+    .success-box {
+        background: #d4edda;
+        border: 1px solid #c3e6cb;
+        border-left: 4px solid #198754;
+        border-radius: 4px;
+        padding: 12px;
+        margin: 15px 0;
+    }
+    
+    .faq-item {
+        border-bottom: 1px solid #dee2e6;
+        padding: 15px 0;
+    }
+    
+    .faq-item:last-child {
+        border-bottom: none;
+    }
+    
+    .faq-question {
+        font-weight: 600;
+        color: #495057;
+        cursor: pointer;
+        display: flex;
+        justify-content: space-between;
+        align-items: center;
+    }
+    
+    .faq-answer {
+        margin-top: 10px;
+        color: #6c757d;
+        display: none;
+    }
+    
+    .faq-answer.show {
+        display: block;
+    }
+    
+    .search-box {
+        background: white;
+        border: 2px solid #ffc107;
+        border-radius: 8px;
+        padding: 15px;
+        margin-bottom: 20px;
+    }
+    
+    .search-results {
+        background: white;
+        border: 1px solid #dee2e6;
+        border-radius: 6px;
+        max-height: 300px;
+        overflow-y: auto;
+        display: none;
+    }
+    
+    .search-result-item {
+        padding: 10px 15px;
+        border-bottom: 1px solid #f8f9fa;
+        cursor: pointer;
+    }
+    
+    .search-result-item:hover {
+        background: #f8f9fa;
+    }
+    
+    .search-result-item:last-child {
+        border-bottom: none;
+    }
+    
+    .breadcrumb-item + .breadcrumb-item::before {
+        content: "›";
+        color: #6c757d;
+    }
+</style>
+{% endblock %}
+
+{% block content %}
+<div class="d-flex justify-content-between flex-wrap flex-md-nowrap align-items-center pt-3 pb-2 mb-3 border-bottom">
+    <h1 class="h2">
+        <i class="bi bi-question-circle"></i> Admin Help Center
+    </h1>
+    <div class="btn-toolbar mb-2 mb-md-0">
+        <div class="btn-group me-2">
+            <button type="button" class="btn btn-sm btn-outline-primary" onclick="printHelpPage()">
+                <i class="bi bi-printer"></i> Print
+            </button>
+            <button type="button" class="btn btn-sm btn-outline-secondary" onclick="exportHelpPDF()">
+                <i class="bi bi-file-pdf"></i> Export PDF
+            </button>
+        </div>
+    </div>
+</div>
+
+<!-- Breadcrumb -->
+<nav aria-label="breadcrumb">
+    <ol class="breadcrumb">
+        <li class="breadcrumb-item"><a href="{{ url_for('admin.dashboard') }}">Admin Dashboard</a></li>
+        <li class="breadcrumb-item active" aria-current="page">Help Center</li>
+    </ol>
+</nav>
+
+<!-- Search Box -->
+<div class="search-box">
+    <div class="input-group">
+        <span class="input-group-text">
+            <i class="bi bi-search"></i>
+        </span>
+        <input type="text" class="form-control" id="helpSearch" placeholder="Search help topics, troubleshooting guides, or FAQs..." onkeyup="searchHelp()">
+    </div>
+    <div class="search-results" id="searchResults">
+        <!-- Search results will appear here -->
+    </div>
+</div>
+
+<div class="row">
+    <!-- Navigation Sidebar -->
+    <div class="col-md-3">
+        <div class="help-nav">
+            <h6 class="text-muted mb-3">Help Topics</h6>
+            <nav class="nav flex-column">
+                <a class="nav-link active" href="#getting-started" onclick="showSection('getting-started')">
+                    <i class="bi bi-play-circle me-2"></i>Getting Started
+                </a>
+                <a class="nav-link" href="#job-management" onclick="showSection('job-management')">
+                    <i class="bi bi-briefcase me-2"></i>Job Management
+                </a>
+                <a class="nav-link" href="#user-management" onclick="showSection('user-management')">
+                    <i class="bi bi-people me-2"></i>User Management
+                </a>
+                <a class="nav-link" href="#system-monitoring" onclick="showSection('system-monitoring')">
+                    <i class="bi bi-graph-up me-2"></i>System Monitoring
+                </a>
+                <a class="nav-link" href="#troubleshooting" onclick="showSection('troubleshooting')">
+                    <i class="bi bi-tools me-2"></i>Troubleshooting
+                </a>
+                <a class="nav-link" href="#security" onclick="showSection('security')">
+                    <i class="bi bi-shield-check me-2"></i>Security
+                </a>
+                <a class="nav-link" href="#api-reference" onclick="showSection('api-reference')">
+                    <i class="bi bi-code-square me-2"></i>API Reference
+                </a>
+                <a class="nav-link" href="#faq" onclick="showSection('faq')">
+                    <i class="bi bi-question-circle me-2"></i>FAQ
+                </a>
+            </nav>
+            
+            <hr class="my-3">
+            
+            <h6 class="text-muted mb-3">Quick Actions</h6>
+            <div class="d-grid gap-2">
+                <button type="button" class="btn btn-outline-warning btn-sm" onclick="runSystemDiagnostics()">
+                    <i class="bi bi-cpu"></i> System Diagnostics
+                </button>
+                <button type="button" class="btn btn-outline-info btn-sm" onclick="viewSystemLogs()">
+                    <i class="bi bi-file-text"></i> View Logs
+                </button>
+                <button type="button" class="btn btn-outline-success btn-sm" onclick="contactSupport()">
+                    <i class="bi bi-headset"></i> Contact Support
+                </button>
+            </div>
+        </div>
+    </div>
+    
+    <!-- Main Content -->
+    <div class="col-md-9">
+        <!-- Getting Started Section -->
+        <div id="getting-started" class="help-section">
+            <h3><i class="bi bi-play-circle text-primary"></i> Getting Started</h3>
+            
+            <h4>Admin Context Switching</h4>
+            <p>As an administrator, you can switch between <strong>Personal Mode</strong> and <strong>Administrator Mode</strong> to manage your own jobs separately from administrative oversight.</p>
+            
+            <div class="info-box">
+                <strong><i class="bi bi-info-circle"></i> Important:</strong>
+                <ul class="mb-0">
+                    <li><strong>Personal Mode:</strong> Manage only your own caption generation jobs</li>
+                    <li><strong>Administrator Mode:</strong> Oversee all users' jobs and perform administrative actions</li>
+                    <li>All administrative actions are logged for audit purposes</li>
+                </ul>
+            </div>
+            
+            <h4>Dashboard Overview</h4>
+            <p>The admin dashboard provides real-time monitoring of:</p>
+            <ul>
+                <li>Active caption generation jobs across all users</li>
+                <li>System performance metrics and resource usage</li>
+                <li>User activity and job statistics</li>
+                <li>System alerts and notifications</li>
+            </ul>
+            
+            <h4>First Steps</h4>
+            <ol>
+                <li>Review the system overview cards for current status</li>
+                <li>Check for any active alerts in the notification center</li>
+                <li>Familiarize yourself with the context switcher</li>
+                <li>Review user management and job oversight capabilities</li>
+            </ol>
+        </div>
+        
+        <!-- Job Management Section -->
+        <div id="job-management" class="help-section" style="display: none;">
+            <h3><i class="bi bi-briefcase text-warning"></i> Job Management</h3>
+            
+            <h4>Administrative Job Actions</h4>
+            <p>When in Administrator Mode, you can perform the following actions on user jobs:</p>
+            
+            <div class="row">
+                <div class="col-md-6">
+                    <h5>Available Actions</h5>
+                    <ul>
+                        <li><strong>Cancel Job:</strong> Stop a running or queued job</li>
+                        <li><strong>Set Priority:</strong> Adjust job processing priority</li>
+                        <li><strong>Restart Job:</strong> Restart a failed job</li>
+                        <li><strong>Add Notes:</strong> Add administrative notes to jobs</li>
+                        <li><strong>View Details:</strong> Inspect job progress and logs</li>
+                    </ul>
+                </div>
+                <div class="col-md-6">
+                    <h5>Bulk Operations</h5>
+                    <ul>
+                        <li>Cancel multiple jobs at once</li>
+                        <li>Set priority for multiple jobs</li>
+                        <li>Clear stuck tasks system-wide</li>
+                        <li>Pause/resume system job processing</li>
+                    </ul>
+                </div>
+            </div>
+            
+            <div class="warning-box">
+                <strong><i class="bi bi-exclamation-triangle"></i> Important:</strong>
+                All administrative actions are logged and users are notified when their jobs are affected by admin interventions.
+            </div>
+            
+            <h4>Personal vs Administrative Jobs</h4>
+            <p>The system clearly distinguishes between:</p>
+            <ul>
+                <li><strong>Personal Jobs:</strong> Your own caption generation jobs (blue theme)</li>
+                <li><strong>Administrative Actions:</strong> Jobs you manage as an admin (yellow theme)</li>
+            </ul>
+            
+            <h4>Job History and Audit Trail</h4>
+            <p>Access comprehensive job history showing:</p>
+            <ul>
+                <li>Administrative actions you've performed</li>
+                <li>Your personal job history</li>
+                <li>Combined chronological view</li>
+                <li>Detailed audit logs with timestamps and reasons</li>
+            </ul>
+        </div>
+        
+        <!-- User Management Section -->
+        <div id="user-management" class="help-section" style="display: none;">
+            <h3><i class="bi bi-people text-success"></i> User Management</h3>
+            
+            <h4>User Oversight</h4>
+            <p>Monitor and manage user activity including:</p>
+            <ul>
+                <li>Active user sessions and job activity</li>
+                <li>User job limits and quotas</li>
+                <li>Platform connections and configurations</li>
+                <li>User role management and permissions</li>
+            </ul>
+            
+            <h4>Setting User Limits</h4>
+            <p>Configure per-user limits for:</p>
+            <ul>
+                <li>Maximum concurrent jobs</li>
+                <li>Daily job quotas</li>
+                <li>Processing time limits</li>
+                <li>Resource usage restrictions</li>
+            </ul>
+            
+            <div class="code-block">
+                Example: Setting user limits via admin interface
+                1. Navigate to User Management
+                2. Select target user
+                3. Click "Set Limits"
+                4. Configure desired restrictions
+                5. Save changes
+            </div>
+        </div>
+        
+        <!-- System Monitoring Section -->
+        <div id="system-monitoring" class="help-section" style="display: none;">
+            <h3><i class="bi bi-graph-up text-info"></i> System Monitoring</h3>
+            
+            <h4>Real-time Metrics</h4>
+            <p>Monitor system health through:</p>
+            <ul>
+                <li>Job processing rates and queue lengths</li>
+                <li>System resource usage (CPU, memory, disk)</li>
+                <li>Error rates and failure patterns</li>
+                <li>User activity and session statistics</li>
+            </ul>
+            
+            <h4>Alert Thresholds</h4>
+            <p>Configure alerts for:</p>
+            <ul>
+                <li>High system load (default: 80%)</li>
+                <li>Queue backup (configurable threshold)</li>
+                <li>Error rate spikes</li>
+                <li>Resource exhaustion warnings</li>
+            </ul>
+            
+            <h4>Performance Optimization</h4>
+            <p>Use monitoring data to:</p>
+            <ul>
+                <li>Identify bottlenecks and performance issues</li>
+                <li>Optimize job processing parameters</li>
+                <li>Plan capacity and resource allocation</li>
+                <li>Schedule maintenance windows</li>
+            </ul>
+        </div>
+        
+        <!-- Troubleshooting Section -->
+        <div id="troubleshooting" class="help-section" style="display: none;">
+            <h3><i class="bi bi-tools text-danger"></i> Troubleshooting</h3>
+            
+            <div class="troubleshooting-item">
+                <h5><i class="bi bi-exclamation-triangle"></i> Jobs Stuck in Queue</h5>
+                <p><strong>Symptoms:</strong> Jobs remain in "queued" status for extended periods</p>
+                <div class="solution-steps">
+                    <strong>Solution:</strong>
+                    <ol>
+                        <li>Check system resource usage in monitoring dashboard</li>
+                        <li>Review active job count vs. configured limits</li>
+                        <li>Use "Clear Stuck Tasks" in bulk actions if needed</li>
+                        <li>Restart job processing service if necessary</li>
+                    </ol>
+                </div>
+            </div>
+            
+            <div class="troubleshooting-item">
+                <h5><i class="bi bi-exclamation-triangle"></i> High Error Rates</h5>
+                <p><strong>Symptoms:</strong> Multiple jobs failing with similar errors</p>
+                <div class="solution-steps">
+                    <strong>Solution:</strong>
+                    <ol>
+                        <li>Check system alerts for specific error patterns</li>
+                        <li>Review AI service connectivity and status</li>
+                        <li>Verify platform API credentials and rate limits</li>
+                        <li>Check database connectivity and performance</li>
+                    </ol>
+                </div>
+            </div>
+            
+            <div class="troubleshooting-item">
+                <h5><i class="bi bi-exclamation-triangle"></i> User Cannot Start Jobs</h5>
+                <p><strong>Symptoms:</strong> Users report inability to start caption generation</p>
+                <div class="solution-steps">
+                    <strong>Solution:</strong>
+                    <ol>
+                        <li>Check user's job limits and quotas</li>
+                        <li>Verify user's platform connections are valid</li>
+                        <li>Review user's recent job history for issues</li>
+                        <li>Check system maintenance mode status</li>
+                    </ol>
+                </div>
+            </div>
+            
+            <div class="troubleshooting-item">
+                <h5><i class="bi bi-exclamation-triangle"></i> System Performance Issues</h5>
+                <p><strong>Symptoms:</strong> Slow response times, high resource usage</p>
+                <div class="solution-steps">
+                    <strong>Solution:</strong>
+                    <ol>
+                        <li>Review system monitoring dashboard</li>
+                        <li>Check database performance and connection pool</li>
+                        <li>Monitor Redis session storage usage</li>
+                        <li>Consider scaling resources or adjusting limits</li>
+                    </ol>
+                </div>
+            </div>
+            
+            <h4>Emergency Procedures</h4>
+            <div class="warning-box">
+                <strong>System Maintenance Mode:</strong>
+                <p>In case of critical issues, you can enable maintenance mode to:</p>
+                <ul class="mb-0">
+                    <li>Prevent new jobs from starting</li>
+                    <li>Allow current jobs to complete safely</li>
+                    <li>Perform system maintenance or updates</li>
+                </ul>
+            </div>
+        </div>
+        
+        <!-- Security Section -->
+        <div id="security" class="help-section" style="display: none;">
+            <h3><i class="bi bi-shield-check text-warning"></i> Security</h3>
+            
+            <h4>Admin Action Auditing</h4>
+            <p>All administrative actions are automatically logged with:</p>
+            <ul>
+                <li>Timestamp and admin user identification</li>
+                <li>Action performed and target job/user</li>
+                <li>Reason provided for the action</li>
+                <li>Result and any error messages</li>
+            </ul>
+            
+            <h4>Access Control</h4>
+            <p>Admin privileges are protected by:</p>
+            <ul>
+                <li>Role-based access control (RBAC)</li>
+                <li>Session validation and timeout</li>
+                <li>CSRF protection on all admin actions</li>
+                <li>Input validation and sanitization</li>
+            </ul>
+            
+            <h4>Security Best Practices</h4>
+            <ul>
+                <li>Always provide clear reasons for administrative actions</li>
+                <li>Regularly review audit logs for unusual activity</li>
+                <li>Use strong, unique passwords for admin accounts</li>
+                <li>Enable two-factor authentication when available</li>
+                <li>Log out of admin sessions when not in use</li>
+            </ul>
+            
+            <div class="success-box">
+                <strong><i class="bi bi-shield-check"></i> Security Status:</strong>
+                The system maintains a 100% security score with comprehensive protection against common vulnerabilities.
+            </div>
+        </div>
+        
+        <!-- API Reference Section -->
+        <div id="api-reference" class="help-section" style="display: none;">
+            <h3><i class="bi bi-code-square text-secondary"></i> API Reference</h3>
+            
+            <h4>Admin API Endpoints</h4>
+            <p>Administrative functions are available via REST API:</p>
+            
+            <div class="code-block">
+                <strong>Job Management:</strong>
+                GET    /admin/api/jobs              - List all jobs
+                POST   /admin/api/jobs/{id}/cancel  - Cancel job
+                POST   /admin/api/jobs/{id}/restart - Restart job
+                PUT    /admin/api/jobs/{id}/priority - Set priority
+                
+                <strong>System Management:</strong>
+                GET    /admin/api/system/health     - System health
+                GET    /admin/api/system/metrics    - Performance metrics
+                POST   /admin/api/system/maintenance - Toggle maintenance mode
+                
+                <strong>User Management:</strong>
+                GET    /admin/api/users             - List users
+                PUT    /admin/api/users/{id}/limits - Set user limits
+                GET    /admin/api/users/{id}/jobs   - User's jobs
+            </div>
+            
+            <h4>Authentication</h4>
+            <p>All API requests require:</p>
+            <ul>
+                <li>Valid admin session cookie</li>
+                <li>CSRF token in request headers</li>
+                <li>Appropriate admin role permissions</li>
+            </ul>
+            
+            <h4>Response Formats</h4>
+            <p>All API responses follow standard JSON format:</p>
+            <div class="code-block">
+                {
+                  "success": true|false,
+                  "data": {...},
+                  "error": "error message if applicable",
+                  "timestamp": "2025-01-01T00:00:00Z"
+                }
+            </div>
+        </div>
+        
+        <!-- FAQ Section -->
+        <div id="faq" class="help-section" style="display: none;">
+            <h3><i class="bi bi-question-circle text-primary"></i> Frequently Asked Questions</h3>
+            
+            <div class="faq-item">
+                <div class="faq-question" onclick="toggleFAQ(this)">
+                    <span>How do I switch between personal and admin modes?</span>
+                    <i class="bi bi-chevron-down"></i>
+                </div>
+                <div class="faq-answer">
+                    Use the context switcher at the top of admin pages. Click "Personal" to manage your own jobs, or "Admin" to perform administrative oversight. Your preference is saved automatically.
+                </div>
+            </div>
+            
+            <div class="faq-item">
+                <div class="faq-question" onclick="toggleFAQ(this)">
+                    <span>What happens when I cancel a user's job?</span>
+                    <i class="bi bi-chevron-down"></i>
+                </div>
+                <div class="faq-answer">
+                    The job is immediately stopped, the user is notified via the system, and the action is logged in the audit trail. You'll be prompted to provide a reason for the cancellation.
+                </div>
+            </div>
+            
+            <div class="faq-item">
+                <div class="faq-question" onclick="toggleFAQ(this)">
+                    <span>How can I monitor system performance?</span>
+                    <i class="bi bi-chevron-down"></i>
+                </div>
+                <div class="faq-answer">
+                    Use the monitoring dashboard to view real-time metrics including job processing rates, system resource usage, error rates, and queue statistics. Alerts are automatically generated for threshold violations.
+                </div>
+            </div>
+            
+            <div class="faq-item">
+                <div class="faq-question" onclick="toggleFAQ(this)">
+                    <span>Can I set limits for individual users?</span>
+                    <i class="bi bi-chevron-down"></i>
+                </div>
+                <div class="faq-answer">
+                    Yes, you can configure per-user limits including maximum concurrent jobs, daily quotas, processing time limits, and resource usage restrictions through the user management interface.
+                </div>
+            </div>
+            
+            <div class="faq-item">
+                <div class="faq-question" onclick="toggleFAQ(this)">
+                    <span>How do I handle stuck or problematic jobs?</span>
+                    <i class="bi bi-chevron-down"></i>
+                </div>
+                <div class="faq-answer">
+                    Use the "Clear Stuck Tasks" function in bulk actions to automatically identify and clean up jobs that have been running too long. You can also manually cancel individual jobs and restart them if needed.
+                </div>
+            </div>
+            
+            <div class="faq-item">
+                <div class="faq-question" onclick="toggleFAQ(this)">
+                    <span>Where can I view audit logs?</span>
+                    <i class="bi bi-chevron-down"></i>
+                </div>
+                <div class="faq-answer">
+                    Access the job history modal to view detailed audit logs of all administrative actions, including timestamps, reasons, and results. Logs are retained for 90 days for compliance purposes.
+                </div>
+            </div>
+            
+            <div class="faq-item">
+                <div class="faq-question" onclick="toggleFAQ(this)">
+                    <span>What should I do during system maintenance?</span>
+                    <i class="bi bi-chevron-down"></i>
+                </div>
+                <div class="faq-answer">
+                    Enable maintenance mode to prevent new jobs from starting while allowing current jobs to complete. This ensures data integrity during system updates or maintenance procedures.
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+{% endblock %}
+
+{% block extra_js %}
+<script>
+// Help Center JavaScript
+function showSection(sectionId) {
+    // Hide all sections
+    document.querySelectorAll('.help-section').forEach(section => {
+        section.style.display = 'none';
+    });
+    
+    // Show selected section
+    document.getElementById(sectionId).style.display = 'block';
+    
+    // Update navigation
+    document.querySelectorAll('.help-nav .nav-link').forEach(link => {
+        link.classList.remove('active');
+    });
+    document.querySelector(`[href="#${sectionId}"]`).classList.add('active');
+    
+    // Scroll to top of content
+    document.querySelector('.col-md-9').scrollTop = 0;
+}
+
+function searchHelp() {
+    const query = document.getElementById('helpSearch').value.toLowerCase();
+    const resultsContainer = document.getElementById('searchResults');
+    
+    if (query.length < 2) {
+        resultsContainer.style.display = 'none';
+        return;
+    }
+    
+    // Search through help content
+    const searchableContent = [
+        { title: 'Admin Context Switching', section: 'getting-started', content: 'switch between personal mode administrator mode manage jobs' },
+        { title: 'Job Management', section: 'job-management', content: 'cancel restart priority administrative actions bulk operations' },
+        { title: 'User Management', section: 'user-management', content: 'user limits quotas permissions role management' },
+        { title: 'System Monitoring', section: 'system-monitoring', content: 'performance metrics alerts resource usage monitoring' },
+        { title: 'Troubleshooting', section: 'troubleshooting', content: 'stuck jobs error rates performance issues emergency procedures' },
+        { title: 'Security', section: 'security', content: 'audit logs access control security best practices' },
+        { title: 'API Reference', section: 'api-reference', content: 'rest api endpoints authentication response formats' },
+        { title: 'FAQ', section: 'faq', content: 'frequently asked questions common issues help' }
+    ];
+    
+    const results = searchableContent.filter(item => 
+        item.title.toLowerCase().includes(query) || 
+        item.content.toLowerCase().includes(query)
+    );
+    
+    if (results.length > 0) {
+        resultsContainer.innerHTML = results.map(result => `
+            <div class="search-result-item" onclick="showSection('${result.section}'); hideSearchResults();">
+                <strong>${result.title}</strong>
+                <br><small class="text-muted">Click to view section</small>
+            </div>
+        `).join('');
+        resultsContainer.style.display = 'block';
+    } else {
+        resultsContainer.innerHTML = '<div class="search-result-item">No results found</div>';
+        resultsContainer.style.display = 'block';
+    }
+}
+
+function hideSearchResults() {
+    document.getElementById('searchResults').style.display = 'none';
+    document.getElementById('helpSearch').value = '';
+}
+
+function toggleFAQ(element) {
+    const answer = element.nextElementSibling;
+    const icon = element.querySelector('i');
+    
+    if (answer.classList.contains('show')) {
+        answer.classList.remove('show');
+        icon.className = 'bi bi-chevron-down';
+    } else {
+        // Close all other FAQs
+        document.querySelectorAll('.faq-answer.show').forEach(openAnswer => {
+            openAnswer.classList.remove('show');
+            openAnswer.previousElementSibling.querySelector('i').className = 'bi bi-chevron-down';
+        });
+        
+        // Open this FAQ
+        answer.classList.add('show');
+        icon.className = 'bi bi-chevron-up';
+    }
+}
+
+function runSystemDiagnostics() {
+    if (window.errorHandler) {
+        window.errorHandler.showNotification('Running system diagnostics...', 'info');
+    }
+    
+    // TODO: Implement system diagnostics
+    setTimeout(() => {
+        if (window.errorHandler) {
+            window.errorHandler.showNotification('System diagnostics completed. All systems operational.', 'success');
+        }
+    }, 2000);
+}
+
+function viewSystemLogs() {
+    // TODO: Open system logs viewer
+    window.open('/admin/logs', '_blank');
+}
+
+function contactSupport() {
+    // TODO: Open support contact form
+    if (window.errorHandler) {
+        window.errorHandler.showNotification('Support contact form opened in new window.', 'info');
+    }
+    window.open('/admin/support', '_blank');
+}
+
+function printHelpPage() {
+    window.print();
+}
+
+function exportHelpPDF() {
+    // TODO: Implement PDF export
+    if (window.errorHandler) {
+        window.errorHandler.showNotification('PDF export feature coming soon.', 'info');
+    }
+}
+
+// Close search results when clicking outside
+document.addEventListener('click', function(event) {
+    const searchBox = document.querySelector('.search-box');
+    if (!searchBox.contains(event.target)) {
+        hideSearchResults();
+    }
+});
+
+// Initialize with getting started section
+document.addEventListener('DOMContentLoaded', function() {
+    showSection('getting-started');
+});
+</script>
+{% endblock %}

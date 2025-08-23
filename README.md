@@ -37,6 +37,26 @@ An accessibility-focused tool that automatically generates and manages alt text 
 - **Admin Dashboard**: Administrative interface for system management
 - **Batch Operations**: Bulk caption generation and review capabilities
 
+## 🆕 Recent Updates
+
+### MySQL Migration (2025)
+- **Complete migration from SQLite to MySQL/MariaDB** for improved performance and scalability
+- **Enterprise-grade database features** with connection pooling and advanced indexing
+- **Migration tools available** for existing SQLite users with backup and verification
+- **Significant performance improvements** in query speed and concurrent access
+
+### Security Enhancements (2025)
+- **100% Security Score** with comprehensive enterprise-grade protection
+- **Advanced input validation** with configurable security features
+- **Enhanced audit logging** and security event monitoring
+- **Encrypted credential storage** for platform connections
+
+### Performance & Monitoring (2025)
+- **Built-in performance monitoring** with real-time metrics and health checks
+- **Redis session management** with database fallback for high availability
+- **Optimized database operations** with connection pooling and query optimization
+- **Comprehensive error handling** with intelligent retry mechanisms
+
 ## 🚀 Quick Start
 
 ### Prerequisites
@@ -321,7 +341,7 @@ For detailed security information, including security feature toggles, see [Secu
 
 ### System Components
 - **Web Application**: Flask-based web interface
-- **Database Layer**: SQLAlchemy ORM with MySQL
+- **Database Layer**: SQLAlchemy ORM with MySQL/MariaDB
 - **AI Integration**: Ollama with LLaVA model
 - **Platform Clients**: ActivityPub API clients
 - **Security Layer**: Comprehensive security middleware
@@ -333,7 +353,7 @@ For detailed security information, including security feature toggles, see [Secu
 - **Backend**: Python 3.8+, Flask, SQLAlchemy
 - **Frontend**: HTML5, Bootstrap 5, JavaScript
 - **AI/ML**: Ollama, LLaVA vision-language model
-- **Database**: MySQL with migration support
+- **Database**: MySQL/MariaDB with migration support
 - **Security**: Flask-WTF, comprehensive middleware
 - **Real-time**: WebSocket support for live updates
 

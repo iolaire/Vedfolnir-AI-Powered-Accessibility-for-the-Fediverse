@@ -1,0 +1,967 @@
+<!-- Copyright (C) 2025 iolaire mcfadden. -->
+<!-- This program is free software: you can redistribute it and/or modify it under the terms of the GNU Affero General Public License as published by the Free Software Foundation, either version 3 of the License, or (at your option) any later version. -->
+<!-- THE SOFTWARE IS PROVIDED "AS IS", WITHOUT WARRANTY OF ANY KIND, EXPRESS OR IMPLIED, INCLUDING BUT NOT LIMITED TO THE WARRANTIES OF MERCHANTABILITY, FITNESS FOR A PARTICULAR PURPOSE AND NONINFRINGEMENT. IN NO EVENT SHALL THE AUTHORS OR COPYRIGHT HOLDERS BE LIABLE FOR ANY CLAIM, DAMAGES OR OTHER LIABILITY, WHETHER IN AN ACTION OF CONTRACT, TORT OR OTHERWISE, ARISING FROM, OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE SOFTWARE. -->
+{% extends "base_admin.html" %}
+
+{% block title %}Widget Customization - Vedfolnir{% endblock %}
+
+{% block head %}
+<style>
+    .widget-grid {
+        display: grid;
+        grid-template-columns: repeat(12, 1fr);
+        gap: 10px;
+        min-height: 400px;
+        border: 2px dashed #dee2e6;
+        border-radius: 8px;
+        padding: 20px;
+        background: #f8f9fa;
+        position: relative;
+    }
+    
+    .widget-preview {
+        background: white;
+        border: 1px solid #dee2e6;
+        border-radius: 6px;
+        padding: 15px;
+        cursor: move;
+        transition: all 0.2s;
+        position: relative;
+        min-height: 100px;
+    }
+    
+    .widget-preview:hover {
+        box-shadow: 0 4px 8px rgba(0,0,0,0.1);
+        transform: translateY(-2px);
+    }
+    
+    .widget-preview.selected {
+        border-color: #007bff;
+        box-shadow: 0 0 0 2px rgba(0,123,255,0.25);
+    }
+    
+    .widget-preview.dragging {
+        opacity: 0.5;
+        transform: rotate(5deg);
+    }
+    
+    .widget-header {
+        display: flex;
+        justify-content: between;
+        align-items: center;
+        margin-bottom: 10px;
+        padding-bottom: 8px;
+        border-bottom: 1px solid #eee;
+    }
+    
+    .widget-title {
+        font-weight: 600;
+        font-size: 0.9rem;
+        margin: 0;
+    }
+    
+    .widget-controls {
+        display: flex;
+        gap: 5px;
+    }
+    
+    .widget-control {
+        background: none;
+        border: none;
+        color: #666;
+        cursor: pointer;
+        padding: 2px 4px;
+        border-radius: 3px;
+        font-size: 0.7rem;
+    }
+    
+    .widget-control:hover {
+        background: #f0f0f0;
+        color: #333;
+    }
+    
+    .widget-content {
+        color: #666;
+        font-size: 0.8rem;
+        text-align: center;
+        padding: 20px 0;
+    }
+    
+    .widget-palette {
+        background: white;
+        border-radius: 8px;
+        padding: 20px;
+        box-shadow: 0 2px 4px rgba(0,0,0,0.1);
+        max-height: 600px;
+        overflow-y: auto;
+    }
+    
+    .widget-type {
+        display: flex;
+        align-items: center;
+        padding: 10px;
+        margin: 5px 0;
+        border: 1px solid #dee2e6;
+        border-radius: 6px;
+        cursor: pointer;
+        transition: all 0.2s;
+    }
+    
+    .widget-type:hover {
+        background: #f8f9fa;
+        border-color: #007bff;
+    }
+    
+    .widget-type-icon {
+        font-size: 1.5rem;
+        margin-right: 15px;
+        color: #007bff;
+        width: 30px;
+        text-align: center;
+    }
+    
+    .widget-type-info h6 {
+        margin: 0 0 5px 0;
+        font-weight: 600;
+    }
+    
+    .widget-type-info small {
+        color: #666;
+        line-height: 1.3;
+    }
+    
+    .properties-panel {
+        background: white;
+        border-radius: 8px;
+        padding: 20px;
+        box-shadow: 0 2px 4px rgba(0,0,0,0.1);
+        max-height: 600px;
+        overflow-y: auto;
+    }
+    
+    .property-group {
+        margin-bottom: 20px;
+        padding-bottom: 15px;
+        border-bottom: 1px solid #eee;
+    }
+    
+    .property-group:last-child {
+        border-bottom: none;
+        margin-bottom: 0;
+    }
+    
+    .property-group h6 {
+        margin-bottom: 10px;
+        color: #333;
+        font-weight: 600;
+    }
+    
+    .grid-overlay {
+        position: absolute;
+        top: 0;
+        left: 0;
+        right: 0;
+        bottom: 0;
+        pointer-events: none;
+        opacity: 0.1;
+        background-image: 
+            linear-gradient(to right, #007bff 1px, transparent 1px),
+            linear-gradient(to bottom, #007bff 1px, transparent 1px);
+        background-size: calc(100% / 12) 40px;
+    }
+    
+    .drop-zone {
+        border: 2px dashed #007bff;
+        background: rgba(0,123,255,0.1);
+        border-radius: 6px;
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        color: #007bff;
+        font-weight: 500;
+        min-height: 100px;
+    }
+    
+    .toolbar {
+        background: white;
+        border-radius: 8px;
+        padding: 15px;
+        margin-bottom: 20px;
+        box-shadow: 0 2px 4px rgba(0,0,0,0.1);
+        display: flex;
+        justify-content: between;
+        align-items: center;
+    }
+    
+    .toolbar-actions {
+        display: flex;
+        gap: 10px;
+    }
+    
+    .size-indicator {
+        position: absolute;
+        top: 5px;
+        right: 5px;
+        background: rgba(0,123,255,0.8);
+        color: white;
+        padding: 2px 6px;
+        border-radius: 3px;
+        font-size: 0.7rem;
+        font-weight: 500;
+    }
+    
+    .role-badge {
+        display: inline-block;
+        padding: 2px 6px;
+        background: #e9ecef;
+        border-radius: 3px;
+        font-size: 0.7rem;
+        margin: 2px;
+    }
+    
+    .role-badge.admin {
+        background: #d4edda;
+        color: #155724;
+    }
+    
+    .role-badge.super-admin {
+        background: #f8d7da;
+        color: #721c24;
+    }
+</style>
+{% endblock %}
+
+{% block content %}
+<div class="toolbar">
+    <div>
+        <h1><i class="bi bi-grid-3x3-gap"></i> Widget Customization</h1>
+        <small class="text-muted">Drag widgets from the palette to customize your dashboard</small>
+    </div>
+    <div class="toolbar-actions">
+        <button class="btn btn-outline-secondary" onclick="resetLayout()">
+            <i class="bi bi-arrow-clockwise"></i> Reset
+        </button>
+        <button class="btn btn-outline-primary" onclick="previewDashboard()">
+            <i class="bi bi-eye"></i> Preview
+        </button>
+        <button class="btn btn-primary" onclick="saveLayout()">
+            <i class="bi bi-check-lg"></i> Save Layout
+        </button>
+        <a href="{{ url_for('admin.enhanced_monitoring_dashboard') }}" class="btn btn-outline-secondary">
+            <i class="bi bi-arrow-left"></i> Back
+        </a>
+    </div>
+</div>
+
+<div class="row">
+    <!-- Widget Palette -->
+    <div class="col-md-3">
+        <div class="widget-palette">
+            <h5><i class="bi bi-palette"></i> Widget Palette</h5>
+            <p class="text-muted small">Drag widgets to the dashboard grid</p>
+            
+            <div class="widget-type" draggable="true" data-widget-type="metric_card">
+                <div class="widget-type-icon">
+                    <i class="bi bi-speedometer2"></i>
+                </div>
+                <div class="widget-type-info">
+                    <h6>Metric Card</h6>
+                    <small>Display key metrics with values and labels</small>
+                </div>
+            </div>
+            
+            <div class="widget-type" draggable="true" data-widget-type="chart">
+                <div class="widget-type-icon">
+                    <i class="bi bi-graph-up"></i>
+                </div>
+                <div class="widget-type-info">
+                    <h6>Chart</h6>
+                    <small>Line, bar, or pie charts for data visualization</small>
+                </div>
+            </div>
+            
+            <div class="widget-type" draggable="true" data-widget-type="table">
+                <div class="widget-type-icon">
+                    <i class="bi bi-table"></i>
+                </div>
+                <div class="widget-type-info">
+                    <h6>Table</h6>
+                    <small>Tabular data display with sorting and filtering</small>
+                </div>
+            </div>
+            
+            <div class="widget-type" draggable="true" data-widget-type="gauge">
+                <div class="widget-type-icon">
+                    <i class="bi bi-speedometer"></i>
+                </div>
+                <div class="widget-type-info">
+                    <h6>Gauge</h6>
+                    <small>Circular gauge for percentage or ratio display</small>
+                </div>
+            </div>
+            
+            <div class="widget-type" draggable="true" data-widget-type="alert_panel">
+                <div class="widget-type-icon">
+                    <i class="bi bi-exclamation-triangle"></i>
+                </div>
+                <div class="widget-type-info">
+                    <h6>Alert Panel</h6>
+                    <small>Display system alerts and notifications</small>
+                </div>
+            </div>
+            
+            <div class="widget-type" draggable="true" data-widget-type="resource_monitor">
+                <div class="widget-type-icon">
+                    <i class="bi bi-cpu"></i>
+                </div>
+                <div class="widget-type-info">
+                    <h6>Resource Monitor</h6>
+                    <small>System resource usage bars and indicators</small>
+                </div>
+            </div>
+        </div>
+    </div>
+    
+    <!-- Dashboard Grid -->
+    <div class="col-md-6">
+        <div class="widget-grid" id="dashboardGrid">
+            <div class="grid-overlay"></div>
+            <div class="drop-zone" id="dropZone" style="display: none;">
+                <i class="bi bi-plus-circle me-2"></i>
+                Drop widget here
+            </div>
+            
+            <!-- Existing widgets will be loaded here -->
+        </div>
+    </div>
+    
+    <!-- Properties Panel -->
+    <div class="col-md-3">
+        <div class="properties-panel">
+            <h5><i class="bi bi-sliders"></i> Properties</h5>
+            <div id="propertiesContent">
+                <p class="text-muted text-center py-4">
+                    <i class="bi bi-cursor" style="font-size: 2rem;"></i><br>
+                    Select a widget to edit its properties
+                </p>
+            </div>
+        </div>
+    </div>
+</div>
+
+<!-- Widget Configuration Modal -->
+<div class="modal fade" id="widgetConfigModal" tabindex="-1">
+    <div class="modal-dialog modal-lg">
+        <div class="modal-content">
+            <div class="modal-header">
+                <h5 class="modal-title">Configure Widget</h5>
+                <button type="button" class="btn-close" data-bs-dismiss="modal"></button>
+            </div>
+            <div class="modal-body">
+                <form id="widgetConfigForm">
+                    <div class="row">
+                        <div class="col-md-6">
+                            <div class="mb-3">
+                                <label for="widgetTitle" class="form-label">Title</label>
+                                <input type="text" class="form-control" id="widgetTitle" required>
+                            </div>
+                        </div>
+                        <div class="col-md-6">
+                            <div class="mb-3">
+                                <label for="widgetType" class="form-label">Type</label>
+                                <select class="form-select" id="widgetType" disabled>
+                                    {% for widget_type in widget_types %}
+                                    <option value="{{ widget_type }}">{{ widget_type.replace('_', ' ').title() }}</option>
+                                    {% endfor %}
+                                </select>
+                            </div>
+                        </div>
+                    </div>
+                    
+                    <div class="row">
+                        <div class="col-md-3">
+                            <div class="mb-3">
+                                <label for="widgetWidth" class="form-label">Width</label>
+                                <select class="form-select" id="widgetWidth">
+                                    <option value="3">3 columns</option>
+                                    <option value="4">4 columns</option>
+                                    <option value="6">6 columns</option>
+                                    <option value="8">8 columns</option>
+                                    <option value="12">12 columns</option>
+                                </select>
+                            </div>
+                        </div>
+                        <div class="col-md-3">
+                            <div class="mb-3">
+                                <label for="widgetHeight" class="form-label">Height</label>
+                                <select class="form-select" id="widgetHeight">
+                                    <option value="2">2 rows</option>
+                                    <option value="3">3 rows</option>
+                                    <option value="4">4 rows</option>
+                                    <option value="6">6 rows</option>
+                                </select>
+                            </div>
+                        </div>
+                        <div class="col-md-6">
+                            <div class="mb-3">
+                                <label for="widgetRefresh" class="form-label">Refresh Interval (seconds)</label>
+                                <input type="number" class="form-control" id="widgetRefresh" min="10" max="300" value="30">
+                            </div>
+                        </div>
+                    </div>
+                    
+                    <div class="mb-3">
+                        <label class="form-label">Visible to Roles</label>
+                        <div>
+                            <div class="form-check form-check-inline">
+                                <input class="form-check-input" type="checkbox" id="roleAdmin" value="admin">
+                                <label class="form-check-label" for="roleAdmin">Admin</label>
+                            </div>
+                            <div class="form-check form-check-inline">
+                                <input class="form-check-input" type="checkbox" id="roleSuperAdmin" value="super_admin">
+                                <label class="form-check-label" for="roleSuperAdmin">Super Admin</label>
+                            </div>
+                        </div>
+                    </div>
+                    
+                    <div class="mb-3" id="widgetSpecificConfig">
+                        <!-- Widget-specific configuration will be loaded here -->
+                    </div>
+                </form>
+            </div>
+            <div class="modal-footer">
+                <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Cancel</button>
+                <button type="button" class="btn btn-danger" id="deleteWidget" style="display: none;">Delete Widget</button>
+                <button type="button" class="btn btn-primary" onclick="saveWidgetConfig()">Save Widget</button>
+            </div>
+        </div>
+    </div>
+</div>
+
+<script>
+class WidgetCustomizer {
+    constructor() {
+        this.widgets = {{ dashboard_config.widgets | tojsonfilter | safe }};
+        this.selectedWidget = null;
+        this.draggedElement = null;
+        this.nextWidgetId = this.widgets.length + 1;
+        
+        this.init();
+    }
+    
+    init() {
+        this.setupDragAndDrop();
+        this.renderExistingWidgets();
+        this.setupEventListeners();
+    }
+    
+    setupDragAndDrop() {
+        const grid = document.getElementById('dashboardGrid');
+        const dropZone = document.getElementById('dropZone');
+        
+        // Drag start from palette
+        document.querySelectorAll('.widget-type').forEach(item => {
+            item.addEventListener('dragstart', (e) => {
+                this.draggedElement = {
+                    type: e.target.closest('.widget-type').dataset.widgetType,
+                    isNew: true
+                };
+                e.dataTransfer.effectAllowed = 'copy';
+            });
+        });
+        
+        // Grid drag events
+        grid.addEventListener('dragover', (e) => {
+            e.preventDefault();
+            e.dataTransfer.dropEffect = 'copy';
+            dropZone.style.display = 'flex';
+        });
+        
+        grid.addEventListener('dragleave', (e) => {
+            if (!grid.contains(e.relatedTarget)) {
+                dropZone.style.display = 'none';
+            }
+        });
+        
+        grid.addEventListener('drop', (e) => {
+            e.preventDefault();
+            dropZone.style.display = 'none';
+            
+            if (this.draggedElement && this.draggedElement.isNew) {
+                this.addNewWidget(this.draggedElement.type, e);
+            }
+            
+            this.draggedElement = null;
+        });
+        
+        // Widget drag within grid
+        grid.addEventListener('dragstart', (e) => {
+            if (e.target.closest('.widget-preview')) {
+                const widget = e.target.closest('.widget-preview');
+                this.draggedElement = {
+                    widgetId: widget.dataset.widgetId,
+                    isNew: false
+                };
+                widget.classList.add('dragging');
+            }
+        });
+        
+        grid.addEventListener('dragend', (e) => {
+            if (e.target.closest('.widget-preview')) {
+                e.target.closest('.widget-preview').classList.remove('dragging');
+            }
+        });
+    }
+    
+    renderExistingWidgets() {
+        const grid = document.getElementById('dashboardGrid');
+        
+        this.widgets.forEach(widget => {
+            const widgetElement = this.createWidgetElement(widget);
+            grid.appendChild(widgetElement);
+        });
+    }
+    
+    createWidgetElement(widget) {
+        const element = document.createElement('div');
+        element.className = 'widget-preview';
+        element.draggable = true;
+        element.dataset.widgetId = widget.id;
+        element.style.gridColumn = `span ${widget.position.width}`;
+        element.style.gridRow = `span ${widget.position.height}`;
+        
+        const roles = widget.roles || [];
+        const rolesBadges = roles.map(role => 
+            `<span class="role-badge ${role.replace('_', '-')}">${role.replace('_', ' ')}</span>`
+        ).join('');
+        
+        element.innerHTML = `
+            <div class="size-indicator">${widget.position.width}x${widget.position.height}</div>
+            <div class="widget-header">
+                <h6 class="widget-title">${widget.title}</h6>
+                <div class="widget-controls">
+                    <button class="widget-control" onclick="customizer.editWidget('${widget.id}')" title="Edit">
+                        <i class="bi bi-gear"></i>
+                    </button>
+                    <button class="widget-control" onclick="customizer.removeWidget('${widget.id}')" title="Remove">
+                        <i class="bi bi-x"></i>
+                    </button>
+                </div>
+            </div>
+            <div class="widget-content">
+                <i class="bi bi-${this.getWidgetIcon(widget.type)}" style="font-size: 1.5rem; color: #007bff;"></i>
+                <div class="mt-2">
+                    <small><strong>${widget.type.replace('_', ' ').replace(/\b\w/g, l => l.toUpperCase())}</strong></small>
+                    <div class="mt-1">${rolesBadges}</div>
+                </div>
+            </div>
+        `;
+        
+        element.addEventListener('click', () => {
+            this.selectWidget(widget.id);
+        });
+        
+        return element;
+    }
+    
+    getWidgetIcon(type) {
+        const icons = {
+            'metric_card': 'speedometer2',
+            'chart': 'graph-up',
+            'table': 'table',
+            'gauge': 'speedometer',
+            'alert_panel': 'exclamation-triangle',
+            'resource_monitor': 'cpu'
+        };
+        return icons[type] || 'square';
+    }
+    
+    addNewWidget(type, event) {
+        const newWidget = {
+            id: `widget_${this.nextWidgetId++}`,
+            type: type,
+            title: type.replace('_', ' ').replace(/\b\w/g, l => l.toUpperCase()),
+            position: {
+                x: 0,
+                y: 0,
+                width: 6,
+                height: 3
+            },
+            config: this.getDefaultConfig(type),
+            roles: ['admin'],
+            refresh_interval: 30,
+            enabled: true
+        };
+        
+        this.widgets.push(newWidget);
+        
+        const widgetElement = this.createWidgetElement(newWidget);
+        document.getElementById('dashboardGrid').appendChild(widgetElement);
+        
+        // Auto-select and edit the new widget
+        this.selectWidget(newWidget.id);
+        this.editWidget(newWidget.id);
+    }
+    
+    getDefaultConfig(type) {
+        const configs = {
+            'metric_card': { metrics: ['active_tasks', 'recent_tasks'] },
+            'chart': { chart_type: 'line', period: '24h', metrics: ['completed', 'failed'] },
+            'table': { max_rows: 10, columns: ['id', 'user', 'status', 'progress'] },
+            'gauge': { metric: 'success_rate', min: 0, max: 100, thresholds: [70, 90] },
+            'alert_panel': { max_alerts: 10, show_acknowledged: false },
+            'resource_monitor': { resources: ['cpu', 'memory', 'disk'] }
+        };
+        return configs[type] || {};
+    }
+    
+    selectWidget(widgetId) {
+        // Remove previous selection
+        document.querySelectorAll('.widget-preview').forEach(el => {
+            el.classList.remove('selected');
+        });
+        
+        // Select new widget
+        const widgetElement = document.querySelector(`[data-widget-id="${widgetId}"]`);
+        if (widgetElement) {
+            widgetElement.classList.add('selected');
+            this.selectedWidget = widgetId;
+            this.showWidgetProperties(widgetId);
+        }
+    }
+    
+    showWidgetProperties(widgetId) {
+        const widget = this.widgets.find(w => w.id === widgetId);
+        if (!widget) return;
+        
+        const propertiesContent = document.getElementById('propertiesContent');
+        
+        propertiesContent.innerHTML = `
+            <div class="property-group">
+                <h6>Basic Properties</h6>
+                <div class="mb-2">
+                    <label class="form-label">Title</label>
+                    <input type="text" class="form-control form-control-sm" value="${widget.title}" 
+                           onchange="customizer.updateWidgetProperty('${widgetId}', 'title', this.value)">
+                </div>
+                <div class="mb-2">
+                    <label class="form-label">Type</label>
+                    <input type="text" class="form-control form-control-sm" value="${widget.type}" disabled>
+                </div>
+            </div>
+            
+            <div class="property-group">
+                <h6>Size & Position</h6>
+                <div class="row">
+                    <div class="col-6">
+                        <label class="form-label">Width</label>
+                        <select class="form-select form-select-sm" 
+                                onchange="customizer.updateWidgetProperty('${widgetId}', 'position.width', parseInt(this.value))">
+                            <option value="3" ${widget.position.width === 3 ? 'selected' : ''}>3 cols</option>
+                            <option value="4" ${widget.position.width === 4 ? 'selected' : ''}>4 cols</option>
+                            <option value="6" ${widget.position.width === 6 ? 'selected' : ''}>6 cols</option>
+                            <option value="8" ${widget.position.width === 8 ? 'selected' : ''}>8 cols</option>
+                            <option value="12" ${widget.position.width === 12 ? 'selected' : ''}>12 cols</option>
+                        </select>
+                    </div>
+                    <div class="col-6">
+                        <label class="form-label">Height</label>
+                        <select class="form-select form-select-sm" 
+                                onchange="customizer.updateWidgetProperty('${widgetId}', 'position.height', parseInt(this.value))">
+                            <option value="2" ${widget.position.height === 2 ? 'selected' : ''}>2 rows</option>
+                            <option value="3" ${widget.position.height === 3 ? 'selected' : ''}>3 rows</option>
+                            <option value="4" ${widget.position.height === 4 ? 'selected' : ''}>4 rows</option>
+                            <option value="6" ${widget.position.height === 6 ? 'selected' : ''}>6 rows</option>
+                        </select>
+                    </div>
+                </div>
+            </div>
+            
+            <div class="property-group">
+                <h6>Permissions</h6>
+                <div class="form-check">
+                    <input class="form-check-input" type="checkbox" id="role_admin_${widgetId}" 
+                           ${widget.roles.includes('admin') ? 'checked' : ''}
+                           onchange="customizer.updateWidgetRoles('${widgetId}')">
+                    <label class="form-check-label" for="role_admin_${widgetId}">Admin</label>
+                </div>
+                <div class="form-check">
+                    <input class="form-check-input" type="checkbox" id="role_super_admin_${widgetId}" 
+                           ${widget.roles.includes('super_admin') ? 'checked' : ''}
+                           onchange="customizer.updateWidgetRoles('${widgetId}')">
+                    <label class="form-check-label" for="role_super_admin_${widgetId}">Super Admin</label>
+                </div>
+            </div>
+            
+            <div class="property-group">
+                <h6>Actions</h6>
+                <div class="d-grid gap-2">
+                    <button class="btn btn-outline-primary btn-sm" onclick="customizer.editWidget('${widgetId}')">
+                        <i class="bi bi-gear"></i> Configure
+                    </button>
+                    <button class="btn btn-outline-danger btn-sm" onclick="customizer.removeWidget('${widgetId}')">
+                        <i class="bi bi-trash"></i> Remove
+                    </button>
+                </div>
+            </div>
+        `;
+    }
+    
+    updateWidgetProperty(widgetId, property, value) {
+        const widget = this.widgets.find(w => w.id === widgetId);
+        if (!widget) return;
+        
+        if (property.includes('.')) {
+            const [parent, child] = property.split('.');
+            widget[parent][child] = value;
+        } else {
+            widget[property] = value;
+        }
+        
+        // Update visual representation
+        this.refreshWidget(widgetId);
+    }
+    
+    updateWidgetRoles(widgetId) {
+        const widget = this.widgets.find(w => w.id === widgetId);
+        if (!widget) return;
+        
+        const roles = [];
+        if (document.getElementById(`role_admin_${widgetId}`).checked) {
+            roles.push('admin');
+        }
+        if (document.getElementById(`role_super_admin_${widgetId}`).checked) {
+            roles.push('super_admin');
+        }
+        
+        widget.roles = roles;
+        this.refreshWidget(widgetId);
+    }
+    
+    refreshWidget(widgetId) {
+        const widget = this.widgets.find(w => w.id === widgetId);
+        const element = document.querySelector(`[data-widget-id="${widgetId}"]`);
+        
+        if (widget && element) {
+            // Update size
+            element.style.gridColumn = `span ${widget.position.width}`;
+            element.style.gridRow = `span ${widget.position.height}`;
+            
+            // Update title
+            const titleElement = element.querySelector('.widget-title');
+            if (titleElement) {
+                titleElement.textContent = widget.title;
+            }
+            
+            // Update size indicator
+            const sizeIndicator = element.querySelector('.size-indicator');
+            if (sizeIndicator) {
+                sizeIndicator.textContent = `${widget.position.width}x${widget.position.height}`;
+            }
+            
+            // Update role badges
+            const rolesBadges = widget.roles.map(role => 
+                `<span class="role-badge ${role.replace('_', '-')}">${role.replace('_', ' ')}</span>`
+            ).join('');
+            
+            const contentDiv = element.querySelector('.widget-content');
+            if (contentDiv) {
+                const icon = contentDiv.querySelector('i');
+                const iconClass = icon ? icon.className : '';
+                contentDiv.innerHTML = `
+                    ${icon ? `<i class="${iconClass}"></i>` : ''}
+                    <div class="mt-2">
+                        <small><strong>${widget.type.replace('_', ' ').replace(/\b\w/g, l => l.toUpperCase())}</strong></small>
+                        <div class="mt-1">${rolesBadges}</div>
+                    </div>
+                `;
+            }
+        }
+    }
+    
+    editWidget(widgetId) {
+        const widget = this.widgets.find(w => w.id === widgetId);
+        if (!widget) return;
+        
+        // Populate modal form
+        document.getElementById('widgetTitle').value = widget.title;
+        document.getElementById('widgetType').value = widget.type;
+        document.getElementById('widgetWidth').value = widget.position.width;
+        document.getElementById('widgetHeight').value = widget.position.height;
+        document.getElementById('widgetRefresh').value = widget.refresh_interval || 30;
+        
+        // Set role checkboxes
+        document.getElementById('roleAdmin').checked = widget.roles.includes('admin');
+        document.getElementById('roleSuperAdmin').checked = widget.roles.includes('super_admin');
+        
+        // Show delete button for existing widgets
+        document.getElementById('deleteWidget').style.display = 'block';
+        document.getElementById('deleteWidget').onclick = () => this.removeWidget(widgetId);
+        
+        // Store current widget ID for saving
+        document.getElementById('widgetConfigForm').dataset.widgetId = widgetId;
+        
+        // Show modal
+        const modal = new bootstrap.Modal(document.getElementById('widgetConfigModal'));
+        modal.show();
+    }
+    
+    removeWidget(widgetId) {
+        if (confirm('Are you sure you want to remove this widget?')) {
+            // Remove from widgets array
+            this.widgets = this.widgets.filter(w => w.id !== widgetId);
+            
+            // Remove from DOM
+            const element = document.querySelector(`[data-widget-id="${widgetId}"]`);
+            if (element) {
+                element.remove();
+            }
+            
+            // Clear properties panel if this widget was selected
+            if (this.selectedWidget === widgetId) {
+                this.selectedWidget = null;
+                document.getElementById('propertiesContent').innerHTML = `
+                    <p class="text-muted text-center py-4">
+                        <i class="bi bi-cursor" style="font-size: 2rem;"></i><br>
+                        Select a widget to edit its properties
+                    </p>
+                `;
+            }
+            
+            // Close modal if open
+            const modal = bootstrap.Modal.getInstance(document.getElementById('widgetConfigModal'));
+            if (modal) {
+                modal.hide();
+            }
+        }
+    }
+    
+    setupEventListeners() {
+        // Clear selection when clicking on empty grid area
+        document.getElementById('dashboardGrid').addEventListener('click', (e) => {
+            if (e.target.id === 'dashboardGrid' || e.target.classList.contains('grid-overlay')) {
+                this.selectedWidget = null;
+                document.querySelectorAll('.widget-preview').forEach(el => {
+                    el.classList.remove('selected');
+                });
+                
+                document.getElementById('propertiesContent').innerHTML = `
+                    <p class="text-muted text-center py-4">
+                        <i class="bi bi-cursor" style="font-size: 2rem;"></i><br>
+                        Select a widget to edit its properties
+                    </p>
+                `;
+            }
+        });
+    }
+}
+
+// Global functions
+let customizer;
+
+document.addEventListener('DOMContentLoaded', function() {
+    customizer = new WidgetCustomizer();
+});
+
+function saveWidgetConfig() {
+    const form = document.getElementById('widgetConfigForm');
+    const widgetId = form.dataset.widgetId;
+    const widget = customizer.widgets.find(w => w.id === widgetId);
+    
+    if (widget) {
+        widget.title = document.getElementById('widgetTitle').value;
+        widget.position.width = parseInt(document.getElementById('widgetWidth').value);
+        widget.position.height = parseInt(document.getElementById('widgetHeight').value);
+        widget.refresh_interval = parseInt(document.getElementById('widgetRefresh').value);
+        
+        // Update roles
+        const roles = [];
+        if (document.getElementById('roleAdmin').checked) roles.push('admin');
+        if (document.getElementById('roleSuperAdmin').checked) roles.push('super_admin');
+        widget.roles = roles;
+        
+        customizer.refreshWidget(widgetId);
+        customizer.showWidgetProperties(widgetId);
+        
+        bootstrap.Modal.getInstance(document.getElementById('widgetConfigModal')).hide();
+        showToast('Widget configuration saved', 'success');
+    }
+}
+
+function resetLayout() {
+    if (confirm('Are you sure you want to reset the layout to default?')) {
+        location.reload();
+    }
+}
+
+function previewDashboard() {
+    // Open dashboard in new tab with current configuration
+    const previewUrl = '{{ url_for("admin.enhanced_monitoring_dashboard") }}';
+    window.open(previewUrl, '_blank');
+}
+
+async function saveLayout() {
+    try {
+        const response = await fetch('/admin/api/dashboard/widgets/save', {
+            method: 'POST',
+            headers: {
+                'Content-Type': 'application/json',
+                'X-CSRFToken': document.querySelector('meta[name="csrf-token"]')?.getAttribute('content') || ''
+            },
+            body: JSON.stringify({
+                widgets: customizer.widgets
+            })
+        });
+        
+        const result = await response.json();
+        
+        if (result.success) {
+            showToast('Dashboard layout saved successfully', 'success');
+        } else {
+            showToast(result.error || 'Failed to save layout', 'error');
+        }
+        
+    } catch (error) {
+        console.error('Error saving layout:', error);
+        showToast('Error saving layout', 'error');
+    }
+}
+
+function showToast(message, type) {
+    // Create toast container if it doesn't exist
+    let toastContainer = document.querySelector('.toast-container');
+    if (!toastContainer) {
+        toastContainer = document.createElement('div');
+        toastContainer.className = 'toast-container position-fixed bottom-0 end-0 p-3';
+        toastContainer.style.zIndex = '1055';
+        document.body.appendChild(toastContainer);
+    }
+    
+    // Create toast
+    const toastId = 'toast-' + Date.now();
+    const bgClass = type === 'success' ? 'bg-success' : type === 'error' ? 'bg-danger' : 'bg-info';
+    
+    const toastHtml = `
+        <div id="${toastId}" class="toast align-items-center text-white ${bgClass} border-0" role="alert" aria-live="assertive" aria-atomic="true">
+            <div class="d-flex">
+                <div class="toast-body">${message}</div>
+                <button type="button" class="btn-close btn-close-white me-2 m-auto" data-bs-dismiss="toast" aria-label="Close"></button>
+            </div>
+        </div>
+    `;
+    
+    toastContainer.insertAdjacentHTML('beforeend', toastHtml);
+    
+    // Show toast
+    const toastElement = document.getElementById(toastId);
+    const toast = new bootstrap.Toast(toastElement, { delay: 5000 });
+    toast.show();
+    
+    // Remove toast element after it's hidden
+    toastElement.addEventListener('hidden.bs.toast', () => {
+        toastElement.remove();
+    });
+}
+</script>
+
+{% endblock %}

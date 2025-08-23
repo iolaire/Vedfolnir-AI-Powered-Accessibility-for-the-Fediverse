@@ -49,6 +49,30 @@ class TaskStatus(Enum):
     FAILED = "failed"
     CANCELLED = "cancelled"
 
+class JobPriority(Enum):
+    LOW = "low"
+    NORMAL = "normal"
+    HIGH = "high"
+    URGENT = "urgent"
+
+class AlertType(Enum):
+    SYSTEM_ERROR = "system_error"
+    RESOURCE_WARNING = "resource_warning"
+    JOB_FAILURE = "job_failure"
+    REPEATED_FAILURES = "repeated_failures"
+    RESOURCE_LOW = "resource_low"
+    AI_SERVICE_DOWN = "ai_service_down"
+    QUEUE_BACKUP = "queue_backup"
+    USER_ISSUE = "user_issue"
+    PERFORMANCE_DEGRADATION = "performance_degradation"
+    SECURITY_ALERT = "security_alert"
+
+class AlertSeverity(Enum):
+    LOW = "low"
+    MEDIUM = "medium"
+    HIGH = "high"
+    CRITICAL = "critical"
+
 class Post(Base):
     __tablename__ = 'posts'
     __table_args__ = mysql_table_args
@@ -1243,6 +1267,10 @@ class CaptionGenerationTask(Base):
         Index('ix_caption_task_platform_status', 'platform_connection_id', 'status'),
         Index('ix_caption_task_status_created', 'status', 'created_at'),
         Index('ix_caption_task_created_at', 'created_at'),
+        Index('ix_caption_task_priority', 'priority'),
+        Index('ix_caption_task_admin_cancelled', 'cancelled_by_admin'),
+        Index('ix_caption_task_admin_user', 'admin_user_id'),
+        Index('ix_caption_task_retry_count', 'retry_count'),
         {
             'mysql_engine': 'InnoDB',
             'mysql_charset': 'utf8mb4',
@@ -1264,9 +1292,20 @@ class CaptionGenerationTask(Base):
     progress_percent = Column(Integer, default=0)
     current_step = Column(String(200))
     
+    # New fields for multi-tenant management
+    priority = Column(SQLEnum(JobPriority, values_callable=lambda obj: [e.value for e in obj]), default=JobPriority.NORMAL)
+    admin_notes = Column(Text)  # Admin comments/notes
+    cancelled_by_admin = Column(Boolean, default=False)
+    admin_user_id = Column(Integer, ForeignKey('users.id'), nullable=True)  # Admin who cancelled
+    cancellation_reason = Column(String(500))
+    retry_count = Column(Integer, default=0)
+    max_retries = Column(Integer, default=3)
+    resource_usage = Column(Text)  # JSON: memory, CPU, processing time
+    
     # Relationships
-    user = relationship("User")
+    user = relationship("User", foreign_keys=[user_id])
     platform_connection = relationship("PlatformConnection")
+    cancelled_by = relationship("User", foreign_keys=[admin_user_id])
     
     # Note: Unique constraint on user_id removed to allow multiple tasks per user
     # Active task enforcement is handled in application logic
@@ -1377,3 +1416,353 @@ class CaptionGenerationUserSettings(Base):
     
     def __repr__(self):
         return f"<CaptionGenerationUserSettings User {self.user_id} Platform {self.platform_connection_id}>"
+
+class SystemConfiguration(Base):
+    """System-wide configuration settings with audit trail"""
+    __tablename__ = 'system_configuration'
+    __table_args__ = (
+        Index('ix_system_config_key', 'key'),
+        Index('ix_system_config_updated', 'updated_at'),
+        Index('ix_system_config_updated_by', 'updated_by'),
+        {
+            'mysql_engine': 'InnoDB',
+            'mysql_charset': 'utf8mb4',
+            'mysql_collate': 'utf8mb4_unicode_ci',
+            'mysql_row_format': 'DYNAMIC',
+        }
+    )
+    
+    id = Column(Integer, primary_key=True, autoincrement=True)
+    key = Column(String(100), unique=True, nullable=False)
+    value = Column(Text)
+    description = Column(Text)
+    data_type = Column(String(20), default='string')  # string, integer, float, boolean, json
+    is_sensitive = Column(Boolean, default=False)  # For passwords, API keys, etc.
+    category = Column(String(50))  # grouping: system, performance, security, etc.
+    updated_by = Column(Integer, ForeignKey('users.id'), nullable=False)
+    updated_at = Column(DateTime, default=datetime.utcnow)
+    created_at = Column(DateTime, default=datetime.utcnow)
+    
+    # Relationships
+    updated_by_user = relationship("User")
+    
+    def get_typed_value(self):
+        """Get the value converted to the appropriate type"""
+        if not self.value:
+            return None
+            
+        try:
+            if self.data_type == 'integer':
+                return int(self.value)
+            elif self.data_type == 'float':
+                return float(self.value)
+            elif self.data_type == 'boolean':
+                return self.value.lower() in ('true', '1', 'yes', 'on')
+            elif self.data_type == 'json':
+                return json.loads(self.value)
+            else:
+                return self.value
+        except (ValueError, json.JSONDecodeError):
+            return self.value  # Return as string if conversion fails
+    
+    def set_typed_value(self, value):
+        """Set the value with appropriate type conversion"""
+        if value is None:
+            self.value = None
+        elif self.data_type == 'json':
+            self.value = json.dumps(value)
+        elif self.data_type == 'boolean':
+            self.value = str(bool(value)).lower()
+        else:
+            self.value = str(value)
+    
+    def __repr__(self):
+        return f"<SystemConfiguration {self.key}={self.value}>"
+
+class JobAuditLog(Base):
+    """Comprehensive audit logging of all job actions"""
+    __tablename__ = 'job_audit_log'
+    __table_args__ = (
+        Index('ix_job_audit_task_id', 'task_id'),
+        Index('ix_job_audit_user_id', 'user_id'),
+        Index('ix_job_audit_admin_user_id', 'admin_user_id'),
+        Index('ix_job_audit_action', 'action'),
+        Index('ix_job_audit_timestamp', 'timestamp'),
+        Index('ix_job_audit_task_action', 'task_id', 'action'),
+        Index('ix_job_audit_user_timestamp', 'user_id', 'timestamp'),
+        {
+            'mysql_engine': 'InnoDB',
+            'mysql_charset': 'utf8mb4',
+            'mysql_collate': 'utf8mb4_unicode_ci',
+            'mysql_row_format': 'DYNAMIC',
+        }
+    )
+    
+    id = Column(Integer, primary_key=True, autoincrement=True)
+    task_id = Column(String(36), ForeignKey('caption_generation_tasks.id', ondelete='CASCADE'), nullable=False)
+    user_id = Column(Integer, ForeignKey('users.id'), nullable=False)
+    admin_user_id = Column(Integer, ForeignKey('users.id'), nullable=True)
+    action = Column(String(50), nullable=False)  # 'created', 'cancelled', 'completed', 'failed', 'restarted', etc.
+    details = Column(Text)  # JSON with action details
+    timestamp = Column(DateTime, default=datetime.utcnow)
+    ip_address = Column(String(45))
+    user_agent = Column(String(500))
+    session_id = Column(String(255))  # For tracking user sessions
+    
+    # Additional context fields
+    platform_connection_id = Column(Integer, ForeignKey('platform_connections.id'), nullable=True)
+    previous_status = Column(String(50))  # Previous task status before action
+    new_status = Column(String(50))  # New task status after action
+    error_code = Column(String(50))  # Error code if applicable
+    processing_time_ms = Column(Integer)  # Processing time in milliseconds
+    
+    # Relationships
+    task = relationship("CaptionGenerationTask")
+    user = relationship("User", foreign_keys=[user_id])
+    admin_user = relationship("User", foreign_keys=[admin_user_id])
+    platform_connection = relationship("PlatformConnection")
+    
+    @classmethod
+    def log_action(cls, session, task_id, user_id, action, details=None, 
+                   admin_user_id=None, ip_address=None, user_agent=None,
+                   session_id=None, platform_connection_id=None,
+                   previous_status=None, new_status=None, error_code=None,
+                   processing_time_ms=None):
+        """Create an audit log entry for a job action"""
+        audit_entry = cls(
+            task_id=task_id,
+            user_id=user_id,
+            admin_user_id=admin_user_id,
+            action=action,
+            details=json.dumps(details) if details else None,
+            ip_address=ip_address,
+            user_agent=user_agent,
+            session_id=session_id,
+            platform_connection_id=platform_connection_id,
+            previous_status=previous_status,
+            new_status=new_status,
+            error_code=error_code,
+            processing_time_ms=processing_time_ms
+        )
+        session.add(audit_entry)
+        return audit_entry
+    
+    def get_details_dict(self):
+        """Get details as a dictionary"""
+        if self.details:
+            try:
+                return json.loads(self.details)
+            except json.JSONDecodeError:
+                return {}
+        return {}
+    
+    def __repr__(self):
+        return f"<JobAuditLog {self.action} - Task {self.task_id} - User {self.user_id}>"
+
+class AlertConfiguration(Base):
+    """Managing alert thresholds and notification settings"""
+    __tablename__ = 'alert_configuration'
+    __table_args__ = (
+        Index('ix_alert_config_type', 'alert_type'),
+        Index('ix_alert_config_enabled', 'enabled'),
+        Index('ix_alert_config_severity', 'severity'),
+        Index('ix_alert_config_created_by', 'created_by'),
+        Index('ix_alert_config_updated', 'updated_at'),
+        UniqueConstraint('alert_type', 'metric_name', name='uq_alert_type_metric'),
+        {
+            'mysql_engine': 'InnoDB',
+            'mysql_charset': 'utf8mb4',
+            'mysql_collate': 'utf8mb4_unicode_ci',
+            'mysql_row_format': 'DYNAMIC',
+        }
+    )
+    
+    id = Column(Integer, primary_key=True, autoincrement=True)
+    alert_type = Column(SQLEnum(AlertType), nullable=False)
+    metric_name = Column(String(100), nullable=False)  # e.g., 'queue_length', 'error_rate', 'memory_usage'
+    threshold_value = Column(Float, nullable=False)
+    threshold_operator = Column(String(10), default='>')  # '>', '<', '>=', '<=', '==', '!='
+    threshold_unit = Column(String(20))  # 'count', 'percent', 'mb', 'seconds', etc.
+    severity = Column(SQLEnum(AlertSeverity), default=AlertSeverity.MEDIUM)
+    enabled = Column(Boolean, default=True)
+    
+    # Notification settings
+    notification_channels = Column(Text)  # JSON array of channels: ['email', 'slack', 'webhook']
+    notification_template = Column(Text)  # Custom notification message template
+    cooldown_minutes = Column(Integer, default=60)  # Minimum time between alerts of same type
+    escalation_minutes = Column(Integer, default=0)  # Time before escalating unacknowledged alerts
+    
+    # Metadata
+    description = Column(Text)
+    created_by = Column(Integer, ForeignKey('users.id'), nullable=False)
+    created_at = Column(DateTime, default=datetime.utcnow)
+    updated_at = Column(DateTime, default=datetime.utcnow, onupdate=datetime.utcnow)
+    last_triggered = Column(DateTime)
+    trigger_count = Column(Integer, default=0)
+    
+    # Relationships
+    created_by_user = relationship("User")
+    
+    def get_notification_channels(self):
+        """Get notification channels as a list"""
+        if self.notification_channels:
+            try:
+                return json.loads(self.notification_channels)
+            except json.JSONDecodeError:
+                return []
+        return []
+    
+    def set_notification_channels(self, channels):
+        """Set notification channels from a list"""
+        self.notification_channels = json.dumps(channels) if channels else None
+    
+    def should_trigger(self, current_value):
+        """Check if alert should trigger based on threshold"""
+        if not self.enabled:
+            return False
+            
+        try:
+            if self.threshold_operator == '>':
+                return current_value > self.threshold_value
+            elif self.threshold_operator == '<':
+                return current_value < self.threshold_value
+            elif self.threshold_operator == '>=':
+                return current_value >= self.threshold_value
+            elif self.threshold_operator == '<=':
+                return current_value <= self.threshold_value
+            elif self.threshold_operator == '==':
+                return current_value == self.threshold_value
+            elif self.threshold_operator == '!=':
+                return current_value != self.threshold_value
+            else:
+                return False
+        except (TypeError, ValueError):
+            return False
+    
+    def is_in_cooldown(self):
+        """Check if alert is in cooldown period"""
+        if not self.last_triggered or self.cooldown_minutes <= 0:
+            return False
+        
+        from datetime import timedelta
+        cooldown_end = self.last_triggered + timedelta(minutes=self.cooldown_minutes)
+        return datetime.utcnow() < cooldown_end
+    
+    def record_trigger(self, session):
+        """Record that this alert was triggered"""
+        self.last_triggered = datetime.utcnow()
+        self.trigger_count += 1
+        session.commit()
+    
+    def __repr__(self):
+        return f"<AlertConfiguration {self.alert_type.value} - {self.metric_name} {self.threshold_operator} {self.threshold_value}>"
+
+class SystemAlert(Base):
+    """Active system alerts and their acknowledgment status"""
+    __tablename__ = 'system_alerts'
+    __table_args__ = (
+        Index('ix_system_alert_type', 'alert_type'),
+        Index('ix_system_alert_severity', 'severity'),
+        Index('ix_system_alert_status', 'status'),
+        Index('ix_system_alert_created', 'created_at'),
+        Index('ix_system_alert_acknowledged', 'acknowledged_at'),
+        Index('ix_system_alert_resolved', 'resolved_at'),
+        Index('ix_system_alert_config', 'alert_configuration_id'),
+        {
+            'mysql_engine': 'InnoDB',
+            'mysql_charset': 'utf8mb4',
+            'mysql_collate': 'utf8mb4_unicode_ci',
+            'mysql_row_format': 'DYNAMIC',
+        }
+    )
+    
+    id = Column(Integer, primary_key=True, autoincrement=True)
+    alert_configuration_id = Column(Integer, ForeignKey('alert_configuration.id'), nullable=False)
+    alert_type = Column(SQLEnum(AlertType), nullable=False)
+    severity = Column(SQLEnum(AlertSeverity), nullable=False)
+    status = Column(String(20), default='active')  # active, acknowledged, resolved, suppressed
+    
+    # Alert content
+    title = Column(String(200), nullable=False)
+    message = Column(Text, nullable=False)
+    metric_value = Column(Float)  # The value that triggered the alert
+    context_data = Column(Text)  # JSON with additional context
+    
+    # Timestamps
+    created_at = Column(DateTime, default=datetime.utcnow)
+    acknowledged_at = Column(DateTime)
+    resolved_at = Column(DateTime)
+    
+    # User actions
+    acknowledged_by = Column(Integer, ForeignKey('users.id'), nullable=True)
+    resolved_by = Column(Integer, ForeignKey('users.id'), nullable=True)
+    acknowledgment_note = Column(Text)
+    resolution_note = Column(Text)
+    
+    # Notification tracking
+    notifications_sent = Column(Text)  # JSON array of sent notifications
+    last_notification_sent = Column(DateTime)
+    notification_count = Column(Integer, default=0)
+    
+    # Relationships
+    alert_configuration = relationship("AlertConfiguration")
+    acknowledged_by_user = relationship("User", foreign_keys=[acknowledged_by])
+    resolved_by_user = relationship("User", foreign_keys=[resolved_by])
+    
+    def get_context_data(self):
+        """Get context data as a dictionary"""
+        if self.context_data:
+            try:
+                return json.loads(self.context_data)
+            except json.JSONDecodeError:
+                return {}
+        return {}
+    
+    def set_context_data(self, data):
+        """Set context data from a dictionary"""
+        self.context_data = json.dumps(data) if data else None
+    
+    def get_notifications_sent(self):
+        """Get sent notifications as a list"""
+        if self.notifications_sent:
+            try:
+                return json.loads(self.notifications_sent)
+            except json.JSONDecodeError:
+                return []
+        return []
+    
+    def add_notification_sent(self, channel, timestamp=None):
+        """Add a sent notification record"""
+        notifications = self.get_notifications_sent()
+        notifications.append({
+            'channel': channel,
+            'timestamp': (timestamp or datetime.utcnow()).isoformat()
+        })
+        self.notifications_sent = json.dumps(notifications)
+        self.last_notification_sent = timestamp or datetime.utcnow()
+        self.notification_count += 1
+    
+    def acknowledge(self, user_id, note=None):
+        """Acknowledge the alert"""
+        self.status = 'acknowledged'
+        self.acknowledged_by = user_id
+        self.acknowledged_at = datetime.utcnow()
+        self.acknowledgment_note = note
+    
+    def resolve(self, user_id, note=None):
+        """Resolve the alert"""
+        self.status = 'resolved'
+        self.resolved_by = user_id
+        self.resolved_at = datetime.utcnow()
+        self.resolution_note = note
+    
+    def is_active(self):
+        """Check if alert is still active"""
+        return self.status == 'active'
+    
+    def is_acknowledged(self):
+        """Check if alert has been acknowledged"""
+        return self.status in ['acknowledged', 'resolved']
+    
+    def __repr__(self):
+        return f"<SystemAlert {self.alert_type.value} - {self.severity.value} - {self.status}>"

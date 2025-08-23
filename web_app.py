@@ -462,6 +462,11 @@ caption_security_manager = CaptionSecurityManager(db_manager)
 app.config['db_manager'] = db_manager
 app.config['caption_security_manager'] = caption_security_manager
 
+# Initialize system configuration manager
+from system_configuration_manager import SystemConfigurationManager
+system_configuration_manager = SystemConfigurationManager(db_manager)
+app.config['system_configuration_manager'] = system_configuration_manager
+
 # Initialize caption review integration
 caption_review_integration = CaptionReviewIntegration(db_manager)
 
@@ -3173,6 +3178,182 @@ def get_caption_generation_results(task_id):
             'error': 'Failed to get results'
         }), 500
 
+@app.route('/api/caption_generation/retry/<task_id>', methods=['POST'])
+@login_required
+@platform_required
+@validate_task_access
+@require_secure_connection
+@validate_csrf_token
+@rate_limit(limit=5, window_seconds=300)  # Limited retries: 5 per 5 minutes
+@with_session_error_handling
+def retry_caption_generation(task_id):
+    """Retry a failed caption generation task with the same settings"""
+    try:
+        # Validate task_id format (UUID)
+        import uuid
+        try:
+            uuid.UUID(task_id)
+        except ValueError:
+            return jsonify({
+                'success': False,
+                'error': 'Invalid task ID format'
+            }), 400
+        
+        # Initialize caption generation service
+        caption_service = WebCaptionGenerationService(db_manager)
+        
+        # Check if user already has an active task
+        active_task = caption_service.task_queue_manager.get_user_active_task(current_user.id)
+        if active_task:
+            return jsonify({
+                'success': False,
+                'error': 'You already have an active caption generation task. Please wait for it to complete or cancel it first.'
+            }), 400
+        
+        # Get the original task to retrieve settings
+        original_task = caption_service.task_queue_manager.get_task(task_id)
+        if not original_task:
+            return jsonify({
+                'success': False,
+                'error': 'Original task not found'
+            }), 404
+        
+        # Verify task belongs to current user
+        if original_task.user_id != current_user.id:
+            return jsonify({
+                'success': False,
+                'error': 'Access denied'
+            }), 403
+        
+        # Verify task is in a failed state
+        if original_task.status.value not in ['failed', 'cancelled']:
+            return jsonify({
+                'success': False,
+                'error': 'Can only retry failed or cancelled tasks'
+            }), 400
+        
+        # Get platform connection ID from session context
+        context = get_current_session_context()
+        if not context or not context.get('platform_connection_id'):
+            return jsonify({
+                'success': False,
+                'error': 'No active platform connection found'
+            }), 400
+        
+        platform_connection_id = context['platform_connection_id']
+        
+        # Use the original task's settings
+        settings = original_task.settings
+        
+        # Start new caption generation task
+        import asyncio
+        loop = asyncio.new_event_loop()
+        asyncio.set_event_loop(loop)
+        try:
+            new_task_id = loop.run_until_complete(
+                caption_service.start_caption_generation(
+                    current_user.id,
+                    platform_connection_id,
+                    settings
+                )
+            )
+            
+            app.logger.info(f"Retried caption generation task {sanitize_for_log(task_id)} as new task {sanitize_for_log(new_task_id)} for user {sanitize_for_log(str(current_user.id))}")
+            
+            return jsonify({
+                'success': True,
+                'task_id': new_task_id,
+                'message': 'Task retry started successfully'
+            })
+            
+        finally:
+            loop.close()
+            
+    except Exception as e:
+        app.logger.error(f"Error retrying caption generation: {sanitize_for_log(str(e))}")
+        return jsonify({
+            'success': False,
+            'error': 'Failed to retry task'
+        }), 500
+
+@app.route('/api/caption_generation/error_details/<task_id>')
+@login_required
+@platform_required
+@validate_task_access
+@rate_limit(limit=20, window_seconds=60)
+@with_session_error_handling
+def get_caption_generation_error_details(task_id):
+    """Get detailed error information for a failed task"""
+    try:
+        # Validate task_id format (UUID)
+        import uuid
+        try:
+            uuid.UUID(task_id)
+        except ValueError:
+            return jsonify({
+                'success': False,
+                'error': 'Invalid task ID format'
+            }), 400
+        
+        # Initialize caption generation service
+        caption_service = WebCaptionGenerationService(db_manager)
+        
+        # Get task
+        task = caption_service.task_queue_manager.get_task(task_id)
+        if not task:
+            return jsonify({
+                'success': False,
+                'error': 'Task not found'
+            }), 404
+        
+        # Verify task belongs to current user
+        if task.user_id != current_user.id:
+            return jsonify({
+                'success': False,
+                'error': 'Access denied'
+            }), 403
+        
+        # Get progress information which may contain enhanced error details
+        progress = caption_service.progress_tracker.get_progress(task_id, current_user.id)
+        
+        error_details = {
+            'message': task.error_message or 'Unknown error occurred',
+            'category': None,
+            'recovery_suggestions': [],
+            'escalation_level': None,
+            'pattern_matched': False
+        }
+        
+        # Extract enhanced error information from progress details if available
+        if progress and progress.details:
+            error_details.update({
+                'category': progress.details.get('error_category'),
+                'recovery_suggestions': progress.details.get('recovery_suggestions', []),
+                'escalation_level': progress.details.get('escalation_level'),
+                'pattern_matched': progress.details.get('pattern_matched', False)
+            })
+        
+        # Add generic recovery suggestions if none are available
+        if not error_details['recovery_suggestions']:
+            error_details['recovery_suggestions'] = [
+                'Check your platform connection settings',
+                'Verify your internet connection is stable',
+                'Try reducing the number of posts to process',
+                'Wait a few minutes and try again'
+            ]
+        
+        return jsonify({
+            'success': True,
+            'error_details': error_details
+        })
+        
+    except Exception as e:
+        app.logger.error(f"Error getting error details: {sanitize_for_log(str(e))}")
+        return jsonify({
+            'success': False,
+            'error': 'Failed to get error details'
+        }), 500
+
 @app.route('/caption_settings')
 @login_required
 @platform_required
@@ -3510,6 +3691,124 @@ def review_batch(batch_id):
         app.logger.error(f"Error loading batch review: {sanitize_for_log(str(e))}")
         flash('Error loading batch for review.', 'error')
         return redirect(url_for('review_batches'))
+
+@app.route('/api/review/batch/<batch_id>/quality_metrics')
+@login_required
+@platform_required
+@with_session_error_handling
+def api_get_batch_quality_metrics(batch_id):
+    """Get quality metrics and improvement suggestions for a batch"""
+    try:
+        quality_metrics = caption_review_integration.get_job_quality_metrics(batch_id, current_user.id)
+        
+        if quality_metrics:
+            return jsonify({
+                'success': True,
+                'quality_metrics': quality_metrics
+            })
+        else:
+            return jsonify({
+                'success': False,
+                'error': 'Batch not found or no quality data available'
+            }), 404
+            
+    except Exception as e:
+        app.logger.error(f"Error getting batch quality metrics: {sanitize_for_log(str(e))}")
+        return jsonify({
+            'success': False,
+            'error': 'Failed to retrieve quality metrics'
+        }), 500
+
+@app.route('/api/review/approval_rate_tracking')
+@login_required
+@platform_required
+@with_session_error_handling
+def api_get_approval_rate_tracking():
+    """Get approval rate tracking and feedback for job optimization"""
+    try:
+        days_back = request.args.get('days_back', 30, type=int)
+        
+        tracking_data = caption_review_integration.get_approval_rate_tracking(
+            current_user.id, 
+            days_back=days_back
+        )
+        
+        return jsonify({
+            'success': True,
+            'tracking_data': tracking_data
+        })
+        
+    except Exception as e:
+        app.logger.error(f"Error getting approval rate tracking: {sanitize_for_log(str(e))}")
+        return jsonify({
+            'success': False,
+            'error': 'Failed to retrieve approval rate tracking'
+        }), 500
+
+@app.route('/api/review/queue_regeneration', methods=['POST'])
+@login_required
+@platform_required
+@with_session_error_handling
+def api_queue_caption_regeneration():
+    """Queue individual images for caption regeneration"""
+    try:
+        data = request.get_json()
+        
+        if not data or 'image_ids' not in data:
+            return jsonify({
+                'success': False,
+                'error': 'image_ids required'
+            }), 400
+        
+        image_ids = data['image_ids']
+        reason = data.get('reason', 'Manual regeneration request')
+        
+        if not isinstance(image_ids, list) or not image_ids:
+            return jsonify({
+                'success': False,
+                'error': 'image_ids must be a non-empty list'
+            }), 400
+        
+        result = caption_review_integration.queue_caption_regeneration(
+            image_ids, 
+            current_user.id, 
+            reason
+        )
+        
+        return jsonify(result)
+        
+    except Exception as e:
+        app.logger.error(f"Error queuing caption regeneration: {sanitize_for_log(str(e))}")
+        return jsonify({
+            'success': False,
+            'error': 'Failed to queue regeneration'
+        }), 500
+
+@app.route('/api/caption_generation/redirect_info/<task_id>')
+@login_required
+@with_session_error_handling
+def api_get_caption_generation_redirect_info(task_id):
+    """Get review redirect information for a completed caption generation task"""
+    try:
+        redirect_info = web_caption_service.get_review_redirect_info(current_user.id, task_id)
+        
+        if redirect_info:
+            return jsonify({
+                'success': True,
+                'redirect_info': redirect_info
+            })
+        else:
+            return jsonify({
+                'success': False,
+                'error': 'No redirect information available'
+            }), 404
+            
+    except Exception as e:
+        app.logger.error(f"Error getting redirect info: {sanitize_for_log(str(e))}")
+        return jsonify({
+            'success': False,
+            'error': 'Failed to retrieve redirect information'
+        }), 500
 
 @app.route('/api/review/batch/<batch_id>/bulk_approve', methods=['POST'])
 @login_required

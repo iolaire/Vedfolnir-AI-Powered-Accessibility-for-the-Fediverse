@@ -551,3 +551,45 @@ class OllamaCaptionGenerator:
             caption=caption,
             prompt_used=prompt_used
         )
+    
+    async def test_connection(self) -> bool:
+        """
+        Test connection to Ollama service
+        
+        Returns:
+            bool: True if connection is successful
+        """
+        try:
+            async with httpx.AsyncClient(timeout=5.0) as client:
+                response = await client.get(f"{self.ollama_url}/api/tags")
+                return response.status_code == 200
+        except Exception as e:
+            logger.debug(f"Connection test failed: {e}")
+            return False
+    
+    async def test_model_availability(self) -> bool:
+        """
+        Test if the configured model is available
+        
+        Returns:
+            bool: True if model is available
+        """
+        try:
+            async with httpx.AsyncClient(timeout=10.0) as client:
+                response = await client.get(f"{self.ollama_url}/api/tags")
+                if response.status_code != 200:
+                    return False
+                
+                data = response.json()
+                models = data.get('models', [])
+                
+                # Check if our model is in the list
+                for model in models:
+                    if model.get('name', '').startswith(self.model_name):
+                        return True
+                
+                return False
+                
+        except Exception as e:
+            logger.debug(f"Model availability test failed: {e}")
+            return False

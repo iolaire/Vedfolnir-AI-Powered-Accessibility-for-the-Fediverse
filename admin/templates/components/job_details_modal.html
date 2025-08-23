@@ -1,0 +1,137 @@
+<!-- Copyright (C) 2025 iolaire mcfadden. -->
+<!-- This program is free software: you can redistribute it and/or modify it under the terms of the GNU Affero General Public License as published by the Free Software Foundation, either version 3 of the License, or (at your option) any later version. -->
+<!-- THE SOFTWARE IS PROVIDED "AS IS", WITHOUT WARRANTY OF ANY KIND, EXPRESS OR IMPLIED, INCLUDING BUT NOT LIMITED TO THE WARRANTIES OF MERCHANTABILITY, FITNESS FOR A PARTICULAR PURPOSE AND NONINFRINGEMENT. IN NO EVENT SHALL THE AUTHORS OR COPYRIGHT HOLDERS BE LIABLE FOR ANY CLAIM, DAMAGES OR OTHER LIABILITY, WHETHER IN AN ACTION OF CONTRACT, TORT OR OTHERWISE, ARISING FROM, OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE SOFTWARE. -->
+
+<!-- Job Details Modal -->
+<div class="modal fade" id="jobDetailsModal" tabindex="-1" aria-labelledby="jobDetailsModalLabel" aria-hidden="true">
+    <div class="modal-dialog modal-lg">
+        <div class="modal-content">
+            <div class="modal-header">
+                <h5 class="modal-title" id="jobDetailsModalLabel">
+                    <i class="bi bi-info-circle"></i> Job Details
+                </h5>
+                <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
+            </div>
+            <div class="modal-body">
+                <div id="jobDetailsContent">
+                    <div class="text-center py-4">
+                        <div class="spinner-border" role="status">
+                            <span class="visually-hidden">Loading...</span>
+                        </div>
+                        <p class="mt-2">Loading job details...</p>
+                    </div>
+                </div>
+            </div>
+            <div class="modal-footer">
+                <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Close</button>
+                <div id="jobDetailsActions">
+                    <!-- Dynamic action buttons will be inserted here -->
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+
+<!-- Job Details Template (hidden, used by JavaScript) -->
+<template id="jobDetailsTemplate">
+    <div class="job-details">
+        <div class="row">
+            <div class="col-md-6">
+                <h6>Basic Information</h6>
+                <table class="table table-sm">
+                    <tr>
+                        <td><strong>Job ID:</strong></td>
+                        <td><code class="job-id"></code></td>
+                    </tr>
+                    <tr>
+                        <td><strong>User:</strong></td>
+                        <td class="job-user"></td>
+                    </tr>
+                    <tr>
+                        <td><strong>Platform:</strong></td>
+                        <td class="job-platform"></td>
+                    </tr>
+                    <tr>
+                        <td><strong>Status:</strong></td>
+                        <td><span class="badge job-status"></span></td>
+                    </tr>
+                    <tr>
+                        <td><strong>Priority:</strong></td>
+                        <td><span class="badge job-priority"></span></td>
+                    </tr>
+                    <tr>
+                        <td><strong>Created:</strong></td>
+                        <td class="job-created"></td>
+                    </tr>
+                    <tr>
+                        <td><strong>Started:</strong></td>
+                        <td class="job-started"></td>
+                    </tr>
+                    <tr>
+                        <td><strong>Duration:</strong></td>
+                        <td class="job-duration"></td>
+                    </tr>
+                </table>
+            </div>
+            <div class="col-md-6">
+                <h6>Progress Information</h6>
+                <div class="mb-3">
+                    <label class="form-label">Overall Progress</label>
+                    <div class="progress">
+                        <div class="progress-bar job-progress" role="progressbar"></div>
+                    </div>
+                    <small class="text-muted job-progress-text"></small>
+                </div>
+                <div class="mb-3">
+                    <label class="form-label">Current Step</label>
+                    <p class="job-current-step"></p>
+                </div>
+                <div class="mb-3">
+                    <label class="form-label">Images Processed</label>
+                    <p class="job-images-processed"></p>
+                </div>
+                <div class="mb-3">
+                    <label class="form-label">Estimated Completion</label>
+                    <p class="job-estimated-completion"></p>
+                </div>
+            </div>
+        </div>
+        
+        <div class="row mt-3">
+            <div class="col-12">
+                <h6>Settings</h6>
+                <div class="job-settings"></div>
+            </div>
+        </div>
+        
+        <div class="row mt-3">
+            <div class="col-12">
+                <h6>Processing Log</h6>
+                <div class="job-log" style="max-height: 200px; overflow-y: auto; background-color: #f8f9fa; padding: 1rem; border-radius: 0.375rem;">
+                    <!-- Log entries will be populated here -->
+                </div>
+            </div>
+        </div>
+        
+        <div class="row mt-3 job-error-section" style="display: none;">
+            <div class="col-12">
+                <h6 class="text-danger">Error Information</h6>
+                <div class="alert alert-danger job-error-details">
+                    <!-- Error details will be populated here -->
+                </div>
+            </div>
+        </div>
+        
+        <div class="row mt-3 job-admin-notes-section">
+            <div class="col-12">
+                <h6>Admin Notes</h6>
+                <textarea class="form-control job-admin-notes" rows="3" placeholder="Add administrative notes about this job..."></textarea>
+                <div class="mt-2">
+                    <button type="button" class="btn btn-sm btn-outline-primary" onclick="saveJobNotes()">
+                        <i class="bi bi-save"></i> Save Notes
+                    </button>
+                </div>
+            </div>
+        </div>
+    </div>
+</template>

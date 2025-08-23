@@ -77,6 +77,16 @@
             {{ batch_stats.special_review_count }} images need special review attention
         </div>
         {% endif %}
+        
+        <!-- Quality Metrics and Improvement Suggestions -->
+        <div class="mt-3">
+            <button type="button" class="btn btn-outline-info btn-sm" id="showQualityMetrics">
+                <i class="bi bi-graph-up"></i> View Quality Metrics
+            </button>
+            <button type="button" class="btn btn-outline-warning btn-sm" id="showRegenerationOptions">
+                <i class="bi bi-arrow-clockwise"></i> Regeneration Options
+            </button>
+        </div>
     </div>
 </div>
 {% endif %}
@@ -564,7 +574,276 @@ document.addEventListener('DOMContentLoaded', function() {
             toastElement.remove();
         });
     }
+    
+    // Quality metrics functionality
+    document.getElementById('showQualityMetrics').addEventListener('click', async function() {
+        const modal = new bootstrap.Modal(document.getElementById('qualityMetricsModal'));
+        modal.show();
+        
+        try {
+            const response = await fetch(`/api/review/batch/${batchId}/quality_metrics`, {
+                headers: {
+                    'X-CSRFToken': document.querySelector('meta[name="csrf-token"]')?.getAttribute('content') || ''
+                }
+            });
+            
+            const result = await response.json();
+            const content = document.getElementById('qualityMetricsContent');
+            
+            if (response.ok && result.success) {
+                const metrics = result.quality_metrics;
+                
+                content.innerHTML = `
+                    <div class="row mb-4">
+                        <div class="col-md-6">
+                            <h6>Quality Distribution</h6>
+                            <div class="mb-2">
+                                <div class="d-flex justify-content-between">
+                                    <span>Excellent (80%+)</span>
+                                    <span class="badge bg-success">${metrics.quality_metrics.quality_distribution.excellent}</span>
+                                </div>
+                            </div>
+                            <div class="mb-2">
+                                <div class="d-flex justify-content-between">
+                                    <span>Good (60-79%)</span>
+                                    <span class="badge bg-primary">${metrics.quality_metrics.quality_distribution.good}</span>
+                                </div>
+                            </div>
+                            <div class="mb-2">
+                                <div class="d-flex justify-content-between">
+                                    <span>Fair (40-59%)</span>
+                                    <span class="badge bg-warning">${metrics.quality_metrics.quality_distribution.fair}</span>
+                                </div>
+                            </div>
+                            <div class="mb-2">
+                                <div class="d-flex justify-content-between">
+                                    <span>Poor (<40%)</span>
+                                    <span class="badge bg-danger">${metrics.quality_metrics.quality_distribution.poor}</span>
+                                </div>
+                            </div>
+                        </div>
+                        <div class="col-md-6">
+                            <h6>Quality Statistics</h6>
+                            <p><strong>Average Quality:</strong> ${metrics.quality_metrics.average_quality}%</p>
+                            <p><strong>Quality Range:</strong> ${metrics.quality_metrics.min_quality}% - ${metrics.quality_metrics.max_quality}%</p>
+                            <p><strong>Special Review:</strong> ${metrics.special_review_count} images</p>
+                        </div>
+                    </div>
+                    
+                    ${metrics.improvement_suggestions.length > 0 ? `
+                        <div class="alert alert-info">
+                            <h6><i class="bi bi-lightbulb"></i> Improvement Suggestions:</h6>
+                            <ul class="mb-0">
+                                ${metrics.improvement_suggestions.map(suggestion => `<li>${suggestion}</li>`).join('')}
+                            </ul>
+                        </div>
+                    ` : ''}
+                `;
+            } else {
+                content.innerHTML = `
+                    <div class="alert alert-warning">
+                        <i class="bi bi-exclamation-triangle"></i>
+                        ${result.error || 'Failed to load quality metrics'}
+                    </div>
+                `;
+            }
+        } catch (error) {
+            console.error('Error loading quality metrics:', error);
+            document.getElementById('qualityMetricsContent').innerHTML = `
+                <div class="alert alert-danger">
+                    <i class="bi bi-exclamation-circle"></i>
+                    Error loading quality metrics. Please try again.
+                </div>
+            `;
+        }
+    });
+    
+    // Regeneration options functionality
+    document.getElementById('showRegenerationOptions').addEventListener('click', function() {
+        const selectedImages = document.querySelectorAll('.image-select:checked');
+        document.getElementById('selectedCount').textContent = selectedImages.length;
+        
+        const modal = new bootstrap.Modal(document.getElementById('regenerationModal'));
+        modal.show();
+    });
+    
+    // Update selected count when checkboxes change
+    document.addEventListener('change', function(e) {
+        if (e.target.classList.contains('image-select')) {
+            const selectedImages = document.querySelectorAll('.image-select:checked');
+            const countElement = document.getElementById('selectedCount');
+            if (countElement) {
+                countElement.textContent = selectedImages.length;
+            }
+        }
+    });
+    
+    // Handle regeneration confirmation
+    document.getElementById('confirmRegeneration').addEventListener('click', async function() {
+        const scope = document.querySelector('input[name="regenerationScope"]:checked').value;
+        const reason = document.getElementById('regenerationReason').value.trim() || 'Manual regeneration request';
+        
+        let imageIds = [];
+        
+        if (scope === 'selected') {
+            const selectedCheckboxes = document.querySelectorAll('.image-select:checked');
+            imageIds = Array.from(selectedCheckboxes).map(cb => parseInt(cb.value));
+            
+            if (imageIds.length === 0) {
+                showToast('Please select at least one image for regeneration', 'error');
+                return;
+            }
+        } else if (scope === 'rejected') {
+            // Get all rejected images in the current view
+            const rejectedCards = document.querySelectorAll('.image-card');
+            rejectedCards.forEach(card => {
+                const statusBadge = card.querySelector('.badge');
+                if (statusBadge && statusBadge.textContent.toLowerCase().includes('rejected')) {
+                    const imageId = parseInt(card.dataset.imageId);
+                    if (imageId) imageIds.push(imageId);
+                }
+            });
+        } else if (scope === 'low_quality') {
+            // Get all images with quality score below 40%
+            const lowQualityCards = document.querySelectorAll('.image-card');
+            lowQualityCards.forEach(card => {
+                const qualityBadge = card.querySelector('.badge.bg-danger');
+                if (qualityBadge) {
+                    const qualityText = qualityBadge.textContent;
+                    const qualityScore = parseInt(qualityText.replace('%', ''));
+                    if (qualityScore < 40) {
+                        const imageId = parseInt(card.dataset.imageId);
+                        if (imageId) imageIds.push(imageId);
+                    }
+                }
+            });
+        }
+        
+        if (imageIds.length === 0) {
+            showToast('No images found matching the selected criteria', 'error');
+            return;
+        }
+        
+        const originalText = this.textContent;
+        this.disabled = true;
+        this.innerHTML = '<span class="spinner-border spinner-border-sm" role="status" aria-hidden="true"></span> Processing...';
+        
+        try {
+            const response = await fetch('/api/review/queue_regeneration', {
+                method: 'POST',
+                headers: {
+                    'Content-Type': 'application/json',
+                    'X-CSRFToken': document.querySelector('meta[name="csrf-token"]')?.getAttribute('content') || ''
+                },
+                body: JSON.stringify({
+                    image_ids: imageIds,
+                    reason: reason
+                })
+            });
+            
+            const result = await response.json();
+            
+            if (response.ok && result.success) {
+                showToast(`Successfully queued ${result.queued_count} images for regeneration`, 'success');
+                
+                // Close modal
+                bootstrap.Modal.getInstance(document.getElementById('regenerationModal')).hide();
+                
+                // Reload page to show updated status
+                setTimeout(() => {
+                    window.location.reload();
+                }, 1500);
+                
+            } else {
+                showToast(`Error: ${result.error || 'Failed to queue regeneration'}`, 'error');
+            }
+            
+        } catch (error) {
+            console.error('Regeneration error:', error);
+            showToast('Error: Failed to connect to server', 'error');
+        } finally {
+            this.disabled = false;
+            this.textContent = originalText;
+        }
+    });
 });
 </script>
+
+<!-- Quality Metrics Modal -->
+<div class="modal fade" id="qualityMetricsModal" tabindex="-1" aria-labelledby="qualityMetricsModalLabel" aria-hidden="true">
+    <div class="modal-dialog modal-lg">
+        <div class="modal-content">
+            <div class="modal-header">
+                <h5 class="modal-title" id="qualityMetricsModalLabel">
+                    <i class="bi bi-graph-up"></i> Quality Metrics & Improvement Suggestions
+                </h5>
+                <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
+            </div>
+            <div class="modal-body" id="qualityMetricsContent">
+                <div class="text-center">
+                    <div class="spinner-border" role="status">
+                        <span class="visually-hidden">Loading...</span>
+                    </div>
+                    <p class="mt-2">Loading quality metrics...</p>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+
+<!-- Regeneration Options Modal -->
+<div class="modal fade" id="regenerationModal" tabindex="-1" aria-labelledby="regenerationModalLabel" aria-hidden="true">
+    <div class="modal-dialog">
+        <div class="modal-content">
+            <div class="modal-header">
+                <h5 class="modal-title" id="regenerationModalLabel">
+                    <i class="bi bi-arrow-clockwise"></i> Caption Regeneration Options
+                </h5>
+                <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
+            </div>
+            <div class="modal-body">
+                <p>Select images to regenerate captions for:</p>
+                
+                <div class="mb-3">
+                    <div class="form-check">
+                        <input class="form-check-input" type="radio" name="regenerationScope" id="regenSelected" value="selected" checked>
+                        <label class="form-check-label" for="regenSelected">
+                            Selected images only (<span id="selectedCount">0</span> selected)
+                        </label>
+                    </div>
+                    <div class="form-check">
+                        <input class="form-check-input" type="radio" name="regenerationScope" id="regenRejected" value="rejected">
+                        <label class="form-check-label" for="regenRejected">
+                            All rejected images in this batch
+                        </label>
+                    </div>
+                    <div class="form-check">
+                        <input class="form-check-input" type="radio" name="regenerationScope" id="regenLowQuality" value="low_quality">
+                        <label class="form-check-label" for="regenLowQuality">
+                            Images with quality score below 40%
+                        </label>
+                    </div>
+                </div>
+                
+                <div class="mb-3">
+                    <label for="regenerationReason" class="form-label">Reason for regeneration:</label>
+                    <textarea class="form-control" id="regenerationReason" rows="3" 
+                              placeholder="Optional: Describe why these captions need regeneration..."></textarea>
+                </div>
+                
+                <div class="alert alert-info">
+                    <i class="bi bi-info-circle"></i>
+                    <strong>Note:</strong> Regenerated images will be reset to pending status and will need to be reviewed again.
+                </div>
+            </div>
+            <div class="modal-footer">
+                <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Cancel</button>
+                <button type="button" class="btn btn-warning" id="confirmRegeneration">
+                    <i class="bi bi-arrow-clockwise"></i> Queue for Regeneration
+                </button>
+            </div>
+        </div>
+    </div>
+</div>
 
 {% endblock %}

@@ -1,0 +1,418 @@
+/* Copyright (C) 2025 iolaire mcfadden. */
+/* This program is free software: you can redistribute it and/or modify it under the terms of the GNU Affero General Public License as published by the Free Software Foundation, either version 3 of the License, or (at your option) any later version. */
+/* THE SOFTWARE IS PROVIDED "AS IS", WITHOUT WARRANTY OF ANY KIND, EXPRESS OR IMPLIED, INCLUDING BUT NOT LIMITED TO THE WARRANTIES OF MERCHANTABILITY, FITNESS FOR A PARTICULAR PURPOSE AND NONINFRINGEMENT. IN NO EVENT SHALL THE AUTHORS OR COPYRIGHT HOLDERS BE LIABLE FOR ANY CLAIM, DAMAGES OR OTHER LIABILITY, WHETHER IN AN ACTION OF CONTRACT, TORT OR OTHERWISE, ARISING FROM, OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE SOFTWARE. */
+
+/* Admin Job Management Styles - Visual Distinction */
+
+/* Admin Action Styling */
+.admin-action {
+    position: relative;
+    border: 2px solid #ffc107 !important;
+    background: linear-gradient(135deg, #fff3cd 0%, #ffeaa7 100%) !important;
+    box-shadow: 0 0 0 2px rgba(255, 193, 7, 0.2);
+}
+
+.admin-action::before {
+    content: "ADMIN";
+    position: absolute;
+    top: -8px;
+    right: 10px;
+    background: #ffc107;
+    color: #000;
+    font-size: 0.7rem;
+    font-weight: bold;
+    padding: 2px 8px;
+    border-radius: 3px;
+    z-index: 10;
+}
+
+.admin-action-button {
+    background: linear-gradient(135deg, #ffc107 0%, #ffb300 100%) !important;
+    border: 1px solid #ffc107 !important;
+    color: #000 !important;
+    font-weight: 600;
+    position: relative;
+    overflow: hidden;
+}
+
+.admin-action-button::before {
+    content: "";
+    position: absolute;
+    top: 0;
+    left: -100%;
+    width: 100%;
+    height: 100%;
+    background: linear-gradient(90deg, transparent, rgba(255, 255, 255, 0.3), transparent);
+    transition: left 0.5s;
+}
+
+.admin-action-button:hover::before {
+    left: 100%;
+}
+
+.admin-action-button:hover {
+    background: linear-gradient(135deg, #ffb300 0%, #ff8f00 100%) !important;
+    border-color: #ffb300 !important;
+    transform: translateY(-1px);
+    box-shadow: 0 4px 8px rgba(255, 193, 7, 0.3);
+}
+
+.admin-action-icon {
+    color: #ffc107;
+    font-size: 1.2rem;
+    margin-right: 8px;
+    animation: adminPulse 2s infinite;
+}
+
+@keyframes adminPulse {
+    0%, 100% { opacity: 1; }
+    50% { opacity: 0.7; }
+}
+
+/* Personal Action Styling */
+.personal-action {
+    position: relative;
+    border: 2px solid #0dcaf0 !important;
+    background: linear-gradient(135deg, #d1ecf1 0%, #b8daff 100%) !important;
+    box-shadow: 0 0 0 2px rgba(13, 202, 240, 0.2);
+}
+
+.personal-action::before {
+    content: "PERSONAL";
+    position: absolute;
+    top: -8px;
+    right: 10px;
+    background: #0dcaf0;
+    color: #000;
+    font-size: 0.7rem;
+    font-weight: bold;
+    padding: 2px 8px;
+    border-radius: 3px;
+    z-index: 10;
+}
+
+.personal-action-button {
+    background: linear-gradient(135deg, #0dcaf0 0%, #0bb5d6 100%) !important;
+    border: 1px solid #0dcaf0 !important;
+    color: #000 !important;
+    font-weight: 600;
+    position: relative;
+    overflow: hidden;
+}
+
+.personal-action-button::before {
+    content: "";
+    position: absolute;
+    top: 0;
+    left: -100%;
+    width: 100%;
+    height: 100%;
+    background: linear-gradient(90deg, transparent, rgba(255, 255, 255, 0.3), transparent);
+    transition: left 0.5s;
+}
+
+.personal-action-button:hover::before {
+    left: 100%;
+}
+
+.personal-action-button:hover {
+    background: linear-gradient(135deg, #0bb5d6 0%, #0a9ec7 100%) !important;
+    border-color: #0bb5d6 !important;
+    transform: translateY(-1px);
+    box-shadow: 0 4px 8px rgba(13, 202, 240, 0.3);
+}
+
+.personal-action-icon {
+    color: #0dcaf0;
+    font-size: 1.2rem;
+    margin-right: 8px;
+}
+
+/* Action Badges */
+.admin-action-badge {
+    background: #ffc107;
+    color: #000;
+    font-size: 0.65rem;
+    font-weight: bold;
+    padding: 3px 6px;
+    border-radius: 3px;
+    margin-left: 8px;
+    text-transform: uppercase;
+    letter-spacing: 0.5px;
+    border: 1px solid #ffb300;
+    box-shadow: 0 1px 2px rgba(0, 0, 0, 0.1);
+}
+
+.personal-action-badge {
+    background: #0dcaf0;
+    color: #000;
+    font-size: 0.65rem;
+    font-weight: bold;
+    padding: 3px 6px;
+    border-radius: 3px;
+    margin-left: 8px;
+    text-transform: uppercase;
+    letter-spacing: 0.5px;
+    border: 1px solid #0bb5d6;
+    box-shadow: 0 1px 2px rgba(0, 0, 0, 0.1);
+}
+
+/* Modal Styling for Admin vs Personal */
+.admin-modal .modal-header {
+    background: linear-gradient(135deg, #fff3cd 0%, #ffeaa7 100%);
+    border-bottom: 2px solid #ffc107;
+}
+
+.admin-modal .modal-title {
+    color: #000;
+    font-weight: bold;
+}
+
+.admin-modal .modal-title::before {
+    content: "🛡️ ";
+    margin-right: 8px;
+}
+
+.personal-modal .modal-header {
+    background: linear-gradient(135deg, #d1ecf1 0%, #b8daff 100%);
+    border-bottom: 2px solid #0dcaf0;
+}
+
+.personal-modal .modal-title {
+    color: #000;
+    font-weight: bold;
+}
+
+.personal-modal .modal-title::before {
+    content: "👤 ";
+    margin-right: 8px;
+}
+
+/* Alert Styling */
+.admin-alert {
+    background: linear-gradient(135deg, #fff3cd 0%, #ffeaa7 100%);
+    border: 1px solid #ffc107;
+    border-left: 4px solid #ffc107;
+    color: #856404;
+}
+
+.admin-alert .alert-icon {
+    color: #ffc107;
+    font-size: 1.2rem;
+    margin-right: 8px;
+}
+
+.personal-alert {
+    background: linear-gradient(135deg, #d1ecf1 0%, #b8daff 100%);
+    border: 1px solid #0dcaf0;
+    border-left: 4px solid #0dcaf0;
+    color: #0c5460;
+}
+
+.personal-alert .alert-icon {
+    color: #0dcaf0;
+    font-size: 1.2rem;
+    margin-right: 8px;
+}
+
+/* Job Card Styling */
+.job-card.admin-managed {
+    border-left: 4px solid #ffc107;
+    background: linear-gradient(135deg, rgba(255, 243, 205, 0.3) 0%, rgba(255, 234, 167, 0.3) 100%);
+    position: relative;
+}
+
+.job-card.admin-managed::after {
+    content: "ADMIN MANAGED";
+    position: absolute;
+    top: 8px;
+    right: 8px;
+    background: #ffc107;
+    color: #000;
+    font-size: 0.6rem;
+    font-weight: bold;
+    padding: 2px 6px;
+    border-radius: 3px;
+    text-transform: uppercase;
+    letter-spacing: 0.5px;
+}
+
+.job-card.personal-managed {
+    border-left: 4px solid #0dcaf0;
+    background: linear-gradient(135deg, rgba(209, 236, 241, 0.3) 0%, rgba(184, 218, 255, 0.3) 100%);
+    position: relative;
+}
+
+.job-card.personal-managed::after {
+    content: "YOUR JOB";
+    position: absolute;
+    top: 8px;
+    right: 8px;
+    background: #0dcaf0;
+    color: #000;
+    font-size: 0.6rem;
+    font-weight: bold;
+    padding: 2px 6px;
+    border-radius: 3px;
+    text-transform: uppercase;
+    letter-spacing: 0.5px;
+}
+
+/* Button Group Styling */
+.admin-button-group .btn {
+    border-color: #ffc107;
+}
+
+.admin-button-group .btn-outline-warning {
+    color: #000;
+    background: rgba(255, 193, 7, 0.1);
+}
+
+.admin-button-group .btn-outline-warning:hover {
+    background: #ffc107;
+    color: #000;
+}
+
+.personal-button-group .btn {
+    border-color: #0dcaf0;
+}
+
+.personal-button-group .btn-outline-info {
+    color: #000;
+    background: rgba(13, 202, 240, 0.1);
+}
+
+.personal-button-group .btn-outline-info:hover {
+    background: #0dcaf0;
+    color: #000;
+}
+
+/* Confirmation Dialog Styling */
+.admin-confirm-dialog {
+    border: 2px solid #ffc107;
+}
+
+.admin-confirm-dialog .modal-header {
+    background: #fff3cd;
+    border-bottom: 1px solid #ffc107;
+}
+
+.admin-confirm-dialog .btn-danger {
+    background: linear-gradient(135deg, #dc3545 0%, #c82333 100%);
+    border-color: #dc3545;
+}
+
+.personal-confirm-dialog {
+    border: 2px solid #0dcaf0;
+}
+
+.personal-confirm-dialog .modal-header {
+    background: #d1ecf1;
+    border-bottom: 1px solid #0dcaf0;
+}
+
+.personal-confirm-dialog .btn-primary {
+    background: linear-gradient(135deg, #0d6efd 0%, #0b5ed7 100%);
+    border-color: #0d6efd;
+}
+
+/* Notification Styling */
+.admin-notification {
+    background: linear-gradient(135deg, #fff3cd 0%, #ffeaa7 100%);
+    border: 1px solid #ffc107;
+    color: #856404;
+}
+
+.admin-notification::before {
+    content: "🛡️ ADMIN: ";
+    font-weight: bold;
+}
+
+.personal-notification {
+    background: linear-gradient(135deg, #d1ecf1 0%, #b8daff 100%);
+    border: 1px solid #0dcaf0;
+    color: #0c5460;
+}
+
+.personal-notification::before {
+    content: "👤 PERSONAL: ";
+    font-weight: bold;
+}
+
+/* Context Switcher Integration */
+.admin-context-active {
+    box-shadow: 0 0 0 3px rgba(255, 193, 7, 0.3);
+}
+
+.personal-context-active {
+    box-shadow: 0 0 0 3px rgba(13, 202, 240, 0.3);
+}
+
+/* Responsive Adjustments */
+@media (max-width: 768px) {
+    .admin-action-badge,
+    .personal-action-badge {
+        font-size: 0.6rem;
+        padding: 2px 4px;
+    }
+    
+    .job-card.admin-managed::after,
+    .job-card.personal-managed::after {
+        font-size: 0.55rem;
+        padding: 1px 4px;
+    }
+    
+    .admin-action-icon,
+    .personal-action-icon {
+        font-size: 1rem;
+        margin-right: 4px;
+    }
+}
+
+/* Accessibility Enhancements */
+.admin-action:focus,
+.admin-action-button:focus {
+    outline: 3px solid #ffc107;
+    outline-offset: 2px;
+}
+
+.personal-action:focus,
+.personal-action-button:focus {
+    outline: 3px solid #0dcaf0;
+    outline-offset: 2px;
+}
+
+/* High Contrast Mode Support */
+@media (prefers-contrast: high) {
+    .admin-action {
+        border-width: 3px !important;
+    }
+    
+    .personal-action {
+        border-width: 3px !important;
+    }
+    
+    .admin-action-badge,
+    .personal-action-badge {
+        border-width: 2px;
+        font-weight: 900;
+    }
+}
+
+/* Reduced Motion Support */
+@media (prefers-reduced-motion: reduce) {
+    .admin-action-button::before,
+    .personal-action-button::before {
+        transition: none;
+    }
+    
+    .admin-action-button:hover::before,
+    .personal-action-button:hover::before {
+        left: 0;
+        opacity: 0.3;
+    }
+    
+    @keyframes adminPulse {
+        0%, 100% { opacity: 1; }
+    }
+}

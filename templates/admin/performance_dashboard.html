@@ -1,0 +1,582 @@
+<!-- Copyright (C) 2025 iolaire mcfadden. -->
+<!-- This program is free software: you can redistribute it and/or modify it under the terms of the GNU Affero General Public License as published by the Free Software Foundation, either version 3 of the License, or (at your option) any later version. -->
+<!-- THE SOFTWARE IS PROVIDED "AS IS", WITHOUT WARRANTY OF ANY KIND, EXPRESS OR IMPLIED, INCLUDING BUT NOT LIMITED TO THE WARRANTIES OF MERCHANTABILITY, FITNESS FOR A PARTICULAR PURPOSE AND NONINFRINGEMENT. IN NO EVENT SHALL THE AUTHORS OR COPYRIGHT HOLDERS BE LIABLE FOR ANY CLAIM, DAMAGES OR OTHER LIABILITY, WHETHER IN AN ACTION OF CONTRACT, TORT OR OTHERWISE, ARISING FROM, OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE SOFTWARE. -->
+
+{% extends "admin/base_admin.html" %}
+
+{% block title %}Performance Dashboard - Admin{% endblock %}
+
+{% block admin_content %}
+<div class="performance-dashboard">
+    <div class="dashboard-header">
+        <h1><i class="fas fa-tachometer-alt"></i> Performance Dashboard</h1>
+        <p class="text-muted">Monitor system performance, caching efficiency, and optimization metrics</p>
+    </div>
+
+    <!-- Performance Status Overview -->
+    <div class="row mb-4">
+        <div class="col-md-3">
+            <div class="card bg-primary text-white">
+                <div class="card-body">
+                    <div class="d-flex justify-content-between">
+                        <div>
+                            <h4 class="card-title">Cache Status</h4>
+                            <h2 id="cache-status">
+                                {% if performance_data.cache_available %}
+                                    <i class="fas fa-check-circle text-success"></i> Active
+                                {% else %}
+                                    <i class="fas fa-times-circle text-danger"></i> Inactive
+                                {% endif %}
+                            </h2>
+                        </div>
+                        <div class="align-self-center">
+                            <i class="fas fa-database fa-2x"></i>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+        
+        <div class="col-md-3">
+            <div class="card bg-success text-white">
+                <div class="card-body">
+                    <div class="d-flex justify-content-between">
+                        <div>
+                            <h4 class="card-title">Query Optimizer</h4>
+                            <h2 id="optimizer-status">
+                                {% if performance_data.query_optimizer_available %}
+                                    <i class="fas fa-check-circle text-light"></i> Active
+                                {% else %}
+                                    <i class="fas fa-times-circle text-danger"></i> Inactive
+                                {% endif %}
+                            </h2>
+                        </div>
+                        <div class="align-self-center">
+                            <i class="fas fa-search fa-2x"></i>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+        
+        <div class="col-md-3">
+            <div class="card bg-info text-white">
+                <div class="card-body">
+                    <div class="d-flex justify-content-between">
+                        <div>
+                            <h4 class="card-title">Cleanup Manager</h4>
+                            <h2 id="cleanup-status">
+                                {% if performance_data.cleanup_manager_available %}
+                                    <i class="fas fa-check-circle text-light"></i> Active
+                                {% else %}
+                                    <i class="fas fa-times-circle text-danger"></i> Inactive
+                                {% endif %}
+                            </h2>
+                        </div>
+                        <div class="align-self-center">
+                            <i class="fas fa-broom fa-2x"></i>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+        
+        <div class="col-md-3">
+            <div class="card bg-warning text-white">
+                <div class="card-body">
+                    <div class="d-flex justify-content-between">
+                        <div>
+                            <h4 class="card-title">Overall Status</h4>
+                            <h2 id="overall-status">
+                                {% set status = get_system_performance_status() %}
+                                {% if status == 'excellent' %}
+                                    <i class="fas fa-star text-light"></i> Excellent
+                                {% elif status == 'good' %}
+                                    <i class="fas fa-thumbs-up text-light"></i> Good
+                                {% elif status == 'fair' %}
+                                    <i class="fas fa-minus-circle text-light"></i> Fair
+                                {% else %}
+                                    <i class="fas fa-exclamation-triangle text-danger"></i> Poor
+                                {% endif %}
+                            </h2>
+                        </div>
+                        <div class="align-self-center">
+                            <i class="fas fa-chart-line fa-2x"></i>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Cache Performance Section -->
+    {% if performance_data.cache_available %}
+    <div class="row mb-4">
+        <div class="col-12">
+            <div class="card">
+                <div class="card-header">
+                    <h3><i class="fas fa-memory"></i> Cache Performance</h3>
+                    <div class="card-tools">
+                        <button class="btn btn-sm btn-outline-primary" onclick="refreshCacheStats()">
+                            <i class="fas fa-sync-alt"></i> Refresh
+                        </button>
+                        <a href="{{ url_for('performance.cache_management') }}" class="btn btn-sm btn-outline-secondary">
+                            <i class="fas fa-cog"></i> Manage
+                        </a>
+                    </div>
+                </div>
+                <div class="card-body">
+                    {% if performance_data.cache_stats %}
+                    <div class="row">
+                        <div class="col-md-3">
+                            <div class="metric-box">
+                                <h4>Hit Rate</h4>
+                                <div class="metric-value">
+                                    <span class="value">{{ "%.1f"|format(performance_data.cache_stats.cache_hit_rate) }}%</span>
+                                    <div class="progress mt-2">
+                                        <div class="progress-bar bg-success" style="width: {{ performance_data.cache_stats.cache_hit_rate }}%"></div>
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
+                        <div class="col-md-3">
+                            <div class="metric-box">
+                                <h4>Memory Usage</h4>
+                                <div class="metric-value">
+                                    <span class="value">{{ performance_data.cache_stats.redis_memory_used }}</span>
+                                </div>
+                            </div>
+                        </div>
+                        <div class="col-md-3">
+                            <div class="metric-box">
+                                <h4>Cache Keys</h4>
+                                <div class="metric-value">
+                                    <span class="value">{{ performance_data.cache_stats.total_cache_keys }}</span>
+                                </div>
+                            </div>
+                        </div>
+                        <div class="col-md-3">
+                            <div class="metric-box">
+                                <h4>Connections</h4>
+                                <div class="metric-value">
+                                    <span class="value">{{ performance_data.cache_stats.connected_clients }}</span>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                    {% else %}
+                    <div class="alert alert-warning">
+                        <i class="fas fa-exclamation-triangle"></i>
+                        Cache statistics not available
+                        {% if performance_data.cache_error %}
+                        <br><small>Error: {{ performance_data.cache_error }}</small>
+                        {% endif %}
+                    </div>
+                    {% endif %}
+                </div>
+            </div>
+        </div>
+    </div>
+    {% endif %}
+
+    <!-- Query Performance Section -->
+    {% if performance_data.query_optimizer_available %}
+    <div class="row mb-4">
+        <div class="col-12">
+            <div class="card">
+                <div class="card-header">
+                    <h3><i class="fas fa-database"></i> Query Performance</h3>
+                    <div class="card-tools">
+                        <button class="btn btn-sm btn-outline-primary" onclick="refreshQueryStats()">
+                            <i class="fas fa-sync-alt"></i> Refresh
+                        </button>
+                    </div>
+                </div>
+                <div class="card-body">
+                    {% if performance_data.query_stats %}
+                    <div class="row">
+                        <div class="col-md-4">
+                            <div class="metric-box">
+                                <h4>Total Queries</h4>
+                                <div class="metric-value">
+                                    <span class="value">{{ performance_data.query_stats.total_queries }}</span>
+                                </div>
+                            </div>
+                        </div>
+                        <div class="col-md-4">
+                            <div class="metric-box">
+                                <h4>Avg Execution Time</h4>
+                                <div class="metric-value">
+                                    <span class="value">{{ "%.1f"|format(performance_data.query_stats.avg_execution_time_ms) }}ms</span>
+                                </div>
+                            </div>
+                        </div>
+                        <div class="col-md-4">
+                            <div class="metric-box">
+                                <h4>Cache Hit Rate</h4>
+                                <div class="metric-value">
+                                    <span class="value">{{ "%.1f"|format(performance_data.query_stats.cache_hit_rate) }}%</span>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                    
+                    {% if performance_data.query_stats.query_breakdown %}
+                    <div class="mt-4">
+                        <h5>Query Breakdown</h5>
+                        <div class="table-responsive">
+                            <table class="table table-sm">
+                                <thead>
+                                    <tr>
+                                        <th>Query Type</th>
+                                        <th>Count</th>
+                                        <th>Avg Time (ms)</th>
+                                        <th>Cache Hit Rate</th>
+                                        <th>Success Rate</th>
+                                    </tr>
+                                </thead>
+                                <tbody>
+                                    {% for query_name, stats in performance_data.query_stats.query_breakdown.items() %}
+                                    <tr>
+                                        <td>{{ query_name }}</td>
+                                        <td>{{ stats.count }}</td>
+                                        <td>{{ "%.1f"|format(stats.avg_time) }}</td>
+                                        <td>{{ "%.1f"|format(stats.cache_hit_rate) }}%</td>
+                                        <td>{{ "%.1f"|format(stats.success_rate) }}%</td>
+                                    </tr>
+                                    {% endfor %}
+                                </tbody>
+                            </table>
+                        </div>
+                    </div>
+                    {% endif %}
+                    {% else %}
+                    <div class="alert alert-warning">
+                        <i class="fas fa-exclamation-triangle"></i>
+                        Query statistics not available
+                        {% if performance_data.query_error %}
+                        <br><small>Error: {{ performance_data.query_error }}</small>
+                        {% endif %}
+                    </div>
+                    {% endif %}
+                </div>
+            </div>
+        </div>
+    </div>
+    {% endif %}
+
+    <!-- Cleanup Performance Section -->
+    {% if performance_data.cleanup_manager_available %}
+    <div class="row mb-4">
+        <div class="col-12">
+            <div class="card">
+                <div class="card-header">
+                    <h3><i class="fas fa-broom"></i> Cleanup Operations</h3>
+                    <div class="card-tools">
+                        <button class="btn btn-sm btn-outline-primary" onclick="refreshCleanupStats()">
+                            <i class="fas fa-sync-alt"></i> Refresh
+                        </button>
+                        <a href="{{ url_for('performance.cleanup_management') }}" class="btn btn-sm btn-outline-secondary">
+                            <i class="fas fa-cog"></i> Manage
+                        </a>
+                    </div>
+                </div>
+                <div class="card-body">
+                    {% if performance_data.cleanup_stats %}
+                    {% set summary = performance_data.cleanup_stats.summary %}
+                    <div class="row">
+                        <div class="col-md-3">
+                            <div class="metric-box">
+                                <h4>Total Operations</h4>
+                                <div class="metric-value">
+                                    <span class="value">{{ summary.total_operations }}</span>
+                                </div>
+                            </div>
+                        </div>
+                        <div class="col-md-3">
+                            <div class="metric-box">
+                                <h4>Success Rate</h4>
+                                <div class="metric-value">
+                                    <span class="value">{{ "%.1f"|format(summary.success_rate) }}%</span>
+                                </div>
+                            </div>
+                        </div>
+                        <div class="col-md-3">
+                            <div class="metric-box">
+                                <h4>Items Cleaned</h4>
+                                <div class="metric-value">
+                                    <span class="value">{{ summary.total_items_cleaned }}</span>
+                                </div>
+                            </div>
+                        </div>
+                        <div class="col-md-3">
+                            <div class="metric-box">
+                                <h4>Avg Time</h4>
+                                <div class="metric-value">
+                                    <span class="value">{{ "%.1f"|format(summary.avg_execution_time_seconds) }}s</span>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                    {% else %}
+                    <div class="alert alert-warning">
+                        <i class="fas fa-exclamation-triangle"></i>
+                        Cleanup statistics not available
+                        {% if performance_data.cleanup_error %}
+                        <br><small>Error: {{ performance_data.cleanup_error }}</small>
+                        {% endif %}
+                    </div>
+                    {% endif %}
+                </div>
+            </div>
+        </div>
+    </div>
+    {% endif %}
+
+    <!-- Quick Actions -->
+    <div class="row">
+        <div class="col-12">
+            <div class="card">
+                <div class="card-header">
+                    <h3><i class="fas fa-bolt"></i> Quick Actions</h3>
+                </div>
+                <div class="card-body">
+                    <div class="row">
+                        <div class="col-md-4">
+                            <button class="btn btn-outline-primary btn-block" onclick="invalidateAllCaches()">
+                                <i class="fas fa-trash-alt"></i> Clear All Caches
+                            </button>
+                        </div>
+                        <div class="col-md-4">
+                            <button class="btn btn-outline-success btn-block" onclick="runCleanup('cache_entries')">
+                                <i class="fas fa-broom"></i> Clean Expired Cache
+                            </button>
+                        </div>
+                        <div class="col-md-4">
+                            <button class="btn btn-outline-info btn-block" onclick="generatePerformanceReport()">
+                                <i class="fas fa-chart-bar"></i> Generate Report
+                            </button>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+
+<!-- Performance Report Modal -->
+<div class="modal fade" id="performanceReportModal" tabindex="-1">
+    <div class="modal-dialog modal-lg">
+        <div class="modal-content">
+            <div class="modal-header">
+                <h5 class="modal-title">Performance Report</h5>
+                <button type="button" class="close" data-dismiss="modal">
+                    <span>&times;</span>
+                </button>
+            </div>
+            <div class="modal-body" id="performanceReportContent">
+                <div class="text-center">
+                    <div class="spinner-border" role="status">
+                        <span class="sr-only">Loading...</span>
+                    </div>
+                </div>
+            </div>
+            <div class="modal-footer">
+                <button type="button" class="btn btn-secondary" data-dismiss="modal">Close</button>
+            </div>
+        </div>
+    </div>
+</div>
+
+<style>
+.performance-dashboard .metric-box {
+    text-align: center;
+    padding: 1rem;
+    border: 1px solid #dee2e6;
+    border-radius: 0.375rem;
+    background: #f8f9fa;
+}
+
+.performance-dashboard .metric-value .value {
+    font-size: 1.5rem;
+    font-weight: bold;
+    color: #495057;
+}
+
+.performance-dashboard .card-tools {
+    display: flex;
+    gap: 0.5rem;
+}
+
+.performance-dashboard .progress {
+    height: 0.5rem;
+}
+</style>
+
+<script>
+function refreshCacheStats() {
+    fetch('/admin/performance/api/cache-stats')
+        .then(response => response.json())
+        .then(data => {
+            if (data.success) {
+                location.reload();
+            } else {
+                showAlert('Error refreshing cache stats: ' + data.error, 'danger');
+            }
+        })
+        .catch(error => {
+            showAlert('Error refreshing cache stats: ' + error.message, 'danger');
+        });
+}
+
+function refreshQueryStats() {
+    fetch('/admin/performance/api/query-stats')
+        .then(response => response.json())
+        .then(data => {
+            if (data.success) {
+                location.reload();
+            } else {
+                showAlert('Error refreshing query stats: ' + data.error, 'danger');
+            }
+        })
+        .catch(error => {
+            showAlert('Error refreshing query stats: ' + error.message, 'danger');
+        });
+}
+
+function refreshCleanupStats() {
+    fetch('/admin/performance/api/cleanup-stats')
+        .then(response => response.json())
+        .then(data => {
+            if (data.success) {
+                location.reload();
+            } else {
+                showAlert('Error refreshing cleanup stats: ' + data.error, 'danger');
+            }
+        })
+        .catch(error => {
+            showAlert('Error refreshing cleanup stats: ' + error.message, 'danger');
+        });
+}
+
+function invalidateAllCaches() {
+    if (!confirm('Are you sure you want to clear all caches? This may temporarily impact performance.')) {
+        return;
+    }
+    
+    fetch('/admin/performance/api/cache-invalidate', {
+        method: 'POST',
+        headers: {
+            'Content-Type': 'application/json',
+        },
+        body: JSON.stringify({
+            type: 'all'
+        })
+    })
+    .then(response => response.json())
+    .then(data => {
+        if (data.success) {
+            showAlert(data.message, 'success');
+            setTimeout(() => location.reload(), 2000);
+        } else {
+            showAlert('Error clearing caches: ' + data.error, 'danger');
+        }
+    })
+    .catch(error => {
+        showAlert('Error clearing caches: ' + error.message, 'danger');
+    });
+}
+
+function runCleanup(cleanupType) {
+    fetch('/admin/performance/api/cleanup-run', {
+        method: 'POST',
+        headers: {
+            'Content-Type': 'application/json',
+        },
+        body: JSON.stringify({
+            cleanup_type: cleanupType
+        })
+    })
+    .then(response => response.json())
+    .then(data => {
+        if (data.success) {
+            showAlert(`Cleanup completed: ${data.data.items_cleaned} items cleaned`, 'success');
+            setTimeout(() => location.reload(), 2000);
+        } else {
+            showAlert('Error running cleanup: ' + data.error, 'danger');
+        }
+    })
+    .catch(error => {
+        showAlert('Error running cleanup: ' + error.message, 'danger');
+    });
+}
+
+function generatePerformanceReport() {
+    $('#performanceReportModal').modal('show');
+    
+    fetch('/admin/performance/api/performance-report')
+        .then(response => response.json())
+        .then(data => {
+            if (data.success) {
+                const report = data.data;
+                let html = `
+                    <div class="performance-report">
+                        <h5>Cache Statistics</h5>
+                        <div class="row mb-3">
+                            <div class="col-md-6">
+                                <strong>Hit Rate:</strong> ${report.cache_statistics.cache_hit_rate}%
+                            </div>
+                            <div class="col-md-6">
+                                <strong>Memory Usage:</strong> ${report.cache_statistics.redis_memory_used}
+                            </div>
+                        </div>
+                        
+                        <h5>Performance Rating</h5>
+                        <div class="alert alert-${report.performance_rating === 'excellent' ? 'success' : 
+                                                   report.performance_rating === 'good' ? 'info' :
+                                                   report.performance_rating === 'fair' ? 'warning' : 'danger'}">
+                            <strong>${report.performance_rating.toUpperCase()}</strong>
+                        </div>
+                        
+                        <h5>Recommendations</h5>
+                        <ul>
+                `;
+                
+                report.recommendations.forEach(rec => {
+                    html += `<li>${rec}</li>`;
+                });
+                
+                html += `
+                        </ul>
+                        
+                        <small class="text-muted">Generated at: ${report.timestamp}</small>
+                    </div>
+                `;
+                
+                document.getElementById('performanceReportContent').innerHTML = html;
+            } else {
+                document.getElementById('performanceReportContent').innerHTML = 
+                    `<div class="alert alert-danger">Error generating report: ${data.error}</div>`;
+            }
+        })
+        .catch(error => {
+            document.getElementById('performanceReportContent').innerHTML = 
+                `<div class="alert alert-danger">Error generating report: ${error.message}</div>`;
+        });
+}
+
+function showAlert(message, type) {
+    const alertHtml = `
+        <div class="alert alert-${type} alert-dismissible fade show" role="alert">
+            ${message}
+            <button type="button" class="close" data-dismiss="alert">
+                <span>&times;</span>
+            </button>
+        </div>
+    `;
+    
+    // Insert at the top of the dashboard
+    document.querySelector('.performance-dashboard').insertAdjacentHTML('afterbegin', alertHtml);
+}
+</script>
+{% endblock %}

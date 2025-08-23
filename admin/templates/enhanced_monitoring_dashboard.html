@@ -1,0 +1,1082 @@
+<!-- Copyright (C) 2025 iolaire mcfadden. -->
+<!-- This program is free software: you can redistribute it and/or modify it under the terms of the GNU Affero General Public License as published by the Free Software Foundation, either version 3 of the License, or (at your option) any later version. -->
+<!-- THE SOFTWARE IS PROVIDED "AS IS", WITHOUT WARRANTY OF ANY KIND, EXPRESS OR IMPLIED, INCLUDING BUT NOT LIMITED TO THE WARRANTIES OF MERCHANTABILITY, FITNESS FOR A PARTICULAR PURPOSE AND NONINFRINGEMENT. IN NO EVENT SHALL THE AUTHORS OR COPYRIGHT HOLDERS BE LIABLE FOR ANY CLAIM, DAMAGES OR OTHER LIABILITY, WHETHER IN AN ACTION OF CONTRACT, TORT OR OTHERWISE, ARISING FROM, OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE SOFTWARE. -->
+{% extends "base_admin.html" %}
+
+{% block title %}Enhanced Monitoring Dashboard - Vedfolnir{% endblock %}
+
+{% block head %}
+<style>
+    .dashboard-grid {
+        display: grid;
+        grid-template-columns: repeat(12, 1fr);
+        gap: 15px;
+        min-height: 100vh;
+    }
+    
+    .widget {
+        background: white;
+        border-radius: 8px;
+        box-shadow: 0 2px 4px rgba(0,0,0,0.1);
+        padding: 20px;
+        transition: transform 0.2s, box-shadow 0.2s;
+        position: relative;
+        overflow: hidden;
+    }
+    
+    .widget:hover {
+        transform: translateY(-2px);
+        box-shadow: 0 4px 8px rgba(0,0,0,0.15);
+    }
+    
+    .widget-header {
+        display: flex;
+        justify-content: between;
+        align-items: center;
+        margin-bottom: 15px;
+        border-bottom: 1px solid #eee;
+        padding-bottom: 10px;
+    }
+    
+    .widget-title {
+        font-size: 1.1rem;
+        font-weight: 600;
+        color: #333;
+        margin: 0;
+    }
+    
+    .widget-controls {
+        display: flex;
+        gap: 5px;
+    }
+    
+    .widget-control {
+        background: none;
+        border: none;
+        color: #666;
+        cursor: pointer;
+        padding: 2px 6px;
+        border-radius: 3px;
+        font-size: 0.8rem;
+    }
+    
+    .widget-control:hover {
+        background: #f0f0f0;
+        color: #333;
+    }
+    
+    .metric-card {
+        text-align: center;
+    }
+    
+    .metric-value {
+        font-size: 2.5rem;
+        font-weight: bold;
+        margin: 10px 0;
+        line-height: 1;
+    }
+    
+    .metric-label {
+        color: #666;
+        font-size: 0.9rem;
+        text-transform: uppercase;
+        letter-spacing: 0.5px;
+    }
+    
+    .metric-change {
+        font-size: 0.8rem;
+        margin-top: 5px;
+    }
+    
+    .metric-change.positive {
+        color: #28a745;
+    }
+    
+    .metric-change.negative {
+        color: #dc3545;
+    }
+    
+    .resource-bar {
+        height: 8px;
+        background: #e9ecef;
+        border-radius: 4px;
+        overflow: hidden;
+        margin: 8px 0;
+    }
+    
+    .resource-fill {
+        height: 100%;
+        transition: width 0.3s ease;
+        border-radius: 4px;
+    }
+    
+    .resource-fill.healthy {
+        background: linear-gradient(90deg, #28a745, #20c997);
+    }
+    
+    .resource-fill.warning {
+        background: linear-gradient(90deg, #ffc107, #fd7e14);
+    }
+    
+    .resource-fill.critical {
+        background: linear-gradient(90deg, #dc3545, #e83e8c);
+    }
+    
+    .alert-item {
+        display: flex;
+        align-items: center;
+        padding: 10px;
+        margin: 5px 0;
+        border-radius: 6px;
+        border-left: 4px solid;
+        background: #f8f9fa;
+    }
+    
+    .alert-item.critical {
+        border-left-color: #dc3545;
+        background: #f8d7da;
+    }
+    
+    .alert-item.warning {
+        border-left-color: #ffc107;
+        background: #fff3cd;
+    }
+    
+    .alert-item.info {
+        border-left-color: #17a2b8;
+        background: #d1ecf1;
+    }
+    
+    .alert-icon {
+        margin-right: 10px;
+        font-size: 1.2rem;
+    }
+    
+    .alert-content {
+        flex: 1;
+    }
+    
+    .alert-message {
+        font-weight: 500;
+        margin: 0 0 2px 0;
+    }
+    
+    .alert-time {
+        font-size: 0.8rem;
+        color: #666;
+        margin: 0;
+    }
+    
+    .alert-actions {
+        display: flex;
+        gap: 5px;
+    }
+    
+    .chart-container {
+        position: relative;
+        height: 200px;
+        margin: 10px 0;
+    }
+    
+    .gauge-container {
+        display: flex;
+        justify-content: center;
+        align-items: center;
+        height: 150px;
+    }
+    
+    .gauge {
+        position: relative;
+        width: 120px;
+        height: 120px;
+    }
+    
+    .gauge-circle {
+        width: 100%;
+        height: 100%;
+        border-radius: 50%;
+        background: conic-gradient(
+            from 0deg,
+            #28a745 0deg 70deg,
+            #ffc107 70deg 90deg,
+            #dc3545 90deg 100deg,
+            #e9ecef 100deg 360deg
+        );
+        display: flex;
+        align-items: center;
+        justify-content: center;
+    }
+    
+    .gauge-inner {
+        width: 80%;
+        height: 80%;
+        background: white;
+        border-radius: 50%;
+        display: flex;
+        flex-direction: column;
+        align-items: center;
+        justify-content: center;
+    }
+    
+    .gauge-value {
+        font-size: 1.5rem;
+        font-weight: bold;
+        color: #333;
+    }
+    
+    .gauge-label {
+        font-size: 0.7rem;
+        color: #666;
+        text-transform: uppercase;
+    }
+    
+    .table-container {
+        max-height: 300px;
+        overflow-y: auto;
+    }
+    
+    .widget-table {
+        width: 100%;
+        font-size: 0.9rem;
+    }
+    
+    .widget-table th {
+        background: #f8f9fa;
+        font-weight: 600;
+        padding: 8px;
+        border-bottom: 2px solid #dee2e6;
+        position: sticky;
+        top: 0;
+    }
+    
+    .widget-table td {
+        padding: 8px;
+        border-bottom: 1px solid #dee2e6;
+    }
+    
+    .status-badge {
+        padding: 2px 8px;
+        border-radius: 12px;
+        font-size: 0.75rem;
+        font-weight: 500;
+        text-transform: uppercase;
+    }
+    
+    .status-running {
+        background: #d4edda;
+        color: #155724;
+    }
+    
+    .status-queued {
+        background: #d1ecf1;
+        color: #0c5460;
+    }
+    
+    .status-completed {
+        background: #d4edda;
+        color: #155724;
+    }
+    
+    .status-failed {
+        background: #f8d7da;
+        color: #721c24;
+    }
+    
+    .progress-mini {
+        width: 60px;
+        height: 4px;
+        background: #e9ecef;
+        border-radius: 2px;
+        overflow: hidden;
+    }
+    
+    .progress-mini-fill {
+        height: 100%;
+        background: #007bff;
+        transition: width 0.3s ease;
+    }
+    
+    .dashboard-controls {
+        position: fixed;
+        top: 80px;
+        right: 20px;
+        z-index: 1000;
+        display: flex;
+        flex-direction: column;
+        gap: 10px;
+    }
+    
+    .control-panel {
+        background: white;
+        border-radius: 8px;
+        box-shadow: 0 2px 8px rgba(0,0,0,0.1);
+        padding: 15px;
+        min-width: 200px;
+    }
+    
+    .auto-refresh-indicator {
+        display: inline-block;
+        width: 8px;
+        height: 8px;
+        background: #28a745;
+        border-radius: 50%;
+        margin-left: 5px;
+        animation: pulse 2s infinite;
+    }
+    
+    @keyframes pulse {
+        0% { opacity: 1; }
+        50% { opacity: 0.5; }
+        100% { opacity: 1; }
+    }
+    
+    .loading-overlay {
+        position: absolute;
+        top: 0;
+        left: 0;
+        right: 0;
+        bottom: 0;
+        background: rgba(255, 255, 255, 0.8);
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        border-radius: 8px;
+        z-index: 10;
+    }
+    
+    .spinner {
+        width: 24px;
+        height: 24px;
+        border: 2px solid #f3f3f3;
+        border-top: 2px solid #007bff;
+        border-radius: 50%;
+        animation: spin 1s linear infinite;
+    }
+    
+    @keyframes spin {
+        0% { transform: rotate(0deg); }
+        100% { transform: rotate(360deg); }
+    }
+    
+    .error-state {
+        text-align: center;
+        color: #dc3545;
+        padding: 20px;
+    }
+    
+    .error-state i {
+        font-size: 2rem;
+        margin-bottom: 10px;
+        display: block;
+    }
+    
+    /* Responsive grid adjustments */
+    @media (max-width: 1200px) {
+        .dashboard-grid {
+            grid-template-columns: repeat(8, 1fr);
+        }
+    }
+    
+    @media (max-width: 768px) {
+        .dashboard-grid {
+            grid-template-columns: repeat(4, 1fr);
+            gap: 10px;
+        }
+        
+        .widget {
+            padding: 15px;
+        }
+        
+        .dashboard-controls {
+            position: relative;
+            top: auto;
+            right: auto;
+            margin-bottom: 20px;
+        }
+    }
+</style>
+{% endblock %}
+
+{% block content %}
+<div class="d-flex justify-content-between align-items-center mb-4">
+    <h1><i class="bi bi-speedometer2"></i> Enhanced Monitoring Dashboard</h1>
+    <div class="d-flex align-items-center gap-3">
+        <div class="form-check form-switch">
+            <input class="form-check-input" type="checkbox" id="autoRefresh" checked>
+            <label class="form-check-label" for="autoRefresh">
+                Auto Refresh
+                <span class="auto-refresh-indicator" id="refreshIndicator"></span>
+            </label>
+        </div>
+        <button class="btn btn-outline-primary" id="refreshBtn">
+            <i class="bi bi-arrow-clockwise"></i> Refresh
+        </button>
+        <button class="btn btn-outline-secondary" id="customizeBtn">
+            <i class="bi bi-gear"></i> Customize
+        </button>
+    </div>
+</div>
+
+<!-- Dashboard Grid -->
+<div class="dashboard-grid" id="dashboardGrid">
+    <!-- Widgets will be dynamically generated here -->
+</div>
+
+<!-- Dashboard Controls -->
+<div class="dashboard-controls">
+    <div class="control-panel">
+        <h6><i class="bi bi-sliders"></i> Quick Controls</h6>
+        <div class="d-grid gap-2">
+            <button class="btn btn-sm btn-outline-info" onclick="openReports()">
+                <i class="bi bi-graph-up"></i> Reports
+            </button>
+            <button class="btn btn-sm btn-outline-warning" onclick="exportData()">
+                <i class="bi bi-download"></i> Export
+            </button>
+            <button class="btn btn-sm btn-outline-secondary" onclick="showSettings()">
+                <i class="bi bi-gear"></i> Settings
+            </button>
+        </div>
+    </div>
+    
+    <!-- Alert Summary -->
+    <div class="control-panel" id="alertSummary">
+        <h6><i class="bi bi-exclamation-triangle"></i> Alerts</h6>
+        <div id="alertCounts">
+            <div class="d-flex justify-content-between">
+                <span>Critical:</span>
+                <span class="badge bg-danger" id="criticalCount">0</span>
+            </div>
+            <div class="d-flex justify-content-between">
+                <span>Warning:</span>
+                <span class="badge bg-warning" id="warningCount">0</span>
+            </div>
+            <div class="d-flex justify-content-between">
+                <span>Info:</span>
+                <span class="badge bg-info" id="infoCount">0</span>
+            </div>
+        </div>
+    </div>
+</div>
+
+<!-- Alert Acknowledgment Modal -->
+<div class="modal fade" id="alertModal" tabindex="-1">
+    <div class="modal-dialog">
+        <div class="modal-content">
+            <div class="modal-header">
+                <h5 class="modal-title">Acknowledge Alert</h5>
+                <button type="button" class="btn-close" data-bs-dismiss="modal"></button>
+            </div>
+            <div class="modal-body">
+                <p id="alertMessage"></p>
+                <p><strong>Timestamp:</strong> <span id="alertTimestamp"></span></p>
+            </div>
+            <div class="modal-footer">
+                <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Cancel</button>
+                <button type="button" class="btn btn-primary" id="confirmAcknowledge">Acknowledge</button>
+            </div>
+        </div>
+    </div>
+</div>
+
+<script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+<script>
+class EnhancedDashboard {
+    constructor() {
+        this.config = {{ dashboard_config | tojsonfilter | safe }};
+        this.widgetData = {{ widget_data | tojsonfilter | safe }};
+        this.alerts = {{ alerts | tojsonfilter | safe }};
+        this.userRole = '{{ user_role }}';
+        
+        this.autoRefreshInterval = null;
+        this.eventSource = null;
+        this.charts = {};
+        this.currentAlertId = null;
+        
+        this.init();
+    }
+    
+    init() {
+        this.renderWidgets();
+        this.setupEventListeners();
+        this.setupAutoRefresh();
+        this.setupServerSentEvents();
+        this.updateAlertCounts();
+    }
+    
+    renderWidgets() {
+        const grid = document.getElementById('dashboardGrid');
+        grid.innerHTML = '';
+        
+        this.config.widgets.forEach(widget => {
+            const widgetElement = this.createWidget(widget);
+            grid.appendChild(widgetElement);
+        });
+    }
+    
+    createWidget(widget) {
+        const element = document.createElement('div');
+        element.className = 'widget';
+        element.style.gridColumn = `span ${widget.position.width}`;
+        element.style.gridRow = `span ${widget.position.height}`;
+        element.id = `widget-${widget.id}`;
+        
+        const data = this.widgetData[widget.id] || {};
+        
+        element.innerHTML = `
+            <div class="widget-header">
+                <h5 class="widget-title">${widget.title}</h5>
+                <div class="widget-controls">
+                    <button class="widget-control" onclick="dashboard.refreshWidget('${widget.id}')" title="Refresh">
+                        <i class="bi bi-arrow-clockwise"></i>
+                    </button>
+                    <button class="widget-control" onclick="dashboard.configureWidget('${widget.id}')" title="Configure">
+                        <i class="bi bi-gear"></i>
+                    </button>
+                </div>
+            </div>
+            <div class="widget-content" id="content-${widget.id}">
+                ${this.renderWidgetContent(widget, data)}
+            </div>
+        `;
+        
+        return element;
+    }
+    
+    renderWidgetContent(widget, data) {
+        switch (widget.type) {
+            case 'metric_card':
+                return this.renderMetricCard(widget, data);
+            case 'chart':
+                return this.renderChart(widget, data);
+            case 'table':
+                return this.renderTable(widget, data);
+            case 'gauge':
+                return this.renderGauge(widget, data);
+            case 'alert_panel':
+                return this.renderAlertPanel(widget, data);
+            case 'resource_monitor':
+                return this.renderResourceMonitor(widget, data);
+            default:
+                return '<div class="error-state"><i class="bi bi-exclamation-triangle"></i>Unknown widget type</div>';
+        }
+    }
+    
+    renderMetricCard(widget, data) {
+        const metrics = data.metrics || {};
+        let html = '<div class="row">';
+        
+        Object.entries(metrics).forEach(([key, value]) => {
+            const label = key.replace('_', ' ').replace(/\b\w/g, l => l.toUpperCase());
+            html += `
+                <div class="col-md-${12 / Object.keys(metrics).length}">
+                    <div class="metric-card">
+                        <div class="metric-value text-primary">${value}</div>
+                        <div class="metric-label">${label}</div>
+                    </div>
+                </div>
+            `;
+        });
+        
+        html += '</div>';
+        return html;
+    }
+    
+    renderChart(widget, data) {
+        const chartId = `chart-${widget.id}`;
+        setTimeout(() => this.initChart(chartId, widget, data), 100);
+        return `<div class="chart-container"><canvas id="${chartId}"></canvas></div>`;
+    }
+    
+    renderTable(widget, data) {
+        const columns = data.columns || [];
+        const rows = data.rows || [];
+        
+        let html = '<div class="table-container"><table class="widget-table table table-sm">';
+        
+        // Header
+        html += '<thead><tr>';
+        columns.forEach(col => {
+            const label = col.replace('_', ' ').replace(/\b\w/g, l => l.toUpperCase());
+            html += `<th>${label}</th>`;
+        });
+        html += '</tr></thead>';
+        
+        // Body
+        html += '<tbody>';
+        rows.forEach(row => {
+            html += '<tr>';
+            columns.forEach(col => {
+                let value = row[col] || '';
+                
+                // Special formatting for certain columns
+                if (col === 'status') {
+                    value = `<span class="status-badge status-${value}">${value}</span>`;
+                } else if (col === 'progress_percent') {
+                    value = `
+                        <div class="progress-mini">
+                            <div class="progress-mini-fill" style="width: ${value}%"></div>
+                        </div>
+                        ${value}%
+                    `;
+                } else if (col === 'actions') {
+                    value = `
+                        <button class="btn btn-sm btn-outline-danger" onclick="dashboard.cancelTask('${row.id}')">
+                            <i class="bi bi-x"></i>
+                        </button>
+                    `;
+                }
+                
+                html += `<td>${value}</td>`;
+            });
+            html += '</tr>';
+        });
+        html += '</tbody></table></div>';
+        
+        return html;
+    }
+    
+    renderGauge(widget, data) {
+        const value = data.value || 0;
+        const max = data.max || 100;
+        const percentage = (value / max) * 100;
+        
+        let status = 'healthy';
+        if (percentage > 90) status = 'critical';
+        else if (percentage > 70) status = 'warning';
+        
+        return `
+            <div class="gauge-container">
+                <div class="gauge">
+                    <div class="gauge-circle">
+                        <div class="gauge-inner">
+                            <div class="gauge-value">${value}%</div>
+                            <div class="gauge-label">Success Rate</div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        `;
+    }
+    
+    renderAlertPanel(widget, data) {
+        const alerts = data.alerts || [];
+        
+        if (alerts.length === 0) {
+            return '<div class="text-center text-muted py-3"><i class="bi bi-check-circle"></i><br>No active alerts</div>';
+        }
+        
+        let html = '';
+        alerts.forEach(alert => {
+            const timeAgo = this.timeAgo(new Date(alert.timestamp));
+            html += `
+                <div class="alert-item ${alert.severity}">
+                    <div class="alert-icon">
+                        <i class="bi bi-${this.getAlertIcon(alert.severity)}"></i>
+                    </div>
+                    <div class="alert-content">
+                        <div class="alert-message">${alert.message}</div>
+                        <div class="alert-time">${timeAgo}</div>
+                    </div>
+                    <div class="alert-actions">
+                        <button class="btn btn-sm btn-outline-primary" onclick="dashboard.acknowledgeAlert('${alert.id}', '${alert.message}', '${alert.timestamp}')">
+                            <i class="bi bi-check"></i>
+                        </button>
+                    </div>
+                </div>
+            `;
+        });
+        
+        return html;
+    }
+    
+    renderResourceMonitor(widget, data) {
+        const resources = data.resources || {};
+        const status = data.status || 'unknown';
+        
+        let html = '<div class="row">';
+        
+        ['cpu_percent', 'memory_percent', 'disk_percent'].forEach(resource => {
+            const value = resources[resource] || 0;
+            const label = resource.replace('_percent', '').toUpperCase();
+            
+            let statusClass = 'healthy';
+            if (value > 90) statusClass = 'critical';
+            else if (value > 70) statusClass = 'warning';
+            
+            html += `
+                <div class="col-md-4 mb-3">
+                    <div class="text-center">
+                        <div class="h6 mb-1">${label}</div>
+                        <div class="resource-bar">
+                            <div class="resource-fill ${statusClass}" style="width: ${value}%"></div>
+                        </div>
+                        <small class="text-muted">${value}%</small>
+                    </div>
+                </div>
+            `;
+        });
+        
+        if (resources.load_1min !== null && resources.load_1min !== undefined) {
+            html += `
+                <div class="col-md-12 text-center mt-2">
+                    <div class="h6 mb-0">${resources.load_1min.toFixed(2)}</div>
+                    <small class="text-muted">Load Average</small>
+                </div>
+            `;
+        }
+        
+        html += '</div>';
+        return html;
+    }
+    
+    initChart(chartId, widget, data) {
+        const ctx = document.getElementById(chartId);
+        if (!ctx) return;
+        
+        const chartData = data.data || [];
+        const chartType = data.chart_type || 'line';
+        
+        // Destroy existing chart if it exists
+        if (this.charts[chartId]) {
+            this.charts[chartId].destroy();
+        }
+        
+        this.charts[chartId] = new Chart(ctx, {
+            type: chartType,
+            data: {
+                labels: chartData.map(d => new Date(d.timestamp).toLocaleTimeString()),
+                datasets: [{
+                    label: 'Completed',
+                    data: chartData.map(d => d.completed),
+                    borderColor: '#28a745',
+                    backgroundColor: 'rgba(40, 167, 69, 0.1)',
+                    tension: 0.4
+                }, {
+                    label: 'Failed',
+                    data: chartData.map(d => d.failed),
+                    borderColor: '#dc3545',
+                    backgroundColor: 'rgba(220, 53, 69, 0.1)',
+                    tension: 0.4
+                }]
+            },
+            options: {
+                responsive: true,
+                maintainAspectRatio: false,
+                scales: {
+                    y: {
+                        beginAtZero: true
+                    }
+                },
+                plugins: {
+                    legend: {
+                        position: 'bottom'
+                    }
+                }
+            }
+        });
+    }
+    
+    setupEventListeners() {
+        document.getElementById('autoRefresh').addEventListener('change', (e) => {
+            if (e.target.checked) {
+                this.startAutoRefresh();
+            } else {
+                this.stopAutoRefresh();
+            }
+        });
+        
+        document.getElementById('refreshBtn').addEventListener('click', () => {
+            this.refreshAllWidgets();
+        });
+        
+        document.getElementById('customizeBtn').addEventListener('click', () => {
+            window.location.href = '/admin/dashboard/widgets/customize';
+        });
+        
+        document.getElementById('confirmAcknowledge').addEventListener('click', () => {
+            if (this.currentAlertId) {
+                this.confirmAcknowledgeAlert(this.currentAlertId);
+            }
+        });
+    }
+    
+    setupAutoRefresh() {
+        this.startAutoRefresh();
+    }
+    
+    startAutoRefresh() {
+        this.stopAutoRefresh();
+        this.autoRefreshInterval = setInterval(() => {
+            this.refreshAllWidgets();
+        }, 30000); // 30 seconds
+        
+        document.getElementById('refreshIndicator').style.display = 'inline-block';
+    }
+    
+    stopAutoRefresh() {
+        if (this.autoRefreshInterval) {
+            clearInterval(this.autoRefreshInterval);
+            this.autoRefreshInterval = null;
+        }
+        document.getElementById('refreshIndicator').style.display = 'none';
+    }
+    
+    setupServerSentEvents() {
+        if (typeof(EventSource) !== "undefined") {
+            this.eventSource = new EventSource('/admin/dashboard/stream');
+            
+            this.eventSource.onmessage = (event) => {
+                try {
+                    const data = JSON.parse(event.data);
+                    this.handleRealtimeUpdate(data);
+                } catch (e) {
+                    console.error('Error parsing SSE data:', e);
+                }
+            };
+            
+            this.eventSource.onerror = (error) => {
+                console.error('SSE error:', error);
+                // Reconnect after 5 seconds
+                setTimeout(() => {
+                    this.setupServerSentEvents();
+                }, 5000);
+            };
+        }
+    }
+    
+    handleRealtimeUpdate(data) {
+        // Update metrics in real-time
+        if (data.overview) {
+            this.updateMetricCards(data.overview);
+        }
+        
+        if (data.alerts) {
+            this.updateAlertCounts(data.alerts);
+        }
+        
+        // Update resource monitors
+        if (data.overview && data.overview.system_resources) {
+            this.updateResourceMonitors(data.overview.system_resources);
+        }
+    }
+    
+    updateMetricCards(overview) {
+        // Update metric card values
+        const metrics = {
+            'active_tasks': overview.active_tasks,
+            'recent_tasks': overview.recent_tasks,
+            'active_users': overview.active_users,
+            'queue_length': overview.queue_stats?.queue_stats?.queued_tasks || 0
+        };
+        
+        Object.entries(metrics).forEach(([key, value]) => {
+            const elements = document.querySelectorAll(`[data-metric="${key}"] .metric-value`);
+            elements.forEach(el => {
+                el.textContent = value;
+            });
+        });
+    }
+    
+    updateAlertCounts(alertCounts = null) {
+        if (!alertCounts) {
+            // Count from current alerts
+            alertCounts = {
+                critical: this.alerts.filter(a => a.severity === 'critical' && !a.acknowledged).length,
+                warning: this.alerts.filter(a => a.severity === 'warning' && !a.acknowledged).length,
+                info: this.alerts.filter(a => a.severity === 'info' && !a.acknowledged).length
+            };
+        }
+        
+        document.getElementById('criticalCount').textContent = alertCounts.critical || 0;
+        document.getElementById('warningCount').textContent = alertCounts.warning || 0;
+        document.getElementById('infoCount').textContent = alertCounts.info || 0;
+    }
+    
+    updateResourceMonitors(resources) {
+        ['cpu_percent', 'memory_percent', 'disk_percent'].forEach(resource => {
+            const value = resources[resource] || 0;
+            const bars = document.querySelectorAll(`[data-resource="${resource}"] .resource-fill`);
+            bars.forEach(bar => {
+                bar.style.width = `${value}%`;
+                
+                // Update status class
+                bar.className = 'resource-fill';
+                if (value > 90) bar.classList.add('critical');
+                else if (value > 70) bar.classList.add('warning');
+                else bar.classList.add('healthy');
+            });
+        });
+    }
+    
+    async refreshWidget(widgetId) {
+        const widget = document.getElementById(`widget-${widgetId}`);
+        const content = document.getElementById(`content-${widgetId}`);
+        
+        // Show loading state
+        const loadingOverlay = document.createElement('div');
+        loadingOverlay.className = 'loading-overlay';
+        loadingOverlay.innerHTML = '<div class="spinner"></div>';
+        widget.appendChild(loadingOverlay);
+        
+        try {
+            const response = await fetch(`/admin/api/dashboard/widget/${widgetId}`);
+            const result = await response.json();
+            
+            if (result.success) {
+                const widgetConfig = this.config.widgets.find(w => w.id === widgetId);
+                content.innerHTML = this.renderWidgetContent(widgetConfig, result.data);
+                
+                // Reinitialize charts if needed
+                if (widgetConfig.type === 'chart') {
+                    setTimeout(() => this.initChart(`chart-${widgetId}`, widgetConfig, result.data), 100);
+                }
+            } else {
+                content.innerHTML = `<div class="error-state"><i class="bi bi-exclamation-triangle"></i>Error: ${result.error}</div>`;
+            }
+        } catch (error) {
+            content.innerHTML = `<div class="error-state"><i class="bi bi-exclamation-triangle"></i>Network error</div>`;
+        } finally {
+            widget.removeChild(loadingOverlay);
+        }
+    }
+    
+    async refreshAllWidgets() {
+        const refreshBtn = document.getElementById('refreshBtn');
+        const icon = refreshBtn.querySelector('i');
+        
+        icon.classList.add('auto-refresh');
+        
+        try {
+            const promises = this.config.widgets.map(widget => this.refreshWidget(widget.id));
+            await Promise.all(promises);
+        } finally {
+            icon.classList.remove('auto-refresh');
+        }
+    }
+    
+    acknowledgeAlert(alertId, message, timestamp) {
+        this.currentAlertId = alertId;
+        document.getElementById('alertMessage').textContent = message;
+        document.getElementById('alertTimestamp').textContent = new Date(timestamp).toLocaleString();
+        
+        const modal = new bootstrap.Modal(document.getElementById('alertModal'));
+        modal.show();
+    }
+    
+    async confirmAcknowledgeAlert(alertId) {
+        try {
+            const response = await fetch(`/admin/api/dashboard/alerts/${alertId}/acknowledge`, {
+                method: 'POST',
+                headers: {
+                    'Content-Type': 'application/json',
+                    'X-CSRFToken': document.querySelector('meta[name="csrf-token"]')?.getAttribute('content') || ''
+                }
+            });
+            
+            const result = await response.json();
+            
+            if (result.success) {
+                this.showToast(result.message, 'success');
+                this.refreshWidget('alert_panel');
+                this.updateAlertCounts();
+            } else {
+                this.showToast(result.error, 'error');
+            }
+        } catch (error) {
+            this.showToast('Error acknowledging alert', 'error');
+        } finally {
+            bootstrap.Modal.getInstance(document.getElementById('alertModal')).hide();
+            this.currentAlertId = null;
+        }
+    }
+    
+    getAlertIcon(severity) {
+        switch (severity) {
+            case 'critical': return 'exclamation-triangle-fill';
+            case 'warning': return 'exclamation-triangle';
+            case 'info': return 'info-circle';
+            default: return 'info-circle';
+        }
+    }
+    
+    timeAgo(date) {
+        const now = new Date();
+        const diffMs = now - date;
+        const diffMins = Math.floor(diffMs / 60000);
+        const diffHours = Math.floor(diffMins / 60);
+        const diffDays = Math.floor(diffHours / 24);
+        
+        if (diffMins < 1) return 'Just now';
+        if (diffMins < 60) return `${diffMins}m ago`;
+        if (diffHours < 24) return `${diffHours}h ago`;
+        return `${diffDays}d ago`;
+    }
+    
+    showToast(message, type) {
+        // Create toast container if it doesn't exist
+        let toastContainer = document.querySelector('.toast-container');
+        if (!toastContainer) {
+            toastContainer = document.createElement('div');
+            toastContainer.className = 'toast-container position-fixed bottom-0 end-0 p-3';
+            toastContainer.style.zIndex = '1055';
+            document.body.appendChild(toastContainer);
+        }
+        
+        // Create toast
+        const toastId = 'toast-' + Date.now();
+        const bgClass = type === 'success' ? 'bg-success' : type === 'error' ? 'bg-danger' : 'bg-info';
+        
+        const toastHtml = `
+            <div id="${toastId}" class="toast align-items-center text-white ${bgClass} border-0" role="alert" aria-live="assertive" aria-atomic="true">
+                <div class="d-flex">
+                    <div class="toast-body">${message}</div>
+                    <button type="button" class="btn-close btn-close-white me-2 m-auto" data-bs-dismiss="toast" aria-label="Close"></button>
+                </div>
+            </div>
+        `;
+        
+        toastContainer.insertAdjacentHTML('beforeend', toastHtml);
+        
+        // Show toast
+        const toastElement = document.getElementById(toastId);
+        const toast = new bootstrap.Toast(toastElement, { delay: 5000 });
+        toast.show();
+        
+        // Remove toast element after it's hidden
+        toastElement.addEventListener('hidden.bs.toast', () => {
+            toastElement.remove();
+        });
+    }
+}
+
+// Global functions for widget interactions
+function openReports() {
+    window.location.href = '/admin/dashboard/reports';
+}
+
+function exportData() {
+    // This would open an export dialog
+    dashboard.showToast('Export functionality coming soon', 'info');
+}
+
+function showSettings() {
+    // This would open settings dialog
+    dashboard.showToast('Settings functionality coming soon', 'info');
+}
+
+// Initialize dashboard when page loads
+let dashboard;
+document.addEventListener('DOMContentLoaded', function() {
+    dashboard = new EnhancedDashboard();
+});
+
+// Cleanup on page unload
+window.addEventListener('beforeunload', function() {
+    if (dashboard && dashboard.eventSource) {
+        dashboard.eventSource.close();
+    }
+});
+</script>
+
+{% endblock %}

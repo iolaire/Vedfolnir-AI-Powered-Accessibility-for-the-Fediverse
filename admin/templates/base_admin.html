@@ -23,6 +23,7 @@
     <link href="{{ url_for('static', filename='css/platform_styles.css') }}" rel="stylesheet">
     <link href="{{ url_for('static', filename='css/fixes.css') }}" rel="stylesheet">
     <link href="{{ url_for('static', filename='css/admin.css') }}" rel="stylesheet">
+    <link href="{{ url_for('admin.static', filename='css/admin_dashboard.css') }}" rel="stylesheet">
     
     <!-- Favicon -->
     {% include 'includes/favicon_meta.html' %}
@@ -42,6 +43,9 @@
             </a>
             
             <div class="navbar-nav ms-auto">
+                <!-- Admin Notification System -->
+                {% include 'components/admin_notification_system.html' %}
+                
                 <a class="nav-link" href="{{ url_for('index') }}">
                     <i class="bi bi-house"></i> Main App
                 </a>
@@ -61,6 +65,11 @@
                         <li class="nav-item">
                             <a class="nav-link" href="{{ url_for('admin.dashboard') }}">
                                 <i class="bi bi-speedometer2"></i> Dashboard
+                            </a>
+                        </li>
+                        <li class="nav-item">
+                            <a class="nav-link" href="{{ url_for('admin.job_management') }}">
+                                <i class="bi bi-briefcase"></i> Job Management
                             </a>
                         </li>
                         <li class="nav-item">
@@ -101,6 +110,11 @@
                         <li class="nav-item">
                             <a class="nav-link" href="{{ url_for('admin.monitoring_dashboard') }}">
                                 <i class="bi bi-graph-up"></i> Monitoring
+                            </a>
+                        </li>
+                        <li class="nav-item">
+                            <a class="nav-link" href="{{ url_for('admin.help_center') }}">
+                                <i class="bi bi-question-circle"></i> Help Center
                             </a>
                         </li>
                     </ul>

@@ -12,6 +12,9 @@
         <a href="{{ url_for('caption_generation') }}" class="btn btn-primary">
             <i class="bi bi-plus-circle"></i> Generate New Captions
         </a>
+        <button type="button" class="btn btn-outline-info ms-2" id="showApprovalTracking">
+            <i class="bi bi-graph-up"></i> Approval Tracking
+        </button>
     </div>
 </div>
 
@@ -307,9 +310,116 @@ document.addEventListener('DOMContentLoaded', function() {
             toastElement.remove();
         });
     }
+    
+    // Approval tracking functionality
+    document.getElementById('showApprovalTracking').addEventListener('click', async function() {
+        const modal = new bootstrap.Modal(document.getElementById('approvalTrackingModal'));
+        modal.show();
+        
+        try {
+            const response = await fetch('/api/review/approval_rate_tracking', {
+                headers: {
+                    'X-CSRFToken': document.querySelector('meta[name="csrf-token"]')?.getAttribute('content') || ''
+                }
+            });
+            
+            const result = await response.json();
+            const content = document.getElementById('approvalTrackingContent');
+            
+            if (response.ok && result.success) {
+                const tracking = result.tracking_data;
+                
+                content.innerHTML = `
+                    <div class="row mb-4">
+                        <div class="col-md-6">
+                            <h6>Overall Statistics (Last ${tracking.period_days} days)</h6>
+                            <p><strong>Total Batches:</strong> ${tracking.total_batches}</p>
+                            <p><strong>Total Images:</strong> ${tracking.total_images}</p>
+                            <p><strong>Images Reviewed:</strong> ${tracking.approval_rates.reviewed_percent}%</p>
+                        </div>
+                        <div class="col-md-6">
+                            <h6>Approval Rates</h6>
+                            <div class="mb-2">
+                                <div class="d-flex justify-content-between">
+                                    <span>Approved</span>
+                                    <span class="badge bg-success">${tracking.approval_rates.approved_percent}%</span>
+                                </div>
+                            </div>
+                            <div class="mb-2">
+                                <div class="d-flex justify-content-between">
+                                    <span>Rejected</span>
+                                    <span class="badge bg-danger">${tracking.approval_rates.rejected_percent}%</span>
+                                </div>
+                            </div>
+                            <div class="mb-2">
+                                <div class="d-flex justify-content-between">
+                                    <span>Pending</span>
+                                    <span class="badge bg-warning">${tracking.approval_rates.pending_percent}%</span>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                    
+                    ${tracking.trends && tracking.trends.direction ? `
+                        <div class="alert ${tracking.trends.direction === 'improving' ? 'alert-success' : tracking.trends.direction === 'declining' ? 'alert-warning' : 'alert-info'}">
+                            <h6><i class="bi bi-trending-${tracking.trends.direction === 'improving' ? 'up' : tracking.trends.direction === 'declining' ? 'down' : 'flat'}"></i> Trend Analysis</h6>
+                            <p><strong>Direction:</strong> ${tracking.trends.direction.charAt(0).toUpperCase() + tracking.trends.direction.slice(1)}</p>
+                            <p><strong>Early Period:</strong> ${tracking.trends.early_approval_rate}% approval rate</p>
+                            <p><strong>Recent Period:</strong> ${tracking.trends.recent_approval_rate}% approval rate</p>
+                            <p><strong>Change:</strong> ${tracking.trends.change_percent > 0 ? '+' : ''}${tracking.trends.change_percent}%</p>
+                        </div>
+                    ` : ''}
+                    
+                    ${tracking.recommendations && tracking.recommendations.length > 0 ? `
+                        <div class="alert alert-info">
+                            <h6><i class="bi bi-lightbulb"></i> Recommendations:</h6>
+                            <ul class="mb-0">
+                                ${tracking.recommendations.map(rec => `<li>${rec}</li>`).join('')}
+                            </ul>
+                        </div>
+                    ` : ''}
+                `;
+            } else {
+                content.innerHTML = `
+                    <div class="alert alert-warning">
+                        <i class="bi bi-exclamation-triangle"></i>
+                        ${result.error || 'Failed to load approval tracking data'}
+                    </div>
+                `;
+            }
+        } catch (error) {
+            console.error('Error loading approval tracking:', error);
+            document.getElementById('approvalTrackingContent').innerHTML = `
+                <div class="alert alert-danger">
+                    <i class="bi bi-exclamation-circle"></i>
+                    Error loading approval tracking data. Please try again.
+                </div>
+            `;
+        }
+    });
 });
 </script>
 
-
+<!-- Approval Tracking Modal -->
+<div class="modal fade" id="approvalTrackingModal" tabindex="-1" aria-labelledby="approvalTrackingModalLabel" aria-hidden="true">
+    <div class="modal-dialog modal-lg">
+        <div class="modal-content">
+            <div class="modal-header">
+                <h5 class="modal-title" id="approvalTrackingModalLabel">
+                    <i class="bi bi-graph-up"></i> Approval Rate Tracking & Feedback
+                </h5>
+                <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
+            </div>
+            <div class="modal-body" id="approvalTrackingContent">
+                <div class="text-center">
+                    <div class="spinner-border" role="status">
+                        <span class="visually-hidden">Loading...</span>
+                    </div>
+                    <p class="mt-2">Loading approval tracking data...</p>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
 
 {% endblock %}

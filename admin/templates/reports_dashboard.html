@@ -1,0 +1,805 @@
+<!-- Copyright (C) 2025 iolaire mcfadden. -->
+<!-- This program is free software: you can redistribute it and/or modify it under the terms of the GNU Affero General Public License as published by the Free Software Foundation, either version 3 of the License, or (at your option) any later version. -->
+<!-- THE SOFTWARE IS PROVIDED "AS IS", WITHOUT WARRANTY OF ANY KIND, EXPRESS OR IMPLIED, INCLUDING BUT NOT LIMITED TO THE WARRANTIES OF MERCHANTABILITY, FITNESS FOR A PARTICULAR PURPOSE AND NONINFRINGEMENT. IN NO EVENT SHALL THE AUTHORS OR COPYRIGHT HOLDERS BE LIABLE FOR ANY CLAIM, DAMAGES OR OTHER LIABILITY, WHETHER IN AN ACTION OF CONTRACT, TORT OR OTHERWISE, ARISING FROM, OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE SOFTWARE. -->
+{% extends "base_admin.html" %}
+
+{% block title %}Reports Dashboard - Vedfolnir{% endblock %}
+
+{% block head %}
+<style>
+    .report-card {
+        transition: transform 0.2s, box-shadow 0.2s;
+        cursor: pointer;
+    }
+    
+    .report-card:hover {
+        transform: translateY(-2px);
+        box-shadow: 0 4px 8px rgba(0,0,0,0.15);
+    }
+    
+    .report-icon {
+        font-size: 2rem;
+        margin-bottom: 10px;
+        color: #007bff;
+    }
+    
+    .date-range-picker {
+        background: #f8f9fa;
+        border-radius: 8px;
+        padding: 20px;
+        margin-bottom: 20px;
+    }
+    
+    .report-preview {
+        max-height: 400px;
+        overflow-y: auto;
+        border: 1px solid #dee2e6;
+        border-radius: 6px;
+        padding: 15px;
+        background: #f8f9fa;
+    }
+    
+    .report-summary {
+        background: white;
+        border-radius: 8px;
+        padding: 20px;
+        margin-bottom: 20px;
+        box-shadow: 0 2px 4px rgba(0,0,0,0.1);
+    }
+    
+    .summary-metric {
+        text-align: center;
+        padding: 15px;
+    }
+    
+    .summary-value {
+        font-size: 2rem;
+        font-weight: bold;
+        color: #007bff;
+    }
+    
+    .summary-label {
+        color: #666;
+        font-size: 0.9rem;
+        text-transform: uppercase;
+        letter-spacing: 0.5px;
+    }
+    
+    .export-options {
+        display: flex;
+        gap: 10px;
+        margin-top: 15px;
+    }
+    
+    .loading-spinner {
+        display: none;
+        text-align: center;
+        padding: 40px;
+    }
+    
+    .spinner-border {
+        width: 3rem;
+        height: 3rem;
+    }
+    
+    .schedule-form {
+        background: #f8f9fa;
+        border-radius: 8px;
+        padding: 20px;
+        margin-top: 20px;
+    }
+    
+    .report-history {
+        max-height: 300px;
+        overflow-y: auto;
+    }
+    
+    .history-item {
+        display: flex;
+        justify-content: between;
+        align-items: center;
+        padding: 10px;
+        border-bottom: 1px solid #eee;
+    }
+    
+    .history-item:last-child {
+        border-bottom: none;
+    }
+    
+    .status-indicator {
+        width: 8px;
+        height: 8px;
+        border-radius: 50%;
+        display: inline-block;
+        margin-right: 8px;
+    }
+    
+    .status-completed {
+        background: #28a745;
+    }
+    
+    .status-running {
+        background: #007bff;
+        animation: pulse 2s infinite;
+    }
+    
+    .status-failed {
+        background: #dc3545;
+    }
+    
+    @keyframes pulse {
+        0% { opacity: 1; }
+        50% { opacity: 0.5; }
+        100% { opacity: 1; }
+    }
+</style>
+{% endblock %}
+
+{% block content %}
+<div class="d-flex justify-content-between align-items-center mb-4">
+    <h1><i class="bi bi-graph-up"></i> Reports Dashboard</h1>
+    <div>
+        <button class="btn btn-outline-primary" onclick="showScheduleModal()">
+            <i class="bi bi-calendar-plus"></i> Schedule Report
+        </button>
+        <a href="{{ url_for('admin.enhanced_monitoring_dashboard') }}" class="btn btn-outline-secondary">
+            <i class="bi bi-arrow-left"></i> Back to Monitoring
+        </a>
+    </div>
+</div>
+
+<!-- Report Type Selection -->
+<div class="row mb-4">
+    <div class="col-md-2">
+        <div class="card report-card h-100" onclick="selectReportType('system_performance')">
+            <div class="card-body text-center">
+                <i class="bi bi-speedometer2 report-icon"></i>
+                <h6>System Performance</h6>
+                <small class="text-muted">Task completion rates, processing times</small>
+            </div>
+        </div>
+    </div>
+    <div class="col-md-2">
+        <div class="card report-card h-100" onclick="selectReportType('user_activity')">
+            <div class="card-body text-center">
+                <i class="bi bi-people report-icon"></i>
+                <h6>User Activity</h6>
+                <small class="text-muted">User engagement and task statistics</small>
+            </div>
+        </div>
+    </div>
+    <div class="col-md-2">
+        <div class="card report-card h-100" onclick="selectReportType('error_analysis')">
+            <div class="card-body text-center">
+                <i class="bi bi-exclamation-triangle report-icon"></i>
+                <h6>Error Analysis</h6>
+                <small class="text-muted">Error patterns and failure analysis</small>
+            </div>
+        </div>
+    </div>
+    <div class="col-md-2">
+        <div class="card report-card h-100" onclick="selectReportType('resource_usage')">
+            <div class="card-body text-center">
+                <i class="bi bi-cpu report-icon"></i>
+                <h6>Resource Usage</h6>
+                <small class="text-muted">System resource consumption</small>
+            </div>
+        </div>
+    </div>
+    <div class="col-md-2">
+        <div class="card report-card h-100" onclick="selectReportType('compliance_audit')">
+            <div class="card-body text-center">
+                <i class="bi bi-shield-check report-icon"></i>
+                <h6>Compliance Audit</h6>
+                <small class="text-muted">Data compliance and audit trail</small>
+            </div>
+        </div>
+    </div>
+    <div class="col-md-2">
+        <div class="card report-card h-100" onclick="selectReportType('task_trends')">
+            <div class="card-body text-center">
+                <i class="bi bi-graph-up-arrow report-icon"></i>
+                <h6>Task Trends</h6>
+                <small class="text-muted">Historical task trends and patterns</small>
+            </div>
+        </div>
+    </div>
+</div>
+
+<!-- Report Configuration -->
+<div class="row">
+    <div class="col-md-8">
+        <!-- Date Range Selection -->
+        <div class="date-range-picker">
+            <h5><i class="bi bi-calendar-range"></i> Report Configuration</h5>
+            <div class="row">
+                <div class="col-md-4">
+                    <label for="reportType" class="form-label">Report Type</label>
+                    <select class="form-select" id="reportType">
+                        <option value="">Select report type...</option>
+                        <option value="system_performance">System Performance</option>
+                        <option value="user_activity">User Activity</option>
+                        <option value="error_analysis">Error Analysis</option>
+                        <option value="resource_usage">Resource Usage</option>
+                        <option value="compliance_audit">Compliance Audit</option>
+                        <option value="task_trends">Task Trends</option>
+                    </select>
+                </div>
+                <div class="col-md-3">
+                    <label for="startDate" class="form-label">Start Date</label>
+                    <input type="date" class="form-control" id="startDate">
+                </div>
+                <div class="col-md-3">
+                    <label for="endDate" class="form-label">End Date</label>
+                    <input type="date" class="form-control" id="endDate">
+                </div>
+                <div class="col-md-2">
+                    <label class="form-label">&nbsp;</label>
+                    <button class="btn btn-primary d-block w-100" onclick="generateReport()">
+                        <i class="bi bi-play-fill"></i> Generate
+                    </button>
+                </div>
+            </div>
+            
+            <!-- Quick Date Ranges -->
+            <div class="mt-3">
+                <small class="text-muted">Quick ranges:</small>
+                <div class="btn-group btn-group-sm ms-2" role="group">
+                    <button type="button" class="btn btn-outline-secondary" onclick="setDateRange(1)">Last 24h</button>
+                    <button type="button" class="btn btn-outline-secondary" onclick="setDateRange(7)">Last 7 days</button>
+                    <button type="button" class="btn btn-outline-secondary" onclick="setDateRange(30)">Last 30 days</button>
+                    <button type="button" class="btn btn-outline-secondary" onclick="setDateRange(90)">Last 90 days</button>
+                </div>
+            </div>
+        </div>
+        
+        <!-- Loading Spinner -->
+        <div class="loading-spinner" id="loadingSpinner">
+            <div class="spinner-border text-primary" role="status">
+                <span class="visually-hidden">Generating report...</span>
+            </div>
+            <p class="mt-3">Generating report, please wait...</p>
+        </div>
+        
+        <!-- Report Results -->
+        <div id="reportResults" style="display: none;">
+            <!-- Report Summary -->
+            <div class="report-summary" id="reportSummary">
+                <!-- Summary will be populated here -->
+            </div>
+            
+            <!-- Report Preview -->
+            <div class="card">
+                <div class="card-header d-flex justify-content-between align-items-center">
+                    <h5><i class="bi bi-file-text"></i> Report Preview</h5>
+                    <div class="export-options">
+                        <button class="btn btn-sm btn-outline-success" onclick="exportReport('json')">
+                            <i class="bi bi-filetype-json"></i> JSON
+                        </button>
+                        <button class="btn btn-sm btn-outline-info" onclick="exportReport('csv')">
+                            <i class="bi bi-filetype-csv"></i> CSV
+                        </button>
+                        <button class="btn btn-sm btn-outline-warning" onclick="exportReport('html')">
+                            <i class="bi bi-filetype-html"></i> HTML
+                        </button>
+                        <button class="btn btn-sm btn-outline-danger" onclick="exportReport('pdf')">
+                            <i class="bi bi-filetype-pdf"></i> PDF
+                        </button>
+                    </div>
+                </div>
+                <div class="card-body">
+                    <div class="report-preview" id="reportPreview">
+                        <!-- Report content will be displayed here -->
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+    
+    <div class="col-md-4">
+        <!-- Report History -->
+        <div class="card">
+            <div class="card-header">
+                <h5><i class="bi bi-clock-history"></i> Recent Reports</h5>
+            </div>
+            <div class="card-body">
+                <div class="report-history" id="reportHistory">
+                    <div class="history-item">
+                        <div>
+                            <span class="status-indicator status-completed"></span>
+                            <strong>System Performance</strong>
+                            <br>
+                            <small class="text-muted">2 hours ago • 7 days</small>
+                        </div>
+                        <button class="btn btn-sm btn-outline-primary">
+                            <i class="bi bi-download"></i>
+                        </button>
+                    </div>
+                    <div class="history-item">
+                        <div>
+                            <span class="status-indicator status-completed"></span>
+                            <strong>User Activity</strong>
+                            <br>
+                            <small class="text-muted">1 day ago • 30 days</small>
+                        </div>
+                        <button class="btn btn-sm btn-outline-primary">
+                            <i class="bi bi-download"></i>
+                        </button>
+                    </div>
+                    <div class="history-item">
+                        <div>
+                            <span class="status-indicator status-running"></span>
+                            <strong>Error Analysis</strong>
+                            <br>
+                            <small class="text-muted">Running... • 14 days</small>
+                        </div>
+                        <button class="btn btn-sm btn-outline-secondary" disabled>
+                            <i class="bi bi-hourglass-split"></i>
+                        </button>
+                    </div>
+                </div>
+            </div>
+        </div>
+        
+        <!-- Scheduled Reports -->
+        <div class="card mt-3">
+            <div class="card-header">
+                <h5><i class="bi bi-calendar-event"></i> Scheduled Reports</h5>
+            </div>
+            <div class="card-body">
+                <div class="text-center text-muted py-3">
+                    <i class="bi bi-calendar-plus" style="font-size: 2rem;"></i>
+                    <p class="mt-2">No scheduled reports</p>
+                    <button class="btn btn-sm btn-outline-primary" onclick="showScheduleModal()">
+                        Schedule Report
+                    </button>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+
+<!-- Schedule Report Modal -->
+<div class="modal fade" id="scheduleModal" tabindex="-1">
+    <div class="modal-dialog modal-lg">
+        <div class="modal-content">
+            <div class="modal-header">
+                <h5 class="modal-title">Schedule Automated Report</h5>
+                <button type="button" class="btn-close" data-bs-dismiss="modal"></button>
+            </div>
+            <div class="modal-body">
+                <form id="scheduleForm">
+                    <div class="row">
+                        <div class="col-md-6">
+                            <div class="mb-3">
+                                <label for="scheduleReportType" class="form-label">Report Type</label>
+                                <select class="form-select" id="scheduleReportType" required>
+                                    <option value="">Select report type...</option>
+                                    <option value="system_performance">System Performance</option>
+                                    <option value="user_activity">User Activity</option>
+                                    <option value="error_analysis">Error Analysis</option>
+                                    <option value="resource_usage">Resource Usage</option>
+                                    <option value="compliance_audit">Compliance Audit</option>
+                                    <option value="task_trends">Task Trends</option>
+                                </select>
+                            </div>
+                        </div>
+                        <div class="col-md-6">
+                            <div class="mb-3">
+                                <label for="scheduleFormat" class="form-label">Format</label>
+                                <select class="form-select" id="scheduleFormat" required>
+                                    <option value="json">JSON</option>
+                                    <option value="csv">CSV</option>
+                                    <option value="html">HTML</option>
+                                    <option value="pdf">PDF</option>
+                                </select>
+                            </div>
+                        </div>
+                    </div>
+                    
+                    <div class="row">
+                        <div class="col-md-6">
+                            <div class="mb-3">
+                                <label for="scheduleFrequency" class="form-label">Frequency</label>
+                                <select class="form-select" id="scheduleFrequency" required>
+                                    <option value="">Select frequency...</option>
+                                    <option value="daily">Daily</option>
+                                    <option value="weekly">Weekly</option>
+                                    <option value="monthly">Monthly</option>
+                                    <option value="custom">Custom (Cron)</option>
+                                </select>
+                            </div>
+                        </div>
+                        <div class="col-md-6">
+                            <div class="mb-3">
+                                <label for="schedulePeriod" class="form-label">Report Period</label>
+                                <select class="form-select" id="schedulePeriod" required>
+                                    <option value="1">Last 24 hours</option>
+                                    <option value="7">Last 7 days</option>
+                                    <option value="30">Last 30 days</option>
+                                    <option value="90">Last 90 days</option>
+                                </select>
+                            </div>
+                        </div>
+                    </div>
+                    
+                    <div class="mb-3" id="cronExpression" style="display: none;">
+                        <label for="cronInput" class="form-label">Cron Expression</label>
+                        <input type="text" class="form-control" id="cronInput" placeholder="0 9 * * 1">
+                        <small class="form-text text-muted">Example: "0 9 * * 1" = Every Monday at 9:00 AM</small>
+                    </div>
+                    
+                    <div class="mb-3">
+                        <label for="scheduleRecipients" class="form-label">Email Recipients</label>
+                        <textarea class="form-control" id="scheduleRecipients" rows="2" 
+                                  placeholder="admin@example.com, manager@example.com"></textarea>
+                        <small class="form-text text-muted">Comma-separated email addresses</small>
+                    </div>
+                    
+                    <div class="mb-3">
+                        <label for="scheduleName" class="form-label">Report Name</label>
+                        <input type="text" class="form-control" id="scheduleName" 
+                               placeholder="Weekly Performance Report" required>
+                    </div>
+                </form>
+            </div>
+            <div class="modal-footer">
+                <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Cancel</button>
+                <button type="button" class="btn btn-primary" onclick="scheduleReport()">Schedule Report</button>
+            </div>
+        </div>
+    </div>
+</div>
+
+<script>
+let currentReportData = null;
+
+document.addEventListener('DOMContentLoaded', function() {
+    // Set default date range to last 7 days
+    setDateRange(7);
+    
+    // Setup event listeners
+    document.getElementById('scheduleFrequency').addEventListener('change', function() {
+        const cronDiv = document.getElementById('cronExpression');
+        if (this.value === 'custom') {
+            cronDiv.style.display = 'block';
+        } else {
+            cronDiv.style.display = 'none';
+        }
+    });
+});
+
+function selectReportType(type) {
+    document.getElementById('reportType').value = type;
+    
+    // Highlight selected card
+    document.querySelectorAll('.report-card').forEach(card => {
+        card.classList.remove('border-primary');
+    });
+    
+    event.currentTarget.classList.add('border-primary');
+}
+
+function setDateRange(days) {
+    const endDate = new Date();
+    const startDate = new Date();
+    startDate.setDate(endDate.getDate() - days);
+    
+    document.getElementById('startDate').value = startDate.toISOString().split('T')[0];
+    document.getElementById('endDate').value = endDate.toISOString().split('T')[0];
+}
+
+async function generateReport() {
+    const reportType = document.getElementById('reportType').value;
+    const startDate = document.getElementById('startDate').value;
+    const endDate = document.getElementById('endDate').value;
+    
+    if (!reportType || !startDate || !endDate) {
+        showToast('Please select report type and date range', 'warning');
+        return;
+    }
+    
+    // Show loading spinner
+    document.getElementById('loadingSpinner').style.display = 'block';
+    document.getElementById('reportResults').style.display = 'none';
+    
+    try {
+        const response = await fetch('/admin/api/reports/generate', {
+            method: 'POST',
+            headers: {
+                'Content-Type': 'application/json',
+                'X-CSRFToken': document.querySelector('meta[name="csrf-token"]')?.getAttribute('content') || ''
+            },
+            body: JSON.stringify({
+                report_type: reportType,
+                start_date: startDate + 'T00:00:00',
+                end_date: endDate + 'T23:59:59',
+                parameters: {}
+            })
+        });
+        
+        const result = await response.json();
+        
+        if (result.success) {
+            currentReportData = result.report;
+            displayReport(result.report);
+            showToast('Report generated successfully', 'success');
+        } else {
+            showToast(result.error, 'error');
+        }
+        
+    } catch (error) {
+        console.error('Error generating report:', error);
+        showToast('Error generating report', 'error');
+    } finally {
+        document.getElementById('loadingSpinner').style.display = 'none';
+    }
+}
+
+function displayReport(reportData) {
+    // Display summary
+    displayReportSummary(reportData);
+    
+    // Display preview
+    displayReportPreview(reportData);
+    
+    // Show results
+    document.getElementById('reportResults').style.display = 'block';
+}
+
+function displayReportSummary(reportData) {
+    const summaryDiv = document.getElementById('reportSummary');
+    const summary = reportData.summary || {};
+    
+    let summaryHtml = '<div class="row">';
+    
+    Object.entries(summary).forEach(([key, value]) => {
+        const label = key.replace(/_/g, ' ').replace(/\b\w/g, l => l.toUpperCase());
+        let displayValue = value;
+        
+        // Format specific metrics
+        if (key.includes('rate') || key.includes('percent')) {
+            displayValue = value + '%';
+        } else if (key.includes('time') && key.includes('seconds')) {
+            displayValue = value + 's';
+        }
+        
+        summaryHtml += `
+            <div class="col-md-3">
+                <div class="summary-metric">
+                    <div class="summary-value">${displayValue}</div>
+                    <div class="summary-label">${label}</div>
+                </div>
+            </div>
+        `;
+    });
+    
+    summaryHtml += '</div>';
+    summaryDiv.innerHTML = summaryHtml;
+}
+
+function displayReportPreview(reportData) {
+    const previewDiv = document.getElementById('reportPreview');
+    
+    let previewHtml = `
+        <div class="mb-3">
+            <h6>Report: ${reportData.report_type.replace('_', ' ').replace(/\b\w/g, l => l.toUpperCase())}</h6>
+            <p class="text-muted">
+                Period: ${new Date(reportData.period.start).toLocaleDateString()} - 
+                ${new Date(reportData.period.end).toLocaleDateString()}
+            </p>
+            <p class="text-muted">Generated: ${new Date(reportData.generated_at).toLocaleString()}</p>
+        </div>
+    `;
+    
+    // Display data based on report type
+    if (reportData.details && Array.isArray(reportData.details)) {
+        previewHtml += '<h6>Details:</h6>';
+        previewHtml += '<div class="table-responsive">';
+        previewHtml += '<table class="table table-sm table-striped">';
+        
+        // Table header
+        if (reportData.details.length > 0) {
+            previewHtml += '<thead><tr>';
+            Object.keys(reportData.details[0]).forEach(key => {
+                const label = key.replace(/_/g, ' ').replace(/\b\w/g, l => l.toUpperCase());
+                previewHtml += `<th>${label}</th>`;
+            });
+            previewHtml += '</tr></thead>';
+            
+            // Table body (limit to first 10 rows)
+            previewHtml += '<tbody>';
+            reportData.details.slice(0, 10).forEach(row => {
+                previewHtml += '<tr>';
+                Object.values(row).forEach(value => {
+                    let displayValue = value;
+                    if (typeof value === 'string' && value.includes('T')) {
+                        // Format datetime
+                        displayValue = new Date(value).toLocaleString();
+                    }
+                    previewHtml += `<td>${displayValue || 'N/A'}</td>`;
+                });
+                previewHtml += '</tr>';
+            });
+            previewHtml += '</tbody>';
+            
+            if (reportData.details.length > 10) {
+                previewHtml += `<tfoot><tr><td colspan="${Object.keys(reportData.details[0]).length}" class="text-center text-muted">... and ${reportData.details.length - 10} more rows</td></tr></tfoot>`;
+            }
+        }
+        
+        previewHtml += '</table></div>';
+    } else if (reportData.users && Array.isArray(reportData.users)) {
+        // User activity report
+        previewHtml += '<h6>User Activity:</h6>';
+        previewHtml += '<div class="table-responsive">';
+        previewHtml += '<table class="table table-sm table-striped">';
+        previewHtml += '<thead><tr><th>Username</th><th>Role</th><th>Task Count</th></tr></thead>';
+        previewHtml += '<tbody>';
+        reportData.users.forEach(user => {
+            previewHtml += `
+                <tr>
+                    <td>${user.username}</td>
+                    <td><span class="badge bg-secondary">${user.role}</span></td>
+                    <td>${user.task_count}</td>
+                </tr>
+            `;
+        });
+        previewHtml += '</tbody></table></div>';
+    } else if (reportData.daily_trends && Array.isArray(reportData.daily_trends)) {
+        // Task trends report
+        previewHtml += '<h6>Daily Trends:</h6>';
+        previewHtml += '<div class="table-responsive">';
+        previewHtml += '<table class="table table-sm table-striped">';
+        previewHtml += '<thead><tr><th>Date</th><th>Total Tasks</th><th>Completed</th><th>Failed</th><th>Success Rate</th></tr></thead>';
+        previewHtml += '<tbody>';
+        reportData.daily_trends.forEach(trend => {
+            previewHtml += `
+                <tr>
+                    <td>${trend.date}</td>
+                    <td>${trend.total_tasks}</td>
+                    <td class="text-success">${trend.completed}</td>
+                    <td class="text-danger">${trend.failed}</td>
+                    <td>${trend.success_rate}%</td>
+                </tr>
+            `;
+        });
+        previewHtml += '</tbody></table></div>';
+    } else {
+        previewHtml += '<pre class="bg-light p-3">' + JSON.stringify(reportData, null, 2) + '</pre>';
+    }
+    
+    previewDiv.innerHTML = previewHtml;
+}
+
+async function exportReport(format) {
+    if (!currentReportData) {
+        showToast('No report data to export', 'warning');
+        return;
+    }
+    
+    try {
+        const response = await fetch('/admin/api/reports/export', {
+            method: 'POST',
+            headers: {
+                'Content-Type': 'application/json',
+                'X-CSRFToken': document.querySelector('meta[name="csrf-token"]')?.getAttribute('content') || ''
+            },
+            body: JSON.stringify({
+                report_data: currentReportData,
+                format: format
+            })
+        });
+        
+        if (response.ok) {
+            // Create download link
+            const blob = await response.blob();
+            const url = window.URL.createObjectURL(blob);
+            const a = document.createElement('a');
+            a.href = url;
+            a.download = `report_${currentReportData.report_type}_${new Date().toISOString().split('T')[0]}.${format}`;
+            document.body.appendChild(a);
+            a.click();
+            window.URL.revokeObjectURL(url);
+            document.body.removeChild(a);
+            
+            showToast(`Report exported as ${format.toUpperCase()}`, 'success');
+        } else {
+            const result = await response.json();
+            showToast(result.error || 'Export failed', 'error');
+        }
+        
+    } catch (error) {
+        console.error('Error exporting report:', error);
+        showToast('Error exporting report', 'error');
+    }
+}
+
+function showScheduleModal() {
+    const modal = new bootstrap.Modal(document.getElementById('scheduleModal'));
+    modal.show();
+}
+
+async function scheduleReport() {
+    const form = document.getElementById('scheduleForm');
+    const formData = new FormData(form);
+    
+    const scheduleData = {
+        name: document.getElementById('scheduleName').value,
+        report_type: document.getElementById('scheduleReportType').value,
+        format: document.getElementById('scheduleFormat').value,
+        frequency: document.getElementById('scheduleFrequency').value,
+        period: parseInt(document.getElementById('schedulePeriod').value),
+        recipients: document.getElementById('scheduleRecipients').value.split(',').map(email => email.trim()),
+        cron_expression: document.getElementById('cronInput').value
+    };
+    
+    if (!scheduleData.name || !scheduleData.report_type || !scheduleData.format || !scheduleData.frequency) {
+        showToast('Please fill in all required fields', 'warning');
+        return;
+    }
+    
+    try {
+        const response = await fetch('/admin/api/reports/schedule', {
+            method: 'POST',
+            headers: {
+                'Content-Type': 'application/json',
+                'X-CSRFToken': document.querySelector('meta[name="csrf-token"]')?.getAttribute('content') || ''
+            },
+            body: JSON.stringify(scheduleData)
+        });
+        
+        const result = await response.json();
+        
+        if (result.success) {
+            showToast(result.message, 'success');
+            bootstrap.Modal.getInstance(document.getElementById('scheduleModal')).hide();
+            form.reset();
+        } else {
+            showToast(result.error, 'error');
+        }
+        
+    } catch (error) {
+        console.error('Error scheduling report:', error);
+        showToast('Error scheduling report', 'error');
+    }
+}
+
+function showToast(message, type) {
+    // Create toast container if it doesn't exist
+    let toastContainer = document.querySelector('.toast-container');
+    if (!toastContainer) {
+        toastContainer = document.createElement('div');
+        toastContainer.className = 'toast-container position-fixed bottom-0 end-0 p-3';
+        toastContainer.style.zIndex = '1055';
+        document.body.appendChild(toastContainer);
+    }
+    
+    // Create toast
+    const toastId = 'toast-' + Date.now();
+    const bgClass = type === 'success' ? 'bg-success' : type === 'error' ? 'bg-danger' : type === 'warning' ? 'bg-warning' : 'bg-info';
+    
+    const toastHtml = `
+        <div id="${toastId}" class="toast align-items-center text-white ${bgClass} border-0" role="alert" aria-live="assertive" aria-atomic="true">
+            <div class="d-flex">
+                <div class="toast-body">${message}</div>
+                <button type="button" class="btn-close btn-close-white me-2 m-auto" data-bs-dismiss="toast" aria-label="Close"></button>
+            </div>
+        </div>
+    `;
+    
+    toastContainer.insertAdjacentHTML('beforeend', toastHtml);
+    
+    // Show toast
+    const toastElement = document.getElementById(toastId);
+    const toast = new bootstrap.Toast(toastElement, { delay: 5000 });
+    toast.show();
+    
+    // Remove toast element after it's hidden
+    toastElement.addEventListener('hidden.bs.toast', () => {
+        toastElement.remove();
+    });
+}
+</script>
+
+{% endblock %}
