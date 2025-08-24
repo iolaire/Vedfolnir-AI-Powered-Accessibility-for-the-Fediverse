@@ -1,0 +1,117 @@
+<!DOCTYPE html>
+<html>
+
+<head>
+    <title>Test Admin Functions</title>
+    <script src="http://127.0.0.1:5000/admin/static/js/admin_job_ajax.js"></script>
+    <script>
+        // Mock the Bootstrap modal objects that the functions expect
+        window.adminJobAjax = {
+            bulkActionsModal: { show: function () { console.log('Bulk Actions Modal would show'); } },
+            systemMaintenanceModal: { show: function () { console.log('System Maintenance Modal would show'); } },
+            personalJobHistoryModal: { show: function () { console.log('Personal Job History Modal would show'); } }
+        };
+
+        // Mock the showModalLoading function
+        window.showModalLoading = function (modalId, message) {
+            console.log(`Loading modal ${modalId}: ${message}`);
+        };
+    </script>
+    <style>
+        body {
+            font-family: Arial, sans-serif;
+            margin: 20px;
+        }
+
+        .test-button {
+            margin: 10px;
+            padding: 10px 20px;
+            background: #007bff;
+            color: white;
+            border: none;
+            cursor: pointer;
+        }
+
+        .test-button:hover {
+            background: #0056b3;
+        }
+
+        .result {
+            margin: 10px 0;
+            padding: 10px;
+            border: 1px solid #ddd;
+            background: #f9f9f9;
+        }
+
+        .success {
+            border-color: #28a745;
+            background: #d4edda;
+            color: #155724;
+        }
+
+        .error {
+            border-color: #dc3545;
+            background: #f8d7da;
+            color: #721c24;
+        }
+    </style>
+</head>
+
+<body>
+    <h1>Admin JavaScript Functions Test</h1>
+
+    <div>
+        <button class="test-button" onclick="testFunction('showBulkAdminActions')">Test Bulk Actions</button>
+        <button class="test-button" onclick="testFunction('showSystemMaintenanceModal')">Test System
+            Maintenance</button>
+        <button class="test-button" onclick="testFunction('showPersonalJobHistory')">Test Job History</button>
+        <button class="test-button" onclick="testAllFunctions()">Test All Functions</button>
+    </div>
+
+    <div id="results"></div>
+
+    <script>
+        function testFunction(funcName) {
+            const resultsDiv = document.getElementById('results');
+            const resultDiv = document.createElement('div');
+            resultDiv.className = 'result';
+
+            try {
+                if (typeof window[funcName] === 'function') {
+                    resultDiv.className += ' success';
+                    resultDiv.innerHTML = `✅ <strong>${funcName}</strong> is available and callable`;
+
+                    // Try to call the function (this might show modals)
+                    try {
+                        window[funcName]();
+                        resultDiv.innerHTML += '<br>📞 Function called successfully (check for modal or console output)';
+                    } catch (callError) {
+                        resultDiv.innerHTML += `<br>⚠️ Function exists but threw error when called: ${callError.message}`;
+                    }
+                } else {
+                    resultDiv.className += ' error';
+                    resultDiv.innerHTML = `❌ <strong>${funcName}</strong> is not available (type: ${typeof window[funcName]})`;
+                }
+            } catch (error) {
+                resultDiv.className += ' error';
+                resultDiv.innerHTML = `❌ Error testing <strong>${funcName}</strong>: ${error.message}`;
+            }
+
+            resultsDiv.appendChild(resultDiv);
+        }
+
+        function testAllFunctions() {
+            document.getElementById('results').innerHTML = '';
+            const functions = ['showBulkAdminActions', 'showSystemMaintenanceModal', 'showPersonalJobHistory'];
+            functions.forEach(func => testFunction(func));
+        }
+
+        // Test immediately when page loads
+        window.addEventListener('load', function () {
+            console.log('Testing admin functions on page load...');
+            testAllFunctions();
+        });
+    </script>
+</body>
+
+</html>

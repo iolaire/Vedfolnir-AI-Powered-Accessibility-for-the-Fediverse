@@ -1,0 +1,539 @@
+<!-- Copyright (C) 2025 iolaire mcfadden. -->
+<!-- This program is free software: you can redistribute it and/or modify it under the terms of the GNU Affero General Public License as published by the Free Software Foundation, either version 3 of the License, or (at your option) any later version. -->
+<!-- THE SOFTWARE IS PROVIDED "AS IS", WITHOUT WARRANTY OF ANY KIND, EXPRESS OR IMPLIED, INCLUDING BUT NOT LIMITED TO THE WARRANTIES OF MERCHANTABILITY, FITNESS FOR A PARTICULAR PURPOSE AND NONINFRINGEMENT. IN NO EVENT SHALL THE AUTHORS OR COPYRIGHT HOLDERS BE LIABLE FOR ANY CLAIM, DAMAGES OR OTHER LIABILITY, WHETHER IN AN ACTION OF CONTRACT, TORT OR OTHERWISE, ARISING FROM, OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE SOFTWARE. -->
+
+{% extends "base.html" %}
+
+{% block title %}Admin Dashboard - Multi-Tenant Caption Management{% endblock %}
+
+{% block content %}
+<div class="container-fluid">
+    <div class="row">
+        <div class="col-12">
+            <h1 class="h3 mb-4">
+                <i class="fas fa-tachometer-alt"></i>
+                Admin Dashboard
+            </h1>
+        </div>
+    </div>
+
+    <!-- System Status Overview -->
+    <div class="row mb-4">
+        <div class="col-md-3">
+            <div class="card bg-primary text-white">
+                <div class="card-body">
+                    <div class="d-flex justify-content-between">
+                        <div>
+                            <h5 class="card-title">Total Users</h5>
+                            <h2>{{ stats.total_users }}</h2>
+                        </div>
+                        <div class="align-self-center">
+                            <i class="fas fa-users fa-2x"></i>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+        <div class="col-md-3">
+            <div class="card bg-success text-white">
+                <div class="card-body">
+                    <div class="d-flex justify-content-between">
+                        <div>
+                            <h5 class="card-title">Active Jobs</h5>
+                            <h2>{{ system_metrics.active_jobs }}</h2>
+                        </div>
+                        <div class="align-self-center">
+                            <i class="fas fa-cogs fa-2x"></i>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+        <div class="col-md-3">
+            <div class="card bg-info text-white">
+                <div class="card-body">
+                    <div class="d-flex justify-content-between">
+                        <div>
+                            <h5 class="card-title">Success Rate</h5>
+                            <h2>{{ "%.1f"|format(system_metrics.success_rate) }}%</h2>
+                        </div>
+                        <div class="align-self-center">
+                            <i class="fas fa-chart-line fa-2x"></i>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+        <div class="col-md-3">
+            <div class="card bg-warning text-white">
+                <div class="card-body">
+                    <div class="d-flex justify-content-between">
+                        <div>
+                            <h5 class="card-title">System Load</h5>
+                            <h2>{{ "%.1f"|format(system_metrics.system_load) }}%</h2>
+                        </div>
+                        <div class="align-self-center">
+                            <i class="fas fa-server fa-2x"></i>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- System Alerts -->
+    {% if system_alerts %}
+    <div class="row mb-4">
+        <div class="col-12">
+            <div class="card">
+                <div class="card-header">
+                    <h5 class="card-title mb-0">
+                        <i class="fas fa-exclamation-triangle text-warning"></i>
+                        System Alerts
+                    </h5>
+                </div>
+                <div class="card-body">
+                    {% for alert in system_alerts %}
+                    <div class="alert alert-{{ 'danger' if alert.severity == 'critical' else 'warning' if alert.severity == 'warning' else 'info' }} alert-dismissible fade show" role="alert">
+                        <strong>{{ alert.title }}</strong> {{ alert.message }}
+                        <small class="text-muted d-block">{{ alert.created_at }}</small>
+                        <button type="button" class="btn-close" data-bs-dismiss="alert" aria-label="Close"></button>
+                    </div>
+                    {% endfor %}
+                </div>
+            </div>
+        </div>
+    </div>
+    {% endif %}
+
+    <!-- Active Jobs Management -->
+    <div class="row mb-4">
+        <div class="col-12">
+            <div class="card">
+                <div class="card-header d-flex justify-content-between align-items-center">
+                    <h5 class="card-title mb-0">
+                        <i class="fas fa-tasks"></i>
+                        Active Caption Generation Jobs
+                    </h5>
+                    <div>
+                        <button class="btn btn-sm btn-outline-primary" onclick="refreshActiveJobs()">
+                            <i class="fas fa-sync-alt"></i> Refresh
+                        </button>
+                        <button class="btn btn-sm btn-outline-warning" onclick="pauseAllJobs()">
+                            <i class="fas fa-pause"></i> Pause All
+                        </button>
+                    </div>
+                </div>
+                <div class="card-body">
+                    {% if active_jobs %}
+                    <div class="table-responsive">
+                        <table class="table table-striped">
+                            <thead>
+                                <tr>
+                                    <th>Task ID</th>
+                                    <th>User</th>
+                                    <th>Platform</th>
+                                    <th>Status</th>
+                                    <th>Progress</th>
+                                    <th>Current Step</th>
+                                    <th>Created</th>
+                                    <th>Actions</th>
+                                </tr>
+                            </thead>
+                            <tbody>
+                                {% for job in active_jobs %}
+                                <tr>
+                                    <td>
+                                        <code>{{ job.task_id[:8] }}...</code>
+                                    </td>
+                                    <td>
+                                        <strong>{{ job.username }}</strong><br>
+                                        <small class="text-muted">{{ job.user_email }}</small>
+                                    </td>
+                                    <td>
+                                        <span class="badge bg-secondary">{{ job.platform_type }}</span><br>
+                                        <small>{{ job.platform_name }}</small>
+                                    </td>
+                                    <td>
+                                        <span class="badge bg-{{ 'success' if job.status == 'running' else 'warning' if job.status == 'queued' else 'secondary' }}">
+                                            {{ job.status.title() }}
+                                        </span>
+                                    </td>
+                                    <td>
+                                        <div class="progress" style="height: 20px;">
+                                            <div class="progress-bar" role="progressbar" 
+                                                 style="width: {{ job.progress_percentage }}%"
+                                                 aria-valuenow="{{ job.progress_percentage }}" 
+                                                 aria-valuemin="0" aria-valuemax="100">
+                                                {{ job.progress_percentage }}%
+                                            </div>
+                                        </div>
+                                    </td>
+                                    <td>{{ job.current_step }}</td>
+                                    <td>{{ job.created_at }}</td>
+                                    <td>
+                                        <div class="btn-group btn-group-sm" role="group">
+                                            <button type="button" class="btn btn-outline-info" 
+                                                    onclick="viewJobDetails('{{ job.task_id }}')"
+                                                    title="View Details">
+                                                <i class="fas fa-eye"></i>
+                                            </button>
+                                            <button type="button" class="btn btn-outline-warning" 
+                                                    onclick="pauseJob('{{ job.task_id }}')"
+                                                    title="Pause Job">
+                                                <i class="fas fa-pause"></i>
+                                            </button>
+                                            <button type="button" class="btn btn-outline-danger" 
+                                                    onclick="cancelJob('{{ job.task_id }}')"
+                                                    title="Cancel Job">
+                                                <i class="fas fa-times"></i>
+                                            </button>
+                                        </div>
+                                    </td>
+                                </tr>
+                                {% endfor %}
+                            </tbody>
+                        </table>
+                    </div>
+                    {% else %}
+                    <div class="text-center py-4">
+                        <i class="fas fa-check-circle fa-3x text-success mb-3"></i>
+                        <h5>No Active Jobs</h5>
+                        <p class="text-muted">All caption generation jobs are completed.</p>
+                    </div>
+                    {% endif %}
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- System Configuration -->
+    <div class="row mb-4">
+        <div class="col-md-6">
+            <div class="card">
+                <div class="card-header">
+                    <h5 class="card-title mb-0">
+                        <i class="fas fa-cog"></i>
+                        System Configuration
+                    </h5>
+                </div>
+                <div class="card-body">
+                    <dl class="row">
+                        <dt class="col-sm-6">Max Concurrent Jobs:</dt>
+                        <dd class="col-sm-6">{{ system_config.max_concurrent_jobs }}</dd>
+                        
+                        <dt class="col-sm-6">Job Timeout:</dt>
+                        <dd class="col-sm-6">{{ system_config.job_timeout_minutes }} minutes</dd>
+                        
+                        <dt class="col-sm-6">Max Retries:</dt>
+                        <dd class="col-sm-6">{{ system_config.max_retries }}</dd>
+                        
+                        <dt class="col-sm-6">Alert Threshold:</dt>
+                        <dd class="col-sm-6">{{ system_config.alert_threshold }}%</dd>
+                    </dl>
+                    <a href="{{ url_for('admin.configuration_management') }}" class="btn btn-primary btn-sm">
+                        <i class="fas fa-edit"></i> Manage Configuration
+                    </a>
+                </div>
+            </div>
+        </div>
+        <div class="col-md-6">
+            <div class="card">
+                <div class="card-header">
+                    <h5 class="card-title mb-0">
+                        <i class="fas fa-chart-bar"></i>
+                        Performance Metrics
+                    </h5>
+                </div>
+                <div class="card-body">
+                    <dl class="row">
+                        <dt class="col-sm-6">Completed Today:</dt>
+                        <dd class="col-sm-6">{{ system_metrics.completed_today }}</dd>
+                        
+                        <dt class="col-sm-6">Failed Jobs:</dt>
+                        <dd class="col-sm-6">{{ system_metrics.failed_jobs }}</dd>
+                        
+                        <dt class="col-sm-6">Error Rate:</dt>
+                        <dd class="col-sm-6">{{ "%.1f"|format(system_metrics.error_rate) }}%</dd>
+                        
+                        <dt class="col-sm-6">Avg Processing Time:</dt>
+                        <dd class="col-sm-6">{{ "%.1f"|format(system_metrics.avg_processing_time) }}s</dd>
+                    </dl>
+                    <a href="{{ url_for('admin.reports_dashboard') }}" class="btn btn-info btn-sm">
+                        <i class="fas fa-chart-line"></i> View Performance Dashboard
+                    </a>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Quick Actions -->
+    <div class="row">
+        <div class="col-12">
+            <div class="card">
+                <div class="card-header">
+                    <h5 class="card-title mb-0">
+                        <i class="fas fa-bolt"></i>
+                        Quick Actions
+                    </h5>
+                </div>
+                <div class="card-body">
+                    <div class="row">
+                        <div class="col-md-3 mb-2">
+                            <button class="btn btn-outline-primary w-100" onclick="viewAllUsers()">
+                                <i class="fas fa-users"></i><br>
+                                Manage Users
+                            </button>
+                        </div>
+                        <div class="col-md-3 mb-2">
+                            <button class="btn btn-outline-info w-100" onclick="viewSystemLogs()">
+                                <i class="fas fa-file-alt"></i><br>
+                                System Logs
+                            </button>
+                        </div>
+                        <div class="col-md-3 mb-2">
+                            <button class="btn btn-outline-warning w-100" onclick="systemMaintenance()">
+                                <i class="fas fa-tools"></i><br>
+                                Maintenance
+                            </button>
+                        </div>
+                        <div class="col-md-3 mb-2">
+                            <button class="btn btn-outline-success w-100" onclick="generateReport()">
+                                <i class="fas fa-chart-pie"></i><br>
+                                Generate Report
+                            </button>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+
+<!-- Job Details Modal -->
+<div class="modal fade" id="jobDetailsModal" tabindex="-1" aria-labelledby="jobDetailsModalLabel" aria-hidden="true">
+    <div class="modal-dialog modal-lg">
+        <div class="modal-content">
+            <div class="modal-header">
+                <h5 class="modal-title" id="jobDetailsModalLabel">Job Details</h5>
+                <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
+            </div>
+            <div class="modal-body" id="jobDetailsContent">
+                <!-- Job details will be loaded here -->
+            </div>
+            <div class="modal-footer">
+                <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Close</button>
+            </div>
+        </div>
+    </div>
+</div>
+
+<!-- Cancel Job Modal -->
+<div class="modal fade" id="cancelJobModal" tabindex="-1" aria-labelledby="cancelJobModalLabel" aria-hidden="true">
+    <div class="modal-dialog">
+        <div class="modal-content">
+            <div class="modal-header">
+                <h5 class="modal-title" id="cancelJobModalLabel">Cancel Job</h5>
+                <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
+            </div>
+            <div class="modal-body">
+                <p>Are you sure you want to cancel this job?</p>
+                <div class="mb-3">
+                    <label for="cancellationReason" class="form-label">Reason for cancellation:</label>
+                    <textarea class="form-control" id="cancellationReason" rows="3" placeholder="Enter reason for cancellation..."></textarea>
+                </div>
+            </div>
+            <div class="modal-footer">
+                <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Cancel</button>
+                <button type="button" class="btn btn-danger" onclick="confirmCancelJob()">Cancel Job</button>
+            </div>
+        </div>
+    </div>
+</div>
+
+<script>
+let currentJobId = null;
+
+function refreshActiveJobs() {
+    location.reload();
+}
+
+function viewJobDetails(taskId) {
+    // Load job details via AJAX
+    fetch(`/admin/api/jobs/${taskId}`)
+        .then(response => response.json())
+        .then(data => {
+            if (data.success) {
+                document.getElementById('jobDetailsContent').innerHTML = formatJobDetails(data.job);
+                new bootstrap.Modal(document.getElementById('jobDetailsModal')).show();
+            } else {
+                alert('Error loading job details: ' + data.message);
+            }
+        })
+        .catch(error => {
+            console.error('Error:', error);
+            alert('Error loading job details');
+        });
+}
+
+function pauseJob(taskId) {
+    if (confirm('Are you sure you want to pause this job?')) {
+        fetch(`/admin/api/jobs/${taskId}/pause`, {
+            method: 'POST',
+            headers: {
+                'Content-Type': 'application/json',
+                'X-CSRFToken': getCsrfToken()
+            }
+        })
+        .then(response => response.json())
+        .then(data => {
+            if (data.success) {
+                alert('Job paused successfully');
+                refreshActiveJobs();
+            } else {
+                alert('Error pausing job: ' + data.message);
+            }
+        })
+        .catch(error => {
+            console.error('Error:', error);
+            alert('Error pausing job');
+        });
+    }
+}
+
+function cancelJob(taskId) {
+    currentJobId = taskId;
+    new bootstrap.Modal(document.getElementById('cancelJobModal')).show();
+}
+
+function confirmCancelJob() {
+    const reason = document.getElementById('cancellationReason').value;
+    
+    if (!reason.trim()) {
+        alert('Please provide a reason for cancellation');
+        return;
+    }
+    
+    fetch(`/admin/api/jobs/${currentJobId}/cancel`, {
+        method: 'POST',
+        headers: {
+            'Content-Type': 'application/json',
+            'X-CSRFToken': getCsrfToken()
+        },
+        body: JSON.stringify({
+            reason: reason
+        })
+    })
+    .then(response => response.json())
+    .then(data => {
+        if (data.success) {
+            alert('Job cancelled successfully');
+            bootstrap.Modal.getInstance(document.getElementById('cancelJobModal')).hide();
+            refreshActiveJobs();
+        } else {
+            alert('Error cancelling job: ' + data.message);
+        }
+    })
+    .catch(error => {
+        console.error('Error:', error);
+        alert('Error cancelling job');
+    });
+}
+
+function pauseAllJobs() {
+    if (confirm('Are you sure you want to pause all active jobs?')) {
+        fetch('/admin/api/jobs/pause-all', {
+            method: 'POST',
+            headers: {
+                'Content-Type': 'application/json',
+                'X-CSRFToken': getCsrfToken()
+            }
+        })
+        .then(response => response.json())
+        .then(data => {
+            if (data.success) {
+                alert('All jobs paused successfully');
+                refreshActiveJobs();
+            } else {
+                alert('Error pausing jobs: ' + data.message);
+            }
+        })
+        .catch(error => {
+            console.error('Error:', error);
+            alert('Error pausing jobs');
+        });
+    }
+}
+
+function viewAllUsers() {
+    window.location.href = '/admin/users';
+}
+
+function viewSystemLogs() {
+    window.location.href = '/admin/logs';
+}
+
+function systemMaintenance() {
+    window.location.href = '/admin/maintenance';
+}
+
+function generateReport() {
+    window.location.href = '/admin/reports';
+}
+
+function formatJobDetails(job) {
+    return `
+        <div class="row">
+            <div class="col-md-6">
+                <h6>Job Information</h6>
+                <dl class="row">
+                    <dt class="col-sm-4">Task ID:</dt>
+                    <dd class="col-sm-8"><code>${job.task_id}</code></dd>
+                    <dt class="col-sm-4">Status:</dt>
+                    <dd class="col-sm-8"><span class="badge bg-primary">${job.status}</span></dd>
+                    <dt class="col-sm-4">Progress:</dt>
+                    <dd class="col-sm-8">${job.progress_percentage}%</dd>
+                    <dt class="col-sm-4">Current Step:</dt>
+                    <dd class="col-sm-8">${job.current_step}</dd>
+                </dl>
+            </div>
+            <div class="col-md-6">
+                <h6>User Information</h6>
+                <dl class="row">
+                    <dt class="col-sm-4">Username:</dt>
+                    <dd class="col-sm-8">${job.username}</dd>
+                    <dt class="col-sm-4">Email:</dt>
+                    <dd class="col-sm-8">${job.user_email}</dd>
+                    <dt class="col-sm-4">Platform:</dt>
+                    <dd class="col-sm-8">${job.platform_name} (${job.platform_type})</dd>
+                </dl>
+            </div>
+        </div>
+        <div class="row mt-3">
+            <div class="col-12">
+                <h6>Timing Information</h6>
+                <dl class="row">
+                    <dt class="col-sm-2">Created:</dt>
+                    <dd class="col-sm-4">${job.created_at}</dd>
+                    <dt class="col-sm-2">Started:</dt>
+                    <dd class="col-sm-4">${job.started_at || 'Not started'}</dd>
+                    <dt class="col-sm-2">Estimated Completion:</dt>
+                    <dd class="col-sm-4">${job.estimated_completion}</dd>
+                </dl>
+            </div>
+        </div>
+    `;
+}
+
+function getCsrfToken() {
+    return document.querySelector('meta[name=csrf-token]')?.getAttribute('content') || '';
+}
+
+// Auto-refresh every 30 seconds
+setInterval(function() {
+    if (document.visibilityState === 'visible') {
+        refreshActiveJobs();
+    }
+}, 30000);
+</script>
+{% endblock %}

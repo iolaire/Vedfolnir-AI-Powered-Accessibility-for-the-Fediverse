@@ -8,7 +8,7 @@ from flask import jsonify, request
 from flask_login import current_user
 from models import UserRole
 from ..security.admin_access_control import admin_api_required
-from datetime import datetime, timezone
+from datetime import datetime, timezone, timedelta
 import logging
 
 logger = logging.getLogger(__name__)
@@ -165,6 +165,98 @@ def register_api_routes(bp):
                 'success': False,
                 'error': 'Failed to retrieve platform statistics'
             }), 500
+    
+    @bp.route('/api/alerts', methods=['GET'])
+    @admin_api_required
+    def get_alerts():
+        """Get system alerts for admin dashboard"""
+        try:
+            from flask import current_app
+            
+            # Get alerts from error recovery manager if available
+            alerts = []
+            
+            # Try to get alerts from error recovery manager
+            try:
+                from error_recovery_manager import ErrorRecoveryManager
+                error_manager = getattr(current_app, 'error_recovery_manager', None)
+                if error_manager:
+                    notifications = error_manager.get_admin_notifications(unread_only=True)
+                    for i, notification in enumerate(notifications):
+                        alerts.append({
+                            'id': f"error_{i}",
+                            'title': f"{notification.get('category', 'System')} Alert",
+                            'message': notification.get('message', 'System alert'),
+                            'severity': notification.get('severity', 'warning').lower(),
+                            'created_at': notification.get('timestamp', datetime.utcnow().isoformat()),
+                            'component': notification.get('component', 'system')
+                        })
+            except Exception as e:
+                logger.debug(f"Could not get error manager alerts: {e}")
+            
+            # Try to get alerts from session alerting system
+            try:
+                from session_alerting_system import SessionAlertingSystem
+                session_alerting = getattr(current_app, 'session_alerting_system', None)
+                if session_alerting:
+                    session_alerts = session_alerting.get_recent_alerts(limit=10)
+                    for alert in session_alerts:
+                        alerts.append({
+                            'id': f"session_{alert.id}",
+                            'title': alert.title,
+                            'message': alert.message,
+                            'severity': alert.severity.value.lower(),
+                            'created_at': alert.created_at.isoformat(),
+                            'component': alert.component
+                        })
+            except Exception as e:
+                logger.debug(f"Could not get session alerts: {e}")
+            
+            # If no alerts from managers, create some sample system status alerts
+            if not alerts:
+                from flask import current_app
+                session_manager = current_app.request_session_manager
+                
+                with session_manager.session_scope() as db_session:
+                    from models import User
+                    from datetime import datetime, timedelta
+                    
+                    # Check for system health indicators
+                    recent_time = datetime.utcnow() - timedelta(hours=1)
+                    
+                    # Check for recent user activity
+                    recent_users = db_session.query(User).filter(
+                        User.last_login >= recent_time
+                    ).count()
+                    
+                    if recent_users == 0:
+                        alerts.append({
+                            'id': 'no_recent_activity',
+                            'title': 'Low User Activity',
+                            'message': 'No users have logged in within the last hour',
+                            'severity': 'info',
+                            'created_at': datetime.utcnow().isoformat(),
+                            'component': 'user_activity'
+                        })
+            
+            return jsonify({
+                'success': True,
+                'alerts': alerts
+            })
+            
+        except Exception as e:
+            logger.error(f"Error getting alerts for admin {current_user.id}: {e}")
+            return jsonify({
+                'success': False,
+                'error': 'Failed to retrieve alerts'
+            }), 500
+    
+    @bp.route('/api/notifications', methods=['GET'])
+    @admin_api_required
+    def get_notifications():
+        """Get admin notifications (alias for alerts)"""
+        # This is an alias for the alerts endpoint to handle the 404 error
+        return get_alerts()
     
     @bp.route('/alerts/<alert_id>/acknowledge', methods=['POST'])
     @admin_api_required

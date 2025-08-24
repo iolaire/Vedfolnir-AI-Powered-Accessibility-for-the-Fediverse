@@ -1,0 +1,328 @@
+<!-- Copyright (C) 2025 iolaire mcfadden. -->
+<!-- This program is free software: you can redistribute it and/or modify it under the terms of the GNU Affero General Public License as published by the Free Software Foundation, either version 3 of the License, or (at your option) any later version. -->
+<!-- THE SOFTWARE IS PROVIDED "AS IS", WITHOUT WARRANTY OF ANY KIND, EXPRESS OR IMPLIED, INCLUDING BUT NOT LIMITED TO THE WARRANTIES OF MERCHANTABILITY, FITNESS FOR A PARTICULAR PURPOSE AND NONINFRINGEMENT. IN NO EVENT SHALL THE AUTHORS OR COPYRIGHT HOLDERS BE LIABLE FOR ANY CLAIM, DAMAGES OR OTHER LIABILITY, WHETHER IN AN ACTION OF CONTRACT, TORT OR OTHERWISE, ARISING FROM, OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE SOFTWARE. -->
+
+{% extends "base_admin.html" %}
+
+{% block title %}Restart Failed Jobs - Maintenance - Admin - Vedfolnir{% endblock %}
+
+{% block content %}
+<div class="d-flex justify-content-between flex-wrap flex-md-nowrap align-items-center pt-3 pb-2 mb-3 border-bottom">
+    <h1 class="h2">
+        <i class="bi bi-arrow-clockwise text-success"></i> Restart Failed Jobs
+    </h1>
+    <div class="btn-toolbar mb-2 mb-md-0">
+        <div class="btn-group me-2">
+            <a href="{{ url_for('admin.system_maintenance') }}" class="btn btn-sm btn-outline-secondary">
+                <i class="bi bi-arrow-left"></i> Back to System Maintenance
+            </a>
+        </div>
+    </div>
+</div>
+
+<!-- Info Alert -->
+<div class="alert alert-info">
+    <div class="d-flex align-items-center">
+        <i class="bi bi-info-circle-fill me-3 display-6"></i>
+        <div>
+            <h5 class="alert-heading">Restart Failed Jobs</h5>
+            <p class="mb-0">
+                This action will create new jobs for all failed caption generation tasks. 
+                The original failed jobs will remain in the system for audit purposes.
+            </p>
+        </div>
+    </div>
+</div>
+
+<!-- Failed Jobs Status -->
+<div class="row mb-4">
+    <div class="col-md-12">
+        <div class="card">
+            <div class="card-header">
+                <h5 class="card-title mb-0">
+                    <i class="bi bi-exclamation-triangle"></i> Failed Jobs Overview
+                    <span class="badge bg-danger ms-2">{{ failed_jobs_count }} failed jobs</span>
+                </h5>
+            </div>
+            <div class="card-body">
+                {% if failed_jobs_count > 0 %}
+                    <div class="table-responsive">
+                        <table class="table table-sm">
+                            <thead>
+                                <tr>
+                                    <th>Job ID</th>
+                                    <th>User</th>
+                                    <th>Platform</th>
+                                    <th>Failed At</th>
+                                    <th>Error</th>
+                                    <th>Select</th>
+                                </tr>
+                            </thead>
+                            <tbody>
+                                {% for job in failed_jobs[:10] %}
+                                <tr>
+                                    <td><code class="small">{{ job.task_id[:8] }}...</code></td>
+                                    <td>{{ job.username }}</td>
+                                    <td>{{ job.platform_name }} ({{ job.platform_type }})</td>
+                                    <td>{{ job.created_at.strftime('%Y-%m-%d %H:%M') if job.created_at else 'Unknown' }}</td>
+                                    <td class="small text-muted">{{ job.error_message[:50] }}{% if job.error_message|length > 50 %}...{% endif %}</td>
+                                    <td>
+                                        <input type="checkbox" class="form-check-input job-checkbox" 
+                                               value="{{ job.task_id }}" checked>
+                                    </td>
+                                </tr>
+                                {% endfor %}
+                                {% if failed_jobs_count > 10 %}
+                                <tr>
+                                    <td colspan="6" class="text-center text-muted">
+                                        ... and {{ failed_jobs_count - 10 }} more failed jobs
+                                    </td>
+                                </tr>
+                                {% endif %}
+                            </tbody>
+                        </table>
+                    </div>
+                {% else %}
+                    <div class="text-center py-4">
+                        <i class="bi bi-check-circle display-4 text-success"></i>
+                        <h5 class="mt-3">No Failed Jobs</h5>
+                        <p class="text-muted">There are currently no failed jobs to restart.</p>
+                    </div>
+                {% endif %}
+            </div>
+        </div>
+    </div>
+</div>
+
+<!-- Restart Form -->
+<div class="row">
+    <div class="col-md-8">
+        {% if failed_jobs_count > 0 %}
+        <div class="card">
+            <div class="card-header">
+                <h5 class="card-title mb-0">
+                    <i class="bi bi-arrow-clockwise"></i> Restart Configuration
+                </h5>
+            </div>
+            <div class="card-body">
+                <form method="post" action="/admin/api/system-maintenance/execute">
+                    <input type="hidden" name="csrf_token" value="{{ csrf_token() }}"/>
+                    <input type="hidden" name="action" value="restart_failed"/>
+                    
+                    <div class="mb-4">
+                        <label class="form-label">
+                            <strong>Jobs to Restart</strong>
+                        </label>
+                        <div class="form-check">
+                            <input class="form-check-input" type="radio" name="restart_scope" id="restartAll" value="all" checked>
+                            <label class="form-check-label" for="restartAll">
+                                <strong>Restart All Failed Jobs</strong> ({{ failed_jobs_count }} jobs)
+                            </label>
+                        </div>
+                        <div class="form-check">
+                            <input class="form-check-input" type="radio" name="restart_scope" id="restartSelected" value="selected">
+                            <label class="form-check-label" for="restartSelected">
+                                <strong>Restart Selected Jobs Only</strong> (<span id="selectedCount">{{ failed_jobs_count }}</span> selected)
+                            </label>
+                        </div>
+                    </div>
+                    
+                    <div class="mb-4">
+                        <label for="reason" class="form-label">
+                            <strong>Reason for Restart</strong>
+                        </label>
+                        <textarea class="form-control" id="reason" name="reason" rows="3"
+                                  placeholder="Optional: Provide a reason for restarting these jobs (e.g., system issue resolved, updated configuration, etc.)"></textarea>
+                        <div class="form-text">
+                            This reason will be logged and may be visible to users.
+                        </div>
+                    </div>
+                    
+                    <div class="mb-4">
+                        <label class="form-label">
+                            <strong>Restart Options</strong>
+                        </label>
+                        <div class="form-check">
+                            <input class="form-check-input" type="checkbox" id="notifyUsers" name="notifyUsers" checked>
+                            <label class="form-check-label" for="notifyUsers">
+                                <strong>Notify Users</strong>
+                            </label>
+                            <div class="form-text">
+                                Send notifications to users that their failed jobs are being restarted.
+                            </div>
+                        </div>
+                        <div class="form-check">
+                            <input class="form-check-input" type="checkbox" id="highPriority" name="highPriority">
+                            <label class="form-check-label" for="highPriority">
+                                <strong>High Priority</strong>
+                            </label>
+                            <div class="form-text">
+                                Process restarted jobs with higher priority in the queue.
+                            </div>
+                        </div>
+                        <div class="form-check">
+                            <input class="form-check-input" type="checkbox" id="preserveSettings" name="preserveSettings" checked>
+                            <label class="form-check-label" for="preserveSettings">
+                                <strong>Preserve Original Settings</strong>
+                            </label>
+                            <div class="form-text">
+                                Use the same settings as the original failed jobs.
+                            </div>
+                        </div>
+                    </div>
+                    
+                    <div class="mb-4">
+                        <div class="form-check">
+                            <input class="form-check-input" type="checkbox" id="confirmRestart" required>
+                            <label class="form-check-label" for="confirmRestart">
+                                <strong>I understand this will create new jobs for failed tasks</strong> <span class="text-danger">*</span>
+                            </label>
+                            <div class="form-text">
+                                Confirm that you want to restart the selected failed jobs.
+                            </div>
+                        </div>
+                    </div>
+                    
+                    <!-- Hidden input for selected job IDs -->
+                    <input type="hidden" name="selected_jobs" id="selectedJobs" value="">
+                    
+                    <div class="d-grid gap-2 d-md-flex justify-content-md-end">
+                        <a href="{{ url_for('admin.system_maintenance') }}" class="btn btn-secondary">
+                            <i class="bi bi-x-circle"></i> Cancel
+                        </a>
+                        <button type="submit" class="btn btn-success">
+                            <i class="bi bi-arrow-clockwise"></i> Restart Jobs
+                        </button>
+                    </div>
+                </form>
+            </div>
+        </div>
+        {% else %}
+        <div class="card">
+            <div class="card-body text-center py-5">
+                <i class="bi bi-check-circle display-4 text-success"></i>
+                <h5 class="mt-3">No Failed Jobs to Restart</h5>
+                <p class="text-muted">All jobs are either completed successfully or currently running.</p>
+                <a href="{{ url_for('admin.system_maintenance') }}" class="btn btn-primary">
+                    <i class="bi bi-arrow-left"></i> Back to System Maintenance
+                </a>
+            </div>
+        </div>
+        {% endif %}
+    </div>
+    
+    <div class="col-md-4">
+        <!-- Restart Information -->
+        <div class="card">
+            <div class="card-header">
+                <h6 class="card-title mb-0">
+                    <i class="bi bi-info-circle"></i> How Restart Works
+                </h6>
+            </div>
+            <div class="card-body">
+                <div class="small">
+                    <h6>What happens when jobs are restarted:</h6>
+                    <ul class="mb-3">
+                        <li>New jobs created with same settings</li>
+                        <li>Original failed jobs remain for audit</li>
+                        <li>Jobs added to queue for processing</li>
+                        <li>Users notified of restart (if enabled)</li>
+                    </ul>
+                    
+                    <h6>Job Processing:</h6>
+                    <ul class="mb-0">
+                        <li>Restarted jobs use current system settings</li>
+                        <li>Platform connections are re-validated</li>
+                        <li>Previous progress is not carried over</li>
+                        <li>Fresh start with clean state</li>
+                    </ul>
+                </div>
+            </div>
+        </div>
+        
+        <!-- Statistics -->
+        <div class="card mt-3">
+            <div class="card-header">
+                <h6 class="card-title mb-0">
+                    <i class="bi bi-bar-chart"></i> Failure Statistics
+                </h6>
+            </div>
+            <div class="card-body">
+                <div class="small">
+                    <div class="d-flex justify-content-between mb-2">
+                        <span>Total Failed Jobs:</span>
+                        <span class="badge bg-danger">{{ failed_jobs_count }}</span>
+                    </div>
+                    <div class="d-flex justify-content-between mb-2">
+                        <span>Unique Users Affected:</span>
+                        <span class="badge bg-warning">{{ failed_jobs|map(attribute='username')|unique|list|length }}</span>
+                    </div>
+                    <div class="d-flex justify-content-between mb-2">
+                        <span>Platforms Affected:</span>
+                        <span class="badge bg-info">{{ failed_jobs|map(attribute='platform_type')|unique|list|length }}</span>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+{% endblock %}
+
+{% block extra_js %}
+<script>
+document.addEventListener('DOMContentLoaded', function() {
+    const checkboxes = document.querySelectorAll('.job-checkbox');
+    const selectedCountSpan = document.getElementById('selectedCount');
+    const selectedJobsInput = document.getElementById('selectedJobs');
+    const restartAllRadio = document.getElementById('restartAll');
+    const restartSelectedRadio = document.getElementById('restartSelected');
+    
+    function updateSelectedCount() {
+        const selected = Array.from(checkboxes).filter(cb => cb.checked);
+        selectedCountSpan.textContent = selected.length;
+        selectedJobsInput.value = selected.map(cb => cb.value).join(',');
+    }
+    
+    // Update count when checkboxes change
+    checkboxes.forEach(checkbox => {
+        checkbox.addEventListener('change', updateSelectedCount);
+    });
+    
+    // Handle radio button changes
+    restartAllRadio.addEventListener('change', function() {
+        if (this.checked) {
+            checkboxes.forEach(cb => cb.checked = true);
+            updateSelectedCount();
+        }
+    });
+    
+    restartSelectedRadio.addEventListener('change', function() {
+        if (this.checked) {
+            // Don't change checkbox states, just update the mode
+            updateSelectedCount();
+        }
+    });
+    
+    // Initial count
+    updateSelectedCount();
+    
+    // Form submission confirmation
+    document.querySelector('form')?.addEventListener('submit', function(e) {
+        const confirmed = document.getElementById('confirmRestart')?.checked;
+        const selectedJobs = selectedJobsInput.value.split(',').filter(id => id.length > 0);
+        const restartAll = restartAllRadio.checked;
+        
+        if (!confirmed) {
+            return; // Let browser validation handle this
+        }
+        
+        const jobCount = restartAll ? {{ failed_jobs_count }} : selectedJobs.length;
+        const scope = restartAll ? 'all failed jobs' : `${jobCount} selected job(s)`;
+        
+        if (!confirm(`Are you sure you want to restart ${scope}?\\n\\nThis will create ${jobCount} new job(s) in the queue.`)) {
+            e.preventDefault();
+        }
+    });
+});
+</script>
+{% endblock %}

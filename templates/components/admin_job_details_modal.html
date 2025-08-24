@@ -1,0 +1,705 @@
+<!-- Copyright (C) 2025 iolaire mcfadden. -->
+<!-- This program is free software: you can redistribute it and/or modify it under the terms of the GNU Affero General Public License as published by the Free Software Foundation, either version 3 of the License, or (at your option) any later version. -->
+<!-- THE SOFTWARE IS PROVIDED "AS IS", WITHOUT WARRANTY OF ANY KIND, EXPRESS OR IMPLIED, INCLUDING BUT NOT LIMITED TO THE WARRANTIES OF MERCHANTABILITY, FITNESS FOR A PARTICULAR PURPOSE AND NONINFRINGEMENT. IN NO EVENT SHALL THE AUTHORS OR COPYRIGHT HOLDERS BE LIABLE FOR ANY CLAIM, DAMAGES OR OTHER LIABILITY, WHETHER IN AN ACTION OF CONTRACT, TORT OR OTHERWISE, ARISING FROM, OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE SOFTWARE. -->
+
+<!-- Admin Job Details Modal Component -->
+<div class="modal fade" id="jobDetailsModal" tabindex="-1" aria-labelledby="jobDetailsModalLabel" aria-hidden="true">
+    <div class="modal-dialog modal-xl">
+        <div class="modal-content">
+            <div class="modal-header">
+                <h5 class="modal-title" id="jobDetailsModalLabel">
+                    <i class="fas fa-info-circle"></i>
+                    Job Details
+                </h5>
+                <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
+            </div>
+            <div class="modal-body" id="jobDetailsContent">
+                <!-- Job details will be loaded here dynamically -->
+                <div class="text-center py-4">
+                    <div class="spinner-border text-primary" role="status">
+                        <span class="visually-hidden">Loading...</span>
+                    </div>
+                    <p class="mt-2">Loading job details...</p>
+                </div>
+            </div>
+            <div class="modal-footer">
+                <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">
+                    <i class="fas fa-times"></i>
+                    Close
+                </button>
+                <div class="btn-group" id="jobActionButtons" style="display: none;">
+                    <button type="button" class="btn btn-warning" id="pauseJobBtn">
+                        <i class="fas fa-pause"></i>
+                        Pause Job
+                    </button>
+                    <button type="button" class="btn btn-success" id="resumeJobBtn" style="display: none;">
+                        <i class="fas fa-play"></i>
+                        Resume Job
+                    </button>
+                    <button type="button" class="btn btn-info" id="prioritizeJobBtn">
+                        <i class="fas fa-arrow-up"></i>
+                        Prioritize
+                    </button>
+                    <button type="button" class="btn btn-danger" id="cancelJobBtn">
+                        <i class="fas fa-stop"></i>
+                        Cancel Job
+                    </button>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+
+<!-- Job Cancellation Modal -->
+<div class="modal fade" id="cancelJobModal" tabindex="-1" aria-labelledby="cancelJobModalLabel" aria-hidden="true">
+    <div class="modal-dialog">
+        <div class="modal-content">
+            <div class="modal-header">
+                <h5 class="modal-title" id="cancelJobModalLabel">
+                    <i class="fas fa-exclamation-triangle text-warning"></i>
+                    Cancel Job
+                </h5>
+                <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
+            </div>
+            <div class="modal-body">
+                <div class="alert alert-warning">
+                    <i class="fas fa-exclamation-triangle"></i>
+                    <strong>Warning:</strong> This action will permanently cancel the job and cannot be undone.
+                </div>
+                <div class="mb-3">
+                    <label for="cancellationReason" class="form-label">
+                        <strong>Reason for cancellation:</strong> <span class="text-danger">*</span>
+                    </label>
+                    <textarea class="form-control" id="cancellationReason" rows="3" 
+                              placeholder="Please provide a detailed reason for cancelling this job..."
+                              required></textarea>
+                    <div class="form-text">This reason will be visible to the user and logged for audit purposes.</div>
+                </div>
+                <div class="mb-3">
+                    <div class="form-check">
+                        <input class="form-check-input" type="checkbox" id="notifyUser" checked>
+                        <label class="form-check-label" for="notifyUser">
+                            Notify user via email
+                        </label>
+                    </div>
+                </div>
+            </div>
+            <div class="modal-footer">
+                <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">
+                    <i class="fas fa-times"></i>
+                    Cancel
+                </button>
+                <button type="button" class="btn btn-danger" id="confirmCancelJobBtn">
+                    <i class="fas fa-stop"></i>
+                    Cancel Job
+                </button>
+            </div>
+        </div>
+    </div>
+</div>
+
+<!-- Job Priority Modal -->
+<div class="modal fade" id="priorityModal" tabindex="-1" aria-labelledby="priorityModalLabel" aria-hidden="true">
+    <div class="modal-dialog">
+        <div class="modal-content">
+            <div class="modal-header">
+                <h5 class="modal-title" id="priorityModalLabel">
+                    <i class="fas fa-arrow-up"></i>
+                    Set Job Priority
+                </h5>
+                <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
+            </div>
+            <div class="modal-body">
+                <div class="mb-3">
+                    <label for="jobPriority" class="form-label">
+                        <strong>Priority Level:</strong>
+                    </label>
+                    <select class="form-select" id="jobPriority">
+                        <option value="LOW">Low - Process when system is idle</option>
+                        <option value="NORMAL" selected>Normal - Standard processing order</option>
+                        <option value="HIGH">High - Process before normal jobs</option>
+                        <option value="URGENT">Urgent - Process immediately</option>
+                    </select>
+                </div>
+                <div class="mb-3">
+                    <label for="priorityReason" class="form-label">
+                        <strong>Reason for priority change:</strong>
+                    </label>
+                    <textarea class="form-control" id="priorityReason" rows="2" 
+                              placeholder="Optional: Explain why this priority change is needed..."></textarea>
+                </div>
+            </div>
+            <div class="modal-footer">
+                <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">
+                    <i class="fas fa-times"></i>
+                    Cancel
+                </button>
+                <button type="button" class="btn btn-primary" id="confirmPriorityBtn">
+                    <i class="fas fa-check"></i>
+                    Update Priority
+                </button>
+            </div>
+        </div>
+    </div>
+</div>
+
+<script>
+// Global variables for job details modal
+let currentJobId = null;
+let currentJobData = null;
+
+// Job details modal functions
+function showJobDetails(taskId) {
+    currentJobId = taskId;
+    
+    // Show modal with loading state
+    const modal = new bootstrap.Modal(document.getElementById('jobDetailsModal'));
+    modal.show();
+    
+    // Load job details
+    loadJobDetails(taskId);
+}
+
+function loadJobDetails(taskId) {
+    fetch(`/admin/api/jobs/${taskId}`, {
+        method: 'GET',
+        headers: {
+            'Content-Type': 'application/json',
+            'X-CSRFToken': getCsrfToken()
+        }
+    })
+    .then(response => response.json())
+    .then(data => {
+        if (data.success) {
+            currentJobData = data.job;
+            renderJobDetails(data.job);
+            showJobActionButtons(data.job);
+        } else {
+            showJobDetailsError(data.message || 'Failed to load job details');
+        }
+    })
+    .catch(error => {
+        console.error('Error loading job details:', error);
+        showJobDetailsError('Network error occurred while loading job details');
+    });
+}
+
+function renderJobDetails(job) {
+    const content = document.getElementById('jobDetailsContent');
+    
+    const statusBadgeClass = {
+        'queued': 'bg-secondary',
+        'running': 'bg-primary',
+        'completed': 'bg-success',
+        'failed': 'bg-danger',
+        'cancelled': 'bg-warning',
+        'paused': 'bg-info'
+    }[job.status] || 'bg-secondary';
+    
+    const priorityBadgeClass = {
+        'LOW': 'bg-light text-dark',
+        'NORMAL': 'bg-secondary',
+        'HIGH': 'bg-warning text-dark',
+        'URGENT': 'bg-danger'
+    }[job.priority] || 'bg-secondary';
+    
+    content.innerHTML = `
+        <div class="row">
+            <!-- Job Overview -->
+            <div class="col-md-6">
+                <div class="card h-100">
+                    <div class="card-header">
+                        <h6 class="card-title mb-0">
+                            <i class="fas fa-info-circle"></i>
+                            Job Overview
+                        </h6>
+                    </div>
+                    <div class="card-body">
+                        <dl class="row">
+                            <dt class="col-sm-4">Task ID:</dt>
+                            <dd class="col-sm-8">
+                                <code class="small">${job.task_id}</code>
+                                <button class="btn btn-sm btn-outline-secondary ms-1" onclick="copyToClipboard('${job.task_id}')" title="Copy Task ID">
+                                    <i class="fas fa-copy"></i>
+                                </button>
+                            </dd>
+                            
+                            <dt class="col-sm-4">Status:</dt>
+                            <dd class="col-sm-8">
+                                <span class="badge ${statusBadgeClass}">${job.status.toUpperCase()}</span>
+                                ${job.admin_managed ? '<span class="badge bg-info ms-1">ADMIN MANAGED</span>' : ''}
+                            </dd>
+                            
+                            <dt class="col-sm-4">Priority:</dt>
+                            <dd class="col-sm-8">
+                                <span class="badge ${priorityBadgeClass}">${job.priority}</span>
+                            </dd>
+                            
+                            <dt class="col-sm-4">Progress:</dt>
+                            <dd class="col-sm-8">
+                                <div class="progress" style="height: 20px;">
+                                    <div class="progress-bar" role="progressbar" 
+                                         style="width: ${job.progress_percentage}%"
+                                         aria-valuenow="${job.progress_percentage}" 
+                                         aria-valuemin="0" aria-valuemax="100">
+                                        ${job.progress_percentage}%
+                                    </div>
+                                </div>
+                            </dd>
+                            
+                            <dt class="col-sm-4">Current Step:</dt>
+                            <dd class="col-sm-8">${job.current_step || 'Not started'}</dd>
+                            
+                            <dt class="col-sm-4">Retry Count:</dt>
+                            <dd class="col-sm-8">${job.retry_count || 0} / ${job.max_retries || 3}</dd>
+                        </dl>
+                    </div>
+                </div>
+            </div>
+            
+            <!-- User Information -->
+            <div class="col-md-6">
+                <div class="card h-100">
+                    <div class="card-header">
+                        <h6 class="card-title mb-0">
+                            <i class="fas fa-user"></i>
+                            User Information
+                        </h6>
+                    </div>
+                    <div class="card-body">
+                        <dl class="row">
+                            <dt class="col-sm-4">Username:</dt>
+                            <dd class="col-sm-8">
+                                <strong>${job.username}</strong>
+                                <a href="/admin/users/${job.user_id}" class="btn btn-sm btn-outline-primary ms-1" title="View User Profile">
+                                    <i class="fas fa-external-link-alt"></i>
+                                </a>
+                            </dd>
+                            
+                            <dt class="col-sm-4">Email:</dt>
+                            <dd class="col-sm-8">${job.user_email}</dd>
+                            
+                            <dt class="col-sm-4">User Role:</dt>
+                            <dd class="col-sm-8">
+                                <span class="badge bg-secondary">${job.user_role || 'USER'}</span>
+                            </dd>
+                            
+                            <dt class="col-sm-4">Platform:</dt>
+                            <dd class="col-sm-8">
+                                <strong>${job.platform_name}</strong>
+                                <br>
+                                <small class="text-muted">${job.platform_type} • ${job.platform_instance_url}</small>
+                            </dd>
+                        </dl>
+                    </div>
+                </div>
+            </div>
+        </div>
+        
+        <div class="row mt-3">
+            <!-- Timing Information -->
+            <div class="col-md-6">
+                <div class="card h-100">
+                    <div class="card-header">
+                        <h6 class="card-title mb-0">
+                            <i class="fas fa-clock"></i>
+                            Timing Information
+                        </h6>
+                    </div>
+                    <div class="card-body">
+                        <dl class="row">
+                            <dt class="col-sm-4">Created:</dt>
+                            <dd class="col-sm-8">${formatDateTime(job.created_at)}</dd>
+                            
+                            <dt class="col-sm-4">Started:</dt>
+                            <dd class="col-sm-8">${job.started_at ? formatDateTime(job.started_at) : 'Not started'}</dd>
+                            
+                            <dt class="col-sm-4">Completed:</dt>
+                            <dd class="col-sm-8">${job.completed_at ? formatDateTime(job.completed_at) : 'Not completed'}</dd>
+                            
+                            <dt class="col-sm-4">Duration:</dt>
+                            <dd class="col-sm-8">${calculateDuration(job.started_at, job.completed_at)}</dd>
+                            
+                            <dt class="col-sm-4">Estimated Completion:</dt>
+                            <dd class="col-sm-8">${job.estimated_completion || 'Calculating...'}</dd>
+                        </dl>
+                    </div>
+                </div>
+            </div>
+            
+            <!-- Job Settings -->
+            <div class="col-md-6">
+                <div class="card h-100">
+                    <div class="card-header">
+                        <h6 class="card-title mb-0">
+                            <i class="fas fa-cog"></i>
+                            Job Settings
+                        </h6>
+                    </div>
+                    <div class="card-body">
+                        <dl class="row">
+                            <dt class="col-sm-4">Images Count:</dt>
+                            <dd class="col-sm-8">${job.total_images || 'Unknown'}</dd>
+                            
+                            <dt class="col-sm-4">Processed:</dt>
+                            <dd class="col-sm-8">${job.processed_images || 0} / ${job.total_images || 0}</dd>
+                            
+                            <dt class="col-sm-4">Quality Level:</dt>
+                            <dd class="col-sm-8">${job.quality_level || 'Standard'}</dd>
+                            
+                            <dt class="col-sm-4">Language:</dt>
+                            <dd class="col-sm-8">${job.language || 'English'}</dd>
+                            
+                            <dt class="col-sm-4">Auto Publish:</dt>
+                            <dd class="col-sm-8">
+                                <span class="badge ${job.auto_publish ? 'bg-success' : 'bg-secondary'}">
+                                    ${job.auto_publish ? 'Enabled' : 'Disabled'}
+                                </span>
+                            </dd>
+                        </dl>
+                    </div>
+                </div>
+            </div>
+        </div>
+        
+        ${job.admin_notes || job.error_message || job.cancellation_reason ? `
+        <div class="row mt-3">
+            <div class="col-12">
+                <div class="card">
+                    <div class="card-header">
+                        <h6 class="card-title mb-0">
+                            <i class="fas fa-sticky-note"></i>
+                            Additional Information
+                        </h6>
+                    </div>
+                    <div class="card-body">
+                        ${job.admin_notes ? `
+                        <div class="mb-3">
+                            <strong>Admin Notes:</strong>
+                            <div class="alert alert-info mt-1">
+                                <i class="fas fa-info-circle"></i>
+                                ${job.admin_notes}
+                            </div>
+                        </div>
+                        ` : ''}
+                        
+                        ${job.error_message ? `
+                        <div class="mb-3">
+                            <strong>Error Message:</strong>
+                            <div class="alert alert-danger mt-1">
+                                <i class="fas fa-exclamation-triangle"></i>
+                                ${job.error_message}
+                            </div>
+                        </div>
+                        ` : ''}
+                        
+                        ${job.cancellation_reason ? `
+                        <div class="mb-3">
+                            <strong>Cancellation Reason:</strong>
+                            <div class="alert alert-warning mt-1">
+                                <i class="fas fa-ban"></i>
+                                ${job.cancellation_reason}
+                                ${job.cancelled_by_admin ? '<br><small class="text-muted">Cancelled by admin</small>' : ''}
+                            </div>
+                        </div>
+                        ` : ''}
+                    </div>
+                </div>
+            </div>
+        </div>
+        ` : ''}
+        
+        ${job.resource_usage ? `
+        <div class="row mt-3">
+            <div class="col-12">
+                <div class="card">
+                    <div class="card-header">
+                        <h6 class="card-title mb-0">
+                            <i class="fas fa-chart-bar"></i>
+                            Resource Usage
+                        </h6>
+                    </div>
+                    <div class="card-body">
+                        <div class="row">
+                            <div class="col-md-3">
+                                <div class="text-center">
+                                    <div class="h4 text-primary">${job.resource_usage.cpu_percent || 0}%</div>
+                                    <div class="text-muted">CPU Usage</div>
+                                </div>
+                            </div>
+                            <div class="col-md-3">
+                                <div class="text-center">
+                                    <div class="h4 text-info">${job.resource_usage.memory_mb || 0} MB</div>
+                                    <div class="text-muted">Memory</div>
+                                </div>
+                            </div>
+                            <div class="col-md-3">
+                                <div class="text-center">
+                                    <div class="h4 text-success">${job.resource_usage.processing_time || 0}s</div>
+                                    <div class="text-muted">Processing Time</div>
+                                </div>
+                            </div>
+                            <div class="col-md-3">
+                                <div class="text-center">
+                                    <div class="h4 text-warning">${job.resource_usage.api_calls || 0}</div>
+                                    <div class="text-muted">API Calls</div>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+        ` : ''}
+    `;
+}
+
+function showJobActionButtons(job) {
+    const actionButtons = document.getElementById('jobActionButtons');
+    const pauseBtn = document.getElementById('pauseJobBtn');
+    const resumeBtn = document.getElementById('resumeJobBtn');
+    const prioritizeBtn = document.getElementById('prioritizeJobBtn');
+    const cancelBtn = document.getElementById('cancelJobBtn');
+    
+    // Show action buttons
+    actionButtons.style.display = 'block';
+    
+    // Configure buttons based on job status
+    if (job.status === 'running') {
+        pauseBtn.style.display = 'inline-block';
+        resumeBtn.style.display = 'none';
+        prioritizeBtn.disabled = true;
+    } else if (job.status === 'paused') {
+        pauseBtn.style.display = 'none';
+        resumeBtn.style.display = 'inline-block';
+        prioritizeBtn.disabled = false;
+    } else if (job.status === 'queued') {
+        pauseBtn.style.display = 'none';
+        resumeBtn.style.display = 'none';
+        prioritizeBtn.disabled = false;
+    } else {
+        // Completed, failed, or cancelled jobs
+        pauseBtn.disabled = true;
+        resumeBtn.style.display = 'none';
+        prioritizeBtn.disabled = true;
+        cancelBtn.disabled = true;
+    }
+    
+    // Set up event listeners
+    pauseBtn.onclick = () => pauseJob(job.task_id);
+    resumeBtn.onclick = () => resumeJob(job.task_id);
+    prioritizeBtn.onclick = () => showPriorityModal(job.task_id, job.priority);
+    cancelBtn.onclick = () => showCancelJobModal(job.task_id);
+}
+
+function showJobDetailsError(message) {
+    const content = document.getElementById('jobDetailsContent');
+    content.innerHTML = `
+        <div class="alert alert-danger">
+            <i class="fas fa-exclamation-triangle"></i>
+            <strong>Error:</strong> ${message}
+        </div>
+        <div class="text-center">
+            <button class="btn btn-primary" onclick="loadJobDetails('${currentJobId}')">
+                <i class="fas fa-redo"></i>
+                Retry
+            </button>
+        </div>
+    `;
+}
+
+// Job action functions
+function pauseJob(taskId) {
+    performJobAction(taskId, 'pause', 'Pausing job...');
+}
+
+function resumeJob(taskId) {
+    performJobAction(taskId, 'resume', 'Resuming job...');
+}
+
+function performJobAction(taskId, action, loadingMessage) {
+    // Show loading state
+    showActionLoading(loadingMessage);
+    
+    fetch(`/admin/api/jobs/${taskId}/${action}`, {
+        method: 'POST',
+        headers: {
+            'Content-Type': 'application/json',
+            'X-CSRFToken': getCsrfToken()
+        }
+    })
+    .then(response => response.json())
+    .then(data => {
+        if (data.success) {
+            showActionSuccess(`Job ${action}d successfully`);
+            // Reload job details
+            setTimeout(() => loadJobDetails(taskId), 1000);
+        } else {
+            showActionError(data.message || `Failed to ${action} job`);
+        }
+    })
+    .catch(error => {
+        console.error(`Error ${action}ing job:`, error);
+        showActionError(`Network error occurred while ${action}ing job`);
+    });
+}
+
+function showCancelJobModal(taskId) {
+    currentJobId = taskId;
+    const modal = new bootstrap.Modal(document.getElementById('cancelJobModal'));
+    modal.show();
+    
+    // Set up cancel confirmation
+    document.getElementById('confirmCancelJobBtn').onclick = confirmCancelJob;
+}
+
+function confirmCancelJob() {
+    const reason = document.getElementById('cancellationReason').value.trim();
+    const notifyUser = document.getElementById('notifyUser').checked;
+    
+    if (!reason) {
+        alert('Please provide a reason for cancellation');
+        return;
+    }
+    
+    fetch(`/admin/api/jobs/${currentJobId}/cancel`, {
+        method: 'POST',
+        headers: {
+            'Content-Type': 'application/json',
+            'X-CSRFToken': getCsrfToken()
+        },
+        body: JSON.stringify({
+            reason: reason,
+            notify_user: notifyUser
+        })
+    })
+    .then(response => response.json())
+    .then(data => {
+        if (data.success) {
+            // Close cancel modal
+            bootstrap.Modal.getInstance(document.getElementById('cancelJobModal')).hide();
+            
+            // Show success and reload
+            showActionSuccess('Job cancelled successfully');
+            setTimeout(() => loadJobDetails(currentJobId), 1000);
+        } else {
+            showActionError(data.message || 'Failed to cancel job');
+        }
+    })
+    .catch(error => {
+        console.error('Error cancelling job:', error);
+        showActionError('Network error occurred while cancelling job');
+    });
+}
+
+function showPriorityModal(taskId, currentPriority) {
+    currentJobId = taskId;
+    
+    // Set current priority
+    document.getElementById('jobPriority').value = currentPriority;
+    
+    const modal = new bootstrap.Modal(document.getElementById('priorityModal'));
+    modal.show();
+    
+    // Set up priority confirmation
+    document.getElementById('confirmPriorityBtn').onclick = confirmPriorityChange;
+}
+
+function confirmPriorityChange() {
+    const priority = document.getElementById('jobPriority').value;
+    const reason = document.getElementById('priorityReason').value.trim();
+    
+    fetch(`/admin/api/jobs/${currentJobId}/priority`, {
+        method: 'POST',
+        headers: {
+            'Content-Type': 'application/json',
+            'X-CSRFToken': getCsrfToken()
+        },
+        body: JSON.stringify({
+            priority: priority,
+            reason: reason
+        })
+    })
+    .then(response => response.json())
+    .then(data => {
+        if (data.success) {
+            // Close priority modal
+            bootstrap.Modal.getInstance(document.getElementById('priorityModal')).hide();
+            
+            // Show success and reload
+            showActionSuccess('Job priority updated successfully');
+            setTimeout(() => loadJobDetails(currentJobId), 1000);
+        } else {
+            showActionError(data.message || 'Failed to update job priority');
+        }
+    })
+    .catch(error => {
+        console.error('Error updating job priority:', error);
+        showActionError('Network error occurred while updating job priority');
+    });
+}
+
+// Utility functions
+function formatDateTime(dateString) {
+    if (!dateString) return 'N/A';
+    
+    try {
+        const date = new Date(dateString);
+        return date.toLocaleString();
+    } catch (e) {
+        return dateString;
+    }
+}
+
+function calculateDuration(startTime, endTime) {
+    if (!startTime) return 'Not started';
+    
+    const start = new Date(startTime);
+    const end = endTime ? new Date(endTime) : new Date();
+    const duration = Math.floor((end - start) / 1000); // seconds
+    
+    if (duration < 60) return `${duration}s`;
+    if (duration < 3600) return `${Math.floor(duration / 60)}m ${duration % 60}s`;
+    
+    const hours = Math.floor(duration / 3600);
+    const minutes = Math.floor((duration % 3600) / 60);
+    return `${hours}h ${minutes}m`;
+}
+
+function copyToClipboard(text) {
+    navigator.clipboard.writeText(text).then(() => {
+        // Show temporary success feedback
+        const event = new CustomEvent('showToast', {
+            detail: { message: 'Task ID copied to clipboard', type: 'success' }
+        });
+        document.dispatchEvent(event);
+    }).catch(err => {
+        console.error('Failed to copy text: ', err);
+    });
+}
+
+function showActionLoading(message) {
+    // Implementation depends on your notification system
+    console.log(message);
+}
+
+function showActionSuccess(message) {
+    // Implementation depends on your notification system
+    const event = new CustomEvent('showToast', {
+        detail: { message: message, type: 'success' }
+    });
+    document.dispatchEvent(event);
+}
+
+function showActionError(message) {
+    // Implementation depends on your notification system
+    const event = new CustomEvent('showToast', {
+        detail: { message: message, type: 'error' }
+    });
+    document.dispatchEvent(event);
+}
+
+function getCsrfToken() {
+    return document.querySelector('meta[name=csrf-token]')?.getAttribute('content') || '';
+}
+</script>

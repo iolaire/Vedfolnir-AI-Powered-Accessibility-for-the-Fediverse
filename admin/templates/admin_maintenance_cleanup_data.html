@@ -1,0 +1,357 @@
+<!-- Copyright (C) 2025 iolaire mcfadden. -->
+<!-- This program is free software: you can redistribute it and/or modify it under the terms of the GNU Affero General Public License as published by the Free Software Foundation, either version 3 of the License, or (at your option) any later version. -->
+<!-- THE SOFTWARE IS PROVIDED "AS IS", WITHOUT WARRANTY OF ANY KIND, EXPRESS OR IMPLIED, INCLUDING BUT NOT LIMITED TO THE WARRANTIES OF MERCHANTABILITY, FITNESS FOR A PARTICULAR PURPOSE AND NONINFRINGEMENT. IN NO EVENT SHALL THE AUTHORS OR COPYRIGHT HOLDERS BE LIABLE FOR ANY CLAIM, DAMAGES OR OTHER LIABILITY, WHETHER IN AN ACTION OF CONTRACT, TORT OR OTHERWISE, ARISING FROM, OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE SOFTWARE. -->
+
+{% extends "base_admin.html" %}
+
+{% block title %}Cleanup Old Data - Maintenance - Admin - Vedfolnir{% endblock %}
+
+{% block content %}
+<div class="d-flex justify-content-between flex-wrap flex-md-nowrap align-items-center pt-3 pb-2 mb-3 border-bottom">
+    <h1 class="h2">
+        <i class="bi bi-broom text-info"></i> Cleanup Old Data
+    </h1>
+    <div class="btn-toolbar mb-2 mb-md-0">
+        <div class="btn-group me-2">
+            <a href="{{ url_for('admin.system_maintenance') }}" class="btn btn-sm btn-outline-secondary">
+                <i class="bi bi-arrow-left"></i> Back to System Maintenance
+            </a>
+        </div>
+    </div>
+</div>
+
+<!-- Info Alert -->
+<div class="alert alert-info">
+    <div class="d-flex align-items-center">
+        <i class="bi bi-info-circle-fill me-3 display-6"></i>
+        <div>
+            <h5 class="alert-heading">Data Cleanup</h5>
+            <p class="mb-0">
+                This maintenance action will remove old completed jobs, failed jobs, and orphaned data to free up storage space and improve system performance.
+            </p>
+        </div>
+    </div>
+</div>
+
+<!-- Cleanup Statistics -->
+<div class="row mb-4">
+    <div class="col-md-12">
+        <div class="card">
+            <div class="card-header">
+                <h5 class="card-title mb-0">
+                    <i class="bi bi-pie-chart"></i> Data to be Cleaned
+                    <span class="badge bg-info ms-2">{{ cleanup_stats.total_cleanable }} items total</span>
+                </h5>
+            </div>
+            <div class="card-body">
+                <div class="row text-center">
+                    <div class="col-md-4">
+                        <div class="card border-success">
+                            <div class="card-body">
+                                <div class="display-6 text-success">{{ cleanup_stats.old_completed_jobs }}</div>
+                                <h6>Old Completed Jobs</h6>
+                                <small class="text-muted">Older than 30 days</small>
+                            </div>
+                        </div>
+                    </div>
+                    <div class="col-md-4">
+                        <div class="card border-warning">
+                            <div class="card-body">
+                                <div class="display-6 text-warning">{{ cleanup_stats.old_failed_jobs }}</div>
+                                <h6>Old Failed Jobs</h6>
+                                <small class="text-muted">Older than 7 days</small>
+                            </div>
+                        </div>
+                    </div>
+                    <div class="col-md-4">
+                        <div class="card border-secondary">
+                            <div class="card-body">
+                                <div class="display-6 text-secondary">{{ cleanup_stats.orphaned_images }}</div>
+                                <h6>Orphaned Images</h6>
+                                <small class="text-muted">No associated posts</small>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+
+<!-- Cleanup Form -->
+<div class="row">
+    <div class="col-md-8">
+        {% if cleanup_stats.total_cleanable > 0 %}
+        <div class="card">
+            <div class="card-header">
+                <h5 class="card-title mb-0">
+                    <i class="bi bi-broom"></i> Cleanup Configuration
+                </h5>
+            </div>
+            <div class="card-body">
+                <form method="post" action="/admin/api/system-maintenance/execute">
+                    <input type="hidden" name="csrf_token" value="{{ csrf_token() }}"/>
+                    <input type="hidden" name="action" value="cleanup_old_data"/>
+                    
+                    <div class="mb-4">
+                        <label class="form-label">
+                            <strong>Data Types to Clean</strong>
+                        </label>
+                        
+                        {% if cleanup_stats.old_completed_jobs > 0 %}
+                        <div class="form-check">
+                            <input class="form-check-input" type="checkbox" id="cleanCompletedJobs" name="cleanup_types" value="completed_jobs" checked>
+                            <label class="form-check-label" for="cleanCompletedJobs">
+                                <strong>Old Completed Jobs</strong> ({{ cleanup_stats.old_completed_jobs }} jobs)
+                            </label>
+                            <div class="form-text">
+                                Remove completed jobs older than 30 days. Job results and captions will be preserved.
+                            </div>
+                        </div>
+                        {% endif %}
+                        
+                        {% if cleanup_stats.old_failed_jobs > 0 %}
+                        <div class="form-check">
+                            <input class="form-check-input" type="checkbox" id="cleanFailedJobs" name="cleanup_types" value="failed_jobs" checked>
+                            <label class="form-check-label" for="cleanFailedJobs">
+                                <strong>Old Failed Jobs</strong> ({{ cleanup_stats.old_failed_jobs }} jobs)
+                            </label>
+                            <div class="form-text">
+                                Remove failed jobs older than 7 days. Error logs will be preserved for audit.
+                            </div>
+                        </div>
+                        {% endif %}
+                        
+                        {% if cleanup_stats.orphaned_images > 0 %}
+                        <div class="form-check">
+                            <input class="form-check-input" type="checkbox" id="cleanOrphanedImages" name="cleanup_types" value="orphaned_images" checked>
+                            <label class="form-check-label" for="cleanOrphanedImages">
+                                <strong>Orphaned Images</strong> ({{ cleanup_stats.orphaned_images }} images)
+                            </label>
+                            <div class="form-text">
+                                Remove image files that are no longer associated with any posts.
+                            </div>
+                        </div>
+                        {% endif %}
+                    </div>
+                    
+                    <div class="mb-4">
+                        <label class="form-label">
+                            <strong>Cleanup Options</strong>
+                        </label>
+                        <div class="form-check">
+                            <input class="form-check-input" type="checkbox" id="createBackup" name="createBackup" checked>
+                            <label class="form-check-label" for="createBackup">
+                                <strong>Create Backup Before Cleanup</strong>
+                            </label>
+                            <div class="form-text">
+                                Create a backup of data before deletion (recommended).
+                            </div>
+                        </div>
+                        <div class="form-check">
+                            <input class="form-check-input" type="checkbox" id="dryRun" name="dryRun">
+                            <label class="form-check-label" for="dryRun">
+                                <strong>Dry Run (Preview Only)</strong>
+                            </label>
+                            <div class="form-text">
+                                Show what would be cleaned without actually deleting anything.
+                            </div>
+                        </div>
+                        <div class="form-check">
+                            <input class="form-check-input" type="checkbox" id="optimizeDatabase" name="optimizeDatabase" checked>
+                            <label class="form-check-label" for="optimizeDatabase">
+                                <strong>Optimize Database After Cleanup</strong>
+                            </label>
+                            <div class="form-text">
+                                Run database optimization to reclaim freed space.
+                            </div>
+                        </div>
+                    </div>
+                    
+                    <div class="mb-4">
+                        <label for="reason" class="form-label">
+                            <strong>Reason for Cleanup</strong>
+                        </label>
+                        <textarea class="form-control" id="reason" name="reason" rows="3"
+                                  placeholder="Optional: Provide a reason for this cleanup (e.g., scheduled maintenance, storage optimization, performance improvement, etc.)"></textarea>
+                        <div class="form-text">
+                            This reason will be logged for audit purposes.
+                        </div>
+                    </div>
+                    
+                    <div class="mb-4">
+                        <div class="form-check">
+                            <input class="form-check-input" type="checkbox" id="confirmCleanup" required>
+                            <label class="form-check-label" for="confirmCleanup">
+                                <strong>I understand this will permanently remove selected data</strong> <span class="text-danger">*</span>
+                            </label>
+                            <div class="form-text">
+                                Confirm that you want to proceed with the data cleanup.
+                            </div>
+                        </div>
+                    </div>
+                    
+                    <div class="d-grid gap-2 d-md-flex justify-content-md-end">
+                        <a href="{{ url_for('admin.system_maintenance') }}" class="btn btn-secondary">
+                            <i class="bi bi-x-circle"></i> Cancel
+                        </a>
+                        <button type="submit" class="btn btn-info">
+                            <i class="bi bi-broom"></i> Start Cleanup
+                        </button>
+                    </div>
+                </form>
+            </div>
+        </div>
+        {% else %}
+        <div class="card">
+            <div class="card-body text-center py-5">
+                <i class="bi bi-check-circle display-4 text-success"></i>
+                <h5 class="mt-3">No Data to Clean</h5>
+                <p class="text-muted">The system is already clean. There's no old data that needs to be removed.</p>
+                <a href="{{ url_for('admin.system_maintenance') }}" class="btn btn-primary">
+                    <i class="bi bi-arrow-left"></i> Back to System Maintenance
+                </a>
+            </div>
+        </div>
+        {% endif %}
+    </div>
+    
+    <div class="col-md-4">
+        <!-- Cleanup Information -->
+        <div class="card">
+            <div class="card-header">
+                <h6 class="card-title mb-0">
+                    <i class="bi bi-info-circle"></i> What Gets Cleaned
+                </h6>
+            </div>
+            <div class="card-body">
+                <div class="small">
+                    <h6>Completed Jobs (30+ days old):</h6>
+                    <ul class="mb-3">
+                        <li>Job execution records</li>
+                        <li>Processing logs and metadata</li>
+                        <li>Temporary processing files</li>
+                        <li><strong>Preserved:</strong> Generated captions and results</li>
+                    </ul>
+                    
+                    <h6>Failed Jobs (7+ days old):</h6>
+                    <ul class="mb-3">
+                        <li>Failed job records</li>
+                        <li>Temporary processing data</li>
+                        <li><strong>Preserved:</strong> Error logs for audit</li>
+                    </ul>
+                    
+                    <h6>Orphaned Images:</h6>
+                    <ul class="mb-0">
+                        <li>Image files without posts</li>
+                        <li>Unused cached images</li>
+                        <li>Temporary image processing files</li>
+                    </ul>
+                </div>
+            </div>
+        </div>
+        
+        <!-- Storage Impact -->
+        <div class="card mt-3">
+            <div class="card-header">
+                <h6 class="card-title mb-0">
+                    <i class="bi bi-hdd"></i> Storage Impact
+                </h6>
+            </div>
+            <div class="card-body">
+                <div class="small">
+                    <h6>Estimated Space Savings:</h6>
+                    <div class="d-flex justify-content-between mb-2">
+                        <span>Database:</span>
+                        <span class="badge bg-success">~{{ (cleanup_stats.old_completed_jobs + cleanup_stats.old_failed_jobs) * 0.5 }}MB</span>
+                    </div>
+                    <div class="d-flex justify-content-between mb-2">
+                        <span>Image Files:</span>
+                        <span class="badge bg-info">~{{ cleanup_stats.orphaned_images * 2 }}MB</span>
+                    </div>
+                    <div class="d-flex justify-content-between mb-3">
+                        <span>Total Estimated:</span>
+                        <span class="badge bg-primary">~{{ ((cleanup_stats.old_completed_jobs + cleanup_stats.old_failed_jobs) * 0.5) + (cleanup_stats.orphaned_images * 2) }}MB</span>
+                    </div>
+                    
+                    <h6>Performance Benefits:</h6>
+                    <ul class="mb-0">
+                        <li>Faster database queries</li>
+                        <li>Reduced backup size</li>
+                        <li>Improved system responsiveness</li>
+                        <li>More available storage space</li>
+                    </ul>
+                </div>
+            </div>
+        </div>
+        
+        <!-- Safety Information -->
+        <div class="card mt-3">
+            <div class="card-header">
+                <h6 class="card-title mb-0">
+                    <i class="bi bi-shield-check"></i> Safety Features
+                </h6>
+            </div>
+            <div class="card-body">
+                <div class="small">
+                    <ul class="mb-0">
+                        <li><strong>Backup:</strong> Data backed up before deletion</li>
+                        <li><strong>Dry Run:</strong> Preview changes before applying</li>
+                        <li><strong>Selective:</strong> Choose what to clean</li>
+                        <li><strong>Audit Trail:</strong> All actions logged</li>
+                        <li><strong>Recovery:</strong> Backups can be restored if needed</li>
+                    </ul>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+{% endblock %}
+
+{% block extra_js %}
+<script>
+document.addEventListener('DOMContentLoaded', function() {
+    const dryRunCheckbox = document.getElementById('dryRun');
+    const submitButton = document.querySelector('button[type="submit"]');
+    const confirmCheckbox = document.getElementById('confirmCleanup');
+    
+    // Update button text based on dry run mode
+    function updateButtonText() {
+        if (dryRunCheckbox?.checked) {
+            submitButton.innerHTML = '<i class="bi bi-eye"></i> Preview Cleanup';
+            submitButton.className = 'btn btn-outline-info';
+        } else {
+            submitButton.innerHTML = '<i class="bi bi-broom"></i> Start Cleanup';
+            submitButton.className = 'btn btn-info';
+        }
+    }
+    
+    dryRunCheckbox?.addEventListener('change', updateButtonText);
+    updateButtonText();
+    
+    // Form submission confirmation
+    document.querySelector('form')?.addEventListener('submit', function(e) {
+        const confirmed = confirmCheckbox?.checked;
+        const isDryRun = dryRunCheckbox?.checked;
+        const selectedTypes = Array.from(document.querySelectorAll('input[name="cleanup_types"]:checked'));
+        
+        if (!confirmed) {
+            return; // Let browser validation handle this
+        }
+        
+        if (selectedTypes.length === 0) {
+            alert('Please select at least one type of data to clean.');
+            e.preventDefault();
+            return;
+        }
+        
+        const typeNames = selectedTypes.map(cb => cb.nextElementSibling.textContent.trim()).join(', ');
+        const action = isDryRun ? 'preview cleanup for' : 'permanently clean';
+        
+        if (!confirm(`Are you sure you want to ${action}:\\n\\n${typeNames}\\n\\n${isDryRun ? 'This will show what would be cleaned without making changes.' : 'This action cannot be undone (unless you have backups enabled).'}`)) {
+            e.preventDefault();
+        }
+    });
+});
+</script>
+{% endblock %}

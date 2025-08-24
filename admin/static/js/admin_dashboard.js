@@ -890,8 +890,7 @@ window.toggleAllJobSelection = toggleAllJobSelection;
 window.updateSelectedJobs = updateSelectedJobs;
 window.acknowledgeAlert = acknowledgeAlert;
 window.saveSystemConfig = saveSystemConfig;
-// 
-Additional functions for modal functionality
+// Additional functions for modal functionality
 
 /**
  * Show user limits modal
@@ -1109,14 +1108,7 @@ function filterUsers() {
     });
 }
 
-/**
- * Show system maintenance modal
- */
-function showSystemMaintenanceModal() {
-    const modal = new bootstrap.Modal(document.getElementById('systemMaintenanceModal'));
-    loadSystemActivity();
-    modal.show();
-}
+
 
 /**
  * Load current system activity
@@ -1541,7 +1533,7 @@ window.selectUser = selectUser;
 window.saveUserLimits = saveUserLimits;
 window.resetUserLimits = resetUserLimits;
 window.filterUsers = filterUsers;
-window.showSystemMaintenanceModal = showSystemMaintenanceModal;
+
 window.pauseSystem = pauseSystem;
 window.resumeSystem = resumeSystem;
 window.showEmergencyStop = showEmergencyStop;

@@ -18,8 +18,8 @@ from flask import (
 from flask_login import login_required, current_user
 
 from models import UserRole
-from admin.security.decorators import require_admin
-from admin.security.error_handling import with_session_error_handling
+from security.core.role_based_access import require_admin
+from session_error_handlers import with_session_error_handling
 from monitoring_dashboard_service import (
     MonitoringDashboardService, ReportType, ReportFormat, DashboardWidgetType
 )

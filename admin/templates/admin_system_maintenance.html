@@ -1,0 +1,310 @@
+<!-- Copyright (C) 2025 iolaire mcfadden. -->
+<!-- This program is free software: you can redistribute it and/or modify it under the terms of the GNU Affero General Public License as published by the Free Software Foundation, either version 3 of the License, or (at your option) any later version. -->
+<!-- THE SOFTWARE IS PROVIDED "AS IS", WITHOUT WARRANTY OF ANY KIND, EXPRESS OR IMPLIED, INCLUDING BUT NOT LIMITED TO THE WARRANTIES OF MERCHANTABILITY, FITNESS FOR A PARTICULAR PURPOSE AND NONINFRINGEMENT. IN NO EVENT SHALL THE AUTHORS OR COPYRIGHT HOLDERS BE LIABLE FOR ANY CLAIM, DAMAGES OR OTHER LIABILITY, WHETHER IN AN ACTION OF CONTRACT, TORT OR OTHERWISE, ARISING FROM, OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE SOFTWARE. -->
+
+{% extends "base_admin.html" %}
+
+{% block title %}System Maintenance - Admin - Vedfolnir{% endblock %}
+
+{% block content %}
+<div class="d-flex justify-content-between flex-wrap flex-md-nowrap align-items-center pt-3 pb-2 mb-3 border-bottom">
+    <h1 class="h2">
+        <i class="bi bi-tools"></i> System Maintenance
+    </h1>
+    <div class="btn-toolbar mb-2 mb-md-0">
+        <div class="btn-group me-2">
+            <a href="{{ url_for('admin.job_management') }}" class="btn btn-sm btn-outline-secondary">
+                <i class="bi bi-arrow-left"></i> Back to Job Management
+            </a>
+            <button type="button" class="btn btn-sm btn-outline-primary" onclick="refreshMetrics()">
+                <i class="bi bi-arrow-clockwise"></i> Refresh Metrics
+            </button>
+        </div>
+    </div>
+</div>
+
+<!-- System Status Overview -->
+<div class="row mb-4">
+    <div class="col-md-12">
+        <div class="card">
+            <div class="card-header">
+                <h5 class="card-title mb-0">
+                    <i class="bi bi-speedometer2"></i> System Status Overview
+                </h5>
+            </div>
+            <div class="card-body">
+                <div class="row">
+                    <div class="col-md-3">
+                        <div class="text-center">
+                            <div class="display-6 text-{{ 'success' if system_metrics.system_status == 'Running' else 'warning' }}">
+                                <i class="bi bi-{{ 'play-circle' if system_metrics.system_status == 'Running' else 'pause-circle' }}"></i>
+                            </div>
+                            <h6>System Status</h6>
+                            <span class="badge bg-{{ 'success' if system_metrics.system_status == 'Running' else 'warning' }}">
+                                {{ system_metrics.system_status }}
+                            </span>
+                        </div>
+                    </div>
+                    <div class="col-md-3">
+                        <div class="text-center">
+                            <div class="display-6 text-primary">{{ system_metrics.active_jobs }}</div>
+                            <h6>Active Jobs</h6>
+                            <small class="text-muted">Currently processing</small>
+                        </div>
+                    </div>
+                    <div class="col-md-3">
+                        <div class="text-center">
+                            <div class="display-6 text-info">{{ system_metrics.active_users }}</div>
+                            <h6>Active Users</h6>
+                            <small class="text-muted">of {{ system_metrics.total_users }} total</small>
+                        </div>
+                    </div>
+                    <div class="col-md-3">
+                        <div class="text-center">
+                            <div class="display-6 text-warning">{{ system_metrics.recent_jobs_24h }}</div>
+                            <h6>Recent Jobs</h6>
+                            <small class="text-muted">Last 24 hours</small>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+
+<!-- System Resources -->
+<div class="row mb-4">
+    <div class="col-md-6">
+        <div class="card">
+            <div class="card-header">
+                <h6 class="card-title mb-0">
+                    <i class="bi bi-cpu"></i> System Resources
+                </h6>
+            </div>
+            <div class="card-body">
+                <div class="mb-3">
+                    <div class="d-flex justify-content-between">
+                        <span>CPU Usage</span>
+                        <span>{{ system_metrics.cpu_usage }}</span>
+                    </div>
+                    <div class="progress">
+                        <div class="progress-bar" role="progressbar" style="width: {{ system_metrics.cpu_usage }}" aria-valuenow="{{ system_metrics.cpu_usage.rstrip('%') }}" aria-valuemin="0" aria-valuemax="100"></div>
+                    </div>
+                </div>
+                <div class="mb-3">
+                    <div class="d-flex justify-content-between">
+                        <span>Memory Usage</span>
+                        <span>{{ system_metrics.memory_usage }}</span>
+                    </div>
+                    <div class="progress">
+                        <div class="progress-bar bg-info" role="progressbar" style="width: {{ system_metrics.memory_usage }}" aria-valuenow="{{ system_metrics.memory_usage.rstrip('%') }}" aria-valuemin="0" aria-valuemax="100"></div>
+                    </div>
+                </div>
+                <div>
+                    <small class="text-muted">
+                        <i class="bi bi-clock"></i> Uptime: {{ system_metrics.uptime }}
+                    </small>
+                </div>
+            </div>
+        </div>
+    </div>
+    
+    <div class="col-md-6">
+        <div class="card">
+            <div class="card-header">
+                <h6 class="card-title mb-0">
+                    <i class="bi bi-activity"></i> System Activity
+                </h6>
+            </div>
+            <div class="card-body">
+                <div class="row text-center">
+                    <div class="col-6">
+                        <div class="border-end">
+                            <div class="h4 text-primary">{{ system_metrics.active_jobs }}</div>
+                            <small>Running Jobs</small>
+                        </div>
+                    </div>
+                    <div class="col-6">
+                        <div class="h4 text-secondary">0</div>
+                        <small>Queued Jobs</small>
+                    </div>
+                </div>
+                <hr>
+                <div class="row text-center">
+                    <div class="col-6">
+                        <div class="border-end">
+                            <div class="h5 text-success">1</div>
+                            <small>Connected Users</small>
+                        </div>
+                    </div>
+                    <div class="col-6">
+                        <div class="h5 text-info">{{ system_metrics.recent_jobs_24h }}</div>
+                        <small>Jobs Today</small>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+
+<!-- Maintenance Actions -->
+<div class="row">
+    <div class="col-md-8">
+        <div class="card">
+            <div class="card-header">
+                <h5 class="card-title mb-0">
+                    <i class="bi bi-wrench"></i> Maintenance Actions
+                </h5>
+            </div>
+            <div class="card-body">
+                <div class="row">
+                    {% for action in maintenance_actions %}
+                    <div class="col-md-6 mb-3">
+                        <div class="card h-100">
+                            <div class="card-body text-center">
+                                <div class="display-6 text-muted mb-3">
+                                    <i class="{{ action.icon }}"></i>
+                                </div>
+                                <h6 class="card-title">{{ action.name }}</h6>
+                                <p class="card-text small text-muted">{{ action.description }}</p>
+                                {% if action.id == 'pause_system' %}
+                                <a href="{{ url_for('admin.pause_system') }}" class="btn {{ action.class }}">
+                                    <i class="{{ action.icon }}"></i> Execute
+                                </a>
+                                {% elif action.id == 'clear_queue' %}
+                                <a href="{{ url_for('admin.clear_queue') }}" class="btn {{ action.class }}">
+                                    <i class="{{ action.icon }}"></i> Execute
+                                </a>
+                                {% elif action.id == 'restart_failed' %}
+                                <a href="{{ url_for('admin.restart_failed') }}" class="btn {{ action.class }}">
+                                    <i class="{{ action.icon }}"></i> Execute
+                                </a>
+                                {% elif action.id == 'cleanup_old_data' %}
+                                <a href="{{ url_for('admin.cleanup_data') }}" class="btn {{ action.class }}">
+                                    <i class="{{ action.icon }}"></i> Execute
+                                </a>
+                                {% else %}
+                                <button type="button" class="btn {{ action.class }}" disabled>
+                                    <i class="{{ action.icon }}"></i> Not Available
+                                </button>
+                                {% endif %}
+                            </div>
+                        </div>
+                    </div>
+                    {% endfor %}
+                </div>
+                
+                <!-- Reason input is now handled on individual maintenance pages -->
+            </div>
+        </div>
+    </div>
+    
+    <div class="col-md-4">
+        <!-- Maintenance Log -->
+        <div class="card">
+            <div class="card-header">
+                <h6 class="card-title mb-0">
+                    <i class="bi bi-journal-text"></i> Maintenance Log
+                </h6>
+            </div>
+            <div class="card-body">
+                <div id="maintenanceLog" style="max-height: 300px; overflow-y: auto;">
+                    <small class="text-muted">No recent maintenance actions</small>
+                </div>
+            </div>
+        </div>
+        
+        <!-- Quick Actions -->
+        <div class="card mt-3">
+            <div class="card-header">
+                <h6 class="card-title mb-0">
+                    <i class="bi bi-lightning"></i> Quick Actions
+                </h6>
+            </div>
+            <div class="card-body">
+                <div class="d-grid gap-2">
+                    <button type="button" class="btn btn-outline-info btn-sm" onclick="viewSystemLogs()">
+                        <i class="bi bi-file-text"></i> View System Logs
+                    </button>
+                    <button type="button" class="btn btn-outline-secondary btn-sm" onclick="exportSystemReport()">
+                        <i class="bi bi-download"></i> Export System Report
+                    </button>
+                    <button type="button" class="btn btn-outline-warning btn-sm" onclick="checkSystemHealth()">
+                        <i class="bi bi-heart-pulse"></i> Health Check
+                    </button>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+{% endblock %}
+
+{% block extra_js %}
+<script>
+function refreshMetrics() {
+    // Simple page refresh for metrics
+    window.location.reload();
+}
+
+function addToMaintenanceLog(message) {
+    const logElement = document.getElementById('maintenanceLog');
+    const timestamp = new Date().toLocaleString();
+    
+    const logEntry = document.createElement('div');
+    logEntry.className = 'small mb-2 pb-2 border-bottom';
+    logEntry.innerHTML = `<strong>${timestamp}:</strong> ${message}`;
+    
+    if (logElement.innerHTML.includes('No recent maintenance actions')) {
+        logElement.innerHTML = '';
+    }
+    
+    logElement.insertBefore(logEntry, logElement.firstChild);
+    
+    // Keep only the last 10 entries
+    const entries = logElement.children;
+    while (entries.length > 10) {
+        logElement.removeChild(entries[entries.length - 1]);
+    }
+}
+
+function viewSystemLogs() {
+    // Open system logs in a new window
+    window.open('/admin/logs', '_blank');
+}
+
+function exportSystemReport() {
+    // Export system report
+    const link = document.createElement('a');
+    link.href = '/admin/api/system-report/export';
+    link.download = `system-report-${new Date().toISOString().split('T')[0]}.json`;
+    link.click();
+    
+    addToMaintenanceLog('System report exported');
+}
+
+function checkSystemHealth() {
+    // Perform system health check
+    fetch('/admin/api/system-health', {
+        method: 'GET'
+    })
+    .then(response => response.json())
+    .then(data => {
+        if (data.healthy) {
+            addToMaintenanceLog('System health check: All systems operational');
+            alert('System Health Check: All systems are operational');
+        } else {
+            addToMaintenanceLog('System health check: Issues detected - ' + (data.issues || []).join(', '));
+            alert('System Health Check: Issues detected\\n\\n' + (data.issues || []).join('\\n'));
+        }
+    })
+    .catch(error => {
+        console.error('Error checking system health:', error);
+        addToMaintenanceLog('System health check failed: Network error');
+        alert('Failed to perform health check due to network error');
+    });
+}
+
+// Auto-refresh metrics every 30 seconds
+setInterval(refreshMetrics, 30000);
+</script>
+{% endblock %}

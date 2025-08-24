@@ -107,7 +107,7 @@ class DatabaseQueryOptimizer:
                 # Single query to get user statistics
                 user_stats = session.query(
                     func.count(User.id).label('total_users'),
-                    func.sum(func.case([(User.is_active == True, 1)], else_=0)).label('active_users')
+                    func.sum(func.case((User.is_active == True, 1), else_=0)).label('active_users')
                 ).first()
                 
                 # Single query to get recent errors (last 24 hours)
@@ -290,25 +290,29 @@ class DatabaseQueryOptimizer:
                 
                 task_metrics = session.query(
                     func.count(CaptionGenerationTask.id).label('total_tasks'),
-                    func.sum(func.case([
-                        (CaptionGenerationTask.status == TaskStatus.COMPLETED, 1)
-                    ], else_=0)).label('completed_tasks'),
-                    func.sum(func.case([
-                        (CaptionGenerationTask.status == TaskStatus.FAILED, 1)
-                    ], else_=0)).label('failed_tasks'),
-                    func.sum(func.case([
-                        (CaptionGenerationTask.status == TaskStatus.RUNNING, 1)
-                    ], else_=0)).label('running_tasks'),
-                    func.sum(func.case([
-                        (CaptionGenerationTask.status == TaskStatus.QUEUED, 1)
-                    ], else_=0)).label('queued_tasks'),
-                    func.avg(func.case([
+                    func.sum(func.case(
+                        (CaptionGenerationTask.status == TaskStatus.COMPLETED, 1),
+                        else_=0
+                    )).label('completed_tasks'),
+                    func.sum(func.case(
+                        (CaptionGenerationTask.status == TaskStatus.FAILED, 1),
+                        else_=0
+                    )).label('failed_tasks'),
+                    func.sum(func.case(
+                        (CaptionGenerationTask.status == TaskStatus.RUNNING, 1),
+                        else_=0
+                    )).label('running_tasks'),
+                    func.sum(func.case(
+                        (CaptionGenerationTask.status == TaskStatus.QUEUED, 1),
+                        else_=0
+                    )).label('queued_tasks'),
+                    func.avg(func.case(
                         (and_(
                             CaptionGenerationTask.status == TaskStatus.COMPLETED,
                             CaptionGenerationTask.started_at.isnot(None),
                             CaptionGenerationTask.completed_at.isnot(None)
                         ), func.extract('epoch', CaptionGenerationTask.completed_at - CaptionGenerationTask.started_at))
-                    ])).label('avg_processing_time')
+                    )).label('avg_processing_time')
                 ).filter(CaptionGenerationTask.created_at >= cutoff_time).first()
                 
                 # Get queue wait time estimate

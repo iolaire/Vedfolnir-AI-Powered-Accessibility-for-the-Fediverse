@@ -1,0 +1,225 @@
+<!-- Copyright (C) 2025 iolaire mcfadden. -->
+<!-- This program is free software: you can redistribute it and/or modify it under the terms of the GNU Affero General Public License as published by the Free Software Foundation, either version 3 of the License, or (at your option) any later version. -->
+<!-- THE SOFTWARE IS PROVIDED "AS IS", WITHOUT WARRANTY OF ANY KIND, EXPRESS OR IMPLIED, INCLUDING BUT NOT LIMITED TO THE WARRANTIES OF MERCHANTABILITY, FITNESS FOR A PARTICULAR PURPOSE AND NONINFRINGEMENT. IN NO EVENT SHALL THE AUTHORS OR COPYRIGHT HOLDERS BE LIABLE FOR ANY CLAIM, DAMAGES OR OTHER LIABILITY, WHETHER IN AN ACTION OF CONTRACT, TORT OR OTHERWISE, ARISING FROM, OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE SOFTWARE. -->
+
+{% extends "base_admin.html" %}
+
+{% block title %}Pause System - Maintenance - Admin - Vedfolnir{% endblock %}
+
+{% block content %}
+<div class="d-flex justify-content-between flex-wrap flex-md-nowrap align-items-center pt-3 pb-2 mb-3 border-bottom">
+    <h1 class="h2">
+        <i class="bi bi-pause-circle text-warning"></i> Pause System
+    </h1>
+    <div class="btn-toolbar mb-2 mb-md-0">
+        <div class="btn-group me-2">
+            <a href="{{ url_for('admin.system_maintenance') }}" class="btn btn-sm btn-outline-secondary">
+                <i class="bi bi-arrow-left"></i> Back to System Maintenance
+            </a>
+        </div>
+    </div>
+</div>
+
+<!-- Warning Alert -->
+<div class="alert alert-warning">
+    <div class="d-flex align-items-center">
+        <i class="bi bi-exclamation-triangle-fill me-3 display-6"></i>
+        <div>
+            <h5 class="alert-heading">System Pause Warning</h5>
+            <p class="mb-0">
+                Pausing the system will prevent new caption generation jobs from starting. 
+                Currently running jobs will continue to completion, but no new jobs will be processed until the system is resumed.
+            </p>
+        </div>
+    </div>
+</div>
+
+<!-- Pause System Form -->
+<div class="row">
+    <div class="col-md-8">
+        <div class="card">
+            <div class="card-header">
+                <h5 class="card-title mb-0">
+                    <i class="bi bi-pause-circle"></i> Pause System Configuration
+                </h5>
+            </div>
+            <div class="card-body">
+                <form method="post" action="/admin/api/system-maintenance/execute">
+                    <input type="hidden" name="csrf_token" value="{{ csrf_token() }}"/>
+                    <input type="hidden" name="action" value="pause_system"/>
+                    
+                    <div class="mb-4">
+                        <label for="reason" class="form-label">
+                            <strong>Reason for System Pause</strong> <span class="text-danger">*</span>
+                        </label>
+                        <textarea class="form-control" id="reason" name="reason" rows="4" required
+                                  placeholder="Please provide a detailed reason for pausing the system (e.g., scheduled maintenance, system updates, troubleshooting, etc.)"></textarea>
+                        <div class="form-text">
+                            This reason will be logged and displayed to users who attempt to start new jobs.
+                        </div>
+                    </div>
+                    
+                    <div class="mb-4">
+                        <label for="duration" class="form-label">
+                            <strong>Expected Duration</strong>
+                        </label>
+                        <select class="form-select" id="duration" name="duration">
+                            <option value="">Not specified</option>
+                            <option value="15 minutes">15 minutes</option>
+                            <option value="30 minutes">30 minutes</option>
+                            <option value="1 hour">1 hour</option>
+                            <option value="2 hours">2 hours</option>
+                            <option value="4 hours">4 hours</option>
+                            <option value="8 hours">8 hours</option>
+                            <option value="24 hours">24 hours</option>
+                            <option value="custom">Custom duration</option>
+                        </select>
+                        <div class="form-text">
+                            Estimated time until system will be resumed (optional).
+                        </div>
+                    </div>
+                    
+                    <div class="mb-4" id="customDurationContainer" style="display: none;">
+                        <label for="customDuration" class="form-label">
+                            <strong>Custom Duration</strong>
+                        </label>
+                        <input type="text" class="form-control" id="customDuration" name="customDuration"
+                               placeholder="e.g., 3 hours, 45 minutes, until further notice">
+                    </div>
+                    
+                    <div class="mb-4">
+                        <div class="form-check">
+                            <input class="form-check-input" type="checkbox" id="notifyUsers" name="notifyUsers" checked>
+                            <label class="form-check-label" for="notifyUsers">
+                                <strong>Notify Active Users</strong>
+                            </label>
+                            <div class="form-text">
+                                Send notifications to users with active sessions about the system pause.
+                            </div>
+                        </div>
+                    </div>
+                    
+                    <div class="mb-4">
+                        <div class="form-check">
+                            <input class="form-check-input" type="checkbox" id="confirmPause" required>
+                            <label class="form-check-label" for="confirmPause">
+                                <strong>I understand the impact of pausing the system</strong> <span class="text-danger">*</span>
+                            </label>
+                            <div class="form-text">
+                                You must confirm that you understand this will prevent new jobs from starting.
+                            </div>
+                        </div>
+                    </div>
+                    
+                    <div class="d-grid gap-2 d-md-flex justify-content-md-end">
+                        <a href="{{ url_for('admin.system_maintenance') }}" class="btn btn-secondary">
+                            <i class="bi bi-x-circle"></i> Cancel
+                        </a>
+                        <button type="submit" class="btn btn-warning">
+                            <i class="bi bi-pause-circle"></i> Pause System
+                        </button>
+                    </div>
+                </form>
+            </div>
+        </div>
+    </div>
+    
+    <div class="col-md-4">
+        <!-- Current System Status -->
+        <div class="card">
+            <div class="card-header">
+                <h6 class="card-title mb-0">
+                    <i class="bi bi-info-circle"></i> Current System Status
+                </h6>
+            </div>
+            <div class="card-body">
+                <div class="text-center mb-3">
+                    <div class="display-6 text-success">
+                        <i class="bi bi-play-circle"></i>
+                    </div>
+                    <h6>System Running</h6>
+                    <span class="badge bg-success">Active</span>
+                </div>
+                
+                <hr>
+                
+                <div class="small">
+                    <div class="d-flex justify-content-between mb-2">
+                        <span>Active Jobs:</span>
+                        <span class="badge bg-primary">0</span>
+                    </div>
+                    <div class="d-flex justify-content-between mb-2">
+                        <span>Queued Jobs:</span>
+                        <span class="badge bg-secondary">0</span>
+                    </div>
+                    <div class="d-flex justify-content-between mb-2">
+                        <span>Connected Users:</span>
+                        <span class="badge bg-info">1</span>
+                    </div>
+                </div>
+            </div>
+        </div>
+        
+        <!-- Impact Information -->
+        <div class="card mt-3">
+            <div class="card-header">
+                <h6 class="card-title mb-0">
+                    <i class="bi bi-exclamation-triangle"></i> Impact Information
+                </h6>
+            </div>
+            <div class="card-body">
+                <div class="small">
+                    <h6>What happens when system is paused:</h6>
+                    <ul class="mb-3">
+                        <li>New caption generation jobs cannot be started</li>
+                        <li>Running jobs will continue to completion</li>
+                        <li>Users will see maintenance message</li>
+                        <li>Admin functions remain available</li>
+                    </ul>
+                    
+                    <h6>What is NOT affected:</h6>
+                    <ul class="mb-0">
+                        <li>User login and authentication</li>
+                        <li>Caption review and editing</li>
+                        <li>Platform management</li>
+                        <li>Admin interface access</li>
+                    </ul>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+{% endblock %}
+
+{% block extra_js %}
+<script>
+document.addEventListener('DOMContentLoaded', function() {
+    const durationSelect = document.getElementById('duration');
+    const customDurationContainer = document.getElementById('customDurationContainer');
+    
+    durationSelect.addEventListener('change', function() {
+        if (this.value === 'custom') {
+            customDurationContainer.style.display = 'block';
+            document.getElementById('customDuration').required = true;
+        } else {
+            customDurationContainer.style.display = 'none';
+            document.getElementById('customDuration').required = false;
+        }
+    });
+    
+    // Form submission confirmation
+    document.querySelector('form').addEventListener('submit', function(e) {
+        const reason = document.getElementById('reason').value.trim();
+        const confirmed = document.getElementById('confirmPause').checked;
+        
+        if (!reason || !confirmed) {
+            return; // Let browser validation handle this
+        }
+        
+        if (!confirm('Are you sure you want to pause the system?\\n\\nThis will prevent new jobs from starting until you manually resume the system.')) {
+            e.preventDefault();
+        }
+    });
+});
+</script>
+{% endblock %}

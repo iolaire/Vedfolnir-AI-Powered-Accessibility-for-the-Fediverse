@@ -1,0 +1,114 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Test AJAX Functions</title>
+    <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.1.3/dist/css/bootstrap.min.css" rel="stylesheet">
+    <link href="https://cdn.jsdelivr.net/npm/bootstrap-icons@1.7.2/font/bootstrap-icons.css" rel="stylesheet">
+</head>
+<body>
+    <div class="container mt-4">
+        <h1>Test AJAX Functions</h1>
+        <div class="alert alert-info">
+            <strong>Testing:</strong> Click the buttons below to test if the AJAX functions are globally accessible.
+        </div>
+        
+        <div class="row">
+            <div class="col-md-4">
+                <div class="card">
+                    <div class="card-body">
+                        <h5 class="card-title">Bulk Actions</h5>
+                        <p class="card-text">Test the bulk actions modal functionality.</p>
+                        <button type="button" class="btn btn-warning" onclick="showBulkAdminActions()">
+                            <i class="bi bi-gear"></i> Bulk Actions
+                        </button>
+                    </div>
+                </div>
+            </div>
+            
+            <div class="col-md-4">
+                <div class="card">
+                    <div class="card-body">
+                        <h5 class="card-title">System Maintenance</h5>
+                        <p class="card-text">Test the system maintenance modal functionality.</p>
+                        <button type="button" class="btn btn-danger" onclick="showSystemMaintenanceModal()">
+                            <i class="bi bi-tools"></i> System Maintenance
+                        </button>
+                    </div>
+                </div>
+            </div>
+            
+            <div class="col-md-4">
+                <div class="card">
+                    <div class="card-body">
+                        <h5 class="card-title">Job History</h5>
+                        <p class="card-text">Test the job history modal functionality.</p>
+                        <button type="button" class="btn btn-secondary" onclick="showPersonalJobHistory()">
+                            <i class="bi bi-clock-history"></i> Job History
+                        </button>
+                    </div>
+                </div>
+            </div>
+        </div>
+        
+        <div class="mt-4">
+            <h3>Console Output</h3>
+            <div id="console-output" class="border p-3" style="height: 200px; overflow-y: auto; background: #f8f9fa;">
+                <p class="text-muted">Console messages will appear here...</p>
+            </div>
+        </div>
+    </div>
+    
+    <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.1.3/dist/js/bootstrap.bundle.min.js"></script>
+    <script src="http://127.0.0.1:5000/admin/static/js/admin_job_ajax.js"></script>
+    
+    <script>
+        // Capture console messages
+        const consoleOutput = document.getElementById('console-output');
+        const originalLog = console.log;
+        const originalError = console.error;
+        
+        function addToConsole(message, type = 'log') {
+            const p = document.createElement('p');
+            p.className = type === 'error' ? 'text-danger' : 'text-success';
+            p.textContent = `[${type.toUpperCase()}] ${message}`;
+            consoleOutput.appendChild(p);
+            consoleOutput.scrollTop = consoleOutput.scrollHeight;
+        }
+        
+        console.log = function(...args) {
+            originalLog.apply(console, args);
+            addToConsole(args.join(' '), 'log');
+        };
+        
+        console.error = function(...args) {
+            originalError.apply(console, args);
+            addToConsole(args.join(' '), 'error');
+        };
+        
+        // Test function availability
+        document.addEventListener('DOMContentLoaded', function() {
+            console.log('Testing function availability...');
+            
+            if (typeof window.showBulkAdminActions === 'function') {
+                console.log('✅ showBulkAdminActions is available');
+            } else {
+                console.error('❌ showBulkAdminActions is NOT available');
+            }
+            
+            if (typeof window.showSystemMaintenanceModal === 'function') {
+                console.log('✅ showSystemMaintenanceModal is available');
+            } else {
+                console.error('❌ showSystemMaintenanceModal is NOT available');
+            }
+            
+            if (typeof window.showPersonalJobHistory === 'function') {
+                console.log('✅ showPersonalJobHistory is available');
+            } else {
+                console.error('❌ showPersonalJobHistory is NOT available');
+            }
+        });
+    </script>
+</body>
+</html>

@@ -320,9 +320,9 @@
                     <button type="button" class="btn btn-outline-primary btn-sm" onclick="showUserLimitsModal()">
                         <i class="bi bi-sliders"></i> Set User Limits
                     </button>
-                    <button type="button" class="btn btn-outline-warning btn-sm" onclick="showSystemMaintenanceModal()">
+                    <a href="{{ url_for('admin.system_maintenance') }}" class="btn btn-outline-warning btn-sm">
                         <i class="bi bi-tools"></i> System Maintenance
-                    </button>
+                    </a>
                 </div>
             </div>
         </div>

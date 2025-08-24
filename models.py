@@ -1271,6 +1271,7 @@ class CaptionGenerationTask(Base):
         Index('ix_caption_task_admin_cancelled', 'cancelled_by_admin'),
         Index('ix_caption_task_admin_user', 'admin_user_id'),
         Index('ix_caption_task_retry_count', 'retry_count'),
+        Index('ix_caption_task_admin_managed', 'admin_managed'),
         {
             'mysql_engine': 'InnoDB',
             'mysql_charset': 'utf8mb4',
@@ -1301,6 +1302,7 @@ class CaptionGenerationTask(Base):
     retry_count = Column(Integer, default=0)
     max_retries = Column(Integer, default=3)
     resource_usage = Column(Text)  # JSON: memory, CPU, processing time
+    admin_managed = Column(Boolean, default=False)  # Whether job is managed by admin
     
     # Relationships
     user = relationship("User", foreign_keys=[user_id])

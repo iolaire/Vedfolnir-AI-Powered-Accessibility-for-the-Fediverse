@@ -1,0 +1,721 @@
+<!-- Copyright (C) 2025 iolaire mcfadden. -->
+<!-- This program is free software: you can redistribute it and/or modify it under the terms of the GNU Affero General Public License as published by the Free Software Foundation, either version 3 of the License, or (at your option) any later version. -->
+<!-- THE SOFTWARE IS PROVIDED "AS IS", WITHOUT WARRANTY OF ANY KIND, EXPRESS OR IMPLIED, INCLUDING BUT NOT LIMITED TO THE WARRANTIES OF MERCHANTABILITY, FITNESS FOR A PARTICULAR PURPOSE AND NONINFRINGEMENT. IN NO EVENT SHALL THE AUTHORS OR COPYRIGHT HOLDERS BE LIABLE FOR ANY CLAIM, DAMAGES OR OTHER LIABILITY, WHETHER IN AN ACTION OF CONTRACT, TORT OR OTHERWISE, ARISING FROM, OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE SOFTWARE. -->
+
+<!-- Bulk Admin Actions Modal Component -->
+<div class="modal fade" id="bulkActionsModal" tabindex="-1" aria-labelledby="bulkActionsModalLabel" aria-hidden="true">
+    <div class="modal-dialog modal-lg">
+        <div class="modal-content">
+            <div class="modal-header">
+                <h5 class="modal-title" id="bulkActionsModalLabel">
+                    <i class="fas fa-tasks"></i>
+                    Bulk Actions
+                </h5>
+                <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
+            </div>
+            <div class="modal-body">
+                <!-- Selected Jobs Summary -->
+                <div class="alert alert-info">
+                    <i class="fas fa-info-circle"></i>
+                    <strong>Selected Jobs:</strong> <span id="selectedJobsCount">0</span> job(s) selected
+                    <div id="selectedJobsList" class="mt-2 small" style="display: none;">
+                        <!-- Selected jobs will be listed here -->
+                    </div>
+                </div>
+                
+                <!-- Action Selection -->
+                <div class="mb-4">
+                    <label for="bulkActionSelect" class="form-label">
+                        <strong>Select Action:</strong>
+                    </label>
+                    <select class="form-select" id="bulkActionSelect" onchange="handleBulkActionChange()">
+                        <option value="">Choose an action...</option>
+                        <optgroup label="Job Control">
+                            <option value="pause">Pause Selected Jobs</option>
+                            <option value="resume">Resume Selected Jobs</option>
+                            <option value="cancel">Cancel Selected Jobs</option>
+                            <option value="restart">Restart Failed Jobs</option>
+                        </optgroup>
+                        <optgroup label="Priority Management">
+                            <option value="priority_low">Set Priority: Low</option>
+                            <option value="priority_normal">Set Priority: Normal</option>
+                            <option value="priority_high">Set Priority: High</option>
+                            <option value="priority_urgent">Set Priority: Urgent</option>
+                        </optgroup>
+                        <optgroup label="Administrative">
+                            <option value="add_notes">Add Admin Notes</option>
+                            <option value="assign_admin">Assign to Admin</option>
+                            <option value="export_data">Export Job Data</option>
+                        </optgroup>
+                        <optgroup label="Cleanup">
+                            <option value="clear_errors">Clear Error Messages</option>
+                            <option value="reset_retry_count">Reset Retry Count</option>
+                        </optgroup>
+                    </select>
+                </div>
+                
+                <!-- Action-Specific Options -->
+                <div id="actionOptions" style="display: none;">
+                    <!-- Cancel Jobs Options -->
+                    <div id="cancelOptions" class="action-option" style="display: none;">
+                        <div class="card border-warning">
+                            <div class="card-header bg-warning text-dark">
+                                <h6 class="card-title mb-0">
+                                    <i class="fas fa-exclamation-triangle"></i>
+                                    Cancel Jobs Options
+                                </h6>
+                            </div>
+                            <div class="card-body">
+                                <div class="mb-3">
+                                    <label for="cancelReason" class="form-label">
+                                        <strong>Cancellation Reason:</strong> <span class="text-danger">*</span>
+                                    </label>
+                                    <textarea class="form-control" id="cancelReason" rows="3" 
+                                              placeholder="Provide a detailed reason for cancelling these jobs..."
+                                              required></textarea>
+                                </div>
+                                <div class="form-check">
+                                    <input class="form-check-input" type="checkbox" id="notifyUsersCancel" checked>
+                                    <label class="form-check-label" for="notifyUsersCancel">
+                                        Notify affected users via email
+                                    </label>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                    
+                    <!-- Add Notes Options -->
+                    <div id="notesOptions" class="action-option" style="display: none;">
+                        <div class="card border-info">
+                            <div class="card-header bg-info text-white">
+                                <h6 class="card-title mb-0">
+                                    <i class="fas fa-sticky-note"></i>
+                                    Add Admin Notes
+                                </h6>
+                            </div>
+                            <div class="card-body">
+                                <div class="mb-3">
+                                    <label for="bulkNotes" class="form-label">
+                                        <strong>Notes to Add:</strong>
+                                    </label>
+                                    <textarea class="form-control" id="bulkNotes" rows="4" 
+                                              placeholder="Enter notes to add to all selected jobs..."></textarea>
+                                    <div class="form-text">
+                                        These notes will be added to existing notes for each job.
+                                    </div>
+                                </div>
+                                <div class="row">
+                                    <div class="col-md-6">
+                                        <h6>Quick Notes:</h6>
+                                        <div class="btn-group-vertical w-100" role="group">
+                                            <button type="button" class="btn btn-sm btn-outline-secondary" onclick="addBulkQuickNote('Bulk review completed')">
+                                                Bulk Review Completed
+                                            </button>
+                                            <button type="button" class="btn btn-sm btn-outline-secondary" onclick="addBulkQuickNote('Priority processing required')">
+                                                Priority Processing Required
+                                            </button>
+                                            <button type="button" class="btn btn-sm btn-outline-secondary" onclick="addBulkQuickNote('Quality check needed')">
+                                                Quality Check Needed
+                                            </button>
+                                        </div>
+                                    </div>
+                                    <div class="col-md-6">
+                                        <h6>Tags:</h6>
+                                        <div class="d-flex flex-wrap gap-1">
+                                            <button type="button" class="btn btn-sm btn-outline-secondary" onclick="addBulkTag('#bulk-action')">
+                                                #bulk-action
+                                            </button>
+                                            <button type="button" class="btn btn-sm btn-outline-secondary" onclick="addBulkTag('#admin-review')">
+                                                #admin-review
+                                            </button>
+                                            <button type="button" class="btn btn-sm btn-outline-secondary" onclick="addBulkTag('#priority')">
+                                                #priority
+                                            </button>
+                                        </div>
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                    
+                    <!-- Assign Admin Options -->
+                    <div id="assignOptions" class="action-option" style="display: none;">
+                        <div class="card border-primary">
+                            <div class="card-header bg-primary text-white">
+                                <h6 class="card-title mb-0">
+                                    <i class="fas fa-user-shield"></i>
+                                    Assign to Admin
+                                </h6>
+                            </div>
+                            <div class="card-body">
+                                <div class="mb-3">
+                                    <label for="assignAdmin" class="form-label">
+                                        <strong>Assign to:</strong>
+                                    </label>
+                                    <select class="form-select" id="assignAdmin">
+                                        <option value="">Select admin user...</option>
+                                        <option value="current">Assign to me</option>
+                                        <!-- Admin users will be loaded dynamically -->
+                                    </select>
+                                </div>
+                                <div class="mb-3">
+                                    <label for="assignmentReason" class="form-label">
+                                        <strong>Assignment Reason:</strong>
+                                    </label>
+                                    <textarea class="form-control" id="assignmentReason" rows="2" 
+                                              placeholder="Optional: Reason for assignment..."></textarea>
+                                </div>
+                                <div class="form-check">
+                                    <input class="form-check-input" type="checkbox" id="markAsManaged" checked>
+                                    <label class="form-check-label" for="markAsManaged">
+                                        Mark jobs as admin-managed
+                                    </label>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                    
+                    <!-- Export Options -->
+                    <div id="exportOptions" class="action-option" style="display: none;">
+                        <div class="card border-success">
+                            <div class="card-header bg-success text-white">
+                                <h6 class="card-title mb-0">
+                                    <i class="fas fa-download"></i>
+                                    Export Job Data
+                                </h6>
+                            </div>
+                            <div class="card-body">
+                                <div class="mb-3">
+                                    <label class="form-label">
+                                        <strong>Export Format:</strong>
+                                    </label>
+                                    <div class="form-check">
+                                        <input class="form-check-input" type="radio" name="exportFormat" id="exportCSV" value="csv" checked>
+                                        <label class="form-check-label" for="exportCSV">
+                                            CSV (Comma Separated Values)
+                                        </label>
+                                    </div>
+                                    <div class="form-check">
+                                        <input class="form-check-input" type="radio" name="exportFormat" id="exportJSON" value="json">
+                                        <label class="form-check-label" for="exportJSON">
+                                            JSON (JavaScript Object Notation)
+                                        </label>
+                                    </div>
+                                    <div class="form-check">
+                                        <input class="form-check-input" type="radio" name="exportFormat" id="exportXLSX" value="xlsx">
+                                        <label class="form-check-label" for="exportXLSX">
+                                            Excel (XLSX)
+                                        </label>
+                                    </div>
+                                </div>
+                                <div class="mb-3">
+                                    <label class="form-label">
+                                        <strong>Include Data:</strong>
+                                    </label>
+                                    <div class="form-check">
+                                        <input class="form-check-input" type="checkbox" id="includeJobDetails" checked>
+                                        <label class="form-check-label" for="includeJobDetails">
+                                            Job details and settings
+                                        </label>
+                                    </div>
+                                    <div class="form-check">
+                                        <input class="form-check-input" type="checkbox" id="includeUserInfo" checked>
+                                        <label class="form-check-label" for="includeUserInfo">
+                                            User information
+                                        </label>
+                                    </div>
+                                    <div class="form-check">
+                                        <input class="form-check-input" type="checkbox" id="includeAdminNotes">
+                                        <label class="form-check-label" for="includeAdminNotes">
+                                            Admin notes and comments
+                                        </label>
+                                    </div>
+                                    <div class="form-check">
+                                        <input class="form-check-input" type="checkbox" id="includeErrorLogs">
+                                        <label class="form-check-label" for="includeErrorLogs">
+                                            Error messages and logs
+                                        </label>
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+                
+                <!-- Progress Indicator -->
+                <div id="bulkActionProgress" style="display: none;">
+                    <div class="card border-info">
+                        <div class="card-body">
+                            <div class="d-flex align-items-center">
+                                <div class="spinner-border spinner-border-sm text-primary me-3" role="status">
+                                    <span class="visually-hidden">Processing...</span>
+                                </div>
+                                <div>
+                                    <strong>Processing bulk action...</strong>
+                                    <div class="small text-muted" id="progressMessage">Initializing...</div>
+                                </div>
+                            </div>
+                            <div class="progress mt-3" style="height: 20px;">
+                                <div class="progress-bar" role="progressbar" id="progressBar" 
+                                     style="width: 0%" aria-valuenow="0" aria-valuemin="0" aria-valuemax="100">
+                                    0%
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+                
+                <!-- Results Summary -->
+                <div id="bulkActionResults" style="display: none;">
+                    <div class="card">
+                        <div class="card-header">
+                            <h6 class="card-title mb-0">
+                                <i class="fas fa-check-circle text-success"></i>
+                                Bulk Action Results
+                            </h6>
+                        </div>
+                        <div class="card-body">
+                            <div id="resultsContent">
+                                <!-- Results will be displayed here -->
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+            <div class="modal-footer">
+                <div class="d-flex justify-content-between w-100">
+                    <div>
+                        <button type="button" class="btn btn-outline-secondary" id="selectAllJobsBtn" onclick="selectAllJobs()">
+                            <i class="fas fa-check-square"></i>
+                            Select All
+                        </button>
+                        <button type="button" class="btn btn-outline-secondary" id="clearSelectionBtn" onclick="clearJobSelection()">
+                            <i class="fas fa-square"></i>
+                            Clear Selection
+                        </button>
+                    </div>
+                    <div>
+                        <button type="button" class="btn btn-secondary" data-bs-dismiss="modal" id="cancelBulkBtn">
+                            <i class="fas fa-times"></i>
+                            Cancel
+                        </button>
+                        <button type="button" class="btn btn-primary" id="executeBulkActionBtn" onclick="executeBulkAction()" disabled>
+                            <i class="fas fa-play"></i>
+                            Execute Action
+                        </button>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+
+<script>
+// Global variables for bulk actions
+let selectedJobIds = [];
+let bulkActionInProgress = false;
+
+// Bulk actions modal functions
+function showBulkActionsModal(preSelectedJobs = []) {
+    selectedJobIds = preSelectedJobs;
+    updateSelectedJobsDisplay();
+    
+    // Reset modal state
+    document.getElementById('bulkActionSelect').value = '';
+    document.getElementById('actionOptions').style.display = 'none';
+    document.getElementById('bulkActionProgress').style.display = 'none';
+    document.getElementById('bulkActionResults').style.display = 'none';
+    document.getElementById('executeBulkActionBtn').disabled = true;
+    
+    // Load admin users for assignment
+    loadAdminUsers();
+    
+    // Show modal
+    const modal = new bootstrap.Modal(document.getElementById('bulkActionsModal'));
+    modal.show();
+}
+
+function updateSelectedJobsDisplay() {
+    const countElement = document.getElementById('selectedJobsCount');
+    const listElement = document.getElementById('selectedJobsList');
+    
+    countElement.textContent = selectedJobIds.length;
+    
+    if (selectedJobIds.length > 0) {
+        listElement.style.display = 'block';
+        listElement.innerHTML = selectedJobIds.map(id => 
+            `<span class="badge bg-secondary me-1">${id.substring(0, 8)}...</span>`
+        ).join('');
+    } else {
+        listElement.style.display = 'none';
+    }
+    
+    // Enable/disable execute button
+    const executeBtn = document.getElementById('executeBulkActionBtn');
+    const actionSelect = document.getElementById('bulkActionSelect');
+    executeBtn.disabled = selectedJobIds.length === 0 || !actionSelect.value;
+}
+
+function handleBulkActionChange() {
+    const actionSelect = document.getElementById('bulkActionSelect');
+    const actionOptions = document.getElementById('actionOptions');
+    const executeBtn = document.getElementById('executeBulkActionBtn');
+    
+    // Hide all action options
+    document.querySelectorAll('.action-option').forEach(option => {
+        option.style.display = 'none';
+    });
+    
+    if (actionSelect.value) {
+        actionOptions.style.display = 'block';
+        
+        // Show specific options based on action
+        switch (actionSelect.value) {
+            case 'cancel':
+                document.getElementById('cancelOptions').style.display = 'block';
+                break;
+            case 'add_notes':
+                document.getElementById('notesOptions').style.display = 'block';
+                break;
+            case 'assign_admin':
+                document.getElementById('assignOptions').style.display = 'block';
+                break;
+            case 'export_data':
+                document.getElementById('exportOptions').style.display = 'block';
+                break;
+        }
+        
+        executeBtn.disabled = selectedJobIds.length === 0;
+    } else {
+        actionOptions.style.display = 'none';
+        executeBtn.disabled = true;
+    }
+}
+
+function addBulkQuickNote(noteText) {
+    const notesTextarea = document.getElementById('bulkNotes');
+    const currentNotes = notesTextarea.value;
+    const timestamp = new Date().toLocaleString();
+    const newNote = `[${timestamp}] ${noteText}`;
+    
+    if (currentNotes.trim()) {
+        notesTextarea.value = currentNotes + '\n\n' + newNote;
+    } else {
+        notesTextarea.value = newNote;
+    }
+    
+    notesTextarea.focus();
+}
+
+function addBulkTag(tag) {
+    const notesTextarea = document.getElementById('bulkNotes');
+    const currentValue = notesTextarea.value;
+    const cursorPosition = notesTextarea.selectionStart;
+    
+    const newValue = currentValue.slice(0, cursorPosition) + tag + ' ' + currentValue.slice(cursorPosition);
+    notesTextarea.value = newValue;
+    
+    notesTextarea.setSelectionRange(cursorPosition + tag.length + 1, cursorPosition + tag.length + 1);
+    notesTextarea.focus();
+}
+
+function loadAdminUsers() {
+    fetch('/admin/api/users?role=admin', {
+        method: 'GET',
+        headers: {
+            'Content-Type': 'application/json',
+            'X-CSRFToken': getCsrfToken()
+        }
+    })
+    .then(response => response.json())
+    .then(data => {
+        if (data.success) {
+            const select = document.getElementById('assignAdmin');
+            
+            // Clear existing options except default ones
+            while (select.children.length > 2) {
+                select.removeChild(select.lastChild);
+            }
+            
+            // Add admin users
+            data.users.forEach(user => {
+                const option = document.createElement('option');
+                option.value = user.id;
+                option.textContent = `${user.username} (${user.email})`;
+                select.appendChild(option);
+            });
+        }
+    })
+    .catch(error => {
+        console.error('Error loading admin users:', error);
+    });
+}
+
+function executeBulkAction() {
+    if (bulkActionInProgress || selectedJobIds.length === 0) {
+        return;
+    }
+    
+    const actionSelect = document.getElementById('bulkActionSelect');
+    const action = actionSelect.value;
+    
+    if (!action) {
+        alert('Please select an action to perform');
+        return;
+    }
+    
+    // Validate action-specific requirements
+    if (!validateBulkAction(action)) {
+        return;
+    }
+    
+    // Show progress
+    showBulkActionProgress();
+    
+    // Prepare action data
+    const actionData = prepareBulkActionData(action);
+    
+    // Execute bulk action
+    performBulkAction(action, actionData);
+}
+
+function validateBulkAction(action) {
+    switch (action) {
+        case 'cancel':
+            const cancelReason = document.getElementById('cancelReason').value.trim();
+            if (!cancelReason) {
+                alert('Please provide a reason for cancellation');
+                return false;
+            }
+            break;
+        case 'assign_admin':
+            const assignAdmin = document.getElementById('assignAdmin').value;
+            if (!assignAdmin) {
+                alert('Please select an admin user to assign jobs to');
+                return false;
+            }
+            break;
+    }
+    return true;
+}
+
+function prepareBulkActionData(action) {
+    const data = {
+        job_ids: selectedJobIds,
+        action: action
+    };
+    
+    switch (action) {
+        case 'cancel':
+            data.reason = document.getElementById('cancelReason').value.trim();
+            data.notify_users = document.getElementById('notifyUsersCancel').checked;
+            break;
+        case 'add_notes':
+            data.notes = document.getElementById('bulkNotes').value.trim();
+            break;
+        case 'assign_admin':
+            data.admin_id = document.getElementById('assignAdmin').value;
+            data.reason = document.getElementById('assignmentReason').value.trim();
+            data.mark_as_managed = document.getElementById('markAsManaged').checked;
+            break;
+        case 'export_data':
+            data.format = document.querySelector('input[name="exportFormat"]:checked').value;
+            data.include_job_details = document.getElementById('includeJobDetails').checked;
+            data.include_user_info = document.getElementById('includeUserInfo').checked;
+            data.include_admin_notes = document.getElementById('includeAdminNotes').checked;
+            data.include_error_logs = document.getElementById('includeErrorLogs').checked;
+            break;
+        case 'priority_low':
+        case 'priority_normal':
+        case 'priority_high':
+        case 'priority_urgent':
+            data.priority = action.replace('priority_', '').toUpperCase();
+            break;
+    }
+    
+    return data;
+}
+
+function showBulkActionProgress() {
+    bulkActionInProgress = true;
+    
+    // Hide action options and show progress
+    document.getElementById('actionOptions').style.display = 'none';
+    document.getElementById('bulkActionProgress').style.display = 'block';
+    document.getElementById('bulkActionResults').style.display = 'none';
+    
+    // Disable buttons
+    document.getElementById('executeBulkActionBtn').disabled = true;
+    document.getElementById('cancelBulkBtn').disabled = true;
+    
+    // Reset progress
+    updateBulkActionProgress(0, 'Initializing bulk action...');
+}
+
+function updateBulkActionProgress(percentage, message) {
+    const progressBar = document.getElementById('progressBar');
+    const progressMessage = document.getElementById('progressMessage');
+    
+    progressBar.style.width = percentage + '%';
+    progressBar.setAttribute('aria-valuenow', percentage);
+    progressBar.textContent = percentage + '%';
+    progressMessage.textContent = message;
+}
+
+function performBulkAction(action, actionData) {
+    fetch('/admin/api/jobs/bulk-action', {
+        method: 'POST',
+        headers: {
+            'Content-Type': 'application/json',
+            'X-CSRFToken': getCsrfToken()
+        },
+        body: JSON.stringify(actionData)
+    })
+    .then(response => response.json())
+    .then(data => {
+        if (data.success) {
+            showBulkActionResults(data);
+        } else {
+            showBulkActionError(data.message || 'Bulk action failed');
+        }
+    })
+    .catch(error => {
+        console.error('Error performing bulk action:', error);
+        showBulkActionError('Network error occurred during bulk action');
+    })
+    .finally(() => {
+        bulkActionInProgress = false;
+        document.getElementById('cancelBulkBtn').disabled = false;
+    });
+}
+
+function showBulkActionResults(data) {
+    // Hide progress and show results
+    document.getElementById('bulkActionProgress').style.display = 'none';
+    document.getElementById('bulkActionResults').style.display = 'block';
+    
+    const resultsContent = document.getElementById('resultsContent');
+    
+    let resultsHtml = `
+        <div class="row">
+            <div class="col-md-4">
+                <div class="text-center">
+                    <div class="h4 text-success">${data.successful || 0}</div>
+                    <div class="text-muted">Successful</div>
+                </div>
+            </div>
+            <div class="col-md-4">
+                <div class="text-center">
+                    <div class="h4 text-danger">${data.failed || 0}</div>
+                    <div class="text-muted">Failed</div>
+                </div>
+            </div>
+            <div class="col-md-4">
+                <div class="text-center">
+                    <div class="h4 text-info">${data.total || selectedJobIds.length}</div>
+                    <div class="text-muted">Total</div>
+                </div>
+            </div>
+        </div>
+    `;
+    
+    if (data.errors && data.errors.length > 0) {
+        resultsHtml += `
+            <div class="mt-3">
+                <h6>Errors:</h6>
+                <div class="alert alert-danger">
+                    <ul class="mb-0">
+                        ${data.errors.map(error => `<li>${error}</li>`).join('')}
+                    </ul>
+                </div>
+            </div>
+        `;
+    }
+    
+    if (data.download_url) {
+        resultsHtml += `
+            <div class="mt-3">
+                <a href="${data.download_url}" class="btn btn-success" download>
+                    <i class="fas fa-download"></i>
+                    Download Export File
+                </a>
+            </div>
+        `;
+    }
+    
+    resultsContent.innerHTML = resultsHtml;
+    
+    // Update execute button to close modal
+    const executeBtn = document.getElementById('executeBulkActionBtn');
+    executeBtn.innerHTML = '<i class="fas fa-check"></i> Close';
+    executeBtn.disabled = false;
+    executeBtn.onclick = function() {
+        bootstrap.Modal.getInstance(document.getElementById('bulkActionsModal')).hide();
+        
+        // Refresh job list if available
+        if (typeof refreshJobList === 'function') {
+            refreshJobList();
+        }
+    };
+}
+
+function showBulkActionError(message) {
+    // Hide progress and show error
+    document.getElementById('bulkActionProgress').style.display = 'none';
+    document.getElementById('bulkActionResults').style.display = 'block';
+    
+    const resultsContent = document.getElementById('resultsContent');
+    resultsContent.innerHTML = `
+        <div class="alert alert-danger">
+            <i class="fas fa-exclamation-triangle"></i>
+            <strong>Error:</strong> ${message}
+        </div>
+    `;
+    
+    // Reset execute button
+    const executeBtn = document.getElementById('executeBulkActionBtn');
+    executeBtn.innerHTML = '<i class="fas fa-redo"></i> Retry';
+    executeBtn.disabled = false;
+    executeBtn.onclick = executeBulkAction;
+}
+
+function selectAllJobs() {
+    // This function should be implemented by the parent page
+    if (typeof selectAllJobsInList === 'function') {
+        selectAllJobsInList();
+    }
+}
+
+function clearJobSelection() {
+    selectedJobIds = [];
+    updateSelectedJobsDisplay();
+    
+    // Clear checkboxes in job list
+    if (typeof clearAllJobSelections === 'function') {
+        clearAllJobSelections();
+    }
+}
+
+function getCsrfToken() {
+    return document.querySelector('meta[name=csrf-token]')?.getAttribute('content') || '';
+}
+
+// Export functions for use by parent pages
+window.bulkActions = {
+    showModal: showBulkActionsModal,
+    updateSelection: function(jobIds) {
+        selectedJobIds = jobIds;
+        updateSelectedJobsDisplay();
+    },
+    addToSelection: function(jobId) {
+        if (!selectedJobIds.includes(jobId)) {
+            selectedJobIds.push(jobId);
+            updateSelectedJobsDisplay();
+        }
+    },
+    removeFromSelection: function(jobId) {
+        selectedJobIds = selectedJobIds.filter(id => id !== jobId);
+        updateSelectedJobsDisplay();
+    }
+};
+</script>

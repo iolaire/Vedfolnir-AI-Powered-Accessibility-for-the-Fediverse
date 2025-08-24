@@ -16,6 +16,7 @@ def register_all_routes(bp):
     from . import security_audit_api
     from . import websocket_routes
     from . import admin_job_management
+    from . import admin_job_api
     from . import configuration_routes
     
     # Register route modules
@@ -29,6 +30,7 @@ def register_all_routes(bp):
     # Note: security_audit_api registers itself with the app, not blueprint
     websocket_routes.register_websocket_routes(bp)
     admin_job_management.register_routes(bp)
+    admin_job_api.register_api_routes(bp)
     
     # Register configuration management routes as a sub-blueprint
     from .configuration_routes import configuration_bp

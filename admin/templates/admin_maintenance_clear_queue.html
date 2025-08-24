@@ -1,0 +1,231 @@
+<!-- Copyright (C) 2025 iolaire mcfadden. -->
+<!-- This program is free software: you can redistribute it and/or modify it under the terms of the GNU Affero General Public License as published by the Free Software Foundation, either version 3 of the License, or (at your option) any later version. -->
+<!-- THE SOFTWARE IS PROVIDED "AS IS", WITHOUT WARRANTY OF ANY KIND, EXPRESS OR IMPLIED, INCLUDING BUT NOT LIMITED TO THE WARRANTIES OF MERCHANTABILITY, FITNESS FOR A PARTICULAR PURPOSE AND NONINFRINGEMENT. IN NO EVENT SHALL THE AUTHORS OR COPYRIGHT HOLDERS BE LIABLE FOR ANY CLAIM, DAMAGES OR OTHER LIABILITY, WHETHER IN AN ACTION OF CONTRACT, TORT OR OTHERWISE, ARISING FROM, OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE SOFTWARE. -->
+
+{% extends "base_admin.html" %}
+
+{% block title %}Clear Job Queue - Maintenance - Admin - Vedfolnir{% endblock %}
+
+{% block content %}
+<div class="d-flex justify-content-between flex-wrap flex-md-nowrap align-items-center pt-3 pb-2 mb-3 border-bottom">
+    <h1 class="h2">
+        <i class="bi bi-trash text-danger"></i> Clear Job Queue
+    </h1>
+    <div class="btn-toolbar mb-2 mb-md-0">
+        <div class="btn-group me-2">
+            <a href="{{ url_for('admin.system_maintenance') }}" class="btn btn-sm btn-outline-secondary">
+                <i class="bi bi-arrow-left"></i> Back to System Maintenance
+            </a>
+        </div>
+    </div>
+</div>
+
+<!-- Warning Alert -->
+<div class="alert alert-danger">
+    <div class="d-flex align-items-center">
+        <i class="bi bi-exclamation-triangle-fill me-3 display-6"></i>
+        <div>
+            <h5 class="alert-heading">Destructive Action Warning</h5>
+            <p class="mb-0">
+                This action will permanently remove all queued jobs from the system. 
+                Running jobs will continue, but queued jobs will be cancelled and cannot be recovered.
+            </p>
+        </div>
+    </div>
+</div>
+
+<!-- Queue Status -->
+<div class="row mb-4">
+    <div class="col-md-12">
+        <div class="card">
+            <div class="card-header">
+                <h5 class="card-title mb-0">
+                    <i class="bi bi-list-ul"></i> Current Queue Status
+                </h5>
+            </div>
+            <div class="card-body">
+                <div class="row text-center">
+                    <div class="col-md-4">
+                        <div class="display-4 text-secondary">{{ queued_jobs_count }}</div>
+                        <h6>Queued Jobs</h6>
+                        <small class="text-muted">Will be removed</small>
+                    </div>
+                    <div class="col-md-4">
+                        <div class="display-4 text-primary">0</div>
+                        <h6>Running Jobs</h6>
+                        <small class="text-muted">Will continue</small>
+                    </div>
+                    <div class="col-md-4">
+                        <div class="display-4 text-success">0</div>
+                        <h6>Completed Jobs</h6>
+                        <small class="text-muted">Not affected</small>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+
+<!-- Clear Queue Form -->
+<div class="row">
+    <div class="col-md-8">
+        {% if queued_jobs_count > 0 %}
+        <div class="card">
+            <div class="card-header">
+                <h5 class="card-title mb-0">
+                    <i class="bi bi-trash"></i> Clear Queue Configuration
+                </h5>
+            </div>
+            <div class="card-body">
+                <form method="post" action="/admin/api/system-maintenance/execute">
+                    <input type="hidden" name="csrf_token" value="{{ csrf_token() }}"/>
+                    <input type="hidden" name="action" value="clear_queue"/>
+                    
+                    <div class="mb-4">
+                        <label for="reason" class="form-label">
+                            <strong>Reason for Clearing Queue</strong> <span class="text-danger">*</span>
+                        </label>
+                        <textarea class="form-control" id="reason" name="reason" rows="4" required
+                                  placeholder="Please provide a detailed reason for clearing the job queue (e.g., system maintenance, resolving queue issues, emergency cleanup, etc.)"></textarea>
+                        <div class="form-text">
+                            This reason will be logged and users will be notified about their cancelled jobs.
+                        </div>
+                    </div>
+                    
+                    <div class="mb-4">
+                        <div class="form-check">
+                            <input class="form-check-input" type="checkbox" id="notifyUsers" name="notifyUsers" checked>
+                            <label class="form-check-label" for="notifyUsers">
+                                <strong>Notify Affected Users</strong>
+                            </label>
+                            <div class="form-text">
+                                Send notifications to users whose jobs will be cancelled.
+                            </div>
+                        </div>
+                    </div>
+                    
+                    <div class="mb-4">
+                        <div class="form-check">
+                            <input class="form-check-input" type="checkbox" id="allowRequeue" name="allowRequeue" checked>
+                            <label class="form-check-label" for="allowRequeue">
+                                <strong>Allow Users to Re-queue Jobs</strong>
+                            </label>
+                            <div class="form-text">
+                                Users will be able to restart their cancelled jobs with the same settings.
+                            </div>
+                        </div>
+                    </div>
+                    
+                    <div class="mb-4">
+                        <div class="form-check">
+                            <input class="form-check-input" type="checkbox" id="confirmClear" required>
+                            <label class="form-check-label" for="confirmClear">
+                                <strong>I understand this will permanently remove {{ queued_jobs_count }} queued job(s)</strong> <span class="text-danger">*</span>
+                            </label>
+                            <div class="form-text">
+                                You must confirm that you understand this action cannot be undone.
+                            </div>
+                        </div>
+                    </div>
+                    
+                    <div class="d-grid gap-2 d-md-flex justify-content-md-end">
+                        <a href="{{ url_for('admin.system_maintenance') }}" class="btn btn-secondary">
+                            <i class="bi bi-x-circle"></i> Cancel
+                        </a>
+                        <button type="submit" class="btn btn-danger">
+                            <i class="bi bi-trash"></i> Clear Queue ({{ queued_jobs_count }} jobs)
+                        </button>
+                    </div>
+                </form>
+            </div>
+        </div>
+        {% else %}
+        <div class="card">
+            <div class="card-body text-center py-5">
+                <i class="bi bi-check-circle display-4 text-success"></i>
+                <h5 class="mt-3">Queue is Empty</h5>
+                <p class="text-muted">There are no queued jobs to clear. The job queue is already empty.</p>
+                <a href="{{ url_for('admin.system_maintenance') }}" class="btn btn-primary">
+                    <i class="bi bi-arrow-left"></i> Back to System Maintenance
+                </a>
+            </div>
+        </div>
+        {% endif %}
+    </div>
+    
+    <div class="col-md-4">
+        <!-- Impact Information -->
+        <div class="card">
+            <div class="card-header">
+                <h6 class="card-title mb-0">
+                    <i class="bi bi-info-circle"></i> What This Does
+                </h6>
+            </div>
+            <div class="card-body">
+                <div class="small">
+                    <h6>Jobs that will be affected:</h6>
+                    <ul class="mb-3">
+                        <li><strong>Queued Jobs:</strong> Permanently removed</li>
+                        <li><strong>Pending Jobs:</strong> Cancelled before starting</li>
+                    </ul>
+                    
+                    <h6>Jobs that will NOT be affected:</h6>
+                    <ul class="mb-3">
+                        <li><strong>Running Jobs:</strong> Continue to completion</li>
+                        <li><strong>Completed Jobs:</strong> Remain in history</li>
+                        <li><strong>Failed Jobs:</strong> Remain for review</li>
+                    </ul>
+                    
+                    <h6>User Impact:</h6>
+                    <ul class="mb-0">
+                        <li>Users will be notified of cancellation</li>
+                        <li>Users can restart jobs if allowed</li>
+                        <li>No data loss for completed work</li>
+                    </ul>
+                </div>
+            </div>
+        </div>
+        
+        <!-- Recovery Options -->
+        <div class="card mt-3">
+            <div class="card-header">
+                <h6 class="card-title mb-0">
+                    <i class="bi bi-arrow-clockwise"></i> Recovery Options
+                </h6>
+            </div>
+            <div class="card-body">
+                <div class="small">
+                    <p><strong>After clearing the queue:</strong></p>
+                    <ul class="mb-0">
+                        <li>Users can manually restart their jobs</li>
+                        <li>Job settings and preferences are preserved</li>
+                        <li>Platform connections remain intact</li>
+                        <li>Previous results are not affected</li>
+                    </ul>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+{% endblock %}
+
+{% block extra_js %}
+<script>
+document.addEventListener('DOMContentLoaded', function() {
+    // Form submission confirmation
+    document.querySelector('form')?.addEventListener('submit', function(e) {
+        const reason = document.getElementById('reason')?.value.trim();
+        const confirmed = document.getElementById('confirmClear')?.checked;
+        const queueCount = {{ queued_jobs_count }};
+        
+        if (!reason || !confirmed) {
+            return; // Let browser validation handle this
+        }
+        
+        if (!confirm(`Are you absolutely sure you want to clear the job queue?\\n\\nThis will permanently remove ${queueCount} queued job(s) and cannot be undone.\\n\\nReason: ${reason}`)) {
+            e.preventDefault();
+        }
+    });
+});
+</script>
+{% endblock %}

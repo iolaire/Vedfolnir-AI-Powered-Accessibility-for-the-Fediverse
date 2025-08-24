@@ -1,0 +1,375 @@
+<!-- Copyright (C) 2025 iolaire mcfadden. -->
+<!-- This program is free software: you can redistribute it and/or modify it under the terms of the GNU Affero General Public License as published by the Free Software Foundation, either version 3 of the License, or (at your option) any later version. -->
+<!-- THE SOFTWARE IS PROVIDED "AS IS", WITHOUT WARRANTY OF ANY KIND, EXPRESS OR IMPLIED, INCLUDING BUT NOT LIMITED TO THE WARRANTIES OF MERCHANTABILITY, FITNESS FOR A PARTICULAR PURPOSE AND NONINFRINGEMENT. IN NO EVENT SHALL THE AUTHORS OR COPYRIGHT HOLDERS BE LIABLE FOR ANY CLAIM, DAMAGES OR OTHER LIABILITY, WHETHER IN AN ACTION OF CONTRACT, TORT OR OTHERWISE, ARISING FROM, OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE SOFTWARE. -->
+
+{% extends "base_admin.html" %}
+
+{% block title %}Job History - {{ user.username }} - Admin - Vedfolnir{% endblock %}
+
+{% block content %}
+<div class="d-flex justify-content-between flex-wrap flex-md-nowrap align-items-center pt-3 pb-2 mb-3 border-bottom">
+    <h1 class="h2">
+        <i class="bi bi-clock-history"></i> Job History
+        {% if is_own_history %}
+        <span class="text-muted">- Your Jobs</span>
+        {% else %}
+        <span class="text-muted">- {{ user.username }}</span>
+        {% endif %}
+    </h1>
+    <div class="btn-toolbar mb-2 mb-md-0">
+        <div class="btn-group me-2">
+            <a href="{{ url_for('admin.job_management') }}" class="btn btn-sm btn-outline-secondary">
+                <i class="bi bi-arrow-left"></i> Back to Job Management
+            </a>
+            <button type="button" class="btn btn-sm btn-outline-primary" onclick="refreshHistory()">
+                <i class="bi bi-arrow-clockwise"></i> Refresh
+            </button>
+            <button type="button" class="btn btn-sm btn-outline-info" onclick="exportHistory()">
+                <i class="bi bi-download"></i> Export
+            </button>
+        </div>
+    </div>
+</div>
+
+<!-- User Information -->
+<div class="row mb-4">
+    <div class="col-md-12">
+        <div class="card">
+            <div class="card-body">
+                <div class="row">
+                    <div class="col-md-8">
+                        <h5 class="card-title">
+                            <i class="bi bi-person-circle"></i> {{ user.username }}
+                            {% if user.role.value == 'admin' %}
+                            <span class="badge bg-danger">Admin</span>
+                            {% elif user.role.value == 'reviewer' %}
+                            <span class="badge bg-warning">Reviewer</span>
+                            {% else %}
+                            <span class="badge bg-secondary">User</span>
+                            {% endif %}
+                        </h5>
+                        <p class="card-text">
+                            <strong>Email:</strong> {{ user.email }}<br>
+                            <strong>Member since:</strong> {{ user.created_at.strftime('%Y-%m-%d') if user.created_at else 'Unknown' }}<br>
+                            <strong>Status:</strong> 
+                            <span class="badge bg-{{ 'success' if user.is_active else 'secondary' }}">
+                                {{ 'Active' if user.is_active else 'Inactive' }}
+                            </span>
+                        </p>
+                    </div>
+                    <div class="col-md-4">
+                        <div class="text-center">
+                            <div class="display-6 text-primary">{{ job_history|length }}</div>
+                            <h6>Total Jobs</h6>
+                            <small class="text-muted">Showing last 50 jobs</small>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+
+<!-- Job History -->
+<div class="row">
+    <div class="col-md-12">
+        <div class="card">
+            <div class="card-header">
+                <h5 class="card-title mb-0">
+                    <i class="bi bi-list"></i> Job History
+                    <span class="badge bg-primary ms-2">{{ job_history|length }} jobs</span>
+                </h5>
+            </div>
+            <div class="card-body">
+                {% if job_history %}
+                    <div class="table-responsive">
+                        <table class="table table-hover">
+                            <thead>
+                                <tr>
+                                    <th>Job ID</th>
+                                    <th>Platform</th>
+                                    <th>Status</th>
+                                    <th>Started</th>
+                                    <th>Completed</th>
+                                    <th>Progress</th>
+                                    <th>Results</th>
+                                    <th>Actions</th>
+                                </tr>
+                            </thead>
+                            <tbody>
+                                {% for job in job_history %}
+                                <tr>
+                                    <td>
+                                        <code class="small">{{ job.task_id[:8] }}...</code>
+                                    </td>
+                                    <td>
+                                        <div>
+                                            <strong>{{ job.platform_name }}</strong><br>
+                                            <small class="text-muted">{{ job.platform_type|title }}</small>
+                                        </div>
+                                    </td>
+                                    <td>
+                                        <span class="badge bg-{{ 'primary' if job.status == 'running' else 'secondary' if job.status == 'queued' else 'success' if job.status == 'completed' else 'danger' }}">
+                                            {{ job.status|title }}
+                                        </span>
+                                    </td>
+                                    <td>
+                                        {% if job.created_at %}
+                                        <div>{{ job.created_at.strftime('%Y-%m-%d') }}</div>
+                                        <small class="text-muted">{{ job.created_at.strftime('%H:%M:%S') }}</small>
+                                        {% else %}
+                                        <span class="text-muted">Unknown</span>
+                                        {% endif %}
+                                    </td>
+                                    <td>
+                                        {% if job.completed_at %}
+                                        <div>{{ job.completed_at.strftime('%Y-%m-%d') }}</div>
+                                        <small class="text-muted">{{ job.completed_at.strftime('%H:%M:%S') }}</small>
+                                        {% else %}
+                                        <span class="text-muted">-</span>
+                                        {% endif %}
+                                    </td>
+                                    <td>
+                                        <div class="progress" style="height: 20px;">
+                                            <div class="progress-bar bg-{{ 'success' if job.progress_percentage == 100 else 'primary' }}" 
+                                                 role="progressbar" 
+                                                 style="width: {{ job.progress_percentage or 0 }}%" 
+                                                 aria-valuenow="{{ job.progress_percentage or 0 }}" 
+                                                 aria-valuemin="0" 
+                                                 aria-valuemax="100">
+                                                {{ job.progress_percentage or 0 }}%
+                                            </div>
+                                        </div>
+                                    </td>
+                                    <td>
+                                        {% if job.results %}
+                                        <div class="small">
+                                            <div><i class="bi bi-images text-success"></i> {{ job.results.captions_generated or 0 }} captions</div>
+                                            <div><i class="bi bi-file-image text-info"></i> {{ job.results.images_processed or 0 }} images</div>
+                                            {% if job.results.errors_count > 0 %}
+                                            <div><i class="bi bi-exclamation-triangle text-warning"></i> {{ job.results.errors_count }} errors</div>
+                                            {% endif %}
+                                        </div>
+                                        {% else %}
+                                        <span class="text-muted">-</span>
+                                        {% endif %}
+                                    </td>
+                                    <td>
+                                        <div class="btn-group btn-group-sm">
+                                            <button type="button" class="btn btn-outline-info" onclick="viewJobDetails('{{ job.task_id }}')" title="View Details">
+                                                <i class="bi bi-eye"></i>
+                                            </button>
+                                            {% if job.status == 'completed' %}
+                                            <a href="{{ url_for('review') }}?job_id={{ job.task_id }}" class="btn btn-outline-primary" title="Review Results">
+                                                <i class="bi bi-eye-fill"></i>
+                                            </a>
+                                            {% endif %}
+                                            {% if job.status == 'failed' and (is_own_history or current_user.role.value == 'admin') %}
+                                            <button type="button" class="btn btn-outline-success" onclick="retryJob('{{ job.task_id }}')" title="Retry Job">
+                                                <i class="bi bi-arrow-clockwise"></i>
+                                            </button>
+                                            {% endif %}
+                                        </div>
+                                    </td>
+                                </tr>
+                                {% endfor %}
+                            </tbody>
+                        </table>
+                    </div>
+                {% else %}
+                    <div class="text-center py-5">
+                        <i class="bi bi-inbox display-4 text-muted"></i>
+                        <h5 class="mt-3">No Job History</h5>
+                        <p class="text-muted">
+                            {% if is_own_history %}
+                            You haven't started any caption generation jobs yet.
+                            {% else %}
+                            {{ user.username }} hasn't started any caption generation jobs yet.
+                            {% endif %}
+                        </p>
+                        {% if is_own_history %}
+                        <a href="{{ url_for('caption_generation') }}" class="btn btn-primary">
+                            <i class="bi bi-plus-circle"></i> Start Your First Job
+                        </a>
+                        {% endif %}
+                    </div>
+                {% endif %}
+            </div>
+        </div>
+    </div>
+</div>
+
+<!-- Job Details Modal -->
+<div class="modal fade" id="jobDetailsModal" tabindex="-1" aria-labelledby="jobDetailsModalLabel" aria-hidden="true">
+    <div class="modal-dialog modal-lg">
+        <div class="modal-content">
+            <div class="modal-header">
+                <h5 class="modal-title" id="jobDetailsModalLabel">
+                    <i class="bi bi-info-circle"></i> Job Details
+                </h5>
+                <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
+            </div>
+            <div class="modal-body" id="jobDetailsContent">
+                <div class="text-center">
+                    <div class="spinner-border" role="status">
+                        <span class="visually-hidden">Loading...</span>
+                    </div>
+                </div>
+            </div>
+            <div class="modal-footer">
+                <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Close</button>
+            </div>
+        </div>
+    </div>
+</div>
+{% endblock %}
+
+{% block extra_js %}
+<script>
+function refreshHistory() {
+    window.location.reload();
+}
+
+function exportHistory() {
+    const userId = {{ user.id }};
+    const link = document.createElement('a');
+    link.href = `/admin/api/job-history/${userId}/export`;
+    link.download = `job-history-{{ user.username }}-${new Date().toISOString().split('T')[0]}.csv`;
+    link.click();
+}
+
+function viewJobDetails(taskId) {
+    const modal = new bootstrap.Modal(document.getElementById('jobDetailsModal'));
+    const content = document.getElementById('jobDetailsContent');
+    
+    // Show loading spinner
+    content.innerHTML = `
+        <div class="text-center">
+            <div class="spinner-border" role="status">
+                <span class="visually-hidden">Loading...</span>
+            </div>
+            <p class="mt-2">Loading job details...</p>
+        </div>
+    `;
+    
+    modal.show();
+    
+    // Fetch job details
+    fetch(`/admin/api/job-details/${taskId}`, {
+        method: 'GET'
+    })
+    .then(response => response.json())
+    .then(data => {
+        if (data.success && data.job) {
+            const job = data.job;
+            content.innerHTML = `
+                <div class="row">
+                    <div class="col-md-6">
+                        <h6>Basic Information</h6>
+                        <table class="table table-sm">
+                            <tr><td><strong>Job ID:</strong></td><td><code>${job.task_id}</code></td></tr>
+                            <tr><td><strong>Status:</strong></td><td><span class="badge bg-${job.status === 'completed' ? 'success' : job.status === 'failed' ? 'danger' : 'primary'}">${job.status}</span></td></tr>
+                            <tr><td><strong>Platform:</strong></td><td>${job.platform_name} (${job.platform_type})</td></tr>
+                            <tr><td><strong>Progress:</strong></td><td>${job.progress_percentage || 0}%</td></tr>
+                        </table>
+                    </div>
+                    <div class="col-md-6">
+                        <h6>Timing</h6>
+                        <table class="table table-sm">
+                            <tr><td><strong>Started:</strong></td><td>${job.created_at ? new Date(job.created_at).toLocaleString() : 'Unknown'}</td></tr>
+                            <tr><td><strong>Completed:</strong></td><td>${job.completed_at ? new Date(job.completed_at).toLocaleString() : 'Not completed'}</td></tr>
+                            <tr><td><strong>Duration:</strong></td><td>${job.duration || 'Calculating...'}</td></tr>
+                        </table>
+                    </div>
+                </div>
+                
+                ${job.results ? `
+                <div class="mt-3">
+                    <h6>Results</h6>
+                    <div class="row">
+                        <div class="col-md-4 text-center">
+                            <div class="display-6 text-success">${job.results.captions_generated || 0}</div>
+                            <small>Captions Generated</small>
+                        </div>
+                        <div class="col-md-4 text-center">
+                            <div class="display-6 text-info">${job.results.images_processed || 0}</div>
+                            <small>Images Processed</small>
+                        </div>
+                        <div class="col-md-4 text-center">
+                            <div class="display-6 text-${job.results.errors_count > 0 ? 'warning' : 'success'}">${job.results.errors_count || 0}</div>
+                            <small>Errors</small>
+                        </div>
+                    </div>
+                </div>
+                ` : ''}
+                
+                ${job.error_message ? `
+                <div class="mt-3">
+                    <h6>Error Information</h6>
+                    <div class="alert alert-danger">
+                        <i class="bi bi-exclamation-triangle"></i> ${job.error_message}
+                    </div>
+                </div>
+                ` : ''}
+                
+                ${job.settings ? `
+                <div class="mt-3">
+                    <h6>Job Settings</h6>
+                    <div class="row">
+                        <div class="col-md-6">
+                            <small><strong>Max Posts:</strong> ${job.settings.max_posts || 'Default'}</small><br>
+                            <small><strong>Processing Delay:</strong> ${job.settings.processing_delay || 'Default'}s</small>
+                        </div>
+                        <div class="col-md-6">
+                            <small><strong>Caption Length:</strong> ${job.settings.caption_length || 'Default'}</small><br>
+                            <small><strong>Quality Threshold:</strong> ${job.settings.quality_threshold || 'Default'}</small>
+                        </div>
+                    </div>
+                </div>
+                ` : ''}
+            `;
+        } else {
+            content.innerHTML = `
+                <div class="alert alert-danger">
+                    <i class="bi bi-exclamation-triangle"></i> Failed to load job details: ${data.error || 'Unknown error'}
+                </div>
+            `;
+        }
+    })
+    .catch(error => {
+        console.error('Error loading job details:', error);
+        content.innerHTML = `
+            <div class="alert alert-danger">
+                <i class="bi bi-exclamation-triangle"></i> Failed to load job details due to network error.
+            </div>
+        `;
+    });
+}
+
+function retryJob(taskId) {
+    if (!confirm(`Are you sure you want to retry job ${taskId.substring(0, 8)}...? This will create a new job with the same settings.`)) {
+        return;
+    }
+    
+    fetch(`/api/caption_generation/retry/${taskId}`, {
+        method: 'POST',
+        headers: {
+            'X-CSRFToken': document.querySelector('meta[name="csrf-token"]').getAttribute('content')
+        }
+    })
+    .then(response => response.json())
+    .then(data => {
+        if (data.success) {
+            alert(`Job retried successfully. New job ID: ${data.new_task_id.substring(0, 8)}...`);
+            refreshHistory();
+        } else {
+            alert('Failed to retry job: ' + (data.error || 'Unknown error'));
+        }
+    })
+    .catch(error => {
+        console.error('Error retrying job:', error);
+        alert('Failed to retry job due to network error');
+    });
+}
+</script>
+{% endblock %}

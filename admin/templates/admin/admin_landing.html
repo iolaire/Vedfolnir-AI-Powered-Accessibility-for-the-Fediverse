@@ -1,0 +1,271 @@
+<!-- Copyright (C) 2025 iolaire mcfadden. -->
+<!-- This program is free software: you can redistribute it and/or modify it under the terms of the GNU Affero General Public License as published by the Free Software Foundation, either version 3 of the License, or (at your option) any later version. -->
+<!-- THE SOFTWARE IS PROVIDED "AS IS", WITHOUT WARRANTY OF ANY KIND, EXPRESS OR IMPLIED, INCLUDING BUT NOT LIMITED TO THE WARRANTIES OF MERCHANTABILITY, FITNESS FOR A PARTICULAR PURPOSE AND NONINFRINGEMENT. IN NO EVENT SHALL THE AUTHORS OR COPYRIGHT HOLDERS BE LIABLE FOR ANY CLAIM, DAMAGES OR OTHER LIABILITY, WHETHER IN AN ACTION OF CONTRACT, TORT OR OTHERWISE, ARISING FROM, OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE SOFTWARE. -->
+
+{% extends "base_admin.html" %}
+
+{% block title %}Admin Dashboard - Vedfolnir{% endblock %}
+
+{% block extra_head %}
+<style>
+    .dashboard-card {
+        transition: transform 0.2s ease-in-out;
+        border: none;
+        box-shadow: 0 2px 4px rgba(0,0,0,0.1);
+    }
+    .dashboard-card:hover {
+        transform: translateY(-2px);
+        box-shadow: 0 4px 8px rgba(0,0,0,0.15);
+    }
+    .stat-card {
+        background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+        color: white;
+        border-radius: 10px;
+    }
+    .health-indicator {
+        display: inline-block;
+        width: 12px;
+        height: 12px;
+        border-radius: 50%;
+        margin-right: 8px;
+    }
+    .health-healthy { background-color: #28a745; }
+    .health-degraded { background-color: #ffc107; }
+    .health-unhealthy { background-color: #dc3545; }
+    .health-unknown { background-color: #6c757d; }
+    .quick-action-btn {
+        height: 60px;
+        font-size: 0.9rem;
+    }
+</style>
+{% endblock %}
+
+{% block content %}
+<div class="d-flex justify-content-between flex-wrap flex-md-nowrap align-items-center pt-3 pb-2 mb-3 border-bottom">
+    <h1 class="h2">
+        <i class="bi bi-speedometer2"></i> Admin Dashboard
+    </h1>
+    <div class="btn-toolbar mb-2 mb-md-0">
+        <div class="btn-group me-2">
+            <a href="{{ url_for('admin.health_dashboard') }}" class="btn btn-primary">
+                <i class="bi bi-activity"></i> System Health Dashboard
+            </a>
+        </div>
+    </div>
+</div>
+
+<!-- Welcome Section -->
+<div class="row mb-4">
+    <div class="col-12">
+        <div class="card dashboard-card">
+            <div class="card-body">
+                <div class="row align-items-center">
+                    <div class="col-md-8">
+                        <h4 class="card-title mb-2">
+                            Welcome back, {{ current_user.username }}!
+                        </h4>
+                        <p class="card-text text-muted mb-0">
+                            System Status: 
+                            <span class="health-indicator health-{{ health_status }}"></span>
+                            <strong class="text-capitalize">{{ health_status }}</strong>
+                        </p>
+                        <small class="text-muted">
+                            Last login: {{ current_user.last_login.strftime('%Y-%m-%d %H:%M:%S') if current_user.last_login else 'First time' }}
+                        </small>
+                    </div>
+                    <div class="col-md-4 text-end">
+                        <i class="bi bi-person-circle" style="font-size: 3rem; color: #6c757d;"></i>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+
+<!-- System Overview Stats -->
+<div class="row mb-4">
+    <div class="col-md-3">
+        <div class="card stat-card text-white">
+            <div class="card-body text-center">
+                <i class="bi bi-people" style="font-size: 2rem;"></i>
+                <h3 class="mt-2">{{ stats.total_users }}</h3>
+                <p class="mb-0">Total Users</p>
+                <small>{{ stats.active_users }} active</small>
+            </div>
+        </div>
+    </div>
+    
+    <div class="col-md-3">
+        <div class="card stat-card text-white">
+            <div class="card-body text-center">
+                <i class="bi bi-diagram-3" style="font-size: 2rem;"></i>
+                <h3 class="mt-2">{{ stats.total_platforms }}</h3>
+                <p class="mb-0">Platform Connections</p>
+                <small>Multi-platform support</small>
+            </div>
+        </div>
+    </div>
+    
+    <div class="col-md-3">
+        <div class="card stat-card text-white">
+            <div class="card-body text-center">
+                <i class="bi bi-images" style="font-size: 2rem;"></i>
+                <h3 class="mt-2">{{ stats.total_images }}</h3>
+                <p class="mb-0">Images Processed</p>
+                <small>Caption generation</small>
+            </div>
+        </div>
+    </div>
+    
+    <div class="col-md-3">
+        <div class="card stat-card text-white">
+            <div class="card-body text-center">
+                <i class="bi bi-activity" style="font-size: 2rem;"></i>
+                <h3 class="mt-2">{{ stats.new_users_24h }}</h3>
+                <p class="mb-0">New Users (24h)</p>
+                <small>{{ stats.recent_logins }} recent logins</small>
+            </div>
+        </div>
+    </div>
+</div>
+
+<!-- Quick Actions -->
+<div class="row mb-4">
+    <div class="col-12">
+        <div class="card dashboard-card">
+            <div class="card-header">
+                <h5 class="mb-0">
+                    <i class="bi bi-lightning-charge"></i> Quick Actions
+                </h5>
+            </div>
+            <div class="card-body">
+                <div class="row g-3">
+                    <div class="col-md-4">
+                        <a href="{{ url_for('admin.health_dashboard') }}" class="btn btn-outline-primary w-100 quick-action-btn d-flex flex-column justify-content-center">
+                            <i class="bi bi-activity mb-1" style="font-size: 1.5rem;"></i>
+                            <span>System Health & Jobs</span>
+                            <small class="text-muted">Multi-tenant management</small>
+                        </a>
+                    </div>
+                    
+                    <div class="col-md-4">
+                        <a href="{{ url_for('admin.user_management') }}" class="btn btn-outline-success w-100 quick-action-btn d-flex flex-column justify-content-center">
+                            <i class="bi bi-people mb-1" style="font-size: 1.5rem;"></i>
+                            <span>User Management</span>
+                            <small class="text-muted">Manage user accounts</small>
+                        </a>
+                    </div>
+                    
+                    <div class="col-md-4">
+                        <a href="{{ url_for('admin.monitoring_dashboard') }}" class="btn btn-outline-info w-100 quick-action-btn d-flex flex-column justify-content-center">
+                            <i class="bi bi-graph-up mb-1" style="font-size: 1.5rem;"></i>
+                            <span>Performance Metrics</span>
+                            <small class="text-muted">System monitoring</small>
+                        </a>
+                    </div>
+                </div>
+                
+                <hr class="my-3">
+                
+                <div class="row g-3">
+                    <div class="col-md-4">
+                        <a href="{{ url_for('admin.security_audit_dashboard') }}" class="btn btn-outline-danger w-100 quick-action-btn d-flex flex-column justify-content-center">
+                            <i class="bi bi-shield-exclamation mb-1" style="font-size: 1.5rem;"></i>
+                            <span>Security Audit</span>
+                            <small class="text-muted">Security monitoring</small>
+                        </a>
+                    </div>
+                    
+                    <div class="col-md-4">
+                        <a href="{{ url_for('admin.cleanup') }}" class="btn btn-outline-warning w-100 quick-action-btn d-flex flex-column justify-content-center">
+                            <i class="bi bi-trash mb-1" style="font-size: 1.5rem;"></i>
+                            <span>Data Cleanup</span>
+                            <small class="text-muted">Maintenance tools</small>
+                        </a>
+                    </div>
+                    
+                    <div class="col-md-4">
+                        <a href="{{ url_for('admin.configuration_management') }}" class="btn btn-outline-secondary w-100 quick-action-btn d-flex flex-column justify-content-center">
+                            <i class="bi bi-gear mb-1" style="font-size: 1.5rem;"></i>
+                            <span>Configuration</span>
+                            <small class="text-muted">System settings</small>
+                        </a>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+
+<!-- Recent Activity & System Status -->
+<div class="row">
+    <div class="col-md-6">
+        <div class="card dashboard-card">
+            <div class="card-header">
+                <h5 class="mb-0">
+                    <i class="bi bi-clock-history"></i> Recent Activity
+                </h5>
+            </div>
+            <div class="card-body">
+                <div class="d-flex justify-content-between align-items-center mb-2">
+                    <span>New Users (24h)</span>
+                    <span class="badge bg-primary">{{ stats.new_users_24h }}</span>
+                </div>
+                <div class="d-flex justify-content-between align-items-center mb-2">
+                    <span>Recent Logins (24h)</span>
+                    <span class="badge bg-success">{{ stats.recent_logins }}</span>
+                </div>
+                <div class="d-flex justify-content-between align-items-center mb-2">
+                    <span>Active Users</span>
+                    <span class="badge bg-info">{{ stats.active_users }}</span>
+                </div>
+                <div class="d-flex justify-content-between align-items-center">
+                    <span>Total Posts</span>
+                    <span class="badge bg-secondary">{{ stats.total_posts }}</span>
+                </div>
+            </div>
+        </div>
+    </div>
+    
+    <div class="col-md-6">
+        <div class="card dashboard-card">
+            <div class="card-header">
+                <h5 class="mb-0">
+                    <i class="bi bi-info-circle"></i> System Information
+                </h5>
+            </div>
+            <div class="card-body">
+                <div class="d-flex justify-content-between align-items-center mb-2">
+                    <span>System Status</span>
+                    <span class="badge bg-{{ 'success' if health_status == 'healthy' else 'warning' if health_status == 'degraded' else 'danger' }}">
+                        {{ health_status.title() }}
+                    </span>
+                </div>
+                <div class="d-flex justify-content-between align-items-center mb-2">
+                    <span>Database Type</span>
+                    <span class="badge bg-info">MySQL</span>
+                </div>
+                <div class="d-flex justify-content-between align-items-center mb-2">
+                    <span>Session Storage</span>
+                    <span class="badge bg-info">Redis</span>
+                </div>
+                <div class="d-flex justify-content-between align-items-center">
+                    <span>Application Version</span>
+                    <span class="badge bg-secondary">v1.0.0</span>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+
+{% endblock %}
+
+{% block extra_js %}
+<script>
+    // Auto-refresh system status every 30 seconds
+    setInterval(function() {
+        // You could add AJAX calls here to update system status
+        console.log('Auto-refresh system status');
+    }, 30000);
+</script>
+{% endblock %}

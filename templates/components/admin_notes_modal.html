@@ -1,0 +1,538 @@
+<!-- Copyright (C) 2025 iolaire mcfadden. -->
+<!-- This program is free software: you can redistribute it and/or modify it under the terms of the GNU Affero General Public License as published by the Free Software Foundation, either version 3 of the License, or (at your option) any later version. -->
+<!-- THE SOFTWARE IS PROVIDED "AS IS", WITHOUT WARRANTY OF ANY KIND, EXPRESS OR IMPLIED, INCLUDING BUT NOT LIMITED TO THE WARRANTIES OF MERCHANTABILITY, FITNESS FOR A PARTICULAR PURPOSE AND NONINFRINGEMENT. IN NO EVENT SHALL THE AUTHORS OR COPYRIGHT HOLDERS BE LIABLE FOR ANY CLAIM, DAMAGES OR OTHER LIABILITY, WHETHER IN AN ACTION OF CONTRACT, TORT OR OTHERWISE, ARISING FROM, OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE SOFTWARE. -->
+
+<!-- Admin Notes Modal Component -->
+<div class="modal fade" id="adminNotesModal" tabindex="-1" aria-labelledby="adminNotesModalLabel" aria-hidden="true">
+    <div class="modal-dialog modal-lg">
+        <div class="modal-content">
+            <div class="modal-header">
+                <h5 class="modal-title" id="adminNotesModalLabel">
+                    <i class="fas fa-sticky-note"></i>
+                    Admin Notes
+                </h5>
+                <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
+            </div>
+            <div class="modal-body">
+                <div class="mb-3">
+                    <div class="d-flex justify-content-between align-items-center mb-2">
+                        <label for="adminNotesText" class="form-label">
+                            <strong>Notes for Job:</strong> <span id="notesJobId" class="text-muted"></span>
+                        </label>
+                        <small class="text-muted">
+                            <i class="fas fa-info-circle"></i>
+                            These notes are visible to other administrators
+                        </small>
+                    </div>
+                    <textarea class="form-control" id="adminNotesText" rows="8" 
+                              placeholder="Add administrative notes about this job...&#10;&#10;Examples:&#10;- Job requires special attention due to...&#10;- User reported issue with...&#10;- Processing delayed because...&#10;- Quality review needed for..."></textarea>
+                    <div class="form-text">
+                        <i class="fas fa-markdown"></i>
+                        Markdown formatting supported. Notes will be timestamped and attributed to you.
+                    </div>
+                </div>
+                
+                <!-- Current Notes Display -->
+                <div id="currentNotesSection" style="display: none;">
+                    <hr>
+                    <div class="mb-3">
+                        <h6 class="text-muted">
+                            <i class="fas fa-history"></i>
+                            Current Notes
+                        </h6>
+                        <div id="currentNotesDisplay" class="alert alert-info">
+                            <!-- Current notes will be displayed here -->
+                        </div>
+                    </div>
+                </div>
+                
+                <!-- Notes History -->
+                <div id="notesHistorySection" style="display: none;">
+                    <hr>
+                    <div class="mb-3">
+                        <h6 class="text-muted">
+                            <i class="fas fa-clock"></i>
+                            Notes History
+                        </h6>
+                        <div id="notesHistoryDisplay" class="border rounded p-3" style="max-height: 200px; overflow-y: auto;">
+                            <!-- Notes history will be displayed here -->
+                        </div>
+                    </div>
+                </div>
+                
+                <!-- Quick Actions -->
+                <div class="row mt-3">
+                    <div class="col-md-6">
+                        <div class="card border-light">
+                            <div class="card-header bg-light py-2">
+                                <h6 class="card-title mb-0">
+                                    <i class="fas fa-bolt"></i>
+                                    Quick Actions
+                                </h6>
+                            </div>
+                            <div class="card-body py-2">
+                                <div class="btn-group-vertical w-100" role="group">
+                                    <button type="button" class="btn btn-sm btn-outline-warning" onclick="addQuickNote('Job requires priority review')">
+                                        <i class="fas fa-exclamation-triangle"></i>
+                                        Priority Review Needed
+                                    </button>
+                                    <button type="button" class="btn btn-sm btn-outline-info" onclick="addQuickNote('User contacted for additional information')">
+                                        <i class="fas fa-phone"></i>
+                                        User Contacted
+                                    </button>
+                                    <button type="button" class="btn btn-sm btn-outline-success" onclick="addQuickNote('Quality check completed - approved')">
+                                        <i class="fas fa-check-circle"></i>
+                                        Quality Approved
+                                    </button>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                    <div class="col-md-6">
+                        <div class="card border-light">
+                            <div class="card-header bg-light py-2">
+                                <h6 class="card-title mb-0">
+                                    <i class="fas fa-tags"></i>
+                                    Common Tags
+                                </h6>
+                            </div>
+                            <div class="card-body py-2">
+                                <div class="d-flex flex-wrap gap-1">
+                                    <button type="button" class="btn btn-sm btn-outline-secondary" onclick="addTag('#priority')">
+                                        #priority
+                                    </button>
+                                    <button type="button" class="btn btn-sm btn-outline-secondary" onclick="addTag('#quality-issue')">
+                                        #quality-issue
+                                    </button>
+                                    <button type="button" class="btn btn-sm btn-outline-secondary" onclick="addTag('#user-request')">
+                                        #user-request
+                                    </button>
+                                    <button type="button" class="btn btn-sm btn-outline-secondary" onclick="addTag('#technical-issue')">
+                                        #technical-issue
+                                    </button>
+                                    <button type="button" class="btn btn-sm btn-outline-secondary" onclick="addTag('#review-needed')">
+                                        #review-needed
+                                    </button>
+                                    <button type="button" class="btn btn-sm btn-outline-secondary" onclick="addTag('#approved')">
+                                        #approved
+                                    </button>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+            <div class="modal-footer">
+                <div class="d-flex justify-content-between w-100">
+                    <div>
+                        <button type="button" class="btn btn-outline-secondary" id="clearNotesBtn">
+                            <i class="fas fa-eraser"></i>
+                            Clear Notes
+                        </button>
+                        <button type="button" class="btn btn-outline-info" id="loadTemplateBtn">
+                            <i class="fas fa-file-alt"></i>
+                            Load Template
+                        </button>
+                    </div>
+                    <div>
+                        <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">
+                            <i class="fas fa-times"></i>
+                            Cancel
+                        </button>
+                        <button type="button" class="btn btn-primary" id="saveNotesBtn">
+                            <i class="fas fa-save"></i>
+                            Save Notes
+                        </button>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+
+<!-- Notes Template Modal -->
+<div class="modal fade" id="notesTemplateModal" tabindex="-1" aria-labelledby="notesTemplateModalLabel" aria-hidden="true">
+    <div class="modal-dialog">
+        <div class="modal-content">
+            <div class="modal-header">
+                <h5 class="modal-title" id="notesTemplateModalLabel">
+                    <i class="fas fa-file-alt"></i>
+                    Notes Templates
+                </h5>
+                <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
+            </div>
+            <div class="modal-body">
+                <div class="list-group">
+                    <button type="button" class="list-group-item list-group-item-action" onclick="loadTemplate('quality_review')">
+                        <div class="d-flex w-100 justify-content-between">
+                            <h6 class="mb-1">Quality Review</h6>
+                            <small class="text-muted">Standard quality assessment</small>
+                        </div>
+                        <p class="mb-1">Template for quality review notes and findings.</p>
+                    </button>
+                    
+                    <button type="button" class="list-group-item list-group-item-action" onclick="loadTemplate('user_issue')">
+                        <div class="d-flex w-100 justify-content-between">
+                            <h6 class="mb-1">User Issue Report</h6>
+                            <small class="text-muted">Issue documentation</small>
+                        </div>
+                        <p class="mb-1">Template for documenting user-reported issues.</p>
+                    </button>
+                    
+                    <button type="button" class="list-group-item list-group-item-action" onclick="loadTemplate('technical_issue')">
+                        <div class="d-flex w-100 justify-content-between">
+                            <h6 class="mb-1">Technical Issue</h6>
+                            <small class="text-muted">Technical problem tracking</small>
+                        </div>
+                        <p class="mb-1">Template for technical issues and troubleshooting.</p>
+                    </button>
+                    
+                    <button type="button" class="list-group-item list-group-item-action" onclick="loadTemplate('priority_escalation')">
+                        <div class="d-flex w-100 justify-content-between">
+                            <h6 class="mb-1">Priority Escalation</h6>
+                            <small class="text-muted">Escalation documentation</small>
+                        </div>
+                        <p class="mb-1">Template for priority escalation and reasoning.</p>
+                    </button>
+                </div>
+            </div>
+            <div class="modal-footer">
+                <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">
+                    <i class="fas fa-times"></i>
+                    Cancel
+                </button>
+            </div>
+        </div>
+    </div>
+</div>
+
+<script>
+// Global variables for admin notes modal
+let currentNotesJobId = null;
+let originalNotes = '';
+
+// Admin notes modal functions
+function showAdminNotesModal(taskId, currentNotes = '') {
+    currentNotesJobId = taskId;
+    originalNotes = currentNotes;
+    
+    // Set job ID display
+    document.getElementById('notesJobId').textContent = taskId.substring(0, 8) + '...';
+    
+    // Set current notes
+    document.getElementById('adminNotesText').value = currentNotes;
+    
+    // Show current notes if they exist
+    if (currentNotes.trim()) {
+        document.getElementById('currentNotesSection').style.display = 'block';
+        document.getElementById('currentNotesDisplay').innerHTML = formatNotesDisplay(currentNotes);
+    } else {
+        document.getElementById('currentNotesSection').style.display = 'none';
+    }
+    
+    // Load notes history
+    loadNotesHistory(taskId);
+    
+    // Show modal
+    const modal = new bootstrap.Modal(document.getElementById('adminNotesModal'));
+    modal.show();
+    
+    // Set up event listeners
+    setupNotesModalEventListeners();
+}
+
+function setupNotesModalEventListeners() {
+    // Save notes button
+    document.getElementById('saveNotesBtn').onclick = saveAdminNotes;
+    
+    // Clear notes button
+    document.getElementById('clearNotesBtn').onclick = function() {
+        if (confirm('Are you sure you want to clear all notes?')) {
+            document.getElementById('adminNotesText').value = '';
+        }
+    };
+    
+    // Load template button
+    document.getElementById('loadTemplateBtn').onclick = function() {
+        const templateModal = new bootstrap.Modal(document.getElementById('notesTemplateModal'));
+        templateModal.show();
+    };
+}
+
+function saveAdminNotes() {
+    const notes = document.getElementById('adminNotesText').value.trim();
+    
+    if (!notes && !originalNotes) {
+        // No notes to save
+        bootstrap.Modal.getInstance(document.getElementById('adminNotesModal')).hide();
+        return;
+    }
+    
+    // Show loading state
+    const saveBtn = document.getElementById('saveNotesBtn');
+    const originalText = saveBtn.innerHTML;
+    saveBtn.innerHTML = '<i class="fas fa-spinner fa-spin"></i> Saving...';
+    saveBtn.disabled = true;
+    
+    fetch(`/admin/api/jobs/${currentNotesJobId}/notes`, {
+        method: 'POST',
+        headers: {
+            'Content-Type': 'application/json',
+            'X-CSRFToken': getCsrfToken()
+        },
+        body: JSON.stringify({
+            notes: notes
+        })
+    })
+    .then(response => response.json())
+    .then(data => {
+        if (data.success) {
+            // Show success message
+            showNotesSuccess('Admin notes saved successfully');
+            
+            // Close modal
+            bootstrap.Modal.getInstance(document.getElementById('adminNotesModal')).hide();
+            
+            // Refresh job list if available
+            if (typeof refreshJobList === 'function') {
+                refreshJobList();
+            }
+        } else {
+            showNotesError(data.message || 'Failed to save admin notes');
+        }
+    })
+    .catch(error => {
+        console.error('Error saving admin notes:', error);
+        showNotesError('Network error occurred while saving notes');
+    })
+    .finally(() => {
+        // Restore button state
+        saveBtn.innerHTML = originalText;
+        saveBtn.disabled = false;
+    });
+}
+
+function loadNotesHistory(taskId) {
+    fetch(`/admin/api/jobs/${taskId}/notes/history`, {
+        method: 'GET',
+        headers: {
+            'Content-Type': 'application/json',
+            'X-CSRFToken': getCsrfToken()
+        }
+    })
+    .then(response => response.json())
+    .then(data => {
+        if (data.success && data.history && data.history.length > 0) {
+            document.getElementById('notesHistorySection').style.display = 'block';
+            document.getElementById('notesHistoryDisplay').innerHTML = formatNotesHistory(data.history);
+        } else {
+            document.getElementById('notesHistorySection').style.display = 'none';
+        }
+    })
+    .catch(error => {
+        console.error('Error loading notes history:', error);
+        document.getElementById('notesHistorySection').style.display = 'none';
+    });
+}
+
+function formatNotesDisplay(notes) {
+    // Simple markdown-like formatting
+    return notes
+        .replace(/\n/g, '<br>')
+        .replace(/\*\*(.*?)\*\*/g, '<strong>$1</strong>')
+        .replace(/\*(.*?)\*/g, '<em>$1</em>')
+        .replace(/#(\w+)/g, '<span class="badge bg-secondary">#$1</span>');
+}
+
+function formatNotesHistory(history) {
+    return history.map(entry => `
+        <div class="border-bottom pb-2 mb-2">
+            <div class="d-flex justify-content-between">
+                <strong>${entry.admin_username}</strong>
+                <small class="text-muted">${formatDateTime(entry.created_at)}</small>
+            </div>
+            <div class="mt-1">${formatNotesDisplay(entry.notes)}</div>
+        </div>
+    `).join('');
+}
+
+function addQuickNote(noteText) {
+    const currentNotes = document.getElementById('adminNotesText').value;
+    const timestamp = new Date().toLocaleString();
+    const newNote = `[${timestamp}] ${noteText}`;
+    
+    if (currentNotes.trim()) {
+        document.getElementById('adminNotesText').value = currentNotes + '\n\n' + newNote;
+    } else {
+        document.getElementById('adminNotesText').value = newNote;
+    }
+    
+    // Focus on textarea
+    document.getElementById('adminNotesText').focus();
+}
+
+function addTag(tag) {
+    const textarea = document.getElementById('adminNotesText');
+    const currentValue = textarea.value;
+    const cursorPosition = textarea.selectionStart;
+    
+    // Insert tag at cursor position
+    const newValue = currentValue.slice(0, cursorPosition) + tag + ' ' + currentValue.slice(cursorPosition);
+    textarea.value = newValue;
+    
+    // Set cursor position after the tag
+    textarea.setSelectionRange(cursorPosition + tag.length + 1, cursorPosition + tag.length + 1);
+    textarea.focus();
+}
+
+function loadTemplate(templateType) {
+    const templates = {
+        'quality_review': `## Quality Review - ${new Date().toLocaleDateString()}
+
+**Reviewer:** [Admin Name]
+**Review Status:** [Pass/Fail/Needs Revision]
+
+### Quality Assessment:
+- **Accuracy:** 
+- **Completeness:** 
+- **Clarity:** 
+- **Compliance:** 
+
+### Issues Found:
+- 
+
+### Recommendations:
+- 
+
+### Next Steps:
+- 
+
+#quality-review #approved`,
+
+        'user_issue': `## User Issue Report - ${new Date().toLocaleDateString()}
+
+**Reported By:** [User Name]
+**Issue Type:** [Technical/Quality/Process]
+**Priority:** [Low/Medium/High/Urgent]
+
+### Issue Description:
+[Detailed description of the issue]
+
+### Steps to Reproduce:
+1. 
+2. 
+3. 
+
+### Current Status:
+[Investigation/In Progress/Resolved]
+
+### Resolution:
+[Description of resolution or next steps]
+
+### Follow-up Required:
+- [ ] Contact user
+- [ ] Update documentation
+- [ ] Monitor for recurrence
+
+#user-request #technical-issue`,
+
+        'technical_issue': `## Technical Issue - ${new Date().toLocaleDateString()}
+
+**Issue Type:** [System/API/Processing/Database]
+**Severity:** [Low/Medium/High/Critical]
+**Affected Components:** 
+
+### Problem Description:
+[Detailed technical description]
+
+### Error Messages/Logs:
+\`\`\`
+[Error messages or relevant log entries]
+\`\`\`
+
+### Investigation Steps:
+1. 
+2. 
+3. 
+
+### Root Cause:
+[Analysis of the root cause]
+
+### Resolution:
+[Steps taken to resolve]
+
+### Prevention:
+[Steps to prevent recurrence]
+
+#technical-issue #investigation`,
+
+        'priority_escalation': `## Priority Escalation - ${new Date().toLocaleDateString()}
+
+**Escalated By:** [Admin Name]
+**Original Priority:** [Low/Normal/High]
+**New Priority:** [High/Urgent]
+
+### Escalation Reason:
+[Detailed justification for priority change]
+
+### Business Impact:
+[Description of business impact]
+
+### Timeline Requirements:
+**Required Completion:** [Date/Time]
+**Justification:** [Why this timeline is critical]
+
+### Stakeholders Notified:
+- [ ] User
+- [ ] Team Lead
+- [ ] Management
+
+### Additional Resources Required:
+- 
+
+#priority #escalation #urgent`
+    };
+    
+    const template = templates[templateType];
+    if (template) {
+        document.getElementById('adminNotesText').value = template;
+        
+        // Close template modal
+        bootstrap.Modal.getInstance(document.getElementById('notesTemplateModal')).hide();
+        
+        // Focus on textarea
+        document.getElementById('adminNotesText').focus();
+    }
+}
+
+function showNotesSuccess(message) {
+    // Implementation depends on your notification system
+    const event = new CustomEvent('showToast', {
+        detail: { message: message, type: 'success' }
+    });
+    document.dispatchEvent(event);
+}
+
+function showNotesError(message) {
+    // Implementation depends on your notification system
+    const event = new CustomEvent('showToast', {
+        detail: { message: message, type: 'error' }
+    });
+    document.dispatchEvent(event);
+}
+
+function formatDateTime(dateString) {
+    if (!dateString) return 'N/A';
+    
+    try {
+        const date = new Date(dateString);
+        return date.toLocaleString();
+    } catch (e) {
+        return dateString;
+    }
+}
+
+function getCsrfToken() {
+    return document.querySelector('meta[name=csrf-token]')?.getAttribute('content') || '';
+}
+</script>

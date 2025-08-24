@@ -1,0 +1,275 @@
+<!-- Copyright (C) 2025 iolaire mcfadden. -->
+<!-- This program is free software: you can redistribute it and/or modify it under the terms of the GNU Affero General Public License as published by the Free Software Foundation, either version 3 of the License, or (at your option) any later version. -->
+<!-- THE SOFTWARE IS PROVIDED "AS IS", WITHOUT WARRANTY OF ANY KIND, EXPRESS OR IMPLIED, INCLUDING BUT NOT LIMITED TO THE WARRANTIES OF MERCHANTABILITY, FITNESS FOR A PARTICULAR PURPOSE AND NONINFRINGEMENT. IN NO EVENT SHALL THE AUTHORS OR COPYRIGHT HOLDERS BE LIABLE FOR ANY CLAIM, DAMAGES OR OTHER LIABILITY, WHETHER IN AN ACTION OF CONTRACT, TORT OR OTHERWISE, ARISING FROM, OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE SOFTWARE. -->
+
+{% extends "base_admin.html" %}
+
+{% block title %}Bulk Actions - Admin - Vedfolnir{% endblock %}
+
+{% block content %}
+<div class="d-flex justify-content-between flex-wrap flex-md-nowrap align-items-center pt-3 pb-2 mb-3 border-bottom">
+    <h1 class="h2">
+        <i class="bi bi-gear"></i> Bulk Actions Management
+    </h1>
+    <div class="btn-toolbar mb-2 mb-md-0">
+        <div class="btn-group me-2">
+            <a href="{{ url_for('admin.job_management') }}" class="btn btn-sm btn-outline-secondary">
+                <i class="bi bi-arrow-left"></i> Back to Job Management
+            </a>
+            <button type="button" class="btn btn-sm btn-outline-primary" onclick="selectAllJobs()">
+                <i class="bi bi-check-all"></i> Select All
+            </button>
+            <button type="button" class="btn btn-sm btn-outline-secondary" onclick="clearSelection()">
+                <i class="bi bi-x-square"></i> Clear Selection
+            </button>
+        </div>
+    </div>
+</div>
+
+<!-- Job Selection -->
+<div class="row">
+    <div class="col-md-8">
+        <div class="card">
+            <div class="card-header">
+                <h5 class="card-title mb-0">
+                    <i class="bi bi-list-check"></i> Select Jobs for Bulk Actions
+                    <span class="badge bg-primary ms-2">{{ total_jobs }} jobs available</span>
+                </h5>
+            </div>
+            <div class="card-body">
+                {% if jobs %}
+                    <form id="bulkActionsForm" method="post">
+                        <input type="hidden" name="csrf_token" value="{{ csrf_token() }}"/>
+                        
+                        {% for job in jobs %}
+                        <div class="form-check mb-3 p-3 border rounded">
+                            <input class="form-check-input" type="checkbox" name="selected_jobs" value="{{ job.task_id }}" id="job_{{ job.task_id }}">
+                            <label class="form-check-label w-100" for="job_{{ job.task_id }}">
+                                <div class="row">
+                                    <div class="col-md-8">
+                                        <div class="d-flex align-items-center mb-2">
+                                            <code class="small me-2">{{ job.task_id[:8] }}...</code>
+                                            <span class="badge bg-{{ 'primary' if job.status == 'running' else 'secondary' if job.status == 'queued' else 'success' if job.status == 'completed' else 'danger' }}">
+                                                {{ job.status|title }}
+                                            </span>
+                                        </div>
+                                        <div class="row">
+                                            <div class="col-sm-6">
+                                                <small><strong>User:</strong> {{ job.username }} ({{ job.user_email }})</small><br>
+                                                <small><strong>Platform:</strong> {{ job.platform_name }} ({{ job.platform_type }})</small>
+                                            </div>
+                                            <div class="col-sm-6">
+                                                <small><strong>Started:</strong> {{ job.created_at.strftime('%Y-%m-%d %H:%M:%S') if job.created_at else 'Unknown' }}</small><br>
+                                                <small><strong>Progress:</strong> {{ job.progress_percentage or 0 }}%</small>
+                                            </div>
+                                        </div>
+                                    </div>
+                                    <div class="col-md-4 text-end">
+                                        <small class="text-muted">Click to select for bulk action</small>
+                                    </div>
+                                </div>
+                            </label>
+                        </div>
+                        {% endfor %}
+                    </form>
+                {% else %}
+                    <div class="text-center py-5">
+                        <i class="bi bi-inbox display-4 text-muted"></i>
+                        <h5 class="mt-3">No Jobs Available</h5>
+                        <p class="text-muted">There are no active, queued, or failed jobs that can be managed with bulk actions.</p>
+                        <a href="{{ url_for('admin.job_management') }}" class="btn btn-primary">
+                            <i class="bi bi-arrow-left"></i> Back to Job Management
+                        </a>
+                    </div>
+                {% endif %}
+            </div>
+        </div>
+    </div>
+    
+    <div class="col-md-4">
+        <div class="card">
+            <div class="card-header">
+                <h5 class="card-title mb-0">
+                    <i class="bi bi-tools"></i> Available Actions
+                </h5>
+            </div>
+            <div class="card-body">
+                <div id="selectedJobsCount" class="alert alert-info">
+                    <i class="bi bi-info-circle"></i> Select jobs to see available actions
+                </div>
+                
+                <div id="bulkActionsContainer" style="display: none;">
+                    {% for action in bulk_actions %}
+                    <div class="d-grid gap-2 mb-2">
+                        <button type="button" class="btn {{ action.class }}" onclick="executeBulkAction('{{ action.id }}', {{ action.requires_reason|lower }})">
+                            <i class="{{ action.icon }}"></i> {{ action.name }}
+                        </button>
+                        <small class="text-muted">{{ action.description }}</small>
+                    </div>
+                    {% endfor %}
+                </div>
+                
+                <!-- Reason input for actions that require it -->
+                <div id="reasonContainer" style="display: none;" class="mt-3">
+                    <label for="actionReason" class="form-label">Reason (required):</label>
+                    <textarea class="form-control" id="actionReason" rows="3" placeholder="Please provide a reason for this action..."></textarea>
+                </div>
+            </div>
+        </div>
+        
+        <!-- Action Log -->
+        <div class="card mt-3">
+            <div class="card-header">
+                <h6 class="card-title mb-0">
+                    <i class="bi bi-clock-history"></i> Recent Actions
+                </h6>
+            </div>
+            <div class="card-body">
+                <div id="actionLog">
+                    <small class="text-muted">No recent actions</small>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+{% endblock %}
+
+{% block extra_js %}
+<script>
+let selectedJobs = [];
+
+document.addEventListener('DOMContentLoaded', function() {
+    // Listen for checkbox changes
+    const checkboxes = document.querySelectorAll('input[name="selected_jobs"]');
+    checkboxes.forEach(checkbox => {
+        checkbox.addEventListener('change', updateSelection);
+    });
+    
+    updateSelection();
+});
+
+function updateSelection() {
+    const checkboxes = document.querySelectorAll('input[name="selected_jobs"]:checked');
+    selectedJobs = Array.from(checkboxes).map(cb => cb.value);
+    
+    const countElement = document.getElementById('selectedJobsCount');
+    const actionsContainer = document.getElementById('bulkActionsContainer');
+    
+    if (selectedJobs.length > 0) {
+        countElement.innerHTML = `<i class="bi bi-check-circle"></i> ${selectedJobs.length} job(s) selected`;
+        countElement.className = 'alert alert-success';
+        actionsContainer.style.display = 'block';
+    } else {
+        countElement.innerHTML = '<i class="bi bi-info-circle"></i> Select jobs to see available actions';
+        countElement.className = 'alert alert-info';
+        actionsContainer.style.display = 'none';
+    }
+}
+
+function selectAllJobs() {
+    const checkboxes = document.querySelectorAll('input[name="selected_jobs"]');
+    checkboxes.forEach(checkbox => {
+        checkbox.checked = true;
+    });
+    updateSelection();
+}
+
+function clearSelection() {
+    const checkboxes = document.querySelectorAll('input[name="selected_jobs"]');
+    checkboxes.forEach(checkbox => {
+        checkbox.checked = false;
+    });
+    updateSelection();
+}
+
+function executeBulkAction(actionId, requiresReason) {
+    if (selectedJobs.length === 0) {
+        alert('Please select at least one job first.');
+        return;
+    }
+    
+    let reason = '';
+    if (requiresReason) {
+        const reasonContainer = document.getElementById('reasonContainer');
+        reasonContainer.style.display = 'block';
+        
+        reason = document.getElementById('actionReason').value.trim();
+        if (!reason) {
+            alert('Please provide a reason for this action.');
+            document.getElementById('actionReason').focus();
+            return;
+        }
+    }
+    
+    const actionNames = {
+        'cancel_selected': 'cancel',
+        'set_priority_high': 'set high priority for',
+        'restart_failed': 'restart',
+        'add_notes': 'add notes to'
+    };
+    
+    const actionName = actionNames[actionId] || actionId;
+    
+    if (!confirm(`Are you sure you want to ${actionName} ${selectedJobs.length} selected job(s)?${reason ? '\\n\\nReason: ' + reason : ''}`)) {
+        return;
+    }
+    
+    // Execute the bulk action
+    fetch('/admin/api/bulk-actions/execute', {
+        method: 'POST',
+        headers: {
+            'Content-Type': 'application/json',
+            'X-CSRFToken': document.querySelector('input[name="csrf_token"]').value
+        },
+        body: JSON.stringify({
+            action: actionId,
+            job_ids: selectedJobs,
+            reason: reason
+        })
+    })
+    .then(response => response.json())
+    .then(data => {
+        if (data.success) {
+            addToActionLog(`Successfully executed ${actionName} on ${selectedJobs.length} job(s)`);
+            
+            // Clear selection and hide reason container
+            clearSelection();
+            document.getElementById('reasonContainer').style.display = 'none';
+            document.getElementById('actionReason').value = '';
+            
+            // Refresh the page after a short delay
+            setTimeout(() => {
+                window.location.reload();
+            }, 2000);
+        } else {
+            alert('Failed to execute bulk action: ' + (data.error || 'Unknown error'));
+        }
+    })
+    .catch(error => {
+        console.error('Error executing bulk action:', error);
+        alert('Failed to execute bulk action due to network error');
+    });
+}
+
+function addToActionLog(message) {
+    const logElement = document.getElementById('actionLog');
+    const timestamp = new Date().toLocaleTimeString();
+    
+    const logEntry = document.createElement('div');
+    logEntry.className = 'small mb-2 pb-2 border-bottom';
+    logEntry.innerHTML = `<strong>${timestamp}:</strong> ${message}`;
+    
+    if (logElement.innerHTML.includes('No recent actions')) {
+        logElement.innerHTML = '';
+    }
+    
+    logElement.insertBefore(logEntry, logElement.firstChild);
+    
+    // Keep only the last 5 entries
+    const entries = logElement.children;
+    while (entries.length > 5) {
+        logElement.removeChild(entries[entries.length - 1]);
+    }
+}
+</script>
+{% endblock %}

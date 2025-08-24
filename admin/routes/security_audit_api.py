@@ -164,13 +164,26 @@ def csrf_metrics():
         csrf_metrics_manager = get_csrf_security_metrics()
         
         # Get CSRF metrics
-        daily_summary = csrf_metrics_manager.get_daily_summary()
-        recent_violations = csrf_metrics_manager.get_recent_violations(hours=24)
+        compliance_metrics = csrf_metrics_manager.get_compliance_metrics('24h')
+        dashboard_data = csrf_metrics_manager.get_csrf_dashboard_data()
+        
+        # Extract recent violations from dashboard data
+        recent_violations = dashboard_data.get('recent_violations', [])
         
         return jsonify({
             'status': 'success',
             'data': {
-                'daily_summary': daily_summary,
+                'compliance_metrics': {
+                    'total_requests': compliance_metrics.total_requests,
+                    'protected_requests': compliance_metrics.protected_requests,
+                    'violations': compliance_metrics.violations,
+                    'compliance_rate': compliance_metrics.compliance_rate,
+                    'compliance_level': compliance_metrics.compliance_level.value,
+                    'violations_by_type': dict(compliance_metrics.violations_by_type),
+                    'violations_by_endpoint': dict(compliance_metrics.violations_by_endpoint),
+                    'violations_by_ip': dict(compliance_metrics.violations_by_ip)
+                },
+                'dashboard_data': dashboard_data,
                 'recent_violations': recent_violations,
                 'csrf_enabled': os.getenv('SECURITY_CSRF_ENABLED', 'true').lower() == 'true'
             }

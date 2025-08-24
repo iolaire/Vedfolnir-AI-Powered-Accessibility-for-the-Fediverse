@@ -518,7 +518,8 @@ class SystemMonitor:
             session = self.db_manager.get_session()
             try:
                 # Simple query to test database connectivity
-                session.execute("SELECT 1")
+                from sqlalchemy import text
+                session.execute(text("SELECT 1"))
                 return 'healthy'
             finally:
                 session.close()

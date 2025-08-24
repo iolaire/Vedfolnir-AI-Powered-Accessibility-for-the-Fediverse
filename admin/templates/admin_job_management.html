@@ -15,7 +15,7 @@
         padding: 20px;
         margin-bottom: 20px;
     }
-    
+
     .admin-job-section {
         border: 2px solid #ffc107;
         border-radius: 8px;
@@ -23,7 +23,7 @@
         padding: 20px;
         margin-bottom: 20px;
     }
-    
+
     .personal-job-section {
         border: 2px solid #0dcaf0;
         border-radius: 8px;
@@ -31,22 +31,22 @@
         padding: 20px;
         margin-bottom: 20px;
     }
-    
+
     .job-section-header {
         display: flex;
         justify-content: between;
         align-items: center;
         margin-bottom: 15px;
         padding-bottom: 10px;
-        border-bottom: 1px solid rgba(0,0,0,0.1);
+        border-bottom: 1px solid rgba(0, 0, 0, 0.1);
     }
-    
+
     .job-section-title {
         font-size: 1.25rem;
         font-weight: 600;
         margin: 0;
     }
-    
+
     .admin-action-badge {
         background: #ffc107;
         color: #000;
@@ -55,7 +55,7 @@
         border-radius: 3px;
         margin-left: 8px;
     }
-    
+
     .personal-action-badge {
         background: #0dcaf0;
         color: #000;
@@ -64,7 +64,7 @@
         border-radius: 3px;
         margin-left: 8px;
     }
-    
+
     .job-card {
         background: white;
         border: 1px solid #dee2e6;
@@ -73,31 +73,31 @@
         margin-bottom: 15px;
         transition: all 0.3s ease;
     }
-    
+
     .job-card:hover {
-        box-shadow: 0 4px 8px rgba(0,0,0,0.1);
+        box-shadow: 0 4px 8px rgba(0, 0, 0, 0.1);
         transform: translateY(-2px);
     }
-    
+
     .job-card.admin-managed {
         border-left: 4px solid #ffc107;
     }
-    
+
     .job-card.personal-managed {
         border-left: 4px solid #0dcaf0;
     }
-    
+
     .job-actions {
         display: flex;
         gap: 8px;
         flex-wrap: wrap;
     }
-    
+
     .job-actions .btn {
         font-size: 0.8rem;
         padding: 4px 8px;
     }
-    
+
     .context-warning {
         background: #fff3cd;
         border: 1px solid #ffeaa7;
@@ -105,14 +105,14 @@
         padding: 12px;
         margin-bottom: 20px;
     }
-    
+
     .job-stats {
         display: grid;
         grid-template-columns: repeat(auto-fit, minmax(150px, 1fr));
         gap: 15px;
         margin-bottom: 20px;
     }
-    
+
     .stat-card {
         background: white;
         border: 1px solid #dee2e6;
@@ -120,24 +120,24 @@
         padding: 15px;
         text-align: center;
     }
-    
+
     .stat-value {
         font-size: 1.5rem;
         font-weight: bold;
         margin-bottom: 5px;
     }
-    
+
     .stat-label {
         font-size: 0.9rem;
         color: #6c757d;
     }
-    
+
     .empty-state {
         text-align: center;
         padding: 40px 20px;
         color: #6c757d;
     }
-    
+
     .empty-state i {
         font-size: 3rem;
         margin-bottom: 15px;
@@ -157,7 +157,7 @@
                 <i class="bi bi-arrow-clockwise"></i> Refresh
             </button>
             <button type="button" class="btn btn-sm btn-outline-primary" onclick="toggleAutoRefresh()">
-                <i class="bi bi-play-circle" id="autoRefreshIcon"></i> 
+                <i class="bi bi-play-circle" id="autoRefreshIcon"></i>
                 <span id="autoRefreshText">Start Auto-refresh</span>
             </button>
         </div>
@@ -174,8 +174,9 @@
         <div>
             <strong>Job Management Context:</strong>
             <span id="contextWarningText">
-                You are currently in <strong>{{ 'Administrator' if admin_mode else 'Personal' }}</strong> mode. 
-                {{ 'Administrative actions will affect all users and be logged as admin interventions.' if admin_mode else 'You can only manage your own jobs in this mode.' }}
+                You are currently in <strong>{{ 'Administrator' if admin_mode else 'Personal' }}</strong> mode.
+                {{ 'Administrative actions will affect all users and be logged as admin interventions.' if admin_mode
+                else 'You can only manage your own jobs in this mode.' }}
             </span>
         </div>
     </div>
@@ -202,7 +203,7 @@
 </div>
 
 <!-- Admin Job Management Section -->
-<div class="admin-job-section" id="adminJobSection" style="display: {{ 'block' if admin_mode else 'none' }}">
+<div class="admin-job-section" id="adminJobSection" style="display: 'block' if admin_mode else 'none' ">
     <div class="job-section-header">
         <h3 class="job-section-title">
             <i class="bi bi-shield-check text-warning"></i>
@@ -210,86 +211,85 @@
             <span class="admin-action-badge">ADMIN ACTIONS</span>
         </h3>
         <div class="btn-group btn-group-sm">
-            <button type="button" class="btn btn-outline-warning" onclick="showBulkAdminActions()">
+            <a href="{{ url_for('admin.bulk_actions') }}" class="btn btn-outline-warning">
                 <i class="bi bi-gear"></i> Bulk Actions
-            </button>
-            <button type="button" class="btn btn-outline-danger" onclick="showSystemMaintenanceModal()">
+            </a>
+            <a href="{{ url_for('admin.system_maintenance') }}" class="btn btn-outline-danger">
                 <i class="bi bi-tools"></i> System Maintenance
-            </button>
+            </a>
         </div>
     </div>
-    
+
     <div id="adminJobsList">
         {% if admin_jobs %}
-            {% for job in admin_jobs %}
-            <div class="job-card admin-managed" data-job-id="{{ job.task_id }}" data-job-type="admin">
-                <div class="row">
-                    <div class="col-md-8">
-                        <div class="d-flex align-items-center mb-2">
-                            <h6 class="mb-0">
-                                <code class="small">{{ job.task_id[:8] }}...</code>
-                                <span class="badge bg-{{ 'primary' if job.status == 'running' else 'secondary' if job.status == 'queued' else 'success' if job.status == 'completed' else 'danger' }}">
-                                    {{ job.status|title }}
-                                </span>
-                                {% if job.admin_managed %}
-                                <span class="admin-action-badge">ADMIN MANAGED</span>
-                                {% endif %}
-                            </h6>
-                        </div>
-                        <div class="row">
-                            <div class="col-sm-6">
-                                <small><strong>User:</strong> {{ job.username }} ({{ job.user_email }})</small><br>
-                                <small><strong>Platform:</strong> {{ job.platform_name }} ({{ job.platform_type }})</small>
-                            </div>
-                            <div class="col-sm-6">
-                                <small><strong>Started:</strong> {{ job.created_at.strftime('%Y-%m-%d %H:%M:%S') if job.created_at else 'Unknown' }}</small><br>
-                                <small><strong>Progress:</strong> {{ job.progress_percentage or 0 }}% - {{ job.current_step or 'Initializing' }}</small>
-                            </div>
-                        </div>
-                        {% if job.admin_notes %}
-                        <div class="mt-2">
-                            <small class="text-muted">
-                                <i class="bi bi-sticky"></i> <strong>Admin Notes:</strong> {{ job.admin_notes }}
-                            </small>
-                        </div>
-                        {% endif %}
+        {% for job in admin_jobs %}
+        <div class="job-card admin-managed" data-job-id="{{ job.task_id }}" data-job-type="admin">
+            <div class="row">
+                <div class="col-md-8">
+                    <div class="d-flex align-items-center mb-2">
+                        <h6 class="mb-0">
+                            <code class="small">{{ job.task_id[:8] }}...</code>
+                            <span
+                                class="badge bg-{{ 'primary' if job.status == 'running' else 'secondary' if job.status == 'queued' else 'success' if job.status == 'completed' else 'danger' }}">
+                                {{ job.status|title }}
+                            </span>
+                            {% if job.admin_managed %}
+                            <span class="admin-action-badge">ADMIN MANAGED</span>
+                            {% endif %}
+                        </h6>
                     </div>
-                    <div class="col-md-4">
-                        <div class="job-actions">
-                            {% if job.status in ['running', 'queued'] %}
-                            <button class="btn btn-outline-danger btn-sm" 
-                                    onclick="adminCancelJob('{{ job.task_id }}', '{{ job.username }}')"
-                                    title="Cancel Job (Admin Action)">
-                                <i class="bi bi-stop-circle"></i> Cancel
-                            </button>
-                            <button class="btn btn-outline-warning btn-sm" 
-                                    onclick="setPriority('{{ job.task_id }}', 'high')"
-                                    title="Set High Priority">
-                                <i class="bi bi-arrow-up-circle"></i> Priority
-                            </button>
-                            {% endif %}
-                            {% if job.status == 'failed' %}
-                            <button class="btn btn-outline-success btn-sm" 
-                                    onclick="adminRestartJob('{{ job.task_id }}')"
-                                    title="Restart Job (Admin Action)">
-                                <i class="bi bi-arrow-clockwise"></i> Restart
-                            </button>
-                            {% endif %}
-                            <button class="btn btn-outline-info btn-sm" 
-                                    onclick="viewJobDetails('{{ job.task_id }}', true)"
-                                    title="View Details">
-                                <i class="bi bi-eye"></i> Details
-                            </button>
-                            <button class="btn btn-outline-secondary btn-sm" 
-                                    onclick="addAdminNotes('{{ job.task_id }}')"
-                                    title="Add Admin Notes">
-                                <i class="bi bi-sticky"></i> Notes
-                            </button>
+                    <div class="row">
+                        <div class="col-sm-6">
+                            <small><strong>User:</strong> {{ job.username }} ({{ job.user_email }})</small><br>
+                            <small><strong>Platform:</strong> {{ job.platform_name }} ({{ job.platform_type }})</small>
                         </div>
+                        <div class="col-sm-6">
+                            <small><strong>Started:</strong> {{ job.created_at.strftime('%Y-%m-%d %H:%M:%S') if
+                                job.created_at else 'Unknown' }}</small><br>
+                            <small><strong>Progress:</strong> {{ job.progress_percentage or 0 }}% - {{ job.current_step
+                                or 'Initializing' }}</small>
+                        </div>
+                    </div>
+                    {% if job.admin_notes %}
+                    <div class="mt-2">
+                        <small class="text-muted">
+                            <i class="bi bi-sticky"></i> <strong>Admin Notes:</strong> {{ job.admin_notes }}
+                        </small>
+                    </div>
+                    {% endif %}
+                </div>
+                <div class="col-md-4">
+                    <div class="job-actions">
+                        {% if job.status in ['running', 'queued'] %}
+                        <button class="btn btn-outline-danger btn-sm"
+                            onclick="adminCancelJob('{{ job.task_id }}', '{{ job.username }}')"
+                            title="Cancel Job (Admin Action)">
+                            <i class="bi bi-stop-circle"></i> Cancel
+                        </button>
+                        <button class="btn btn-outline-warning btn-sm"
+                            onclick="setPriority('{{ job.task_id }}', 'high')" title="Set High Priority">
+                            <i class="bi bi-arrow-up-circle"></i> Priority
+                        </button>
+                        {% endif %}
+                        {% if job.status == 'failed' %}
+                        <button class="btn btn-outline-success btn-sm" onclick="adminRestartJob('{{ job.task_id }}')"
+                            title="Restart Job (Admin Action)">
+                            <i class="bi bi-arrow-clockwise"></i> Restart
+                        </button>
+                        {% endif %}
+                        <button class="btn btn-outline-info btn-sm" onclick="viewJobDetails('{{ job.task_id }}', true)"
+                            title="View Details">
+                            <i class="bi bi-eye"></i> Details
+                        </button>
+                        <button class="btn btn-outline-secondary btn-sm" onclick="addAdminNotes('{{ job.task_id }}')"
+                            title="Add Admin Notes">
+                            <i class="bi bi-sticky"></i> Notes
+                        </button>
                     </div>
                 </div>
             </div>
-            {% endfor %}
+        </div>
+        {% endfor %}
         {% else %}
         <div class="empty-state">
             <i class="bi bi-inbox"></i>
@@ -312,78 +312,81 @@
             <a href="{{ url_for('caption_generation') }}" class="btn btn-outline-primary">
                 <i class="bi bi-plus-circle"></i> Start New Job
             </a>
-            <button type="button" class="btn btn-outline-secondary" onclick="showPersonalJobHistory()">
+            <a href="{{ url_for('admin.job_history', user_id=current_user.id) }}" class="btn btn-outline-secondary">
                 <i class="bi bi-clock-history"></i> Job History
-            </button>
+            </a>
         </div>
     </div>
-    
+
     <div id="personalJobsList">
         {% if personal_jobs %}
-            {% for job in personal_jobs %}
-            <div class="job-card personal-managed" data-job-id="{{ job.task_id }}" data-job-type="personal">
-                <div class="row">
-                    <div class="col-md-8">
-                        <div class="d-flex align-items-center mb-2">
-                            <h6 class="mb-0">
-                                <code class="small">{{ job.task_id[:8] }}...</code>
-                                <span class="badge bg-{{ 'primary' if job.status == 'running' else 'secondary' if job.status == 'queued' else 'success' if job.status == 'completed' else 'danger' }}">
-                                    {{ job.status|title }}
-                                </span>
-                                <span class="personal-action-badge">YOUR JOB</span>
-                            </h6>
-                        </div>
-                        <div class="row">
-                            <div class="col-sm-6">
-                                <small><strong>Platform:</strong> {{ job.platform_name }} ({{ job.platform_type }})</small><br>
-                                <small><strong>Settings:</strong> {{ job.max_posts or 'Default' }} posts, {{ job.processing_delay or 'Default' }}s delay</small>
-                            </div>
-                            <div class="col-sm-6">
-                                <small><strong>Started:</strong> {{ job.created_at.strftime('%Y-%m-%d %H:%M:%S') if job.created_at else 'Unknown' }}</small><br>
-                                <small><strong>Progress:</strong> {{ job.progress_percentage or 0 }}% - {{ job.current_step or 'Initializing' }}</small>
-                            </div>
-                        </div>
-                        {% if job.results %}
-                        <div class="mt-2">
-                            <small class="text-success">
-                                <i class="bi bi-check-circle"></i> {{ job.results.captions_generated or 0 }} captions generated, 
-                                {{ job.results.images_processed or 0 }} images processed
-                            </small>
-                        </div>
-                        {% endif %}
+        {% for job in personal_jobs %}
+        <div class="job-card personal-managed" data-job-id="{{ job.task_id }}" data-job-type="personal">
+            <div class="row">
+                <div class="col-md-8">
+                    <div class="d-flex align-items-center mb-2">
+                        <h6 class="mb-0">
+                            <code class="small">{{ job.task_id[:8] }}...</code>
+                            <span
+                                class="badge bg-{{ 'primary' if job.status == 'running' else 'secondary' if job.status == 'queued' else 'success' if job.status == 'completed' else 'danger' }}">
+                                {{ job.status|title }}
+                            </span>
+                            <span class="personal-action-badge">YOUR JOB</span>
+                        </h6>
                     </div>
-                    <div class="col-md-4">
-                        <div class="job-actions">
-                            {% if job.status in ['running', 'queued'] %}
-                            <button class="btn btn-outline-danger btn-sm" 
-                                    onclick="personalCancelJob('{{ job.task_id }}')"
-                                    title="Cancel Your Job">
-                                <i class="bi bi-stop-circle"></i> Cancel
-                            </button>
-                            {% endif %}
-                            {% if job.status == 'failed' %}
-                            <button class="btn btn-outline-success btn-sm" 
-                                    onclick="personalRetryJob('{{ job.task_id }}')"
-                                    title="Retry Your Job">
-                                <i class="bi bi-arrow-clockwise"></i> Retry
-                            </button>
-                            {% endif %}
-                            {% if job.status == 'completed' %}
-                            <a href="{{ url_for('review_list') }}" class="btn btn-outline-primary btn-sm"
-                               title="Review Generated Captions">
-                                <i class="bi bi-eye-fill"></i> Review
-                            </a>
-                            {% endif %}
-                            <button class="btn btn-outline-info btn-sm" 
-                                    onclick="viewJobDetails('{{ job.task_id }}', false)"
-                                    title="View Details">
-                                <i class="bi bi-eye"></i> Details
-                            </button>
+                    <div class="row">
+                        <div class="col-sm-6">
+                            <small><strong>Platform:</strong> {{ job.platform_name }} ({{ job.platform_type
+                                }})</small><br>
+                            <small><strong>Settings:</strong> {{ job.max_posts or 'Default' }} posts, {{
+                                job.processing_delay or 'Default' }}s delay</small>
                         </div>
+                        <div class="col-sm-6">
+                            <small><strong>Started:</strong> {{ job.created_at.strftime('%Y-%m-%d %H:%M:%S') if
+                                job.created_at else 'Unknown' }}</small><br>
+                            <small><strong>Progress:</strong> {{ job.progress_percentage or 0 }}% - {{ job.current_step
+                                or 'Initializing' }}</small>
+                        </div>
+                    </div>
+                    {% if job.results %}
+                    <div class="mt-2">
+                        <small class="text-success">
+                            <i class="bi bi-check-circle"></i> {{ job.results.captions_generated or 0 }} captions
+                            generated,
+                            {{ job.results.images_processed or 0 }} images processed
+                        </small>
+                    </div>
+                    {% endif %}
+                </div>
+                <div class="col-md-4">
+                    <div class="job-actions">
+                        {% if job.status in ['running', 'queued'] %}
+                        <button class="btn btn-outline-danger btn-sm" onclick="personalCancelJob('{{ job.task_id }}')"
+                            title="Cancel Your Job">
+                            <i class="bi bi-stop-circle"></i> Cancel
+                        </button>
+                        {% endif %}
+                        {% if job.status == 'failed' %}
+                        <button class="btn btn-outline-success btn-sm" onclick="personalRetryJob('{{ job.task_id }}')"
+                            title="Retry Your Job">
+                            <i class="bi bi-arrow-clockwise"></i> Retry
+                        </button>
+                        {% endif %}
+                        {% if job.status == 'completed' %}
+                        <a href="{{ url_for('review_list') }}" class="btn btn-outline-primary btn-sm"
+                            title="Review Generated Captions">
+                            <i class="bi bi-eye-fill"></i> Review
+                        </a>
+                        {% endif %}
+                        <button class="btn btn-outline-info btn-sm" onclick="viewJobDetails('{{ job.task_id }}', false)"
+                            title="View Details">
+                            <i class="bi bi-eye"></i> Details
+                        </button>
                     </div>
                 </div>
             </div>
-            {% endfor %}
+        </div>
+        {% endfor %}
         {% else %}
         <div class="empty-state">
             <i class="bi bi-person-plus"></i>
@@ -394,254 +397,413 @@
             </a>
         </div>
         {% endif %}
-    </div>
-</div>
+        {% endblock %}
 
-<!-- Modals -->
-{% include 'components/admin_job_details_modal.html' %}
-{% include 'components/admin_notes_modal.html' %}
-{% include 'components/bulk_admin_actions_modal.html' %}
-{% include 'components/system_maintenance_modal.html' %}
+        {% block extra_js %}
+        <script src="{{ url_for('admin.static', filename='js/admin_job_management.js') }}"></script>
+        <script>
 
-{% endblock %}
+            // Initialize job management
+            document.addEventListener('DOMContentLoaded', function () {
+                initializeJobManagement();
 
-{% block extra_js %}
-<script src="{{ url_for('admin.static', filename='js/admin_job_management.js') }}"></script>
-<script>
-// Initialize job management
-document.addEventListener('DOMContentLoaded', function() {
-    initializeJobManagement();
-    
-    // Listen for admin mode changes
-    window.addEventListener('adminModeChanged', function(event) {
-        handleAdminModeChange(event.detail.adminMode);
-    });
-    
-    // Set up auto-refresh
-    let autoRefreshInterval;
-    let autoRefreshActive = false;
-    
-    window.toggleAutoRefresh = function() {
-        if (autoRefreshActive) {
-            clearInterval(autoRefreshInterval);
-            autoRefreshActive = false;
-            document.getElementById('autoRefreshIcon').className = 'bi bi-play-circle';
-            document.getElementById('autoRefreshText').textContent = 'Start Auto-refresh';
-        } else {
-            autoRefreshInterval = setInterval(refreshJobData, 30000); // 30 seconds
-            autoRefreshActive = true;
-            document.getElementById('autoRefreshIcon').className = 'bi bi-pause-circle';
-            document.getElementById('autoRefreshText').textContent = 'Stop Auto-refresh';
-        }
-    };
-    
-    window.refreshJobData = function() {
-        // Refresh job data without full page reload
-        fetch(window.location.href, {
-            headers: {
-                'X-Requested-With': 'XMLHttpRequest'
+                // Listen for admin mode changes
+                window.addEventListener('adminModeChanged', function (event) {
+                    handleAdminModeChange(event.detail.adminMode);
+                });
+
+                // Set up auto-refresh
+                let autoRefreshInterval;
+                let autoRefreshActive = false;
+
+                window.toggleAutoRefresh = function () {
+                    if (autoRefreshActive) {
+                        clearInterval(autoRefreshInterval);
+                        autoRefreshActive = false;
+                        document.getElementById('autoRefreshIcon').className = 'bi bi-play-circle';
+                        document.getElementById('autoRefreshText').textContent = 'Start Auto-refresh';
+                    } else {
+                        autoRefreshInterval = setInterval(refreshJobData, 30000); // 30 seconds
+                        autoRefreshActive = true;
+                        document.getElementById('autoRefreshIcon').className = 'bi bi-pause-circle';
+                        document.getElementById('autoRefreshText').textContent = 'Stop Auto-refresh';
+                    }
+                };
+
+                window.refreshJobData = function () {
+                    // Refresh job data without full page reload
+                    window.location.reload();
+                };
+            });
+
+            function handleAdminModeChange(adminMode) {
+                const adminSection = document.getElementById('adminJobSection');
+                const contextWarningText = document.getElementById('contextWarningText');
+
+                if (adminMode) {
+                    adminSection.style.display = 'block';
+                    contextWarningText.innerHTML = 'You are currently in <strong>Administrator</strong> mode. Administrative actions will affect all users and be logged as admin interventions.';
+                } else {
+                    adminSection.style.display = 'none';
+                    contextWarningText.innerHTML = 'You are currently in <strong>Personal</strong> mode. You can only manage your own jobs in this mode.';
+                }
             }
-        })
-        .then(response => response.json())
-        .then(data => {
-            updateJobLists(data);
-            updateJobStats(data.job_stats);
-        })
-        .catch(error => {
-            console.error('Error refreshing job data:', error);
-        });
-    };
-});
 
-function handleAdminModeChange(adminMode) {
-    const adminSection = document.getElementById('adminJobSection');
-    const contextWarningText = document.getElementById('contextWarningText');
-    
-    if (adminMode) {
-        adminSection.style.display = 'block';
-        contextWarningText.innerHTML = 'You are currently in <strong>Administrator</strong> mode. Administrative actions will affect all users and be logged as admin interventions.';
-    } else {
-        adminSection.style.display = 'none';
-        contextWarningText.innerHTML = 'You are currently in <strong>Personal</strong> mode. You can only manage your own jobs in this mode.';
-    }
-}
-
-function initializeJobManagement() {
-    // Initialize based on current admin mode
-    const currentMode = window.adminContextSwitcher ? window.adminContextSwitcher.getCurrentMode() : false;
-    handleAdminModeChange(currentMode);
-}
-
-// Job action functions
-function adminCancelJob(taskId, username) {
-    if (!confirm(`Are you sure you want to cancel ${username}'s job ${taskId.substring(0, 8)}...? This is an administrative action that will be logged.`)) {
-        return;
-    }
-    
-    const reason = prompt('Please provide a reason for cancelling this job:');
-    if (!reason) {
-        return;
-    }
-    
-    // Call admin cancel API
-    fetch(`/admin/api/jobs/${taskId}/cancel`, {
-        method: 'POST',
-        headers: {
-            'Content-Type': 'application/json',
-            'X-CSRFToken': document.querySelector('meta[name="csrf-token"]').getAttribute('content')
-        },
-        body: JSON.stringify({ reason: reason })
-    })
-    .then(response => response.json())
-    .then(data => {
-        if (data.success) {
-            if (window.errorHandler) {
-                window.errorHandler.showNotification(`Job cancelled successfully. User ${username} has been notified.`, 'success');
+            function initializeJobManagement() {
+                // Initialize based on current admin mode
+                const currentMode = window.adminContextSwitcher ? window.adminContextSwitcher.getCurrentMode() : false;
+                handleAdminModeChange(currentMode);
             }
-            refreshJobData();
-        } else {
-            throw new Error(data.error || 'Failed to cancel job');
-        }
-    })
-    .catch(error => {
-        if (window.errorHandler) {
-            window.errorHandler.showNotification('Failed to cancel job: ' + error.message, 'danger');
-        }
-    });
-}
 
-function personalCancelJob(taskId) {
-    if (!confirm(`Are you sure you want to cancel your job ${taskId.substring(0, 8)}...?`)) {
-        return;
-    }
-    
-    // Call personal cancel API
-    fetch(`/api/cancel_task/${taskId}`, {
-        method: 'POST',
-        headers: {
-            'X-CSRFToken': document.querySelector('meta[name="csrf-token"]').getAttribute('content')
-        }
-    })
-    .then(response => response.json())
-    .then(data => {
-        if (data.success) {
-            if (window.errorHandler) {
-                window.errorHandler.showNotification('Your job has been cancelled.', 'info');
+            // Job action functions - make globally accessible
+            window.adminCancelJob = function (taskId, username) {
+                if (!confirm(`Are you sure you want to cancel ${username}'s job ${taskId.substring(0, 8)}...? This is an administrative action that will be logged.`)) {
+                    return;
+                }
+
+                const reason = prompt('Please provide a reason for cancelling this job:');
+                if (!reason) {
+                    return;
+                }
+
+                // Call admin cancel API
+                fetch(`/admin/api/jobs/${taskId}/cancel`, {
+                    method: 'POST',
+                    headers: {
+                        'Content-Type': 'application/json',
+                        'X-CSRFToken': document.querySelector('meta[name="csrf-token"]').getAttribute('content')
+                    },
+                    body: JSON.stringify({ reason: reason })
+                })
+                    .then(response => response.json())
+                    .then(data => {
+                        if (data.success) {
+                            if (window.errorHandler) {
+                                window.errorHandler.showNotification(`Job cancelled successfully. User ${username} has been notified.`, 'success');
+                            }
+                            refreshJobData();
+                        } else {
+                            throw new Error(data.error || 'Failed to cancel job');
+                        }
+                    })
+                    .catch(error => {
+                        if (window.errorHandler) {
+                            window.errorHandler.showNotification('Failed to cancel job: ' + error.message, 'danger');
+                        }
+                    });
             }
-            refreshJobData();
-        } else {
-            throw new Error(data.error || 'Failed to cancel job');
-        }
-    })
-    .catch(error => {
-        if (window.errorHandler) {
-            window.errorHandler.showNotification('Failed to cancel job: ' + error.message, 'danger');
-        }
-    });
-}
 
-function adminRestartJob(taskId) {
-    if (!confirm(`Are you sure you want to restart job ${taskId.substring(0, 8)}...? This will create a new job with the same settings.`)) {
-        return;
-    }
-    
-    // Call admin restart API
-    fetch(`/admin/api/jobs/${taskId}/restart`, {
-        method: 'POST',
-        headers: {
-            'X-CSRFToken': document.querySelector('meta[name="csrf-token"]').getAttribute('content')
-        }
-    })
-    .then(response => response.json())
-    .then(data => {
-        if (data.success) {
-            if (window.errorHandler) {
-                window.errorHandler.showNotification(`Job restarted successfully. New job ID: ${data.new_task_id.substring(0, 8)}...`, 'success');
+            window.personalCancelJob = function (taskId) {
+                if (!confirm(`Are you sure you want to cancel your job ${taskId.substring(0, 8)}...?`)) {
+                    return;
+                }
+
+                // Call personal cancel API
+                fetch(`/api/cancel_task/${taskId}`, {
+                    method: 'POST',
+                    headers: {
+                        'X-CSRFToken': document.querySelector('meta[name="csrf-token"]').getAttribute('content')
+                    }
+                })
+                    .then(response => response.json())
+                    .then(data => {
+                        if (data.success) {
+                            if (window.errorHandler) {
+                                window.errorHandler.showNotification('Your job has been cancelled.', 'info');
+                            }
+                            refreshJobData();
+                        } else {
+                            throw new Error(data.error || 'Failed to cancel job');
+                        }
+                    })
+                    .catch(error => {
+                        if (window.errorHandler) {
+                            window.errorHandler.showNotification('Failed to cancel job: ' + error.message, 'danger');
+                        }
+                    });
             }
-            refreshJobData();
-        } else {
-            throw new Error(data.error || 'Failed to restart job');
-        }
-    })
-    .catch(error => {
-        if (window.errorHandler) {
-            window.errorHandler.showNotification('Failed to restart job: ' + error.message, 'danger');
-        }
-    });
-}
 
-function personalRetryJob(taskId) {
-    if (!confirm(`Are you sure you want to retry your job ${taskId.substring(0, 8)}...? This will create a new job with the same settings.`)) {
-        return;
-    }
-    
-    // Call personal retry API
-    fetch(`/api/retry_task/${taskId}`, {
-        method: 'POST',
-        headers: {
-            'X-CSRFToken': document.querySelector('meta[name="csrf-token"]').getAttribute('content')
-        }
-    })
-    .then(response => response.json())
-    .then(data => {
-        if (data.success) {
-            if (window.errorHandler) {
-                window.errorHandler.showNotification(`Job retried successfully. New job ID: ${data.new_task_id.substring(0, 8)}...`, 'success');
+            window.adminRestartJob = function (taskId) {
+                if (!confirm(`Are you sure you want to restart job ${taskId.substring(0, 8)}...? This will create a new job with the same settings.`)) {
+                    return;
+                }
+
+                // Call admin restart API
+                fetch(`/admin/api/jobs/${taskId}/restart`, {
+                    method: 'POST',
+                    headers: {
+                        'X-CSRFToken': document.querySelector('meta[name="csrf-token"]').getAttribute('content')
+                    }
+                })
+                    .then(response => response.json())
+                    .then(data => {
+                        if (data.success) {
+                            if (window.errorHandler) {
+                                window.errorHandler.showNotification(`Job restarted successfully. New job ID: ${data.new_task_id.substring(0, 8)}...`, 'success');
+                            }
+                            refreshJobData();
+                        } else {
+                            throw new Error(data.error || 'Failed to restart job');
+                        }
+                    })
+                    .catch(error => {
+                        if (window.errorHandler) {
+                            window.errorHandler.showNotification('Failed to restart job: ' + error.message, 'danger');
+                        }
+                    });
             }
-            refreshJobData();
-        } else {
-            throw new Error(data.error || 'Failed to retry job');
-        }
-    })
-    .catch(error => {
-        if (window.errorHandler) {
-            window.errorHandler.showNotification('Failed to retry job: ' + error.message, 'danger');
-        }
-    });
-}
 
-// Placeholder functions for other actions
-function setPriority(taskId, priority) {
-    // TODO: Implement priority setting
-    console.log(`Setting priority ${priority} for job ${taskId}`);
-}
+            window.personalRetryJob = function (taskId) {
+                if (!confirm(`Are you sure you want to retry your job ${taskId.substring(0, 8)}...? This will create a new job with the same settings.`)) {
+                    return;
+                }
 
-function viewJobDetails(taskId, isAdmin) {
-    // TODO: Implement job details modal
-    console.log(`Viewing details for job ${taskId}, admin: ${isAdmin}`);
-}
+                // Call personal retry API
+                fetch(`/api/retry_task/${taskId}`, {
+                    method: 'POST',
+                    headers: {
+                        'X-CSRFToken': document.querySelector('meta[name="csrf-token"]').getAttribute('content')
+                    }
+                })
+                    .then(response => response.json())
+                    .then(data => {
+                        if (data.success) {
+                            if (window.errorHandler) {
+                                window.errorHandler.showNotification(`Job retried successfully. New job ID: ${data.new_task_id.substring(0, 8)}...`, 'success');
+                            }
+                            refreshJobData();
+                        } else {
+                            throw new Error(data.error || 'Failed to retry job');
+                        }
+                    })
+                    .catch(error => {
+                        if (window.errorHandler) {
+                            window.errorHandler.showNotification('Failed to retry job: ' + error.message, 'danger');
+                        }
+                    });
+            }
 
-function addAdminNotes(taskId) {
-    // TODO: Implement admin notes modal
-    console.log(`Adding admin notes for job ${taskId}`);
-}
+            // Placeholder functions for other actions - make globally accessible
+            window.setPriority = function (taskId, priority) {
+                // TODO: Implement priority setting
+                console.log(`Setting priority ${priority} for job ${taskId}`);
+            }
 
-function showBulkAdminActions() {
-    // TODO: Implement bulk actions modal
-    console.log('Showing bulk admin actions');
-}
+            window.viewJobDetails = function (taskId, isAdmin) {
+                // TODO: Implement job details modal
+                console.log(`Viewing details for job ${taskId}, admin: ${isAdmin}`);
+            }
 
-function showSystemMaintenanceModal() {
-    // TODO: Implement system maintenance modal
-    console.log('Showing system maintenance modal');
-}
+            window.addAdminNotes = function (taskId) {
+                // TODO: Implement admin notes modal
+                console.log(`Adding admin notes for job ${taskId}`);
+            }
 
-function showPersonalJobHistory() {
-    // TODO: Implement personal job history modal
-    console.log('Showing personal job history');
-}
+            function updateJobStats(stats) {
+                // Update job statistics
+                document.getElementById('totalActiveJobs').textContent = stats.total_active || 0;
+                document.getElementById('personalActiveJobs').textContent = stats.personal_active || 0;
+                document.getElementById('adminManagedJobs').textContent = stats.admin_managed || 0;
+                document.getElementById('queuedJobs').textContent = stats.queued || 0;
+            }
 
-function updateJobLists(data) {
-    // TODO: Update job lists with new data
-    console.log('Updating job lists', data);
-}
+            // System maintenance functions
+            function pauseSystem() {
+                const reason = document.getElementById('maintenanceReason').value.trim();
+                if (!reason) {
+                    alert('Please provide a reason for system maintenance');
+                    return;
+                }
 
-function updateJobStats(stats) {
-    // Update job statistics
-    document.getElementById('totalActiveJobs').textContent = stats.total_active || 0;
-    document.getElementById('personalActiveJobs').textContent = stats.personal_active || 0;
-    document.getElementById('adminManagedJobs').textContent = stats.admin_managed || 0;
-    document.getElementById('queuedJobs').textContent = stats.queued || 0;
-}
-</script>
-{% endblock %}
+                if (!confirm('Are you sure you want to pause the system? This will prevent new jobs from starting.')) {
+                    return;
+                }
+
+                // Call API to pause system
+                fetch('/admin/api/system/pause', {
+                    method: 'POST',
+                    headers: {
+                        'Content-Type': 'application/json',
+                        'X-CSRFToken': document.querySelector('meta[name="csrf-token"]').getAttribute('content')
+                    },
+                    body: JSON.stringify({ reason: reason })
+                })
+                    .then(response => response.json())
+                    .then(data => {
+                        if (data.success) {
+                            document.getElementById('systemStatus').textContent = 'Paused';
+                            document.getElementById('systemStatus').className = 'badge bg-warning';
+                            document.getElementById('pauseSystemBtn').style.display = 'none';
+                            document.getElementById('resumeSystemBtn').style.display = 'block';
+                            addMaintenanceLogEntry('System paused: ' + reason);
+                        } else {
+                            alert('Failed to pause system: ' + (data.error || 'Unknown error'));
+                        }
+                    })
+                    .catch(error => {
+                        console.error('Error pausing system:', error);
+                        alert('Failed to pause system due to network error');
+                    });
+            }
+
+            function resumeSystem() {
+                if (!confirm('Are you sure you want to resume the system?')) {
+                    return;
+                }
+
+                // Call API to resume system
+                fetch('/admin/api/system/resume', {
+                    method: 'POST',
+                    headers: {
+                        'X-CSRFToken': document.querySelector('meta[name="csrf-token"]').getAttribute('content')
+                    }
+                })
+                    .then(response => response.json())
+                    .then(data => {
+                        if (data.success) {
+                            document.getElementById('systemStatus').textContent = 'Active';
+                            document.getElementById('systemStatus').className = 'badge bg-success';
+                            document.getElementById('pauseSystemBtn').style.display = 'block';
+                            document.getElementById('resumeSystemBtn').style.display = 'none';
+                            addMaintenanceLogEntry('System resumed');
+                        } else {
+                            alert('Failed to resume system: ' + (data.error || 'Unknown error'));
+                        }
+                    })
+                    .catch(error => {
+                        console.error('Error resuming system:', error);
+                        alert('Failed to resume system due to network error');
+                    });
+            }
+
+            function showEmergencyStop() {
+                const emergencyModal = new bootstrap.Modal(document.getElementById('emergencyStopModal'));
+                emergencyModal.show();
+            }
+
+            function executeEmergencyStop() {
+                const reason = document.getElementById('emergencyReason').value.trim();
+                const confirmed = document.getElementById('confirmEmergencyStop').checked;
+
+                if (!reason) {
+                    alert('Please provide a reason for the emergency stop');
+                    return;
+                }
+
+                if (!confirmed) {
+                    alert('Please confirm that you understand the consequences');
+                    return;
+                }
+
+                // Call API for emergency stop
+                fetch('/admin/api/system/emergency-stop', {
+                    method: 'POST',
+                    headers: {
+                        'Content-Type': 'application/json',
+                        'X-CSRFToken': document.querySelector('meta[name="csrf-token"]').getAttribute('content')
+                    },
+                    body: JSON.stringify({ reason: reason })
+                })
+                    .then(response => response.json())
+                    .then(data => {
+                        if (data.success) {
+                            alert('Emergency stop executed successfully');
+                            // Close both modals
+                            bootstrap.Modal.getInstance(document.getElementById('emergencyStopModal')).hide();
+                            bootstrap.Modal.getInstance(document.getElementById('systemMaintenanceModal')).hide();
+                            // Refresh the page to reflect system state
+                            window.location.reload();
+                        } else {
+                            alert('Failed to execute emergency stop: ' + (data.error || 'Unknown error'));
+                        }
+                    })
+                    .catch(error => {
+                        console.error('Error executing emergency stop:', error);
+                        alert('Failed to execute emergency stop due to network error');
+                    });
+            }
+
+            function addMaintenanceLogEntry(message) {
+                const logContainer = document.getElementById('maintenanceLog');
+                if (logContainer) {
+                    const timestamp = new Date().toLocaleString();
+                    const logEntry = document.createElement('div');
+                    logEntry.className = 'mb-1';
+                    logEntry.innerHTML = `<small class="text-muted">[${timestamp}]</small> ${message}`;
+
+                    // Remove "no activities" message if present
+                    const noActivitiesMsg = logContainer.querySelector('.text-muted');
+                    if (noActivitiesMsg && noActivitiesMsg.textContent.includes('No maintenance activities')) {
+                        noActivitiesMsg.remove();
+                    }
+
+                    logContainer.appendChild(logEntry);
+                    logContainer.scrollTop = logContainer.scrollHeight;
+                }
+            }
+
+            // Placeholder maintenance task functions
+            function clearStuckJobs() {
+                if (!confirm('Clear all stuck jobs? This will reset jobs that appear to be hanging.')) return;
+
+                fetch('/admin/api/maintenance/clear-stuck-jobs', {
+                    method: 'POST',
+                    headers: { 'X-CSRFToken': document.querySelector('meta[name="csrf-token"]').getAttribute('content') }
+                })
+                    .then(response => response.json())
+                    .then(data => {
+                        if (data.success) {
+                            addMaintenanceLogEntry(`Cleared ${data.cleared_count || 0} stuck jobs`);
+                        } else {
+                            alert('Failed to clear stuck jobs: ' + (data.error || 'Unknown error'));
+                        }
+                    })
+                    .catch(error => {
+                        console.error('Error clearing stuck jobs:', error);
+                        addMaintenanceLogEntry('Error clearing stuck jobs: ' + error.message);
+                    });
+            }
+
+            function cleanupOldLogs() {
+                if (!confirm('Clean up old log files? This will remove logs older than 30 days.')) return;
+
+                addMaintenanceLogEntry('Log cleanup initiated (placeholder)');
+            }
+
+            function optimizeDatabase() {
+                if (!confirm('Optimize database? This may take a few minutes.')) return;
+
+                addMaintenanceLogEntry('Database optimization initiated (placeholder)');
+            }
+
+            function refreshSystemCache() {
+                addMaintenanceLogEntry('System cache refreshed (placeholder)');
+            }
+
+            function runHealthCheck() {
+                fetch('/admin/health', {
+                    method: 'GET',
+                    headers: { 'X-CSRFToken': document.querySelector('meta[name="csrf-token"]').getAttribute('content') }
+                })
+                    .then(response => response.json())
+                    .then(data => {
+                        const status = data.status || 'unknown';
+                        addMaintenanceLogEntry(`Health check completed: System is ${status}`);
+                    })
+                    .catch(error => {
+                        console.error('Error running health check:', error);
+                        addMaintenanceLogEntry('Health check failed: ' + error.message);
+                    });
+            }
+
+            function exportMaintenanceReport() {
+                addMaintenanceLogEntry('Maintenance report export initiated (placeholder)');
+            }
+
+            // Utility function for CSRF token
+            function getCsrfToken() {
+                const token = document.querySelector('meta[name="csrf-token"]');
+                return token ? token.getAttribute('content') : '';
+            }
+        </script>
+        {% endblock %}

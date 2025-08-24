@@ -157,3 +157,5 @@ specs
 .q
 .q/chat_history
 
+#playwright tests
+tests/playwright

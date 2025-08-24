@@ -1,0 +1,194 @@
+<!-- Copyright (C) 2025 iolaire mcfadden. -->
+<!-- This program is free software: you can redistribute it and/or modify it under the terms of the GNU Affero General Public License as published by the Free Software Foundation, either version 3 of the License, or (at your option) any later version. -->
+<!-- THE SOFTWARE IS PROVIDED "AS IS", WITHOUT WARRANTY OF ANY KIND, EXPRESS OR IMPLIED, INCLUDING BUT NOT LIMITED TO THE WARRANTIES OF MERCHANTABILITY, FITNESS FOR A PARTICULAR PURPOSE AND NONINFRINGEMENT. IN NO EVENT SHALL THE AUTHORS OR COPYRIGHT HOLDERS BE LIABLE FOR ANY CLAIM, DAMAGES OR OTHER LIABILITY, WHETHER IN AN ACTION OF CONTRACT, TORT OR OTHERWISE, ARISING FROM, OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE SOFTWARE. -->
+
+<!-- Admin Navigation Component -->
+<nav class="navbar navbar-expand-lg navbar-dark bg-dark">
+    <div class="container-fluid">
+        <a class="navbar-brand" href="{{ url_for('admin.dashboard') }}">
+            <i class="fas fa-shield-alt"></i>
+            Admin Panel
+        </a>
+        
+        <button class="navbar-toggler" type="button" data-bs-toggle="collapse" data-bs-target="#adminNavbar" aria-controls="adminNavbar" aria-expanded="false" aria-label="Toggle navigation">
+            <span class="navbar-toggler-icon"></span>
+        </button>
+        
+        <div class="collapse navbar-collapse" id="adminNavbar">
+            <ul class="navbar-nav me-auto mb-2 mb-lg-0">
+                <li class="nav-item">
+                    <a class="nav-link {{ 'active' if request.endpoint == 'admin.dashboard' }}" href="{{ url_for('admin.dashboard') }}">
+                        <i class="fas fa-tachometer-alt"></i>
+                        Dashboard
+                    </a>
+                </li>
+                
+                <li class="nav-item dropdown">
+                    <a class="nav-link dropdown-toggle" href="#" id="jobsDropdown" role="button" data-bs-toggle="dropdown" aria-expanded="false">
+                        <i class="fas fa-tasks"></i>
+                        Job Management
+                    </a>
+                    <ul class="dropdown-menu" aria-labelledby="jobsDropdown">
+                        <li><a class="dropdown-item" href="{{ url_for('admin.active_jobs') }}">
+                            <i class="fas fa-play"></i> Active Jobs
+                        </a></li>
+                        <li><a class="dropdown-item" href="{{ url_for('admin.job_history') }}">
+                            <i class="fas fa-history"></i> Job History
+                        </a></li>
+                        <li><a class="dropdown-item" href="{{ url_for('admin.job_queue') }}">
+                            <i class="fas fa-list"></i> Job Queue
+                        </a></li>
+                        <li><hr class="dropdown-divider"></li>
+                        <li><a class="dropdown-item" href="{{ url_for('admin.job_settings') }}">
+                            <i class="fas fa-cog"></i> Job Settings
+                        </a></li>
+                    </ul>
+                </li>
+                
+                <li class="nav-item dropdown">
+                    <a class="nav-link dropdown-toggle" href="#" id="usersDropdown" role="button" data-bs-toggle="dropdown" aria-expanded="false">
+                        <i class="fas fa-users"></i>
+                        User Management
+                    </a>
+                    <ul class="dropdown-menu" aria-labelledby="usersDropdown">
+                        <li><a class="dropdown-item" href="{{ url_for('admin.users') }}">
+                            <i class="fas fa-list"></i> All Users
+                        </a></li>
+                        <li><a class="dropdown-item" href="{{ url_for('admin.create_user') }}">
+                            <i class="fas fa-user-plus"></i> Create User
+                        </a></li>
+                        <li><a class="dropdown-item" href="{{ url_for('admin.user_roles') }}">
+                            <i class="fas fa-user-tag"></i> Manage Roles
+                        </a></li>
+                        <li><hr class="dropdown-divider"></li>
+                        <li><a class="dropdown-item" href="{{ url_for('admin.user_activity') }}">
+                            <i class="fas fa-chart-line"></i> User Activity
+                        </a></li>
+                    </ul>
+                </li>
+                
+                <li class="nav-item dropdown">
+                    <a class="nav-link dropdown-toggle" href="#" id="systemDropdown" role="button" data-bs-toggle="dropdown" aria-expanded="false">
+                        <i class="fas fa-server"></i>
+                        System
+                    </a>
+                    <ul class="dropdown-menu" aria-labelledby="systemDropdown">
+                        <li><a class="dropdown-item" href="{{ url_for('admin.system_health') }}">
+                            <i class="fas fa-heartbeat"></i> System Health
+                        </a></li>
+                        <li><a class="dropdown-item" href="{{ url_for('admin.reports_dashboard') }}">
+                            <i class="fas fa-chart-bar"></i> Performance
+                        </a></li>
+                        <li><a class="dropdown-item" href="{{ url_for('admin.system_logs') }}">
+                            <i class="fas fa-file-alt"></i> System Logs
+                        </a></li>
+                        <li><hr class="dropdown-divider"></li>
+                        <li><a class="dropdown-item" href="{{ url_for('admin.alerts') }}">
+                            <i class="fas fa-exclamation-triangle"></i> Alerts
+                        </a></li>
+                        <li><a class="dropdown-item" href="{{ url_for('admin.monitoring') }}">
+                            <i class="fas fa-eye"></i> Monitoring
+                        </a></li>
+                    </ul>
+                </li>
+                
+                <li class="nav-item dropdown">
+                    <a class="nav-link dropdown-toggle" href="#" id="configDropdown" role="button" data-bs-toggle="dropdown" aria-expanded="false">
+                        <i class="fas fa-cogs"></i>
+                        Configuration
+                    </a>
+                    <ul class="dropdown-menu" aria-labelledby="configDropdown">
+                        <li><a class="dropdown-item" href="{{ url_for('admin.configuration_management') }}">
+                            <i class="fas fa-sliders-h"></i> System Settings
+                        </a></li>
+                        <li><a class="dropdown-item" href="{{ url_for('admin.feature_flags') }}">
+                            <i class="fas fa-flag"></i> Feature Flags
+                        </a></li>
+                        <li><a class="dropdown-item" href="{{ url_for('admin.platform_settings') }}">
+                            <i class="fas fa-plug"></i> Platform Settings
+                        </a></li>
+                        <li><hr class="dropdown-divider"></li>
+                        <li><a class="dropdown-item" href="{{ url_for('admin.backup_restore') }}">
+                            <i class="fas fa-database"></i> Backup & Restore
+                        </a></li>
+                    </ul>
+                </li>
+                
+                <li class="nav-item dropdown">
+                    <a class="nav-link dropdown-toggle" href="#" id="reportsDropdown" role="button" data-bs-toggle="dropdown" aria-expanded="false">
+                        <i class="fas fa-chart-pie"></i>
+                        Reports
+                    </a>
+                    <ul class="dropdown-menu" aria-labelledby="reportsDropdown">
+                        <li><a class="dropdown-item" href="{{ url_for('admin.usage_reports') }}">
+                            <i class="fas fa-chart-area"></i> Usage Reports
+                        </a></li>
+                        <li><a class="dropdown-item" href="{{ url_for('admin.performance_reports') }}">
+                            <i class="fas fa-tachometer-alt"></i> Performance Reports
+                        </a></li>
+                        <li><a class="dropdown-item" href="{{ url_for('admin.error_reports') }}">
+                            <i class="fas fa-exclamation-circle"></i> Error Reports
+                        </a></li>
+                        <li><hr class="dropdown-divider"></li>
+                        <li><a class="dropdown-item" href="{{ url_for('admin.export_data') }}">
+                            <i class="fas fa-download"></i> Export Data
+                        </a></li>
+                    </ul>
+                </li>
+            </ul>
+            
+            <ul class="navbar-nav">
+                <li class="nav-item dropdown">
+                    <a class="nav-link dropdown-toggle" href="#" id="adminUserDropdown" role="button" data-bs-toggle="dropdown" aria-expanded="false">
+                        <i class="fas fa-user-shield"></i>
+                        {{ current_user.username }}
+                    </a>
+                    <ul class="dropdown-menu dropdown-menu-end" aria-labelledby="adminUserDropdown">
+                        <li><a class="dropdown-item" href="{{ url_for('profile') }}">
+                            <i class="fas fa-user"></i> Profile
+                        </a></li>
+                        <li><a class="dropdown-item" href="{{ url_for('admin.admin_settings') }}">
+                            <i class="fas fa-cog"></i> Admin Settings
+                        </a></li>
+                        <li><hr class="dropdown-divider"></li>
+                        <li><a class="dropdown-item" href="{{ url_for('index') }}">
+                            <i class="fas fa-home"></i> User Dashboard
+                        </a></li>
+                        <li><a class="dropdown-item" href="{{ url_for('logout') }}">
+                            <i class="fas fa-sign-out-alt"></i> Logout
+                        </a></li>
+                    </ul>
+                </li>
+            </ul>
+        </div>
+    </div>
+</nav>
+
+<!-- Admin Status Bar -->
+<div class="bg-light border-bottom py-2">
+    <div class="container-fluid">
+        <div class="row align-items-center">
+            <div class="col-md-6">
+                <small class="text-muted">
+                    <i class="fas fa-info-circle"></i>
+                    Admin Mode Active - System-wide access enabled
+                </small>
+            </div>
+            <div class="col-md-6 text-end">
+                <small class="text-muted">
+                    Last updated: <span id="lastUpdated">{{ moment().format('HH:mm:ss') }}</span>
+                </small>
+            </div>
+        </div>
+    </div>
+</div>
+
+<script>
+// Update last updated timestamp
+function updateTimestamp() {
+    document.getElementById('lastUpdated').textContent = new Date().toLocaleTimeString();
+}
+
+// Update timestamp every minute
+setInterval(updateTimestamp, 60000);
+</script>

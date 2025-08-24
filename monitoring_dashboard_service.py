@@ -17,7 +17,7 @@ from datetime import datetime, timezone, timedelta
 from typing import Dict, List, Any, Optional, Tuple
 from dataclasses import dataclass, asdict
 from enum import Enum
-from sqlalchemy import func, desc, and_, or_, text
+from sqlalchemy import func, desc, and_, or_, text, case
 from sqlalchemy.orm import joinedload
 from sqlalchemy.exc import SQLAlchemyError
 
@@ -96,11 +96,17 @@ class DashboardAlert:
 class MonitoringDashboardService:
     """Enhanced monitoring dashboard service with reporting and alerting"""
     
-    def __init__(self, db_manager: DatabaseManager):
+    def __init__(self, db_manager: DatabaseManager, config=None):
         self.db_manager = db_manager
         self.admin_monitoring = AdminMonitoringService(db_manager)
-        self.system_monitor = SystemMonitor()
-        self.alert_manager = AlertManager()
+        self.system_monitor = SystemMonitor(db_manager)
+        
+        # Import config if not provided
+        if config is None:
+            from config import Config
+            config = Config()
+        
+        self.alert_manager = AlertManager(db_manager, config)
         self._setup_default_widgets()
         self._setup_alert_handlers()
     
@@ -598,7 +604,7 @@ class MonitoringDashboardService:
                 User.username,
                 User.role,
                 func.count(CaptionGenerationTask.id).label('task_count')
-            ).outerjoin(CaptionGenerationTask).filter(
+            ).outerjoin(CaptionGenerationTask, User.id == CaptionGenerationTask.user_id).filter(
                 or_(
                     CaptionGenerationTask.created_at.between(start_date, end_date),
                     CaptionGenerationTask.created_at.is_(None)
@@ -769,8 +775,8 @@ class MonitoringDashboardService:
             daily_stats = session.query(
                 func.date(CaptionGenerationTask.created_at).label('date'),
                 func.count(CaptionGenerationTask.id).label('total_tasks'),
-                func.sum(func.case([(CaptionGenerationTask.status == TaskStatus.COMPLETED, 1)], else_=0)).label('completed'),
-                func.sum(func.case([(CaptionGenerationTask.status == TaskStatus.FAILED, 1)], else_=0)).label('failed')
+                func.sum(case((CaptionGenerationTask.status == TaskStatus.COMPLETED, 1), else_=0)).label('completed'),
+                func.sum(case((CaptionGenerationTask.status == TaskStatus.FAILED, 1), else_=0)).label('failed')
             ).filter(
                 CaptionGenerationTask.created_at >= start_date,
                 CaptionGenerationTask.created_at <= end_date

@@ -42,6 +42,335 @@ def register_routes(bp):
                              admin_jobs=admin_jobs,
                              personal_jobs=personal_jobs)
     
+    @bp.route('/bulk-actions')
+    @login_required
+    @with_session_error_handling
+    def bulk_actions():
+        """Bulk actions management page"""
+        if not current_user.role == UserRole.ADMIN:
+            from flask import flash, redirect, url_for
+            flash('Access denied. Admin privileges required.', 'error')
+            return redirect(url_for('index'))
+        
+        db_manager = current_app.config['db_manager']
+        
+        # Get all active jobs for bulk actions
+        with db_manager.get_session() as session:
+            from models import CaptionGenerationTask, User, PlatformConnection
+            
+            jobs = session.query(CaptionGenerationTask, User, PlatformConnection)\
+                         .join(User, CaptionGenerationTask.user_id == User.id)\
+                         .join(PlatformConnection, CaptionGenerationTask.platform_connection_id == PlatformConnection.id)\
+                         .filter(CaptionGenerationTask.status.in_(['running', 'queued', 'failed']))\
+                         .order_by(CaptionGenerationTask.created_at.desc())\
+                         .all()
+            
+            job_list = []
+            for task, user, platform in jobs:
+                job_list.append({
+                    'task_id': task.id,
+                    'username': user.username,
+                    'user_email': user.email,
+                    'platform_name': platform.name,
+                    'platform_type': platform.platform_type,
+                    'status': task.status.value if hasattr(task.status, 'value') else str(task.status),
+                    'created_at': task.created_at,
+                    'progress_percentage': task.progress_percent or 0
+                })
+            
+            # Available bulk actions
+            bulk_actions = [
+                {
+                    'id': 'cancel_selected',
+                    'name': 'Cancel Selected Jobs',
+                    'description': 'Cancel all selected jobs',
+                    'icon': 'bi-stop-circle',
+                    'class': 'btn-outline-danger',
+                    'requires_reason': True
+                },
+                {
+                    'id': 'set_priority_high',
+                    'name': 'Set High Priority',
+                    'description': 'Set high priority for selected jobs',
+                    'icon': 'bi-arrow-up-circle',
+                    'class': 'btn-outline-warning',
+                    'requires_reason': False
+                },
+                {
+                    'id': 'restart_failed',
+                    'name': 'Restart Failed Jobs',
+                    'description': 'Restart all selected failed jobs',
+                    'icon': 'bi-arrow-clockwise',
+                    'class': 'btn-outline-success',
+                    'requires_reason': False
+                },
+                {
+                    'id': 'add_notes',
+                    'name': 'Add Admin Notes',
+                    'description': 'Add notes to selected jobs',
+                    'icon': 'bi-sticky',
+                    'class': 'btn-outline-secondary',
+                    'requires_reason': True
+                }
+            ]
+        
+        return render_template('admin_bulk_actions.html',
+                             jobs=job_list,
+                             bulk_actions=bulk_actions,
+                             total_jobs=len(job_list))
+    
+    @bp.route('/system-maintenance')
+    @login_required
+    @with_session_error_handling
+    def system_maintenance():
+        """System maintenance management page"""
+        if not current_user.role == UserRole.ADMIN:
+            from flask import flash, redirect, url_for
+            flash('Access denied. Admin privileges required.', 'error')
+            return redirect(url_for('index'))
+        
+        db_manager = current_app.config['db_manager']
+        
+        # Get system metrics and maintenance information
+        with db_manager.get_session() as session:
+            from models import CaptionGenerationTask, User
+            from datetime import datetime, timedelta
+            
+            # System statistics
+            total_active_jobs = session.query(CaptionGenerationTask)\
+                                     .filter(CaptionGenerationTask.status.in_(['running', 'queued']))\
+                                     .count()
+            
+            total_users = session.query(User).count()
+            active_users = session.query(User).filter_by(is_active=True).count()
+            
+            # Recent activity (last 24 hours)
+            yesterday = datetime.utcnow() - timedelta(days=1)
+            recent_jobs = session.query(CaptionGenerationTask)\
+                                .filter(CaptionGenerationTask.created_at >= yesterday)\
+                                .count()
+            
+            system_metrics = {
+                'active_jobs': total_active_jobs,
+                'total_users': total_users,
+                'active_users': active_users,
+                'recent_jobs_24h': recent_jobs,
+                'system_status': 'Running',  # This could be dynamic based on system state
+                'uptime': '2 days, 14 hours',  # This could be calculated from app start time
+                'memory_usage': '45%',  # This could be from system monitoring
+                'cpu_usage': '23%'  # This could be from system monitoring
+            }
+            
+            # Available maintenance actions
+            maintenance_actions = [
+                {
+                    'id': 'pause_system',
+                    'name': 'Pause System',
+                    'description': 'Temporarily pause all job processing',
+                    'icon': 'bi-pause-circle',
+                    'class': 'btn-outline-warning',
+                    'requires_reason': True
+                },
+                {
+                    'id': 'clear_queue',
+                    'name': 'Clear Job Queue',
+                    'description': 'Remove all queued jobs (running jobs continue)',
+                    'icon': 'bi-trash',
+                    'class': 'btn-outline-danger',
+                    'requires_reason': True
+                },
+                {
+                    'id': 'restart_failed',
+                    'name': 'Restart All Failed Jobs',
+                    'description': 'Restart all failed jobs system-wide',
+                    'icon': 'bi-arrow-clockwise',
+                    'class': 'btn-outline-success',
+                    'requires_reason': False
+                },
+                {
+                    'id': 'cleanup_old_data',
+                    'name': 'Cleanup Old Data',
+                    'description': 'Remove old completed jobs and temporary files',
+                    'icon': 'bi-broom',
+                    'class': 'btn-outline-info',
+                    'requires_reason': False
+                }
+            ]
+        
+        return render_template('admin_system_maintenance.html',
+                             system_metrics=system_metrics,
+                             maintenance_actions=maintenance_actions)
+    
+    @bp.route('/maintenance/pause-system')
+    @login_required
+    @with_session_error_handling
+    def pause_system():
+        """Pause system maintenance page"""
+        if not current_user.role == UserRole.ADMIN:
+            from flask import flash, redirect, url_for
+            flash('Access denied. Admin privileges required.', 'error')
+            return redirect(url_for('index'))
+        
+        return render_template('admin_maintenance_pause_system.html')
+    
+    @bp.route('/maintenance/clear-queue')
+    @login_required
+    @with_session_error_handling
+    def clear_queue():
+        """Clear job queue maintenance page"""
+        if not current_user.role == UserRole.ADMIN:
+            from flask import flash, redirect, url_for
+            flash('Access denied. Admin privileges required.', 'error')
+            return redirect(url_for('index'))
+        
+        db_manager = current_app.config['db_manager']
+        
+        # Get queued jobs count
+        with db_manager.get_session() as session:
+            from models import CaptionGenerationTask
+            queued_jobs_count = session.query(CaptionGenerationTask)\
+                                     .filter_by(status='queued')\
+                                     .count()
+        
+        return render_template('admin_maintenance_clear_queue.html',
+                             queued_jobs_count=queued_jobs_count)
+    
+    @bp.route('/maintenance/restart-failed')
+    @login_required
+    @with_session_error_handling
+    def restart_failed():
+        """Restart failed jobs maintenance page"""
+        if not current_user.role == UserRole.ADMIN:
+            from flask import flash, redirect, url_for
+            flash('Access denied. Admin privileges required.', 'error')
+            return redirect(url_for('index'))
+        
+        db_manager = current_app.config['db_manager']
+        
+        # Get failed jobs
+        with db_manager.get_session() as session:
+            from models import CaptionGenerationTask, User, PlatformConnection
+            
+            failed_jobs = session.query(CaptionGenerationTask, User, PlatformConnection)\
+                               .join(User, CaptionGenerationTask.user_id == User.id)\
+                               .join(PlatformConnection, CaptionGenerationTask.platform_connection_id == PlatformConnection.id)\
+                               .filter_by(status='failed')\
+                               .order_by(CaptionGenerationTask.created_at.desc())\
+                               .all()
+            
+            failed_jobs_list = []
+            for task, user, platform in failed_jobs:
+                failed_jobs_list.append({
+                    'task_id': task.id,
+                    'username': user.username,
+                    'platform_name': platform.name,
+                    'platform_type': platform.platform_type,
+                    'created_at': task.created_at,
+                    'error_message': getattr(task, 'error_message', 'Unknown error')
+                })
+        
+        return render_template('admin_maintenance_restart_failed.html',
+                             failed_jobs=failed_jobs_list,
+                             failed_jobs_count=len(failed_jobs_list))
+    
+    @bp.route('/maintenance/cleanup-data')
+    @login_required
+    @with_session_error_handling
+    def cleanup_data():
+        """Cleanup old data maintenance page"""
+        if not current_user.role == UserRole.ADMIN:
+            from flask import flash, redirect, url_for
+            flash('Access denied. Admin privileges required.', 'error')
+            return redirect(url_for('index'))
+        
+        db_manager = current_app.config['db_manager']
+        
+        # Get cleanup statistics
+        with db_manager.get_session() as session:
+            from models import CaptionGenerationTask, Image
+            from datetime import datetime, timedelta
+            
+            # Old completed jobs (older than 30 days)
+            thirty_days_ago = datetime.utcnow() - timedelta(days=30)
+            old_completed_jobs = session.query(CaptionGenerationTask)\
+                                      .filter(CaptionGenerationTask.status == 'completed')\
+                                      .filter(CaptionGenerationTask.completed_at < thirty_days_ago)\
+                                      .count()
+            
+            # Old failed jobs (older than 7 days)
+            seven_days_ago = datetime.utcnow() - timedelta(days=7)
+            old_failed_jobs = session.query(CaptionGenerationTask)\
+                                   .filter(CaptionGenerationTask.status == 'failed')\
+                                   .filter(CaptionGenerationTask.created_at < seven_days_ago)\
+                                   .count()
+            
+            # Orphaned images (no associated posts)
+            orphaned_images = session.query(Image)\
+                                   .filter(~Image.posts.any())\
+                                   .count()
+            
+            cleanup_stats = {
+                'old_completed_jobs': old_completed_jobs,
+                'old_failed_jobs': old_failed_jobs,
+                'orphaned_images': orphaned_images,
+                'total_cleanable': old_completed_jobs + old_failed_jobs + orphaned_images
+            }
+        
+        return render_template('admin_maintenance_cleanup_data.html',
+                             cleanup_stats=cleanup_stats)
+    
+    @bp.route('/job-history/<int:user_id>')
+    @login_required
+    @with_session_error_handling
+    def job_history(user_id):
+        """Job history page for a specific user"""
+        if not current_user.role == UserRole.ADMIN and current_user.id != user_id:
+            from flask import flash, redirect, url_for
+            flash('Access denied. You can only view your own job history.', 'error')
+            return redirect(url_for('admin.job_management'))
+        
+        db_manager = current_app.config['db_manager']
+        
+        with db_manager.get_session() as session:
+            from models import CaptionGenerationTask, User, PlatformConnection
+            
+            # Get user information
+            user = session.query(User).filter_by(id=user_id).first()
+            if not user:
+                from flask import flash, redirect, url_for
+                flash('User not found.', 'error')
+                return redirect(url_for('admin.job_management'))
+            
+            # Get job history for the user
+            jobs = session.query(CaptionGenerationTask, PlatformConnection)\
+                         .join(PlatformConnection, CaptionGenerationTask.platform_connection_id == PlatformConnection.id)\
+                         .filter(CaptionGenerationTask.user_id == user_id)\
+                         .order_by(CaptionGenerationTask.created_at.desc())\
+                         .limit(50)\
+                         .all()
+            
+            job_history = []
+            for task, platform in jobs:
+                job_history.append({
+                    'task_id': task.id,
+                    'platform_name': platform.name,
+                    'platform_type': platform.platform_type,
+                    'status': task.status.value if hasattr(task.status, 'value') else str(task.status),
+                    'created_at': task.created_at,
+                    'completed_at': task.completed_at,
+                    'progress_percentage': task.progress_percent or 0,
+                    'results': {
+                        'captions_generated': getattr(task, 'captions_generated', 0),
+                        'images_processed': getattr(task, 'images_processed', 0),
+                        'errors_count': getattr(task, 'errors_count', 0)
+                    }
+                })
+        
+        return render_template('admin_job_history.html',
+                             user=user,
+                             job_history=job_history,
+                             is_own_history=(current_user.id == user_id))
+    
     @bp.route('/help')
     @login_required
     @with_session_error_handling
