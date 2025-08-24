@@ -298,9 +298,44 @@ def register_api_routes(bp):
                 if duration == 'custom' and custom_duration:
                     duration = custom_duration
                 
-                result = pause_system(reason, current_user.id, duration, notify_users)
+                # Use the proper multi-tenant control service
+                from multi_tenant_control_service import MultiTenantControlService
+                mt_service = MultiTenantControlService(db_manager)
+                
+                success = mt_service.pause_system_jobs(current_user.id, reason)
+                
+                if success:
+                    duration_msg = f" (Expected duration: {duration})" if duration else ""
+                    notify_msg = " Users will be notified." if notify_users else ""
+                    message = f"System has been paused successfully.{duration_msg}{notify_msg}"
+                    result = {
+                        'success': True,
+                        'message': message,
+                        'new_status': 'paused'
+                    }
+                else:
+                    result = {
+                        'success': False,
+                        'message': 'Failed to pause system'
+                    }
             elif action_id == 'resume_system':
-                result = resume_system(current_user.id)
+                # Use the proper multi-tenant control service
+                from multi_tenant_control_service import MultiTenantControlService
+                mt_service = MultiTenantControlService(db_manager)
+                
+                success = mt_service.resume_system_jobs(current_user.id)
+                
+                if success:
+                    result = {
+                        'success': True,
+                        'message': 'System has been resumed successfully',
+                        'new_status': 'active'
+                    }
+                else:
+                    result = {
+                        'success': False,
+                        'message': 'Failed to resume system'
+                    }
             elif action_id == 'clear_queue':
                 result = clear_job_queue(reason, current_user.id)
             elif action_id == 'restart_services':
@@ -440,48 +475,7 @@ def get_maintenance_log():
         logger.error(f"Error getting maintenance log: {e}")
         return []
 
-def pause_system(reason, admin_user_id, duration='', notify_users=False):
-    """Pause the system"""
-    try:
-        # Implementation would set system maintenance mode
-        duration_msg = f" (Expected duration: {duration})" if duration else ""
-        notify_msg = " Users will be notified." if notify_users else ""
-        
-        logger.info(f"System paused by admin {admin_user_id}: {reason}{duration_msg}{notify_msg}")
-        
-        # Here you would implement actual system pause logic
-        # For now, just return success
-        
-        message = f"System has been paused successfully.{duration_msg}{notify_msg}"
-        
-        return {
-            'success': True,
-            'message': message,
-            'new_status': 'paused'
-        }
-    except Exception as e:
-        logger.error(f"Error pausing system: {e}")
-        return {
-            'success': False,
-            'message': 'Failed to pause system'
-        }
 
-def resume_system(admin_user_id):
-    """Resume the system"""
-    try:
-        # Implementation would clear system maintenance mode
-        logger.info(f"System resumed by admin {admin_user_id}")
-        return {
-            'success': True,
-            'message': 'System has been resumed successfully',
-            'new_status': 'active'
-        }
-    except Exception as e:
-        logger.error(f"Error resuming system: {e}")
-        return {
-            'success': False,
-            'error': 'Failed to resume system'
-        }
 
 def clear_job_queue(reason, admin_user_id):
     """Clear the job queue"""
@@ -540,7 +534,13 @@ def restart_services(reason, admin_user_id):
 def log_maintenance_action(action_id, reason, admin_user_id, success):
     """Log maintenance action to database"""
     try:
-        # Implementation would log to maintenance_log table
-        logger.info(f"Maintenance action logged: {action_id} by admin {admin_user_id}, success: {success}")
+        from multi_tenant_control_service import MultiTenantControlService
+        db_manager = current_app.config['db_manager']
+        mt_service = MultiTenantControlService(db_manager)
+        
+        # The MultiTenantControlService already logs admin actions internally
+        # So we just need to log to the application logger as well
+        status = "SUCCESS" if success else "FAILED"
+        logger.info(f"Maintenance action {action_id} by admin {admin_user_id}: {status} - {reason}")
     except Exception as e:
         logger.error(f"Error logging maintenance action: {e}")

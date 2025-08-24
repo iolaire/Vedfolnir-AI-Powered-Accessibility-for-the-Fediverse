@@ -150,27 +150,49 @@ def register_routes(bp):
                                 .filter(CaptionGenerationTask.created_at >= yesterday)\
                                 .count()
             
+            # Check actual maintenance mode status
+            from multi_tenant_control_service import MultiTenantControlService
+            mt_service = MultiTenantControlService(db_manager)
+            is_maintenance = mt_service.is_maintenance_mode()
+            maintenance_reason = mt_service.get_maintenance_reason()
+            
             system_metrics = {
                 'active_jobs': total_active_jobs,
                 'total_users': total_users,
                 'active_users': active_users,
                 'recent_jobs_24h': recent_jobs,
-                'system_status': 'Running',  # This could be dynamic based on system state
+                'system_status': 'Maintenance' if is_maintenance else 'Running',
+                'maintenance_reason': maintenance_reason,
                 'uptime': '2 days, 14 hours',  # This could be calculated from app start time
                 'memory_usage': '45%',  # This could be from system monitoring
                 'cpu_usage': '23%'  # This could be from system monitoring
             }
             
-            # Available maintenance actions
-            maintenance_actions = [
-                {
+            # Available maintenance actions - show different actions based on system status
+            maintenance_actions = []
+            
+            # Add pause/resume action based on current status
+            if is_maintenance:
+                maintenance_actions.append({
+                    'id': 'resume_system',
+                    'name': 'Resume System',
+                    'description': 'Resume normal job processing operations',
+                    'icon': 'bi-play-circle',
+                    'class': 'btn-outline-success',
+                    'requires_reason': False
+                })
+            else:
+                maintenance_actions.append({
                     'id': 'pause_system',
                     'name': 'Pause System',
                     'description': 'Temporarily pause all job processing',
                     'icon': 'bi-pause-circle',
                     'class': 'btn-outline-warning',
                     'requires_reason': True
-                },
+                })
+            
+            # Add other maintenance actions
+            maintenance_actions.extend([
                 {
                     'id': 'clear_queue',
                     'name': 'Clear Job Queue',
@@ -195,7 +217,7 @@ def register_routes(bp):
                     'class': 'btn-outline-info',
                     'requires_reason': False
                 }
-            ]
+            ])
         
         return render_template('admin_system_maintenance.html',
                              system_metrics=system_metrics,
@@ -211,7 +233,45 @@ def register_routes(bp):
             flash('Access denied. Admin privileges required.', 'error')
             return redirect(url_for('index'))
         
-        return render_template('admin_maintenance_pause_system.html')
+        # Check current maintenance mode status
+        db_manager = current_app.config['db_manager']
+        from multi_tenant_control_service import MultiTenantControlService
+        mt_service = MultiTenantControlService(db_manager)
+        is_maintenance = mt_service.is_maintenance_mode()
+        maintenance_reason = mt_service.get_maintenance_reason()
+        
+        system_status = {
+            'status': 'Maintenance' if is_maintenance else 'Running',
+            'reason': maintenance_reason
+        }
+        
+        return render_template('admin_maintenance_pause_system.html', system_status=system_status)
+    
+    @bp.route('/maintenance/resume-system')
+    @login_required
+    @with_session_error_handling
+    def resume_system():
+        """Resume system maintenance page"""
+        if not current_user.role == UserRole.ADMIN:
+            from flask import flash, redirect, url_for
+            flash('Access denied. Admin privileges required.', 'error')
+            return redirect(url_for('index'))
+        
+        # Check current maintenance mode status
+        db_manager = current_app.config['db_manager']
+        from multi_tenant_control_service import MultiTenantControlService
+        mt_service = MultiTenantControlService(db_manager)
+        is_maintenance = mt_service.is_maintenance_mode()
+        maintenance_reason = mt_service.get_maintenance_reason()
+        
+        # Get additional status information
+        system_status = {
+            'status': 'Maintenance' if is_maintenance else 'Running',
+            'reason': maintenance_reason,
+            'paused_at': None  # This could be enhanced to track when the system was paused
+        }
+        
+        return render_template('admin_maintenance_resume_system.html', system_status=system_status)
     
     @bp.route('/maintenance/clear-queue')
     @login_required

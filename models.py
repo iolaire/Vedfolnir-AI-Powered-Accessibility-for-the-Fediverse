@@ -1501,8 +1501,8 @@ class JobAuditLog(Base):
     )
     
     id = Column(Integer, primary_key=True, autoincrement=True)
-    task_id = Column(String(36), ForeignKey('caption_generation_tasks.id', ondelete='CASCADE'), nullable=False)
-    user_id = Column(Integer, ForeignKey('users.id'), nullable=False)
+    task_id = Column(String(36), ForeignKey('caption_generation_tasks.id', ondelete='CASCADE'), nullable=True)
+    user_id = Column(Integer, ForeignKey('users.id'), nullable=True)
     admin_user_id = Column(Integer, ForeignKey('users.id'), nullable=True)
     action = Column(String(50), nullable=False)  # 'created', 'cancelled', 'completed', 'failed', 'restarted', etc.
     details = Column(Text)  # JSON with action details

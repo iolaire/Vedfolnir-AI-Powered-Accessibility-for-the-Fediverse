@@ -88,17 +88,45 @@ load_test.py
 
 ### 6. Frontend/UI Tests → `tests/frontend/` or `tests/playwright/`
 ```python
-# ✅ CORRECT
+# ✅ CORRECT - Python-based frontend tests
 tests/frontend/test_web_interface.py
-tests/playwright/test_admin_ui.py
 tests/frontend/test_session_sync.py
+
+# ✅ CORRECT - All Playwright tests (JavaScript/TypeScript)
+tests/playwright/test_admin_ui.js
+tests/playwright/test_login_flow.js
+tests/playwright/test_platform_switching.js
 
 # ❌ WRONG
 ui_test.py
 frontend_test.py
+playwright_test.js  # Should be in tests/playwright/
 ```
 
-### 7. Security Tests → `tests/security/`
+### 7. Playwright Tests → `tests/playwright/`
+```javascript
+// ✅ CORRECT - All Playwright tests and files with timestamp prefix
+tests/playwright/0824_14_30_test_admin_ui.js
+tests/playwright/0824_14_30_test_login_flow.js
+tests/playwright/0824_14_30_test_platform_switching.js
+tests/playwright/0824_14_30_playwright.config.js
+tests/playwright/0824_14_30_README.md
+tests/playwright/fixtures/0824_14_30_test_data.json
+tests/playwright/page_objects/0824_14_30_LoginPage.js
+tests/playwright/utils/0824_14_30_test_helpers.js
+
+// ❌ WRONG - Missing timestamp prefix
+tests/playwright/test_admin_ui.js        # Missing timestamp prefix
+tests/playwright/playwright.config.js   # Missing timestamp prefix
+tests/playwright/README.md              # Missing timestamp prefix
+
+// ❌ WRONG - Playwright files outside tests/playwright/
+playwright.config.js                    # Should be in tests/playwright/
+e2e/test_admin.js                       # Should be in tests/playwright/
+browser_tests/login_test.js             # Should be in tests/playwright/
+```
+
+### 8. Security Tests → `tests/security/`
 ```python
 # ✅ CORRECT
 tests/security/test_csrf_protection.py
@@ -133,6 +161,28 @@ test_csrf.py
   - `test_pause_system_with_valid_credentials`
   - `test_login_with_invalid_password`
   - `test_session_creation_success`
+
+### Playwright File Naming
+**IMPORTANT**: All Playwright test and documentation files must be prefixed with timestamp in format `MMdd_HH_mm_`
+
+- **Test Files**: `MMdd_HH_mm_test_<functionality>.js` or `MMdd_HH_mm_<functionality>.spec.js`
+- **Configuration**: `MMdd_HH_mm_playwright.config.js`
+- **Page Objects**: `MMdd_HH_mm_<PageName>Page.js`
+- **Utilities**: `MMdd_HH_mm_<utility_name>.js`
+- **Documentation**: `MMdd_HH_mm_README.md`, `MMdd_HH_mm_<doc_name>.md`
+- **Examples**:
+  - `0824_14_30_test_admin_login.js`
+  - `0824_14_30_admin_dashboard.spec.js`
+  - `0824_14_30_LoginPage.js`
+  - `0824_14_30_test_helpers.js`
+  - `0824_14_30_README.md`
+  - `0824_14_30_playwright.config.js`
+
+**Timestamp Format**: `MMdd_HH_mm_` where:
+- `MM` = Month (01-12)
+- `dd` = Day (01-31)  
+- `HH` = Hour in 24-hour format (00-23)
+- `mm` = Minute (00-59)
 
 ## Test Script Organization
 
@@ -267,17 +317,25 @@ python -m unittest discover tests/integration
 - Database performance tests
 
 ### `tests/frontend/`
-- Web interface tests
-- JavaScript functionality tests
-- CSS/styling tests
-- User interaction tests
-- Accessibility tests
+- **Python-based web interface tests only**
+- Server-side rendered template tests
+- Flask route testing with web interface
+- Session synchronization tests
+- CSRF token validation tests
+- **Note**: All Playwright/browser automation tests go in `tests/playwright/`
 
 ### `tests/playwright/`
-- Browser automation tests
+- **ALL Playwright tests and documentation**
+- Browser automation tests (JavaScript/TypeScript)
 - End-to-end user workflows
 - Cross-browser compatibility tests
 - UI regression tests
+- Playwright configuration files (`playwright.config.js`) with `headless: false`
+- Playwright test utilities and helpers
+- Playwright test documentation and README files
+- Page object models and test fixtures
+- Visual regression test screenshots and baselines
+- **Configuration Requirement**: All tests must run with `headless: false` for visual debugging
 
 ### `tests/scripts/`
 - Manual testing scripts
@@ -286,17 +344,224 @@ python -m unittest discover tests/integration
 - Test environment setup scripts
 - Temporary test files
 
+## Playwright Test Organization
+
+### Mandatory Playwright Directory Structure
+**ALL Playwright-related files MUST be placed in `tests/playwright/`**
+
+```
+tests/playwright/
+├── MMdd_HH_mm_test_*.js          # Playwright test files with timestamp
+├── MMdd_HH_mm_*.spec.js          # Alternative test file naming with timestamp
+├── MMdd_HH_mm_playwright.config.js # Playwright configuration with timestamp
+├── MMdd_HH_mm_README.md          # Playwright documentation with timestamp
+├── MMdd_HH_mm_package.json       # Node.js dependencies with timestamp
+├── fixtures/                     # Test data and fixtures
+│   ├── MMdd_HH_mm_test_data.json
+│   └── MMdd_HH_mm_mock_responses.json
+├── page_objects/                 # Page Object Model files
+│   ├── MMdd_HH_mm_LoginPage.js
+│   ├── MMdd_HH_mm_AdminDashboardPage.js
+│   └── MMdd_HH_mm_PlatformManagementPage.js
+├── utils/                        # Playwright utilities and helpers
+│   ├── MMdd_HH_mm_test_helpers.js
+│   ├── MMdd_HH_mm_auth_utils.js
+│   └── MMdd_HH_mm_screenshot_utils.js
+├── docs/                         # Documentation files
+│   ├── MMdd_HH_mm_setup_guide.md
+│   └── MMdd_HH_mm_troubleshooting.md
+├── screenshots/                  # Visual regression baselines
+│   ├── baseline/
+│   └── actual/
+└── reports/                      # Test reports and artifacts
+    ├── html-report/
+    └── test-results/
+```
+
+### Playwright File Types and Placement
+
+#### Test Files
+- **Location**: `tests/playwright/`
+- **Naming**: `MMdd_HH_mm_test_<functionality>.js` or `MMdd_HH_mm_<functionality>.spec.js`
+- **Examples**: `0824_14_30_test_admin_login.js`, `0824_14_30_admin_dashboard.spec.js`
+
+#### Configuration Files
+- **Location**: `tests/playwright/`
+- **Files**: `MMdd_HH_mm_playwright.config.js`, `MMdd_HH_mm_package.json`
+- **Purpose**: Playwright configuration and Node.js dependencies
+- **Examples**: `0824_14_30_playwright.config.js`, `0824_14_30_package.json`
+- **Required Setting**: `headless: false` must be configured in playwright.config.js
+
+#### Page Object Models
+- **Location**: `tests/playwright/page_objects/`
+- **Naming**: `MMdd_HH_mm_<PageName>Page.js`
+- **Examples**: `0824_14_30_LoginPage.js`, `0824_14_30_AdminDashboardPage.js`
+
+#### Test Utilities
+- **Location**: `tests/playwright/utils/`
+- **Naming**: `MMdd_HH_mm_<utility_name>.js`
+- **Examples**: `0824_14_30_test_helpers.js`, `0824_14_30_auth_utils.js`
+
+#### Test Data and Fixtures
+- **Location**: `tests/playwright/fixtures/`
+- **Files**: JSON, CSV, or other data files with timestamp prefix
+- **Examples**: `0824_14_30_test_data.json`, `0824_14_30_mock_responses.json`
+
+#### Documentation
+- **Location**: `tests/playwright/` or `tests/playwright/docs/`
+- **Files**: `MMdd_HH_mm_README.md`, setup guides, troubleshooting docs
+- **Purpose**: Playwright-specific documentation and guides
+- **Examples**: `0824_14_30_README.md`, `0824_14_30_setup_guide.md`, `0824_14_30_troubleshooting.md`
+
+### Playwright Test Categories
+
+#### End-to-End Workflow Tests
+```javascript
+// tests/playwright/0824_14_30_test_complete_workflow.js
+// Full user journey from login to task completion
+```
+
+#### Admin Interface Tests
+```javascript
+// tests/playwright/0824_14_30_test_admin_dashboard.js
+// Admin-specific UI functionality
+```
+
+#### Cross-Browser Compatibility Tests
+```javascript
+// tests/playwright/0824_14_30_test_browser_compatibility.js
+// Testing across different browsers
+```
+
+#### Visual Regression Tests
+```javascript
+// tests/playwright/0824_14_30_test_visual_regression.js
+// Screenshot comparison tests
+```
+
+#### Performance Tests
+```javascript
+// tests/playwright/0824_14_30_test_performance.js
+// Page load times and performance metrics
+```
+
+### Playwright Configuration Requirements
+
+#### Headless Mode Setting
+**MANDATORY**: All Playwright tests must be configured to run with `headless: false`
+
+```javascript
+// 0824_14_30_playwright.config.js
+module.exports = {
+  use: {
+    headless: false,  // REQUIRED: Always run with visible browser
+    // other configuration options...
+  },
+  // other configuration...
+};
+```
+
+#### Reasons for headless=false
+- **Visual Debugging**: Allows developers to see test execution in real-time
+- **Test Development**: Easier to develop and debug tests when browser is visible
+- **Issue Identification**: Faster identification of UI issues and test failures
+- **Interactive Development**: Enables step-by-step test development and validation
+
+#### Configuration Examples
+```javascript
+// Example 1: Basic configuration with headless=false
+// 0824_14_30_playwright.config.js
+module.exports = {
+  testDir: './tests',
+  use: {
+    headless: false,
+    viewport: { width: 1280, height: 720 },
+    ignoreHTTPSErrors: true,
+  },
+};
+
+// Example 2: Advanced configuration with headless=false
+// 0824_14_30_playwright.config.js
+module.exports = {
+  testDir: './tests',
+  timeout: 30000,
+  use: {
+    headless: false,
+    baseURL: 'http://127.0.0.1:5000',
+    viewport: { width: 1280, height: 720 },
+    screenshot: 'only-on-failure',
+    video: 'retain-on-failure',
+  },
+  projects: [
+    {
+      name: 'chromium',
+      use: { ...devices['Desktop Chrome'], headless: false },
+    },
+    {
+      name: 'firefox',
+      use: { ...devices['Desktop Firefox'], headless: false },
+    },
+  ],
+};
+```
+
+### Timestamp Prefix Rules
+
+#### When to Apply Timestamp Prefix
+- **ALL Playwright test files** (`.js`, `.ts`, `.spec.js`, `.spec.ts`)
+- **ALL Playwright configuration files** (`playwright.config.js`, `package.json`)
+- **ALL Playwright documentation files** (`.md` files)
+- **ALL Playwright utility files** (helper functions, page objects)
+- **ALL Playwright data files** (fixtures, test data)
+
+#### How to Generate Timestamp
+Use the current date and time when creating the file:
+- **Format**: `MMdd_HH_mm_`
+- **Example**: For August 24th at 2:30 PM → `0824_14_30_`
+
+#### Timestamp Examples by File Type
+```javascript
+// Test files
+0824_14_30_test_login.js
+0824_14_30_admin_dashboard.spec.js
+
+// Configuration files  
+0824_14_30_playwright.config.js
+0824_14_30_package.json
+
+// Page objects
+0824_14_30_LoginPage.js
+0824_14_30_AdminDashboardPage.js
+
+// Utilities
+0824_14_30_test_helpers.js
+0824_14_30_auth_utils.js
+
+// Documentation
+0824_14_30_README.md
+0824_14_30_setup_guide.md
+0824_14_30_troubleshooting.md
+
+// Test data
+0824_14_30_test_data.json
+0824_14_30_mock_responses.json
+```
+
 ## Enforcement Rules
 
 ### Kiro Guidelines
 When Kiro creates test files:
 
-1. **Always ask**: "What type of test is this?" (admin, security, integration, unit, etc.)
+1. **Always ask**: "What type of test is this?" (admin, security, integration, unit, playwright, etc.)
 2. **Always place** test files in the appropriate `tests/` subdirectory
 3. **Never create** test files in the project root directory
 4. **Always use** proper naming conventions
-5. **Always include** proper copyright headers
+5. **Always include** proper copyright headers (for Python files)
 6. **Always add** proper import path management for subdirectories
+7. **For Playwright tests**: Always place ALL Playwright-related files in `tests/playwright/`
+8. **For browser automation**: Use `tests/playwright/` for all browser-based end-to-end tests
+9. **For Playwright configuration**: Always set `headless: false` in playwright.config.js
+10. **For Playwright execution**: Ensure tests run with visible browser for debugging and development
 
 ### Code Review Checklist
 - [ ] Test file is in appropriate `tests/` subdirectory
@@ -361,6 +626,18 @@ tests/
 │   ├── test_login_workflow.py
 │   ├── test_platform_switching.py
 │   └── test_end_to_end.py
+├── playwright/
+│   ├── 0824_14_30_test_admin_ui.js
+│   ├── 0824_14_30_test_login_flow.js
+│   ├── 0824_14_30_playwright.config.js
+│   ├── 0824_14_30_README.md
+│   ├── fixtures/
+│   │   └── 0824_14_30_test_data.json
+│   ├── page_objects/
+│   │   ├── 0824_14_30_LoginPage.js
+│   │   └── 0824_14_30_AdminDashboardPage.js
+│   └── utils/
+│       └── 0824_14_30_test_helpers.js
 └── scripts/
     ├── debug_authentication.py
     └── manual_system_test.py
@@ -373,7 +650,12 @@ tests/
 ├── auth_test.py                  # Should be in tests/security/
 ├── integration_test.py           # Should be in tests/integration/
 ├── debug_test.py                 # Should be in tests/scripts/
-└── manual_test.py                # Should be in tests/scripts/
+├── manual_test.py                # Should be in tests/scripts/
+├── playwright.config.js          # Should be in tests/playwright/
+├── e2e/
+│   └── admin_test.js             # Should be in tests/playwright/
+└── browser_tests/
+    └── login_test.js             # Should be in tests/playwright/
 ```
 
 This organization ensures a clean, maintainable, and professional project structure that scales well as the project grows.

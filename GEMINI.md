@@ -79,6 +79,26 @@ The project includes a comprehensive test suite.
     python scripts/testing/run_comprehensive_tests.py --suite security
     ```
 
+### Playwright End-to-End Tests
+
+Tests located in `tests/playwright/` are Playwright end-to-end browser tests. These tests interact with the running web application.
+
+To run a specific Playwright test (e.g., `tests/playwright/0824_8_00_job_management_test.py`):
+
+1.  **Ensure the Flask application is running.** You can start it locally using:
+    ```bash
+    python web_app.py
+    ```
+    (Note: This will run the Flask app in the foreground. For background execution, consider using `python web_app.py &` or a process manager.)
+
+2.  **Execute the Playwright test script directly:**
+    ```bash
+    python tests/playwright/0824_8_00_job_management_test.py
+    ```
+    Replace `0824_8_00_job_management_test.py` with the actual test file name.
+
+These tests are designed to be run as standalone Python scripts and are not integrated with the `run_comprehensive_tests.py` runner.
+
 # Development Conventions
 
 -   **Configuration:** The application is configured entirely through environment variables, which are loaded from a `.env` file into the `Config` object in `config.py`. This is a security best practice that avoids hardcoding secrets.

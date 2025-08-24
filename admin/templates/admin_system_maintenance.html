@@ -43,6 +43,11 @@
                             <span class="badge bg-{{ 'success' if system_metrics.system_status == 'Running' else 'warning' }}">
                                 {{ system_metrics.system_status }}
                             </span>
+                            {% if system_metrics.system_status == 'Maintenance' and system_metrics.maintenance_reason %}
+                            <div class="mt-2">
+                                <small class="text-muted">{{ system_metrics.maintenance_reason }}</small>
+                            </div>
+                            {% endif %}
                         </div>
                     </div>
                     <div class="col-md-3">
@@ -169,6 +174,10 @@
                                 <p class="card-text small text-muted">{{ action.description }}</p>
                                 {% if action.id == 'pause_system' %}
                                 <a href="{{ url_for('admin.pause_system') }}" class="btn {{ action.class }}">
+                                    <i class="{{ action.icon }}"></i> Execute
+                                </a>
+                                {% elif action.id == 'resume_system' %}
+                                <a href="{{ url_for('admin.resume_system') }}" class="btn {{ action.class }}">
                                     <i class="{{ action.icon }}"></i> Execute
                                 </a>
                                 {% elif action.id == 'clear_queue' %}

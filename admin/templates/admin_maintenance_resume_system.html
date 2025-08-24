@@ -1,0 +1,457 @@
+<!-- Copyright (C) 2025 iolaire mcfadden. -->
+<!-- This program is free software: you can redistribute it and/or modify it under the terms of the GNU Affero General Public License as published by the Free Software Foundation, either version 3 of the License, or (at your option) any later version. -->
+<!-- THE SOFTWARE IS PROVIDED "AS IS", WITHOUT WARRANTY OF ANY KIND, EXPRESS OR IMPLIED, INCLUDING BUT NOT LIMITED TO THE WARRANTIES OF MERCHANTABILITY, FITNESS FOR A PARTICULAR PURPOSE AND NONINFRINGEMENT. IN NO EVENT SHALL THE AUTHORS OR COPYRIGHT HOLDERS BE LIABLE FOR ANY CLAIM, DAMAGES OR OTHER LIABILITY, WHETHER IN AN ACTION OF CONTRACT, TORT OR OTHERWISE, ARISING FROM, OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE SOFTWARE. -->
+
+{% extends "base_admin.html" %}
+
+{% block title %}Resume System - Maintenance - Admin - Vedfolnir{% endblock %}
+
+{% block content %}
+<div class="d-flex justify-content-between flex-wrap flex-md-nowrap align-items-center pt-3 pb-2 mb-3 border-bottom">
+    <h1 class="h2">
+        <i class="bi bi-play-circle text-success"></i> Resume System
+    </h1>
+    <div class="btn-toolbar mb-2 mb-md-0">
+        <div class="btn-group me-2">
+            <a href="{{ url_for('admin.system_maintenance') }}" class="btn btn-sm btn-outline-secondary">
+                <i class="bi bi-arrow-left"></i> Back to System Maintenance
+            </a>
+        </div>
+    </div>
+</div>
+
+<!-- System Status Alert -->
+{% if system_status.status == 'Maintenance' %}
+<div class="alert alert-warning">
+    <div class="d-flex align-items-center">
+        <i class="bi bi-pause-circle-fill me-3 display-6"></i>
+        <div>
+            <h5 class="alert-heading">System Currently Paused</h5>
+            <p class="mb-0">
+                The system is in maintenance mode and new jobs are not being processed.
+                {% if system_status.reason %}
+                <br><strong>Reason:</strong> {{ system_status.reason }}
+                {% endif %}
+                <br>Use this page to resume normal system operations.
+            </p>
+        </div>
+    </div>
+</div>
+{% else %}
+<div class="alert alert-success">
+    <div class="d-flex align-items-center">
+        <i class="bi bi-play-circle-fill me-3 display-6"></i>
+        <div>
+            <h5 class="alert-heading">System Already Running</h5>
+            <p class="mb-0">
+                The system is currently running normally and processing jobs.
+                <br><a href="{{ url_for('admin.system_maintenance') }}" class="alert-link">Go to System Maintenance</a>
+                to view system status or pause the system if needed.
+            </p>
+        </div>
+    </div>
+</div>
+{% endif %}
+
+<!-- Resume System Interface -->
+<div class="row">
+    <div class="col-md-8">
+        <div class="card">
+            <div class="card-header">
+                <h5 class="card-title mb-0">
+                    <i class="bi bi-play-circle text-success"></i> Resume System Operations
+                </h5>
+            </div>
+            <div class="card-body">
+                {% if system_status.status == 'Maintenance' %}
+                <div class="text-center py-4">
+                    <div class="display-6 text-warning mb-3">
+                        <i class="bi bi-pause-circle"></i>
+                    </div>
+                    <h5>System Currently Paused</h5>
+                    <p class="text-muted mb-3">
+                        The system is in maintenance mode and new jobs are not being processed.
+                        {% if system_status.reason %}
+                        <br><strong>Reason:</strong> {{ system_status.reason }}
+                        {% endif %}
+                        {% if system_status.paused_at %}
+                        <br><strong>Paused at:</strong> {{ system_status.paused_at.strftime('%Y-%m-%d %H:%M:%S') }}
+                        {% endif %}
+                    </p>
+
+                    <!-- Resume System Button -->
+                    <button type="button" class="btn btn-success btn-lg me-2" id="resumeSystemBtn">
+                        <i class="bi bi-play-circle"></i> Resume System
+                    </button>
+
+
+
+                    <!-- Resume System Confirmation Area (initially hidden) -->
+                    <div id="confirmResume" class="mt-4 p-4 border border-success rounded bg-light"
+                        style="display: none;">
+                        <div class="text-center">
+                            <div class="display-6 text-success mb-3">
+                                <i class="bi bi-play-circle"></i>
+                            </div>
+                            <h5 class="text-success">Confirm System Resume</h5>
+                            <p class="mb-3">
+                                Are you sure you want to resume the system?<br>
+                                <small class="text-muted">This will allow new caption generation jobs to start
+                                    immediately.</small>
+                            </p>
+
+                            <div class="mb-3">
+                                <label for="resumeNotes" class="form-label">
+                                    <strong>Resume Notes</strong> <small class="text-muted">(optional)</small>
+                                </label>
+                                <textarea class="form-control" id="resumeNotes" rows="3"
+                                    placeholder="Optional notes about the system resume (e.g., maintenance completed, issue resolved, etc.)"></textarea>
+                                <div class="form-text">
+                                    These notes will be logged for audit purposes.
+                                </div>
+                            </div>
+
+                            <div class="d-inline-block">
+                                <button type="button" class="btn btn-success me-2" id="confirmResumeBtn">
+                                    <i class="bi bi-play-circle"></i> Yes, Resume System
+                                </button>
+                                <button type="button" class="btn btn-outline-secondary" id="cancelResumeBtn">
+                                    <i class="bi bi-x-circle"></i> Cancel
+                                </button>
+                            </div>
+                        </div>
+                    </div>
+
+                    <div class="mt-3">
+                        <a href="{{ url_for('admin.system_maintenance') }}" class="btn btn-outline-secondary">
+                            <i class="bi bi-arrow-left"></i> System Maintenance
+                        </a>
+                    </div>
+                </div>
+                {% else %}
+                <div class="text-center py-4">
+                    <div class="display-6 text-success mb-3">
+                        <i class="bi bi-play-circle"></i>
+                    </div>
+                    <h5>System Already Running</h5>
+                    <p class="text-muted mb-3">
+                        The system is currently running normally and processing jobs.
+                    </p>
+
+                    <div class="d-flex justify-content-center gap-2">
+                        <a href="{{ url_for('admin.system_maintenance') }}" class="btn btn-primary">
+                            <i class="bi bi-speedometer2"></i> System Maintenance
+                        </a>
+                        <a href="{{ url_for('admin.dashboard') }}" class="btn btn-outline-primary">
+                            <i class="bi bi-house"></i> Admin Dashboard
+                        </a>
+                    </div>
+                </div>
+                {% endif %}
+
+
+            </div>
+        </div>
+    </div>
+    <div class="col-md-4">
+        <!-- Current System Status -->
+        <div class="card">
+            <div class="card-header">
+                <h6 class="card-title mb-0">
+                    <i class="bi bi-info-circle"></i> Current System Status
+                </h6>
+            </div>
+            <div class="card-body">
+                <div class="text-center mb-3">
+                    <div class="display-6 text-{{ 'success' if system_status.status == 'Running' else 'warning' }}">
+                        <i
+                            class="bi bi-{{ 'play-circle' if system_status.status == 'Running' else 'pause-circle' }}"></i>
+                    </div>
+                    <h6>System {{ system_status.status }}</h6>
+                    <span class="badge bg-{{ 'success' if system_status.status == 'Running' else 'warning' }}">
+                        {{ system_status.status }}
+                    </span>
+                    {% if system_status.status == 'Maintenance' and system_status.reason %}
+                    <div class="mt-2">
+                        <small class="text-muted">{{ system_status.reason }}</small>
+                    </div>
+                    {% endif %}
+                </div>
+
+                <hr>
+
+                <div class="small">
+                    <div class="d-flex justify-content-between mb-2">
+                        <span>Active Jobs:</span>
+                        <span class="badge bg-primary">0</span>
+                    </div>
+                    <div class="d-flex justify-content-between mb-2">
+                        <span>Queued Jobs:</span>
+                        <span class="badge bg-secondary">0</span>
+                    </div>
+                    <div class="d-flex justify-content-between mb-2">
+                        <span>Connected Users:</span>
+                        <span class="badge bg-info">1</span>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <!-- Resume Impact Information -->
+        <div class="card mt-3">
+            <div class="card-header">
+                <h6 class="card-title mb-0">
+                    <i class="bi bi-info-circle"></i> Resume Impact
+                </h6>
+            </div>
+            <div class="card-body">
+                <div class="small">
+                    <h6>What happens when system is resumed:</h6>
+                    <ul class="mb-3">
+                        <li>New caption generation jobs can be started</li>
+                        <li>Queued jobs will begin processing</li>
+                        <li>Users can submit new processing requests</li>
+                        <li>All system functions become available</li>
+                    </ul>
+
+                    <h6>System will immediately:</h6>
+                    <ul class="mb-0">
+                        <li>Process any queued jobs</li>
+                        <li>Accept new job submissions</li>
+                        <li>Resume normal operations</li>
+                        <li>Log the resume action for audit</li>
+                    </ul>
+                </div>
+            </div>
+        </div>
+
+        <!-- Recent Maintenance History -->
+        <div class="card mt-3">
+            <div class="card-header">
+                <h6 class="card-title mb-0">
+                    <i class="bi bi-clock-history"></i> Recent Activity
+                </h6>
+            </div>
+            <div class="card-body">
+                <div class="small">
+                    {% if system_status.status == 'Maintenance' %}
+                    <div class="mb-2">
+                        <strong>Current Pause:</strong><br>
+                        <small class="text-muted">
+                            {% if system_status.paused_at %}
+                            Started: {{ system_status.paused_at.strftime('%Y-%m-%d %H:%M:%S') }}<br>
+                            {% endif %}
+                            {% if system_status.reason %}
+                            Reason: {{ system_status.reason }}
+                            {% endif %}
+                        </small>
+                    </div>
+                    {% else %}
+                    <div class="text-muted">
+                        System is currently running normally.
+                    </div>
+                    {% endif %}
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+{% endblock %}
+
+{% block scripts %}
+<script>
+    console.log('=== RESUME SYSTEM JAVASCRIPT LOADING ===');
+    console.log('Script block started');
+
+    // Resume system confirmation functionality - define as global functions immediately
+    window.showResumeConfirmation = function () {
+        console.log('showResumeConfirmation called');
+        const resumeBtn = document.getElementById('resumeSystemBtn');
+        const confirmArea = document.getElementById('confirmResume');
+
+        if (resumeBtn && confirmArea) {
+            // Hide the initial resume button
+            resumeBtn.style.display = 'none';
+            // Show the confirmation area
+            confirmArea.style.display = 'block';
+            console.log('Confirmation area shown');
+        } else {
+            console.error('Could not find resume button or confirm area');
+            console.log('Resume button element:', resumeBtn);
+            console.log('Confirm area element:', confirmArea);
+        }
+    };
+
+    window.hideResumeConfirmation = function () {
+        console.log('hideResumeConfirmation called');
+        const resumeBtn = document.getElementById('resumeSystemBtn');
+        const confirmArea = document.getElementById('confirmResume');
+
+        if (resumeBtn && confirmArea) {
+            // Show the initial resume button
+            resumeBtn.style.display = 'inline-block';
+            // Hide the confirmation area
+            confirmArea.style.display = 'none';
+            console.log('Confirmation area hidden');
+        }
+    };
+
+    // Make functions available as regular global functions too
+    showResumeConfirmation = window.showResumeConfirmation;
+    hideResumeConfirmation = window.hideResumeConfirmation;
+
+    window.resumeSystemWithNotes = async function () {
+        // Get the resume notes
+        const notes = document.getElementById('resumeNotes').value.trim();
+
+        // Show loading state
+        const confirmBtn = document.getElementById('confirmResumeBtn');
+        const cancelBtn = document.getElementById('cancelResumeBtn');
+
+        confirmBtn.innerHTML = '<span class="spinner-border spinner-border-sm me-2"></span>Resuming System...';
+        confirmBtn.disabled = true;
+        cancelBtn.disabled = true;
+
+        try {
+            // Call the resume system API directly
+            const response = await fetch('/admin/api/system-maintenance/execute', {
+                method: 'POST',
+                headers: {
+                    'Content-Type': 'application/json',
+                    'X-CSRFToken': getCSRFToken()
+                },
+                body: JSON.stringify({
+                    action_id: 'resume_system',
+                    reason: notes
+                })
+            });
+
+            const data = await response.json();
+
+            if (data.success) {
+                // Show success message
+                showNotification('System resumed successfully', 'success');
+
+                // Hide the confirmation area
+                hideResumeConfirmation();
+
+                // Redirect to system maintenance page after successful resume
+                setTimeout(() => {
+                    window.location.href = "{{ url_for('admin.system_maintenance') }}";
+                }, 1500);
+            } else {
+                // Show error message
+                showNotification(`Failed to resume system: ${data.error || 'Unknown error'}`, 'error');
+
+                // Reset button state
+                confirmBtn.innerHTML = '<i class="bi bi-play-circle"></i> Yes, Resume System';
+                confirmBtn.disabled = false;
+                cancelBtn.disabled = false;
+            }
+        } catch (error) {
+            console.error('Failed to resume system:', error);
+            showNotification('Failed to resume system due to network error', 'error');
+
+            // Reset button state
+            confirmBtn.innerHTML = '<i class="bi bi-play-circle"></i> Yes, Resume System';
+            confirmBtn.disabled = false;
+            cancelBtn.disabled = false;
+        }
+    };
+
+    // Make resumeSystemWithNotes available globally too
+    resumeSystemWithNotes = window.resumeSystemWithNotes;
+
+    // Test that functions are available globally
+    console.log('Global function test:');
+    console.log('showResumeConfirmation available:', typeof window.showResumeConfirmation);
+    console.log('hideResumeConfirmation available:', typeof window.hideResumeConfirmation);
+    console.log('resumeSystemWithNotes available:', typeof window.resumeSystemWithNotes);
+
+    // Helper function to get CSRF token
+    function getCSRFToken() {
+        const token = document.querySelector('meta[name="csrf-token"]');
+        return token ? token.getAttribute('content') : '';
+    }
+
+    // Helper function to show notifications
+    function showNotification(message, type = 'info') {
+        // Create notification element
+        const notification = document.createElement('div');
+        notification.className = `alert alert-${type === 'error' ? 'danger' : type} alert-dismissible fade show position-fixed`;
+        notification.style.cssText = 'top: 20px; right: 20px; z-index: 9999; min-width: 300px;';
+        notification.innerHTML = `
+            ${message}
+            <button type="button" class="btn-close" data-bs-dismiss="alert"></button>
+        `;
+
+        document.body.appendChild(notification);
+
+        // Auto-remove after 5 seconds
+        setTimeout(() => {
+            if (notification.parentNode) {
+                notification.remove();
+            }
+        }, 5000);
+    }
+
+    document.addEventListener('DOMContentLoaded', function () {
+        console.log('DOM loaded, setting up event listeners');
+        console.log('System status from template: {{ system_status.status }}');
+
+        // Resume system button event listeners
+        const resumeBtn = document.getElementById('resumeSystemBtn');
+        const cancelResumeBtn = document.getElementById('cancelResumeBtn');
+        const confirmResumeBtn = document.getElementById('confirmResumeBtn');
+        const confirmArea = document.getElementById('confirmResume');
+
+        console.log('Elements found:');
+        console.log('Resume button:', resumeBtn);
+        console.log('Cancel button:', cancelResumeBtn);
+        console.log('Confirm button:', confirmResumeBtn);
+        console.log('Confirm area:', confirmArea);
+
+        if (resumeBtn) {
+            console.log('Adding click listener to resume button');
+            resumeBtn.addEventListener('click', function (e) {
+                console.log('Resume button clicked - event triggered');
+                console.log('Event object:', e);
+                console.log('Target element:', e.target);
+
+                // Try calling the function directly
+                try {
+                    showResumeConfirmation();
+                } catch (error) {
+                    console.error('Error calling showResumeConfirmation:', error);
+                }
+            });
+
+            // Also add a direct onclick as backup
+            resumeBtn.onclick = function () {
+                console.log('Resume button clicked via onclick');
+                showResumeConfirmation();
+            };
+        } else {
+            console.error('Resume button not found!');
+        }
+
+        if (cancelResumeBtn) {
+            cancelResumeBtn.addEventListener('click', function (e) {
+                console.log('Cancel button clicked');
+                e.preventDefault();
+                hideResumeConfirmation();
+            });
+        }
+
+        if (confirmResumeBtn) {
+            confirmResumeBtn.addEventListener('click', function (e) {
+                console.log('Confirm resume button clicked');
+                e.preventDefault();
+                resumeSystemWithNotes();
+            });
+        }
+
+
+    });
+</script>
+{% endblock %}

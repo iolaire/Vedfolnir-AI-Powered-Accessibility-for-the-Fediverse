@@ -20,19 +20,39 @@
     </div>
 </div>
 
-<!-- Warning Alert -->
+<!-- System Status Alert -->
+{% if system_status.status == 'Maintenance' %}
+<div class="alert alert-success">
+    <div class="d-flex align-items-center">
+        <i class="bi bi-check-circle-fill me-3 display-6"></i>
+        <div>
+            <h5 class="alert-heading">System Already Paused</h5>
+            <p class="mb-0">
+                The system is currently in maintenance mode.
+                {% if system_status.reason %}
+                <br><strong>Reason:</strong> {{ system_status.reason }}
+                {% endif %}
+                <br><a href="{{ url_for('admin.resume_system') }}" class="alert-link">Go to Resume System</a>
+                to resume normal operations.
+            </p>
+        </div>
+    </div>
+</div>
+{% else %}
 <div class="alert alert-warning">
     <div class="d-flex align-items-center">
         <i class="bi bi-exclamation-triangle-fill me-3 display-6"></i>
         <div>
             <h5 class="alert-heading">System Pause Warning</h5>
             <p class="mb-0">
-                Pausing the system will prevent new caption generation jobs from starting. 
-                Currently running jobs will continue to completion, but no new jobs will be processed until the system is resumed.
+                Pausing the system will prevent new caption generation jobs from starting.
+                Currently running jobs will continue to completion, but no new jobs will be processed until the system
+                is resumed.
             </p>
         </div>
     </div>
 </div>
+{% endif %}
 
 <!-- Pause System Form -->
 <div class="row">
@@ -40,25 +60,55 @@
         <div class="card">
             <div class="card-header">
                 <h5 class="card-title mb-0">
+                    {% if system_status.status == 'Maintenance' %}
+                    <i class="bi bi-check-circle text-success"></i> System Already Paused
+                    {% else %}
                     <i class="bi bi-pause-circle"></i> Pause System Configuration
+                    {% endif %}
                 </h5>
             </div>
             <div class="card-body">
+                {% if system_status.status == 'Maintenance' %}
+                <div class="text-center py-4">
+                    <div class="display-6 text-success mb-3">
+                        <i class="bi bi-check-circle"></i>
+                    </div>
+                    <h5>System Successfully Paused</h5>
+                    <p class="text-muted mb-3">
+                        The system is in maintenance mode and new jobs are not being processed.
+                        {% if system_status.reason %}
+                        <br><strong>Reason:</strong> {{ system_status.reason }}
+                        {% endif %}
+                        {% if system_status.paused_at %}
+                        <br><strong>Paused at:</strong> {{ system_status.paused_at.strftime('%Y-%m-%d %H:%M:%S') }}
+                        {% endif %}
+                    </p>
+
+                    <div class="d-flex justify-content-center gap-2">
+                        <a href="{{ url_for('admin.resume_system') }}" class="btn btn-success">
+                            <i class="bi bi-play-circle"></i> Resume System
+                        </a>
+                        <a href="{{ url_for('admin.system_maintenance') }}" class="btn btn-outline-secondary">
+                            <i class="bi bi-arrow-left"></i> System Maintenance
+                        </a>
+                    </div>
+                </div>
+                {% else %}
                 <form method="post" action="/admin/api/system-maintenance/execute">
-                    <input type="hidden" name="csrf_token" value="{{ csrf_token() }}"/>
-                    <input type="hidden" name="action" value="pause_system"/>
-                    
+                    <input type="hidden" name="csrf_token" value="{{ csrf_token() }}" />
+                    <input type="hidden" name="action" value="pause_system" />
+
                     <div class="mb-4">
                         <label for="reason" class="form-label">
                             <strong>Reason for System Pause</strong> <span class="text-danger">*</span>
                         </label>
                         <textarea class="form-control" id="reason" name="reason" rows="4" required
-                                  placeholder="Please provide a detailed reason for pausing the system (e.g., scheduled maintenance, system updates, troubleshooting, etc.)"></textarea>
+                            placeholder="Please provide a detailed reason for pausing the system (e.g., scheduled maintenance, system updates, troubleshooting, etc.)"></textarea>
                         <div class="form-text">
                             This reason will be logged and displayed to users who attempt to start new jobs.
                         </div>
                     </div>
-                    
+
                     <div class="mb-4">
                         <label for="duration" class="form-label">
                             <strong>Expected Duration</strong>
@@ -78,15 +128,15 @@
                             Estimated time until system will be resumed (optional).
                         </div>
                     </div>
-                    
+
                     <div class="mb-4" id="customDurationContainer" style="display: none;">
                         <label for="customDuration" class="form-label">
                             <strong>Custom Duration</strong>
                         </label>
                         <input type="text" class="form-control" id="customDuration" name="customDuration"
-                               placeholder="e.g., 3 hours, 45 minutes, until further notice">
+                            placeholder="e.g., 3 hours, 45 minutes, until further notice">
                     </div>
-                    
+
                     <div class="mb-4">
                         <div class="form-check">
                             <input class="form-check-input" type="checkbox" id="notifyUsers" name="notifyUsers" checked>
@@ -98,32 +148,33 @@
                             </div>
                         </div>
                     </div>
-                    
+
                     <div class="mb-4">
                         <div class="form-check">
                             <input class="form-check-input" type="checkbox" id="confirmPause" required>
                             <label class="form-check-label" for="confirmPause">
-                                <strong>I understand the impact of pausing the system</strong> <span class="text-danger">*</span>
+                                <strong>I understand the impact of pausing the system</strong> <span
+                                    class="text-danger">*</span>
                             </label>
                             <div class="form-text">
                                 You must confirm that you understand this will prevent new jobs from starting.
                             </div>
                         </div>
                     </div>
-                    
+
                     <div class="d-grid gap-2 d-md-flex justify-content-md-end">
                         <a href="{{ url_for('admin.system_maintenance') }}" class="btn btn-secondary">
                             <i class="bi bi-x-circle"></i> Cancel
                         </a>
-                        <button type="submit" class="btn btn-warning">
+                        <button type="submit" class="btn btn-warning" id="pauseSystemBtn">
                             <i class="bi bi-pause-circle"></i> Pause System
                         </button>
                     </div>
                 </form>
+                {% endif %}
             </div>
         </div>
     </div>
-    
     <div class="col-md-4">
         <!-- Current System Status -->
         <div class="card">
@@ -134,15 +185,23 @@
             </div>
             <div class="card-body">
                 <div class="text-center mb-3">
-                    <div class="display-6 text-success">
-                        <i class="bi bi-play-circle"></i>
+                    <div class="display-6 text-{{ 'success' if system_status.status == 'Running' else 'warning' }}">
+                        <i
+                            class="bi bi-{{ 'play-circle' if system_status.status == 'Running' else 'pause-circle' }}"></i>
                     </div>
-                    <h6>System Running</h6>
-                    <span class="badge bg-success">Active</span>
+                    <h6>System {{ system_status.status }}</h6>
+                    <span class="badge bg-{{ 'success' if system_status.status == 'Running' else 'warning' }}">
+                        {{ system_status.status }}
+                    </span>
+                    {% if system_status.status == 'Maintenance' and system_status.reason %}
+                    <div class="mt-2">
+                        <small class="text-muted">{{ system_status.reason }}</small>
+                    </div>
+                    {% endif %}
                 </div>
-                
+
                 <hr>
-                
+
                 <div class="small">
                     <div class="d-flex justify-content-between mb-2">
                         <span>Active Jobs:</span>
@@ -159,7 +218,7 @@
                 </div>
             </div>
         </div>
-        
+
         <!-- Impact Information -->
         <div class="card mt-3">
             <div class="card-header">
@@ -176,7 +235,7 @@
                         <li>Users will see maintenance message</li>
                         <li>Admin functions remain available</li>
                     </ul>
-                    
+
                     <h6>What is NOT affected:</h6>
                     <ul class="mb-0">
                         <li>User login and authentication</li>
@@ -191,35 +250,181 @@
 </div>
 {% endblock %}
 
-{% block extra_js %}
+{% block scripts %}
 <script>
-document.addEventListener('DOMContentLoaded', function() {
-    const durationSelect = document.getElementById('duration');
-    const customDurationContainer = document.getElementById('customDurationContainer');
+    console.log('=== PAUSE SYSTEM JAVASCRIPT LOADING ===');
+    console.log('Script block started');
     
-    durationSelect.addEventListener('change', function() {
-        if (this.value === 'custom') {
-            customDurationContainer.style.display = 'block';
-            document.getElementById('customDuration').required = true;
+    document.addEventListener('DOMContentLoaded', function () {
+        console.log('DOM loaded, setting up pause system functionality');
+        
+        const durationSelect = document.getElementById('duration');
+        const customDurationContainer = document.getElementById('customDurationContainer');
+
+        // Set up duration select if it exists (when system is not paused)
+        if (durationSelect && customDurationContainer) {
+            durationSelect.addEventListener('change', function () {
+                if (this.value === 'custom') {
+                    customDurationContainer.style.display = 'block';
+                    document.getElementById('customDuration').required = true;
+                } else {
+                    customDurationContainer.style.display = 'none';
+                    document.getElementById('customDuration').required = false;
+                }
+            });
+        }
+
+        // Form submission confirmation and loading state for pause form
+        const pauseForm = document.querySelector('form[action*="system-maintenance/execute"]');
+        const submitBtn = document.getElementById('pauseSystemBtn');
+
+        console.log('Elements found:');
+        console.log('Pause form:', pauseForm);
+        console.log('Submit button:', submitBtn);
+        
+        if (pauseForm && submitBtn) {
+            console.log('Adding click listener to pause button');
+            
+            // Change button type to prevent default form submission
+            submitBtn.type = 'button';
+            
+            // Add click listener to button to handle submission manually
+            submitBtn.addEventListener('click', async function(e) {
+                console.log('Submit button clicked');
+                e.preventDefault(); // Prevent any default behavior
+                
+                const reason = document.getElementById('reason').value.trim();
+                const confirmed = document.getElementById('confirmPause').checked;
+                const duration = document.getElementById('duration').value;
+                const customDuration = document.getElementById('customDuration').value;
+                const notifyUsers = document.getElementById('notifyUsers').checked;
+                
+                console.log('Form data:', { reason, confirmed, duration, customDuration, notifyUsers });
+                
+                // Validate required fields
+                if (!reason) {
+                    alert('Please provide a reason for pausing the system.');
+                    document.getElementById('reason').focus();
+                    return;
+                }
+                
+                if (!confirmed) {
+                    alert('Please confirm that you understand the impact of pausing the system.');
+                    document.getElementById('confirmPause').focus();
+                    return;
+                }
+                
+                // Show confirmation dialog
+                console.log('Showing confirmation dialog');
+                if (!confirm('Are you sure you want to pause the system?\n\nThis will prevent new jobs from starting until you manually resume the system.')) {
+                    console.log('User cancelled confirmation dialog');
+                    return;
+                }
+
+                console.log('User confirmed, proceeding with pause request');
+                
+                // Show loading state
+                submitBtn.innerHTML = '<span class="spinner-border spinner-border-sm me-2"></span>Pausing System...';
+                submitBtn.disabled = true;
+
+                try {
+                    // Prepare JSON data
+                    const requestData = {
+                        action_id: 'pause_system',
+                        reason: reason
+                    };
+                    
+                    if (duration) {
+                        if (duration === 'custom' && customDuration) {
+                            requestData.duration = customDuration;
+                        } else {
+                            requestData.duration = duration;
+                        }
+                    }
+                    
+                    if (notifyUsers) {
+                        requestData.notifyUsers = true;
+                    }
+                    
+                    // Get CSRF token
+                    const csrfToken = document.querySelector('meta[name="csrf-token"]').getAttribute('content');
+                    
+                    console.log('Sending pause request to API with JSON data:', requestData);
+                    const response = await fetch('/admin/api/system-maintenance/execute', {
+                        method: 'POST',
+                        headers: {
+                            'Content-Type': 'application/json',
+                            'X-CSRFToken': csrfToken
+                        },
+                        body: JSON.stringify(requestData)
+                    });
+
+                    console.log('Response status:', response.status);
+                    console.log('Response headers:', response.headers);
+                    
+                    // Check if response is JSON
+                    const contentType = response.headers.get('content-type');
+                    console.log('Content-Type:', contentType);
+                    
+                    let data;
+                    if (contentType && contentType.includes('application/json')) {
+                        data = await response.json();
+                        console.log('API response (JSON):', data);
+                    } else {
+                        const text = await response.text();
+                        console.log('API response (Text):', text);
+                        throw new Error(`Server returned non-JSON response: ${response.status} ${response.statusText}. Response: ${text.substring(0, 200)}...`);
+                    }
+
+                    if (data.success) {
+                        console.log('System paused successfully');
+                        showNotification('System paused successfully', 'success');
+                        
+                        // Redirect to system maintenance page after successful pause
+                        setTimeout(() => {
+                            window.location.href = "{{ url_for('admin.system_maintenance') }}";
+                        }, 1500);
+                    } else {
+                        console.error('Failed to pause system:', data.error);
+                        showNotification(`Failed to pause system: ${data.error || 'Unknown error'}`, 'error');
+                        
+                        // Reset button state
+                        submitBtn.innerHTML = '<i class="bi bi-pause-circle"></i> Pause System';
+                        submitBtn.disabled = false;
+                    }
+                } catch (error) {
+                    console.error('Failed to pause system:', error);
+                    showNotification('Failed to pause system due to network error', 'error');
+                    
+                    // Reset button state
+                    submitBtn.innerHTML = '<i class="bi bi-pause-circle"></i> Pause System';
+                    submitBtn.disabled = false;
+                }
+            });
         } else {
-            customDurationContainer.style.display = 'none';
-            document.getElementById('customDuration').required = false;
-        }
-    });
-    
-    // Form submission confirmation
-    document.querySelector('form').addEventListener('submit', function(e) {
-        const reason = document.getElementById('reason').value.trim();
-        const confirmed = document.getElementById('confirmPause').checked;
-        
-        if (!reason || !confirmed) {
-            return; // Let browser validation handle this
+            console.error('Pause form or submit button not found!');
         }
         
-        if (!confirm('Are you sure you want to pause the system?\\n\\nThis will prevent new jobs from starting until you manually resume the system.')) {
-            e.preventDefault();
+        // Helper function to show notifications
+        function showNotification(message, type = 'info') {
+            // Create notification element
+            const notification = document.createElement('div');
+            notification.className = `alert alert-${type === 'error' ? 'danger' : type} alert-dismissible fade show position-fixed`;
+            notification.style.cssText = 'top: 20px; right: 20px; z-index: 9999; min-width: 300px;';
+            notification.innerHTML = `
+                ${message}
+                <button type="button" class="btn-close" data-bs-dismiss="alert"></button>
+            `;
+
+            document.body.appendChild(notification);
+
+            // Auto-remove after 5 seconds
+            setTimeout(() => {
+                if (notification.parentNode) {
+                    notification.remove();
+                }
+            }, 5000);
         }
     });
-});
 </script>
 {% endblock %}

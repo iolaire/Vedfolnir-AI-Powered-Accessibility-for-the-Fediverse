@@ -17,13 +17,13 @@ let selectedJobs = new Set();
  */
 function initializeDashboard() {
     console.log('Initializing admin dashboard...');
-    
+
     // Load initial data
     refreshDashboard();
-    
+
     // Set up event listeners
     setupEventListeners();
-    
+
     // Initialize tooltips
     initializeTooltips();
 }
@@ -35,17 +35,17 @@ function setupEventListeners() {
     // Emergency stop confirmation checkbox
     const emergencyCheckbox = document.getElementById('confirmEmergencyStop');
     const emergencyButton = document.getElementById('executeEmergencyStop');
-    
+
     if (emergencyCheckbox && emergencyButton) {
-        emergencyCheckbox.addEventListener('change', function() {
+        emergencyCheckbox.addEventListener('change', function () {
             emergencyButton.disabled = !this.checked;
         });
     }
-    
+
     // Emergency reason textarea
     const emergencyReason = document.getElementById('emergencyReason');
     if (emergencyReason) {
-        emergencyReason.addEventListener('input', function() {
+        emergencyReason.addEventListener('input', function () {
             const checkbox = document.getElementById('confirmEmergencyStop');
             const button = document.getElementById('executeEmergencyStop');
             if (checkbox && button) {
@@ -71,33 +71,33 @@ function initializeTooltips() {
 function connectWebSocket() {
     const protocol = window.location.protocol === 'https:' ? 'wss:' : 'ws:';
     const wsUrl = `${protocol}//${window.location.host}/admin/ws/dashboard`;
-    
+
     try {
         websocket = new WebSocket(wsUrl);
-        
-        websocket.onopen = function(event) {
+
+        websocket.onopen = function (event) {
             console.log('WebSocket connected');
             updateConnectionStatus(true);
         };
-        
-        websocket.onmessage = function(event) {
+
+        websocket.onmessage = function (event) {
             const data = JSON.parse(event.data);
             handleWebSocketMessage(data);
         };
-        
-        websocket.onclose = function(event) {
+
+        websocket.onclose = function (event) {
             console.log('WebSocket disconnected');
             updateConnectionStatus(false);
-            
+
             // Attempt to reconnect after 5 seconds
             setTimeout(connectWebSocket, 5000);
         };
-        
-        websocket.onerror = function(error) {
+
+        websocket.onerror = function (error) {
             console.error('WebSocket error:', error);
             updateConnectionStatus(false);
         };
-        
+
     } catch (error) {
         console.error('Failed to connect WebSocket:', error);
         updateConnectionStatus(false);
@@ -157,7 +157,7 @@ function isWebSocketConnected() {
  */
 function refreshDashboard() {
     console.log('Refreshing dashboard...');
-    
+
     Promise.all([
         refreshSystemMetrics(),
         refreshActiveJobs(),
@@ -177,7 +177,7 @@ async function refreshSystemMetrics() {
     try {
         const response = await fetch('/admin/api/system-metrics');
         const data = await response.json();
-        
+
         if (data.success) {
             updateSystemMetrics(data.metrics);
         }
@@ -196,7 +196,7 @@ function updateSystemMetrics(metrics) {
         'failedJobsCount': metrics.failed_jobs || 0,
         'systemLoadValue': `${metrics.system_load || 0}%`
     };
-    
+
     Object.entries(elements).forEach(([id, value]) => {
         const element = document.getElementById(id);
         if (element) {
@@ -212,7 +212,7 @@ async function refreshActiveJobs() {
     try {
         const response = await fetch('/admin/api/jobs/active');
         const data = await response.json();
-        
+
         if (data.success) {
             updateActiveJobsTable(data.jobs);
         }
@@ -227,7 +227,7 @@ async function refreshActiveJobs() {
 function updateActiveJobsTable(jobs) {
     const tbody = document.getElementById('activeJobsBody');
     if (!tbody) return;
-    
+
     if (jobs.length === 0) {
         tbody.innerHTML = `
             <tr>
@@ -238,7 +238,7 @@ function updateActiveJobsTable(jobs) {
         `;
         return;
     }
-    
+
     tbody.innerHTML = jobs.map(job => createJobRow(job)).join('');
 }
 
@@ -248,7 +248,7 @@ function updateActiveJobsTable(jobs) {
 function createJobRow(job) {
     const statusClass = getStatusBadgeClass(job.status);
     const progressPercentage = job.progress_percentage || 0;
-    
+
     return `
         <tr data-job-id="${job.task_id}">
             <td>
@@ -314,7 +314,7 @@ function getStatusBadgeClass(status) {
  */
 function createJobActionButtons(job) {
     let buttons = '';
-    
+
     if (['running', 'queued'].includes(job.status)) {
         buttons += `
             <button class="btn btn-outline-danger btn-sm" 
@@ -329,7 +329,7 @@ function createJobActionButtons(job) {
             </button>
         `;
     }
-    
+
     if (job.status === 'failed') {
         buttons += `
             <button class="btn btn-outline-success btn-sm" 
@@ -339,7 +339,7 @@ function createJobActionButtons(job) {
             </button>
         `;
     }
-    
+
     buttons += `
         <button class="btn btn-outline-info btn-sm" 
                 onclick="viewJobDetails('${job.task_id}')"
@@ -347,7 +347,7 @@ function createJobActionButtons(job) {
             <i class="bi bi-eye"></i>
         </button>
     `;
-    
+
     return `<div class="job-controls">${buttons}</div>`;
 }
 
@@ -387,7 +387,7 @@ function handleJobFailure(job) {
 async function cancelJob(taskId, username) {
     const reason = prompt(`Enter reason for cancelling ${username}'s job:`);
     if (!reason) return;
-    
+
     try {
         const response = await fetch(`/admin/api/jobs/${taskId}/cancel`, {
             method: 'POST',
@@ -397,9 +397,9 @@ async function cancelJob(taskId, username) {
             },
             body: JSON.stringify({ reason })
         });
-        
+
         const data = await response.json();
-        
+
         if (data.success) {
             showNotification('Job cancelled successfully', 'success');
             refreshActiveJobs();
@@ -425,9 +425,9 @@ async function setPriority(taskId, priority) {
             },
             body: JSON.stringify({ priority })
         });
-        
+
         const data = await response.json();
-        
+
         if (data.success) {
             showNotification(`Job priority set to ${priority}`, 'success');
             refreshActiveJobs();
@@ -445,7 +445,7 @@ async function setPriority(taskId, priority) {
  */
 async function restartJob(taskId) {
     if (!confirm('Are you sure you want to restart this job?')) return;
-    
+
     try {
         const response = await fetch(`/admin/api/jobs/${taskId}/restart`, {
             method: 'POST',
@@ -454,9 +454,9 @@ async function restartJob(taskId) {
                 'X-CSRFToken': getCSRFToken()
             }
         });
-        
+
         const data = await response.json();
-        
+
         if (data.success) {
             showNotification('Job restarted successfully', 'success');
             refreshActiveJobs();
@@ -476,7 +476,7 @@ async function viewJobDetails(taskId) {
     try {
         const response = await fetch(`/admin/api/jobs/${taskId}/details`);
         const data = await response.json();
-        
+
         if (data.success) {
             showJobDetailsModal(data.job);
         } else {
@@ -495,12 +495,12 @@ function showJobDetailsModal(job) {
     const modal = document.getElementById('jobDetailsModal');
     const content = document.getElementById('jobDetailsContent');
     const template = document.getElementById('jobDetailsTemplate');
-    
+
     if (!modal || !content || !template) return;
-    
+
     // Clone template and populate with job data
     const clone = template.content.cloneNode(true);
-    
+
     // Populate job details
     clone.querySelector('.job-id').textContent = job.task_id;
     clone.querySelector('.job-user').textContent = `${job.username} (${job.user_email})`;
@@ -511,18 +511,18 @@ function showJobDetailsModal(job) {
     clone.querySelector('.job-created').textContent = formatDateTime(job.created_at);
     clone.querySelector('.job-started').textContent = formatDateTime(job.started_at);
     clone.querySelector('.job-duration').textContent = job.duration || 'N/A';
-    
+
     // Progress information
     const progressBar = clone.querySelector('.job-progress');
     const progressPercentage = job.progress_percentage || 0;
     progressBar.style.width = `${progressPercentage}%`;
     progressBar.setAttribute('aria-valuenow', progressPercentage);
     clone.querySelector('.job-progress-text').textContent = `${progressPercentage}% complete`;
-    
+
     clone.querySelector('.job-current-step').textContent = job.current_step || 'Initializing';
     clone.querySelector('.job-images-processed').textContent = `${job.images_processed || 0} / ${job.total_images || 0}`;
     clone.querySelector('.job-estimated-completion').textContent = job.estimated_completion || 'Calculating...';
-    
+
     // Settings
     const settingsDiv = clone.querySelector('.job-settings');
     if (job.settings) {
@@ -530,7 +530,7 @@ function showJobDetailsModal(job) {
             .map(([key, value]) => `<strong>${key}:</strong> ${value}`)
             .join('<br>');
     }
-    
+
     // Processing log
     const logDiv = clone.querySelector('.job-log');
     if (job.processing_log && job.processing_log.length > 0) {
@@ -540,7 +540,7 @@ function showJobDetailsModal(job) {
     } else {
         logDiv.innerHTML = '<div class="text-muted">No log entries available</div>';
     }
-    
+
     // Error information
     if (job.error_message) {
         const errorSection = clone.querySelector('.job-error-section');
@@ -551,16 +551,16 @@ function showJobDetailsModal(job) {
             ${job.error_details ? `<strong>Details:</strong> ${escapeHtml(job.error_details)}` : ''}
         `;
     }
-    
+
     // Admin notes
     const notesTextarea = clone.querySelector('.job-admin-notes');
     notesTextarea.value = job.admin_notes || '';
     notesTextarea.setAttribute('data-job-id', job.task_id);
-    
+
     // Replace modal content
     content.innerHTML = '';
     content.appendChild(clone);
-    
+
     // Show modal
     const bsModal = new bootstrap.Modal(modal);
     bsModal.show();
@@ -572,7 +572,7 @@ function showJobDetailsModal(job) {
 function toggleAutoRefresh() {
     const button = document.getElementById('autoRefreshText');
     const icon = document.getElementById('autoRefreshIcon');
-    
+
     if (isAutoRefreshEnabled) {
         // Stop auto-refresh
         if (autoRefreshInterval) {
@@ -598,7 +598,7 @@ async function refreshAlerts() {
     try {
         const response = await fetch('/admin/api/alerts');
         const data = await response.json();
-        
+
         if (data.success) {
             updateAlertsDisplay(data.alerts);
         }
@@ -613,7 +613,7 @@ async function refreshAlerts() {
 function updateAlertsDisplay(alerts) {
     const alertsList = document.getElementById('alertsList');
     if (!alertsList) return;
-    
+
     if (alerts.length === 0) {
         alertsList.innerHTML = `
             <div class="text-center text-muted py-3">
@@ -622,7 +622,7 @@ function updateAlertsDisplay(alerts) {
         `;
         return;
     }
-    
+
     alertsList.innerHTML = alerts.map(alert => `
         <div class="alert-item alert-${alert.severity}" data-alert-id="${alert.id}">
             <div class="d-flex justify-content-between align-items-start">
@@ -647,13 +647,13 @@ function updateAlertsDisplay(alerts) {
 function addAlert(alert) {
     const alertsList = document.getElementById('alertsList');
     if (!alertsList) return;
-    
+
     // Remove "no alerts" message if present
     const noAlertsMsg = alertsList.querySelector('.text-center');
     if (noAlertsMsg) {
         noAlertsMsg.remove();
     }
-    
+
     // Add new alert at the top
     const alertHtml = `
         <div class="alert-item alert-${alert.severity}" data-alert-id="${alert.id}">
@@ -671,7 +671,7 @@ function addAlert(alert) {
             </div>
         </div>
     `;
-    
+
     alertsList.insertAdjacentHTML('afterbegin', alertHtml);
 }
 
@@ -687,16 +687,16 @@ async function acknowledgeAlert(alertId) {
                 'X-CSRFToken': getCSRFToken()
             }
         });
-        
+
         const data = await response.json();
-        
+
         if (data.success) {
             // Remove alert from display
             const alertElement = document.querySelector(`[data-alert-id="${alertId}"]`);
             if (alertElement) {
                 alertElement.remove();
             }
-            
+
             // Check if no alerts remain
             const alertsList = document.getElementById('alertsList');
             if (alertsList && alertsList.children.length === 0) {
@@ -724,7 +724,7 @@ function showBulkActions() {
         showNotification('Please select at least one job', 'warning');
         return;
     }
-    
+
     document.getElementById('selectedJobsCount').textContent = selectedCount;
     const modal = new bootstrap.Modal(document.getElementById('bulkActionsModal'));
     modal.show();
@@ -736,12 +736,12 @@ function showBulkActions() {
 function updateBulkActionForm() {
     const action = document.getElementById('bulkAction').value;
     const executeButton = document.getElementById('executeBulkAction');
-    
+
     // Hide all forms
     document.querySelectorAll('.bulk-action-form').forEach(form => {
         form.style.display = 'none';
     });
-    
+
     // Show relevant form
     if (action) {
         const formId = action + 'ActionForm';
@@ -761,11 +761,11 @@ function updateBulkActionForm() {
 function toggleAllJobSelection() {
     const selectAll = document.getElementById('selectAllJobs');
     const checkboxes = document.querySelectorAll('.job-checkbox');
-    
+
     checkboxes.forEach(checkbox => {
         checkbox.checked = selectAll.checked;
     });
-    
+
     updateSelectedJobs();
 }
 
@@ -774,16 +774,16 @@ function toggleAllJobSelection() {
  */
 function updateSelectedJobs() {
     selectedJobs.clear();
-    
+
     document.querySelectorAll('.job-checkbox:checked').forEach(checkbox => {
         selectedJobs.add(checkbox.value);
     });
-    
+
     // Update select all checkbox state
     const selectAll = document.getElementById('selectAllJobs');
     const checkboxes = document.querySelectorAll('.job-checkbox');
     const checkedBoxes = document.querySelectorAll('.job-checkbox:checked');
-    
+
     if (checkedBoxes.length === 0) {
         selectAll.indeterminate = false;
         selectAll.checked = false;
@@ -806,7 +806,7 @@ async function saveSystemConfig() {
         max_retries: parseInt(document.getElementById('maxRetries').value),
         alert_threshold: parseInt(document.getElementById('alertThreshold').value)
     };
-    
+
     try {
         const response = await fetch('/admin/api/config', {
             method: 'PUT',
@@ -816,9 +816,9 @@ async function saveSystemConfig() {
             },
             body: JSON.stringify(config)
         });
-        
+
         const data = await response.json();
-        
+
         if (data.success) {
             showNotification('System configuration saved successfully', 'success');
         } else {
@@ -864,9 +864,9 @@ function showNotification(message, type = 'info') {
         ${message}
         <button type="button" class="btn-close" data-bs-dismiss="alert"></button>
     `;
-    
+
     document.body.appendChild(notification);
-    
+
     // Auto-remove after 5 seconds
     setTimeout(() => {
         if (notification.parentNode) {
@@ -908,7 +908,7 @@ async function loadUsersList() {
     try {
         const response = await fetch('/admin/api/users');
         const data = await response.json();
-        
+
         if (data.success) {
             populateUsersList(data.users);
         }
@@ -923,25 +923,25 @@ async function loadUsersList() {
 function populateUsersList(users) {
     const usersList = document.getElementById('usersList');
     const template = document.getElementById('userListItemTemplate');
-    
+
     if (!usersList || !template) return;
-    
+
     usersList.innerHTML = '';
-    
+
     users.forEach(user => {
         const clone = template.content.cloneNode(true);
-        
+
         clone.querySelector('.user-name').textContent = user.username;
         clone.querySelector('.user-email').textContent = user.email;
         clone.querySelector('.user-role').textContent = user.role;
         clone.querySelector('.user-role').className = `badge ${getRoleBadgeClass(user.role)}`;
         clone.querySelector('.user-status').textContent = user.is_active ? 'Active' : 'Inactive';
-        
+
         const userItem = clone.querySelector('.user-item');
         userItem.setAttribute('data-user-id', user.id);
         userItem.setAttribute('data-username', user.username);
         userItem.setAttribute('data-email', user.email);
-        
+
         usersList.appendChild(clone);
     });
 }
@@ -966,25 +966,25 @@ function selectUser(userElement) {
     document.querySelectorAll('.user-item').forEach(item => {
         item.classList.remove('bg-light');
     });
-    
+
     // Highlight selected user
     userElement.classList.add('bg-light');
-    
+
     // Get user data
     const userId = userElement.getAttribute('data-user-id');
     const username = userElement.getAttribute('data-username');
     const email = userElement.getAttribute('data-email');
-    
+
     // Show user limits form
     document.getElementById('selectedUserId').value = userId;
     document.getElementById('selectedUserName').textContent = username;
     document.getElementById('selectedUserEmail').textContent = email;
-    
+
     document.getElementById('userLimitsForm').style.display = 'block';
     document.getElementById('noUserSelected').style.display = 'none';
     document.getElementById('resetUserLimits').style.display = 'inline-block';
     document.getElementById('saveUserLimits').style.display = 'inline-block';
-    
+
     // Load current limits for user
     loadUserLimits(userId);
 }
@@ -996,7 +996,7 @@ async function loadUserLimits(userId) {
     try {
         const response = await fetch(`/admin/api/users/${userId}/limits`);
         const data = await response.json();
-        
+
         if (data.success) {
             populateUserLimitsForm(data.limits);
         }
@@ -1015,12 +1015,12 @@ function populateUserLimitsForm(limits) {
     document.getElementById('jobPriority').value = limits.default_priority || 'normal';
     document.getElementById('jobTimeoutMinutes').value = limits.job_timeout_minutes || 30;
     document.getElementById('cooldownMinutes').value = limits.cooldown_minutes || 5;
-    
+
     document.getElementById('canCreateJobs').checked = limits.can_create_jobs !== false;
     document.getElementById('canCancelOwnJobs').checked = limits.can_cancel_own_jobs !== false;
     document.getElementById('canViewJobHistory').checked = limits.can_view_job_history !== false;
     document.getElementById('canRetryFailedJobs').checked = limits.can_retry_failed_jobs !== false;
-    
+
     document.getElementById('userNotes').value = limits.admin_notes || '';
 }
 
@@ -1030,7 +1030,7 @@ function populateUserLimitsForm(limits) {
 async function saveUserLimits() {
     const userId = document.getElementById('selectedUserId').value;
     if (!userId) return;
-    
+
     const limits = {
         max_concurrent_jobs: parseInt(document.getElementById('maxConcurrentJobs').value),
         max_daily_jobs: parseInt(document.getElementById('maxDailyJobs').value),
@@ -1044,7 +1044,7 @@ async function saveUserLimits() {
         can_retry_failed_jobs: document.getElementById('canRetryFailedJobs').checked,
         admin_notes: document.getElementById('userNotes').value
     };
-    
+
     try {
         const response = await fetch(`/admin/api/users/${userId}/limits`, {
             method: 'PUT',
@@ -1054,9 +1054,9 @@ async function saveUserLimits() {
             },
             body: JSON.stringify(limits)
         });
-        
+
         const data = await response.json();
-        
+
         if (data.success) {
             showNotification('User limits saved successfully', 'success');
         } else {
@@ -1073,7 +1073,7 @@ async function saveUserLimits() {
  */
 function resetUserLimits() {
     if (!confirm('Reset user limits to system defaults?')) return;
-    
+
     populateUserLimitsForm({
         max_concurrent_jobs: 2,
         max_daily_jobs: 10,
@@ -1095,11 +1095,11 @@ function resetUserLimits() {
 function filterUsers() {
     const searchTerm = document.getElementById('userSearch').value.toLowerCase();
     const userItems = document.querySelectorAll('.user-item');
-    
+
     userItems.forEach(item => {
         const username = item.querySelector('.user-name').textContent.toLowerCase();
         const email = item.querySelector('.user-email').textContent.toLowerCase();
-        
+
         if (username.includes(searchTerm) || email.includes(searchTerm)) {
             item.style.display = 'block';
         } else {
@@ -1117,7 +1117,7 @@ async function loadSystemActivity() {
     try {
         const response = await fetch('/admin/api/system-activity');
         const data = await response.json();
-        
+
         if (data.success) {
             updateSystemActivity(data.activity);
         }
@@ -1145,7 +1145,7 @@ async function pauseSystem() {
         showNotification('Please enter a reason for maintenance', 'warning');
         return;
     }
-    
+
     try {
         const response = await fetch('/admin/api/system/pause', {
             method: 'POST',
@@ -1155,15 +1155,15 @@ async function pauseSystem() {
             },
             body: JSON.stringify({ reason })
         });
-        
+
         const data = await response.json();
-        
+
         if (data.success) {
             document.getElementById('systemStatus').textContent = 'Paused';
             document.getElementById('systemStatus').className = 'badge bg-warning';
             document.getElementById('pauseSystemBtn').style.display = 'none';
             document.getElementById('resumeSystemBtn').style.display = 'block';
-            
+
             addMaintenanceLogEntry(`System paused: ${reason}`);
             showNotification('System paused successfully', 'success');
         } else {
@@ -1187,15 +1187,15 @@ async function resumeSystem() {
                 'X-CSRFToken': getCSRFToken()
             }
         });
-        
+
         const data = await response.json();
-        
+
         if (data.success) {
             document.getElementById('systemStatus').textContent = 'Active';
             document.getElementById('systemStatus').className = 'badge bg-success';
             document.getElementById('pauseSystemBtn').style.display = 'block';
             document.getElementById('resumeSystemBtn').style.display = 'none';
-            
+
             addMaintenanceLogEntry('System resumed');
             showNotification('System resumed successfully', 'success');
         } else {
@@ -1213,17 +1213,17 @@ async function resumeSystem() {
 function addMaintenanceLogEntry(message) {
     const logDiv = document.getElementById('maintenanceLog');
     if (!logDiv) return;
-    
+
     const timestamp = new Date().toLocaleString();
     const entry = document.createElement('div');
     entry.innerHTML = `<small class="text-muted">${timestamp}</small> ${message}`;
-    
+
     // Remove "no activities" message if present
     const noActivities = logDiv.querySelector('.text-muted');
     if (noActivities && noActivities.textContent.includes('No maintenance activities')) {
         noActivities.remove();
     }
-    
+
     logDiv.insertBefore(entry, logDiv.firstChild);
 }
 
@@ -1241,17 +1241,17 @@ function showEmergencyStop() {
 async function executeEmergencyStop() {
     const reason = document.getElementById('emergencyReason').value;
     const confirmed = document.getElementById('confirmEmergencyStop').checked;
-    
+
     if (!reason.trim() || reason.length < 10) {
         showNotification('Please provide a detailed reason (minimum 10 characters)', 'warning');
         return;
     }
-    
+
     if (!confirmed) {
         showNotification('Please confirm that you understand the consequences', 'warning');
         return;
     }
-    
+
     try {
         const response = await fetch('/admin/api/system/emergency-stop', {
             method: 'POST',
@@ -1261,20 +1261,20 @@ async function executeEmergencyStop() {
             },
             body: JSON.stringify({ reason })
         });
-        
+
         const data = await response.json();
-        
+
         if (data.success) {
             // Close modals
             bootstrap.Modal.getInstance(document.getElementById('emergencyStopModal')).hide();
             bootstrap.Modal.getInstance(document.getElementById('systemMaintenanceModal')).hide();
-            
+
             // Update system status
             document.getElementById('systemStatus').textContent = 'Emergency Stop';
             document.getElementById('systemStatus').className = 'badge bg-danger';
-            
+
             showNotification('Emergency stop executed', 'warning');
-            
+
             // Refresh dashboard
             setTimeout(refreshDashboard, 2000);
         } else {
@@ -1291,7 +1291,7 @@ async function executeEmergencyStop() {
  */
 async function clearStuckJobs() {
     if (!confirm('Clear all stuck jobs? This action cannot be undone.')) return;
-    
+
     try {
         const response = await fetch('/admin/api/maintenance/clear-stuck-jobs', {
             method: 'POST',
@@ -1300,9 +1300,9 @@ async function clearStuckJobs() {
                 'X-CSRFToken': getCSRFToken()
             }
         });
-        
+
         const data = await response.json();
-        
+
         if (data.success) {
             addMaintenanceLogEntry(`Cleared ${data.count} stuck jobs`);
             showNotification(`Cleared ${data.count} stuck jobs`, 'success');
@@ -1318,7 +1318,7 @@ async function clearStuckJobs() {
 
 async function cleanupOldLogs() {
     if (!confirm('Clean up old logs? This will remove logs older than 30 days.')) return;
-    
+
     try {
         const response = await fetch('/admin/api/maintenance/cleanup-logs', {
             method: 'POST',
@@ -1327,9 +1327,9 @@ async function cleanupOldLogs() {
                 'X-CSRFToken': getCSRFToken()
             }
         });
-        
+
         const data = await response.json();
-        
+
         if (data.success) {
             addMaintenanceLogEntry(`Cleaned up ${data.count} old log entries`);
             showNotification(`Cleaned up ${data.count} old log entries`, 'success');
@@ -1344,7 +1344,7 @@ async function cleanupOldLogs() {
 
 async function optimizeDatabase() {
     if (!confirm('Optimize database? This may take a few minutes.')) return;
-    
+
     try {
         const response = await fetch('/admin/api/maintenance/optimize-database', {
             method: 'POST',
@@ -1353,9 +1353,9 @@ async function optimizeDatabase() {
                 'X-CSRFToken': getCSRFToken()
             }
         });
-        
+
         const data = await response.json();
-        
+
         if (data.success) {
             addMaintenanceLogEntry('Database optimization completed');
             showNotification('Database optimization completed', 'success');
@@ -1377,9 +1377,9 @@ async function refreshSystemCache() {
                 'X-CSRFToken': getCSRFToken()
             }
         });
-        
+
         const data = await response.json();
-        
+
         if (data.success) {
             addMaintenanceLogEntry('System cache refreshed');
             showNotification('System cache refreshed', 'success');
@@ -1401,9 +1401,9 @@ async function runHealthCheck() {
                 'X-CSRFToken': getCSRFToken()
             }
         });
-        
+
         const data = await response.json();
-        
+
         if (data.success) {
             addMaintenanceLogEntry(`Health check completed: ${data.status}`);
             showNotification(`Health check completed: ${data.status}`, 'success');
@@ -1427,7 +1427,7 @@ async function exportSystemReport() {
                 'X-CSRFToken': getCSRFToken()
             }
         });
-        
+
         if (response.ok) {
             const blob = await response.blob();
             const url = window.URL.createObjectURL(blob);
@@ -1438,7 +1438,7 @@ async function exportSystemReport() {
             a.click();
             document.body.removeChild(a);
             window.URL.revokeObjectURL(url);
-            
+
             showNotification('System report exported successfully', 'success');
         } else {
             showNotification('Failed to export system report', 'error');
@@ -1460,7 +1460,7 @@ async function exportMaintenanceReport() {
                 'X-CSRFToken': getCSRFToken()
             }
         });
-        
+
         if (response.ok) {
             const blob = await response.blob();
             const url = window.URL.createObjectURL(blob);
@@ -1471,7 +1471,7 @@ async function exportMaintenanceReport() {
             a.click();
             document.body.removeChild(a);
             window.URL.revokeObjectURL(url);
-            
+
             showNotification('Maintenance report exported successfully', 'success');
         } else {
             showNotification('Failed to export maintenance report', 'error');
@@ -1487,7 +1487,7 @@ async function exportMaintenanceReport() {
  */
 function resetSystemConfig() {
     if (!confirm('Reset system configuration to defaults?')) return;
-    
+
     document.getElementById('maxConcurrentJobs').value = 5;
     document.getElementById('jobTimeoutMinutes').value = 30;
     document.getElementById('maxRetries').value = 3;
@@ -1500,10 +1500,10 @@ function resetSystemConfig() {
 async function saveJobNotes() {
     const textarea = document.querySelector('.job-admin-notes');
     if (!textarea) return;
-    
+
     const taskId = textarea.getAttribute('data-job-id');
     const notes = textarea.value;
-    
+
     try {
         const response = await fetch(`/admin/api/jobs/${taskId}/notes`, {
             method: 'PUT',
@@ -1513,9 +1513,9 @@ async function saveJobNotes() {
             },
             body: JSON.stringify({ notes })
         });
-        
+
         const data = await response.json();
-        
+
         if (data.success) {
             showNotification('Job notes saved successfully', 'success');
         } else {
