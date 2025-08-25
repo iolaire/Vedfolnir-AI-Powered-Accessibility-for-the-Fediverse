@@ -771,6 +771,10 @@ from admin import create_admin_blueprint
 admin_bp = create_admin_blueprint(app)
 app.register_blueprint(admin_bp)
 
+# Register debug routes (for development only)
+from debug_routes import register_debug_routes
+register_debug_routes(app)
+
 class LoginForm(Form):
     """Form for user login - using regular WTForms (no Flask-WTF CSRF)"""
     username = StringField('Username', validators=[DataRequired()])

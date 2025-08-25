@@ -8,6 +8,7 @@ from flask import render_template, current_app
 from flask_login import login_required, current_user
 from models import UserRole
 from session_error_handlers import with_session_error_handling
+import version
 
 def register_routes(bp):
     """Register dashboard routes"""
@@ -65,7 +66,8 @@ def register_routes(bp):
         
         return render_template('admin/admin_landing.html', 
                              stats=stats,
-                             health_status=health_status)
+                             health_status=health_status,
+                             app_version=version.__version__)
     
     @bp.route('/configuration')
     @login_required
@@ -77,12 +79,5 @@ def register_routes(bp):
             flash('Access denied. Admin privileges required.', 'error')
             return redirect(url_for('admin.dashboard'))
             
-        return render_template('admin/configuration_management.html')
-        
-        return render_template('dashboard.html', 
-                             stats=stats, 
-                             system_metrics=system_metrics,
-                             active_jobs=active_jobs,
-                             system_alerts=system_alerts,
-                             system_config=system_config)
+        return render_template('configuration_management.html')
 

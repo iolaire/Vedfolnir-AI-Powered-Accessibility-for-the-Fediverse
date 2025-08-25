@@ -17,6 +17,28 @@ let configurationSchema = {};
 let currentConfigurations = {};
 let currentCategory = 'all';
 
+/**
+ * Get CSRF token from meta tag
+ */
+function getCSRFToken() {
+    try {
+        const csrfMeta = document.querySelector('meta[name="csrf-token"]');
+        if (!csrfMeta) {
+            console.error('CSRF token not found in page meta tags');
+            return null;
+        }
+        const token = csrfMeta.getAttribute('content');
+        if (!token) {
+            console.error('CSRF token meta tag found but content is empty');
+            return null;
+        }
+        return token;
+    } catch (error) {
+        console.error('Error getting CSRF token:', error);
+        return null;
+    }
+}
+
 // Initialize the page
 document.addEventListener('DOMContentLoaded', function() {
     loadConfigurationCategories();
@@ -154,11 +176,11 @@ function displayConfigurations(configurations) {
             <td class="text-muted small">${schema ? escapeHtml(schema.description) : ''}</td>
             <td>
                 <div class="btn-group btn-group-sm" role="group">
-                    <button type="button" class="btn btn-outline-primary" onclick="editConfiguration('${key}')" title="Edit">
-                        <i class="fas fa-edit"></i>
+                    <button type="button" class="btn btn-outline-primary" onclick="editConfiguration('${key}')" title="Edit Configuration">
+                        <i class="fas fa-edit me-1"></i>Edit
                     </button>
-                    <button type="button" class="btn btn-outline-info" onclick="showConfigurationHistory('${key}')" title="History">
-                        <i class="fas fa-history"></i>
+                    <button type="button" class="btn btn-outline-info" onclick="showConfigurationHistory('${key}')" title="View Configuration History">
+                        <i class="fas fa-history me-1"></i>History
                     </button>
                 </div>
             </td>
@@ -307,10 +329,24 @@ async function saveConfiguration() {
     }
     
     try {
+        // Get CSRF token - handle both sync and async cases
+        let csrfToken = getCSRFToken();
+        
+        // If it's a Promise, await it
+        if (csrfToken && typeof csrfToken.then === 'function') {
+            csrfToken = await csrfToken;
+        }
+        
+        if (!csrfToken || typeof csrfToken !== 'string') {
+            showAlert('CSRF token not available', 'danger');
+            return;
+        }
+        
         const response = await fetch(`/admin/api/configuration/${key}`, {
             method: 'PUT',
             headers: {
                 'Content-Type': 'application/json',
+                'X-CSRFToken': csrfToken
             },
             body: JSON.stringify({
                 value: value,
@@ -330,11 +366,11 @@ async function saveConfiguration() {
             
             showAlert(`Configuration ${key} updated successfully`, 'success');
         } else {
-            showValidationError([data.error || 'Failed to update configuration']);
+            showAlert(data.error || 'Failed to update configuration', 'danger');
         }
     } catch (error) {
         console.error('Error saving configuration:', error);
-        showValidationError(['Error saving configuration']);
+        showAlert('Error saving configuration', 'danger');
     }
 }
 
@@ -411,10 +447,24 @@ async function rollbackConfiguration(key, targetTimestamp) {
     }
     
     try {
+        // Get CSRF token - handle both sync and async cases
+        let csrfToken = getCSRFToken();
+        
+        // If it's a Promise, await it
+        if (csrfToken && typeof csrfToken.then === 'function') {
+            csrfToken = await csrfToken;
+        }
+        
+        if (!csrfToken || typeof csrfToken !== 'string') {
+            showAlert('CSRF token not available', 'danger');
+            return;
+        }
+        
         const response = await fetch(`/admin/api/configuration/${key}/rollback`, {
             method: 'POST',
             headers: {
                 'Content-Type': 'application/json',
+                'X-CSRFToken': csrfToken
             },
             body: JSON.stringify({
                 target_timestamp: targetTimestamp,
@@ -523,38 +573,54 @@ async function importConfigurations() {
         importData.validate_only = validateOnly;
         importData.overwrite_existing = overwriteExisting;
         
+        // Get CSRF token - handle both sync and async cases
+        let csrfToken = getCSRFToken();
+        
+        // If it's a Promise, await it
+        if (csrfToken && typeof csrfToken.then === 'function') {
+            csrfToken = await csrfToken;
+        }
+        
+        if (!csrfToken || typeof csrfToken !== 'string') {
+            showAlert('CSRF token not available', 'danger');
+            return;
+        }
+        
         const response = await fetch('/admin/api/configuration/import', {
             method: 'POST',
             headers: {
                 'Content-Type': 'application/json',
+                'X-CSRFToken': csrfToken
             },
             body: JSON.stringify(importData)
         });
         
         const data = await response.json();
         
-        // Show results
-        const resultsDiv = document.getElementById('importResults');
-        const messagesDiv = document.getElementById('importMessages');
-        
-        resultsDiv.classList.remove('d-none');
-        messagesDiv.innerHTML = '';
-        
-        data.messages.forEach(message => {
-            const p = document.createElement('p');
-            p.className = 'mb-1';
-            p.textContent = message;
-            messagesDiv.appendChild(p);
-        });
-        
         if (response.ok && data.success) {
+            // Show results
+            const resultsDiv = document.getElementById('importResults');
+            const messagesDiv = document.getElementById('importMessages');
+            
+            resultsDiv.classList.remove('d-none');
+            messagesDiv.innerHTML = '';
+            
+            if (data.messages && Array.isArray(data.messages)) {
+                data.messages.forEach(message => {
+                    const p = document.createElement('p');
+                    p.className = 'mb-1';
+                    p.textContent = message;
+                    messagesDiv.appendChild(p);
+                });
+            }
+            
             if (!validateOnly) {
                 // Reload configurations if actually imported
                 loadConfigurations();
             }
             showAlert(validateOnly ? 'Validation completed' : 'Import completed successfully', 'success');
         } else {
-            showAlert('Import failed', 'danger');
+            showAlert(data.error || 'Import failed', 'danger');
         }
     } catch (error) {
         console.error('Error importing configurations:', error);
@@ -629,8 +695,66 @@ async function showDocumentation() {
  */
 function showValidationError(errors) {
     const errorDiv = document.getElementById('validationErrors');
+    if (!errorDiv) {
+        console.error('validationErrors element not found');
+        // Fallback to alert if the element doesn't exist
+        showAlert(errors.join(', '), 'danger');
+        return;
+    }
     errorDiv.innerHTML = errors.map(error => `<div>${escapeHtml(error)}</div>`).join('');
     errorDiv.classList.remove('d-none');
+}
+
+/**
+ * Initialize default configurations
+ */
+async function initializeDefaultConfigurations() {
+    if (!confirm('This will create database records for all default configurations that don\'t already exist. Continue?')) {
+        return;
+    }
+    
+    try {
+        // Get CSRF token - handle both sync and async cases
+        let csrfToken = getCSRFToken();
+        
+        // If it's a Promise, await it
+        if (csrfToken && typeof csrfToken.then === 'function') {
+            csrfToken = await csrfToken;
+        }
+        
+        if (!csrfToken || typeof csrfToken !== 'string') {
+            showAlert('CSRF token not available', 'danger');
+            return;
+        }
+        
+        const response = await fetch('/admin/api/configuration/initialize', {
+            method: 'POST',
+            headers: {
+                'Content-Type': 'application/json',
+                'X-CSRFToken': csrfToken
+            }
+        });
+        
+        const data = await response.json();
+        
+        if (response.ok && data.success) {
+            // Show success message with details
+            let message = `Initialization completed: ${data.created_count} configurations created`;
+            if (data.messages && data.messages.length > 0) {
+                message += '\n\nDetails:\n' + data.messages.join('\n');
+            }
+            
+            showAlert(message, 'success');
+            
+            // Reload configurations to show the new ones
+            loadConfigurations();
+        } else {
+            showAlert(data.error || 'Failed to initialize default configurations', 'danger');
+        }
+    } catch (error) {
+        console.error('Error initializing default configurations:', error);
+        showAlert('Error initializing default configurations', 'danger');
+    }
 }
 
 /**

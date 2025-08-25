@@ -22,16 +22,16 @@ from system_configuration_manager import (
     ConfigurationExport, ConfigurationValidationResult
 )
 from security.core.security_utils import sanitize_for_log
-from security.core.role_based_access import require_admin
+from security.core.role_based_access import api_require_admin
 
 logger = logging.getLogger(__name__)
 
 # Create blueprint
-configuration_bp = Blueprint('admin_configuration', __name__, url_prefix='/admin/api/configuration')
+configuration_bp = Blueprint('admin_configuration', __name__, url_prefix='/api/configuration')
 
 
 @configuration_bp.route('/schema', methods=['GET'])
-@require_admin
+@api_require_admin
 def get_configuration_schema():
     """Get configuration schema information"""
     try:
@@ -81,7 +81,7 @@ def get_configuration_schema():
 
 
 @configuration_bp.route('/documentation', methods=['GET'])
-@require_admin
+@api_require_admin
 def get_configuration_documentation():
     """Get comprehensive configuration documentation"""
     try:
@@ -98,7 +98,7 @@ def get_configuration_documentation():
 
 
 @configuration_bp.route('/', methods=['GET'])
-@require_admin
+@api_require_admin
 def get_configurations():
     """Get all configurations, optionally filtered by category"""
     try:
@@ -106,7 +106,7 @@ def get_configurations():
         if not config_manager:
             return jsonify({"error": "Configuration manager not available"}), 500
         
-        admin_user_id = session.get('user_id')
+        admin_user_id = session.get('_user_id')
         if not admin_user_id:
             return jsonify({"error": "Admin user ID not found in session"}), 401
         
@@ -138,7 +138,7 @@ def get_configurations():
 
 
 @configuration_bp.route('/<key>', methods=['GET'])
-@require_admin
+@api_require_admin
 def get_configuration(key: str):
     """Get a specific configuration value"""
     try:
@@ -146,7 +146,7 @@ def get_configuration(key: str):
         if not config_manager:
             return jsonify({"error": "Configuration manager not available"}), 500
         
-        admin_user_id = session.get('user_id')
+        admin_user_id = session.get('_user_id')
         if not admin_user_id:
             return jsonify({"error": "Admin user ID not found in session"}), 401
         
@@ -166,7 +166,7 @@ def get_configuration(key: str):
 
 
 @configuration_bp.route('/<key>', methods=['PUT'])
-@require_admin
+@api_require_admin
 def set_configuration(key: str):
     """Set a configuration value"""
     try:
@@ -174,7 +174,7 @@ def set_configuration(key: str):
         if not config_manager:
             return jsonify({"error": "Configuration manager not available"}), 500
         
-        admin_user_id = session.get('user_id')
+        admin_user_id = session.get('_user_id')
         if not admin_user_id:
             return jsonify({"error": "Admin user ID not found in session"}), 401
         
@@ -202,7 +202,7 @@ def set_configuration(key: str):
 
 
 @configuration_bp.route('/batch', methods=['PUT'])
-@require_admin
+@api_require_admin
 def set_configurations_batch():
     """Set multiple configurations in a batch"""
     try:
@@ -210,7 +210,7 @@ def set_configurations_batch():
         if not config_manager:
             return jsonify({"error": "Configuration manager not available"}), 500
         
-        admin_user_id = session.get('user_id')
+        admin_user_id = session.get('_user_id')
         if not admin_user_id:
             return jsonify({"error": "Admin user ID not found in session"}), 401
         
@@ -264,7 +264,7 @@ def set_configurations_batch():
 
 
 @configuration_bp.route('/validate', methods=['POST'])
-@require_admin
+@api_require_admin
 def validate_configurations():
     """Validate a set of configurations"""
     try:
@@ -292,7 +292,7 @@ def validate_configurations():
 
 
 @configuration_bp.route('/<key>/history', methods=['GET'])
-@require_admin
+@api_require_admin
 def get_configuration_history(key: str):
     """Get configuration change history"""
     try:
@@ -300,7 +300,7 @@ def get_configuration_history(key: str):
         if not config_manager:
             return jsonify({"error": "Configuration manager not available"}), 500
         
-        admin_user_id = session.get('user_id')
+        admin_user_id = session.get('_user_id')
         if not admin_user_id:
             return jsonify({"error": "Admin user ID not found in session"}), 401
         
@@ -331,7 +331,7 @@ def get_configuration_history(key: str):
 
 
 @configuration_bp.route('/<key>/rollback', methods=['POST'])
-@require_admin
+@api_require_admin
 def rollback_configuration(key: str):
     """Rollback a configuration to a previous value"""
     try:
@@ -339,7 +339,7 @@ def rollback_configuration(key: str):
         if not config_manager:
             return jsonify({"error": "Configuration manager not available"}), 500
         
-        admin_user_id = session.get('user_id')
+        admin_user_id = session.get('_user_id')
         if not admin_user_id:
             return jsonify({"error": "Admin user ID not found in session"}), 401
         
@@ -367,7 +367,7 @@ def rollback_configuration(key: str):
 
 
 @configuration_bp.route('/export', methods=['GET'])
-@require_admin
+@api_require_admin
 def export_configurations():
     """Export configurations to a structured format"""
     try:
@@ -375,7 +375,7 @@ def export_configurations():
         if not config_manager:
             return jsonify({"error": "Configuration manager not available"}), 500
         
-        admin_user_id = session.get('user_id')
+        admin_user_id = session.get('_user_id')
         if not admin_user_id:
             return jsonify({"error": "Admin user ID not found in session"}), 401
         
@@ -408,7 +408,7 @@ def export_configurations():
 
 
 @configuration_bp.route('/import', methods=['POST'])
-@require_admin
+@api_require_admin
 def import_configurations():
     """Import configurations from export data"""
     try:
@@ -416,7 +416,7 @@ def import_configurations():
         if not config_manager:
             return jsonify({"error": "Configuration manager not available"}), 500
         
-        admin_user_id = session.get('user_id')
+        admin_user_id = session.get('_user_id')
         if not admin_user_id:
             return jsonify({"error": "Admin user ID not found in session"}), 401
         
@@ -458,7 +458,7 @@ def import_configurations():
 
 
 @configuration_bp.route('/categories', methods=['GET'])
-@require_admin
+@api_require_admin
 def get_configuration_categories():
     """Get available configuration categories"""
     try:
@@ -475,6 +475,32 @@ def get_configuration_categories():
     except Exception as e:
         logger.error(f"Error getting configuration categories: {sanitize_for_log(str(e))}")
         return jsonify({"error": "Failed to get configuration categories"}), 500
+
+
+@configuration_bp.route('/initialize', methods=['POST'])
+@api_require_admin
+def initialize_default_configurations():
+    """Initialize default configurations in the database"""
+    try:
+        config_manager: SystemConfigurationManager = current_app.config.get('system_configuration_manager')
+        if not config_manager:
+            return jsonify({"error": "Configuration manager not available"}), 500
+        
+        admin_user_id = session.get('_user_id')
+        if not admin_user_id:
+            return jsonify({"error": "Admin user ID not found in session"}), 401
+        
+        created_count, messages = config_manager.initialize_default_configurations(admin_user_id)
+        
+        return jsonify({
+            "success": True,
+            "created_count": created_count,
+            "messages": messages
+        })
+        
+    except Exception as e:
+        logger.error(f"Error initializing default configurations: {sanitize_for_log(str(e))}")
+        return jsonify({"error": "Failed to initialize default configurations"}), 500
 
 
 def _get_category_description(category: ConfigurationCategory) -> str:

@@ -791,3 +791,72 @@ class SystemConfigurationManager:
             ConfigurationCategory.FEATURES: "Feature flags and optional functionality"
         }
         return descriptions.get(category, "Configuration settings")
+    
+    def initialize_default_configurations(self, admin_user_id: int) -> Tuple[int, List[str]]:
+        """
+        Initialize default configurations in the database
+        
+        Creates database records for all schema-defined configurations that don't already exist,
+        using their default values from the schema.
+        
+        Args:
+            admin_user_id: Admin user ID performing the initialization
+            
+        Returns:
+            Tuple of (created_count, list of messages)
+        """
+        messages = []
+        created_count = 0
+        
+        try:
+            with self.db_manager.get_session() as session:
+                # Verify admin authorization
+                self._verify_admin_authorization(session, admin_user_id)
+                
+                # Get existing configuration keys
+                existing_configs = session.query(SystemConfiguration.key).all()
+                existing_keys = {config.key for config in existing_configs}
+                
+                # Create configurations for schema entries that don't exist in database
+                for key, schema in self._configuration_schema.items():
+                    if key not in existing_keys:
+                        # Create new configuration with default value
+                        new_config = SystemConfiguration(
+                            key=key,
+                            data_type=schema.data_type.value,
+                            category=schema.category.value,
+                            description=schema.description,
+                            is_sensitive=schema.is_sensitive,
+                            updated_by=admin_user_id,
+                            created_at=datetime.now(timezone.utc),
+                            updated_at=datetime.now(timezone.utc)
+                        )
+                        
+                        # Set the default value
+                        if schema.default_value is not None:
+                            new_config.set_typed_value(schema.default_value)
+                        
+                        session.add(new_config)
+                        created_count += 1
+                        messages.append(f"Created configuration: {key} = {schema.default_value}")
+                        
+                        # Create audit trail
+                        self._create_configuration_audit(
+                            session, key, None, schema.default_value, 
+                            admin_user_id, "Initial configuration setup"
+                        )
+                
+                session.commit()
+                
+                if created_count > 0:
+                    messages.append(f"Successfully initialized {created_count} default configurations")
+                    logger.info(f"Initialized {created_count} default configurations for admin {sanitize_for_log(str(admin_user_id))}")
+                else:
+                    messages.append("All configurations already exist in database")
+                
+                return created_count, messages
+                
+        except Exception as e:
+            logger.error(f"Error initializing default configurations: {sanitize_for_log(str(e))}")
+            messages.append(f"Error initializing configurations: {str(e)}")
+            return 0, messages
