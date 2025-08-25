@@ -503,6 +503,346 @@ def initialize_default_configurations():
         return jsonify({"error": "Failed to initialize default configurations"}), 500
 
 
+@configuration_bp.route('/restart-status', methods=['GET'])
+@api_require_admin
+def get_restart_status():
+    """Get restart requirement status"""
+    try:
+        # Get configuration service from app context
+        config_service = current_app.config.get('configuration_service')
+        if not config_service:
+            return jsonify({"error": "Configuration service not available"}), 500
+        
+        restart_required = config_service.is_restart_required()
+        pending_configs = config_service.get_pending_restart_configs()
+        
+        return jsonify({
+            "restart_required": restart_required,
+            "pending_restart_configs": pending_configs,
+            "total_pending": len(pending_configs)
+        })
+        
+    except Exception as e:
+        logger.error(f"Error getting restart status: {sanitize_for_log(str(e))}")
+        return jsonify({"error": "Failed to get restart status"}), 500
+
+
+@configuration_bp.route('/<key>/impact-assessment', methods=['POST'])
+@api_require_admin
+def assess_configuration_impact(key: str):
+    """Assess the impact of a configuration change"""
+    try:
+        from configuration_validation import get_validator
+        
+        data = request.get_json()
+        if not data or 'new_value' not in data:
+            return jsonify({"error": "Request must contain 'new_value' field"}), 400
+        
+        new_value = data['new_value']
+        
+        # Get current value
+        config_manager: SystemConfigurationManager = current_app.config.get('system_configuration_manager')
+        if not config_manager:
+            return jsonify({"error": "Configuration manager not available"}), 500
+        
+        admin_user_id = session.get('_user_id')
+        if not admin_user_id:
+            return jsonify({"error": "Admin user ID not found in session"}), 401
+        
+        current_value = config_manager.get_configuration(key, admin_user_id)
+        
+        # Perform impact assessment
+        validator = get_validator()
+        impact = validator.assess_impact(key, current_value, new_value)
+        
+        # Get related configurations
+        related_configs = validator.get_related_configurations(key)
+        
+        return jsonify({
+            "key": key,
+            "current_value": current_value,
+            "new_value": new_value,
+            "impact_level": impact.impact_level.value,
+            "affected_components": impact.affected_components,
+            "requires_restart": impact.requires_restart,
+            "estimated_downtime": impact.estimated_downtime,
+            "rollback_complexity": impact.rollback_complexity,
+            "risk_factors": impact.risk_factors,
+            "mitigation_steps": impact.mitigation_steps,
+            "related_configurations": related_configs
+        })
+        
+    except Exception as e:
+        logger.error(f"Error assessing configuration impact for {sanitize_for_log(key)}: {sanitize_for_log(str(e))}")
+        return jsonify({"error": f"Failed to assess configuration impact: {key}"}), 500
+
+
+@configuration_bp.route('/<key>/validate', methods=['POST'])
+@api_require_admin
+def validate_single_configuration(key: str):
+    """Validate a single configuration value"""
+    try:
+        from configuration_validation import get_validator
+        
+        data = request.get_json()
+        if not data or 'value' not in data:
+            return jsonify({"error": "Request must contain 'value' field"}), 400
+        
+        value = data['value']
+        
+        # Get configuration manager
+        config_manager: SystemConfigurationManager = current_app.config.get('system_configuration_manager')
+        if not config_manager:
+            return jsonify({"error": "Configuration manager not available"}), 500
+        
+        # Get schema for validation
+        schema = config_manager.get_configuration_schema(key)
+        if not schema:
+            return jsonify({"error": f"Schema not found for configuration: {key}"}), 404
+        
+        # Perform validation
+        validator = get_validator()
+        validation_result = validator.validate_single_value(key, value, schema)
+        
+        # Check for conflicts with other configurations
+        admin_user_id = session.get('_user_id')
+        if admin_user_id:
+            current_configs = config_manager.get_all_configurations(admin_user_id)
+            # Create a test configuration set with the new value
+            test_configs = current_configs.copy()
+            test_configs[key] = value
+            
+            conflict_result = validator.detect_conflicts({key: value}, test_configs)
+        else:
+            conflict_result = []
+        
+        return jsonify({
+            "key": key,
+            "value": value,
+            "is_valid": validation_result.is_valid,
+            "errors": validation_result.errors,
+            "warnings": validation_result.warnings,
+            "conflicts": [
+                {
+                    "conflicting_key": conflict.conflicting_key,
+                    "conflict_type": conflict.conflict_type,
+                    "description": conflict.description,
+                    "severity": conflict.severity
+                } for conflict in conflict_result
+            ],
+            "data_type": schema.data_type.value,
+            "validation_rules": schema.validation_rules or {}
+        })
+        
+    except Exception as e:
+        logger.error(f"Error validating configuration {sanitize_for_log(key)}: {sanitize_for_log(str(e))}")
+        return jsonify({"error": f"Failed to validate configuration: {key}"}), 500
+
+
+@configuration_bp.route('/<key>/dry-run', methods=['POST'])
+@api_require_admin
+def dry_run_configuration_change(key: str):
+    """Perform a dry-run test of a configuration change"""
+    try:
+        from configuration_validation import get_validator
+        
+        data = request.get_json()
+        if not data or 'value' not in data:
+            return jsonify({"error": "Request must contain 'value' field"}), 400
+        
+        new_value = data['value']
+        
+        # Get configuration manager
+        config_manager: SystemConfigurationManager = current_app.config.get('system_configuration_manager')
+        if not config_manager:
+            return jsonify({"error": "Configuration manager not available"}), 500
+        
+        admin_user_id = session.get('_user_id')
+        if not admin_user_id:
+            return jsonify({"error": "Admin user ID not found in session"}), 401
+        
+        # Get current value and schema
+        current_value = config_manager.get_configuration(key, admin_user_id)
+        schema = config_manager.get_configuration_schema(key)
+        
+        if not schema:
+            return jsonify({"error": f"Schema not found for configuration: {key}"}), 404
+        
+        # Perform comprehensive dry-run analysis
+        validator = get_validator()
+        
+        # 1. Validation
+        validation_result = validator.validate_single_value(key, new_value, schema)
+        
+        # 2. Impact Assessment
+        impact = validator.assess_impact(key, current_value, new_value)
+        
+        # 3. Conflict Detection
+        current_configs = config_manager.get_all_configurations(admin_user_id)
+        test_configs = current_configs.copy()
+        test_configs[key] = new_value
+        conflicts = validator.detect_conflicts({key: new_value}, test_configs)
+        
+        # 4. Related Configuration Analysis
+        related_configs = validator.get_related_configurations(key)
+        related_analysis = []
+        
+        for related_key in related_configs:
+            related_value = current_configs.get(related_key)
+            if related_value is not None:
+                # Check if the change affects this related configuration
+                related_impact = validator.assess_impact(related_key, related_value, related_value)
+                related_analysis.append({
+                    "key": related_key,
+                    "current_value": related_value,
+                    "potential_impact": "May be affected by this change",
+                    "recommendation": f"Review {related_key} after applying this change"
+                })
+        
+        # 5. Rollback Analysis
+        rollback_complexity = "low"
+        rollback_steps = ["Revert configuration value", "Restart services if required"]
+        
+        if impact.requires_restart:
+            rollback_complexity = "medium"
+            rollback_steps.append("System restart required for rollback")
+        
+        if impact.impact_level.value in ['high', 'critical']:
+            rollback_complexity = "high"
+            rollback_steps.extend([
+                "Monitor system stability after rollback",
+                "Verify dependent services are functioning"
+            ])
+        
+        # 6. Pre-change Checklist
+        pre_change_checklist = [
+            "Backup current configuration values",
+            "Notify relevant team members",
+            "Prepare rollback plan"
+        ]
+        
+        if impact.requires_restart:
+            pre_change_checklist.extend([
+                "Schedule maintenance window",
+                "Notify users of potential downtime"
+            ])
+        
+        if impact.impact_level.value in ['high', 'critical']:
+            pre_change_checklist.extend([
+                "Create system backup",
+                "Prepare monitoring alerts",
+                "Have support team on standby"
+            ])
+        
+        # 7. Post-change Verification
+        post_change_verification = [
+            "Verify configuration value is applied",
+            "Check system logs for errors",
+            "Monitor system performance"
+        ]
+        
+        for component in impact.affected_components:
+            post_change_verification.append(f"Verify {component} is functioning correctly")
+        
+        return jsonify({
+            "key": key,
+            "current_value": current_value,
+            "new_value": new_value,
+            "dry_run_timestamp": datetime.now().isoformat(),
+            
+            # Validation Results
+            "validation": {
+                "is_valid": validation_result.is_valid,
+                "errors": validation_result.errors,
+                "warnings": validation_result.warnings
+            },
+            
+            # Impact Assessment
+            "impact": {
+                "level": impact.impact_level.value,
+                "affected_components": impact.affected_components,
+                "requires_restart": impact.requires_restart,
+                "estimated_downtime": impact.estimated_downtime,
+                "risk_factors": impact.risk_factors,
+                "mitigation_steps": impact.mitigation_steps
+            },
+            
+            # Conflict Analysis
+            "conflicts": [
+                {
+                    "conflicting_key": conflict.conflicting_key,
+                    "conflict_type": conflict.conflict_type,
+                    "description": conflict.description,
+                    "severity": conflict.severity
+                } for conflict in conflicts
+            ],
+            
+            # Related Configuration Analysis
+            "related_configurations": related_analysis,
+            
+            # Rollback Analysis
+            "rollback": {
+                "complexity": rollback_complexity,
+                "steps": rollback_steps,
+                "estimated_time": impact.estimated_downtime or "< 5 minutes"
+            },
+            
+            # Change Management
+            "change_management": {
+                "pre_change_checklist": pre_change_checklist,
+                "post_change_verification": post_change_verification,
+                "recommended_timing": "During maintenance window" if impact.requires_restart else "Any time"
+            },
+            
+            # Overall Recommendation
+            "recommendation": {
+                "proceed": validation_result.is_valid and len(conflicts) == 0,
+                "reason": _get_recommendation_reason(validation_result, conflicts, impact),
+                "confidence": _get_confidence_level(validation_result, conflicts, impact)
+            }
+        })
+        
+    except Exception as e:
+        logger.error(f"Error performing dry-run for {sanitize_for_log(key)}: {sanitize_for_log(str(e))}")
+        return jsonify({"error": f"Failed to perform dry-run for configuration: {key}"}), 500
+
+
+def _get_recommendation_reason(validation_result, conflicts, impact):
+    """Get recommendation reason based on analysis results"""
+    if not validation_result.is_valid:
+        return "Configuration value failed validation"
+    
+    if conflicts:
+        high_severity_conflicts = [c for c in conflicts if c.severity in ['high', 'critical']]
+        if high_severity_conflicts:
+            return "High-severity configuration conflicts detected"
+        else:
+            return "Configuration conflicts detected - review recommended"
+    
+    if impact.impact_level.value == 'critical':
+        return "Critical impact level - proceed with extreme caution"
+    elif impact.impact_level.value == 'high':
+        return "High impact level - ensure proper planning and backup"
+    elif impact.impact_level.value == 'medium':
+        return "Medium impact level - standard change management recommended"
+    else:
+        return "Low impact change - safe to proceed"
+
+
+def _get_confidence_level(validation_result, conflicts, impact):
+    """Get confidence level for the recommendation"""
+    if not validation_result.is_valid:
+        return "high"  # High confidence in rejecting invalid values
+    
+    if conflicts:
+        return "medium"  # Medium confidence due to conflicts
+    
+    if impact.impact_level.value in ['high', 'critical']:
+        return "medium"  # Medium confidence for high-impact changes
+    
+    return "high"  # High confidence for low-impact, valid changes
+
+
 def _get_category_description(category: ConfigurationCategory) -> str:
     """Get description for configuration category"""
     descriptions = {

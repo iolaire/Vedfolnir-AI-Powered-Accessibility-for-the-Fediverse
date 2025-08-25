@@ -22,10 +22,19 @@ logger = logging.getLogger(__name__)
 class SecurityMiddleware:
     """Comprehensive security middleware for Flask applications"""
     
-    def __init__(self, app=None):
+    def __init__(self, app=None, rate_limiting_adapter=None):
         self.app = app
         self.rate_limit_storage = {}  # In production, use Redis
         self.failed_attempts = {}
+        self.rate_limiting_adapter = rate_limiting_adapter
+        
+        # Rate limiting configuration (can be updated by adapter)
+        self._rate_limit_config = {
+            'requests_per_minute': 120,
+            'window_minutes': 1,
+            'burst_size': 10,
+            'enabled': True
+        }
         
         if app:
             self.init_app(app)
@@ -82,11 +91,19 @@ class SecurityMiddleware:
     
     def _check_rate_limit(self):
         """Check rate limiting for the current request"""
+        # Check if rate limiting is enabled
+        if not self._rate_limit_config.get('enabled', True):
+            return True
+        
         client_ip = request.remote_addr
         current_time = datetime.utcnow()
         
+        # Get current configuration values
+        requests_per_minute = self._rate_limit_config.get('requests_per_minute', 120)
+        window_minutes = self._rate_limit_config.get('window_minutes', 1)
+        
         # Clean old entries
-        cutoff_time = current_time - timedelta(minutes=1)
+        cutoff_time = current_time - timedelta(minutes=window_minutes)
         self.rate_limit_storage = {
             ip: requests for ip, requests in self.rate_limit_storage.items()
             if any(req_time > cutoff_time for req_time in requests)
@@ -102,13 +119,65 @@ class SecurityMiddleware:
             if req_time > cutoff_time
         ]
         
-        # Check rate limit (120 requests per minute)
-        if len(self.rate_limit_storage[client_ip]) >= 120:
+        # Check rate limit using configured value
+        if len(self.rate_limit_storage[client_ip]) >= requests_per_minute:
             return False
         
         # Add current request
         self.rate_limit_storage[client_ip].append(current_time)
         return True
+    
+    def update_rate_limit_config(self, config: dict):
+        """
+        Update rate limiting configuration
+        
+        Args:
+            config: Dictionary with rate limiting configuration
+        """
+        self._rate_limit_config.update(config)
+        logger.info(f"Updated rate limiting configuration: {self._rate_limit_config}")
+    
+    def get_rate_limit_config(self) -> dict:
+        """
+        Get current rate limiting configuration
+        
+        Returns:
+            Dictionary with current rate limiting configuration
+        """
+        return self._rate_limit_config.copy()
+    
+    def get_rate_limit_info_for_ip(self, ip_address: str) -> dict:
+        """
+        Get rate limit information for an IP address
+        
+        Args:
+            ip_address: IP address to check
+            
+        Returns:
+            Dictionary with rate limit information
+        """
+        current_time = datetime.utcnow()
+        window_minutes = self._rate_limit_config.get('window_minutes', 1)
+        cutoff_time = current_time - timedelta(minutes=window_minutes)
+        
+        # Count current requests for this IP
+        current_requests = 0
+        if ip_address in self.rate_limit_storage:
+            current_requests = len([
+                req_time for req_time in self.rate_limit_storage[ip_address]
+                if req_time > cutoff_time
+            ])
+        
+        requests_per_minute = self._rate_limit_config.get('requests_per_minute', 120)
+        
+        return {
+            'ip_address': ip_address,
+            'current_requests': current_requests,
+            'rate_limit': requests_per_minute,
+            'remaining_requests': max(0, requests_per_minute - current_requests),
+            'window_minutes': window_minutes,
+            'enabled': self._rate_limit_config.get('enabled', True)
+        }
     
     def _validate_request_data(self):
         """Validate request data for security issues"""

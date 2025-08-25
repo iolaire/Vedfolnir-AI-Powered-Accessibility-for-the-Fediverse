@@ -1,0 +1,710 @@
+/* Copyright (C) 2025 iolaire mcfadden. */
+/* This program is free software: you can redistribute it and/or modify it under the terms of the GNU Affero General Public License as published by the Free Software Foundation, either version 3 of the License, or (at your option) any later version. */
+/* THE SOFTWARE IS PROVIDED "AS IS", WITHOUT WARRANTY OF ANY KIND, EXPRESS OR IMPLIED, INCLUDING BUT NOT LIMITED TO THE WARRANTIES OF MERCHANTABILITY, FITNESS FOR A PARTICULAR PURPOSE AND NONINFRINGEMENT. IN NO EVENT SHALL THE AUTHORS OR COPYRIGHT HOLDERS BE LIABLE FOR ANY CLAIM, DAMAGES OR OTHER LIABILITY, WHETHER IN AN ACTION OF CONTRACT, TORT OR OTHERWISE, ARISING FROM, OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE SOFTWARE. */
+
+/**
+ * Configuration Management Styles
+ * 
+ * Styles for the admin configuration management interface including:
+ * - Restart requirement indicators
+ * - Configuration status badges
+ * - Visual feedback for configuration changes
+ */
+
+/* Restart notification styling */
+.restart-notification {
+    border-left: 4px solid #ffc107;
+    background-color: #fff3cd;
+}
+
+.restart-notification .alert-heading {
+    color: #856404;
+}
+
+/* Configuration table styling */
+.table-warning {
+    background-color: rgba(255, 193, 7, 0.1);
+}
+
+.table-warning:hover {
+    background-color: rgba(255, 193, 7, 0.2);
+}
+
+/* Status indicator styling */
+.status-indicators {
+    display: flex;
+    align-items: center;
+    gap: 0.25rem;
+}
+
+.status-indicators .badge {
+    font-size: 0.7em;
+}
+
+/* Restart required badge */
+.badge-restart-required {
+    background-color: #ffc107 !important;
+    color: #212529 !important;
+    border: 1px solid #ffb300;
+}
+
+.badge-restart-required:hover {
+    background-color: #ffb300 !important;
+}
+
+/* Configuration key styling */
+.config-key {
+    font-family: 'Monaco', 'Menlo', 'Ubuntu Mono', monospace;
+    font-size: 0.9em;
+    background-color: #f8f9fa;
+    padding: 0.2em 0.4em;
+    border-radius: 0.25rem;
+    border: 1px solid #dee2e6;
+}
+
+/* Icon styling */
+.config-icon {
+    font-size: 0.9em;
+    margin-left: 0.25rem;
+}
+
+.config-icon.sensitive {
+    color: #ffc107;
+}
+
+.config-icon.restart-required {
+    color: #17a2b8;
+    animation: pulse-restart 2s infinite;
+}
+
+.config-icon.pending-restart {
+    color: #ffc107;
+    animation: pulse-warning 1.5s infinite;
+}
+
+/* Animations */
+@keyframes pulse-restart {
+    0% { opacity: 1; }
+    50% { opacity: 0.6; }
+    100% { opacity: 1; }
+}
+
+@keyframes pulse-warning {
+    0% { opacity: 1; transform: scale(1); }
+    50% { opacity: 0.8; transform: scale(1.05); }
+    100% { opacity: 1; transform: scale(1); }
+}
+
+/* Modal styling */
+.restart-required-modal .modal-header {
+    background-color: #fff3cd;
+    border-bottom: 1px solid #ffeaa7;
+}
+
+.restart-required-modal .modal-title {
+    color: #856404;
+}
+
+/* Configuration value display */
+.config-value {
+    font-family: 'Monaco', 'Menlo', 'Ubuntu Mono', monospace;
+    font-size: 0.85em;
+    max-width: 200px;
+    overflow: hidden;
+    text-overflow: ellipsis;
+    white-space: nowrap;
+}
+
+/* Category badge styling */
+.category-badge {
+    font-size: 0.75em;
+    font-weight: 500;
+}
+
+/* Type badge styling */
+.type-badge {
+    font-size: 0.75em;
+    font-weight: 500;
+}
+
+/* Action button styling */
+.config-actions .btn {
+    font-size: 0.8em;
+    padding: 0.25rem 0.5rem;
+}
+
+/* Responsive adjustments */
+@media (max-width: 768px) {
+    .config-key {
+        font-size: 0.8em;
+    }
+    
+    .config-value {
+        max-width: 150px;
+    }
+    
+    .status-indicators {
+        flex-direction: column;
+        align-items: flex-start;
+        gap: 0.1rem;
+    }
+    
+    .config-actions .btn {
+        font-size: 0.7em;
+        padding: 0.2rem 0.4rem;
+    }
+}
+
+/* Accessibility improvements */
+.config-icon[title]:hover::after {
+    content: attr(title);
+    position: absolute;
+    background: #333;
+    color: white;
+    padding: 0.25rem 0.5rem;
+    border-radius: 0.25rem;
+    font-size: 0.8em;
+    white-space: nowrap;
+    z-index: 1000;
+    margin-top: 1.5rem;
+    margin-left: -2rem;
+}
+
+/* Focus states for keyboard navigation */
+.btn:focus,
+.form-control:focus,
+.form-select:focus {
+    box-shadow: 0 0 0 0.2rem rgba(255, 193, 7, 0.25);
+    border-color: #ffc107;
+}
+
+/* High contrast mode support */
+@media (prefers-contrast: high) {
+    .badge-restart-required {
+        background-color: #000 !important;
+        color: #fff !important;
+        border: 2px solid #ffc107;
+    }
+    
+    .table-warning {
+        background-color: rgba(255, 193, 7, 0.3);
+        border: 1px solid #ffc107;
+    }
+}
+
+/* Impact Assessment Styling */
+.impact-assessment-card {
+    border-left: 4px solid #ffc107;
+}
+
+.impact-level-low {
+    background-color: #d1edff !important;
+    color: #0c5460 !important;
+}
+
+.impact-level-medium {
+    background-color: #fff3cd !important;
+    color: #856404 !important;
+}
+
+.impact-level-high {
+    background-color: #f8d7da !important;
+    color: #721c24 !important;
+}
+
+.impact-level-critical {
+    background-color: #d1ecf1 !important;
+    color: #0c5460 !important;
+    border-color: #dc3545 !important;
+}
+
+.critical-change-confirmation {
+    border: 2px solid #dc3545;
+    background-color: #f8d7da;
+}
+
+.critical-change-confirmation .form-check-label {
+    font-weight: 600;
+    color: #721c24;
+}
+
+/* Component badges */
+.component-badge {
+    font-size: 0.75em;
+    margin: 0.1rem;
+}
+
+/* Risk factors and mitigation steps */
+.risk-factors-list,
+.mitigation-steps-list {
+    margin-bottom: 0;
+    padding-left: 1.2rem;
+}
+
+.risk-factors-list li,
+.mitigation-steps-list li {
+    margin-bottom: 0.25rem;
+    font-size: 0.9em;
+}
+
+/* Related configurations */
+.related-configs {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 0.25rem;
+}
+
+.related-config-badge {
+    font-size: 0.7em;
+    cursor: pointer;
+    transition: all 0.2s ease;
+}
+
+.related-config-badge:hover {
+    transform: scale(1.05);
+    box-shadow: 0 2px 4px rgba(0,0,0,0.1);
+}
+
+/* Estimated downtime warning */
+.estimated-downtime {
+    font-weight: 600;
+    color: #dc3545;
+}
+
+/* Modal enhancements for impact assessment */
+.modal-lg.impact-modal {
+    max-width: 900px;
+}
+
+.impact-assessment .card-header {
+    background: linear-gradient(135deg, #fff3cd 0%, #ffeaa7 100%);
+    border-bottom: 1px solid #ffc107;
+}
+
+/* Animation for impact assessment appearance */
+.impact-assessment {
+    animation: slideInDown 0.3s ease-out;
+}
+
+@keyframes slideInDown {
+    from {
+        opacity: 0;
+        transform: translateY(-10px);
+    }
+    to {
+        opacity: 1;
+        transform: translateY(0);
+    }
+}
+
+/* Critical confirmation animation */
+.critical-change-confirmation {
+    animation: pulseWarning 0.5s ease-in-out;
+}
+
+@keyframes pulseWarning {
+    0% { transform: scale(1); }
+    50% { transform: scale(1.02); }
+    100% { transform: scale(1); }
+}
+
+/* Validation Feedback Styling */
+.form-control.is-valid {
+    border-color: #198754;
+    background-image: url("data:image/svg+xml,%3csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 8 8'%3e%3cpath fill='%23198754' d='m2.3 6.73.94-.94 1.38 1.38L7.7 4.09 6.76 3.15 4.62 5.29z'/%3e%3c/svg%3e");
+    background-repeat: no-repeat;
+    background-position: right calc(0.375em + 0.1875rem) center;
+    background-size: calc(0.75em + 0.375rem) calc(0.75em + 0.375rem);
+}
+
+.form-control.is-invalid {
+    border-color: #dc3545;
+    background-image: url("data:image/svg+xml,%3csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 12 12' width='12' height='12' fill='none' stroke='%23dc3545'%3e%3ccircle cx='6' cy='6' r='4.5'/%3e%3cpath d='m5.8 4.6 1.4 1.4M7.2 4.6l-1.4 1.4'/%3e%3c/svg%3e");
+    background-repeat: no-repeat;
+    background-position: right calc(0.375em + 0.1875rem) center;
+    background-size: calc(0.75em + 0.375rem) calc(0.75em + 0.375rem);
+}
+
+.validation-rules-info {
+    border-left: 4px solid #0dcaf0;
+    background-color: #cff4fc;
+}
+
+.validation-rules-info .alert-heading {
+    color: #055160;
+}
+
+.validation-rules-info ul {
+    margin-bottom: 0;
+}
+
+.validation-rules-info li {
+    margin-bottom: 0.25rem;
+    font-size: 0.9em;
+}
+
+/* Conflict detection styling */
+.conflict-alert {
+    border-left: 4px solid #ffc107;
+    background-color: #fff3cd;
+    animation: slideInLeft 0.3s ease-out;
+}
+
+.conflict-alert .conflict-item {
+    padding: 0.25rem 0;
+    border-bottom: 1px solid #ffeaa7;
+}
+
+.conflict-alert .conflict-item:last-child {
+    border-bottom: none;
+}
+
+.conflict-severity-badge {
+    font-size: 0.7em;
+    font-weight: 600;
+}
+
+/* Real-time validation animations */
+.validation-feedback-enter {
+    animation: fadeInUp 0.3s ease-out;
+}
+
+.validation-feedback-exit {
+    animation: fadeOutDown 0.3s ease-out;
+}
+
+@keyframes fadeInUp {
+    from {
+        opacity: 0;
+        transform: translateY(10px);
+    }
+    to {
+        opacity: 1;
+        transform: translateY(0);
+    }
+}
+
+@keyframes fadeOutDown {
+    from {
+        opacity: 1;
+        transform: translateY(0);
+    }
+    to {
+        opacity: 0;
+        transform: translateY(10px);
+    }
+}
+
+@keyframes slideInLeft {
+    from {
+        opacity: 0;
+        transform: translateX(-20px);
+    }
+    to {
+        opacity: 1;
+        transform: translateX(0);
+    }
+}
+
+/* Input validation states */
+.form-control:focus.is-valid {
+    border-color: #198754;
+    box-shadow: 0 0 0 0.2rem rgba(25, 135, 84, 0.25);
+}
+
+.form-control:focus.is-invalid {
+    border-color: #dc3545;
+    box-shadow: 0 0 0 0.2rem rgba(220, 53, 69, 0.25);
+}
+
+/* Validation message styling */
+.validation-error-message {
+    color: #dc3545;
+    font-size: 0.875em;
+    margin-top: 0.25rem;
+}
+
+.validation-warning-message {
+    color: #856404;
+    font-size: 0.875em;
+    margin-top: 0.25rem;
+}
+
+.validation-success-message {
+    color: #198754;
+    font-size: 0.875em;
+    margin-top: 0.25rem;
+}
+
+/* Responsive adjustments for validation */
+@media (max-width: 768px) {
+    .validation-rules-info {
+        font-size: 0.8em;
+    }
+    
+    .conflict-alert {
+        font-size: 0.85em;
+    }
+    
+    .validation-error-message,
+    .validation-warning-message,
+    .validation-success-message {
+        font-size: 0.8em;
+    }
+}
+
+/* Responsive adjustments for impact assessment */
+@media (max-width: 768px) {
+    .impact-assessment .row {
+        flex-direction: column;
+    }
+    
+    .impact-assessment .col-md-6 {
+        margin-bottom: 0.5rem;
+    }
+    
+    .related-configs {
+        flex-direction: column;
+    }
+    
+    .component-badge,
+    .related-config-badge {
+        font-size: 0.7em;
+        margin: 0.05rem;
+    }
+}
+
+/* Dry-Run Modal Styling */
+.dry-run-modal .modal-dialog {
+    max-width: 1200px;
+}
+
+.dry-run-recommendation {
+    border-left: 4px solid;
+    font-weight: 500;
+}
+
+.dry-run-recommendation.alert-success {
+    border-left-color: #198754;
+}
+
+.dry-run-recommendation.alert-danger {
+    border-left-color: #dc3545;
+}
+
+.dry-run-tabs .nav-link {
+    color: #495057;
+    border: 1px solid transparent;
+    border-bottom: 2px solid transparent;
+}
+
+.dry-run-tabs .nav-link.active {
+    color: #0d6efd;
+    border-bottom-color: #0d6efd;
+    background-color: transparent;
+}
+
+.dry-run-tabs .nav-link:hover {
+    border-bottom-color: #dee2e6;
+}
+
+/* Tab content styling */
+.dry-run-tab-content {
+    min-height: 300px;
+}
+
+.dry-run-section {
+    padding: 1rem 0;
+}
+
+.dry-run-section h6 {
+    color: #495057;
+    font-weight: 600;
+    margin-bottom: 0.75rem;
+}
+
+/* Impact level badges */
+.impact-level-badge {
+    font-size: 1rem;
+    padding: 0.5rem 1rem;
+}
+
+/* Conflict cards */
+.conflict-card {
+    border-left: 4px solid #ffc107;
+    background-color: #fff3cd;
+}
+
+.conflict-card.severity-high {
+    border-left-color: #dc3545;
+    background-color: #f8d7da;
+}
+
+.conflict-card.severity-critical {
+    border-left-color: #6f42c1;
+    background-color: #e2d9f3;
+}
+
+/* Checklist styling */
+.checklist-item {
+    padding: 0.5rem;
+    border-radius: 0.25rem;
+    margin-bottom: 0.25rem;
+    background-color: #f8f9fa;
+    border-left: 3px solid #dee2e6;
+}
+
+.checklist-item:hover {
+    background-color: #e9ecef;
+    border-left-color: #0d6efd;
+}
+
+.checklist-item i {
+    color: #6c757d;
+}
+
+/* Rollback complexity indicators */
+.rollback-low {
+    color: #198754;
+}
+
+.rollback-medium {
+    color: #ffc107;
+}
+
+.rollback-high {
+    color: #dc3545;
+}
+
+/* Component badges in dry-run */
+.component-badge-dry-run {
+    font-size: 0.8em;
+    margin: 0.1rem;
+    padding: 0.3rem 0.6rem;
+}
+
+/* Confidence level styling */
+.confidence-high {
+    background-color: #198754 !important;
+}
+
+.confidence-medium {
+    background-color: #ffc107 !important;
+    color: #212529 !important;
+}
+
+.confidence-low {
+    background-color: #dc3545 !important;
+}
+
+/* Animation for dry-run modal */
+.dry-run-modal .modal-content {
+    animation: slideInDown 0.4s ease-out;
+}
+
+@keyframes slideInDown {
+    from {
+        opacity: 0;
+        transform: translateY(-30px);
+    }
+    to {
+        opacity: 1;
+        transform: translateY(0);
+    }
+}
+
+/* Test button styling */
+.btn-test-config {
+    background: linear-gradient(135deg, #17a2b8 0%, #138496 100%);
+    border: none;
+    color: white;
+    transition: all 0.3s ease;
+}
+
+.btn-test-config:hover {
+    background: linear-gradient(135deg, #138496 0%, #117a8b 100%);
+    transform: translateY(-1px);
+    box-shadow: 0 4px 8px rgba(0,0,0,0.1);
+}
+
+.btn-test-config:disabled {
+    background: #6c757d;
+    transform: none;
+    box-shadow: none;
+}
+
+/* Responsive adjustments for dry-run modal */
+@media (max-width: 992px) {
+    .dry-run-modal .modal-dialog {
+        max-width: 95%;
+        margin: 1rem auto;
+    }
+    
+    .dry-run-tabs .nav-link {
+        font-size: 0.9em;
+        padding: 0.5rem 0.75rem;
+    }
+    
+    .dry-run-section {
+        padding: 0.5rem 0;
+    }
+    
+    .checklist-item {
+        font-size: 0.9em;
+        padding: 0.4rem;
+    }
+}
+
+@media (max-width: 768px) {
+    .dry-run-modal .modal-dialog {
+        max-width: 100%;
+        margin: 0.5rem;
+    }
+    
+    .dry-run-tabs {
+        flex-wrap: wrap;
+    }
+    
+    .dry-run-tabs .nav-link {
+        font-size: 0.8em;
+        padding: 0.4rem 0.6rem;
+    }
+    
+    .impact-level-badge {
+        font-size: 0.9rem;
+        padding: 0.4rem 0.8rem;
+    }
+}
+
+/* Print styles */
+@media print {
+    .restart-notification,
+    .config-actions,
+    .btn {
+        display: none !important;
+    }
+    
+    .table-warning {
+        background-color: transparent !important;
+        border-left: 3px solid #000;
+    }
+    
+    .config-icon::after {
+        content: " [" attr(title) "]";
+        font-size: 0.8em;
+    }
+    
+    .impact-assessment {
+        border: 2px solid #000 !important;
+        background-color: transparent !important;
+    }
+    
+    .critical-change-confirmation {
+        border: 3px solid #000 !important;
+        background-color: #f0f0f0 !important;
+    }
+    
+    .dry-run-modal {
+        display: none !important;
+    }
+}

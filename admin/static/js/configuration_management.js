@@ -44,9 +44,13 @@ document.addEventListener('DOMContentLoaded', function() {
     loadConfigurationCategories();
     loadConfigurationSchema();
     loadConfigurations();
+    loadRestartRequiredStatus();
     
     // Set up event listeners
     document.getElementById('includeSensitive').addEventListener('change', loadConfigurations);
+    
+    // Check restart status periodically
+    setInterval(loadRestartRequiredStatus, 30000); // Check every 30 seconds
 });
 
 /**
@@ -161,10 +165,26 @@ function displayConfigurations(configurations) {
             displayValue = displayValue.substring(0, 50) + '...';
         }
         
+        // Check if this configuration requires restart
+        const requiresRestart = schema && schema.requires_restart;
+        const isPendingRestart = window.pendingRestartConfigs && window.pendingRestartConfigs.includes(key);
+        
+        // Create status indicators
+        let statusIndicators = '';
+        if (schema && schema.is_sensitive) {
+            statusIndicators += '<i class="bi bi-lock-fill text-warning me-1" title="Sensitive Configuration"></i>';
+        }
+        if (requiresRestart) {
+            statusIndicators += '<i class="bi bi-arrow-clockwise text-info me-1" title="Requires Restart"></i>';
+        }
+        if (isPendingRestart) {
+            statusIndicators += '<span class="badge bg-warning text-dark me-1" title="Restart Required">Restart Required</span>';
+        }
+        
         row.innerHTML = `
             <td>
                 <code>${escapeHtml(key)}</code>
-                ${schema && schema.is_sensitive ? '<i class="fas fa-lock text-warning ms-1" title="Sensitive"></i>' : ''}
+                ${schema && schema.is_sensitive ? '<i class="bi bi-lock-fill text-warning ms-1" title="Sensitive"></i>' : ''}
             </td>
             <td>${escapeHtml(displayValue || 'null')}</td>
             <td>
@@ -173,18 +193,26 @@ function displayConfigurations(configurations) {
             <td>
                 <span class="badge bg-info">${schema ? schema.data_type : 'string'}</span>
             </td>
+            <td>
+                ${statusIndicators || '<span class="text-muted">-</span>'}
+            </td>
             <td class="text-muted small">${schema ? escapeHtml(schema.description) : ''}</td>
             <td>
                 <div class="btn-group btn-group-sm" role="group">
                     <button type="button" class="btn btn-outline-primary" onclick="editConfiguration('${key}')" title="Edit Configuration">
-                        <i class="fas fa-edit me-1"></i>Edit
+                        <i class="bi bi-pencil me-1"></i>Edit
                     </button>
                     <button type="button" class="btn btn-outline-info" onclick="showConfigurationHistory('${key}')" title="View Configuration History">
-                        <i class="fas fa-history me-1"></i>History
+                        <i class="bi bi-clock-history me-1"></i>History
                     </button>
                 </div>
             </td>
         `;
+        
+        // Add special styling for configurations requiring restart
+        if (isPendingRestart) {
+            row.classList.add('table-warning');
+        }
         
         tbody.appendChild(row);
     });
@@ -288,6 +316,21 @@ function editConfiguration(key) {
     input.id = 'configValue';
     container.appendChild(input);
     
+    // Add event listeners for validation and impact assessment
+    input.addEventListener('input', debounce(() => {
+        validateConfigurationValue(key, input.value);
+        assessConfigurationImpact(key, input.value);
+    }, 500));
+    
+    // Add blur event for immediate validation
+    input.addEventListener('blur', () => {
+        validateConfigurationValue(key, input.value);
+    });
+    
+    // Hide impact assessment initially
+    document.getElementById('impactAssessment').classList.add('d-none');
+    document.getElementById('criticalChangeConfirmation').classList.add('d-none');
+    
     // Show modal
     const modal = new bootstrap.Modal(document.getElementById('editConfigModal'));
     modal.show();
@@ -301,6 +344,22 @@ async function saveConfiguration() {
     const valueInput = document.getElementById('configValue');
     const reason = document.getElementById('configReason').value;
     const schema = configurationSchema[key];
+    
+    // Check for validation errors
+    const errorsDiv = document.getElementById('validationErrors');
+    if (!errorsDiv.classList.contains('d-none')) {
+        showValidationError(['Please fix validation errors before saving.']);
+        return;
+    }
+    
+    // Check for critical change confirmation
+    const criticalDiv = document.getElementById('criticalChangeConfirmation');
+    const confirmCheckbox = document.getElementById('confirmCriticalChange');
+    
+    if (!criticalDiv.classList.contains('d-none') && !confirmCheckbox.checked) {
+        showValidationError(['Please confirm that you understand the risks of this critical configuration change.']);
+        return;
+    }
     
     let value = valueInput.value;
     
@@ -361,10 +420,17 @@ async function saveConfiguration() {
             const modal = bootstrap.Modal.getInstance(document.getElementById('editConfigModal'));
             modal.hide();
             
-            // Reload configurations
+            // Reload configurations and restart status
             loadConfigurations();
+            loadRestartRequiredStatus();
             
-            showAlert(`Configuration ${key} updated successfully`, 'success');
+            // Show success message with restart warning if applicable
+            const schema = configurationSchema[key];
+            let message = `Configuration ${key} updated successfully`;
+            if (schema && schema.requires_restart) {
+                message += '. System restart required for changes to take effect.';
+            }
+            showAlert(message, schema && schema.requires_restart ? 'warning' : 'success');
         } else {
             showAlert(data.error || 'Failed to update configuration', 'danger');
         }
@@ -780,6 +846,908 @@ function showAlert(message, type = 'info') {
             alert.parentNode.removeChild(alert);
         }
     }, 5000);
+}
+
+/**
+ * Load restart required status
+ */
+async function loadRestartRequiredStatus() {
+    try {
+        const response = await fetch('/admin/api/configuration/restart-status');
+        const data = await response.json();
+        
+        if (response.ok) {
+            window.pendingRestartConfigs = data.pending_restart_configs || [];
+            updateRestartNotification(data.restart_required, data.pending_restart_configs || []);
+        }
+    } catch (error) {
+        console.error('Error loading restart status:', error);
+    }
+}
+
+/**
+ * Update restart notification display
+ */
+function updateRestartNotification(restartRequired, pendingConfigs) {
+    const notificationRow = document.getElementById('restartNotificationRow');
+    const countElement = document.getElementById('restartRequiredCount');
+    
+    if (restartRequired && pendingConfigs.length > 0) {
+        notificationRow.style.display = 'block';
+        countElement.textContent = pendingConfigs.length;
+    } else {
+        notificationRow.style.display = 'none';
+    }
+    
+    // Update configurations table if it's already loaded
+    if (currentConfigurations && Object.keys(currentConfigurations).length > 0) {
+        displayConfigurations(currentConfigurations);
+    }
+}
+
+/**
+ * Show restart required configurations modal
+ */
+async function showRestartRequiredConfigs() {
+    try {
+        const response = await fetch('/admin/api/configuration/restart-status');
+        const data = await response.json();
+        
+        if (response.ok && data.pending_restart_configs) {
+            const tbody = document.getElementById('restartRequiredTableBody');
+            tbody.innerHTML = '';
+            
+            // Get configuration details for each pending restart config
+            for (const key of data.pending_restart_configs) {
+                const schema = configurationSchema[key];
+                const value = currentConfigurations[key];
+                
+                let displayValue = value;
+                if (typeof value === 'object') {
+                    displayValue = JSON.stringify(value);
+                } else if (typeof value === 'boolean') {
+                    displayValue = value ? 'true' : 'false';
+                }
+                
+                // Truncate long values
+                if (displayValue && displayValue.length > 100) {
+                    displayValue = displayValue.substring(0, 100) + '...';
+                }
+                
+                const row = document.createElement('tr');
+                row.innerHTML = `
+                    <td>
+                        <code>${escapeHtml(key)}</code>
+                        ${schema && schema.is_sensitive ? '<i class="bi bi-lock-fill text-warning ms-1" title="Sensitive"></i>' : ''}
+                    </td>
+                    <td><code>${escapeHtml(displayValue || 'null')}</code></td>
+                    <td>
+                        <span class="badge bg-secondary">${schema ? schema.category : 'unknown'}</span>
+                    </td>
+                    <td class="text-muted small">${schema ? escapeHtml(schema.description) : ''}</td>
+                `;
+                tbody.appendChild(row);
+            }
+            
+            // Show modal
+            const modal = new bootstrap.Modal(document.getElementById('restartRequiredModal'));
+            modal.show();
+        } else {
+            showAlert('No configurations requiring restart found', 'info');
+        }
+    } catch (error) {
+        console.error('Error loading restart required configurations:', error);
+        showAlert('Error loading restart required configurations', 'danger');
+    }
+}
+
+/**
+ * Acknowledge restart required configurations
+ */
+function acknowledgeRestartRequired() {
+    // Close the modal
+    const modal = bootstrap.Modal.getInstance(document.getElementById('restartRequiredModal'));
+    modal.hide();
+    
+    // Show acknowledgment message
+    showAlert('Restart requirement acknowledged. Please restart the system when convenient to apply these changes.', 'warning');
+}
+
+/**
+ * Assess configuration impact
+ */
+async function assessConfigurationImpact(key, newValue) {
+    try {
+        // Get CSRF token
+        let csrfToken = getCSRFToken();
+        if (csrfToken && typeof csrfToken.then === 'function') {
+            csrfToken = await csrfToken;
+        }
+        
+        if (!csrfToken || typeof csrfToken !== 'string') {
+            console.error('CSRF token not available for impact assessment');
+            return;
+        }
+        
+        const response = await fetch(`/admin/api/configuration/${key}/impact-assessment`, {
+            method: 'POST',
+            headers: {
+                'Content-Type': 'application/json',
+                'X-CSRFToken': csrfToken
+            },
+            body: JSON.stringify({
+                new_value: newValue
+            })
+        });
+        
+        if (response.ok) {
+            const data = await response.json();
+            displayImpactAssessment(data);
+        } else {
+            // Hide impact assessment on error
+            document.getElementById('impactAssessment').classList.add('d-none');
+            document.getElementById('criticalChangeConfirmation').classList.add('d-none');
+        }
+    } catch (error) {
+        console.error('Error assessing configuration impact:', error);
+        // Hide impact assessment on error
+        document.getElementById('impactAssessment').classList.add('d-none');
+        document.getElementById('criticalChangeConfirmation').classList.add('d-none');
+    }
+}
+
+/**
+ * Display impact assessment results
+ */
+function displayImpactAssessment(impact) {
+    const impactDiv = document.getElementById('impactAssessment');
+    const criticalDiv = document.getElementById('criticalChangeConfirmation');
+    
+    // Show impact assessment
+    impactDiv.classList.remove('d-none');
+    
+    // Set impact level with appropriate styling
+    const impactLevelSpan = document.getElementById('impactLevel');
+    impactLevelSpan.textContent = impact.impact_level.toUpperCase();
+    impactLevelSpan.className = 'badge ms-1';
+    
+    switch (impact.impact_level.toLowerCase()) {
+        case 'low':
+            impactLevelSpan.classList.add('bg-success');
+            break;
+        case 'medium':
+            impactLevelSpan.classList.add('bg-warning', 'text-dark');
+            break;
+        case 'high':
+            impactLevelSpan.classList.add('bg-danger');
+            break;
+        case 'critical':
+            impactLevelSpan.classList.add('bg-dark');
+            break;
+        default:
+            impactLevelSpan.classList.add('bg-secondary');
+    }
+    
+    // Set restart requirement
+    const restartSpan = document.getElementById('impactRestartRequired');
+    restartSpan.textContent = impact.requires_restart ? 'YES' : 'NO';
+    restartSpan.className = 'badge ms-1';
+    restartSpan.classList.add(impact.requires_restart ? 'bg-warning' : 'bg-success');
+    if (impact.requires_restart) {
+        restartSpan.classList.add('text-dark');
+    }
+    
+    // Set affected components
+    const componentsDiv = document.getElementById('affectedComponents');
+    componentsDiv.innerHTML = '';
+    impact.affected_components.forEach(component => {
+        const badge = document.createElement('span');
+        badge.className = 'badge bg-info me-1';
+        badge.textContent = component;
+        componentsDiv.appendChild(badge);
+    });
+    
+    // Set risk factors
+    const riskFactorsSection = document.getElementById('riskFactorsSection');
+    const riskFactorsList = document.getElementById('riskFactors');
+    if (impact.risk_factors && impact.risk_factors.length > 0) {
+        riskFactorsSection.style.display = 'block';
+        riskFactorsList.innerHTML = '';
+        impact.risk_factors.forEach(risk => {
+            const li = document.createElement('li');
+            li.textContent = risk;
+            riskFactorsList.appendChild(li);
+        });
+    } else {
+        riskFactorsSection.style.display = 'none';
+    }
+    
+    // Set mitigation steps
+    const mitigationSection = document.getElementById('mitigationStepsSection');
+    const mitigationList = document.getElementById('mitigationSteps');
+    if (impact.mitigation_steps && impact.mitigation_steps.length > 0) {
+        mitigationSection.style.display = 'block';
+        mitigationList.innerHTML = '';
+        impact.mitigation_steps.forEach(step => {
+            const li = document.createElement('li');
+            li.textContent = step;
+            mitigationList.appendChild(li);
+        });
+    } else {
+        mitigationSection.style.display = 'none';
+    }
+    
+    // Set related configurations
+    const relatedSection = document.getElementById('relatedConfigsSection');
+    const relatedDiv = document.getElementById('relatedConfigs');
+    if (impact.related_configurations && impact.related_configurations.length > 0) {
+        relatedSection.style.display = 'block';
+        relatedDiv.innerHTML = '';
+        impact.related_configurations.forEach(config => {
+            const badge = document.createElement('span');
+            badge.className = 'badge bg-secondary me-1';
+            badge.textContent = config;
+            relatedDiv.appendChild(badge);
+        });
+    } else {
+        relatedSection.style.display = 'none';
+    }
+    
+    // Set estimated downtime
+    const downtimeSection = document.getElementById('estimatedDowntimeSection');
+    const downtimeSpan = document.getElementById('estimatedDowntime');
+    if (impact.estimated_downtime) {
+        downtimeSection.style.display = 'block';
+        downtimeSpan.textContent = impact.estimated_downtime;
+    } else {
+        downtimeSection.style.display = 'none';
+    }
+    
+    // Show critical change confirmation for high/critical impact
+    if (impact.impact_level.toLowerCase() === 'high' || impact.impact_level.toLowerCase() === 'critical') {
+        criticalDiv.classList.remove('d-none');
+        // Uncheck the confirmation checkbox
+        document.getElementById('confirmCriticalChange').checked = false;
+    } else {
+        criticalDiv.classList.add('d-none');
+    }
+}
+
+/**
+ * Validate configuration value
+ */
+async function validateConfigurationValue(key, value) {
+    try {
+        // Get CSRF token
+        let csrfToken = getCSRFToken();
+        if (csrfToken && typeof csrfToken.then === 'function') {
+            csrfToken = await csrfToken;
+        }
+        
+        if (!csrfToken || typeof csrfToken !== 'string') {
+            console.error('CSRF token not available for validation');
+            return;
+        }
+        
+        const response = await fetch(`/admin/api/configuration/${key}/validate`, {
+            method: 'POST',
+            headers: {
+                'Content-Type': 'application/json',
+                'X-CSRFToken': csrfToken
+            },
+            body: JSON.stringify({
+                value: value
+            })
+        });
+        
+        if (response.ok) {
+            const data = await response.json();
+            displayValidationFeedback(data);
+        } else {
+            // Clear validation feedback on error
+            clearValidationFeedback();
+        }
+    } catch (error) {
+        console.error('Error validating configuration value:', error);
+        clearValidationFeedback();
+    }
+}
+
+/**
+ * Display validation feedback
+ */
+function displayValidationFeedback(validation) {
+    const errorsDiv = document.getElementById('validationErrors');
+    const warningsDiv = document.getElementById('validationWarnings');
+    const valueInput = document.getElementById('configValue');
+    
+    // Clear previous feedback
+    errorsDiv.classList.add('d-none');
+    warningsDiv.classList.add('d-none');
+    valueInput.classList.remove('is-invalid', 'is-valid');
+    
+    // Display errors
+    if (validation.errors && validation.errors.length > 0) {
+        errorsDiv.innerHTML = '';
+        validation.errors.forEach(error => {
+            const errorDiv = document.createElement('div');
+            errorDiv.innerHTML = `<i class="bi bi-exclamation-triangle-fill me-2"></i>${escapeHtml(error)}`;
+            errorsDiv.appendChild(errorDiv);
+        });
+        errorsDiv.classList.remove('d-none');
+        valueInput.classList.add('is-invalid');
+    } else if (validation.is_valid) {
+        valueInput.classList.add('is-valid');
+    }
+    
+    // Display warnings
+    if (validation.warnings && validation.warnings.length > 0) {
+        warningsDiv.innerHTML = '';
+        validation.warnings.forEach(warning => {
+            const warningDiv = document.createElement('div');
+            warningDiv.innerHTML = `<i class="bi bi-exclamation-triangle me-2"></i>${escapeHtml(warning)}`;
+            warningsDiv.appendChild(warningDiv);
+        });
+        warningsDiv.classList.remove('d-none');
+    }
+    
+    // Display conflicts
+    if (validation.conflicts && validation.conflicts.length > 0) {
+        const conflictsDiv = document.createElement('div');
+        conflictsDiv.className = 'alert alert-warning mt-2';
+        conflictsDiv.innerHTML = '<strong><i class="bi bi-exclamation-triangle-fill me-2"></i>Configuration Conflicts:</strong>';
+        
+        const conflictsList = document.createElement('ul');
+        conflictsList.className = 'mt-2 mb-0';
+        
+        validation.conflicts.forEach(conflict => {
+            const li = document.createElement('li');
+            li.innerHTML = `<strong>${escapeHtml(conflict.conflicting_key)}:</strong> ${escapeHtml(conflict.description)} <span class="badge bg-${getSeverityColor(conflict.severity)} ms-1">${conflict.severity}</span>`;
+            conflictsList.appendChild(li);
+        });
+        
+        conflictsDiv.appendChild(conflictsList);
+        
+        // Insert after warnings or errors
+        const insertAfter = warningsDiv.classList.contains('d-none') ? errorsDiv : warningsDiv;
+        insertAfter.parentNode.insertBefore(conflictsDiv, insertAfter.nextSibling);
+    }
+    
+    // Add validation rules info
+    if (validation.validation_rules && Object.keys(validation.validation_rules).length > 0) {
+        addValidationRulesInfo(validation.validation_rules, validation.data_type);
+    }
+}
+
+/**
+ * Clear validation feedback
+ */
+function clearValidationFeedback() {
+    const errorsDiv = document.getElementById('validationErrors');
+    const warningsDiv = document.getElementById('validationWarnings');
+    const valueInput = document.getElementById('configValue');
+    
+    errorsDiv.classList.add('d-none');
+    warningsDiv.classList.add('d-none');
+    valueInput.classList.remove('is-invalid', 'is-valid');
+    
+    // Remove any conflict alerts
+    const conflictAlerts = document.querySelectorAll('.alert-warning');
+    conflictAlerts.forEach(alert => {
+        if (alert.innerHTML.includes('Configuration Conflicts:')) {
+            alert.remove();
+        }
+    });
+    
+    // Remove validation rules info
+    const rulesInfo = document.getElementById('validationRulesInfo');
+    if (rulesInfo) {
+        rulesInfo.remove();
+    }
+}
+
+/**
+ * Add validation rules information
+ */
+function addValidationRulesInfo(rules, dataType) {
+    // Remove existing rules info
+    const existingInfo = document.getElementById('validationRulesInfo');
+    if (existingInfo) {
+        existingInfo.remove();
+    }
+    
+    const rulesDiv = document.createElement('div');
+    rulesDiv.id = 'validationRulesInfo';
+    rulesDiv.className = 'alert alert-info mt-2';
+    rulesDiv.innerHTML = '<strong><i class="bi bi-info-circle me-2"></i>Validation Rules:</strong>';
+    
+    const rulesList = document.createElement('ul');
+    rulesList.className = 'mt-2 mb-0 small';
+    
+    // Add data type info
+    const typeItem = document.createElement('li');
+    typeItem.innerHTML = `<strong>Data Type:</strong> ${dataType}`;
+    rulesList.appendChild(typeItem);
+    
+    // Add specific rules
+    Object.entries(rules).forEach(([rule, value]) => {
+        const li = document.createElement('li');
+        
+        switch (rule) {
+            case 'min':
+                li.innerHTML = `<strong>Minimum Value:</strong> ${value}`;
+                break;
+            case 'max':
+                li.innerHTML = `<strong>Maximum Value:</strong> ${value}`;
+                break;
+            case 'min_length':
+                li.innerHTML = `<strong>Minimum Length:</strong> ${value} characters`;
+                break;
+            case 'max_length':
+                li.innerHTML = `<strong>Maximum Length:</strong> ${value} characters`;
+                break;
+            case 'pattern':
+                li.innerHTML = `<strong>Pattern:</strong> <code>${escapeHtml(value)}</code>`;
+                break;
+            case 'allowed_values':
+                li.innerHTML = `<strong>Allowed Values:</strong> ${Array.isArray(value) ? value.join(', ') : value}`;
+                break;
+            default:
+                li.innerHTML = `<strong>${rule}:</strong> ${value}`;
+        }
+        
+        rulesList.appendChild(li);
+    });
+    
+    rulesDiv.appendChild(rulesList);
+    
+    // Insert after the config value container
+    const container = document.getElementById('configValueContainer');
+    container.parentNode.insertBefore(rulesDiv, container.nextSibling);
+}
+
+/**
+ * Get severity color for badges
+ */
+function getSeverityColor(severity) {
+    switch (severity.toLowerCase()) {
+        case 'low':
+            return 'info';
+        case 'medium':
+            return 'warning';
+        case 'high':
+            return 'danger';
+        case 'critical':
+            return 'dark';
+        default:
+            return 'secondary';
+    }
+}
+
+/**
+ * Test configuration (dry-run)
+ */
+async function testConfiguration() {
+    const key = document.getElementById('configKey').value;
+    const valueInput = document.getElementById('configValue');
+    const schema = configurationSchema[key];
+    
+    let value = valueInput.value;
+    
+    // Convert value based on data type
+    if (schema) {
+        try {
+            switch (schema.data_type) {
+                case 'boolean':
+                    value = value === 'true';
+                    break;
+                case 'integer':
+                    value = parseInt(value);
+                    break;
+                case 'float':
+                    value = parseFloat(value);
+                    break;
+                case 'json':
+                    value = JSON.parse(value);
+                    break;
+                // string remains as is
+            }
+        } catch (error) {
+            showAlert('Invalid value format for data type: ' + schema.data_type, 'danger');
+            return;
+        }
+    }
+    
+    try {
+        // Get CSRF token
+        let csrfToken = getCSRFToken();
+        if (csrfToken && typeof csrfToken.then === 'function') {
+            csrfToken = await csrfToken;
+        }
+        
+        if (!csrfToken || typeof csrfToken !== 'string') {
+            showAlert('CSRF token not available', 'danger');
+            return;
+        }
+        
+        // Show loading state
+        const testButton = document.querySelector('button[onclick="testConfiguration()"]');
+        const originalText = testButton.innerHTML;
+        testButton.innerHTML = '<i class="bi bi-hourglass-split me-1"></i>Testing...';
+        testButton.disabled = true;
+        
+        const response = await fetch(`/admin/api/configuration/${key}/dry-run`, {
+            method: 'POST',
+            headers: {
+                'Content-Type': 'application/json',
+                'X-CSRFToken': csrfToken
+            },
+            body: JSON.stringify({
+                value: value
+            })
+        });
+        
+        // Restore button state
+        testButton.innerHTML = originalText;
+        testButton.disabled = false;
+        
+        if (response.ok) {
+            const data = await response.json();
+            displayDryRunResults(data);
+        } else {
+            const errorData = await response.json();
+            showAlert(errorData.error || 'Failed to test configuration', 'danger');
+        }
+    } catch (error) {
+        console.error('Error testing configuration:', error);
+        showAlert('Error testing configuration', 'danger');
+        
+        // Restore button state
+        const testButton = document.querySelector('button[onclick="testConfiguration()"]');
+        testButton.innerHTML = '<i class="bi bi-play-circle me-1"></i>Test Configuration';
+        testButton.disabled = false;
+    }
+}
+
+/**
+ * Display dry-run results
+ */
+function displayDryRunResults(results) {
+    // Set modal title with configuration key
+    document.getElementById('dryRunModalLabel').innerHTML = `
+        <i class="bi bi-play-circle-fill text-info me-2"></i>
+        Configuration Test Results: <code>${results.key}</code>
+    `;
+    
+    // Display overall recommendation
+    displayDryRunRecommendation(results.recommendation);
+    
+    // Display validation results
+    displayDryRunValidation(results.validation);
+    
+    // Display impact analysis
+    displayDryRunImpact(results.impact);
+    
+    // Display conflicts
+    displayDryRunConflicts(results.conflicts);
+    
+    // Display rollback information
+    displayDryRunRollback(results.rollback);
+    
+    // Display checklists
+    displayDryRunChecklist(results.change_management);
+    
+    // Show/hide proceed button based on recommendation
+    const proceedButton = document.getElementById('proceedWithChange');
+    if (results.recommendation.proceed) {
+        proceedButton.style.display = 'inline-block';
+        proceedButton.setAttribute('data-config-key', results.key);
+        proceedButton.setAttribute('data-config-value', JSON.stringify(results.new_value));
+    } else {
+        proceedButton.style.display = 'none';
+    }
+    
+    // Show the modal
+    const modal = new bootstrap.Modal(document.getElementById('dryRunModal'));
+    modal.show();
+}
+
+/**
+ * Display dry-run recommendation
+ */
+function displayDryRunRecommendation(recommendation) {
+    const recommendationDiv = document.getElementById('dryRunRecommendation');
+    const iconElement = document.getElementById('recommendationIcon');
+    const titleElement = document.getElementById('recommendationTitle');
+    const reasonElement = document.getElementById('recommendationReason');
+    const confidenceElement = document.getElementById('confidenceLevel');
+    
+    // Set alert class and icon based on recommendation
+    recommendationDiv.className = 'alert mb-3';
+    if (recommendation.proceed) {
+        recommendationDiv.classList.add('alert-success');
+        iconElement.className = 'bi bi-check-circle-fill text-success me-2';
+        titleElement.textContent = 'Recommended: Proceed with Change';
+    } else {
+        recommendationDiv.classList.add('alert-danger');
+        iconElement.className = 'bi bi-x-circle-fill text-danger me-2';
+        titleElement.textContent = 'Not Recommended: Review Required';
+    }
+    
+    reasonElement.textContent = recommendation.reason;
+    
+    // Set confidence level
+    confidenceElement.textContent = `${recommendation.confidence.toUpperCase()} CONFIDENCE`;
+    confidenceElement.className = 'badge';
+    switch (recommendation.confidence.toLowerCase()) {
+        case 'high':
+            confidenceElement.classList.add('bg-success');
+            break;
+        case 'medium':
+            confidenceElement.classList.add('bg-warning', 'text-dark');
+            break;
+        case 'low':
+            confidenceElement.classList.add('bg-danger');
+            break;
+        default:
+            confidenceElement.classList.add('bg-secondary');
+    }
+}
+
+/**
+ * Display dry-run validation results
+ */
+function displayDryRunValidation(validation) {
+    const validationDiv = document.getElementById('dryRunValidation');
+    
+    let html = '<div class="row">';
+    
+    // Validation status
+    html += '<div class="col-md-6">';
+    html += '<h6><i class="bi bi-check-circle me-2"></i>Validation Status</h6>';
+    if (validation.is_valid) {
+        html += '<div class="alert alert-success"><i class="bi bi-check-circle-fill me-2"></i>Valid</div>';
+    } else {
+        html += '<div class="alert alert-danger"><i class="bi bi-x-circle-fill me-2"></i>Invalid</div>';
+    }
+    html += '</div>';
+    
+    // Errors and warnings
+    html += '<div class="col-md-6">';
+    html += '<h6><i class="bi bi-exclamation-triangle me-2"></i>Issues</h6>';
+    
+    if (validation.errors && validation.errors.length > 0) {
+        html += '<div class="alert alert-danger"><strong>Errors:</strong><ul class="mb-0 mt-1">';
+        validation.errors.forEach(error => {
+            html += `<li>${escapeHtml(error)}</li>`;
+        });
+        html += '</ul></div>';
+    }
+    
+    if (validation.warnings && validation.warnings.length > 0) {
+        html += '<div class="alert alert-warning"><strong>Warnings:</strong><ul class="mb-0 mt-1">';
+        validation.warnings.forEach(warning => {
+            html += `<li>${escapeHtml(warning)}</li>`;
+        });
+        html += '</ul></div>';
+    }
+    
+    if ((!validation.errors || validation.errors.length === 0) && 
+        (!validation.warnings || validation.warnings.length === 0)) {
+        html += '<div class="alert alert-info">No issues detected</div>';
+    }
+    
+    html += '</div></div>';
+    
+    validationDiv.innerHTML = html;
+}
+
+/**
+ * Display dry-run impact analysis
+ */
+function displayDryRunImpact(impact) {
+    const impactDiv = document.getElementById('dryRunImpact');
+    
+    let html = '<div class="row">';
+    
+    // Impact level and restart requirement
+    html += '<div class="col-md-6">';
+    html += '<h6><i class="bi bi-speedometer2 me-2"></i>Impact Level</h6>';
+    html += `<span class="badge bg-${getImpactLevelColor(impact.level)} fs-6">${impact.level.toUpperCase()}</span>`;
+    
+    if (impact.requires_restart) {
+        html += '<div class="mt-2"><span class="badge bg-warning text-dark"><i class="bi bi-arrow-clockwise me-1"></i>Restart Required</span></div>';
+    }
+    
+    if (impact.estimated_downtime) {
+        html += `<div class="mt-2"><strong>Estimated Downtime:</strong> ${impact.estimated_downtime}</div>`;
+    }
+    html += '</div>';
+    
+    // Affected components
+    html += '<div class="col-md-6">';
+    html += '<h6><i class="bi bi-diagram-3 me-2"></i>Affected Components</h6>';
+    impact.affected_components.forEach(component => {
+        html += `<span class="badge bg-info me-1">${component}</span>`;
+    });
+    html += '</div>';
+    
+    html += '</div>';
+    
+    // Risk factors
+    if (impact.risk_factors && impact.risk_factors.length > 0) {
+        html += '<div class="mt-3">';
+        html += '<h6><i class="bi bi-shield-exclamation me-2"></i>Risk Factors</h6>';
+        html += '<ul>';
+        impact.risk_factors.forEach(risk => {
+            html += `<li>${escapeHtml(risk)}</li>`;
+        });
+        html += '</ul></div>';
+    }
+    
+    // Mitigation steps
+    if (impact.mitigation_steps && impact.mitigation_steps.length > 0) {
+        html += '<div class="mt-3">';
+        html += '<h6><i class="bi bi-shield-check me-2"></i>Mitigation Steps</h6>';
+        html += '<ul>';
+        impact.mitigation_steps.forEach(step => {
+            html += `<li>${escapeHtml(step)}</li>`;
+        });
+        html += '</ul></div>';
+    }
+    
+    impactDiv.innerHTML = html;
+}
+
+/**
+ * Display dry-run conflicts
+ */
+function displayDryRunConflicts(conflicts) {
+    const conflictsDiv = document.getElementById('dryRunConflicts');
+    
+    if (!conflicts || conflicts.length === 0) {
+        conflictsDiv.innerHTML = '<div class="alert alert-success"><i class="bi bi-check-circle-fill me-2"></i>No configuration conflicts detected</div>';
+        return;
+    }
+    
+    let html = '<div class="alert alert-warning"><i class="bi bi-exclamation-triangle-fill me-2"></i><strong>Configuration conflicts detected:</strong></div>';
+    
+    conflicts.forEach(conflict => {
+        html += '<div class="card mb-2">';
+        html += '<div class="card-body">';
+        html += `<h6 class="card-title">${conflict.conflicting_key} <span class="badge bg-${getSeverityColor(conflict.severity)}">${conflict.severity}</span></h6>`;
+        html += `<p class="card-text">${escapeHtml(conflict.description)}</p>`;
+        html += `<small class="text-muted">Conflict Type: ${conflict.conflict_type}</small>`;
+        html += '</div></div>';
+    });
+    
+    conflictsDiv.innerHTML = html;
+}
+
+/**
+ * Display dry-run rollback information
+ */
+function displayDryRunRollback(rollback) {
+    const rollbackDiv = document.getElementById('dryRunRollback');
+    
+    let html = '<div class="row">';
+    
+    // Rollback complexity
+    html += '<div class="col-md-6">';
+    html += '<h6><i class="bi bi-speedometer2 me-2"></i>Rollback Complexity</h6>';
+    html += `<span class="badge bg-${getRollbackComplexityColor(rollback.complexity)} fs-6">${rollback.complexity.toUpperCase()}</span>`;
+    html += `<div class="mt-2"><strong>Estimated Time:</strong> ${rollback.estimated_time}</div>`;
+    html += '</div>';
+    
+    // Rollback steps
+    html += '<div class="col-md-6">';
+    html += '<h6><i class="bi bi-list-ol me-2"></i>Rollback Steps</h6>';
+    html += '<ol>';
+    rollback.steps.forEach(step => {
+        html += `<li>${escapeHtml(step)}</li>`;
+    });
+    html += '</ol></div>';
+    
+    html += '</div>';
+    
+    rollbackDiv.innerHTML = html;
+}
+
+/**
+ * Display dry-run checklist
+ */
+function displayDryRunChecklist(changeManagement) {
+    const checklistDiv = document.getElementById('dryRunChecklist');
+    
+    let html = '<div class="row">';
+    
+    // Pre-change checklist
+    html += '<div class="col-md-6">';
+    html += '<h6><i class="bi bi-list-check me-2"></i>Pre-Change Checklist</h6>';
+    html += '<div class="list-group">';
+    changeManagement.pre_change_checklist.forEach(item => {
+        html += `<div class="list-group-item"><i class="bi bi-square me-2"></i>${escapeHtml(item)}</div>`;
+    });
+    html += '</div></div>';
+    
+    // Post-change verification
+    html += '<div class="col-md-6">';
+    html += '<h6><i class="bi bi-check2-square me-2"></i>Post-Change Verification</h6>';
+    html += '<div class="list-group">';
+    changeManagement.post_change_verification.forEach(item => {
+        html += `<div class="list-group-item"><i class="bi bi-square me-2"></i>${escapeHtml(item)}</div>`;
+    });
+    html += '</div></div>';
+    
+    html += '</div>';
+    
+    // Recommended timing
+    html += '<div class="mt-3">';
+    html += '<div class="alert alert-info">';
+    html += `<strong><i class="bi bi-clock me-2"></i>Recommended Timing:</strong> ${changeManagement.recommended_timing}`;
+    html += '</div></div>';
+    
+    checklistDiv.innerHTML = html;
+}
+
+/**
+ * Proceed with configuration change after dry-run
+ */
+function proceedWithConfigurationChange() {
+    const proceedButton = document.getElementById('proceedWithChange');
+    const configKey = proceedButton.getAttribute('data-config-key');
+    const configValue = JSON.parse(proceedButton.getAttribute('data-config-value'));
+    
+    // Close dry-run modal
+    const dryRunModal = bootstrap.Modal.getInstance(document.getElementById('dryRunModal'));
+    dryRunModal.hide();
+    
+    // Set the value in the edit modal and save
+    document.getElementById('configValue').value = typeof configValue === 'object' ? JSON.stringify(configValue, null, 2) : configValue;
+    document.getElementById('configReason').value = 'Applied after successful dry-run test';
+    
+    // Save the configuration
+    saveConfiguration();
+}
+
+/**
+ * Get impact level color
+ */
+function getImpactLevelColor(level) {
+    switch (level.toLowerCase()) {
+        case 'low': return 'success';
+        case 'medium': return 'warning';
+        case 'high': return 'danger';
+        case 'critical': return 'dark';
+        default: return 'secondary';
+    }
+}
+
+/**
+ * Get rollback complexity color
+ */
+function getRollbackComplexityColor(complexity) {
+    switch (complexity.toLowerCase()) {
+        case 'low': return 'success';
+        case 'medium': return 'warning';
+        case 'high': return 'danger';
+        default: return 'secondary';
+    }
+}
+
+/**
+ * Debounce function to limit API calls
+ */
+function debounce(func, wait) {
+    let timeout;
+    return function executedFunction(...args) {
+        const later = () => {
+            clearTimeout(timeout);
+            func(...args);
+        };
+        clearTimeout(timeout);
+        timeout = setTimeout(later, wait);
+    };
 }
 
 /**

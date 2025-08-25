@@ -84,6 +84,25 @@ class AlertThresholds:
     queue_backup_threshold: int = 100  # jobs in queue
     ai_service_timeout: int = 30  # seconds
     performance_degradation_threshold: float = 2.0  # 2x normal time
+    
+    @classmethod
+    def from_configuration_service(cls, config_service):
+        """Create AlertThresholds from configuration service"""
+        if not config_service:
+            return cls()
+        
+        try:
+            return cls(
+                job_failure_rate=config_service.get_config('alert_job_failure_rate_threshold', 0.1),
+                repeated_failure_count=config_service.get_config('alert_repeated_failure_count_threshold', 3),
+                resource_usage_threshold=config_service.get_config('alert_resource_usage_threshold', 0.9),
+                queue_backup_threshold=config_service.get_config('alert_queue_backup_threshold', 100),
+                ai_service_timeout=config_service.get_config('alert_ai_service_timeout_threshold', 30),
+                performance_degradation_threshold=config_service.get_config('alert_performance_degradation_threshold', 2.0)
+            )
+        except Exception as e:
+            logger.warning(f"Error loading thresholds from configuration: {e}")
+            return cls()
 
 @dataclass
 class NotificationConfig:
@@ -95,9 +114,10 @@ class NotificationConfig:
 class AlertManager:
     """Comprehensive alert management system for caption generation"""
     
-    def __init__(self, db_manager: DatabaseManager, config: Config):
+    def __init__(self, db_manager: DatabaseManager, config: Config, configuration_service=None):
         self.db_manager = db_manager
         self.config = config
+        self.configuration_service = configuration_service
         
         # Alert storage
         self.active_alerts: Dict[str, Alert] = {}
@@ -105,8 +125,11 @@ class AlertManager:
         self._lock = Lock()
         
         # Alert configuration
-        self.thresholds = AlertThresholds()
+        self.thresholds = AlertThresholds.from_configuration_service(self.configuration_service)
         self.notification_configs: Dict[NotificationChannel, NotificationConfig] = {}
+        
+        # Configuration adapter for dynamic updates
+        self._config_adapter = None
         
         # Alert handlers and tracking
         self.alert_handlers: Dict[AlertType, List[Callable]] = defaultdict(list)
@@ -121,6 +144,10 @@ class AlertManager:
         # Initialize default configurations
         self._initialize_default_configs()
         
+        # Initialize configuration integration if service is available
+        if self.configuration_service:
+            self._initialize_configuration_integration()
+        
         logger.info("AlertManager initialized for caption generation system")
     
     def _initialize_default_configs(self):
@@ -128,7 +155,7 @@ class AlertManager:
         # Email notifications
         self.notification_configs[NotificationChannel.EMAIL] = NotificationConfig(
             channel=NotificationChannel.EMAIL,
-            enabled=True,
+            enabled=self.get_notification_config_from_service('alert_email_enabled', True),
             config={
                 'smtp_server': getattr(self.config, 'SMTP_SERVER', 'localhost'),
                 'smtp_port': getattr(self.config, 'SMTP_PORT', 587),
@@ -142,13 +169,14 @@ class AlertManager:
         # In-app notifications
         self.notification_configs[NotificationChannel.IN_APP] = NotificationConfig(
             channel=NotificationChannel.IN_APP,
-            enabled=True
+            enabled=self.get_notification_config_from_service('alert_in_app_enabled', True)
         )
         
         # Webhook notifications
         self.notification_configs[NotificationChannel.WEBHOOK] = NotificationConfig(
             channel=NotificationChannel.WEBHOOK,
-            enabled=getattr(self.config, 'WEBHOOK_ALERTS_ENABLED', False),
+            enabled=self.get_notification_config_from_service('alert_webhook_enabled', 
+                                                            getattr(self.config, 'WEBHOOK_ALERTS_ENABLED', False)),
             config={
                 'webhook_url': getattr(self.config, 'ALERT_WEBHOOK_URL', ''),
                 'webhook_secret': getattr(self.config, 'ALERT_WEBHOOK_SECRET', '')
@@ -160,6 +188,103 @@ class AlertManager:
             channel=NotificationChannel.LOG,
             enabled=True
         )
+    
+    def _initialize_configuration_integration(self):
+        """Initialize configuration service integration"""
+        try:
+            from alert_configuration_adapter import AlertConfigurationAdapter
+            from configuration_event_bus import ConfigurationEventBus
+            
+            # Create event bus if not provided
+            event_bus = getattr(self.configuration_service, 'event_bus', None)
+            
+            # Create configuration adapter
+            self._config_adapter = AlertConfigurationAdapter(
+                alert_manager=self,
+                config_service=self.configuration_service,
+                event_bus=event_bus
+            )
+            
+            logger.info("Alert configuration integration initialized")
+            
+        except ImportError as e:
+            logger.warning(f"Alert configuration integration not available: {e}")
+        except Exception as e:
+            logger.error(f"Error initializing alert configuration integration: {e}")
+    
+    def get_threshold_from_config(self, threshold_key: str, default_value: Any) -> Any:
+        """
+        Get threshold value from configuration service with fallback
+        
+        Args:
+            threshold_key: Configuration key for the threshold
+            default_value: Default value if configuration not available
+            
+        Returns:
+            Threshold value from configuration or default
+        """
+        if not self.configuration_service:
+            return default_value
+        
+        try:
+            return self.configuration_service.get_config(threshold_key, default_value)
+        except Exception as e:
+            logger.warning(f"Error getting threshold {threshold_key} from configuration: {e}")
+            return default_value
+    
+    def get_notification_config_from_service(self, config_key: str, default_value: Any) -> Any:
+        """
+        Get notification configuration from configuration service
+        
+        Args:
+            config_key: Configuration key
+            default_value: Default value if configuration not available
+            
+        Returns:
+            Configuration value or default
+        """
+        if not self.configuration_service:
+            return default_value
+        
+        try:
+            return self.configuration_service.get_config(config_key, default_value)
+        except Exception as e:
+            logger.warning(f"Error getting notification config {config_key}: {e}")
+            return default_value
+    
+    def update_thresholds_from_configuration(self) -> bool:
+        """
+        Update alert thresholds from configuration service
+        
+        Returns:
+            True if update was successful
+        """
+        if not self._config_adapter:
+            logger.warning("Configuration adapter not available")
+            return False
+        
+        try:
+            return self._config_adapter.update_alert_thresholds()
+        except Exception as e:
+            logger.error(f"Error updating thresholds from configuration: {e}")
+            return False
+    
+    def update_notification_channels_from_configuration(self) -> bool:
+        """
+        Update notification channels from configuration service
+        
+        Returns:
+            True if update was successful
+        """
+        if not self._config_adapter:
+            logger.warning("Configuration adapter not available")
+            return False
+        
+        try:
+            return self._config_adapter.update_notification_channels()
+        except Exception as e:
+            logger.error(f"Error updating notification channels from configuration: {e}")
+            return False
     
     def register_alert_handler(self, alert_type: AlertType, handler: Callable[[Alert], None]):
         """Register a handler for specific alert types"""
@@ -598,6 +723,19 @@ Please check the admin dashboard for more details and to acknowledge this alert.
         except Exception as e:
             logger.error(f"Error exporting alerts: {e}")
             return [] if format != 'json' else '[]'
+    
+    def cleanup(self):
+        """Cleanup alert manager resources"""
+        try:
+            # Cleanup configuration adapter
+            if self._config_adapter:
+                self._config_adapter.cleanup()
+                self._config_adapter = None
+            
+            logger.info("AlertManager cleanup completed")
+            
+        except Exception as e:
+            logger.error(f"Error during AlertManager cleanup: {e}")
 
 # Convenience functions for common alert scenarios
 def alert_job_failure(alert_manager: AlertManager, job_id: str, user_id: int, error: str):

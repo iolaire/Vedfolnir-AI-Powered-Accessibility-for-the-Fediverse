@@ -4,28 +4,46 @@
 from asyncio import gather, sleep, Semaphore
 from logging import getLogger
 from json import dumps
-from typing import List, Dict, Any, Tuple
+from typing import List, Dict, Any, Tuple, Optional
 from datetime import datetime
 from config import Config
 from database import DatabaseManager
 from activitypub_client import ActivityPubClient
 from models import ProcessingStatus, Image
 from security.core.security_utils import sanitize_for_log
+from feature_flag_service import FeatureFlagService
+from feature_flag_decorators import FeatureFlagMiddleware
 
 logger = getLogger(__name__)
 
 class BatchUpdateService:
     """Service for batch updating approved captions to ActivityPub"""
     
-    def __init__(self, config: Config):
+    def __init__(self, config: Config, feature_service: Optional[FeatureFlagService] = None):
         self.config = config
         self.db = DatabaseManager(config)
         self.batch_size = getattr(config, 'batch_size', 5)  # Default batch size of 5
         self.max_concurrent_batches = getattr(config, 'max_concurrent_batches', 2)  # Default max concurrent batches
         self.verification_delay = getattr(config, 'verification_delay', 2)  # Delay before verification in seconds
+        
+        # Feature flag support
+        self.feature_service = feature_service
+        self.feature_middleware = FeatureFlagMiddleware(feature_service) if feature_service else None
     
     async def batch_update_captions(self, limit: int = 50) -> dict:
         """Update approved captions in batches to reduce API calls"""
+        # Check if batch processing is enabled
+        if self.feature_middleware and not self.feature_middleware.enforce_batch_processing("batch caption updates"):
+            return {
+                'processed': 0,
+                'successful': 0,
+                'failed': 0,
+                'verified': 0,
+                'rollbacks': 0,
+                'errors': ['Batch processing is currently disabled'],
+                'feature_disabled': True
+            }
+        
         stats = {
             'processed': 0,
             'successful': 0,

@@ -64,7 +64,7 @@ class FlaskRedisSessionInterface(SessionInterface):
     """Flask session interface using Redis as backend storage"""
     
     def __init__(self, redis_client: redis.Redis, key_prefix: str = 'vedfolnir:session:', 
-                 session_timeout: int = 7200):
+                 session_timeout: int = 7200, config_service=None):
         """
         Initialize Redis session interface
         
@@ -72,11 +72,47 @@ class FlaskRedisSessionInterface(SessionInterface):
             redis_client: Redis client instance
             key_prefix: Prefix for Redis keys
             session_timeout: Session timeout in seconds (default: 2 hours)
+            config_service: Configuration service for dynamic timeout (optional)
         """
         self.redis = redis_client
         self.key_prefix = key_prefix
-        self.session_timeout = session_timeout
+        self._default_session_timeout = session_timeout
+        self.config_service = config_service
         
+        # Initialize session timeout from configuration or use default
+        self.session_timeout = self._get_configured_session_timeout()
+    
+    def _get_configured_session_timeout(self) -> int:
+        """
+        Get session timeout from configuration service or use default
+        
+        Returns:
+            Session timeout in seconds
+        """
+        if self.config_service:
+            try:
+                # Get timeout in minutes from configuration and convert to seconds
+                timeout_minutes = self.config_service.get_config('session_timeout_minutes', 120)
+                if timeout_minutes is None:
+                    return self._default_session_timeout
+                return int(timeout_minutes) * 60
+            except Exception as e:
+                logger.warning(f"Failed to get session timeout from configuration: {e}")
+                return self._default_session_timeout
+        return self._default_session_timeout
+    
+    def update_session_timeout_from_config(self):
+        """
+        Update session timeout from configuration service
+        
+        This method can be called when configuration changes to update the timeout
+        """
+        new_timeout = self._get_configured_session_timeout()
+        if new_timeout != self.session_timeout:
+            old_timeout = self.session_timeout
+            self.session_timeout = new_timeout
+            logger.info(f"Updated Flask session interface timeout from {old_timeout} to {new_timeout} seconds")
+    
     def _generate_sid(self) -> str:
         """Generate a secure session ID"""
         return str(uuid.uuid4())
@@ -135,7 +171,9 @@ class FlaskRedisSessionInterface(SessionInterface):
                 if last_activity_str:
                     try:
                         last_activity = datetime.fromisoformat(last_activity_str.replace('Z', '+00:00'))
-                        if datetime.now(timezone.utc) - last_activity > timedelta(seconds=self.session_timeout):
+                        # Use current configured timeout for expiration check
+                        current_timeout = self._get_configured_session_timeout()
+                        if datetime.now(timezone.utc) - last_activity > timedelta(seconds=current_timeout):
                             # Session expired, delete it
                             self.redis.delete(redis_key)
                             logger.debug(f"Session {sid} expired, creating new session")
@@ -227,8 +265,11 @@ class FlaskRedisSessionInterface(SessionInterface):
                 
                 logger.info(f"Saving session {session.sid} with data: {session_data}")
                 
+                # Get current configured timeout (in case it changed)
+                current_timeout = self._get_configured_session_timeout()
+                
                 # Set with expiration
-                self.redis.setex(redis_key, self.session_timeout, session_str)
+                self.redis.setex(redis_key, current_timeout, session_str)
                 
                 # Mark session as no longer new or modified
                 session.new = False
@@ -250,7 +291,9 @@ class FlaskRedisSessionInterface(SessionInterface):
         if hasattr(session, 'sid') and session.sid:
             cookie_exp = None
             if getattr(session, 'permanent', False):
-                cookie_exp = datetime.now(timezone.utc) + timedelta(seconds=self.session_timeout)
+                # Use current configured timeout for cookie expiration
+                current_timeout = self._get_configured_session_timeout()
+                cookie_exp = datetime.now(timezone.utc) + timedelta(seconds=current_timeout)
             
             cookie_name = getattr(app, 'session_cookie_name', app.config.get('SESSION_COOKIE_NAME', 'session'))
             response.set_cookie(

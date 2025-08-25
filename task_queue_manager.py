@@ -19,16 +19,45 @@ from sqlalchemy import and_, or_
 from database import DatabaseManager
 from models import CaptionGenerationTask, TaskStatus, User, UserRole, PlatformConnection, JobPriority
 from security.core.security_utils import sanitize_for_log
+from feature_flag_service import FeatureFlagService
+from feature_flag_decorators import FeatureFlagMiddleware
 
 logger = logging.getLogger(__name__)
 
 class TaskQueueManager:
     """Manages caption generation task queue with single-task-per-user enforcement"""
     
-    def __init__(self, db_manager: DatabaseManager, max_concurrent_tasks: int = 3):
+    def __init__(self, db_manager: DatabaseManager, max_concurrent_tasks: int = 3, 
+                 config_service: Optional['ConfigurationService'] = None,
+                 feature_service: Optional[FeatureFlagService] = None):
+        """
+        Initialize TaskQueueManager
+        
+        Args:
+            db_manager: Database manager instance
+            max_concurrent_tasks: Maximum concurrent tasks (used as fallback if no config service)
+            config_service: Optional configuration service for dynamic configuration
+            feature_service: Optional feature flag service for feature enforcement
+        """
         self.db_manager = db_manager
-        self.max_concurrent_tasks = max_concurrent_tasks
+        self.config_service = config_service
+        self.feature_service = feature_service
         self._lock = threading.Lock()
+        
+        # Initialize feature flag middleware
+        self.feature_middleware = FeatureFlagMiddleware(feature_service) if feature_service else None
+        
+        # Initialize configuration values
+        if self.config_service:
+            # Use configuration service for dynamic values
+            self.max_concurrent_tasks = self.config_service.get_config('max_concurrent_jobs', max_concurrent_tasks)
+            self.default_job_timeout = self.config_service.get_config('default_job_timeout', 3600)
+            self.queue_size_limit = self.config_service.get_config('queue_size_limit', 100)
+        else:
+            # Use static values as fallback
+            self.max_concurrent_tasks = max_concurrent_tasks
+            self.default_job_timeout = 3600  # 1 hour default
+            self.queue_size_limit = 100  # Default queue size limit
         
     def enqueue_task(self, task: CaptionGenerationTask, priority_override: Optional[JobPriority] = None) -> str:
         """
@@ -69,6 +98,15 @@ class TaskQueueManager:
                 
                 if existing_task:
                     raise ValueError(f"User {task.user_id} already has an active task: {existing_task.id}")
+                
+                # Check queue size limit
+                if hasattr(self, 'queue_size_limit') and self.queue_size_limit:
+                    queued_count = session.query(CaptionGenerationTask).filter_by(
+                        status=TaskStatus.QUEUED
+                    ).count()
+                    
+                    if queued_count >= self.queue_size_limit:
+                        raise ValueError(f"Queue size limit reached ({queued_count}/{self.queue_size_limit}). Cannot enqueue new task.")
                 
                 # Add the task to the database
                 session.add(task)
@@ -693,6 +731,102 @@ class TaskQueueManager:
             finally:
                 session.close()
     
+    def should_auto_retry_task(self, task_id: str, error_type: str = None) -> bool:
+        """
+        Check if a task should be automatically retried based on feature flags
+        
+        Args:
+            task_id: The task ID to check
+            error_type: Optional error type for retry decision
+            
+        Returns:
+            bool: True if task should be retried
+        """
+        # Check if auto-retry is enabled
+        if self.feature_middleware and not self.feature_middleware.enforce_auto_retry("task auto-retry"):
+            logger.info(f"Auto-retry disabled, not retrying task {sanitize_for_log(task_id)}")
+            return False
+        
+        # Additional retry logic could go here
+        # For example, checking retry count, error type, etc.
+        
+        session = self.db_manager.get_session()
+        try:
+            task = session.query(CaptionGenerationTask).filter_by(id=task_id).first()
+            if not task:
+                return False
+            
+            # Check if task has exceeded retry limit
+            retry_count = getattr(task, 'retry_count', 0)
+            max_retries = 3  # Could be configurable
+            
+            if retry_count >= max_retries:
+                logger.info(f"Task {sanitize_for_log(task_id)} has exceeded max retries ({retry_count}/{max_retries})")
+                return False
+            
+            # Check error type for retry eligibility
+            retryable_errors = ['network_error', 'timeout', 'rate_limit', 'temporary_failure']
+            if error_type and error_type not in retryable_errors:
+                logger.info(f"Task {sanitize_for_log(task_id)} has non-retryable error type: {error_type}")
+                return False
+            
+            logger.info(f"Task {sanitize_for_log(task_id)} is eligible for auto-retry (attempt {retry_count + 1}/{max_retries})")
+            return True
+            
+        except Exception as e:
+            logger.error(f"Error checking auto-retry eligibility: {sanitize_for_log(str(e))}")
+            return False
+        finally:
+            session.close()
+    
+    def retry_failed_task(self, task_id: str, delay_seconds: int = 60) -> bool:
+        """
+        Retry a failed task if auto-retry is enabled
+        
+        Args:
+            task_id: The task ID to retry
+            delay_seconds: Delay before retry in seconds
+            
+        Returns:
+            bool: True if task was queued for retry
+        """
+        if not self.should_auto_retry_task(task_id):
+            return False
+        
+        session = self.db_manager.get_session()
+        try:
+            task = session.query(CaptionGenerationTask).filter_by(id=task_id).first()
+            if not task:
+                logger.warning(f"Task {sanitize_for_log(task_id)} not found for retry")
+                return False
+            
+            # Reset task for retry
+            task.status = TaskStatus.QUEUED
+            task.started_at = None
+            task.completed_at = None
+            task.error_message = None
+            
+            # Increment retry count
+            if not hasattr(task, 'retry_count') or task.retry_count is None:
+                task.retry_count = 0
+            task.retry_count += 1
+            
+            # Schedule retry with delay (in a real implementation, you might use a job scheduler)
+            from datetime import datetime, timezone, timedelta
+            task.scheduled_at = datetime.now(timezone.utc) + timedelta(seconds=delay_seconds)
+            
+            session.commit()
+            
+            logger.info(f"Queued task {sanitize_for_log(task_id)} for retry (attempt {task.retry_count})")
+            return True
+            
+        except Exception as e:
+            session.rollback()
+            logger.error(f"Error retrying task: {sanitize_for_log(str(e))}")
+            return False
+        finally:
+            session.close()
+    
     def set_task_priority(self, task_id: str, admin_user_id: int, priority: JobPriority) -> bool:
         """
         Set the priority of a task (admin override)
@@ -891,5 +1025,186 @@ class TaskQueueManager:
         except SQLAlchemyError as e:
             logger.error(f"Database error getting queue statistics: {sanitize_for_log(str(e))}")
             return {}
+        finally:
+            session.close()
+    
+    # Configuration Management Methods
+    
+    def update_max_concurrent_tasks(self, new_value: int) -> bool:
+        """
+        Update maximum concurrent tasks limit
+        
+        Args:
+            new_value: New maximum concurrent tasks value
+            
+        Returns:
+            True if update was successful
+        """
+        try:
+            if not isinstance(new_value, int) or new_value < 1:
+                logger.error(f"Invalid max_concurrent_tasks value: {new_value}. Must be positive integer.")
+                return False
+            
+            with self._lock:
+                old_value = self.max_concurrent_tasks
+                self.max_concurrent_tasks = new_value
+                logger.info(f"Updated max_concurrent_tasks from {old_value} to {new_value}")
+                return True
+                
+        except Exception as e:
+            logger.error(f"Error updating max_concurrent_tasks: {str(e)}")
+            return False
+    
+    def update_default_job_timeout(self, new_value: int) -> bool:
+        """
+        Update default job timeout
+        
+        Args:
+            new_value: New default job timeout in seconds
+            
+        Returns:
+            True if update was successful
+        """
+        try:
+            if not isinstance(new_value, (int, float)) or new_value <= 0:
+                logger.error(f"Invalid default_job_timeout value: {new_value}. Must be positive number.")
+                return False
+            
+            with self._lock:
+                old_value = getattr(self, 'default_job_timeout', None)
+                self.default_job_timeout = new_value
+                logger.info(f"Updated default_job_timeout from {old_value} to {new_value}")
+                return True
+                
+        except Exception as e:
+            logger.error(f"Error updating default_job_timeout: {str(e)}")
+            return False
+    
+    def update_queue_size_limit(self, new_value: int) -> bool:
+        """
+        Update queue size limit
+        
+        Args:
+            new_value: New queue size limit
+            
+        Returns:
+            True if update was successful
+        """
+        try:
+            if not isinstance(new_value, int) or new_value < 1:
+                logger.error(f"Invalid queue_size_limit value: {new_value}. Must be positive integer.")
+                return False
+            
+            with self._lock:
+                old_value = getattr(self, 'queue_size_limit', None)
+                self.queue_size_limit = new_value
+                logger.info(f"Updated queue_size_limit from {old_value} to {new_value}")
+                return True
+                
+        except Exception as e:
+            logger.error(f"Error updating queue_size_limit: {str(e)}")
+            return False
+    
+    def get_configuration_values(self) -> Dict[str, Any]:
+        """
+        Get current configuration values
+        
+        Returns:
+            Dictionary with current configuration
+        """
+        return {
+            'max_concurrent_tasks': self.max_concurrent_tasks,
+            'default_job_timeout': getattr(self, 'default_job_timeout', 3600),
+            'queue_size_limit': getattr(self, 'queue_size_limit', 100)
+        }
+    
+    def refresh_configuration(self) -> bool:
+        """
+        Refresh configuration from configuration service
+        
+        Returns:
+            True if refresh was successful
+        """
+        if not self.config_service:
+            logger.warning("No configuration service available for refresh")
+            return False
+        
+        try:
+            with self._lock:
+                # Refresh max concurrent tasks
+                new_max_concurrent = self.config_service.get_config('max_concurrent_jobs', self.max_concurrent_tasks)
+                if new_max_concurrent != self.max_concurrent_tasks:
+                    if isinstance(new_max_concurrent, int) and new_max_concurrent >= 1:
+                        old_value = self.max_concurrent_tasks
+                        self.max_concurrent_tasks = new_max_concurrent
+                        logger.info(f"Updated max_concurrent_tasks from {old_value} to {new_max_concurrent}")
+                
+                # Refresh default job timeout
+                new_timeout = self.config_service.get_config('default_job_timeout', getattr(self, 'default_job_timeout', 3600))
+                if new_timeout != getattr(self, 'default_job_timeout', 3600):
+                    if isinstance(new_timeout, (int, float)) and new_timeout > 0:
+                        old_value = getattr(self, 'default_job_timeout', None)
+                        self.default_job_timeout = new_timeout
+                        logger.info(f"Updated default_job_timeout from {old_value} to {new_timeout}")
+                
+                # Refresh queue size limit
+                new_queue_limit = self.config_service.get_config('queue_size_limit', getattr(self, 'queue_size_limit', 100))
+                if new_queue_limit != getattr(self, 'queue_size_limit', 100):
+                    if isinstance(new_queue_limit, int) and new_queue_limit >= 1:
+                        old_value = getattr(self, 'queue_size_limit', None)
+                        self.queue_size_limit = new_queue_limit
+                        logger.info(f"Updated queue_size_limit from {old_value} to {new_queue_limit}")
+                
+                logger.info("Configuration refreshed successfully")
+                return True
+                
+        except Exception as e:
+            logger.error(f"Error refreshing configuration: {str(e)}")
+            return False
+    
+    def enforce_job_timeout(self, task_id: str) -> bool:
+        """
+        Check if a job has exceeded its timeout and mark it as failed if so
+        
+        Args:
+            task_id: Task ID to check
+            
+        Returns:
+            True if task was within timeout or successfully timed out
+        """
+        if not hasattr(self, 'default_job_timeout'):
+            return True  # No timeout enforcement if not configured
+        
+        session = self.db_manager.get_session()
+        try:
+            task = session.query(CaptionGenerationTask).filter_by(id=task_id).first()
+            
+            if not task or task.status != TaskStatus.RUNNING:
+                return True  # Task not found or not running
+            
+            if not task.started_at:
+                return True  # Task hasn't started yet
+            
+            # Check if task has exceeded timeout
+            now = datetime.now(timezone.utc)
+            elapsed_time = (now - task.started_at).total_seconds()
+            
+            if elapsed_time > self.default_job_timeout:
+                # Task has timed out
+                task.status = TaskStatus.FAILED
+                task.completed_at = now
+                task.error_message = f"Task timed out after {elapsed_time:.0f} seconds (limit: {self.default_job_timeout})"
+                
+                session.commit()
+                
+                logger.warning(f"Task {sanitize_for_log(task_id)} timed out after {elapsed_time:.0f} seconds")
+                return True
+            
+            return True  # Task is within timeout
+            
+        except SQLAlchemyError as e:
+            session.rollback()
+            logger.error(f"Database error enforcing job timeout: {sanitize_for_log(str(e))}")
+            return False
         finally:
             session.close()
