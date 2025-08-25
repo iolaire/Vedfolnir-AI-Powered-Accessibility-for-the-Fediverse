@@ -254,10 +254,10 @@
 <script>
     console.log('=== PAUSE SYSTEM JAVASCRIPT LOADING ===');
     console.log('Script block started');
-    
+
     document.addEventListener('DOMContentLoaded', function () {
         console.log('DOM loaded, setting up pause system functionality');
-        
+
         const durationSelect = document.getElementById('duration');
         const customDurationContainer = document.getElementById('customDurationContainer');
 
@@ -281,39 +281,39 @@
         console.log('Elements found:');
         console.log('Pause form:', pauseForm);
         console.log('Submit button:', submitBtn);
-        
+
         if (pauseForm && submitBtn) {
             console.log('Adding click listener to pause button');
-            
+
             // Change button type to prevent default form submission
             submitBtn.type = 'button';
-            
+
             // Add click listener to button to handle submission manually
-            submitBtn.addEventListener('click', async function(e) {
+            submitBtn.addEventListener('click', async function (e) {
                 console.log('Submit button clicked');
                 e.preventDefault(); // Prevent any default behavior
-                
+
                 const reason = document.getElementById('reason').value.trim();
                 const confirmed = document.getElementById('confirmPause').checked;
                 const duration = document.getElementById('duration').value;
                 const customDuration = document.getElementById('customDuration').value;
                 const notifyUsers = document.getElementById('notifyUsers').checked;
-                
+
                 console.log('Form data:', { reason, confirmed, duration, customDuration, notifyUsers });
-                
+
                 // Validate required fields
                 if (!reason) {
                     alert('Please provide a reason for pausing the system.');
                     document.getElementById('reason').focus();
                     return;
                 }
-                
+
                 if (!confirmed) {
                     alert('Please confirm that you understand the impact of pausing the system.');
                     document.getElementById('confirmPause').focus();
                     return;
                 }
-                
+
                 // Show confirmation dialog
                 console.log('Showing confirmation dialog');
                 if (!confirm('Are you sure you want to pause the system?\n\nThis will prevent new jobs from starting until you manually resume the system.')) {
@@ -322,7 +322,7 @@
                 }
 
                 console.log('User confirmed, proceeding with pause request');
-                
+
                 // Show loading state
                 submitBtn.innerHTML = '<span class="spinner-border spinner-border-sm me-2"></span>Pausing System...';
                 submitBtn.disabled = true;
@@ -333,7 +333,7 @@
                         action_id: 'pause_system',
                         reason: reason
                     };
-                    
+
                     if (duration) {
                         if (duration === 'custom' && customDuration) {
                             requestData.duration = customDuration;
@@ -341,14 +341,14 @@
                             requestData.duration = duration;
                         }
                     }
-                    
+
                     if (notifyUsers) {
                         requestData.notifyUsers = true;
                     }
-                    
+
                     // Get CSRF token
                     const csrfToken = document.querySelector('meta[name="csrf-token"]').getAttribute('content');
-                    
+
                     console.log('Sending pause request to API with JSON data:', requestData);
                     const response = await fetch('/admin/api/system-maintenance/execute', {
                         method: 'POST',
@@ -361,11 +361,11 @@
 
                     console.log('Response status:', response.status);
                     console.log('Response headers:', response.headers);
-                    
+
                     // Check if response is JSON
                     const contentType = response.headers.get('content-type');
                     console.log('Content-Type:', contentType);
-                    
+
                     let data;
                     if (contentType && contentType.includes('application/json')) {
                         data = await response.json();
@@ -379,7 +379,7 @@
                     if (data.success) {
                         console.log('System paused successfully');
                         showNotification('System paused successfully', 'success');
-                        
+
                         // Redirect to system maintenance page after successful pause
                         setTimeout(() => {
                             window.location.href = "{{ url_for('admin.system_maintenance') }}";
@@ -387,7 +387,7 @@
                     } else {
                         console.error('Failed to pause system:', data.error);
                         showNotification(`Failed to pause system: ${data.error || 'Unknown error'}`, 'error');
-                        
+
                         // Reset button state
                         submitBtn.innerHTML = '<i class="bi bi-pause-circle"></i> Pause System';
                         submitBtn.disabled = false;
@@ -395,7 +395,7 @@
                 } catch (error) {
                     console.error('Failed to pause system:', error);
                     showNotification('Failed to pause system due to network error', 'error');
-                    
+
                     // Reset button state
                     submitBtn.innerHTML = '<i class="bi bi-pause-circle"></i> Pause System';
                     submitBtn.disabled = false;
@@ -404,7 +404,7 @@
         } else {
             console.error('Pause form or submit button not found!');
         }
-        
+
         // Helper function to show notifications
         function showNotification(message, type = 'info') {
             // Create notification element

@@ -277,7 +277,7 @@ def register_routes(bp):
                     components={}
                 )
             
-            return render_template('admin/dashboard.html', 
+            return render_template('dashboard.html', 
                                  health=system_health,
                                  stats=stats,
                                  system_metrics=system_metrics,

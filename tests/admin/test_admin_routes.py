@@ -81,7 +81,6 @@ def test_admin_template():
     print("\n=== Admin Template Testing ===\n")
     
     template_paths = [
-        'templates/admin/dashboard.html',
         'admin/templates/dashboard.html'
     ]
     

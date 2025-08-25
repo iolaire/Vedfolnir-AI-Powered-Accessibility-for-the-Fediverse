@@ -81,7 +81,7 @@ def performance_dashboard():
                 logger.error(f"Error getting cleanup stats: {sanitize_for_log(str(e))}")
                 performance_data['cleanup_error'] = str(e)
         
-        return render_template('admin/performance_dashboard.html', 
+        return render_template('performance_dashboard.html', 
                              performance_data=performance_data,
                              current_user=current_user)
         

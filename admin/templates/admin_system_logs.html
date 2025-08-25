@@ -1,0 +1,406 @@
+<!-- Copyright (C) 2025 iolaire mcfadden. -->
+<!-- This program is free software: you can redistribute it and/or modify it under the terms of the GNU Affero General Public License as published by the Free Software Foundation, either version 3 of the License, or (at your option) any later version. -->
+<!-- THE SOFTWARE IS PROVIDED "AS IS", WITHOUT WARRANTY OF ANY KIND, EXPRESS OR IMPLIED, INCLUDING BUT NOT LIMITED TO THE WARRANTIES OF MERCHANTABILITY, FITNESS FOR A PARTICULAR PURPOSE AND NONINFRINGEMENT. IN NO EVENT SHALL THE AUTHORS OR COPYRIGHT HOLDERS BE LIABLE FOR ANY CLAIM, DAMAGES OR OTHER LIABILITY, WHETHER IN AN ACTION OF CONTRACT, TORT OR OTHERWISE, ARISING FROM, OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE SOFTWARE. -->
+
+{% extends "base_admin.html" %}
+
+{% block title %}System Logs - Admin - Vedfolnir{% endblock %}
+
+{% block content %}
+<div class="d-flex justify-content-between flex-wrap flex-md-nowrap align-items-center pt-3 pb-2 mb-3 border-bottom">
+    <h1 class="h2">
+        <i class="bi bi-file-text"></i> System Logs
+    </h1>
+    <div class="btn-toolbar mb-2 mb-md-0">
+        <div class="btn-group me-2">
+            <a href="{{ url_for('admin.system_maintenance') }}" class="btn btn-sm btn-outline-secondary">
+                <i class="bi bi-arrow-left"></i> Back to System Maintenance
+            </a>
+            <button type="button" class="btn btn-sm btn-outline-primary" onclick="refreshLogs()">
+                <i class="bi bi-arrow-clockwise"></i> Refresh
+            </button>
+        </div>
+    </div>
+</div>
+
+<!-- Log Files Overview -->
+<div class="row mb-4">
+    <div class="col-md-12">
+        <div class="card">
+            <div class="card-header">
+                <h5 class="card-title mb-0">
+                    <i class="bi bi-folder"></i> Available Log Files
+                </h5>
+            </div>
+            <div class="card-body">
+                {% if log_files %}
+                <div class="table-responsive">
+                    <table class="table table-sm">
+                        <thead>
+                            <tr>
+                                <th>File Name</th>
+                                <th>Size</th>
+                                <th>Last Modified</th>
+                                <th>Actions</th>
+                            </tr>
+                        </thead>
+                        <tbody>
+                            {% for log_file in log_files %}
+                            <tr>
+                                <td>
+                                    <i class="bi bi-file-text text-muted me-2"></i>
+                                    {{ log_file.name }}
+                                </td>
+                                <td>{{ log_file.size_mb }} MB</td>
+                                <td>{{ log_file.modified.strftime('%Y-%m-%d %H:%M:%S') }}</td>
+                                <td>
+                                    <button type="button" class="btn btn-outline-primary btn-sm" 
+                                            onclick="loadLogFile('{{ log_file.name }}')">
+                                        <i class="bi bi-eye"></i> View
+                                    </button>
+                                    <a href="/admin/api/logs/download/{{ log_file.name }}" 
+                                       class="btn btn-outline-secondary btn-sm">
+                                        <i class="bi bi-download"></i> Download
+                                    </a>
+                                </td>
+                            </tr>
+                            {% endfor %}
+                        </tbody>
+                    </table>
+                </div>
+                {% else %}
+                <div class="text-center py-4">
+                    <i class="bi bi-folder-x text-muted" style="font-size: 3rem;"></i>
+                    <h5 class="mt-3">No Log Files Found</h5>
+                    <p class="text-muted">No log files are available in the logs directory.</p>
+                </div>
+                {% endif %}
+            </div>
+        </div>
+    </div>
+</div>
+
+<!-- Current Log Viewer -->
+<div class="row">
+    <div class="col-md-12">
+        <div class="card">
+            <div class="card-header d-flex justify-content-between align-items-center">
+                <h5 class="card-title mb-0">
+                    <i class="bi bi-terminal"></i> Log Viewer: <span id="currentLogName">{{ current_log_name }}</span>
+                </h5>
+                <div class="btn-group btn-group-sm">
+                    <button type="button" class="btn btn-outline-secondary" onclick="scrollToTop()">
+                        <i class="bi bi-arrow-up"></i> Top
+                    </button>
+                    <button type="button" class="btn btn-outline-secondary" onclick="scrollToBottom()">
+                        <i class="bi bi-arrow-down"></i> Bottom
+                    </button>
+                    <button type="button" class="btn btn-outline-primary" onclick="toggleAutoScroll()">
+                        <i class="bi bi-play-circle"></i> <span id="autoScrollText">Auto Scroll</span>
+                    </button>
+                </div>
+            </div>
+            <div class="card-body p-0">
+                <div id="logContent" class="log-viewer" style="height: 600px; overflow-y: auto; background-color: #1e1e1e; color: #d4d4d4; font-family: 'Courier New', monospace; font-size: 12px; padding: 15px;">
+                    {% if current_log_content %}
+                        {% for line in current_log_content %}
+                            <div class="log-line">{{ line|e }}</div>
+                        {% endfor %}
+                    {% else %}
+                        <div class="text-center py-5">
+                            <i class="bi bi-file-text text-muted" style="font-size: 3rem;"></i>
+                            <h5 class="mt-3">No Log Content</h5>
+                            <p class="text-muted">The log file is empty or could not be read.</p>
+                        </div>
+                    {% endif %}
+                </div>
+            </div>
+            <div class="card-footer">
+                <div class="row">
+                    <div class="col-md-6">
+                        <small class="text-muted">
+                            <i class="bi bi-info-circle"></i> 
+                            Showing last 500 lines. Use download to get complete log file.
+                        </small>
+                    </div>
+                    <div class="col-md-6 text-end">
+                        <small class="text-muted">
+                            <i class="bi bi-clock"></i> 
+                            Last updated: <span id="lastUpdated">Just now</span>
+                        </small>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+
+<!-- Log Search Modal -->
+<div class="modal fade" id="logSearchModal" tabindex="-1" aria-labelledby="logSearchModalLabel" aria-hidden="true">
+    <div class="modal-dialog">
+        <div class="modal-content">
+            <div class="modal-header">
+                <h5 class="modal-title" id="logSearchModalLabel">Search Logs</h5>
+                <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
+            </div>
+            <div class="modal-body">
+                <div class="mb-3">
+                    <label for="searchTerm" class="form-label">Search Term</label>
+                    <input type="text" class="form-control" id="searchTerm" placeholder="Enter search term...">
+                </div>
+                <div class="mb-3">
+                    <div class="form-check">
+                        <input class="form-check-input" type="checkbox" id="caseSensitive">
+                        <label class="form-check-label" for="caseSensitive">
+                            Case sensitive
+                        </label>
+                    </div>
+                </div>
+            </div>
+            <div class="modal-footer">
+                <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Cancel</button>
+                <button type="button" class="btn btn-primary" onclick="searchLogs()">Search</button>
+            </div>
+        </div>
+    </div>
+</div>
+{% endblock %}
+
+{% block scripts %}
+<script>
+console.log('=== SYSTEM LOGS JAVASCRIPT LOADING ===');
+
+let autoScrollEnabled = false;
+let autoScrollInterval = null;
+
+document.addEventListener('DOMContentLoaded', function() {
+    console.log('DOM loaded, setting up log viewer');
+    scrollToBottom();
+});
+
+function refreshLogs() {
+    console.log('Refreshing logs');
+    window.location.reload();
+}
+
+function loadLogFile(filename) {
+    console.log('Loading log file:', filename);
+    
+    const logContent = document.getElementById('logContent');
+    const currentLogName = document.getElementById('currentLogName');
+    
+    // Show loading state
+    logContent.innerHTML = `
+        <div class="text-center py-5">
+            <div class="spinner-border text-primary" role="status">
+                <span class="visually-hidden">Loading...</span>
+            </div>
+            <h5 class="mt-3">Loading ${filename}...</h5>
+        </div>
+    `;
+    
+    // Fetch log file content
+    fetch(`/admin/api/logs/content/${filename}`)
+        .then(response => {
+            if (!response.ok) {
+                throw new Error(`HTTP ${response.status}: ${response.statusText}`);
+            }
+            return response.json();
+        })
+        .then(data => {
+            if (data.success) {
+                currentLogName.textContent = filename;
+                displayLogContent(data.content);
+                updateLastUpdated();
+            } else {
+                throw new Error(data.error || 'Failed to load log file');
+            }
+        })
+        .catch(error => {
+            console.error('Error loading log file:', error);
+            logContent.innerHTML = `
+                <div class="text-center py-5">
+                    <i class="bi bi-exclamation-triangle text-warning" style="font-size: 3rem;"></i>
+                    <h5 class="mt-3">Error Loading Log File</h5>
+                    <p class="text-muted">${error.message}</p>
+                </div>
+            `;
+        });
+}
+
+function displayLogContent(lines) {
+    const logContent = document.getElementById('logContent');
+    
+    if (!lines || lines.length === 0) {
+        logContent.innerHTML = `
+            <div class="text-center py-5">
+                <i class="bi bi-file-text text-muted" style="font-size: 3rem;"></i>
+                <h5 class="mt-3">Empty Log File</h5>
+                <p class="text-muted">This log file contains no content.</p>
+            </div>
+        `;
+        return;
+    }
+    
+    const logHtml = lines.map(line => {
+        // Add syntax highlighting for different log levels
+        let className = 'log-line';
+        if (line.includes('ERROR')) {
+            className += ' text-danger';
+        } else if (line.includes('WARNING')) {
+            className += ' text-warning';
+        } else if (line.includes('INFO')) {
+            className += ' text-info';
+        } else if (line.includes('DEBUG')) {
+            className += ' text-muted';
+        }
+        
+        return `<div class="${className}">${escapeHtml(line)}</div>`;
+    }).join('');
+    
+    logContent.innerHTML = logHtml;
+    scrollToBottom();
+}
+
+function scrollToTop() {
+    const logContent = document.getElementById('logContent');
+    logContent.scrollTop = 0;
+}
+
+function scrollToBottom() {
+    const logContent = document.getElementById('logContent');
+    logContent.scrollTop = logContent.scrollHeight;
+}
+
+function toggleAutoScroll() {
+    const autoScrollText = document.getElementById('autoScrollText');
+    
+    if (autoScrollEnabled) {
+        // Disable auto scroll
+        autoScrollEnabled = false;
+        if (autoScrollInterval) {
+            clearInterval(autoScrollInterval);
+            autoScrollInterval = null;
+        }
+        autoScrollText.innerHTML = '<i class="bi bi-play-circle"></i> Auto Scroll';
+    } else {
+        // Enable auto scroll
+        autoScrollEnabled = true;
+        autoScrollInterval = setInterval(() => {
+            scrollToBottom();
+        }, 2000);
+        autoScrollText.innerHTML = '<i class="bi bi-pause-circle"></i> Stop Auto Scroll';
+    }
+}
+
+function searchLogs() {
+    const searchTerm = document.getElementById('searchTerm').value;
+    const caseSensitive = document.getElementById('caseSensitive').checked;
+    
+    if (!searchTerm.trim()) {
+        alert('Please enter a search term');
+        return;
+    }
+    
+    const logContent = document.getElementById('logContent');
+    const logLines = logContent.querySelectorAll('.log-line');
+    
+    // Clear previous highlights
+    logLines.forEach(line => {
+        line.classList.remove('highlight');
+        line.innerHTML = line.textContent;
+    });
+    
+    // Search and highlight
+    let matchCount = 0;
+    const searchRegex = new RegExp(escapeRegExp(searchTerm), caseSensitive ? 'g' : 'gi');
+    
+    logLines.forEach(line => {
+        const text = line.textContent;
+        if (searchRegex.test(text)) {
+            matchCount++;
+            line.classList.add('highlight');
+            line.innerHTML = text.replace(searchRegex, `<mark>$&</mark>`);
+        }
+    });
+    
+    // Close modal and show results
+    const modal = bootstrap.Modal.getInstance(document.getElementById('logSearchModal'));
+    modal.hide();
+    
+    if (matchCount > 0) {
+        alert(`Found ${matchCount} matches for "${searchTerm}"`);
+        // Scroll to first match
+        const firstMatch = logContent.querySelector('.highlight');
+        if (firstMatch) {
+            firstMatch.scrollIntoView({ behavior: 'smooth', block: 'center' });
+        }
+    } else {
+        alert(`No matches found for "${searchTerm}"`);
+    }
+}
+
+function updateLastUpdated() {
+    const lastUpdated = document.getElementById('lastUpdated');
+    if (lastUpdated) {
+        lastUpdated.textContent = new Date().toLocaleString();
+    }
+}
+
+function escapeHtml(text) {
+    const div = document.createElement('div');
+    div.textContent = text;
+    return div.innerHTML;
+}
+
+function escapeRegExp(string) {
+    return string.replace(/[.*+?^${}()|[\]\\]/g, '\\$&');
+}
+
+// Add CSS for log highlighting
+const style = document.createElement('style');
+style.textContent = `
+    .log-line {
+        margin: 0;
+        padding: 2px 0;
+        line-height: 1.4;
+        word-wrap: break-word;
+    }
+    
+    .log-line.highlight {
+        background-color: rgba(255, 255, 0, 0.2);
+        border-left: 3px solid #ffc107;
+        padding-left: 10px;
+    }
+    
+    .log-line mark {
+        background-color: #ffeb3b;
+        color: #000;
+        padding: 1px 2px;
+        border-radius: 2px;
+    }
+    
+    .log-viewer {
+        white-space: pre-wrap;
+    }
+    
+    .log-viewer::-webkit-scrollbar {
+        width: 8px;
+    }
+    
+    .log-viewer::-webkit-scrollbar-track {
+        background: #2d2d2d;
+    }
+    
+    .log-viewer::-webkit-scrollbar-thumb {
+        background: #555;
+        border-radius: 4px;
+    }
+    
+    .log-viewer::-webkit-scrollbar-thumb:hover {
+        background: #777;
+    }
+`;
+document.head.appendChild(style);
+</script>
+{% endblock %}

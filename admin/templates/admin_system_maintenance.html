@@ -218,7 +218,12 @@
             </div>
             <div class="card-body">
                 <div id="maintenanceLog" style="max-height: 300px; overflow-y: auto;">
-                    <small class="text-muted">No recent maintenance actions</small>
+                    <div class="text-center py-3">
+                        <div class="spinner-border spinner-border-sm text-muted" role="status">
+                            <span class="visually-hidden">Loading...</span>
+                        </div>
+                        <small class="text-muted ms-2">Loading maintenance log...</small>
+                    </div>
                 </div>
             </div>
         </div>
@@ -248,22 +253,117 @@
 </div>
 {% endblock %}
 
-{% block extra_js %}
+{% block scripts %}
 <script>
+console.log('=== SYSTEM MAINTENANCE JAVASCRIPT LOADING ===');
+
+document.addEventListener('DOMContentLoaded', function() {
+    console.log('DOM loaded, loading maintenance log');
+    loadMaintenanceLog();
+});
+
 function refreshMetrics() {
     // Simple page refresh for metrics
     window.location.reload();
 }
 
+async function loadMaintenanceLog() {
+    const logElement = document.getElementById('maintenanceLog');
+    
+    try {
+        console.log('Loading maintenance log from API');
+        const response = await fetch('/admin/api/system-maintenance', {
+            method: 'GET',
+            headers: {
+                'X-CSRFToken': document.querySelector('meta[name="csrf-token"]').getAttribute('content')
+            }
+        });
+        
+        if (!response.ok) {
+            throw new Error(`HTTP ${response.status}: ${response.statusText}`);
+        }
+        
+        const data = await response.json();
+        console.log('Maintenance log data:', data);
+        
+        if (data.success && data.maintenance_log && data.maintenance_log.length > 0) {
+            displayMaintenanceLog(data.maintenance_log);
+        } else {
+            logElement.innerHTML = '<small class="text-muted">No recent maintenance actions</small>';
+        }
+    } catch (error) {
+        console.error('Error loading maintenance log:', error);
+        logElement.innerHTML = '<small class="text-danger">Failed to load maintenance log</small>';
+    }
+}
+
+function displayMaintenanceLog(logEntries) {
+    const logElement = document.getElementById('maintenanceLog');
+    
+    if (logEntries.length === 0) {
+        logElement.innerHTML = '<small class="text-muted">No recent maintenance actions</small>';
+        return;
+    }
+    
+    const logHtml = logEntries.map(entry => {
+        const timestamp = new Date(entry.timestamp).toLocaleString();
+        const statusClass = entry.status === 'completed' ? 'text-success' : 
+                           entry.status === 'failed' ? 'text-danger' : 'text-muted';
+        const statusIcon = entry.status === 'completed' ? 'bi-check-circle' : 
+                          entry.status === 'failed' ? 'bi-x-circle' : 'bi-clock';
+        
+        return `
+            <div class="small mb-2 pb-2 border-bottom">
+                <div class="d-flex justify-content-between align-items-start">
+                    <div class="flex-grow-1">
+                        <div class="fw-bold">${entry.action}</div>
+                        <div class="text-muted">${entry.details || 'No additional details'}</div>
+                        <div class="text-muted">
+                            <small>
+                                <i class="bi bi-person"></i> ${entry.admin_user} • 
+                                <i class="bi bi-clock"></i> ${timestamp}
+                            </small>
+                        </div>
+                    </div>
+                    <div class="flex-shrink-0 ms-2">
+                        <i class="bi ${statusIcon} ${statusClass}"></i>
+                    </div>
+                </div>
+            </div>
+        `;
+    }).join('');
+    
+    logElement.innerHTML = logHtml;
+}
+
 function addToMaintenanceLog(message) {
+    // This function is now used for client-side additions only
     const logElement = document.getElementById('maintenanceLog');
     const timestamp = new Date().toLocaleString();
     
     const logEntry = document.createElement('div');
     logEntry.className = 'small mb-2 pb-2 border-bottom';
-    logEntry.innerHTML = `<strong>${timestamp}:</strong> ${message}`;
+    logEntry.innerHTML = `
+        <div class="d-flex justify-content-between align-items-start">
+            <div class="flex-grow-1">
+                <div class="fw-bold">Manual Action</div>
+                <div class="text-muted">${message}</div>
+                <div class="text-muted">
+                    <small>
+                        <i class="bi bi-person"></i> Current User • 
+                        <i class="bi bi-clock"></i> ${timestamp}
+                    </small>
+                </div>
+            </div>
+            <div class="flex-shrink-0 ms-2">
+                <i class="bi bi-info-circle text-info"></i>
+            </div>
+        </div>
+    `;
     
-    if (logElement.innerHTML.includes('No recent maintenance actions')) {
+    // Remove loading message if present
+    if (logElement.innerHTML.includes('No recent maintenance actions') || 
+        logElement.innerHTML.includes('Loading maintenance log')) {
         logElement.innerHTML = '';
     }
     

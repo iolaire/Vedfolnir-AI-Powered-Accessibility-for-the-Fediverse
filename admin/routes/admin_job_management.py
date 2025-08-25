@@ -314,7 +314,7 @@ def register_routes(bp):
             failed_jobs = session.query(CaptionGenerationTask, User, PlatformConnection)\
                                .join(User, CaptionGenerationTask.user_id == User.id)\
                                .join(PlatformConnection, CaptionGenerationTask.platform_connection_id == PlatformConnection.id)\
-                               .filter_by(status='failed')\
+                               .filter(CaptionGenerationTask.status == 'failed')\
                                .order_by(CaptionGenerationTask.created_at.desc())\
                                .all()
             
@@ -366,7 +366,7 @@ def register_routes(bp):
             
             # Orphaned images (no associated posts)
             orphaned_images = session.query(Image)\
-                                   .filter(~Image.posts.any())\
+                                   .filter(Image.post_id.is_(None))\
                                    .count()
             
             cleanup_stats = {
@@ -442,6 +442,60 @@ def register_routes(bp):
             return redirect(url_for('index'))
         
         return render_template('admin_help_center.html')
+    
+    @bp.route('/logs')
+    @login_required
+    @with_session_error_handling
+    def system_logs():
+        """System logs viewer"""
+        if not current_user.role == UserRole.ADMIN:
+            from flask import flash, redirect, url_for
+            flash('Access denied. Admin privileges required.', 'error')
+            return redirect(url_for('index'))
+        
+        import os
+        from datetime import datetime
+        
+        log_files = []
+        log_directory = 'logs'
+        
+        # Get available log files
+        if os.path.exists(log_directory):
+            for filename in os.listdir(log_directory):
+                if filename.endswith('.log'):
+                    filepath = os.path.join(log_directory, filename)
+                    try:
+                        stat = os.stat(filepath)
+                        log_files.append({
+                            'name': filename,
+                            'path': filepath,
+                            'size': stat.st_size,
+                            'modified': datetime.fromtimestamp(stat.st_mtime),
+                            'size_mb': round(stat.st_size / (1024 * 1024), 2)
+                        })
+                    except OSError:
+                        continue
+        
+        # Sort by modification time (newest first)
+        log_files.sort(key=lambda x: x['modified'], reverse=True)
+        
+        # Get current log content (last 500 lines of webapp.log)
+        current_log_content = []
+        webapp_log_path = os.path.join(log_directory, 'webapp.log')
+        
+        if os.path.exists(webapp_log_path):
+            try:
+                with open(webapp_log_path, 'r', encoding='utf-8', errors='ignore') as f:
+                    lines = f.readlines()
+                    # Get last 500 lines
+                    current_log_content = lines[-500:] if len(lines) > 500 else lines
+            except Exception as e:
+                current_log_content = [f"Error reading log file: {e}"]
+        
+        return render_template('admin_system_logs.html',
+                             log_files=log_files,
+                             current_log_content=current_log_content,
+                             current_log_name='webapp.log')
 
 def get_job_statistics(admin_user_id, admin_mode=True):
     """Get job statistics for admin dashboard"""
