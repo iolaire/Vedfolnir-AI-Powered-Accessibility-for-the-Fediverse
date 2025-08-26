@@ -243,41 +243,12 @@
                     <button class="btn btn-outline-info" id="viewUserActivityBtn">
                         <i class="bi bi-people"></i> User Activity
                     </button>
-                    <button class="btn btn-outline-secondary" id="systemLimitsBtn">
-                        <i class="bi bi-sliders"></i> System Limits
-                    </button>
+
                 </div>
             </div>
         </div>
         
-        <!-- Quick Stats -->
-        <div class="card">
-            <div class="card-header">
-                <h5><i class="bi bi-info-circle"></i> System Info</h5>
-            </div>
-            <div class="card-body">
-                {% if system_limits %}
-                <div class="row text-center">
-                    <div class="col-6 mb-2">
-                        <div class="h6 mb-0">{{ system_limits.max_concurrent_tasks }}</div>
-                        <small class="text-muted">Max Tasks</small>
-                    </div>
-                    <div class="col-6 mb-2">
-                        <div class="h6 mb-0">{{ system_limits.task_timeout_minutes }}m</div>
-                        <small class="text-muted">Timeout</small>
-                    </div>
-                    <div class="col-6">
-                        <div class="h6 mb-0">{{ system_limits.max_images_per_task }}</div>
-                        <small class="text-muted">Max Images</small>
-                    </div>
-                    <div class="col-6">
-                        <div class="h6 mb-0">{{ system_limits.cleanup_interval_hours }}h</div>
-                        <small class="text-muted">Cleanup</small>
-                    </div>
-                </div>
-                {% endif %}
-            </div>
-        </div>
+
     </div>
 </div>
 
@@ -400,7 +371,7 @@ async function refreshData() {
     
     try {
         // Refresh system overview
-        const overviewResponse = await fetch('/api/admin/system_overview');
+        const overviewResponse = await fetch('/admin/api/system_overview');
         const overviewData = await overviewResponse.json();
         
         if (overviewData.success) {
@@ -408,7 +379,7 @@ async function refreshData() {
         }
         
         // Refresh active tasks
-        const tasksResponse = await fetch('/api/admin/active_tasks');
+        const tasksResponse = await fetch('/admin/api/active_tasks');
         const tasksData = await tasksResponse.json();
         
         if (tasksData.success) {
@@ -491,7 +462,7 @@ async function cancelTask(taskId) {
     const reason = document.getElementById('cancelReason').value.trim();
     
     try {
-        const response = await fetch(`/api/admin/cancel_task/${taskId}`, {
+        const response = await fetch(`/admin/api/cancel_task/${taskId}`, {
             method: 'POST',
             headers: {
                 'Content-Type': 'application/json',
@@ -521,7 +492,7 @@ async function cancelTask(taskId) {
 
 async function cleanupTasks(days, dryRun) {
     try {
-        const response = await fetch('/api/admin/cleanup_tasks', {
+        const response = await fetch('/admin/api/cleanup_tasks', {
             method: 'POST',
             headers: {
                 'Content-Type': 'application/json',
@@ -548,7 +519,7 @@ async function cleanupTasks(days, dryRun) {
 
 async function loadUserActivity() {
     try {
-        const response = await fetch('/api/admin/user_activity?days=7');
+        const response = await fetch('/admin/api/user_activity?days=7');
         const data = await response.json();
         
         if (data.success) {

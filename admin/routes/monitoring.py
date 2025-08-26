@@ -56,3 +56,4 @@ def register_routes(bp):
             return jsonify({'success': True, 'overview': overview})
         except Exception as e:
             return jsonify({'success': False, 'error': str(e)}), 500
+

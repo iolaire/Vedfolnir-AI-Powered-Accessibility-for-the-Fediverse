@@ -672,6 +672,168 @@ def register_api_routes(bp):
                 'error': 'Failed to retrieve system health'
             }), 500
     
+    # Missing API Endpoints for Monitoring Dashboard
+    
+    @bp.route('/api/cleanup_tasks', methods=['POST'])
+    @admin_api_required
+    def cleanup_tasks():
+        """Cleanup old tasks API endpoint"""
+        try:
+            data = request.get_json() or {}
+            days = data.get('days', 30)
+            dry_run = data.get('dry_run', True)
+            
+            from ..services.cleanup_service import CleanupService
+            from flask import current_app
+            
+            db_manager = current_app.config['db_manager']
+            cleanup_service = CleanupService(db_manager, current_app.config.get('config'))
+            
+            # Perform cleanup operation
+            result = cleanup_service.cleanup_old_processing_runs(days=days, dry_run=dry_run)
+            
+            if result['success']:
+                message = result['message']
+                if dry_run:
+                    message = f"DRY RUN: {message}"
+                
+                return jsonify({
+                    'success': True,
+                    'message': message,
+                    'details': result
+                })
+            else:
+                return jsonify({
+                    'success': False,
+                    'error': result.get('error', 'Cleanup operation failed')
+                }), 400
+                
+        except Exception as e:
+            logger.error(f"Error in cleanup tasks API: {e}")
+            return jsonify({
+                'success': False,
+                'error': 'Failed to perform cleanup operation'
+            }), 500
+    
+    @bp.route('/api/user_activity', methods=['GET'])
+    @admin_api_required
+    def user_activity():
+        """Get user activity data API endpoint"""
+        try:
+            days = int(request.args.get('days', 7))
+            
+            from flask import current_app
+            session_manager = current_app.request_session_manager
+            
+            with session_manager.session_scope() as db_session:
+                from models import User, UserSession, CaptionGenerationTask
+                from datetime import datetime, timedelta
+                from sqlalchemy import func, desc
+                
+                # Calculate date range
+                end_date = datetime.utcnow()
+                start_date = end_date - timedelta(days=days)
+                
+                # Get user activity statistics
+                user_stats = db_session.query(
+                    User.id,
+                    User.username,
+                    User.email,
+                    User.last_login,
+                    func.count(CaptionGenerationTask.id).label('task_count')
+                ).outerjoin(
+                    CaptionGenerationTask,
+                    (CaptionGenerationTask.user_id == User.id) &
+                    (CaptionGenerationTask.created_at >= start_date)
+                ).group_by(User.id).order_by(desc(User.last_login)).limit(50).all()
+                
+                # Format activity data
+                activity_data = []
+                for stat in user_stats:
+                    activity_data.append({
+                        'user_id': stat.id,
+                        'username': stat.username,
+                        'email': stat.email,
+                        'last_login': stat.last_login.isoformat() if stat.last_login else None,
+                        'task_count': stat.task_count or 0,
+                        'active_in_period': stat.task_count > 0 or (
+                            stat.last_login and stat.last_login >= start_date
+                        )
+                    })
+                
+                return jsonify({
+                    'success': True,
+                    'activity': activity_data,
+                    'period_days': days,
+                    'total_users': len(activity_data)
+                })
+                
+        except Exception as e:
+            logger.error(f"Error getting user activity: {e}")
+            return jsonify({
+                'success': False,
+                'error': 'Failed to retrieve user activity data'
+            }), 500
+    
+    @bp.route('/api/active_tasks', methods=['GET'])
+    @admin_api_required
+    def active_tasks():
+        """Get active tasks for monitoring dashboard"""
+        try:
+            from ..services.monitoring_service import AdminMonitoringService
+            from flask import current_app
+            
+            monitoring_service = AdminMonitoringService(current_app.config['db_manager'])
+            tasks = monitoring_service.get_active_tasks(limit=20)
+            
+            return jsonify({
+                'success': True,
+                'tasks': tasks
+            })
+            
+        except Exception as e:
+            logger.error(f"Error getting active tasks: {e}")
+            return jsonify({
+                'success': False,
+                'error': 'Failed to retrieve active tasks'
+            }), 500
+    
+    @bp.route('/api/cancel_task/<task_id>', methods=['POST'])
+    @admin_api_required
+    def cancel_task(task_id):
+        """Cancel a specific task"""
+        try:
+            data = request.get_json() or {}
+            reason = data.get('reason', 'Cancelled by administrator')
+            
+            from admin_management_service import AdminManagementService
+            from task_queue_manager import TaskQueueManager
+            from flask import current_app
+            
+            db_manager = current_app.config['db_manager']
+            task_queue_manager = TaskQueueManager(db_manager)
+            service = AdminManagementService(db_manager, task_queue_manager)
+            
+            success = service.cancel_job_as_admin(current_user.id, task_id, reason)
+            
+            if success:
+                return jsonify({
+                    'success': True,
+                    'message': f'Task {task_id[:8]}... cancelled successfully'
+                })
+            else:
+                return jsonify({
+                    'success': False,
+                    'error': 'Failed to cancel task'
+                }), 400
+                
+        except Exception as e:
+            logger.error(f"Error cancelling task {task_id}: {e}")
+            return jsonify({
+                'success': False,
+                'error': 'Failed to cancel task'
+            }), 500
+
     # User Management API Endpoints
     
     @bp.route('/api/users/<int:user_id>/jobs', methods=['GET'])
