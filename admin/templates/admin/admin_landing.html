@@ -120,14 +120,21 @@
     <div class="col-md-3">
         <div class="card stat-card text-white">
             <div class="card-body text-center">
-                <i class="bi bi-activity" style="font-size: 2rem;"></i>
-                <h3 class="mt-2">{{ stats.new_users_24h }}</h3>
-                <p class="mb-0">New Users (24h)</p>
-                <small>{{ stats.recent_logins }} recent logins</small>
+                <i class="bi bi-hdd-stack" style="font-size: 2rem;"></i>
+                <h3 class="mt-2">{{ storage_data.percentage if storage_data else '0.0%' }}</h3>
+                <p class="mb-0">Storage Usage</p>
+                <small class="text-{% if storage_data.status_color == 'green' %}success{% elif storage_data.status_color == 'yellow' %}warning{% else %}danger{% endif %}">
+                    {{ storage_data.status_text if storage_data else 'Unknown' }}
+                </small>
             </div>
         </div>
     </div>
 </div>
+
+<!-- Storage Monitoring Section -->
+{% if storage_data %}
+    {% include 'admin/storage_monitoring_section.html' %}
+{% endif %}
 
 <!-- Quick Actions -->
 <div class="row mb-4">

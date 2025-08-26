@@ -1768,3 +1768,209 @@ class SystemAlert(Base):
     
     def __repr__(self):
         return f"<SystemAlert {self.alert_type.value} - {self.severity.value} - {self.status}>"
+
+class StorageOverride(Base):
+    """Model for tracking manual storage limit overrides by administrators"""
+    __tablename__ = 'storage_overrides'
+    __table_args__ = (
+        Index('ix_storage_override_admin_activated', 'admin_user_id', 'activated_at'),
+        Index('ix_storage_override_active_expires', 'is_active', 'expires_at'),
+        Index('ix_storage_override_expires_at', 'expires_at'),
+        {
+            'mysql_engine': 'InnoDB',
+            'mysql_charset': 'utf8mb4',
+            'mysql_collate': 'utf8mb4_unicode_ci',
+            'mysql_row_format': 'DYNAMIC',
+        }
+    )
+    
+    id = Column(Integer, primary_key=True, autoincrement=True)
+    admin_user_id = Column(Integer, ForeignKey('users.id', ondelete='CASCADE'), nullable=False)
+    activated_at = Column(DateTime, default=datetime.utcnow, nullable=False)
+    expires_at = Column(DateTime, nullable=False)
+    duration_hours = Column(Integer, nullable=False)
+    reason = Column(String(500), nullable=True)
+    is_active = Column(Boolean, default=True, nullable=False)
+    deactivated_at = Column(DateTime, nullable=True)
+    deactivated_by_user_id = Column(Integer, ForeignKey('users.id', ondelete='SET NULL'), nullable=True)
+    
+    # Storage context at time of override
+    storage_gb_at_activation = Column(Float, nullable=True)
+    limit_gb_at_activation = Column(Float, nullable=True)
+    
+    # Relationships
+    admin_user = relationship("User", foreign_keys=[admin_user_id], backref="storage_overrides_created")
+    deactivated_by_user = relationship("User", foreign_keys=[deactivated_by_user_id], backref="storage_overrides_deactivated")
+    
+    def is_expired(self):
+        """Check if the override has expired"""
+        return datetime.utcnow() > self.expires_at
+    
+    def is_currently_active(self):
+        """Check if the override is currently active (not expired and not manually deactivated)"""
+        return self.is_active and not self.is_expired()
+    
+    def get_remaining_time(self):
+        """Get remaining time as a timedelta, or None if expired"""
+        if self.is_expired():
+            return None
+        return self.expires_at - datetime.utcnow()
+    
+    def deactivate(self, deactivated_by_user_id, reason=None):
+        """Manually deactivate the override"""
+        self.is_active = False
+        self.deactivated_at = datetime.utcnow()
+        self.deactivated_by_user_id = deactivated_by_user_id
+        if reason:
+            self.reason = f"{self.reason or ''} | Deactivated: {reason}".strip(' |')
+    
+    def __repr__(self):
+        status = "active" if self.is_currently_active() else "inactive"
+        return f"<StorageOverride {self.id} by User {self.admin_user_id} - {status}>"
+
+class StorageEventLog(Base):
+    """Model for audit logging of storage-related events and actions"""
+    __tablename__ = 'storage_event_log'
+    __table_args__ = (
+        Index('ix_storage_event_type_timestamp', 'event_type', 'timestamp'),
+        Index('ix_storage_event_user_timestamp', 'user_id', 'timestamp'),
+        Index('ix_storage_event_timestamp', 'timestamp'),
+        Index('ix_storage_event_type', 'event_type'),
+        {
+            'mysql_engine': 'InnoDB',
+            'mysql_charset': 'utf8mb4',
+            'mysql_collate': 'utf8mb4_unicode_ci',
+            'mysql_row_format': 'DYNAMIC',
+        }
+    )
+    
+    id = Column(Integer, primary_key=True, autoincrement=True)
+    event_type = Column(String(50), nullable=False)  # limit_reached, override_activated, cleanup_performed, etc.
+    storage_gb = Column(Float, nullable=False)
+    limit_gb = Column(Float, nullable=False)
+    usage_percentage = Column(Float, nullable=True)  # Calculated percentage for convenience
+    user_id = Column(Integer, ForeignKey('users.id', ondelete='SET NULL'), nullable=True)
+    timestamp = Column(DateTime, default=datetime.utcnow, nullable=False)
+    details = Column(Text, nullable=True)  # JSON string with additional event details
+    
+    # Optional reference to related storage override
+    storage_override_id = Column(Integer, ForeignKey('storage_overrides.id', ondelete='SET NULL'), nullable=True)
+    
+    # Relationships
+    user = relationship("User", backref="storage_events")
+    storage_override = relationship("StorageOverride", backref="related_events")
+    
+    def get_details(self):
+        """Get details as a dictionary"""
+        if self.details:
+            try:
+                return json.loads(self.details)
+            except json.JSONDecodeError:
+                return {}
+        return {}
+    
+    def set_details(self, details_dict):
+        """Set details from a dictionary"""
+        self.details = json.dumps(details_dict) if details_dict else None
+    
+    def calculate_usage_percentage(self):
+        """Calculate and update usage percentage"""
+        if self.limit_gb and self.limit_gb > 0:
+            self.usage_percentage = (self.storage_gb / self.limit_gb) * 100
+        else:
+            self.usage_percentage = 0
+        return self.usage_percentage
+    
+    @classmethod
+    def log_event(cls, session, event_type, storage_gb, limit_gb, user_id=None, 
+                  details=None, storage_override_id=None):
+        """Create a storage event log entry"""
+        event = cls(
+            event_type=event_type,
+            storage_gb=storage_gb,
+            limit_gb=limit_gb,
+            user_id=user_id,
+            details=json.dumps(details) if details else None,
+            storage_override_id=storage_override_id
+        )
+        event.calculate_usage_percentage()
+        session.add(event)
+        return event
+    
+    @classmethod
+    def log_limit_reached(cls, session, storage_gb, limit_gb, details=None):
+        """Log when storage limit is reached"""
+        return cls.log_event(
+            session, 'limit_reached', storage_gb, limit_gb, 
+            details=details or {'action': 'caption_generation_blocked'}
+        )
+    
+    @classmethod
+    def log_override_activated(cls, session, storage_gb, limit_gb, user_id, 
+                              storage_override_id, duration_hours, reason=None):
+        """Log when storage override is activated"""
+        details = {
+            'action': 'override_activated',
+            'duration_hours': duration_hours,
+            'reason': reason
+        }
+        return cls.log_event(
+            session, 'override_activated', storage_gb, limit_gb, 
+            user_id=user_id, details=details, storage_override_id=storage_override_id
+        )
+    
+    @classmethod
+    def log_override_deactivated(cls, session, storage_gb, limit_gb, user_id, 
+                                storage_override_id, reason=None):
+        """Log when storage override is deactivated"""
+        details = {
+            'action': 'override_deactivated',
+            'reason': reason
+        }
+        return cls.log_event(
+            session, 'override_deactivated', storage_gb, limit_gb, 
+            user_id=user_id, details=details, storage_override_id=storage_override_id
+        )
+    
+    @classmethod
+    def log_cleanup_performed(cls, session, storage_gb_before, storage_gb_after, 
+                             limit_gb, user_id=None, cleanup_details=None):
+        """Log when cleanup operations are performed"""
+        details = {
+            'action': 'cleanup_performed',
+            'storage_gb_before': storage_gb_before,
+            'storage_gb_after': storage_gb_after,
+            'space_freed_gb': storage_gb_before - storage_gb_after,
+            'cleanup_details': cleanup_details
+        }
+        return cls.log_event(
+            session, 'cleanup_performed', storage_gb_after, limit_gb, 
+            user_id=user_id, details=details
+        )
+    
+    @classmethod
+    def log_warning_threshold_exceeded(cls, session, storage_gb, limit_gb, 
+                                      threshold_percentage=80):
+        """Log when warning threshold is exceeded"""
+        details = {
+            'action': 'warning_threshold_exceeded',
+            'threshold_percentage': threshold_percentage
+        }
+        return cls.log_event(
+            session, 'warning_threshold_exceeded', storage_gb, limit_gb, 
+            details=details
+        )
+    
+    @classmethod
+    def log_limit_lifted(cls, session, storage_gb, limit_gb, reason='storage_freed'):
+        """Log when storage limit blocking is lifted"""
+        details = {
+            'action': 'limit_lifted',
+            'reason': reason
+        }
+        return cls.log_event(
+            session, 'limit_lifted', storage_gb, limit_gb, details=details
+        )
+    
+    def __repr__(self):
+        return f"<StorageEventLog {self.event_type} - {self.storage_gb:.2f}GB/{self.limit_gb:.2f}GB>"

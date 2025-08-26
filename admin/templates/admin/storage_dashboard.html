@@ -1,0 +1,473 @@
+<!-- Copyright (C) 2025 iolaire mcfadden. -->
+<!-- This program is free software: you can redistribute it and/or modify it under the terms of the GNU Affero General Public License as published by the Free Software Foundation, either version 3 of the License, or (at your option) any later version. -->
+<!-- THE SOFTWARE IS PROVIDED "AS IS", WITHOUT WARRANTY OF ANY KIND, EXPRESS OR IMPLIED, INCLUDING BUT NOT LIMITED TO THE WARRANTIES OF MERCHANTABILITY, FITNESS FOR A PARTICULAR PURPOSE AND NONINFRINGEMENT. IN NO EVENT SHALL THE AUTHORS OR COPYRIGHT HOLDERS BE LIABLE FOR ANY CLAIM, DAMAGES OR OTHER LIABILITY, WHETHER IN AN ACTION OF CONTRACT, TORT OR OTHERWISE, ARISING FROM, OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE SOFTWARE. -->
+
+{% extends "base_admin.html" %}
+
+{% block title %}Storage Management - Admin Dashboard - Vedfolnir{% endblock %}
+
+{% block extra_head %}
+<style>
+    .storage-metric-card {
+        transition: transform 0.2s ease-in-out;
+        border: none;
+        box-shadow: 0 2px 4px rgba(0,0,0,0.1);
+    }
+    .storage-metric-card:hover {
+        transform: translateY(-2px);
+        box-shadow: 0 4px 8px rgba(0,0,0,0.15);
+    }
+    .storage-gauge-large {
+        width: 200px;
+        height: 200px;
+    }
+    .storage-gauge-large circle {
+        transition: stroke-dasharray 0.8s ease-in-out;
+    }
+    .status-indicator {
+        display: inline-block;
+        width: 12px;
+        height: 12px;
+        border-radius: 50%;
+        margin-right: 8px;
+    }
+    .status-healthy { background-color: #28a745; }
+    .status-warning { background-color: #ffc107; }
+    .status-critical { background-color: #dc3545; }
+    .status-error { background-color: #6c757d; }
+    .metric-value {
+        font-size: 2rem;
+        font-weight: bold;
+    }
+    .metric-label {
+        font-size: 0.9rem;
+        color: #6c757d;
+    }
+    .enforcement-stat {
+        background: linear-gradient(135deg, #f8f9fa 0%, #e9ecef 100%);
+        border-radius: 8px;
+        padding: 1rem;
+        margin-bottom: 0.5rem;
+    }
+</style>
+{% endblock %}
+
+{% block content %}
+<div class="d-flex justify-content-between flex-wrap flex-md-nowrap align-items-center pt-3 pb-2 mb-3 border-bottom">
+    <h1 class="h2">
+        <i class="bi bi-hdd-stack"></i> Storage Management
+    </h1>
+    <div class="btn-toolbar mb-2 mb-md-0">
+        <div class="btn-group me-2">
+            <form method="POST" action="{{ url_for('admin.storage_refresh') }}" class="d-inline">
+                <button type="submit" class="btn btn-outline-primary">
+                    <i class="bi bi-arrow-clockwise"></i> Refresh Data
+                </button>
+            </form>
+        </div>
+        <div class="btn-group">
+            <a href="{{ url_for('admin.cleanup') }}" class="btn btn-warning">
+                <i class="bi bi-trash"></i> Data Cleanup
+            </a>
+            {% if dashboard_data.is_blocked %}
+                <a href="{{ url_for('admin.storage_override') }}" class="btn btn-danger">
+                    <i class="bi bi-unlock"></i> Override Limits
+                </a>
+            {% endif %}
+        </div>
+    </div>
+</div>
+
+<!-- Storage Status Alert -->
+{% if dashboard_data.is_blocked %}
+    <div class="alert alert-danger" role="alert">
+        <i class="bi bi-exclamation-triangle-fill"></i>
+        <strong>Caption Generation Blocked</strong> - Storage limit exceeded
+        {% if dashboard_data.block_reason %}
+            <br><small>{{ dashboard_data.block_reason }}</small>
+        {% endif %}
+    </div>
+{% elif dashboard_data.is_limit_exceeded %}
+    <div class="alert alert-danger" role="alert">
+        <i class="bi bi-x-circle-fill"></i>
+        <strong>Storage Limit Exceeded</strong> - Immediate action required
+    </div>
+{% elif dashboard_data.is_warning_exceeded %}
+    <div class="alert alert-warning" role="alert">
+        <i class="bi bi-exclamation-triangle-fill"></i>
+        <strong>Warning Threshold Exceeded</strong> - Consider cleanup soon
+    </div>
+{% endif %}
+
+<!-- Storage Overview -->
+<div class="row mb-4">
+    <!-- Large Storage Gauge -->
+    <div class="col-md-6">
+        <div class="card storage-metric-card">
+            <div class="card-header bg-primary text-white">
+                <h5 class="mb-0">
+                    <i class="bi bi-pie-chart"></i> Storage Usage Overview
+                </h5>
+            </div>
+            <div class="card-body text-center">
+                <!-- Large Circular Gauge -->
+                <div class="position-relative d-inline-block mb-3">
+                    <svg class="storage-gauge-large">
+                        <!-- Background circle -->
+                        <circle cx="100" cy="100" r="80" 
+                                fill="none" 
+                                stroke="#e9ecef" 
+                                stroke-width="12"/>
+                        
+                        <!-- Warning threshold arc -->
+                        <circle cx="100" cy="100" r="80" 
+                                fill="none" 
+                                stroke="#ffc107" 
+                                stroke-width="12"
+                                stroke-dasharray="{{ (gauge_data.warning_percentage / 100 * 502.4) | round(1) }} 502.4"
+                                stroke-dashoffset="125.6"
+                                transform="rotate(-90 100 100)"
+                                opacity="0.3"/>
+                        
+                        <!-- Current usage arc -->
+                        <circle cx="100" cy="100" r="80" 
+                                fill="none" 
+                                stroke="{% if gauge_data.status_color == 'green' %}#28a745{% elif gauge_data.status_color == 'yellow' %}#ffc107{% else %}#dc3545{% endif %}" 
+                                stroke-width="12"
+                                stroke-dasharray="{{ (gauge_data.current_percentage / 100 * 502.4) | round(1) }} 502.4"
+                                stroke-dashoffset="125.6"
+                                transform="rotate(-90 100 100)"
+                                stroke-linecap="round"/>
+                    </svg>
+                    
+                    <!-- Center content -->
+                    <div class="position-absolute top-50 start-50 translate-middle text-center">
+                        <div class="metric-value text-{% if gauge_data.status_color == 'green' %}success{% elif gauge_data.status_color == 'yellow' %}warning{% else %}danger{% endif %}">
+                            {{ "%.1f" | format(gauge_data.current_percentage) }}%
+                        </div>
+                        <div class="metric-label">Used</div>
+                    </div>
+                </div>
+                
+                <!-- Status indicator -->
+                <div class="mb-3">
+                    <span class="status-indicator status-{% if gauge_data.status_color == 'green' %}healthy{% elif gauge_data.status_color == 'yellow' %}warning{% else %}critical{% endif %}"></span>
+                    <strong class="text-{% if gauge_data.status_color == 'green' %}success{% elif gauge_data.status_color == 'yellow' %}warning{% else %}danger{% endif %}">
+                        {{ gauge_data.status_text }}
+                    </strong>
+                </div>
+                
+                <!-- Usage breakdown -->
+                <div class="row text-center">
+                    <div class="col-4">
+                        <div class="metric-value text-primary" style="font-size: 1.5rem;">{{ dashboard_data.formatted_usage }}</div>
+                        <div class="metric-label">Current</div>
+                    </div>
+                    <div class="col-4">
+                        <div class="metric-value text-secondary" style="font-size: 1.5rem;">{{ dashboard_data.formatted_limit }}</div>
+                        <div class="metric-label">Limit</div>
+                    </div>
+                    <div class="col-4">
+                        <div class="metric-value text-success" style="font-size: 1.5rem;">{{ dashboard_data.formatted_available }}</div>
+                        <div class="metric-label">Available</div>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+    
+    <!-- Storage Metrics -->
+    <div class="col-md-6">
+        <div class="row">
+            <!-- Current Usage -->
+            <div class="col-12 mb-3">
+                <div class="card storage-metric-card">
+                    <div class="card-body">
+                        <div class="d-flex justify-content-between align-items-center">
+                            <div>
+                                <h6 class="card-title text-muted mb-1">Current Usage</h6>
+                                <div class="metric-value text-primary">{{ dashboard_data.current_usage_gb | round(2) }} GB</div>
+                            </div>
+                            <div class="text-primary" style="font-size: 3rem;">
+                                <i class="bi bi-hdd"></i>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+            
+            <!-- Storage Limit -->
+            <div class="col-12 mb-3">
+                <div class="card storage-metric-card">
+                    <div class="card-body">
+                        <div class="d-flex justify-content-between align-items-center">
+                            <div>
+                                <h6 class="card-title text-muted mb-1">Storage Limit</h6>
+                                <div class="metric-value text-secondary">{{ dashboard_data.limit_gb | round(2) }} GB</div>
+                            </div>
+                            <div class="text-secondary" style="font-size: 3rem;">
+                                <i class="bi bi-hdd-stack"></i>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+            
+            <!-- Available Space -->
+            <div class="col-12 mb-3">
+                <div class="card storage-metric-card">
+                    <div class="card-body">
+                        <div class="d-flex justify-content-between align-items-center">
+                            <div>
+                                <h6 class="card-title text-muted mb-1">Available Space</h6>
+                                <div class="metric-value text-success">{{ dashboard_data.available_space_gb | round(2) }} GB</div>
+                            </div>
+                            <div class="text-success" style="font-size: 3rem;">
+                                <i class="bi bi-hdd-fill"></i>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+
+<!-- Enforcement Statistics -->
+<div class="row mb-4">
+    <div class="col-12">
+        <div class="card storage-metric-card">
+            <div class="card-header bg-info text-white">
+                <h5 class="mb-0">
+                    <i class="bi bi-graph-up"></i> Enforcement Statistics
+                </h5>
+            </div>
+            <div class="card-body">
+                <div class="row">
+                    <div class="col-md-3">
+                        <div class="enforcement-stat text-center">
+                            <div class="metric-value text-primary">{{ dashboard_data.enforcement_stats.total_checks | default(0) }}</div>
+                            <div class="metric-label">Total Checks</div>
+                        </div>
+                    </div>
+                    <div class="col-md-3">
+                        <div class="enforcement-stat text-center">
+                            <div class="metric-value text-warning">{{ dashboard_data.enforcement_stats.blocks_enforced | default(0) }}</div>
+                            <div class="metric-label">Blocks Enforced</div>
+                        </div>
+                    </div>
+                    <div class="col-md-3">
+                        <div class="enforcement-stat text-center">
+                            <div class="metric-value text-success">{{ dashboard_data.enforcement_stats.automatic_unblocks | default(0) }}</div>
+                            <div class="metric-label">Auto Unblocks</div>
+                        </div>
+                    </div>
+                    <div class="col-md-3">
+                        <div class="enforcement-stat text-center">
+                            <div class="metric-value text-danger">{{ dashboard_data.enforcement_stats.limit_exceeded_count | default(0) }}</div>
+                            <div class="metric-label">Limit Exceeded</div>
+                        </div>
+                    </div>
+                </div>
+                
+                {% if dashboard_data.enforcement_stats.last_block_time %}
+                    <hr>
+                    <div class="row">
+                        <div class="col-md-6">
+                            <small class="text-muted">
+                                <i class="bi bi-clock"></i>
+                                Last Block: {{ dashboard_data.enforcement_stats.last_block_time }}
+                            </small>
+                        </div>
+                        {% if dashboard_data.enforcement_stats.last_unblock_time %}
+                            <div class="col-md-6">
+                                <small class="text-muted">
+                                    <i class="bi bi-clock"></i>
+                                    Last Unblock: {{ dashboard_data.enforcement_stats.last_unblock_time }}
+                                </small>
+                            </div>
+                        {% endif %}
+                    </div>
+                {% endif %}
+            </div>
+        </div>
+    </div>
+</div>
+
+<!-- System Health and Cache Info -->
+<div class="row mb-4">
+    <!-- System Health -->
+    <div class="col-md-6">
+        <div class="card storage-metric-card">
+            <div class="card-header bg-{% if health_data.overall_healthy %}success{% else %}danger{% endif %} text-white">
+                <h5 class="mb-0">
+                    <i class="bi bi-heart-pulse"></i> System Health
+                </h5>
+            </div>
+            <div class="card-body">
+                <div class="list-group list-group-flush">
+                    <div class="list-group-item d-flex justify-content-between align-items-center">
+                        Configuration Service
+                        <span class="badge bg-{% if health_data.config_service_healthy %}success{% else %}danger{% endif %}">
+                            {% if health_data.config_service_healthy %}Healthy{% else %}Error{% endif %}
+                        </span>
+                    </div>
+                    <div class="list-group-item d-flex justify-content-between align-items-center">
+                        Monitor Service
+                        <span class="badge bg-{% if health_data.monitor_service_healthy %}success{% else %}danger{% endif %}">
+                            {% if health_data.monitor_service_healthy %}Healthy{% else %}Error{% endif %}
+                        </span>
+                    </div>
+                    <div class="list-group-item d-flex justify-content-between align-items-center">
+                        Enforcer Service
+                        <span class="badge bg-{% if health_data.enforcer_service_healthy %}success{% else %}danger{% endif %}">
+                            {% if health_data.enforcer_service_healthy %}Healthy{% else %}Error{% endif %}
+                        </span>
+                    </div>
+                    <div class="list-group-item d-flex justify-content-between align-items-center">
+                        Dashboard Data
+                        <span class="badge bg-{% if health_data.dashboard_data_accessible %}success{% else %}danger{% endif %}">
+                            {% if health_data.dashboard_data_accessible %}Accessible{% else %}Error{% endif %}
+                        </span>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+    
+    <!-- Cache Information -->
+    <div class="col-md-6">
+        <div class="card storage-metric-card">
+            <div class="card-header bg-secondary text-white">
+                <h5 class="mb-0">
+                    <i class="bi bi-speedometer2"></i> Cache Information
+                </h5>
+            </div>
+            <div class="card-body">
+                <div class="list-group list-group-flush">
+                    <div class="list-group-item d-flex justify-content-between align-items-center">
+                        Cache Status
+                        <span class="badge bg-{% if dashboard_data.cache_info.has_cache %}success{% else %}warning{% endif %}">
+                            {% if dashboard_data.cache_info.has_cache %}Active{% else %}No Cache{% endif %}
+                        </span>
+                    </div>
+                    {% if dashboard_data.cache_info.has_cache %}
+                        <div class="list-group-item d-flex justify-content-between align-items-center">
+                            Cache Valid
+                            <span class="badge bg-{% if dashboard_data.cache_info.is_valid %}success{% else %}warning{% endif %}">
+                                {% if dashboard_data.cache_info.is_valid %}Valid{% else %}Expired{% endif %}
+                            </span>
+                        </div>
+                        {% if dashboard_data.cache_info.cache_age_seconds is not none %}
+                            <div class="list-group-item d-flex justify-content-between align-items-center">
+                                Cache Age
+                                <small class="text-muted">{{ (dashboard_data.cache_info.cache_age_seconds / 60) | round(1) }} minutes</small>
+                            </div>
+                        {% endif %}
+                        {% if dashboard_data.cache_info.cache_expires_in_seconds is not none %}
+                            <div class="list-group-item d-flex justify-content-between align-items-center">
+                                Expires In
+                                <small class="text-muted">{{ (dashboard_data.cache_info.cache_expires_in_seconds / 60) | round(1) }} minutes</small>
+                            </div>
+                        {% endif %}
+                    {% endif %}
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+
+<!-- Quick Actions -->
+<div class="row">
+    <div class="col-12">
+        <div class="card storage-metric-card">
+            <div class="card-header bg-dark text-white">
+                <h5 class="mb-0">
+                    <i class="bi bi-lightning-charge"></i> Quick Actions
+                </h5>
+            </div>
+            <div class="card-body">
+                <div class="row g-3">
+                    {% for action in actions_data.actions %}
+                        <div class="col-md-4">
+                            <a href="{% if action.url.startswith('http') %}{{ action.url }}{% else %}{{ url_for(action.url) if action.url != '#' else '#' }}{% endif %}" 
+                               class="btn {{ action.class }} w-100 d-flex flex-column justify-content-center p-3"
+                               style="height: 80px;">
+                                <i class="{{ action.icon }} mb-2" style="font-size: 1.5rem;"></i>
+                                <span class="fw-bold">{{ action.title }}</span>
+                                <small class="text-muted">{{ action.description }}</small>
+                            </a>
+                        </div>
+                    {% endfor %}
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+
+{% endblock %}
+
+{% block extra_js %}
+<script>
+document.addEventListener('DOMContentLoaded', function() {
+    // Auto-refresh storage data every 2 minutes
+    setInterval(function() {
+        refreshStorageData();
+    }, 120000); // 2 minutes
+    
+    // Refresh storage data via AJAX
+    function refreshStorageData() {
+        fetch('{{ url_for("admin.storage_api_data") }}')
+            .then(response => response.json())
+            .then(data => {
+                if (data.success) {
+                    console.log('Storage data refreshed:', data.data.timestamp);
+                    // You could update specific elements here without full page reload
+                    updateStorageDisplay(data.data);
+                } else {
+                    console.error('Failed to refresh storage data:', data.error);
+                }
+            })
+            .catch(error => {
+                console.error('Error refreshing storage data:', error);
+            });
+    }
+    
+    // Update storage display elements
+    function updateStorageDisplay(data) {
+        // Update gauge percentage
+        const gaugeCircle = document.querySelector('.storage-gauge-large circle:last-child');
+        if (gaugeCircle && data.gauge) {
+            const circumference = 502.4;
+            const dashArray = (data.gauge.current_percentage / 100 * circumference).toFixed(1);
+            gaugeCircle.setAttribute('stroke-dasharray', dashArray + ' ' + circumference);
+        }
+        
+        // Update percentage text
+        const percentageText = document.querySelector('.metric-value');
+        if (percentageText && data.gauge) {
+            percentageText.textContent = data.gauge.current_percentage.toFixed(1) + '%';
+        }
+        
+        // Update status indicators
+        const statusIndicators = document.querySelectorAll('.status-indicator');
+        statusIndicators.forEach(indicator => {
+            indicator.className = 'status-indicator status-' + 
+                (data.gauge.status_color === 'green' ? 'healthy' : 
+                 data.gauge.status_color === 'yellow' ? 'warning' : 'critical');
+        });
+    }
+    
+    // Add confirmation for critical actions
+    document.querySelectorAll('a[href*="override"], a[href*="cleanup"]').forEach(function(element) {
+        element.addEventListener('click', function(e) {
+            const actionName = this.textContent.trim();
+            if (!confirm(`Are you sure you want to perform this action: ${actionName}?`)) {
+                e.preventDefault();
+                return false;
+            }
+        });
+    });
+});
+</script>
+{% endblock %}

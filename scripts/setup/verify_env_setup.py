@@ -171,6 +171,49 @@ def check_email_config():
         print(f"❌ Email config: Failed to validate ({e})")
         return False
 
+def check_storage_config():
+    """Check storage management configuration"""
+    try:
+        max_storage_gb = os.getenv('CAPTION_MAX_STORAGE_GB')
+        warning_threshold = os.getenv('STORAGE_WARNING_THRESHOLD', '80')
+        monitoring_enabled = os.getenv('STORAGE_MONITORING_ENABLED', 'true')
+        
+        # Validate max storage GB
+        if not max_storage_gb:
+            print("❌ Storage config: CAPTION_MAX_STORAGE_GB not set")
+            return False
+        
+        try:
+            max_storage_float = float(max_storage_gb)
+            if max_storage_float <= 0:
+                print(f"❌ Storage config: CAPTION_MAX_STORAGE_GB must be positive, got: {max_storage_float}")
+                return False
+        except ValueError:
+            print(f"❌ Storage config: CAPTION_MAX_STORAGE_GB must be numeric, got: '{max_storage_gb}'")
+            return False
+        
+        # Validate warning threshold
+        try:
+            warning_float = float(warning_threshold)
+            if warning_float <= 0 or warning_float > 100:
+                print(f"❌ Storage config: STORAGE_WARNING_THRESHOLD must be between 0 and 100, got: {warning_float}")
+                return False
+        except ValueError:
+            print(f"❌ Storage config: STORAGE_WARNING_THRESHOLD must be numeric, got: '{warning_threshold}'")
+            return False
+        
+        # Validate monitoring enabled
+        if monitoring_enabled.lower() not in ['true', 'false']:
+            print(f"❌ Storage config: STORAGE_MONITORING_ENABLED must be 'true' or 'false', got: '{monitoring_enabled}'")
+            return False
+        
+        print(f"✅ Storage config: Max={max_storage_gb}GB, Warning={warning_threshold}%, Monitoring={monitoring_enabled}")
+        return True
+        
+    except Exception as e:
+        print(f"❌ Storage config: Failed to validate ({e})")
+        return False
+
 def main():
     print("🔍 Vedfolnir Environment Setup Verification")
     print("=" * 50)
@@ -217,6 +260,11 @@ def main():
     all_checks_passed &= check_env_variable("MAIL_USERNAME", "Email username", required=False)
     all_checks_passed &= check_env_variable("MAIL_PASSWORD", "Email password", required=False)
     all_checks_passed &= check_env_variable("MAIL_DEFAULT_SENDER", "Email default sender", required=False)
+    
+    # Check storage management settings
+    all_checks_passed &= check_env_variable("CAPTION_MAX_STORAGE_GB", "Storage limit", required=True)
+    all_checks_passed &= check_env_variable("STORAGE_WARNING_THRESHOLD", "Storage warning threshold", required=False)
+    all_checks_passed &= check_env_variable("STORAGE_MONITORING_ENABLED", "Storage monitoring", required=False)
     print()
     
     # Check encryption key format
@@ -232,6 +280,11 @@ def main():
     # Check email configuration
     print("📧 Email Configuration:")
     all_checks_passed &= check_email_config()
+    print()
+    
+    # Check storage configuration
+    print("💾 Storage Configuration:")
+    all_checks_passed &= check_storage_config()
     print()
     
     # Check database connection

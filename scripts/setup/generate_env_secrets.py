@@ -14,6 +14,7 @@ import secrets
 import string
 import sys
 import os
+import re
 from pathlib import Path
 
 # Add the project root to the Python path
@@ -320,6 +321,32 @@ def main():
     ollama_url = input("Ollama URL (default: http://localhost:11434): ").strip() or "http://localhost:11434"
     ollama_model = input("Ollama model (default: llava:7b): ").strip() or "llava:7b"
     
+    # Get storage configuration from user
+    print("\nStorage Configuration:")
+    print("Configure storage limits for image caption generation")
+    storage_max_gb = input("Maximum storage for images in GB (default: 10): ").strip() or "10"
+    storage_warning_threshold = input("Warning threshold percentage (default: 80): ").strip() or "80"
+    storage_monitoring_enabled = input("Enable storage monitoring? (Y/n): ").strip().lower() != 'n'
+    
+    # Validate storage configuration
+    try:
+        storage_max_gb_float = float(storage_max_gb)
+        if storage_max_gb_float <= 0:
+            print("Warning: Storage limit must be positive, using default value of 10GB")
+            storage_max_gb = "10"
+    except ValueError:
+        print("Warning: Invalid storage limit, using default value of 10GB")
+        storage_max_gb = "10"
+    
+    try:
+        storage_warning_threshold_float = float(storage_warning_threshold)
+        if storage_warning_threshold_float <= 0 or storage_warning_threshold_float > 100:
+            print("Warning: Warning threshold must be between 0 and 100, using default value of 80%")
+            storage_warning_threshold = "80"
+    except ValueError:
+        print("Warning: Invalid warning threshold, using default value of 80%")
+        storage_warning_threshold = "80"
+    
     # Get email configuration from user
     print("\nEmail Configuration:")
     print("Configure email settings for user notifications (verification, password reset, etc.)")
@@ -494,8 +521,28 @@ def main():
                 f"OLLAMA_MODEL={ollama_model}"
             )
             
+            # Update storage configuration
+            env_content = re.sub(
+                r'^CAPTION_MAX_STORAGE_GB=.*$',
+                f'CAPTION_MAX_STORAGE_GB={storage_max_gb}',
+                env_content, flags=re.MULTILINE
+            )
+            
+            # Add storage configuration if not present
+            if 'STORAGE_WARNING_THRESHOLD=' not in env_content:
+                storage_config = f"""
+# Storage Management Configuration
+STORAGE_WARNING_THRESHOLD={storage_warning_threshold}
+STORAGE_MONITORING_ENABLED={'true' if storage_monitoring_enabled else 'false'}
+"""
+                # Insert after CAPTION_MAX_STORAGE_GB line
+                env_content = re.sub(
+                    r'(^CAPTION_MAX_STORAGE_GB=.*$)',
+                    r'\1' + storage_config,
+                    env_content, flags=re.MULTILINE
+                )
+            
             # Update database configuration
-            import re
             if database_settings.get('DB_TYPE') == 'mysql':
                 # Replace DATABASE_URL
                 env_content = re.sub(
@@ -734,6 +781,11 @@ LOG_LEVEL=INFO
 # Ollama Configuration
 OLLAMA_URL={ollama_url}
 OLLAMA_MODEL={ollama_model}
+
+# Storage Management Configuration
+CAPTION_MAX_STORAGE_GB={storage_max_gb}
+STORAGE_WARNING_THRESHOLD={storage_warning_threshold}
+STORAGE_MONITORING_ENABLED={'true' if storage_monitoring_enabled else 'false'}
 
 # Security Settings
 SECURITY_CSRF_ENABLED={security_settings['SECURITY_CSRF_ENABLED']}

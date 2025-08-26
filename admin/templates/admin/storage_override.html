@@ -1,0 +1,162 @@
+<!-- Copyright (C) 2025 iolaire mcfadden. -->
+<!-- This program is free software: you can redistribute it and/or modify it under the terms of the GNU Affero General Public License as published by the Free Software Foundation, either version 3 of the License, or (at your option) any later version. -->
+<!-- THE SOFTWARE IS PROVIDED "AS IS", WITHOUT WARRANTY OF ANY KIND, EXPRESS OR IMPLIED, INCLUDING BUT NOT LIMITED TO THE WARRANTIES OF MERCHANTABILITY, FITNESS FOR A PARTICULAR PURPOSE AND NONINFRINGEMENT. IN NO EVENT SHALL THE AUTHORS OR COPYRIGHT HOLDERS BE LIABLE FOR ANY CLAIM, DAMAGES OR OTHER LIABILITY, WHETHER IN AN ACTION OF CONTRACT, TORT OR OTHERWISE, ARISING FROM, OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE SOFTWARE. -->
+
+{% extends "base_admin.html" %}
+
+{% block title %}Storage Override - Admin Dashboard - Vedfolnir{% endblock %}
+
+{% block content %}
+<div class="d-flex justify-content-between flex-wrap flex-md-nowrap align-items-center pt-3 pb-2 mb-3 border-bottom">
+    <h1 class="h2">
+        <i class="bi bi-unlock"></i> Storage Override Management
+    </h1>
+    <div class="btn-toolbar mb-2 mb-md-0">
+        <div class="btn-group">
+            <a href="{{ url_for('admin.storage_dashboard') }}" class="btn btn-outline-primary">
+                <i class="bi bi-arrow-left"></i> Back to Storage Dashboard
+            </a>
+        </div>
+    </div>
+</div>
+
+<!-- Current Storage Status -->
+<div class="row mb-4">
+    <div class="col-12">
+        <div class="card">
+            <div class="card-header bg-info text-white">
+                <h5 class="mb-0">Current Storage Status</h5>
+            </div>
+            <div class="card-body">
+                <div class="row">
+                    <div class="col-md-4">
+                        <strong>Usage:</strong> {{ dashboard_data.formatted_usage }} / {{ dashboard_data.formatted_limit }}
+                    </div>
+                    <div class="col-md-4">
+                        <strong>Percentage:</strong> {{ dashboard_data.formatted_percentage }}
+                    </div>
+                    <div class="col-md-4">
+                        <strong>Status:</strong> 
+                        <span class="badge bg-{% if dashboard_data.status_color == 'green' %}success{% elif dashboard_data.status_color == 'yellow' %}warning{% else %}danger{% endif %}">
+                            {{ dashboard_data.status_text }}
+                        </span>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+
+<!-- Override Status -->
+<div class="row mb-4">
+    <div class="col-12">
+        <div class="card">
+            <div class="card-header bg-{% if override_data.is_active %}warning{% else %}secondary{% endif %} text-white">
+                <h5 class="mb-0">Override Status</h5>
+            </div>
+            <div class="card-body">
+                {% if override_data.is_active %}
+                    <div class="alert alert-warning">
+                        <i class="bi bi-exclamation-triangle-fill"></i>
+                        <strong>Storage Override Active</strong>
+                        <br>Reason: {{ override_data.reason }}
+                        <br>Activated by: {{ override_data.activated_by }}
+                        <br>Remaining time: {{ override_data.remaining_time }}
+                    </div>
+                    
+                    <form method="POST" class="d-inline">
+                        <input type="hidden" name="action" value="deactivate">
+                        <button type="submit" class="btn btn-danger" onclick="return confirm('Are you sure you want to deactivate the storage override?')">
+                            <i class="bi bi-x-circle"></i> Deactivate Override
+                        </button>
+                    </form>
+                {% else %}
+                    <div class="alert alert-info">
+                        <i class="bi bi-info-circle"></i>
+                        No storage override is currently active.
+                    </div>
+                    
+                    {% if dashboard_data.is_blocked or dashboard_data.is_limit_exceeded %}
+                        <h6>Activate Storage Override</h6>
+                        <form method="POST">
+                            <input type="hidden" name="action" value="activate">
+                            
+                            <div class="row">
+                                <div class="col-md-6">
+                                    <div class="mb-3">
+                                        <label for="duration_hours" class="form-label">Duration (hours)</label>
+                                        <select class="form-select" id="duration_hours" name="duration_hours" required>
+                                            <option value="1">1 hour</option>
+                                            <option value="2">2 hours</option>
+                                            <option value="4">4 hours</option>
+                                            <option value="8">8 hours</option>
+                                            <option value="12">12 hours</option>
+                                            <option value="24">24 hours</option>
+                                        </select>
+                                    </div>
+                                </div>
+                                <div class="col-md-6">
+                                    <div class="mb-3">
+                                        <label for="reason" class="form-label">Reason</label>
+                                        <input type="text" class="form-control" id="reason" name="reason" 
+                                               placeholder="Emergency override reason" required>
+                                    </div>
+                                </div>
+                            </div>
+                            
+                            <div class="alert alert-warning">
+                                <i class="bi bi-exclamation-triangle"></i>
+                                <strong>Warning:</strong> This will temporarily allow caption generation even when storage limits are exceeded. 
+                                Use only in emergency situations and ensure cleanup is performed promptly.
+                            </div>
+                            
+                            <button type="submit" class="btn btn-warning" onclick="return confirm('Are you sure you want to activate storage override? This should only be used in emergencies.')">
+                                <i class="bi bi-unlock"></i> Activate Override
+                            </button>
+                        </form>
+                    {% else %}
+                        <p class="text-muted">Storage override is not needed - storage usage is within normal limits.</p>
+                    {% endif %}
+                {% endif %}
+            </div>
+        </div>
+    </div>
+</div>
+
+<!-- Override Information -->
+<div class="row">
+    <div class="col-12">
+        <div class="card">
+            <div class="card-header bg-dark text-white">
+                <h5 class="mb-0">Override Information</h5>
+            </div>
+            <div class="card-body">
+                <h6>What is Storage Override?</h6>
+                <p>Storage override temporarily bypasses storage limit enforcement, allowing caption generation to continue even when storage limits are exceeded. This feature should only be used in emergency situations.</p>
+                
+                <h6>When to Use Override:</h6>
+                <ul>
+                    <li>Emergency situations requiring immediate caption generation</li>
+                    <li>Temporary bypass while performing cleanup operations</li>
+                    <li>Critical accessibility requirements that cannot wait</li>
+                </ul>
+                
+                <h6>Important Notes:</h6>
+                <ul>
+                    <li>Override is time-limited (maximum 24 hours)</li>
+                    <li>All override actions are logged for audit purposes</li>
+                    <li>Cleanup should be performed as soon as possible</li>
+                    <li>Override automatically expires after the specified duration</li>
+                </ul>
+                
+                <div class="alert alert-info">
+                    <i class="bi bi-lightbulb"></i>
+                    <strong>Tip:</strong> Consider using the <a href="{{ url_for('admin.cleanup') }}" class="alert-link">Data Cleanup</a> 
+                    tools to free up storage space instead of using override when possible.
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+
+{% endblock %}

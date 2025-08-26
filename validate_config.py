@@ -43,7 +43,9 @@ def validate_core_config():
         'OLLAMA_URL': 'http://localhost:11434',
         'OLLAMA_MODEL': 'llava:7b',
         'LOG_LEVEL': 'INFO',
-        'DATABASE_URL': 'mysql+pymysql://vedfolnir_user:vedfolnir_password@localhost/vedfolnir?charset=utf8mb4'
+        'DATABASE_URL': 'mysql+pymysql://vedfolnir_user:vedfolnir_password@localhost/vedfolnir?charset=utf8mb4',
+        'STORAGE_WARNING_THRESHOLD': '80',
+        'STORAGE_MONITORING_ENABLED': 'true'
     }
     
     for var, default in recommended_vars.items():
@@ -70,7 +72,9 @@ def validate_core_config():
         'OLLAMA_TIMEOUT': (1, 300, 'Ollama timeout in seconds'),
         'MAX_POSTS_PER_RUN': (1, 1000, 'Maximum posts per run'),
         'MAX_USERS_PER_RUN': (1, 100, 'Maximum users per run'),
-        'USER_PROCESSING_DELAY': (0, 60, 'User processing delay in seconds')
+        'USER_PROCESSING_DELAY': (0, 60, 'User processing delay in seconds'),
+        'CAPTION_MAX_STORAGE_GB': (0.1, 1000, 'Maximum storage for images in GB'),
+        'STORAGE_WARNING_THRESHOLD': (1, 100, 'Storage warning threshold percentage')
     }
     
     for var, (min_val, max_val, description) in numeric_configs.items():

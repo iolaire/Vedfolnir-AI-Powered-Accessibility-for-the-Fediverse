@@ -1,0 +1,253 @@
+<!-- Copyright (C) 2025 iolaire mcfadden. -->
+<!-- This program is free software: you can redistribute it and/or modify it under the terms of the GNU Affero General Public License as published by the Free Software Foundation, either version 3 of the License, or (at your option) any later version. -->
+<!-- THE SOFTWARE IS PROVIDED "AS IS", WITHOUT WARRANTY OF ANY KIND, EXPRESS OR IMPLIED, INCLUDING BUT NOT LIMITED TO THE WARRANTIES OF MERCHANTABILITY, FITNESS FOR A PARTICULAR PURPOSE AND NONINFRINGEMENT. IN NO EVENT SHALL THE AUTHORS OR COPYRIGHT HOLDERS BE LIABLE FOR ANY CLAIM, DAMAGES OR OTHER LIABILITY, WHETHER IN AN ACTION OF CONTRACT, TORT OR OTHERWISE, ARISING FROM, OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE SOFTWARE. -->
+
+<!-- Storage Monitoring Section for Admin Dashboard -->
+<div class="row mb-4">
+    <div class="col-12">
+        <div class="card dashboard-card">
+            <div class="card-header {{ storage_data.header_class if storage_data.header_class else 'bg-primary text-white' }}">
+                <h5 class="mb-0">
+                    <i class="{{ storage_data.status_icon if storage_data.status_icon else 'bi-hdd-stack' }}"></i> 
+                    {{ storage_data.title }}
+                    <span class="badge bg-light text-dark ms-2">{{ storage_data.status_text }}</span>
+                </h5>
+            </div>
+            <div class="card-body">
+                <div class="row">
+                    <!-- Storage Usage Gauge -->
+                    <div class="col-md-6">
+                        <div class="text-center mb-3">
+                            <h6 class="text-muted mb-3">Current Usage</h6>
+                            
+                            <!-- Circular Progress Gauge -->
+                            <div class="position-relative d-inline-block">
+                                <svg width="120" height="120" class="storage-gauge">
+                                    <!-- Background circle -->
+                                    <circle cx="60" cy="60" r="50" 
+                                            fill="none" 
+                                            stroke="#e9ecef" 
+                                            stroke-width="8"/>
+                                    
+                                    <!-- Warning threshold arc -->
+                                    <circle cx="60" cy="60" r="50" 
+                                            fill="none" 
+                                            stroke="#ffc107" 
+                                            stroke-width="8"
+                                            stroke-dasharray="{{ (storage_gauge.warning_percentage / 100 * 314) | round(1) }} 314"
+                                            stroke-dashoffset="78.5"
+                                            transform="rotate(-90 60 60)"
+                                            opacity="0.3"/>
+                                    
+                                    <!-- Current usage arc -->
+                                    <circle cx="60" cy="60" r="50" 
+                                            fill="none" 
+                                            stroke="{% if storage_gauge.status_color == 'green' %}#28a745{% elif storage_gauge.status_color == 'yellow' %}#ffc107{% else %}#dc3545{% endif %}" 
+                                            stroke-width="8"
+                                            stroke-dasharray="{{ (storage_gauge.current_percentage / 100 * 314) | round(1) }} 314"
+                                            stroke-dashoffset="78.5"
+                                            transform="rotate(-90 60 60)"
+                                            stroke-linecap="round"/>
+                                </svg>
+                                
+                                <!-- Center text -->
+                                <div class="position-absolute top-50 start-50 translate-middle text-center">
+                                    <div class="h4 mb-0 fw-bold text-{% if storage_gauge.status_color == 'green' %}success{% elif storage_gauge.status_color == 'yellow' %}warning{% else %}danger{% endif %}">
+                                        {{ "%.1f" | format(storage_gauge.current_percentage) }}%
+                                    </div>
+                                    <small class="text-muted">Used</small>
+                                </div>
+                            </div>
+                            
+                            <!-- Usage details -->
+                            <div class="mt-3">
+                                <div class="d-flex justify-content-between align-items-center mb-1">
+                                    <small class="text-muted">Current:</small>
+                                    <small class="fw-bold">{{ storage_data.current_usage }}</small>
+                                </div>
+                                <div class="d-flex justify-content-between align-items-center mb-1">
+                                    <small class="text-muted">Limit:</small>
+                                    <small class="fw-bold">{{ storage_data.limit }}</small>
+                                </div>
+                                <div class="d-flex justify-content-between align-items-center">
+                                    <small class="text-muted">Available:</small>
+                                    <small class="fw-bold text-success">{{ storage_data.available }}</small>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                    
+                    <!-- Storage Status and Actions -->
+                    <div class="col-md-6">
+                        <h6 class="text-muted mb-3">Status & Actions</h6>
+                        
+                        <!-- Status Indicators -->
+                        <div class="mb-3">
+                            {% if storage_data.is_blocked %}
+                                <div class="alert alert-danger py-2 mb-2">
+                                    <i class="bi bi-exclamation-triangle-fill"></i>
+                                    <strong>Caption Generation Blocked</strong>
+                                    {% if storage_data.block_reason %}
+                                        <br><small>{{ storage_data.block_reason }}</small>
+                                    {% endif %}
+                                </div>
+                            {% elif storage_data.is_critical %}
+                                <div class="alert alert-danger py-2 mb-2">
+                                    <i class="bi bi-x-circle-fill"></i>
+                                    <strong>Storage Limit Exceeded</strong>
+                                    <br><small>Immediate action required</small>
+                                </div>
+                            {% elif storage_data.is_warning %}
+                                <div class="alert alert-warning py-2 mb-2">
+                                    <i class="bi bi-exclamation-triangle-fill"></i>
+                                    <strong>Warning Threshold Exceeded</strong>
+                                    <br><small>Consider cleanup soon</small>
+                                </div>
+                            {% else %}
+                                <div class="alert alert-success py-2 mb-2">
+                                    <i class="bi bi-check-circle-fill"></i>
+                                    <strong>Storage Normal</strong>
+                                    <br><small>No action required</small>
+                                </div>
+                            {% endif %}
+                        </div>
+                        
+                        <!-- Quick Actions -->
+                        <div class="d-grid gap-2">
+                            {% for action in storage_actions.actions[:3] %}
+                                <a href="{% if action.url.startswith('http') %}{{ action.url }}{% else %}{{ url_for(action.url) if action.url != '#' else '#' }}{% endif %}" 
+                                   class="btn {{ action.class }} btn-sm d-flex align-items-center justify-content-between">
+                                    <span>
+                                        <i class="{{ action.icon }}"></i>
+                                        {{ action.title }}
+                                    </span>
+                                    <small class="text-muted">{{ action.description }}</small>
+                                </a>
+                            {% endfor %}
+                            
+                            {% if storage_actions.actions | length > 3 %}
+                                <button class="btn btn-outline-secondary btn-sm" type="button" data-bs-toggle="collapse" data-bs-target="#moreStorageActions">
+                                    <i class="bi bi-three-dots"></i> More Actions
+                                </button>
+                                <div class="collapse" id="moreStorageActions">
+                                    <div class="d-grid gap-2 mt-2">
+                                        {% for action in storage_actions.actions[3:] %}
+                                            <a href="{% if action.url.startswith('http') %}{{ action.url }}{% else %}{{ url_for(action.url) if action.url != '#' else '#' }}{% endif %}" 
+                                               class="btn {{ action.class }} btn-sm">
+                                                <i class="{{ action.icon }}"></i>
+                                                {{ action.title }}
+                                            </a>
+                                        {% endfor %}
+                                    </div>
+                                </div>
+                            {% endif %}
+                        </div>
+                        
+                        <!-- Last Updated -->
+                        <div class="mt-3 pt-2 border-top">
+                            <small class="text-muted">
+                                <i class="bi bi-clock"></i>
+                                Last updated: {{ storage_data.last_updated }}
+                            </small>
+                        </div>
+                    </div>
+                </div>
+                
+                <!-- Progress Bar (Alternative visualization) -->
+                <div class="mt-3">
+                    <div class="d-flex justify-content-between align-items-center mb-1">
+                        <small class="text-muted">Storage Usage</small>
+                        <small class="text-muted">{{ storage_data.percentage }}</small>
+                    </div>
+                    <div class="progress" style="height: 8px;">
+                        <!-- Warning threshold background -->
+                        <div class="progress-bar bg-warning opacity-25" 
+                             style="width: {{ storage_gauge.warning_percentage }}%"></div>
+                        
+                        <!-- Current usage -->
+                        <div class="progress-bar {% if storage_gauge.status_color == 'green' %}bg-success{% elif storage_gauge.status_color == 'yellow' %}bg-warning{% else %}bg-danger{% endif %}" 
+                             style="width: {{ storage_gauge.current_percentage }}%; position: absolute; left: 0;"></div>
+                    </div>
+                    <div class="d-flex justify-content-between mt-1">
+                        <small class="text-muted">0 GB</small>
+                        <small class="text-muted">{{ storage_data.limit }}</small>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+
+<!-- Storage Monitoring Styles -->
+<style>
+.storage-gauge {
+    filter: drop-shadow(0 2px 4px rgba(0,0,0,0.1));
+}
+
+.storage-gauge circle {
+    transition: stroke-dasharray 0.5s ease-in-out;
+}
+
+.progress {
+    position: relative;
+    overflow: visible;
+}
+
+.progress-bar {
+    transition: width 0.5s ease-in-out;
+}
+
+/* Status-specific styling */
+.storage-status-green {
+    border-left: 4px solid #28a745;
+}
+
+.storage-status-yellow {
+    border-left: 4px solid #ffc107;
+}
+
+.storage-status-red {
+    border-left: 4px solid #dc3545;
+}
+
+/* Responsive adjustments */
+@media (max-width: 768px) {
+    .storage-gauge {
+        width: 100px;
+        height: 100px;
+    }
+    
+    .storage-gauge circle {
+        r: 40;
+        cx: 50;
+        cy: 50;
+    }
+}
+</style>
+
+<!-- Storage Monitoring JavaScript -->
+<script>
+document.addEventListener('DOMContentLoaded', function() {
+    // Auto-refresh storage data every 5 minutes
+    setInterval(function() {
+        // You could add AJAX calls here to update storage data
+        console.log('Auto-refresh storage data');
+    }, 300000); // 5 minutes
+    
+    // Add click handlers for storage actions
+    document.querySelectorAll('[data-storage-action]').forEach(function(element) {
+        element.addEventListener('click', function(e) {
+            const action = this.getAttribute('data-storage-action');
+            console.log('Storage action clicked:', action);
+            
+            // Add confirmation for critical actions
+            if (action === 'override' || action === 'cleanup') {
+                if (!confirm('Are you sure you want to perform this action?')) {
+                    e.preventDefault();
+                    return false;
+                }
+            }
+        });
+    });
+});
+</script>

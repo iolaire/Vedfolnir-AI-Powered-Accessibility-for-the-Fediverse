@@ -12,8 +12,102 @@
     <div class="alert alert-info">
         <p>This interface allows you to clean up old data from the database. Use with caution!</p>
         <p>All operations can be run in "dry run" mode to see what would be deleted without actually deleting anything.</p>
-
     </div>
+    
+    <!-- Storage Warnings Section -->
+    {% if stats.storage_available and stats.storage_warnings %}
+    <div class="card mb-4">
+        <div class="card-header">
+            <h2 class="h5 mb-0">
+                <i class="bi bi-hdd-stack"></i> Storage Status & Warnings
+            </h2>
+        </div>
+        <div class="card-body">
+            <!-- Storage Warnings -->
+            {% for warning in stats.storage_warnings.warnings %}
+            <div class="alert alert-{{ 'danger' if warning.type == 'critical' else 'warning' if warning.type == 'warning' else 'info' if warning.type == 'info' else 'danger' }} mb-3">
+                <div class="d-flex align-items-center">
+                    <i class="{{ warning.icon }} fs-4 me-3"></i>
+                    <div class="flex-grow-1">
+                        <strong>{{ warning.title }}</strong><br>
+                        {{ warning.message }}
+                    </div>
+                </div>
+            </div>
+            {% endfor %}
+            
+            <!-- Storage Usage Summary -->
+            <div class="row">
+                <div class="col-md-6">
+                    <div class="card bg-light">
+                        <div class="card-body">
+                            <h6 class="card-title">Current Storage Usage</h6>
+                            <div class="d-flex justify-content-between align-items-center mb-2">
+                                <span>Used:</span>
+                                <strong>{{ "%.1f"|format(stats.storage_warnings.current_usage_gb) }} GB</strong>
+                            </div>
+                            <div class="d-flex justify-content-between align-items-center mb-2">
+                                <span>Limit:</span>
+                                <strong>{{ "%.1f"|format(stats.storage_warnings.limit_gb) }} GB</strong>
+                            </div>
+                            <div class="d-flex justify-content-between align-items-center mb-2">
+                                <span>Usage:</span>
+                                <strong>{{ "%.1f"|format(stats.storage_warnings.usage_percentage) }}%</strong>
+                            </div>
+                            <div class="d-flex justify-content-between align-items-center">
+                                <span>Available:</span>
+                                <strong>{{ "%.1f"|format(stats.storage_warnings.available_space_gb) }} GB</strong>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+                <div class="col-md-6">
+                    {% if stats.storage_warnings.cleanup_potential.available %}
+                    <div class="card bg-light">
+                        <div class="card-body">
+                            <h6 class="card-title">Cleanup Potential</h6>
+                            <div class="d-flex justify-content-between align-items-center mb-2">
+                                <span>Old Images:</span>
+                                <strong>{{ stats.storage_warnings.cleanup_potential.total_images_count }}</strong>
+                            </div>
+                            <div class="d-flex justify-content-between align-items-center mb-2">
+                                <span>Estimated Savings:</span>
+                                <strong>{{ "%.1f"|format(stats.storage_warnings.cleanup_potential.estimated_savings_gb) }} GB</strong>
+                            </div>
+                            <small class="text-muted">{{ stats.storage_warnings.cleanup_potential.note }}</small>
+                        </div>
+                    </div>
+                    {% endif %}
+                </div>
+            </div>
+            
+            <!-- Recommendations -->
+            {% if stats.storage_warnings.recommendations %}
+            <div class="mt-3">
+                <h6>Recommended Actions:</h6>
+                <ul class="mb-0">
+                    {% for recommendation in stats.storage_warnings.recommendations %}
+                    <li>{{ recommendation }}</li>
+                    {% endfor %}
+                </ul>
+            </div>
+            {% endif %}
+        </div>
+    </div>
+    {% elif stats.storage_available == false %}
+    <div class="alert alert-warning mb-4">
+        <div class="d-flex align-items-center">
+            <i class="bi bi-exclamation-triangle fs-4 me-3"></i>
+            <div>
+                <strong>Storage Monitoring Unavailable</strong><br>
+                <small>Storage limit monitoring is not available. Cleanup operations will proceed without storage integration.</small>
+                {% if stats.storage_error %}
+                <br><small class="text-muted">Error: {{ stats.storage_error }}</small>
+                {% endif %}
+            </div>
+        </div>
+    </div>
+    {% endif %}
     
     {% with messages = get_flashed_messages(with_categories=true) %}
         {% if messages %}
@@ -121,6 +215,7 @@
         <div class="card-body">
             <form action="{{ url_for('admin.cleanup_runs') }}" method="post">
                 <input type="hidden" name="csrf_token" value="{{ csrf_token() }}"/>
+                <input type="hidden" name="operation" value="archive_runs"/>
                 <div class="mb-3">
                     <label for="runs_days" class="form-label">Archive runs older than (days)</label>
                     <input type="number" class="form-control" id="runs_days" name="days" value="{{ retention.processing_runs }}" min="1" max="365">
@@ -169,11 +264,24 @@
     
     <div class="card mb-4">
         <div class="card-header">
-            <h2 class="h5 mb-0">Clean Up Images</h2>
+            <h2 class="h5 mb-0">
+                Clean Up Images
+                {% if stats.storage_available and stats.storage_warnings.cleanup_potential.available %}
+                <small class="text-muted">- Potential savings: {{ "%.1f"|format(stats.storage_warnings.cleanup_potential.estimated_savings_gb) }}GB</small>
+                {% endif %}
+            </h2>
         </div>
         <div class="card-body">
+            {% if stats.storage_available and stats.storage_warnings.urgency_level == 'critical' %}
+            <div class="alert alert-warning mb-3">
+                <i class="bi bi-exclamation-triangle"></i> 
+                <strong>High Priority:</strong> Storage limits are exceeded. Cleaning up images will help restore normal operation.
+            </div>
+            {% endif %}
+            
             <form action="{{ url_for('admin.cleanup_runs') }}" method="post">
                 <input type="hidden" name="csrf_token" value="{{ csrf_token() }}"/>
+                <input type="hidden" name="operation" value="cleanup_images"/>
                 <div class="mb-3">
                     <label for="image_status" class="form-label">Image Status</label>
                     <select class="form-select" id="image_status" name="status">
@@ -204,6 +312,7 @@
         <div class="card-body">
             <form action="{{ url_for('admin.cleanup_runs') }}" method="post">
                 <input type="hidden" name="csrf_token" value="{{ csrf_token() }}"/>
+                <input type="hidden" name="operation" value="cleanup_orphaned_posts"/>
                 <div class="form-check mb-3">
                     <input class="form-check-input" type="checkbox" id="posts_dry_run" name="dry_run" checked>
                     <label class="form-check-label" for="posts_dry_run">
@@ -222,6 +331,7 @@
         <div class="card-body">
             <form action="{{ url_for('admin.cleanup_runs') }}" method="post">
                 <input type="hidden" name="csrf_token" value="{{ csrf_token() }}"/>
+                <input type="hidden" name="operation" value="cleanup_user_data"/>
                 <div class="mb-3">
                     <label for="user_id" class="form-label">Select User</label>
                     <select class="form-select" id="user_id" name="user_id" required>
@@ -245,21 +355,73 @@
         </div>
     </div>
     
+    <!-- Storage Images Cleanup -->
+    {% if stats.storage_available %}
     <div class="card mb-4">
         <div class="card-header">
-            <h2 class="h5 mb-0">Full Cleanup</h2>
+            <h2 class="h5 mb-0">
+                Clean Up Storage Images
+                {% if stats.storage_warnings.urgency_level == 'critical' %}
+                <span class="badge bg-danger ms-2">High Priority</span>
+                {% endif %}
+            </h2>
         </div>
         <div class="card-body">
+            {% if stats.storage_warnings.urgency_level == 'critical' %}
+            <div class="alert alert-danger mb-3">
+                <i class="bi bi-exclamation-triangle-fill"></i> 
+                <strong>Critical:</strong> Storage limits exceeded. This operation will free the most storage space.
+            </div>
+            {% endif %}
+            
+            <p class="text-muted">This will delete all image files from the storage/images directory. This operation typically frees the most storage space.</p>
+            
+            <form action="{{ url_for('admin.cleanup_runs') }}" method="post">
+                <input type="hidden" name="csrf_token" value="{{ csrf_token() }}"/>
+                <input type="hidden" name="operation" value="cleanup_storage_images"/>
+                <div class="form-check mb-3">
+                    <input class="form-check-input" type="checkbox" id="storage_dry_run" name="dry_run" checked>
+                    <label class="form-check-label" for="storage_dry_run">
+                        Dry run (don't actually delete anything)
+                    </label>
+                </div>
+                <button type="submit" class="btn btn-warning">Clean Up Storage Images</button>
+            </form>
+        </div>
+    </div>
+    {% endif %}
+    
+    <div class="card mb-4">
+        <div class="card-header">
+            <h2 class="h5 mb-0">
+                Full Cleanup
+                {% if stats.storage_available and stats.storage_warnings.urgency_level == 'critical' %}
+                <span class="badge bg-danger ms-2">Recommended</span>
+                {% endif %}
+            </h2>
+        </div>
+        <div class="card-body">
+            {% if stats.storage_available and stats.storage_warnings.urgency_level == 'critical' %}
+            <div class="alert alert-info mb-3">
+                <i class="bi bi-info-circle"></i> 
+                <strong>Recommended:</strong> Full cleanup will address storage limit issues and restore normal operation.
+            </div>
+            {% endif %}
+            
             <div class="alert alert-warning">
                 <strong>Full Cleanup includes:</strong>
                 <ul class="mb-0 mt-2">
                     <li><strong>Database:</strong> Archives old processing runs, cleans up orphan processing runs, cleans up old images (rejected, posted, error), removes orphaned posts</li>
                     <li><strong>Storage:</strong> Deletes all files in the storage/images directory</li>
                     <li><strong>Logs:</strong> Clears/truncates log files</li>
+                    {% if stats.storage_available %}
+                    <li><strong>Storage Monitoring:</strong> Automatically lifts storage limits if sufficient space is freed</li>
+                    {% endif %}
                 </ul>
             </div>
             <form action="{{ url_for('admin.cleanup_runs') }}" method="post">
-                <input type="hidden" name="csrf_token" value="{{ csrf_token() }}"
+                <input type="hidden" name="csrf_token" value="{{ csrf_token() }}"/>
+                <input type="hidden" name="operation" value="full_cleanup"/>
                 <div class="form-check mb-3">
                     <input class="form-check-input" type="checkbox" id="all_dry_run" name="dry_run" checked>
                     <label class="form-check-label" for="all_dry_run">

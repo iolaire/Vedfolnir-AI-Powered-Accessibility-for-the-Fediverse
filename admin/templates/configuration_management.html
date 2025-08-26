@@ -38,7 +38,8 @@
         <div class="col-12">
             <div class="alert alert-info">
                 <h4>Configuration Management</h4>
-                <p>This page allows you to manage system configurations. Use the buttons above to export, import, or view documentation.</p>
+                <p>This page allows you to manage system configurations. Use the buttons above to export, import, or
+                    view documentation.</p>
             </div>
         </div>
     </div>
@@ -73,7 +74,8 @@
                         <div class="mt-2">
                             <span class="badge bg-warning text-dark me-1" id="restartRequiredCount">0</span>
                             <span>configuration(s) pending restart</span>
-                            <button type="button" class="btn btn-sm btn-outline-warning ms-2" onclick="showRestartRequiredConfigs()">
+                            <button type="button" class="btn btn-sm btn-outline-warning ms-2"
+                                onclick="showRestartRequiredConfigs()">
                                 <i class="bi bi-list-ul me-1"></i>View Details
                             </button>
                         </div>
@@ -148,7 +150,7 @@
                         <textarea class="form-control" id="configReason" rows="2"
                             placeholder="Optional reason for this configuration change"></textarea>
                     </div>
-                    
+
                     <!-- Impact Assessment Display -->
                     <div id="impactAssessment" class="d-none">
                         <div class="card border-warning mb-3">
@@ -169,27 +171,27 @@
                                         <span id="impactRestartRequired" class="badge ms-1"></span>
                                     </div>
                                 </div>
-                                
+
                                 <div class="mt-2" id="affectedComponentsSection">
                                     <strong>Affected Components:</strong>
                                     <div id="affectedComponents" class="mt-1"></div>
                                 </div>
-                                
+
                                 <div class="mt-2" id="riskFactorsSection" style="display: none;">
                                     <strong>Risk Factors:</strong>
                                     <ul id="riskFactors" class="mt-1 mb-0"></ul>
                                 </div>
-                                
+
                                 <div class="mt-2" id="mitigationStepsSection" style="display: none;">
                                     <strong>Mitigation Steps:</strong>
                                     <ul id="mitigationSteps" class="mt-1 mb-0"></ul>
                                 </div>
-                                
+
                                 <div class="mt-2" id="relatedConfigsSection" style="display: none;">
                                     <strong>Related Configurations:</strong>
                                     <div id="relatedConfigs" class="mt-1"></div>
                                 </div>
-                                
+
                                 <div class="mt-2" id="estimatedDowntimeSection" style="display: none;">
                                     <strong>Estimated Downtime:</strong>
                                     <span id="estimatedDowntime" class="text-warning"></span>
@@ -197,19 +199,20 @@
                             </div>
                         </div>
                     </div>
-                    
+
                     <!-- Critical Change Confirmation -->
                     <div id="criticalChangeConfirmation" class="d-none">
                         <div class="alert alert-danger">
                             <div class="form-check">
                                 <input class="form-check-input" type="checkbox" id="confirmCriticalChange">
                                 <label class="form-check-label" for="confirmCriticalChange">
-                                    <strong>I understand this is a critical configuration change</strong> and acknowledge the potential risks and impacts listed above.
+                                    <strong>I understand this is a critical configuration change</strong> and
+                                    acknowledge the potential risks and impacts listed above.
                                 </label>
                             </div>
                         </div>
                     </div>
-                    
+
                     <div id="validationErrors" class="alert alert-danger d-none"></div>
                     <div id="validationWarnings" class="alert alert-warning d-none"></div>
                 </form>
@@ -322,57 +325,62 @@
                         <span id="confidenceLevel" class="badge"></span>
                     </div>
                 </div>
-                
+
                 <!-- Tabs for different sections -->
                 <ul class="nav nav-tabs" id="dryRunTabs" role="tablist">
                     <li class="nav-item" role="presentation">
-                        <button class="nav-link active" id="validation-tab" data-bs-toggle="tab" data-bs-target="#validation-pane" type="button" role="tab">
+                        <button class="nav-link active" id="validation-tab" data-bs-toggle="tab"
+                            data-bs-target="#validation-pane" type="button" role="tab">
                             <i class="bi bi-check-circle me-1"></i>Validation
                         </button>
                     </li>
                     <li class="nav-item" role="presentation">
-                        <button class="nav-link" id="impact-tab" data-bs-toggle="tab" data-bs-target="#impact-pane" type="button" role="tab">
+                        <button class="nav-link" id="impact-tab" data-bs-toggle="tab" data-bs-target="#impact-pane"
+                            type="button" role="tab">
                             <i class="bi bi-exclamation-triangle me-1"></i>Impact
                         </button>
                     </li>
                     <li class="nav-item" role="presentation">
-                        <button class="nav-link" id="conflicts-tab" data-bs-toggle="tab" data-bs-target="#conflicts-pane" type="button" role="tab">
+                        <button class="nav-link" id="conflicts-tab" data-bs-toggle="tab"
+                            data-bs-target="#conflicts-pane" type="button" role="tab">
                             <i class="bi bi-shield-exclamation me-1"></i>Conflicts
                         </button>
                     </li>
                     <li class="nav-item" role="presentation">
-                        <button class="nav-link" id="rollback-tab" data-bs-toggle="tab" data-bs-target="#rollback-pane" type="button" role="tab">
+                        <button class="nav-link" id="rollback-tab" data-bs-toggle="tab" data-bs-target="#rollback-pane"
+                            type="button" role="tab">
                             <i class="bi bi-arrow-counterclockwise me-1"></i>Rollback
                         </button>
                     </li>
                     <li class="nav-item" role="presentation">
-                        <button class="nav-link" id="checklist-tab" data-bs-toggle="tab" data-bs-target="#checklist-pane" type="button" role="tab">
+                        <button class="nav-link" id="checklist-tab" data-bs-toggle="tab"
+                            data-bs-target="#checklist-pane" type="button" role="tab">
                             <i class="bi bi-list-check me-1"></i>Checklist
                         </button>
                     </li>
                 </ul>
-                
+
                 <div class="tab-content mt-3" id="dryRunTabContent">
                     <!-- Validation Tab -->
                     <div class="tab-pane fade show active" id="validation-pane" role="tabpanel">
                         <div id="dryRunValidation"></div>
                     </div>
-                    
+
                     <!-- Impact Tab -->
                     <div class="tab-pane fade" id="impact-pane" role="tabpanel">
                         <div id="dryRunImpact"></div>
                     </div>
-                    
+
                     <!-- Conflicts Tab -->
                     <div class="tab-pane fade" id="conflicts-pane" role="tabpanel">
                         <div id="dryRunConflicts"></div>
                     </div>
-                    
+
                     <!-- Rollback Tab -->
                     <div class="tab-pane fade" id="rollback-pane" role="tabpanel">
                         <div id="dryRunRollback"></div>
                     </div>
-                    
+
                     <!-- Checklist Tab -->
                     <div class="tab-pane fade" id="checklist-pane" role="tabpanel">
                         <div id="dryRunChecklist"></div>
@@ -381,7 +389,8 @@
             </div>
             <div class="modal-footer">
                 <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Close</button>
-                <button type="button" class="btn btn-success" id="proceedWithChange" onclick="proceedWithConfigurationChange()" style="display: none;">
+                <button type="button" class="btn btn-success" id="proceedWithChange"
+                    onclick="proceedWithConfigurationChange()" style="display: none;">
                     <i class="bi bi-check-circle me-1"></i>Proceed with Change
                 </button>
             </div>
@@ -390,7 +399,8 @@
 </div>
 
 <!-- Restart Required Configurations Modal -->
-<div class="modal fade" id="restartRequiredModal" tabindex="-1" aria-labelledby="restartRequiredModalLabel" aria-hidden="true">
+<div class="modal fade" id="restartRequiredModal" tabindex="-1" aria-labelledby="restartRequiredModalLabel"
+    aria-hidden="true">
     <div class="modal-dialog modal-lg">
         <div class="modal-content">
             <div class="modal-header">
@@ -403,8 +413,10 @@
             <div class="modal-body">
                 <div class="alert alert-info">
                     <h6>System Restart Required</h6>
-                    <p class="mb-0">The following configurations have been changed and require a system restart to take effect. 
-                    Until the system is restarted, these configurations will continue to use their previous values.</p>
+                    <p class="mb-0">The following configurations have been changed and require a system restart to take
+                        effect.
+                        Until the system is restarted, these configurations will continue to use their previous values.
+                    </p>
                 </div>
                 <div class="table-responsive">
                     <table class="table table-striped">

@@ -159,3 +159,4 @@ specs
 
 #playwright tests
 tests/playwright
+.aider*

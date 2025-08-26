@@ -344,13 +344,15 @@ class DatabaseConfig:
 @dataclass
 class StorageConfig:
     """Configuration for storage paths and MySQL database"""
-    base_dir: str = "storage"
-    images_dir: str = "storage/images"
-    logs_dir: str = "logs"
-    database_url: str = "mysql+pymysql://vedfolnir_user:vedfolnir_password@localhost/vedfolnir?charset=utf8mb4"
-    db_config: DatabaseConfig = None
-    
-    def __post_init__(self):
+    def __init__(self, base_dir="storage", images_dir="storage/images", logs_dir="logs", 
+                 database_url="mysql+pymysql://vedfolnir_user:vedfolnir_password@localhost/vedfolnir?charset=utf8mb4",
+                 db_config=None):
+        self.base_dir = base_dir
+        self.images_dir = images_dir
+        self.logs_dir = logs_dir
+        self.database_url = database_url
+        self.db_config = db_config
+        
         # Create directories if they don't exist (MySQL doesn't need database_dir)
         os.makedirs(self.base_dir, exist_ok=True)
         os.makedirs(self.images_dir, exist_ok=True)
@@ -359,6 +361,14 @@ class StorageConfig:
         # Initialize database config if not provided
         if self.db_config is None:
             self.db_config = DatabaseConfig.from_env()
+        
+        # Initialize storage limit management service
+        try:
+            from storage_configuration_service import StorageConfigurationService
+            self.limit_service = StorageConfigurationService()
+        except ImportError as e:
+            logging.warning(f"Could not import StorageConfigurationService: {e}")
+            self.limit_service = None
     
     @classmethod
     def from_env(cls):

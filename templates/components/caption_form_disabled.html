@@ -1,0 +1,194 @@
+<!-- Copyright (C) 2025 iolaire mcfadden. -->
+<!-- This program is free software: you can redistribute it and/or modify it under the terms of the GNU Affero General Public License as published by the Free Software Foundation, either version 3 of the License, or (at your option) any later version. -->
+<!-- THE SOFTWARE IS PROVIDED "AS IS", WITHOUT WARRANTY OF ANY KIND, EXPRESS OR IMPLIED, INCLUDING BUT NOT LIMITED TO THE WARRANTIES OF MERCHANTABILITY, FITNESS FOR A PARTICULAR PURPOSE AND NONINFRINGEMENT. IN NO EVENT SHALL THE AUTHORS OR COPYRIGHT HOLDERS BE LIABLE FOR ANY CLAIM, DAMAGES OR OTHER LIABILITY, WHETHER IN AN ACTION OF CONTRACT, TORT OR OTHERWISE, ARISING FROM, OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE SOFTWARE. -->
+
+<!-- Disabled Caption Generation Form Component -->
+<!-- This component displays when caption generation is disabled due to storage limits -->
+<!-- Usage: {% include 'components/caption_form_disabled.html' %} -->
+
+<div class="caption-form-disabled-container">
+    <div class="card border-danger">
+        <div class="card-header bg-danger text-white">
+            <h5 class="mb-0">
+                <i class="bi bi-exclamation-triangle"></i>
+                Caption Generation Temporarily Unavailable
+            </h5>
+        </div>
+        <div class="card-body">
+            <div class="row">
+                <div class="col-md-8">
+                    <h6>Service Temporarily Disabled</h6>
+                    <p class="mb-3">
+                        Caption generation is currently disabled due to storage limit restrictions. 
+                        This is a temporary measure to prevent storage overflow and maintain system stability.
+                    </p>
+                    
+                    <h6>What you can still do:</h6>
+                    <ul class="list-unstyled">
+                        <li><i class="bi bi-check-circle text-success"></i> Review existing captions</li>
+                        <li><i class="bi bi-check-circle text-success"></i> Edit and approve pending captions</li>
+                        <li><i class="bi bi-check-circle text-success"></i> Access your platform management</li>
+                        <li><i class="bi bi-check-circle text-success"></i> View processing history</li>
+                    </ul>
+                </div>
+                <div class="col-md-4">
+                    <div class="text-center">
+                        <i class="bi bi-database-x display-4 text-muted mb-3"></i>
+                        <h6>Storage Status</h6>
+                        {% if storage_notification %}
+                        <div class="storage-status-info">
+                            <div class="mb-2">
+                                <strong>{{ "%.1f"|format(storage_notification.storage_gb) }}GB</strong>
+                                <small class="text-muted">/ {{ "%.1f"|format(storage_notification.limit_gb) }}GB</small>
+                            </div>
+                            <div class="progress mb-2" style="height: 10px;">
+                                <div class="progress-bar bg-danger" 
+                                     role="progressbar" 
+                                     style="width: {{ storage_notification.usage_percentage }}%"
+                                     aria-valuenow="{{ storage_notification.usage_percentage }}" 
+                                     aria-valuemin="0" 
+                                     aria-valuemax="100">
+                                </div>
+                            </div>
+                            <small class="text-muted">{{ "%.1f"|format(storage_notification.usage_percentage) }}% used</small>
+                        </div>
+                        {% endif %}
+                    </div>
+                </div>
+            </div>
+            
+            <hr>
+            
+            <div class="row">
+                <div class="col-12">
+                    <div class="alert alert-info mb-0">
+                        <div class="d-flex align-items-center">
+                            <i class="bi bi-info-circle me-2"></i>
+                            <div class="flex-grow-1">
+                                <strong>Automatic Recovery:</strong>
+                                Caption generation will resume automatically when storage space becomes available.
+                                Administrators have been notified and are working to resolve this issue.
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+        <div class="card-footer bg-light">
+            <div class="row align-items-center">
+                <div class="col-md-8">
+                    <small class="text-muted">
+                        <i class="bi bi-clock"></i>
+                        This page will automatically refresh when caption generation becomes available.
+                    </small>
+                </div>
+                <div class="col-md-4 text-end">
+                    <button class="btn btn-outline-primary btn-sm" onclick="location.reload()">
+                        <i class="bi bi-arrow-clockwise"></i> Check Status
+                    </button>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+
+<!-- Alternative Actions -->
+<div class="mt-4">
+    <div class="row">
+        <div class="col-md-6">
+            <div class="card h-100">
+                <div class="card-body text-center">
+                    <i class="bi bi-list-check display-6 text-primary mb-3"></i>
+                    <h6>Review Existing Captions</h6>
+                    <p class="text-muted mb-3">Continue working with captions that have already been generated.</p>
+                    <a href="{{ url_for('review') }}" class="btn btn-primary">
+                        <i class="bi bi-eye"></i> Go to Review
+                    </a>
+                </div>
+            </div>
+        </div>
+        <div class="col-md-6">
+            <div class="card h-100">
+                <div class="card-body text-center">
+                    <i class="bi bi-gear display-6 text-secondary mb-3"></i>
+                    <h6>Platform Management</h6>
+                    <p class="text-muted mb-3">Manage your platform connections and settings.</p>
+                    <a href="{{ url_for('platform_management') }}" class="btn btn-secondary">
+                        <i class="bi bi-server"></i> Manage Platforms
+                    </a>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+
+<!-- Auto-refresh script -->
+<script>
+// Auto-refresh page every 2 minutes to check if storage limit is lifted
+let autoRefreshInterval;
+
+function startAutoRefresh() {
+    // Clear any existing interval
+    if (autoRefreshInterval) {
+        clearInterval(autoRefreshInterval);
+    }
+    
+    // Set up auto-refresh every 2 minutes (120000 ms)
+    autoRefreshInterval = setInterval(function() {
+        console.log('Auto-refreshing to check storage status...');
+        location.reload();
+    }, 120000);
+    
+    console.log('Auto-refresh enabled: checking storage status every 2 minutes');
+}
+
+// Start auto-refresh when page loads
+document.addEventListener('DOMContentLoaded', function() {
+    startAutoRefresh();
+});
+
+// Clear interval when page is about to unload
+window.addEventListener('beforeunload', function() {
+    if (autoRefreshInterval) {
+        clearInterval(autoRefreshInterval);
+    }
+});
+</script>
+
+<!-- Styles -->
+<style>
+.caption-form-disabled-container {
+    animation: slideIn 0.5s ease-out;
+}
+
+@keyframes slideIn {
+    from {
+        opacity: 0;
+        transform: translateY(20px);
+    }
+    to {
+        opacity: 1;
+        transform: translateY(0);
+    }
+}
+
+.storage-status-info .progress {
+    background-color: #e9ecef;
+}
+
+.storage-status-info .progress-bar.bg-danger {
+    background-color: #dc3545 !important;
+}
+
+/* Responsive adjustments */
+@media (max-width: 768px) {
+    .caption-form-disabled-container .col-md-4.text-end {
+        text-align: center !important;
+        margin-top: 1rem;
+    }
+    
+    .caption-form-disabled-container .row .col-md-6 {
+        margin-bottom: 1rem;
+    }
+}
+</style>

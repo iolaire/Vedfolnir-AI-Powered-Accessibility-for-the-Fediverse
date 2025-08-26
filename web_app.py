@@ -1580,6 +1580,32 @@ def api_update_caption(image_id):
 @with_session_error_handling
 def api_regenerate_caption(image_id):
     """API endpoint to regenerate caption for an image"""
+    # Check storage limits before regenerating caption
+    try:
+        from storage_limit_enforcer import StorageLimitEnforcer, StorageCheckResult
+        storage_enforcer = StorageLimitEnforcer()
+        
+        storage_check = storage_enforcer.check_storage_before_generation()
+        if storage_check == StorageCheckResult.BLOCKED_LIMIT_EXCEEDED:
+            app.logger.warning(f"Caption regeneration blocked for user {current_user.id} due to storage limit")
+            return jsonify({
+                'success': False,
+                'error': 'Caption regeneration is temporarily unavailable due to storage limits.',
+                'error_type': 'storage_limit_exceeded',
+                'message': 'Storage limit has been reached. Please contact administrators or try again later.'
+            }), 403
+        elif storage_check == StorageCheckResult.ERROR:
+            app.logger.error(f"Storage check failed for caption regeneration by user {current_user.id}")
+            return jsonify({
+                'success': False,
+                'error': 'Unable to verify storage availability.',
+                'error_type': 'storage_check_error',
+                'message': 'Please try again in a few moments.'
+            }), 500
+    except Exception as e:
+        app.logger.error(f"Storage check error during caption regeneration: {sanitize_for_log(str(e))}")
+        # Continue with regeneration if storage check fails (don't block on storage check errors)
+    
     with unified_session_manager.get_db_session() as session:
         image = session.query(Image).options(
             joinedload(Image.platform_connection),
@@ -2732,6 +2758,13 @@ def caption_generation():
         # Initialize caption generation service
         caption_service = WebCaptionGenerationService(db_manager)
         
+        # Initialize storage user notification system
+        from storage_user_notification_system import StorageUserNotificationSystem
+        storage_notification_system = StorageUserNotificationSystem()
+        
+        # Get storage status for template context
+        storage_status = storage_notification_system.get_storage_status_for_template()
+        
         # Check if user has an active task
         active_task = caption_service.task_queue_manager.get_user_active_task(current_user.id)
         
@@ -2803,7 +2836,8 @@ def caption_generation():
                              form=form,
                              active_task=active_task,
                              task_history=task_history,
-                             user_settings=user_settings)
+                             user_settings=user_settings,
+                             **storage_status)
                              
     except Exception as e:
         app.logger.error(f"Error loading caption generation page: {sanitize_for_log(str(e))}")
@@ -2985,6 +3019,28 @@ def start_caption_generation():
     
     if validate_form_submission(form):
         try:
+            # Check storage limits before starting caption generation
+            from storage_limit_enforcer import StorageLimitEnforcer, StorageCheckResult
+            storage_enforcer = StorageLimitEnforcer()
+            
+            storage_check = storage_enforcer.check_storage_before_generation()
+            if storage_check == StorageCheckResult.BLOCKED_LIMIT_EXCEEDED:
+                app.logger.warning(f"Caption generation blocked for user {current_user.id} due to storage limit")
+                return jsonify({
+                    'success': False,
+                    'error': 'Caption generation is temporarily unavailable due to storage limits.',
+                    'error_type': 'storage_limit_exceeded',
+                    'message': 'Storage limit has been reached. Please contact administrators or try again later.'
+                }), 403
+            elif storage_check == StorageCheckResult.ERROR:
+                app.logger.error(f"Storage check failed for user {current_user.id}")
+                return jsonify({
+                    'success': False,
+                    'error': 'Unable to verify storage availability.',
+                    'error_type': 'storage_check_error',
+                    'message': 'Please try again in a few moments.'
+                }), 500
+            
             # Get current platform context
             context = get_current_session_context()
             if not context or not context.get('platform_connection_id'):

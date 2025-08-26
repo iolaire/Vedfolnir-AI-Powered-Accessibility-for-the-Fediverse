@@ -66,6 +66,9 @@ class WebCaptionGenerationService:
             RuntimeError: If task creation fails
         """
         try:
+            # Check storage limits before starting caption generation
+            await self._check_storage_limits_before_generation()
+            
             # Check if user already has an active task first
             active_task = self.task_queue_manager.get_user_active_task(user_id)
             if active_task:
@@ -112,6 +115,47 @@ class WebCaptionGenerationService:
         except Exception as e:
             logger.error(f"Failed to start caption generation: {sanitize_for_log(str(e))}")
             raise
+    
+    async def _check_storage_limits_before_generation(self) -> None:
+        """
+        Check storage limits before caption generation and handle automatic re-enabling.
+        
+        This method implements requirements 5.3 and 5.4 by checking storage limits
+        before each caption generation operation and automatically re-enabling when
+        storage drops below the limit.
+        
+        Raises:
+            ValueError: If storage limit is exceeded and generation should be blocked
+        """
+        try:
+            from storage_limit_enforcer import StorageLimitEnforcer, StorageCheckResult
+            storage_enforcer = StorageLimitEnforcer()
+            
+            # Perform storage check which includes automatic re-enabling logic
+            storage_check = storage_enforcer.check_storage_before_generation()
+            
+            if storage_check == StorageCheckResult.BLOCKED_LIMIT_EXCEEDED:
+                logger.warning("Caption generation blocked due to storage limit exceeded")
+                raise ValueError("Caption generation is temporarily unavailable due to storage limits. Storage limit has been reached.")
+            elif storage_check == StorageCheckResult.BLOCKED_OVERRIDE_EXPIRED:
+                logger.warning("Caption generation blocked due to expired storage override")
+                raise ValueError("Caption generation is temporarily unavailable. Storage override has expired.")
+            elif storage_check == StorageCheckResult.ERROR:
+                logger.error("Storage check failed during caption generation")
+                raise ValueError("Unable to verify storage availability. Please try again in a few moments.")
+            elif storage_check == StorageCheckResult.ALLOWED:
+                logger.debug("Storage check passed, caption generation allowed")
+            
+        except ImportError as e:
+            logger.error(f"Storage limit enforcer not available: {e}")
+            # Continue without storage checks if the module is not available
+        except Exception as e:
+            logger.error(f"Storage check error during caption generation: {sanitize_for_log(str(e))}")
+            # Re-raise ValueError exceptions (these are expected blocking conditions)
+            if isinstance(e, ValueError):
+                raise
+            # For other exceptions, log but don't block caption generation
+            logger.warning("Continuing with caption generation despite storage check error")
     
     def get_generation_status(self, task_id: str, user_id: int = None, admin_access: bool = False) -> Optional[Dict[str, Any]]:
         """
@@ -336,6 +380,15 @@ class WebCaptionGenerationService:
         
         try:
             logger.info(f"Processing caption generation task {sanitize_for_log(task_id)}")
+            
+            # Check storage limits before processing task
+            try:
+                await self._check_storage_limits_before_generation()
+            except ValueError as e:
+                # Storage limit exceeded, fail the task
+                logger.warning(f"Task {task_id} failed due to storage limits: {e}")
+                self.task_queue_manager.fail_task(task_id, str(e))
+                return
             
             # Get platform connection
             session = self.db_manager.get_session()

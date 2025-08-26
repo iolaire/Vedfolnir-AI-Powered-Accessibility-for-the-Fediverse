@@ -36,6 +36,7 @@ class ConfigurationCategory(Enum):
     ALERTS = "alerts"
     MAINTENANCE = "maintenance"
     FEATURES = "features"
+    STORAGE = "storage"
 
 
 class ConfigurationDataType(Enum):
@@ -249,6 +250,74 @@ class SystemConfigurationManager:
                 category=ConfigurationCategory.FEATURES,
                 description="Enable automatic retry for failed jobs",
                 default_value=True
+            )
+        })
+        
+        # Storage management settings
+        schema.update({
+            "CAPTION_MAX_STORAGE_GB": ConfigurationSchema(
+                key="CAPTION_MAX_STORAGE_GB",
+                data_type=ConfigurationDataType.FLOAT,
+                category=ConfigurationCategory.STORAGE,
+                description="Maximum storage limit for image files in gigabytes",
+                default_value=10.0,
+                validation_rules={"min": 0.1, "max": 1000.0},
+                environment_override=True,
+                requires_restart=False
+            ),
+            "STORAGE_WARNING_THRESHOLD": ConfigurationSchema(
+                key="STORAGE_WARNING_THRESHOLD",
+                data_type=ConfigurationDataType.FLOAT,
+                category=ConfigurationCategory.STORAGE,
+                description="Warning threshold as percentage of maximum storage limit (1-100)",
+                default_value=80.0,
+                validation_rules={"min": 1.0, "max": 100.0},
+                environment_override=True,
+                requires_restart=False
+            ),
+            "STORAGE_MONITORING_ENABLED": ConfigurationSchema(
+                key="STORAGE_MONITORING_ENABLED",
+                data_type=ConfigurationDataType.BOOLEAN,
+                category=ConfigurationCategory.STORAGE,
+                description="Enable or disable storage monitoring and limit enforcement",
+                default_value=True,
+                environment_override=True,
+                requires_restart=False
+            ),
+            "storage_cleanup_retention_days": ConfigurationSchema(
+                key="storage_cleanup_retention_days",
+                data_type=ConfigurationDataType.INTEGER,
+                category=ConfigurationCategory.STORAGE,
+                description="Number of days to retain storage event logs",
+                default_value=30,
+                validation_rules={"min": 1, "max": 365},
+                requires_restart=False
+            ),
+            "storage_override_max_duration_hours": ConfigurationSchema(
+                key="storage_override_max_duration_hours",
+                data_type=ConfigurationDataType.INTEGER,
+                category=ConfigurationCategory.STORAGE,
+                description="Maximum duration for storage limit overrides in hours",
+                default_value=24,
+                validation_rules={"min": 1, "max": 168},
+                requires_restart=False
+            ),
+            "storage_email_notification_enabled": ConfigurationSchema(
+                key="storage_email_notification_enabled",
+                data_type=ConfigurationDataType.BOOLEAN,
+                category=ConfigurationCategory.STORAGE,
+                description="Enable email notifications for storage limit events",
+                default_value=True,
+                requires_restart=False
+            ),
+            "storage_email_rate_limit_hours": ConfigurationSchema(
+                key="storage_email_rate_limit_hours",
+                data_type=ConfigurationDataType.INTEGER,
+                category=ConfigurationCategory.STORAGE,
+                description="Rate limit for storage email notifications in hours",
+                default_value=24,
+                validation_rules={"min": 1, "max": 168},
+                requires_restart=False
             )
         })
         
@@ -788,7 +857,8 @@ class SystemConfigurationManager:
             ConfigurationCategory.LIMITS: "Resource limits and quotas",
             ConfigurationCategory.ALERTS: "Alert thresholds and notification settings",
             ConfigurationCategory.MAINTENANCE: "Maintenance mode and system status settings",
-            ConfigurationCategory.FEATURES: "Feature flags and optional functionality"
+            ConfigurationCategory.FEATURES: "Feature flags and optional functionality",
+            ConfigurationCategory.STORAGE: "Storage limit management and monitoring settings"
         }
         return descriptions.get(category, "Configuration settings")
     

@@ -4,11 +4,14 @@
 
 """Admin Data Cleanup Routes"""
 
+import logging
 from flask import render_template, request, redirect, url_for, flash, current_app
 from flask_login import login_required, current_user
 from models import UserRole, ProcessingStatus
 from session_error_handlers import with_session_error_handling
 from ..services.cleanup_service import CleanupService
+
+logger = logging.getLogger(__name__)
 
 def register_routes(bp):
     """Register cleanup routes"""
@@ -34,26 +37,87 @@ def register_routes(bp):
     @login_required
     @with_session_error_handling
     def cleanup_runs():
-        """Archive old processing runs"""
+        """Handle various cleanup operations"""
         if not current_user.role == UserRole.ADMIN:
             flash('Access denied', 'error')
-            return redirect(url_for('admin.cleanup'))
-            
-        days = request.form.get('days', type=int)
-        dry_run = 'dry_run' in request.form
-        
-        if not days or days < 1:
-            flash('Invalid number of days', 'error')
             return redirect(url_for('admin.cleanup'))
         
         db_manager = current_app.config['db_manager']
         cleanup_service = CleanupService(db_manager, current_app.config.get('config'))
         
-        result = cleanup_service.cleanup_old_processing_runs(days=days, dry_run=dry_run)
+        # Determine the type of cleanup operation
+        operation = request.form.get('operation', 'archive_runs')
+        dry_run = 'dry_run' in request.form
         
-        if result['success']:
-            flash(result['message'], 'info' if dry_run else 'success')
-        else:
-            flash(f'Error: {result["error"]}', 'error')
+        try:
+            if operation == 'archive_runs':
+                days = request.form.get('days', type=int)
+                if not days or days < 1:
+                    flash('Invalid number of days', 'error')
+                    return redirect(url_for('admin.cleanup'))
+                
+                result = cleanup_service.cleanup_old_processing_runs(days=days, dry_run=dry_run)
+                
+            elif operation == 'cleanup_images':
+                status_str = request.form.get('status', 'rejected')
+                days = request.form.get('days', type=int)
+                
+                if not days or days < 1:
+                    flash('Invalid number of days', 'error')
+                    return redirect(url_for('admin.cleanup'))
+                
+                # Convert status string to enum
+                status_map = {
+                    'rejected': ProcessingStatus.REJECTED,
+                    'posted': ProcessingStatus.POSTED,
+                    'error': ProcessingStatus.ERROR
+                }
+                status = status_map.get(status_str, ProcessingStatus.REJECTED)
+                
+                # Use storage-aware cleanup if available
+                result = cleanup_service.cleanup_old_images_with_storage_monitoring(
+                    status=status, days=days, dry_run=dry_run
+                )
+                
+            elif operation == 'cleanup_orphaned_posts':
+                result = cleanup_service.cleanup_orphaned_posts(dry_run=dry_run)
+                
+            elif operation == 'cleanup_user_data':
+                user_id = request.form.get('user_id')
+                if not user_id:
+                    flash('Please select a user', 'error')
+                    return redirect(url_for('admin.cleanup'))
+                
+                result = cleanup_service.cleanup_user_data(user_id=user_id, dry_run=dry_run)
+                
+            elif operation == 'cleanup_storage_images':
+                result = cleanup_service.cleanup_storage_images_with_monitoring(dry_run=dry_run)
+                
+            elif operation == 'full_cleanup':
+                result = cleanup_service.run_full_cleanup(dry_run=dry_run)
+                
+            else:
+                flash('Unknown cleanup operation', 'error')
+                return redirect(url_for('admin.cleanup'))
+            
+            # Handle result
+            if result['success']:
+                message = result['message']
+                
+                # Add storage information if available
+                if 'storage_freed_gb' in result and result['storage_freed_gb'] > 0:
+                    message += f" (Storage freed: {result['storage_freed_gb']:.2f}GB)"
+                
+                if 'limit_lifted' in result and result['limit_lifted']:
+                    message += " - Storage limits automatically lifted!"
+                    flash(message, 'success')
+                else:
+                    flash(message, 'info' if dry_run else 'success')
+            else:
+                flash(f'Error: {result["error"]}', 'error')
+                
+        except Exception as e:
+            logger.error(f"Error in cleanup operation {operation}: {e}")
+            flash(f'Cleanup operation failed: {str(e)}', 'error')
         
         return redirect(url_for('admin.cleanup'))

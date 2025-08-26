@@ -184,6 +184,9 @@
                 {% endif %}
             </div>
             {% endif %}
+            
+            <!-- Storage Limit Notifications -->
+            {% include 'components/storage_limit_notification.html' %}
         </div>
     </div>
     
@@ -246,7 +249,12 @@
             </div>
             {% endif %}
             
-            <!-- Caption Generation Form -->
+            <!-- Caption Generation Form or Disabled State -->
+            {% if hide_caption_form %}
+            <!-- Storage Limit Disabled Form -->
+            {% include 'components/caption_form_disabled.html' %}
+            {% else %}
+            <!-- Normal Caption Generation Form -->
             <div class="card">
                 <div class="card-header">
                     <h5><i class="bi bi-play-circle"></i> Start Caption Generation</h5>
@@ -315,6 +323,8 @@
                     </form>
                     {% endif %}
                 </div>
+            </div>
+            {% endif %}
             </div>
         </div>
         

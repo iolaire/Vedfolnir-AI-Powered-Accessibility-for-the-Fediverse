@@ -22,6 +22,7 @@ Welcome to the Vedfolnir documentation! This directory contains comprehensive gu
 - [User Guide](user_guide.md) - Complete user manual
 - [Platform Setup](platform_setup.md) - Setting up platform connections
 - [Multi-Platform Setup](multi-platform-setup.md) - Managing multiple platforms
+- [Storage Limit User Guide](storage-limit-user-guide.md) - Understanding storage limits and notifications
 - [Troubleshooting](troubleshooting.md) - Common issues and solutions
 
 ### 🔧 Technical Documentation
@@ -29,10 +30,21 @@ Welcome to the Vedfolnir documentation! This directory contains comprehensive gu
 - [Database Migrations](database_migrations.md) - Database schema changes
 - [Migration Guide](migration_guide.md) - System migration procedures
 - [ActivityPub Platforms](activitypub_platforms.md) - Platform integration details
+- [Storage Cleanup Procedures](storage-cleanup-procedures.md) - Comprehensive storage management procedures
 
 ### 🚀 Deployment & Operations
 - [Deployment Guide](deployment.md) - Production deployment instructions
 - [Batch Update](batch_update.md) - Batch processing documentation
+
+### 🗂️ Administrative Documentation
+**Location**: [`admin/`](admin/)
+- [Storage Limit Admin Guide](admin/storage-limit-admin-guide.md) - Complete administrator guide for storage limits
+- [Administrator Training Guide](admin/administrator_training_guide.md) - Comprehensive admin training
+- [User Management Admin Guide](admin/user-management-admin-guide.md) - User administration procedures
+
+### 🔧 Troubleshooting Guides
+**Location**: [`troubleshooting/`](troubleshooting/)
+- [Storage Troubleshooting Guide](troubleshooting/storage-troubleshooting-guide.md) - Comprehensive storage issue resolution
 
 ### 🎯 Feature-Specific Documentation
 **Location**: [`web-caption-generation/`](web-caption-generation/)
@@ -57,6 +69,8 @@ Welcome to the Vedfolnir documentation! This directory contains comprehensive gu
 2. Review [Security Audit Summary](summary/SECURITY_AUDIT_SUMMARY.md) for security status
 3. Use [Migration Guide](migration_guide.md) for system updates
 4. Monitor using [Troubleshooting](troubleshooting.md) guide
+5. Manage storage limits with [Storage Limit Admin Guide](admin/storage-limit-admin-guide.md)
+6. Handle storage issues using [Storage Troubleshooting Guide](troubleshooting/storage-troubleshooting-guide.md)
 
 ### For Security Auditors
 1. Review [Security Guide](SECURITY.md) for implementation details

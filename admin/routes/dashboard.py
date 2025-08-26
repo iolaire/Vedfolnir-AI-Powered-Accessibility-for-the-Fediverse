@@ -8,6 +8,7 @@ from flask import render_template, current_app
 from flask_login import login_required, current_user
 from models import UserRole
 from session_error_handlers import with_session_error_handling
+from admin_storage_dashboard import AdminStorageDashboard
 import version
 
 def register_routes(bp):
@@ -64,10 +65,40 @@ def register_routes(bp):
             current_app.logger.error(f"Error getting health status: {e}")
             health_status = 'unknown'
         
+        # Get storage dashboard data
+        try:
+            storage_dashboard = AdminStorageDashboard()
+            storage_data = storage_dashboard.get_storage_summary_card_data()
+            storage_gauge = storage_dashboard.get_storage_gauge_data()
+            storage_actions = storage_dashboard.get_quick_actions_data()
+        except Exception as e:
+            current_app.logger.error(f"Error getting storage dashboard data: {e}")
+            storage_data = {
+                'title': 'Storage Usage',
+                'current_usage': '0.00 GB',
+                'limit': '10.00 GB',
+                'percentage': '0.0%',
+                'status_text': 'Error',
+                'status_color': 'red',
+                'error': str(e)
+            }
+            storage_gauge = {
+                'current_percentage': 0.0,
+                'status_color': 'red',
+                'error': str(e)
+            }
+            storage_actions = {
+                'actions': [],
+                'error': str(e)
+            }
+        
         return render_template('admin/admin_landing.html', 
                              stats=stats,
                              health_status=health_status,
-                             app_version=version.__version__)
+                             app_version=version.__version__,
+                             storage_data=storage_data,
+                             storage_gauge=storage_gauge,
+                             storage_actions=storage_actions)
     
     @bp.route('/configuration')
     @login_required

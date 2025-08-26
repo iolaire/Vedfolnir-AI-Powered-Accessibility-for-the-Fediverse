@@ -29,6 +29,7 @@ from models import (
 from admin.services.monitoring_service import AdminMonitoringService
 from alert_manager import AlertManager, AlertType, AlertSeverity
 from system_monitor import SystemMonitor
+from storage_monitoring_dashboard_integration import StorageMonitoringDashboardIntegration
 
 logger = logging.getLogger(__name__)
 
@@ -107,6 +108,15 @@ class MonitoringDashboardService:
             config = Config()
         
         self.alert_manager = AlertManager(db_manager, config)
+        
+        # Initialize storage monitoring integration
+        try:
+            self.storage_monitoring = StorageMonitoringDashboardIntegration(db_manager)
+            logger.info("Storage monitoring integration initialized")
+        except Exception as e:
+            logger.warning(f"Could not initialize storage monitoring integration: {e}")
+            self.storage_monitoring = None
+        
         self._setup_default_widgets()
         self._setup_alert_handlers()
     
@@ -151,7 +161,11 @@ class MonitoringDashboardService:
             elif widget.type == DashboardWidgetType.RESOURCE_MONITOR:
                 return self._get_resource_monitor_data(widget)
             else:
-                return {'error': 'Unknown widget type'}
+                # Check if it's a storage widget
+                if widget.id.startswith('storage_') and self.storage_monitoring:
+                    return self.storage_monitoring.get_storage_widget_data(widget.id)
+                else:
+                    return {'error': 'Unknown widget type'}
                 
         except Exception as e:
             logger.error(f"Error getting widget data for {widget_id}: {str(e)}")
@@ -220,6 +234,25 @@ class MonitoringDashboardService:
                     )
                     dashboard_alerts.append(dashboard_alert)
             
+            # Add storage alerts if available
+            if self.storage_monitoring:
+                try:
+                    storage_alerts = self.storage_monitoring.get_storage_dashboard_alerts()
+                    for storage_alert in storage_alerts:
+                        dashboard_alert = DashboardAlert(
+                            id=storage_alert['id'],
+                            type=AlertType.SYSTEM_ERROR,  # Map to existing alert type
+                            severity=AlertSeverity.CRITICAL if storage_alert['severity'] == 'critical' else AlertSeverity.WARNING,
+                            message=storage_alert['message'],
+                            timestamp=datetime.fromisoformat(storage_alert['timestamp'].replace('Z', '+00:00')),
+                            acknowledged=False,
+                            auto_dismiss=storage_alert.get('auto_dismiss', False),
+                            dismiss_after=storage_alert.get('dismiss_after')
+                        )
+                        dashboard_alerts.append(dashboard_alert)
+                except Exception as e:
+                    logger.error(f"Error getting storage alerts: {e}")
+            
             return dashboard_alerts
             
         except Exception as e:
@@ -266,12 +299,22 @@ class MonitoringDashboardService:
                 'info': len([a for a in alerts if a.severity == AlertSeverity.INFO])
             }
             
+            # Get storage metrics if available
+            storage_metrics = {}
+            if self.storage_monitoring:
+                try:
+                    storage_metrics = self.storage_monitoring.get_storage_dashboard_metrics()
+                except Exception as e:
+                    logger.error(f"Error getting storage metrics: {e}")
+                    storage_metrics = {'error': str(e)}
+            
             return {
                 'timestamp': datetime.now(timezone.utc).isoformat(),
                 'overview': overview,
                 'health': health,
                 'performance': performance,
                 'alerts': alert_counts,
+                'storage': storage_metrics,
                 'status': 'healthy' if health.get('overall_status') == 'healthy' else 'degraded'
             }
             
@@ -349,6 +392,34 @@ class MonitoringDashboardService:
                 title="User Activity (7 days)",
                 position={"x": 0, "y": 13, "width": 12, "height": 4},
                 config={"chart_type": "bar", "period": "7d", "metric": "user_tasks"},
+                roles=[UserRole.ADMIN]
+            ),
+            
+            # Storage System Widgets
+            DashboardWidget(
+                id="storage_usage_gauge",
+                type=DashboardWidgetType.GAUGE,
+                title="Storage Usage",
+                position={"x": 0, "y": 17, "width": 4, "height": 3},
+                config={"metric": "storage_usage", "min": 0, "max": 100, "thresholds": [80, 95]},
+                roles=[UserRole.ADMIN]
+            ),
+            
+            DashboardWidget(
+                id="storage_health_status",
+                type=DashboardWidgetType.METRIC_CARD,
+                title="Storage System Health",
+                position={"x": 4, "y": 17, "width": 4, "height": 3},
+                config={"metrics": ["storage_status", "storage_components"]},
+                roles=[UserRole.ADMIN]
+            ),
+            
+            DashboardWidget(
+                id="storage_enforcement_status",
+                type=DashboardWidgetType.METRIC_CARD,
+                title="Storage Enforcement",
+                position={"x": 8, "y": 17, "width": 4, "height": 3},
+                config={"metrics": ["enforcement_blocked", "enforcement_checks"]},
                 roles=[UserRole.ADMIN]
             )
         ]

@@ -23,8 +23,9 @@ sys.path.insert(0, os.path.join(os.path.dirname(__file__), '..', '..'))
 from config import Config
 from database import DatabaseManager
 from data_cleanup import DataCleanupManager
-from models import Base
+from models import Base, User, UserRole
 from sqlalchemy import create_engine
+from system_configuration_manager import SystemConfigurationManager
 
 # Set up logging
 logging.basicConfig(level=logging.INFO, format='%(asctime)s - %(levelname)s - %(message)s')
@@ -38,6 +39,13 @@ class AppResetManager:
             self.config = Config()
             self.db_manager = DatabaseManager(self.config)
             self.cleanup_manager = DataCleanupManager(self.db_manager, self.config)
+            
+            # Initialize system configuration manager
+            try:
+                self.system_config_manager = SystemConfigurationManager(self.db_manager)
+            except Exception as config_error:
+                logger.warning(f"⚠️  Could not initialize system configuration manager: {config_error}")
+                self.system_config_manager = None
             
             # Initialize Redis connection for cache clearing
             self.redis_client = None
@@ -71,6 +79,7 @@ class AppResetManager:
             self.db_manager = None
             self.cleanup_manager = None
             self.redis_client = None
+            self.system_config_manager = None
     
     def clear_redis_cache(self, dry_run=False):
         """Clear Redis cache including sessions and platform data"""
@@ -139,6 +148,96 @@ class AppResetManager:
             logger.error(f"❌ Failed to clear Redis cache: {e}")
             return False
     
+    def _get_or_create_admin_user(self) -> int:
+        """Get or create an admin user for configuration initialization"""
+        try:
+            with self.db_manager.get_session() as session:
+                # Try to find an existing admin user
+                admin_user = session.query(User).filter_by(role=UserRole.ADMIN).first()
+                
+                if admin_user:
+                    logger.info(f"Using existing admin user: {admin_user.username}")
+                    return admin_user.id
+                
+                # If no admin user exists, try to create one from environment variables
+                admin_username = os.getenv('AUTH_ADMIN_USERNAME', 'admin')
+                admin_email = os.getenv('AUTH_ADMIN_EMAIL', 'admin@localhost')
+                admin_password = os.getenv('AUTH_ADMIN_PASSWORD', 'admin')
+                
+                # Check if user already exists with different role
+                existing_user = session.query(User).filter_by(username=admin_username).first()
+                if existing_user:
+                    # Promote existing user to admin
+                    existing_user.role = UserRole.ADMIN
+                    existing_user.is_active = True
+                    existing_user.email_verified = True
+                    session.commit()
+                    logger.info(f"Promoted existing user {admin_username} to admin")
+                    return existing_user.id
+                
+                # Create new admin user
+                admin_user = User(
+                    username=admin_username,
+                    email=admin_email,
+                    role=UserRole.ADMIN,
+                    is_active=True,
+                    email_verified=True
+                )
+                admin_user.set_password(admin_password)
+                session.add(admin_user)
+                session.commit()
+                
+                logger.info(f"Created new admin user: {admin_username}")
+                return admin_user.id
+                
+        except Exception as e:
+            logger.error(f"Failed to get or create admin user: {e}")
+            # Return a default admin user ID (1) as fallback
+            return 1
+    
+    def _initialize_system_configurations(self, dry_run=False):
+        """Initialize default system configurations after database reset"""
+        if not self.system_config_manager:
+            logger.warning("⚠️  System configuration manager not available, skipping configuration initialization")
+            return False
+        
+        if dry_run:
+            logger.info("DRY RUN - Would initialize default system configurations")
+            return True
+        
+        try:
+            # Get or create admin user for configuration initialization
+            admin_user_id = self._get_or_create_admin_user()
+            
+            # Initialize default configurations
+            logger.info("🔧 Initializing default system configurations...")
+            logger.info(f"   Using admin user ID: {admin_user_id}")
+            created_count, messages = self.system_config_manager.initialize_default_configurations(admin_user_id)
+            
+            if created_count > 0:
+                logger.info(f"✅ Initialized {created_count} default system configurations")
+                for message in messages[:5]:  # Show first 5 messages
+                    logger.info(f"   - {message}")
+                if len(messages) > 5:
+                    logger.info(f"   ... and {len(messages) - 5} more configurations")
+            else:
+                logger.info("✅ System configurations already initialized")
+            
+            # Verify configurations were created
+            try:
+                all_configs = self.system_config_manager.get_all_configurations(admin_user_id)
+                config_count = len(all_configs) if all_configs else 0
+                logger.info(f"✅ Verification: {config_count} total system configurations available")
+            except Exception as verify_error:
+                logger.warning(f"⚠️  Could not verify configuration count: {verify_error}")
+            
+            return True
+            
+        except Exception as e:
+            logger.error(f"❌ Failed to initialize system configurations: {e}")
+            logger.warning("⚠️  System will work but may need manual configuration setup")
+            return False
+    
     def reset_database_only(self, dry_run=False):
         """Reset only the database, keeping files"""
         if not self.config:
@@ -151,6 +250,8 @@ class AppResetManager:
             logger.info("DRY RUN - Database would be reset")
             # Also preview Redis cache clearing
             self.clear_redis_cache(dry_run=True)
+            # Preview configuration initialization
+            self._initialize_system_configurations(dry_run=True)
             return True
         
         try:
@@ -164,6 +265,11 @@ class AppResetManager:
             
             # Use DatabaseManager to create tables with proper connection management
             self.db_manager.create_tables()
+            
+            # Initialize default system configurations
+            config_success = self._initialize_system_configurations(dry_run=False)
+            if not config_success:
+                logger.warning("⚠️  Database reset successful but configuration initialization failed")
             
             logger.info("✅ Database reset successfully")
             return True
@@ -245,11 +351,12 @@ class AppResetManager:
         if success:
             if not dry_run:
                 logger.info("🎉 Complete application reset successful!")
-                logger.info("The application is now in a fresh state.")
+                logger.info("The application is now in a fresh state with default system configurations initialized.")
                 logger.info("Next steps:")
                 logger.info("1. Generate new environment configuration: python scripts/setup/generate_env_secrets.py")
                 logger.info("2. Start the web application: python web_app.py")
                 logger.info("3. Log in and set up your platform connections")
+                logger.info("4. Review and adjust system configurations in the admin panel")
             else:
                 logger.info("DRY RUN - Complete reset would be successful")
         else:
