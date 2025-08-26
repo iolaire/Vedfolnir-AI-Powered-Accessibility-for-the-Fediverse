@@ -271,3 +271,104 @@ def create_session_state_routes(app):
                 'error': 'Failed to generate session report',
                 'timestamp': datetime.now(timezone.utc).isoformat()
             }), 500
+    
+    @app.route('/api/maintenance/status', methods=['GET', 'OPTIONS'])
+    def api_maintenance_status():
+        """
+        Get current maintenance mode status
+        
+        Returns:
+            JSON response with maintenance status information
+        """
+        # Handle CORS preflight request
+        if request.method == 'OPTIONS':
+            response = make_response()
+            response.headers['Access-Control-Allow-Origin'] = '*'
+            response.headers['Access-Control-Allow-Methods'] = 'GET, OPTIONS'
+            response.headers['Access-Control-Allow-Headers'] = 'Content-Type, Accept, X-Requested-With'
+            response.headers['Access-Control-Max-Age'] = '86400'
+            return response
+            
+        try:
+            # Import maintenance status function
+            from maintenance_mode_decorators import maintenance_status_info
+            
+            # Get maintenance status
+            status_info = maintenance_status_info()
+            
+            response_data = {
+                'success': True,
+                'maintenance_mode': status_info.get('maintenance_mode', False),
+                'maintenance_reason': status_info.get('maintenance_reason'),
+                'maintenance_status': status_info.get('maintenance_status', 'inactive'),
+                'last_updated': status_info.get('last_updated'),
+                'service_available': status_info.get('service_available', False),
+                'timestamp': datetime.now(timezone.utc).isoformat()
+            }
+            
+            logger.debug(f"Maintenance status API called: {status_info.get('maintenance_mode', False)}")
+            response = jsonify(response_data)
+            
+            # Add CORS headers
+            response.headers['Access-Control-Allow-Origin'] = '*'
+            response.headers['Access-Control-Allow-Methods'] = 'GET, OPTIONS'
+            response.headers['Access-Control-Allow-Headers'] = 'Content-Type, Accept, X-Requested-With'
+            return response
+            
+        except Exception as e:
+            logger.error(f"Error in maintenance status API: {e}")
+            response = jsonify({
+                'success': False,
+                'error': 'Failed to get maintenance status',
+                'timestamp': datetime.now(timezone.utc).isoformat()
+            })
+            # Add CORS headers even for error responses
+            response.headers['Access-Control-Allow-Origin'] = '*'
+            response.headers['Access-Control-Allow-Methods'] = 'GET, OPTIONS'
+            response.headers['Access-Control-Allow-Headers'] = 'Content-Type, Accept, X-Requested-With'
+            return response, 500
+    
+    @app.route('/api/maintenance/refresh', methods=['GET'])
+    def api_maintenance_refresh():
+        """
+        Manually refresh maintenance service cache (for testing)
+        
+        Returns:
+            JSON response with refresh result
+        """
+        try:
+            maintenance_service = getattr(app, 'maintenance_service', None)
+            if not maintenance_service:
+                return jsonify({
+                    'success': False,
+                    'error': 'Maintenance service not available',
+                    'timestamp': datetime.now(timezone.utc).isoformat()
+                }), 503
+            
+            # Refresh the cache
+            refresh_success = maintenance_service.refresh_status()
+            
+            # Get updated status
+            from maintenance_mode_decorators import maintenance_status_info
+            status_info = maintenance_status_info()
+            
+            return jsonify({
+                'success': True,
+                'refresh_successful': refresh_success,
+                'updated_status': {
+                    'maintenance_mode': status_info.get('maintenance_mode', False),
+                    'maintenance_reason': status_info.get('maintenance_reason'),
+                    'maintenance_status': status_info.get('maintenance_status', 'inactive'),
+                    'last_updated': status_info.get('last_updated'),
+                    'service_available': status_info.get('service_available', False)
+                },
+                'timestamp': datetime.now(timezone.utc).isoformat()
+            })
+            
+        except Exception as e:
+            logger.error(f"Error in maintenance refresh API: {e}")
+            return jsonify({
+                'success': False,
+                'error': 'Failed to refresh maintenance status',
+                'timestamp': datetime.now(timezone.utc).isoformat()
+            }), 500

@@ -7,6 +7,23 @@
 
 {% block content %}
 <div class="container-fluid">
+    <!-- Maintenance Status Banner -->
+    {% if maintenance_status and maintenance_status.is_active %}
+    <div class="row mb-3">
+        <div class="col-12">
+            {{ maintenance_status.banner_html|safe }}
+            {% if maintenance_status.mode != 'test' %}
+            <div class="alert alert-info">
+                <i class="bi bi-info-circle"></i>
+                <strong>Platform Operations Restricted:</strong>
+                Platform switching, connection testing, and credential updates are temporarily disabled during maintenance.
+                You can continue using your current platform connection.
+            </div>
+            {% endif %}
+        </div>
+    </div>
+    {% endif %}
+
     <div class="row">
         <div class="col-12">
             <h2>Platform Management</h2>

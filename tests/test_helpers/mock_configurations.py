@@ -448,3 +448,54 @@ def patch_async_http_client(success: bool = True) -> AsyncMock:
     )
     
     return patch('httpx.AsyncClient', return_value=client_mock)
+
+
+class MockConfigurationService:
+    """Mock configuration service for testing"""
+    
+    def __init__(self):
+        self.config_data = {}
+        self.subscribers = {}
+    
+    def get_config(self, key: str, default=None):
+        """Get configuration value"""
+        return self.config_data.get(key, default)
+    
+    def set_config(self, key: str, value):
+        """Set configuration value"""
+        old_value = self.config_data.get(key)
+        self.config_data[key] = value
+        
+        # Notify subscribers
+        if key in self.subscribers:
+            for callback in self.subscribers[key]:
+                try:
+                    callback(key, old_value, value)
+                except Exception:
+                    pass  # Ignore callback errors
+        
+        return True
+    
+    def subscribe_to_changes(self, key: str, callback):
+        """Subscribe to configuration changes"""
+        if key not in self.subscribers:
+            self.subscribers[key] = []
+        self.subscribers[key].append(callback)
+    
+    def unsubscribe_from_changes(self, key: str, callback):
+        """Unsubscribe from configuration changes"""
+        if key in self.subscribers and callback in self.subscribers[key]:
+            self.subscribers[key].remove(callback)
+    
+    def get_all_config(self):
+        """Get all configuration data"""
+        return self.config_data.copy()
+    
+    def clear_config(self):
+        """Clear all configuration data"""
+        self.config_data.clear()
+    
+    def reset(self):
+        """Reset the mock configuration service"""
+        self.config_data.clear()
+        self.subscribers.clear()

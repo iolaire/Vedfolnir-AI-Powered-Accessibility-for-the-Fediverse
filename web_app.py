@@ -48,6 +48,8 @@ from session_aware_user import SessionAwareUser
 from session_aware_decorators import with_db_session, require_platform_context
 from security.core.security_utils import sanitize_for_log, sanitize_html_input
 from enhanced_input_validation import enhanced_input_validation, EnhancedInputValidator
+from enhanced_maintenance_mode_service import EnhancedMaintenanceModeService
+from maintenance_mode_middleware import MaintenanceModeMiddleware
 from security.core.security_middleware import SecurityMiddleware, require_https, validate_csrf_token, sanitize_filename, generate_secure_token, rate_limit, validate_input_length, require_secure_connection
 from security_decorators import conditional_rate_limit, conditional_validate_csrf_token, conditional_validate_input_length, conditional_enhanced_input_validation
 from security.core.role_based_access import require_role, require_admin, require_viewer_or_higher, platform_access_required, content_access_required, api_require_admin, api_platform_access_required, api_content_access_required
@@ -466,6 +468,24 @@ app.config['caption_security_manager'] = caption_security_manager
 from system_configuration_manager import SystemConfigurationManager
 system_configuration_manager = SystemConfigurationManager(db_manager)
 app.config['system_configuration_manager'] = system_configuration_manager
+
+# Initialize configuration service
+from configuration_service import ConfigurationService
+configuration_service = ConfigurationService(db_manager)
+app.config['configuration_service'] = configuration_service
+
+# Initialize enhanced maintenance mode service
+maintenance_service = EnhancedMaintenanceModeService(configuration_service)
+app.config['maintenance_service'] = maintenance_service
+
+# Initialize maintenance mode middleware
+maintenance_middleware = MaintenanceModeMiddleware(app, maintenance_service)
+app.config['maintenance_middleware'] = maintenance_middleware
+
+# Initialize maintenance mode service
+from maintenance_mode_service import MaintenanceModeService
+maintenance_service = MaintenanceModeService(configuration_service)
+app.maintenance_service = maintenance_service
 
 # Initialize caption review integration
 caption_review_integration = CaptionReviewIntegration(db_manager)
@@ -1858,12 +1878,30 @@ def platform_management():
             include_stats=True
         )
         
+        # Get maintenance status for UI display
+        maintenance_status = None
+        maintenance_status_dict = None
+        try:
+            from enhanced_maintenance_mode_service import EnhancedMaintenanceModeService
+            from maintenance_response_helper import MaintenanceResponseHelper
+            from configuration_service import ConfigurationService
+            
+            config_service = ConfigurationService()
+            maintenance_service = EnhancedMaintenanceModeService(config_service, db_manager)
+            response_helper = MaintenanceResponseHelper()
+            
+            maintenance_status = maintenance_service.get_maintenance_status()
+            maintenance_status_dict = response_helper.create_maintenance_status_dict(maintenance_status)
+        except Exception as e:
+            app.logger.error(f"Error getting maintenance status for platform management: {str(e)}")
+        
         # Platform management always shows the interface, even if no platforms
         # (unlike other routes that redirect when no platform is found)
         return render_template('platform_management.html', 
                              platforms=result.user_platforms or [],
                              current_platform=result.current_platform,
-                             platform_stats=result.platform_stats or {})
+                             platform_stats=result.platform_stats or {},
+                             maintenance_status=maintenance_status_dict)
                              
     except Exception as e:
         app.logger.error(f"Error in platform management: {sanitize_for_log(str(e))}")

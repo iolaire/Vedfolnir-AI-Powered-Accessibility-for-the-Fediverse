@@ -18,6 +18,7 @@ def register_all_routes(bp):
     from . import admin_job_management
     from . import admin_job_api
     from . import configuration_routes
+    from . import maintenance_mode
     
     # Register route modules
     dashboard.register_routes(bp)
@@ -31,6 +32,7 @@ def register_all_routes(bp):
     websocket_routes.register_websocket_routes(bp)
     admin_job_management.register_routes(bp)
     admin_job_api.register_api_routes(bp)
+    maintenance_mode.register_routes(bp)
     
     # Register configuration management routes as a sub-blueprint
     from .configuration_routes import configuration_bp

@@ -1,0 +1,927 @@
+<!-- Copyright (C) 2025 iolaire mcfadden. -->
+<!-- This program is free software: you can redistribute it and/or modify it under the terms of the GNU Affero General Public License as published by the Free Software Foundation, either version 3 of the License, or (at your option) any later version. -->
+<!-- THE SOFTWARE IS PROVIDED "AS IS", WITHOUT WARRANTY OF ANY KIND, EXPRESS OR IMPLIED, INCLUDING BUT NOT LIMITED TO THE WARRANTIES OF MERCHANTABILITY, FITNESS FOR A PARTICULAR PURPOSE AND NONINFRINGEMENT. IN NO EVENT SHALL THE AUTHORS OR COPYRIGHT HOLDERS BE LIABLE FOR ANY CLAIM, DAMAGES OR OTHER LIABILITY, WHETHER IN AN ACTION OF CONTRACT, TORT OR OTHERWISE, ARISING FROM, OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE SOFTWARE. -->
+
+{% extends "base_admin.html" %}
+
+{% block title %}Maintenance Mode - Admin - Vedfolnir{% endblock %}
+
+{% block extra_head %}
+<style>
+    .maintenance-status-card {
+        border-left: 4px solid;
+    }
+    .maintenance-active { border-left-color: #dc3545; }
+    .maintenance-inactive { border-left-color: #28a745; }
+    .maintenance-test { border-left-color: #ffc107; }
+    .maintenance-emergency { border-left-color: #fd7e14; }
+    
+    .operation-badge {
+        font-size: 0.75rem;
+        margin: 0.125rem;
+    }
+    
+    .maintenance-form {
+        background: #f8f9fa;
+        border-radius: 0.375rem;
+        padding: 1.5rem;
+    }
+    
+    .status-indicator {
+        display: inline-block;
+        width: 12px;
+        height: 12px;
+        border-radius: 50%;
+        margin-right: 0.5rem;
+    }
+    .status-active { background-color: #dc3545; }
+    .status-inactive { background-color: #28a745; }
+    .status-test { background-color: #ffc107; }
+    .status-emergency { background-color: #fd7e14; }
+    
+    .real-time-indicator {
+        display: inline-block;
+        width: 8px;
+        height: 8px;
+        background-color: #28a745;
+        border-radius: 50%;
+        animation: pulse 2s infinite;
+    }
+    @keyframes pulse {
+        0% { opacity: 1; }
+        50% { opacity: 0.5; }
+        100% { opacity: 1; }
+    }
+    .disconnected { background-color: #dc3545; }
+    
+    .validation-feedback {
+        display: none;
+        margin-top: 0.5rem;
+    }
+    .validation-feedback.show {
+        display: block;
+    }
+    
+    .maintenance-history-item {
+        border-left: 3px solid #dee2e6;
+        padding-left: 1rem;
+        margin-bottom: 1rem;
+    }
+    .maintenance-history-item.enabled { border-left-color: #dc3545; }
+    .maintenance-history-item.disabled { border-left-color: #28a745; }
+    .maintenance-history-item.emergency { border-left-color: #fd7e14; }
+</style>
+{% endblock %}
+
+{% block content %}
+<div class="d-flex justify-content-between flex-wrap flex-md-nowrap align-items-center pt-3 pb-2 mb-3 border-bottom">
+    <h1 class="h2">
+        <i class="bi bi-tools"></i> Maintenance Mode Control
+        <span class="real-time-indicator" id="connectionStatus" title="Real-time updates active"></span>
+    </h1>
+    <div class="btn-toolbar mb-2 mb-md-0">
+        <div class="btn-group me-2">
+            <a href="{{ url_for('admin.dashboard') }}" class="btn btn-sm btn-outline-secondary">
+                <i class="bi bi-arrow-left"></i> Back to Dashboard
+            </a>
+            <button type="button" class="btn btn-sm btn-outline-primary" onclick="refreshStatus()">
+                <i class="bi bi-arrow-clockwise"></i> Refresh
+            </button>
+        </div>
+    </div>
+</div>
+
+<!-- Current Status Overview -->
+<div class="row mb-4">
+    <div class="col-12">
+        <div class="card maintenance-status-card {% if status.is_active %}{% if status.mode.value == 'emergency' %}maintenance-emergency{% elif status.test_mode %}maintenance-test{% else %}maintenance-active{% endif %}{% else %}maintenance-inactive{% endif %}" id="statusCard">
+            <div class="card-header d-flex justify-content-between align-items-center">
+                <h5 class="mb-0">
+                    <span class="status-indicator {% if status.is_active %}{% if status.mode.value == 'emergency' %}status-emergency{% elif status.test_mode %}status-test{% else %}status-active{% endif %}{% else %}status-inactive{% endif %}" id="statusIndicator"></span>
+                    Current Status: <span id="statusText">{% if status.is_active %}{{ status.mode.value|title }} Maintenance Active{% else %}System Operational{% endif %}</span>
+                </h5>
+                <div class="btn-group btn-group-sm">
+                    {% if status.is_active %}
+                    <button type="button" class="btn btn-success" onclick="disableMaintenanceMode()">
+                        <i class="bi bi-play-circle"></i> Disable Maintenance
+                    </button>
+                    {% else %}
+                    <button type="button" class="btn btn-warning" onclick="showMaintenanceForm()">
+                        <i class="bi bi-pause-circle"></i> Enable Maintenance
+                    </button>
+                    {% endif %}
+                    <button type="button" class="btn btn-danger" onclick="showEmergencyForm()">
+                        <i class="bi bi-exclamation-triangle"></i> Emergency Mode
+                    </button>
+                </div>
+            </div>
+            <div class="card-body">
+                <div class="row">
+                    <div class="col-md-6">
+                        {% if status.is_active %}
+                        <div class="mb-2">
+                            <strong>Reason:</strong> <span id="statusReason">{{ status.reason or 'No reason provided' }}</span>
+                        </div>
+                        {% if status.started_at %}
+                        <div class="mb-2">
+                            <strong>Started:</strong> <span id="statusStarted">{{ status.started_at.strftime('%Y-%m-%d %H:%M:%S UTC') }}</span>
+                        </div>
+                        {% endif %}
+                        {% if status.estimated_completion %}
+                        <div class="mb-2">
+                            <strong>Estimated Completion:</strong> <span id="statusCompletion">{{ status.estimated_completion.strftime('%Y-%m-%d %H:%M:%S UTC') }}</span>
+                        </div>
+                        {% endif %}
+                        {% if status.enabled_by %}
+                        <div class="mb-2">
+                            <strong>Enabled By:</strong> <span id="statusEnabledBy">{{ status.enabled_by }}</span>
+                        </div>
+                        {% endif %}
+                        {% else %}
+                        <div class="text-muted">
+                            <i class="bi bi-check-circle"></i> All systems are operational and available to users.
+                        </div>
+                        {% endif %}
+                    </div>
+                    <div class="col-md-6">
+                        <div class="row text-center">
+                            <div class="col-4">
+                                <div class="h4 text-primary" id="activeJobsCount">{{ status.active_jobs_count }}</div>
+                                <small>Active Jobs</small>
+                            </div>
+                            <div class="col-4">
+                                <div class="h4 text-warning" id="blockedOpsCount">{{ blocked_operations|length }}</div>
+                                <small>Blocked Operations</small>
+                            </div>
+                            <div class="col-4">
+                                <div class="h4 text-info" id="invalidatedSessionsCount">{{ status.invalidated_sessions }}</div>
+                                <small>Invalidated Sessions</small>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+
+<!-- Maintenance Control Forms -->
+<div class="row mb-4" id="maintenanceFormsRow" style="display: none;">
+    <div class="col-md-8">
+        <div class="card">
+            <div class="card-header">
+                <h5 class="mb-0">
+                    <i class="bi bi-gear"></i> Maintenance Configuration
+                </h5>
+            </div>
+            <div class="card-body">
+                <form id="maintenanceForm" class="maintenance-form">
+                    <div class="row">
+                        <div class="col-md-6">
+                            <div class="mb-3">
+                                <label for="maintenanceReason" class="form-label">Maintenance Reason *</label>
+                                <textarea class="form-control" id="maintenanceReason" rows="3" 
+                                         placeholder="Describe the reason for maintenance..." required></textarea>
+                                <div class="form-text">Provide a clear reason that will be shown to users</div>
+                            </div>
+                        </div>
+                        <div class="col-md-6">
+                            <div class="mb-3">
+                                <label for="maintenanceMode" class="form-label">Maintenance Mode</label>
+                                <select class="form-select" id="maintenanceMode">
+                                    <option value="normal">Normal - Block new operations, allow completion</option>
+                                    <option value="emergency">Emergency - Block all non-admin operations immediately</option>
+                                    <option value="test">Test - Simulate maintenance without blocking</option>
+                                </select>
+                            </div>
+                            <div class="mb-3">
+                                <label for="maintenanceDuration" class="form-label">Estimated Duration (minutes)</label>
+                                <input type="number" class="form-control" id="maintenanceDuration" 
+                                       min="1" max="1440" placeholder="Optional">
+                                <div class="form-text">Leave empty if duration is unknown</div>
+                            </div>
+                        </div>
+                    </div>
+                    
+                    <!-- Validation Feedback -->
+                    <div class="validation-feedback" id="validationFeedback">
+                        <div class="alert alert-danger" id="validationErrors" style="display: none;">
+                            <h6>Configuration Errors:</h6>
+                            <ul id="errorsList"></ul>
+                        </div>
+                        <div class="alert alert-warning" id="validationWarnings" style="display: none;">
+                            <h6>Configuration Warnings:</h6>
+                            <ul id="warningsList"></ul>
+                        </div>
+                    </div>
+                    
+                    <div class="d-flex justify-content-end">
+                        <button type="button" class="btn btn-outline-secondary me-2" onclick="hideMaintenanceForm()">
+                            Cancel
+                        </button>
+                        <button type="button" class="btn btn-outline-primary me-2" onclick="validateConfiguration()">
+                            <i class="bi bi-check-circle"></i> Validate
+                        </button>
+                        <button type="button" class="btn btn-warning" onclick="enableMaintenanceMode()">
+                            <i class="bi bi-pause-circle"></i> Enable Maintenance
+                        </button>
+                    </div>
+                </form>
+            </div>
+        </div>
+    </div>
+    
+    <div class="col-md-4">
+        <div class="card">
+            <div class="card-header">
+                <h6 class="mb-0">
+                    <i class="bi bi-info-circle"></i> Maintenance Mode Guide
+                </h6>
+            </div>
+            <div class="card-body">
+                <div class="mb-3">
+                    <h6>Normal Mode</h6>
+                    <small class="text-muted">
+                        Blocks new operations while allowing existing operations to complete gracefully.
+                        Recommended for routine maintenance.
+                    </small>
+                </div>
+                <div class="mb-3">
+                    <h6>Emergency Mode</h6>
+                    <small class="text-muted">
+                        Immediately blocks all non-admin operations and terminates running jobs.
+                        Use only for critical system issues.
+                    </small>
+                </div>
+                <div class="mb-3">
+                    <h6>Test Mode</h6>
+                    <small class="text-muted">
+                        Simulates maintenance mode without actually blocking operations.
+                        Use for testing maintenance procedures.
+                    </small>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+
+<!-- Blocked Operations and System Impact -->
+<div class="row mb-4">
+    <div class="col-md-6">
+        <div class="card">
+            <div class="card-header">
+                <h5 class="mb-0">
+                    <i class="bi bi-slash-circle"></i> Blocked Operations
+                </h5>
+            </div>
+            <div class="card-body">
+                <div id="blockedOperationsList">
+                    {% if blocked_operations %}
+                    {% for operation in blocked_operations %}
+                    <span class="badge bg-danger operation-badge">{{ operation|replace('_', ' ')|title }}</span>
+                    {% endfor %}
+                    {% else %}
+                    <div class="text-muted text-center py-3">
+                        <i class="bi bi-check-circle"></i> No operations are currently blocked
+                    </div>
+                    {% endif %}
+                </div>
+            </div>
+        </div>
+    </div>
+    
+    <div class="col-md-6">
+        <div class="card">
+            <div class="card-header">
+                <h5 class="mb-0">
+                    <i class="bi bi-graph-up"></i> Service Statistics
+                </h5>
+            </div>
+            <div class="card-body">
+                {% if service_stats and service_stats.statistics %}
+                <div class="row text-center">
+                    <div class="col-6">
+                        <div class="border-end">
+                            <div class="h5 text-primary">{{ service_stats.statistics.maintenance_activations }}</div>
+                            <small>Total Activations</small>
+                        </div>
+                    </div>
+                    <div class="col-6">
+                        <div class="h5 text-warning">{{ service_stats.statistics.emergency_activations }}</div>
+                        <small>Emergency Activations</small>
+                    </div>
+                </div>
+                <hr>
+                <div class="row text-center">
+                    <div class="col-6">
+                        <div class="border-end">
+                            <div class="h6 text-info">{{ service_stats.statistics.blocked_operations }}</div>
+                            <small>Blocked Operations</small>
+                        </div>
+                    </div>
+                    <div class="col-6">
+                        <div class="h6 text-success">{{ service_stats.statistics.admin_bypasses }}</div>
+                        <small>Admin Bypasses</small>
+                    </div>
+                </div>
+                {% else %}
+                <div class="text-muted text-center py-3">
+                    <i class="bi bi-bar-chart"></i> Statistics not available
+                </div>
+                {% endif %}
+            </div>
+        </div>
+    </div>
+</div>
+
+<!-- Maintenance History -->
+<div class="row">
+    <div class="col-12">
+        <div class="card">
+            <div class="card-header d-flex justify-content-between align-items-center">
+                <h5 class="mb-0">
+                    <i class="bi bi-clock-history"></i> Maintenance History
+                </h5>
+                <button type="button" class="btn btn-outline-secondary btn-sm" onclick="refreshHistory()">
+                    <i class="bi bi-arrow-clockwise"></i> Refresh
+                </button>
+            </div>
+            <div class="card-body">
+                <div id="maintenanceHistory" style="max-height: 400px; overflow-y: auto;">
+                    {% if maintenance_history %}
+                    {% for event in maintenance_history %}
+                    <div class="maintenance-history-item {{ event.event_type }}">
+                        <div class="d-flex justify-content-between align-items-start">
+                            <div>
+                                <h6 class="mb-1">{{ event.event_type|replace('_', ' ')|title }}</h6>
+                                <p class="mb-1 text-muted">{{ event.details.reason if event.details and event.details.reason else 'No details available' }}</p>
+                                <small class="text-muted">
+                                    <i class="bi bi-person"></i> {{ event.administrator or 'Unknown' }} • 
+                                    <i class="bi bi-clock"></i> {{ event.timestamp }}
+                                </small>
+                            </div>
+                        </div>
+                    </div>
+                    {% endfor %}
+                    {% else %}
+                    <div class="text-center text-muted py-4">
+                        <i class="bi bi-inbox"></i> No maintenance history available
+                    </div>
+                    {% endif %}
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+
+<!-- Loading Modal -->
+<div class="modal fade" id="loadingModal" tabindex="-1" data-bs-backdrop="static" data-bs-keyboard="false">
+    <div class="modal-dialog modal-sm modal-dialog-centered">
+        <div class="modal-content">
+            <div class="modal-body text-center py-4">
+                <div class="spinner-border text-primary" role="status">
+                    <span class="visually-hidden">Loading...</span>
+                </div>
+                <div class="mt-2">
+                    <span id="loadingText">Processing...</span>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+
+{% endblock %}
+
+{% block extra_js %}
+<script>
+// Global variables
+let maintenanceStatusInterval;
+let isFormVisible = false;
+
+// Initialize dashboard
+document.addEventListener('DOMContentLoaded', function() {
+    initializeDashboard();
+    startStatusPolling();
+});
+
+function initializeDashboard() {
+    console.log('Initializing maintenance mode dashboard');
+    
+    // Set up form validation
+    setupFormValidation();
+    
+    // Set up real-time updates
+    updateConnectionStatus(true);
+}
+
+function startStatusPolling() {
+    // Poll for status updates every 10 seconds
+    maintenanceStatusInterval = setInterval(refreshStatus, 10000);
+}
+
+function stopStatusPolling() {
+    if (maintenanceStatusInterval) {
+        clearInterval(maintenanceStatusInterval);
+        maintenanceStatusInterval = null;
+    }
+}
+
+function refreshStatus() {
+    fetch('/admin/api/maintenance-mode/status', {
+        method: 'GET',
+        headers: {
+            'X-CSRFToken': document.querySelector('meta[name="csrf-token"]').getAttribute('content')
+        }
+    })
+    .then(response => response.json())
+    .then(data => {
+        if (data.success) {
+            updateStatusDisplay(data.status, data.blocked_operations);
+            updateConnectionStatus(true);
+        } else {
+            console.error('Error refreshing status:', data.error);
+            updateConnectionStatus(false);
+        }
+    })
+    .catch(error => {
+        console.error('Error refreshing status:', error);
+        updateConnectionStatus(false);
+    });
+}
+
+function updateStatusDisplay(status, blockedOperations) {
+    // Update status indicator and text
+    const statusIndicator = document.getElementById('statusIndicator');
+    const statusText = document.getElementById('statusText');
+    const statusCard = document.getElementById('statusCard');
+    
+    // Remove all status classes
+    statusIndicator.className = 'status-indicator';
+    statusCard.className = 'card maintenance-status-card';
+    
+    if (status.is_active) {
+        if (status.mode === 'emergency') {
+            statusIndicator.classList.add('status-emergency');
+            statusCard.classList.add('maintenance-emergency');
+            statusText.textContent = 'Emergency Maintenance Active';
+        } else if (status.test_mode) {
+            statusIndicator.classList.add('status-test');
+            statusCard.classList.add('maintenance-test');
+            statusText.textContent = 'Test Maintenance Active';
+        } else {
+            statusIndicator.classList.add('status-active');
+            statusCard.classList.add('maintenance-active');
+            statusText.textContent = 'Normal Maintenance Active';
+        }
+    } else {
+        statusIndicator.classList.add('status-inactive');
+        statusCard.classList.add('maintenance-inactive');
+        statusText.textContent = 'System Operational';
+    }
+    
+    // Update status details
+    const statusReason = document.getElementById('statusReason');
+    const statusStarted = document.getElementById('statusStarted');
+    const statusCompletion = document.getElementById('statusCompletion');
+    const statusEnabledBy = document.getElementById('statusEnabledBy');
+    
+    if (statusReason) statusReason.textContent = status.reason || 'No reason provided';
+    if (statusStarted && status.started_at) {
+        statusStarted.textContent = new Date(status.started_at).toLocaleString() + ' UTC';
+    }
+    if (statusCompletion && status.estimated_completion) {
+        statusCompletion.textContent = new Date(status.estimated_completion).toLocaleString() + ' UTC';
+    }
+    if (statusEnabledBy) statusEnabledBy.textContent = status.enabled_by || 'Unknown';
+    
+    // Update counters
+    document.getElementById('activeJobsCount').textContent = status.active_jobs_count || 0;
+    document.getElementById('blockedOpsCount').textContent = blockedOperations.length;
+    document.getElementById('invalidatedSessionsCount').textContent = status.invalidated_sessions || 0;
+    
+    // Update blocked operations list
+    updateBlockedOperationsList(blockedOperations);
+}
+
+function updateBlockedOperationsList(blockedOperations) {
+    const container = document.getElementById('blockedOperationsList');
+    
+    if (blockedOperations.length === 0) {
+        container.innerHTML = `
+            <div class="text-muted text-center py-3">
+                <i class="bi bi-check-circle"></i> No operations are currently blocked
+            </div>
+        `;
+    } else {
+        const badges = blockedOperations.map(op => 
+            `<span class="badge bg-danger operation-badge">${op.replace(/_/g, ' ').replace(/\b\w/g, l => l.toUpperCase())}</span>`
+        ).join('');
+        container.innerHTML = badges;
+    }
+}
+
+function updateConnectionStatus(connected) {
+    const indicator = document.getElementById('connectionStatus');
+    if (connected) {
+        indicator.classList.remove('disconnected');
+        indicator.title = 'Real-time updates active';
+    } else {
+        indicator.classList.add('disconnected');
+        indicator.title = 'Connection lost - updates may be delayed';
+    }
+}
+
+function showMaintenanceForm() {
+    document.getElementById('maintenanceFormsRow').style.display = 'block';
+    isFormVisible = true;
+    
+    // Scroll to form
+    document.getElementById('maintenanceFormsRow').scrollIntoView({ behavior: 'smooth' });
+}
+
+function hideMaintenanceForm() {
+    document.getElementById('maintenanceFormsRow').style.display = 'none';
+    isFormVisible = false;
+    
+    // Clear form
+    document.getElementById('maintenanceForm').reset();
+    hideValidationFeedback();
+}
+
+function showEmergencyForm() {
+    showMaintenanceForm();
+    document.getElementById('maintenanceMode').value = 'emergency';
+    document.getElementById('maintenanceReason').value = 'Emergency maintenance required';
+    document.getElementById('maintenanceDuration').value = '30';
+}
+
+function setupFormValidation() {
+    const reasonField = document.getElementById('maintenanceReason');
+    const durationField = document.getElementById('maintenanceDuration');
+    const modeField = document.getElementById('maintenanceMode');
+    
+    // Real-time validation
+    reasonField.addEventListener('input', debounce(validateConfiguration, 500));
+    durationField.addEventListener('input', debounce(validateConfiguration, 500));
+    modeField.addEventListener('change', validateConfiguration);
+    
+    // Client-side validation rules
+    setupClientSideValidation();
+}
+
+function setupClientSideValidation() {
+    const reasonField = document.getElementById('maintenanceReason');
+    const durationField = document.getElementById('maintenanceDuration');
+    const modeField = document.getElementById('maintenanceMode');
+    
+    // Reason field validation
+    reasonField.addEventListener('input', function() {
+        const value = this.value.trim();
+        const feedback = this.parentNode.querySelector('.client-validation-feedback') || createValidationFeedback(this);
+        
+        if (value.length === 0) {
+            showClientValidation(feedback, 'error', 'Maintenance reason is required');
+        } else if (value.length < 10) {
+            showClientValidation(feedback, 'warning', 'Reason should be more descriptive (at least 10 characters)');
+        } else if (value.length > 500) {
+            showClientValidation(feedback, 'error', 'Reason is too long (max 500 characters)');
+        } else {
+            hideClientValidation(feedback);
+        }
+    });
+    
+    // Duration field validation
+    durationField.addEventListener('input', function() {
+        const value = this.value;
+        const feedback = this.parentNode.querySelector('.client-validation-feedback') || createValidationFeedback(this);
+        
+        if (value !== '' && value !== null) {
+            const duration = parseInt(value);
+            if (isNaN(duration)) {
+                showClientValidation(feedback, 'error', 'Duration must be a valid number');
+            } else if (duration <= 0) {
+                showClientValidation(feedback, 'error', 'Duration must be positive');
+            } else if (duration > 1440) {
+                showClientValidation(feedback, 'error', 'Duration cannot exceed 24 hours (1440 minutes)');
+            } else if (duration < 5) {
+                showClientValidation(feedback, 'warning', 'Very short duration (less than 5 minutes)');
+            } else if (duration > 480) {
+                showClientValidation(feedback, 'warning', 'Long duration (more than 8 hours) - consider user impact');
+            } else {
+                hideClientValidation(feedback);
+            }
+        } else {
+            hideClientValidation(feedback);
+        }
+    });
+    
+    // Mode field validation
+    modeField.addEventListener('change', function() {
+        const value = this.value;
+        const feedback = this.parentNode.querySelector('.client-validation-feedback') || createValidationFeedback(this);
+        
+        if (value === 'emergency') {
+            showClientValidation(feedback, 'warning', 'Emergency mode will immediately terminate all non-admin operations');
+        } else if (value === 'test') {
+            showClientValidation(feedback, 'info', 'Test mode will simulate maintenance without actually blocking operations');
+        } else {
+            hideClientValidation(feedback);
+        }
+    });
+}
+
+function createValidationFeedback(field) {
+    const feedback = document.createElement('div');
+    feedback.className = 'client-validation-feedback mt-1';
+    feedback.style.display = 'none';
+    field.parentNode.appendChild(feedback);
+    return feedback;
+}
+
+function showClientValidation(feedback, type, message) {
+    const alertClass = type === 'error' ? 'alert-danger' : 
+                     type === 'warning' ? 'alert-warning' : 'alert-info';
+    
+    feedback.className = `client-validation-feedback mt-1 alert ${alertClass} py-1 px-2`;
+    feedback.innerHTML = `<small>${message}</small>`;
+    feedback.style.display = 'block';
+}
+
+function hideClientValidation(feedback) {
+    feedback.style.display = 'none';
+}
+
+function validateConfiguration() {
+    const reason = document.getElementById('maintenanceReason').value.trim();
+    const duration = document.getElementById('maintenanceDuration').value;
+    const mode = document.getElementById('maintenanceMode').value;
+    
+    const data = {
+        reason: reason,
+        duration: duration || null,
+        mode: mode
+    };
+    
+    fetch('/admin/api/maintenance-mode/validate', {
+        method: 'POST',
+        headers: {
+            'Content-Type': 'application/json',
+            'X-CSRFToken': document.querySelector('meta[name="csrf-token"]').getAttribute('content')
+        },
+        body: JSON.stringify(data)
+    })
+    .then(response => response.json())
+    .then(data => {
+        if (data.success) {
+            showValidationFeedback(data.errors, data.warnings, data.info);
+            
+            // Update validation button state
+            const validateButton = document.querySelector('button[onclick="validateConfiguration()"]');
+            if (validateButton) {
+                if (data.valid) {
+                    validateButton.className = 'btn btn-success me-2';
+                    validateButton.innerHTML = '<i class="bi bi-check-circle"></i> Valid';
+                } else {
+                    validateButton.className = 'btn btn-outline-danger me-2';
+                    validateButton.innerHTML = '<i class="bi bi-x-circle"></i> Invalid';
+                }
+                
+                // Reset button after 3 seconds
+                setTimeout(() => {
+                    validateButton.className = 'btn btn-outline-primary me-2';
+                    validateButton.innerHTML = '<i class="bi bi-check-circle"></i> Validate';
+                }, 3000);
+            }
+            
+            // Show validation statistics if available
+            if (data.validation_stats) {
+                console.log('Validation statistics:', data.validation_stats);
+            }
+            
+            // Store validated config for submission
+            if (data.validation_details && data.validation_details.validated_config) {
+                window.validatedConfig = data.validation_details.validated_config;
+            }
+        } else {
+            console.error('Validation error:', data.error);
+            showAlert('danger', 'Validation error: ' + data.error);
+        }
+    })
+    .catch(error => {
+        console.error('Error validating configuration:', error);
+        showAlert('danger', 'Network error during validation');
+    });
+}
+
+function showValidationFeedback(errors, warnings, info) {
+    const feedbackContainer = document.getElementById('validationFeedback');
+    const errorsContainer = document.getElementById('validationErrors');
+    const warningsContainer = document.getElementById('validationWarnings');
+    const errorsList = document.getElementById('errorsList');
+    const warningsList = document.getElementById('warningsList');
+    
+    // Create info container if it doesn't exist
+    let infoContainer = document.getElementById('validationInfo');
+    let infoList = document.getElementById('infoList');
+    
+    if (!infoContainer && info && info.length > 0) {
+        infoContainer = document.createElement('div');
+        infoContainer.id = 'validationInfo';
+        infoContainer.className = 'alert alert-info';
+        infoContainer.style.display = 'none';
+        infoContainer.innerHTML = `
+            <h6>Configuration Information:</h6>
+            <ul id="infoList"></ul>
+        `;
+        feedbackContainer.appendChild(infoContainer);
+        infoList = document.getElementById('infoList');
+    }
+    
+    // Clear previous feedback
+    errorsList.innerHTML = '';
+    warningsList.innerHTML = '';
+    if (infoList) infoList.innerHTML = '';
+    errorsContainer.style.display = 'none';
+    warningsContainer.style.display = 'none';
+    if (infoContainer) infoContainer.style.display = 'none';
+    
+    // Show errors
+    if (errors && errors.length > 0) {
+        errors.forEach(error => {
+            const li = document.createElement('li');
+            li.textContent = error;
+            errorsList.appendChild(li);
+        });
+        errorsContainer.style.display = 'block';
+    }
+    
+    // Show warnings
+    if (warnings && warnings.length > 0) {
+        warnings.forEach(warning => {
+            const li = document.createElement('li');
+            li.textContent = warning;
+            warningsList.appendChild(li);
+        });
+        warningsContainer.style.display = 'block';
+    }
+    
+    // Show info messages
+    if (info && info.length > 0 && infoList) {
+        info.forEach(infoMsg => {
+            const li = document.createElement('li');
+            li.textContent = infoMsg;
+            infoList.appendChild(li);
+        });
+        infoContainer.style.display = 'block';
+    }
+    
+    // Show feedback container if there are any messages
+    const hasMessages = (errors && errors.length > 0) || 
+                       (warnings && warnings.length > 0) || 
+                       (info && info.length > 0);
+    
+    if (hasMessages) {
+        feedbackContainer.classList.add('show');
+    } else {
+        feedbackContainer.classList.remove('show');
+    }
+}
+
+function hideValidationFeedback() {
+    document.getElementById('validationFeedback').classList.remove('show');
+}
+
+function enableMaintenanceMode() {
+    const reason = document.getElementById('maintenanceReason').value.trim();
+    const duration = document.getElementById('maintenanceDuration').value;
+    const mode = document.getElementById('maintenanceMode').value;
+    
+    if (!reason) {
+        alert('Please provide a reason for maintenance');
+        return;
+    }
+    
+    const data = {
+        reason: reason,
+        duration: duration || null,
+        mode: mode
+    };
+    
+    showLoadingModal('Enabling maintenance mode...');
+    
+    fetch('/admin/api/maintenance-mode/enable', {
+        method: 'POST',
+        headers: {
+            'Content-Type': 'application/json',
+            'X-CSRFToken': document.querySelector('meta[name="csrf-token"]').getAttribute('content')
+        },
+        body: JSON.stringify(data)
+    })
+    .then(response => response.json())
+    .then(data => {
+        hideLoadingModal();
+        
+        if (data.success) {
+            hideMaintenanceForm();
+            refreshStatus();
+            showAlert('success', data.message);
+        } else {
+            showAlert('danger', 'Error: ' + data.error);
+        }
+    })
+    .catch(error => {
+        hideLoadingModal();
+        console.error('Error enabling maintenance mode:', error);
+        showAlert('danger', 'Network error occurred while enabling maintenance mode');
+    });
+}
+
+function disableMaintenanceMode() {
+    if (!confirm('Are you sure you want to disable maintenance mode?')) {
+        return;
+    }
+    
+    showLoadingModal('Disabling maintenance mode...');
+    
+    fetch('/admin/api/maintenance-mode/disable', {
+        method: 'POST',
+        headers: {
+            'X-CSRFToken': document.querySelector('meta[name="csrf-token"]').getAttribute('content')
+        }
+    })
+    .then(response => response.json())
+    .then(data => {
+        hideLoadingModal();
+        
+        if (data.success) {
+            refreshStatus();
+            showAlert('success', data.message);
+        } else {
+            showAlert('danger', 'Error: ' + data.error);
+        }
+    })
+    .catch(error => {
+        hideLoadingModal();
+        console.error('Error disabling maintenance mode:', error);
+        showAlert('danger', 'Network error occurred while disabling maintenance mode');
+    });
+}
+
+function refreshHistory() {
+    // Refresh the entire page to get updated history
+    // In a real implementation, this could be an AJAX call
+    window.location.reload();
+}
+
+function showLoadingModal(text) {
+    document.getElementById('loadingText').textContent = text;
+    const modal = new bootstrap.Modal(document.getElementById('loadingModal'));
+    modal.show();
+}
+
+function hideLoadingModal() {
+    const modal = bootstrap.Modal.getInstance(document.getElementById('loadingModal'));
+    if (modal) {
+        modal.hide();
+    }
+}
+
+function showAlert(type, message) {
+    // Create and show a Bootstrap alert
+    const alertContainer = document.createElement('div');
+    alertContainer.className = `alert alert-${type} alert-dismissible fade show`;
+    alertContainer.innerHTML = `
+        ${message}
+        <button type="button" class="btn-close" data-bs-dismiss="alert"></button>
+    `;
+    
+    // Insert at the top of the content
+    const content = document.querySelector('.container-fluid');
+    content.insertBefore(alertContainer, content.firstChild);
+    
+    // Auto-dismiss after 5 seconds
+    setTimeout(() => {
+        if (alertContainer.parentNode) {
+            alertContainer.remove();
+        }
+    }, 5000);
+}
+
+function debounce(func, wait) {
+    let timeout;
+    return function executedFunction(...args) {
+        const later = () => {
+            clearTimeout(timeout);
+            func(...args);
+        };
+        clearTimeout(timeout);
+        timeout = setTimeout(later, wait);
+    };
+}
+
+// Cleanup on page unload
+window.addEventListener('beforeunload', function() {
+    stopStatusPolling();
+});
+</script>
+{% endblock %}

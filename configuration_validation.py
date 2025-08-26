@@ -674,7 +674,8 @@ class ConfigurationValidator:
                     value = int_value
                 except (ValueError, TypeError):
                     errors.append(f"Value must be an integer, got: {type(value).__name__}")
-                    return ValidationResult(is_valid=False, errors=errors, warnings=warnings)
+                    issues = [ValidationIssue(rule_type="type_validation", severity=ValidationSeverity.ERROR, message=error) for error in errors]
+                    return ValidationResult(key=key, value=value, is_valid=False, issues=issues, warnings=warnings)
             
             elif schema.data_type == ConfigurationDataType.FLOAT:
                 try:
@@ -682,7 +683,8 @@ class ConfigurationValidator:
                     value = float_value
                 except (ValueError, TypeError):
                     errors.append(f"Value must be a number, got: {type(value).__name__}")
-                    return ValidationResult(is_valid=False, errors=errors, warnings=warnings)
+                    issues = [ValidationIssue(rule_type="type_validation", severity=ValidationSeverity.ERROR, message=error) for error in errors]
+                    return ValidationResult(key=key, value=value, is_valid=False, issues=issues, warnings=warnings)
             
             elif schema.data_type == ConfigurationDataType.BOOLEAN:
                 if isinstance(value, str):
@@ -692,10 +694,12 @@ class ConfigurationValidator:
                         value = False
                     else:
                         errors.append(f"Boolean value must be true/false, got: {value}")
-                        return ValidationResult(is_valid=False, errors=errors, warnings=warnings)
+                        issues = [ValidationIssue(rule_type="type_validation", severity=ValidationSeverity.ERROR, message=error) for error in errors]
+                        return ValidationResult(key=key, value=value, is_valid=False, issues=issues, warnings=warnings)
                 elif not isinstance(value, bool):
                     errors.append(f"Value must be boolean, got: {type(value).__name__}")
-                    return ValidationResult(is_valid=False, errors=errors, warnings=warnings)
+                    issues = [ValidationIssue(rule_type="type_validation", severity=ValidationSeverity.ERROR, message=error) for error in errors]
+                    return ValidationResult(key=key, value=value, is_valid=False, issues=issues, warnings=warnings)
             
             elif schema.data_type == ConfigurationDataType.JSON:
                 if isinstance(value, str):
@@ -704,7 +708,8 @@ class ConfigurationValidator:
                         json.loads(value)
                     except json.JSONDecodeError as e:
                         errors.append(f"Invalid JSON format: {str(e)}")
-                        return ValidationResult(is_valid=False, errors=errors, warnings=warnings)
+                        issues = [ValidationIssue(rule_type="type_validation", severity=ValidationSeverity.ERROR, message=error) for error in errors]
+                        return ValidationResult(key=key, value=value, is_valid=False, issues=issues, warnings=warnings)
             
             # Validation rules
             if schema.validation_rules:
@@ -756,15 +761,94 @@ class ConfigurationValidator:
                 elif key == 'queue_size_limit' and value > 10000:
                     warnings.append("Large queue size limit may consume significant memory")
             
+            issues = [ValidationIssue(rule_type="validation", severity=ValidationSeverity.ERROR, message=error) for error in errors]
             return ValidationResult(
+                key=key,
+                value=value,
                 is_valid=len(errors) == 0,
-                errors=errors,
+                issues=issues,
                 warnings=warnings
             )
             
         except Exception as e:
             errors.append(f"Validation error: {str(e)}")
-            return ValidationResult(is_valid=False, errors=errors, warnings=warnings)
+            issues = [ValidationIssue(rule_type="validation", severity=ValidationSeverity.ERROR, message=error) for error in errors]
+            return ValidationResult(key=key, value=value, is_valid=False, issues=issues, warnings=warnings)
+
+    def assess_impact(self, key: str, old_value: Any, new_value: Any) -> ImpactAssessment:
+        """Assess the impact of a configuration change"""
+        
+        # Determine impact level based on configuration key and value change
+        impact_level = ImpactLevel.LOW
+        affected_components = []
+        requires_restart = False
+        risk_factors = []
+        mitigation_steps = []
+        
+        # High-impact configurations
+        high_impact_keys = {
+            'database_url', 'redis_url', 'secret_key', 'security_key',
+            'max_concurrent_jobs', 'session_timeout_minutes'
+        }
+        
+        # Medium-impact configurations  
+        medium_impact_keys = {
+            'queue_size_limit', 'rate_limit_per_user_per_hour',
+            'maintenance_mode', 'enable_batch_processing'
+        }
+        
+        if key in high_impact_keys:
+            impact_level = ImpactLevel.HIGH
+            affected_components.append("Core System")
+            requires_restart = True
+            risk_factors.append("May affect system stability")
+            mitigation_steps.append("Test in staging environment first")
+            
+        elif key in medium_impact_keys:
+            impact_level = ImpactLevel.MEDIUM
+            affected_components.append("Application Services")
+            
+            if key == 'maintenance_mode':
+                affected_components.append("User Access")
+                risk_factors.append("Will block new operations")
+                mitigation_steps.append("Notify users before enabling")
+                
+        # Specific configuration impact analysis
+        if key == 'max_concurrent_jobs':
+            if isinstance(new_value, (int, float)) and isinstance(old_value, (int, float)):
+                if new_value > old_value * 2:
+                    risk_factors.append("Significant increase may overload system")
+                    mitigation_steps.append("Monitor system resources after change")
+                    
+        elif key == 'session_timeout_minutes':
+            if isinstance(new_value, (int, float)) and new_value < 5:
+                risk_factors.append("Very short timeout may cause user frustration")
+                mitigation_steps.append("Consider user workflow requirements")
+                
+        # Estimate downtime
+        estimated_downtime = None
+        if requires_restart:
+            estimated_downtime = "30-60 seconds"
+            
+        # Rollback complexity
+        rollback_complexity = "low"
+        if requires_restart:
+            rollback_complexity = "medium"
+        if impact_level == ImpactLevel.HIGH:
+            rollback_complexity = "high"
+            
+        return ImpactAssessment(
+            key=key,
+            old_value=old_value,
+            new_value=new_value,
+            impact_level=impact_level,
+            affected_components=affected_components,
+            requires_restart=requires_restart,
+            estimated_downtime=estimated_downtime,
+            rollback_complexity=rollback_complexity,
+            risk_factors=risk_factors,
+            mitigation_steps=mitigation_steps
+        )
 
 
 # Global validator instance

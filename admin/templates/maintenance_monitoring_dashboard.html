@@ -1,0 +1,807 @@
+<!-- Copyright (C) 2025 iolaire mcfadden. -->
+<!-- This program is free software: you can redistribute it and/or modify it under the terms of the GNU Affero General Public License as published by the Free Software Foundation, either version 3 of the License, or (at your option) any later version. -->
+<!-- THE SOFTWARE IS PROVIDED "AS IS", WITHOUT WARRANTY OF ANY KIND, EXPRESS OR IMPLIED, INCLUDING BUT NOT LIMITED TO THE WARRANTIES OF MERCHANTABILITY, FITNESS FOR A PARTICULAR PURPOSE AND NONINFRINGEMENT. IN NO EVENT SHALL THE AUTHORS OR COPYRIGHT HOLDERS BE LIABLE FOR ANY CLAIM, DAMAGES OR OTHER LIABILITY, WHETHER IN AN ACTION OF CONTRACT, TORT OR OTHERWISE, ARISING FROM, OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE SOFTWARE. -->
+
+{% extends "base_admin.html" %}
+
+{% block title %}Maintenance Monitoring - Admin - Vedfolnir{% endblock %}
+
+{% block extra_head %}
+<style>
+    .metric-card {
+        transition: all 0.3s ease;
+        border-left: 4px solid transparent;
+    }
+    .metric-card:hover {
+        transform: translateY(-2px);
+        box-shadow: 0 4px 8px rgba(0,0,0,0.1);
+    }
+    .metric-card.critical { border-left-color: #dc3545; }
+    .metric-card.warning { border-left-color: #ffc107; }
+    .metric-card.success { border-left-color: #28a745; }
+    .metric-card.info { border-left-color: #17a2b8; }
+    
+    .metric-value {
+        font-size: 2rem;
+        font-weight: bold;
+        line-height: 1;
+    }
+    
+    .metric-trend {
+        font-size: 0.875rem;
+        margin-top: 0.25rem;
+    }
+    .trend-up { color: #28a745; }
+    .trend-down { color: #dc3545; }
+    .trend-stable { color: #6c757d; }
+    
+    .real-time-indicator {
+        display: inline-block;
+        width: 8px;
+        height: 8px;
+        background-color: #28a745;
+        border-radius: 50%;
+        animation: pulse 2s infinite;
+        margin-right: 0.5rem;
+    }
+    @keyframes pulse {
+        0% { opacity: 1; }
+        50% { opacity: 0.5; }
+        100% { opacity: 1; }
+    }
+    .disconnected { background-color: #dc3545; }
+    
+    .session-item {
+        border-left: 3px solid #dee2e6;
+        padding: 0.75rem;
+        margin-bottom: 0.5rem;
+        border-radius: 0.25rem;
+        background: #f8f9fa;
+    }
+    .session-item.admin { border-left-color: #28a745; }
+    .session-item.user { border-left-color: #17a2b8; }
+    .session-item.invalidated { border-left-color: #dc3545; background: #fff5f5; }
+    
+    .chart-container {
+        position: relative;
+        height: 300px;
+        margin: 1rem 0;
+    }
+    
+    .maintenance-timeline {
+        position: relative;
+        padding-left: 2rem;
+    }
+    .maintenance-timeline::before {
+        content: '';
+        position: absolute;
+        left: 0.5rem;
+        top: 0;
+        bottom: 0;
+        width: 2px;
+        background: #dee2e6;
+    }
+    .timeline-item {
+        position: relative;
+        margin-bottom: 1.5rem;
+        padding-left: 1.5rem;
+    }
+    .timeline-item::before {
+        content: '';
+        position: absolute;
+        left: -0.5rem;
+        top: 0.25rem;
+        width: 12px;
+        height: 12px;
+        border-radius: 50%;
+        background: #fff;
+        border: 2px solid #dee2e6;
+    }
+    .timeline-item.enabled::before { border-color: #dc3545; background: #dc3545; }
+    .timeline-item.disabled::before { border-color: #28a745; background: #28a745; }
+    .timeline-item.emergency::before { border-color: #fd7e14; background: #fd7e14; }
+    
+    .impact-gauge {
+        position: relative;
+        width: 120px;
+        height: 120px;
+        margin: 0 auto;
+    }
+    .impact-gauge svg {
+        transform: rotate(-90deg);
+    }
+    .impact-gauge-text {
+        position: absolute;
+        top: 50%;
+        left: 50%;
+        transform: translate(-50%, -50%);
+        text-align: center;
+    }
+</style>
+{% endblock %}
+
+{% block content %}
+<div class="d-flex justify-content-between flex-wrap flex-md-nowrap align-items-center pt-3 pb-2 mb-3 border-bottom">
+    <h1 class="h2">
+        <i class="bi bi-graph-up"></i> Maintenance Monitoring Dashboard
+        <span class="real-time-indicator" id="connectionStatus" title="Real-time updates active"></span>
+    </h1>
+    <div class="btn-toolbar mb-2 mb-md-0">
+        <div class="btn-group me-2">
+            <a href="{{ url_for('admin.maintenance_mode_dashboard') }}" class="btn btn-sm btn-outline-secondary">
+                <i class="bi bi-tools"></i> Maintenance Control
+            </a>
+            <button type="button" class="btn btn-sm btn-outline-primary" onclick="refreshDashboard()">
+                <i class="bi bi-arrow-clockwise"></i> Refresh
+            </button>
+            <button type="button" class="btn btn-sm btn-outline-info" onclick="toggleAutoRefresh()">
+                <i class="bi bi-play-circle" id="autoRefreshIcon"></i> <span id="autoRefreshText">Start Auto-refresh</span>
+            </button>
+        </div>
+    </div>
+</div>
+
+<!-- Key Metrics Overview -->
+<div class="row mb-4">
+    <div class="col-md-3">
+        <div class="card metric-card {% if monitoring_data.current_status.is_active %}critical{% else %}success{% endif %}" id="statusMetricCard">
+            <div class="card-body text-center">
+                <div class="metric-value text-{% if monitoring_data.current_status.is_active %}danger{% else %}success{% endif %}" id="statusMetricValue">
+                    {% if monitoring_data.current_status.is_active %}ACTIVE{% else %}NORMAL{% endif %}
+                </div>
+                <div class="text-muted">System Status</div>
+                <div class="metric-trend" id="statusMetricTrend">
+                    {% if monitoring_data.current_status.is_active %}
+                    <i class="bi bi-exclamation-triangle text-warning"></i> Maintenance Mode
+                    {% else %}
+                    <i class="bi bi-check-circle text-success"></i> Operational
+                    {% endif %}
+                </div>
+            </div>
+        </div>
+    </div>
+    
+    <div class="col-md-3">
+        <div class="card metric-card info">
+            <div class="card-body text-center">
+                <div class="metric-value text-primary" id="blockedOpsMetric">{{ monitoring_data.blocked_operations_count }}</div>
+                <div class="text-muted">Blocked Operations</div>
+                <div class="metric-trend trend-stable" id="blockedOpsTrend">
+                    <i class="bi bi-dash-circle"></i> Current count
+                </div>
+            </div>
+        </div>
+    </div>
+    
+    <div class="col-md-3">
+        <div class="card metric-card warning">
+            <div class="card-body text-center">
+                <div class="metric-value text-warning" id="activeJobsMetric">{{ monitoring_data.active_jobs_count }}</div>
+                <div class="text-muted">Active Jobs</div>
+                <div class="metric-trend trend-stable" id="activeJobsTrend">
+                    <i class="bi bi-clock"></i> In progress
+                </div>
+            </div>
+        </div>
+    </div>
+    
+    <div class="col-md-3">
+        <div class="card metric-card {% if monitoring_data.invalidated_sessions_count > 0 %}critical{% else %}success{% endif %}">
+            <div class="card-body text-center">
+                <div class="metric-value text-{% if monitoring_data.invalidated_sessions_count > 0 %}danger{% else %}success{% endif %}" id="invalidatedSessionsMetric">{{ monitoring_data.invalidated_sessions_count }}</div>
+                <div class="text-muted">Invalidated Sessions</div>
+                <div class="metric-trend trend-stable" id="invalidatedSessionsTrend">
+                    <i class="bi bi-people"></i> User impact
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+
+<!-- Real-time Status and Impact -->
+<div class="row mb-4">
+    <div class="col-md-8">
+        <div class="card">
+            <div class="card-header d-flex justify-content-between align-items-center">
+                <h5 class="mb-0">
+                    <i class="bi bi-activity"></i> Real-time Maintenance Status
+                </h5>
+                <div class="btn-group btn-group-sm">
+                    <button type="button" class="btn btn-outline-secondary" onclick="refreshStatus()">
+                        <i class="bi bi-arrow-clockwise"></i>
+                    </button>
+                </div>
+            </div>
+            <div class="card-body">
+                <div id="maintenanceStatusDetails">
+                    {% if monitoring_data.current_status.is_active %}
+                    <div class="alert alert-{% if monitoring_data.current_status.mode == 'emergency' %}danger{% elif monitoring_data.current_status.test_mode %}warning{% else %}info{% endif %}">
+                        <div class="d-flex justify-content-between align-items-start">
+                            <div>
+                                <h6 class="alert-heading">
+                                    {% if monitoring_data.current_status.mode == 'emergency' %}
+                                    <i class="bi bi-exclamation-triangle"></i> Emergency Maintenance Active
+                                    {% elif monitoring_data.current_status.test_mode %}
+                                    <i class="bi bi-flask"></i> Test Maintenance Active
+                                    {% else %}
+                                    <i class="bi bi-tools"></i> Normal Maintenance Active
+                                    {% endif %}
+                                </h6>
+                                <p class="mb-1"><strong>Reason:</strong> {{ monitoring_data.current_status.reason or 'No reason provided' }}</p>
+                                {% if monitoring_data.current_status.started_at %}
+                                <p class="mb-1"><strong>Started:</strong> {{ monitoring_data.current_status.started_at.strftime('%Y-%m-%d %H:%M:%S UTC') }}</p>
+                                {% endif %}
+                                {% if monitoring_data.current_status.estimated_completion %}
+                                <p class="mb-1"><strong>Estimated Completion:</strong> {{ monitoring_data.current_status.estimated_completion.strftime('%Y-%m-%d %H:%M:%S UTC') }}</p>
+                                {% endif %}
+                                {% if monitoring_data.current_status.enabled_by %}
+                                <p class="mb-0"><strong>Enabled By:</strong> {{ monitoring_data.current_status.enabled_by }}</p>
+                                {% endif %}
+                            </div>
+                            <div class="text-end">
+                                <div class="h4 mb-0">{{ monitoring_data.current_status.mode|title }}</div>
+                                <small class="text-muted">Mode</small>
+                            </div>
+                        </div>
+                    </div>
+                    {% else %}
+                    <div class="alert alert-success">
+                        <div class="d-flex align-items-center">
+                            <i class="bi bi-check-circle me-2"></i>
+                            <div>
+                                <h6 class="mb-0">System Operating Normally</h6>
+                                <small class="text-muted">All operations are available to users</small>
+                            </div>
+                        </div>
+                    </div>
+                    {% endif %}
+                </div>
+                
+                <!-- Blocked Operations Display -->
+                <div class="mt-3">
+                    <h6>Currently Blocked Operations</h6>
+                    <div id="blockedOperationsDisplay">
+                        {% if monitoring_data.blocked_operations %}
+                        {% for operation in monitoring_data.blocked_operations %}
+                        <span class="badge bg-danger me-1 mb-1">{{ operation|replace('_', ' ')|title }}</span>
+                        {% endfor %}
+                        {% else %}
+                        <span class="text-muted">No operations are currently blocked</span>
+                        {% endif %}
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+    
+    <div class="col-md-4">
+        <div class="card">
+            <div class="card-header">
+                <h6 class="mb-0">
+                    <i class="bi bi-speedometer2"></i> System Impact
+                </h6>
+            </div>
+            <div class="card-body text-center">
+                <div class="impact-gauge" id="impactGauge">
+                    <svg width="120" height="120">
+                        <circle cx="60" cy="60" r="50" fill="none" stroke="#e9ecef" stroke-width="8"/>
+                        <circle cx="60" cy="60" r="50" fill="none" stroke="#dc3545" stroke-width="8" 
+                                stroke-dasharray="314" stroke-dashoffset="314" id="impactCircle"/>
+                    </svg>
+                    <div class="impact-gauge-text">
+                        <div class="h4 mb-0" id="impactPercentage">{{ monitoring_data.impact_percentage }}%</div>
+                        <small class="text-muted">Impact</small>
+                    </div>
+                </div>
+                <div class="mt-3">
+                    <div class="row text-center">
+                        <div class="col-6">
+                            <div class="border-end">
+                                <div class="h6 text-primary" id="affectedUsersCount">{{ monitoring_data.affected_users_count }}</div>
+                                <small>Affected Users</small>
+                            </div>
+                        </div>
+                        <div class="col-6">
+                            <div class="h6 text-warning" id="blockedRequestsCount">{{ monitoring_data.blocked_requests_count }}</div>
+                            <small>Blocked Requests</small>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+
+<!-- Active Sessions and User Impact -->
+<div class="row mb-4">
+    <div class="col-md-6">
+        <div class="card">
+            <div class="card-header d-flex justify-content-between align-items-center">
+                <h5 class="mb-0">
+                    <i class="bi bi-people"></i> Active Sessions
+                </h5>
+                <span class="badge bg-primary" id="totalSessionsCount">{{ monitoring_data.active_sessions|length }}</span>
+            </div>
+            <div class="card-body" style="max-height: 400px; overflow-y: auto;">
+                <div id="activeSessionsList">
+                    {% if monitoring_data.active_sessions %}
+                    {% for session in monitoring_data.active_sessions %}
+                    <div class="session-item {% if session.is_admin %}admin{% elif session.is_invalidated %}invalidated{% else %}user{% endif %}">
+                        <div class="d-flex justify-content-between align-items-start">
+                            <div>
+                                <div class="fw-bold">
+                                    {{ session.username }}
+                                    {% if session.is_admin %}
+                                    <span class="badge bg-success ms-1">Admin</span>
+                                    {% endif %}
+                                    {% if session.is_invalidated %}
+                                    <span class="badge bg-danger ms-1">Invalidated</span>
+                                    {% endif %}
+                                </div>
+                                <div class="text-muted small">
+                                    <i class="bi bi-envelope"></i> {{ session.email }}
+                                    {% if session.platform_name %}
+                                    <br><i class="bi bi-globe"></i> {{ session.platform_name }}
+                                    {% endif %}
+                                </div>
+                            </div>
+                            <div class="text-end">
+                                <small class="text-muted">{{ session.last_activity }}</small>
+                            </div>
+                        </div>
+                    </div>
+                    {% endfor %}
+                    {% else %}
+                    <div class="text-center text-muted py-4">
+                        <i class="bi bi-people"></i> No active sessions
+                    </div>
+                    {% endif %}
+                </div>
+            </div>
+        </div>
+    </div>
+    
+    <div class="col-md-6">
+        <div class="card">
+            <div class="card-header">
+                <h5 class="mb-0">
+                    <i class="bi bi-clock-history"></i> Maintenance History
+                </h5>
+            </div>
+            <div class="card-body" style="max-height: 400px; overflow-y: auto;">
+                <div class="maintenance-timeline" id="maintenanceTimeline">
+                    {% if monitoring_data.maintenance_history %}
+                    {% for event in monitoring_data.maintenance_history %}
+                    <div class="timeline-item {{ event.event_type }}">
+                        <div class="d-flex justify-content-between align-items-start">
+                            <div>
+                                <h6 class="mb-1">{{ event.event_type|replace('_', ' ')|title }}</h6>
+                                <p class="mb-1 text-muted">{{ event.details.reason if event.details and event.details.reason else 'No details available' }}</p>
+                                <small class="text-muted">
+                                    <i class="bi bi-person"></i> {{ event.administrator or 'System' }} • 
+                                    <i class="bi bi-clock"></i> {{ event.timestamp }}
+                                </small>
+                            </div>
+                        </div>
+                    </div>
+                    {% endfor %}
+                    {% else %}
+                    <div class="text-center text-muted py-4">
+                        <i class="bi bi-clock-history"></i> No maintenance history available
+                    </div>
+                    {% endif %}
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+
+<!-- Performance Metrics and Statistics -->
+<div class="row">
+    <div class="col-md-8">
+        <div class="card">
+            <div class="card-header">
+                <h5 class="mb-0">
+                    <i class="bi bi-bar-chart"></i> Maintenance Statistics
+                </h5>
+            </div>
+            <div class="card-body">
+                <div class="row">
+                    <div class="col-md-6">
+                        <h6>Activation Statistics</h6>
+                        <div class="row text-center mb-3">
+                            <div class="col-4">
+                                <div class="h5 text-primary">{{ monitoring_data.statistics.total_activations }}</div>
+                                <small>Total</small>
+                            </div>
+                            <div class="col-4">
+                                <div class="h5 text-warning">{{ monitoring_data.statistics.emergency_activations }}</div>
+                                <small>Emergency</small>
+                            </div>
+                            <div class="col-4">
+                                <div class="h5 text-info">{{ monitoring_data.statistics.test_activations }}</div>
+                                <small>Test</small>
+                            </div>
+                        </div>
+                    </div>
+                    <div class="col-md-6">
+                        <h6>Operation Statistics</h6>
+                        <div class="row text-center mb-3">
+                            <div class="col-4">
+                                <div class="h5 text-danger">{{ monitoring_data.statistics.blocked_operations }}</div>
+                                <small>Blocked</small>
+                            </div>
+                            <div class="col-4">
+                                <div class="h5 text-success">{{ monitoring_data.statistics.admin_bypasses }}</div>
+                                <small>Bypasses</small>
+                            </div>
+                            <div class="col-4">
+                                <div class="h5 text-warning">{{ monitoring_data.statistics.session_invalidations }}</div>
+                                <small>Sessions</small>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+                
+                <!-- Performance Metrics -->
+                <div class="mt-4">
+                    <h6>Performance Metrics</h6>
+                    <div class="row">
+                        <div class="col-md-4">
+                            <div class="text-center">
+                                <div class="h6 text-success">{{ monitoring_data.performance.avg_response_time }}ms</div>
+                                <small>Avg Response Time</small>
+                            </div>
+                        </div>
+                        <div class="col-md-4">
+                            <div class="text-center">
+                                <div class="h6 text-info">{{ monitoring_data.performance.uptime_percentage }}%</div>
+                                <small>Uptime</small>
+                            </div>
+                        </div>
+                        <div class="col-md-4">
+                            <div class="text-center">
+                                <div class="h6 text-primary">{{ monitoring_data.performance.total_requests }}</div>
+                                <small>Total Requests</small>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+    
+    <div class="col-md-4">
+        <div class="card">
+            <div class="card-header">
+                <h6 class="mb-0">
+                    <i class="bi bi-lightning"></i> Quick Actions
+                </h6>
+            </div>
+            <div class="card-body">
+                <div class="d-grid gap-2">
+                    <a href="{{ url_for('admin.maintenance_mode_dashboard') }}" class="btn btn-outline-warning btn-sm">
+                        <i class="bi bi-tools"></i> Maintenance Control
+                    </a>
+                    <button type="button" class="btn btn-outline-info btn-sm" onclick="exportMonitoringReport()">
+                        <i class="bi bi-download"></i> Export Report
+                    </button>
+                    <button type="button" class="btn btn-outline-secondary btn-sm" onclick="refreshDashboard()">
+                        <i class="bi bi-arrow-clockwise"></i> Refresh Data
+                    </button>
+                    <button type="button" class="btn btn-outline-primary btn-sm" onclick="showMaintenanceAlerts()">
+                        <i class="bi bi-bell"></i> View Alerts
+                    </button>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+
+{% endblock %}
+
+{% block extra_js %}
+<script>
+// Global variables
+let autoRefreshInterval;
+let isAutoRefreshActive = false;
+
+// Initialize dashboard
+document.addEventListener('DOMContentLoaded', function() {
+    initializeMonitoringDashboard();
+    updateImpactGauge({{ monitoring_data.impact_percentage }});
+});
+
+function initializeMonitoringDashboard() {
+    console.log('Initializing maintenance monitoring dashboard');
+    
+    // Set up real-time updates
+    updateConnectionStatus(true);
+    
+    // Initialize impact gauge
+    updateImpactGauge({{ monitoring_data.impact_percentage }});
+}
+
+function refreshDashboard() {
+    console.log('Refreshing monitoring dashboard');
+    
+    // Show loading state
+    updateConnectionStatus(false);
+    
+    // Fetch updated data
+    fetch('/admin/api/maintenance-mode/monitoring', {
+        method: 'GET',
+        headers: {
+            'X-CSRFToken': document.querySelector('meta[name="csrf-token"]').getAttribute('content')
+        }
+    })
+    .then(response => response.json())
+    .then(data => {
+        if (data.success) {
+            updateDashboardData(data.monitoring_data);
+            updateConnectionStatus(true);
+        } else {
+            console.error('Error refreshing dashboard:', data.error);
+            updateConnectionStatus(false);
+        }
+    })
+    .catch(error => {
+        console.error('Error refreshing dashboard:', error);
+        updateConnectionStatus(false);
+    });
+}
+
+function updateDashboardData(data) {
+    // Update metrics
+    updateMetrics(data);
+    
+    // Update status details
+    updateStatusDetails(data.current_status);
+    
+    // Update blocked operations
+    updateBlockedOperations(data.blocked_operations);
+    
+    // Update active sessions
+    updateActiveSessions(data.active_sessions);
+    
+    // Update impact gauge
+    updateImpactGauge(data.impact_percentage);
+    
+    // Update statistics
+    updateStatistics(data.statistics);
+}
+
+function updateMetrics(data) {
+    // Status metric
+    const statusValue = document.getElementById('statusMetricValue');
+    const statusCard = document.getElementById('statusMetricCard');
+    const statusTrend = document.getElementById('statusMetricTrend');
+    
+    if (data.current_status.is_active) {
+        statusValue.textContent = 'ACTIVE';
+        statusValue.className = 'metric-value text-danger';
+        statusCard.className = 'card metric-card critical';
+        statusTrend.innerHTML = '<i class="bi bi-exclamation-triangle text-warning"></i> Maintenance Mode';
+    } else {
+        statusValue.textContent = 'NORMAL';
+        statusValue.className = 'metric-value text-success';
+        statusCard.className = 'card metric-card success';
+        statusTrend.innerHTML = '<i class="bi bi-check-circle text-success"></i> Operational';
+    }
+    
+    // Other metrics
+    document.getElementById('blockedOpsMetric').textContent = data.blocked_operations_count;
+    document.getElementById('activeJobsMetric').textContent = data.active_jobs_count;
+    document.getElementById('invalidatedSessionsMetric').textContent = data.invalidated_sessions_count;
+    
+    // Update affected users and blocked requests
+    document.getElementById('affectedUsersCount').textContent = data.affected_users_count;
+    document.getElementById('blockedRequestsCount').textContent = data.blocked_requests_count;
+}
+
+function updateStatusDetails(status) {
+    const container = document.getElementById('maintenanceStatusDetails');
+    
+    if (status.is_active) {
+        let alertClass = 'info';
+        let icon = 'tools';
+        let title = 'Normal Maintenance Active';
+        
+        if (status.mode === 'emergency') {
+            alertClass = 'danger';
+            icon = 'exclamation-triangle';
+            title = 'Emergency Maintenance Active';
+        } else if (status.test_mode) {
+            alertClass = 'warning';
+            icon = 'flask';
+            title = 'Test Maintenance Active';
+        }
+        
+        container.innerHTML = `
+            <div class="alert alert-${alertClass}">
+                <div class="d-flex justify-content-between align-items-start">
+                    <div>
+                        <h6 class="alert-heading">
+                            <i class="bi bi-${icon}"></i> ${title}
+                        </h6>
+                        <p class="mb-1"><strong>Reason:</strong> ${status.reason || 'No reason provided'}</p>
+                        ${status.started_at ? `<p class="mb-1"><strong>Started:</strong> ${new Date(status.started_at).toLocaleString()} UTC</p>` : ''}
+                        ${status.estimated_completion ? `<p class="mb-1"><strong>Estimated Completion:</strong> ${new Date(status.estimated_completion).toLocaleString()} UTC</p>` : ''}
+                        ${status.enabled_by ? `<p class="mb-0"><strong>Enabled By:</strong> ${status.enabled_by}</p>` : ''}
+                    </div>
+                    <div class="text-end">
+                        <div class="h4 mb-0">${status.mode.charAt(0).toUpperCase() + status.mode.slice(1)}</div>
+                        <small class="text-muted">Mode</small>
+                    </div>
+                </div>
+            </div>
+        `;
+    } else {
+        container.innerHTML = `
+            <div class="alert alert-success">
+                <div class="d-flex align-items-center">
+                    <i class="bi bi-check-circle me-2"></i>
+                    <div>
+                        <h6 class="mb-0">System Operating Normally</h6>
+                        <small class="text-muted">All operations are available to users</small>
+                    </div>
+                </div>
+            </div>
+        `;
+    }
+}
+
+function updateBlockedOperations(blockedOperations) {
+    const container = document.getElementById('blockedOperationsDisplay');
+    
+    if (blockedOperations && blockedOperations.length > 0) {
+        const badges = blockedOperations.map(op => 
+            `<span class="badge bg-danger me-1 mb-1">${op.replace(/_/g, ' ').replace(/\b\w/g, l => l.toUpperCase())}</span>`
+        ).join('');
+        container.innerHTML = badges;
+    } else {
+        container.innerHTML = '<span class="text-muted">No operations are currently blocked</span>';
+    }
+}
+
+function updateActiveSessions(sessions) {
+    const container = document.getElementById('activeSessionsList');
+    const countBadge = document.getElementById('totalSessionsCount');
+    
+    countBadge.textContent = sessions.length;
+    
+    if (sessions.length > 0) {
+        const sessionItems = sessions.map(session => {
+            let sessionClass = 'user';
+            if (session.is_admin) sessionClass = 'admin';
+            else if (session.is_invalidated) sessionClass = 'invalidated';
+            
+            return `
+                <div class="session-item ${sessionClass}">
+                    <div class="d-flex justify-content-between align-items-start">
+                        <div>
+                            <div class="fw-bold">
+                                ${session.username}
+                                ${session.is_admin ? '<span class="badge bg-success ms-1">Admin</span>' : ''}
+                                ${session.is_invalidated ? '<span class="badge bg-danger ms-1">Invalidated</span>' : ''}
+                            </div>
+                            <div class="text-muted small">
+                                <i class="bi bi-envelope"></i> ${session.email}
+                                ${session.platform_name ? `<br><i class="bi bi-globe"></i> ${session.platform_name}` : ''}
+                            </div>
+                        </div>
+                        <div class="text-end">
+                            <small class="text-muted">${session.last_activity}</small>
+                        </div>
+                    </div>
+                </div>
+            `;
+        }).join('');
+        
+        container.innerHTML = sessionItems;
+    } else {
+        container.innerHTML = `
+            <div class="text-center text-muted py-4">
+                <i class="bi bi-people"></i> No active sessions
+            </div>
+        `;
+    }
+}
+
+function updateImpactGauge(percentage) {
+    const circle = document.getElementById('impactCircle');
+    const percentageText = document.getElementById('impactPercentage');
+    
+    if (circle && percentageText) {
+        const circumference = 2 * Math.PI * 50; // radius = 50
+        const offset = circumference - (percentage / 100) * circumference;
+        
+        circle.style.strokeDashoffset = offset;
+        percentageText.textContent = percentage + '%';
+        
+        // Update color based on impact level
+        if (percentage >= 75) {
+            circle.style.stroke = '#dc3545'; // Red
+        } else if (percentage >= 50) {
+            circle.style.stroke = '#fd7e14'; // Orange
+        } else if (percentage >= 25) {
+            circle.style.stroke = '#ffc107'; // Yellow
+        } else {
+            circle.style.stroke = '#28a745'; // Green
+        }
+    }
+}
+
+function updateStatistics(stats) {
+    // Update statistics if elements exist
+    const elements = {
+        'totalActivations': stats.total_activations,
+        'emergencyActivations': stats.emergency_activations,
+        'testActivations': stats.test_activations,
+        'blockedOperations': stats.blocked_operations,
+        'adminBypasses': stats.admin_bypasses,
+        'sessionInvalidations': stats.session_invalidations
+    };
+    
+    Object.entries(elements).forEach(([key, value]) => {
+        const element = document.querySelector(`[data-stat="${key}"]`);
+        if (element) {
+            element.textContent = value;
+        }
+    });
+}
+
+function updateConnectionStatus(connected) {
+    const indicator = document.getElementById('connectionStatus');
+    if (connected) {
+        indicator.classList.remove('disconnected');
+        indicator.title = 'Real-time updates active';
+    } else {
+        indicator.classList.add('disconnected');
+        indicator.title = 'Connection lost - updates may be delayed';
+    }
+}
+
+function toggleAutoRefresh() {
+    const icon = document.getElementById('autoRefreshIcon');
+    const text = document.getElementById('autoRefreshText');
+    
+    if (isAutoRefreshActive) {
+        // Stop auto-refresh
+        clearInterval(autoRefreshInterval);
+        isAutoRefreshActive = false;
+        icon.className = 'bi bi-play-circle';
+        text.textContent = 'Start Auto-refresh';
+    } else {
+        // Start auto-refresh
+        autoRefreshInterval = setInterval(refreshDashboard, 10000); // 10 seconds
+        isAutoRefreshActive = true;
+        icon.className = 'bi bi-pause-circle';
+        text.textContent = 'Stop Auto-refresh';
+    }
+}
+
+function refreshStatus() {
+    refreshDashboard();
+}
+
+function exportMonitoringReport() {
+    const link = document.createElement('a');
+    link.href = '/admin/api/maintenance-mode/monitoring/export';
+    link.download = `maintenance-monitoring-report-${new Date().toISOString().split('T')[0]}.json`;
+    link.click();
+}
+
+function showMaintenanceAlerts() {
+    // Open maintenance alerts in a modal or new window
+    window.open('/admin/maintenance-mode/alerts', '_blank');
+}
+
+// Cleanup on page unload
+window.addEventListener('beforeunload', function() {
+    if (autoRefreshInterval) {
+        clearInterval(autoRefreshInterval);
+    }
+});
+</script>
+{% endblock %}

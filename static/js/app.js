@@ -13,6 +13,7 @@ document.addEventListener('DOMContentLoaded', function() {
     initializeFormEnhancements();
     initializeLoadingStates();
     initializeKeyboardShortcuts();
+    initializeMaintenanceMonitoring();
     
     // Add smooth scrolling
     document.documentElement.style.scrollBehavior = 'smooth';
@@ -295,6 +296,101 @@ function createToastContainer() {
     container.className = 'toast-container position-fixed bottom-0 end-0 p-3';
     document.body.appendChild(container);
     return container;
+}
+
+// Maintenance mode monitoring
+function initializeMaintenanceMonitoring() {
+    let maintenanceAlert = null;
+    let lastMaintenanceStatus = null;
+    
+    function checkMaintenanceStatus() {
+        fetch('/api/maintenance/status')
+            .then(response => response.json())
+            .then(data => {
+                if (data.success) {
+                    const isMaintenanceMode = data.maintenance_mode;
+                    const maintenanceReason = data.maintenance_reason;
+                    
+                    // Check if maintenance status changed
+                    if (lastMaintenanceStatus !== isMaintenanceMode) {
+                        lastMaintenanceStatus = isMaintenanceMode;
+                        
+                        if (isMaintenanceMode) {
+                            showMaintenanceAlert(maintenanceReason);
+                        } else {
+                            hideMaintenanceAlert();
+                        }
+                    }
+                }
+            })
+            .catch(error => {
+                console.warn('Failed to check maintenance status:', error);
+            });
+    }
+    
+    function showMaintenanceAlert(reason) {
+        // Remove existing alert if present
+        hideMaintenanceAlert();
+        
+        // Create maintenance alert
+        maintenanceAlert = document.createElement('div');
+        maintenanceAlert.className = 'alert alert-warning alert-dismissible fade show position-fixed';
+        maintenanceAlert.style.cssText = `
+            top: 0;
+            left: 0;
+            right: 0;
+            z-index: 9999;
+            margin: 0;
+            border-radius: 0;
+            border: none;
+            border-bottom: 3px solid #f0ad4e;
+        `;
+        
+        const reasonText = reason ? ` Reason: ${reason}` : '';
+        maintenanceAlert.innerHTML = `
+            <div class="container-fluid">
+                <div class="d-flex align-items-center">
+                    <i class="bi bi-exclamation-triangle-fill me-2"></i>
+                    <strong>System Maintenance Mode Active</strong>
+                    <span class="ms-2">${reasonText}</span>
+                    <button type="button" class="btn-close ms-auto" data-bs-dismiss="alert"></button>
+                </div>
+            </div>
+        `;
+        
+        // Insert at the top of the body
+        document.body.insertBefore(maintenanceAlert, document.body.firstChild);
+        
+        // Adjust body padding to account for fixed alert
+        document.body.style.paddingTop = maintenanceAlert.offsetHeight + 'px';
+        
+        // Handle alert dismissal
+        maintenanceAlert.addEventListener('closed.bs.alert', function() {
+            document.body.style.paddingTop = '';
+            maintenanceAlert = null;
+        });
+        
+        console.log('Maintenance mode alert displayed:', reasonText);
+    }
+    
+    function hideMaintenanceAlert() {
+        if (maintenanceAlert) {
+            const bsAlert = bootstrap.Alert.getInstance(maintenanceAlert);
+            if (bsAlert) {
+                bsAlert.close();
+            } else {
+                maintenanceAlert.remove();
+                document.body.style.paddingTop = '';
+                maintenanceAlert = null;
+            }
+        }
+    }
+    
+    // Initial check
+    checkMaintenanceStatus();
+    
+    // Poll every 30 seconds
+    setInterval(checkMaintenanceStatus, 30000);
 }
 
 // Performance monitoring

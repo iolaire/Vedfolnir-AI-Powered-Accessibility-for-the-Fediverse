@@ -247,8 +247,15 @@ function editConfiguration(key) {
     document.getElementById('configReason').value = '';
     
     // Clear validation messages
-    document.getElementById('validationErrors').classList.add('d-none');
-    document.getElementById('validationWarnings').classList.add('d-none');
+    const validationErrors = document.getElementById('validationErrors');
+    const validationWarnings = document.getElementById('validationWarnings');
+    
+    if (validationErrors) {
+        validationErrors.classList.add('d-none');
+    }
+    if (validationWarnings) {
+        validationWarnings.classList.add('d-none');
+    }
     
     // Create appropriate input based on data type
     const container = document.getElementById('configValueContainer');
@@ -347,7 +354,7 @@ async function saveConfiguration() {
     
     // Check for validation errors
     const errorsDiv = document.getElementById('validationErrors');
-    if (!errorsDiv.classList.contains('d-none')) {
+    if (errorsDiv && !errorsDiv.classList.contains('d-none')) {
         showValidationError(['Please fix validation errors before saving.']);
         return;
     }
@@ -1162,12 +1169,18 @@ function displayValidationFeedback(validation) {
     const valueInput = document.getElementById('configValue');
     
     // Clear previous feedback
-    errorsDiv.classList.add('d-none');
-    warningsDiv.classList.add('d-none');
-    valueInput.classList.remove('is-invalid', 'is-valid');
+    if (errorsDiv) {
+        errorsDiv.classList.add('d-none');
+    }
+    if (warningsDiv) {
+        warningsDiv.classList.add('d-none');
+    }
+    if (valueInput) {
+        valueInput.classList.remove('is-invalid', 'is-valid');
+    }
     
     // Display errors
-    if (validation.errors && validation.errors.length > 0) {
+    if (validation.errors && validation.errors.length > 0 && errorsDiv) {
         errorsDiv.innerHTML = '';
         validation.errors.forEach(error => {
             const errorDiv = document.createElement('div');
@@ -1181,7 +1194,7 @@ function displayValidationFeedback(validation) {
     }
     
     // Display warnings
-    if (validation.warnings && validation.warnings.length > 0) {
+    if (validation.warnings && validation.warnings.length > 0 && warningsDiv) {
         warningsDiv.innerHTML = '';
         validation.warnings.forEach(warning => {
             const warningDiv = document.createElement('div');
@@ -1209,8 +1222,10 @@ function displayValidationFeedback(validation) {
         conflictsDiv.appendChild(conflictsList);
         
         // Insert after warnings or errors
-        const insertAfter = warningsDiv.classList.contains('d-none') ? errorsDiv : warningsDiv;
-        insertAfter.parentNode.insertBefore(conflictsDiv, insertAfter.nextSibling);
+        const insertAfter = (warningsDiv && warningsDiv.classList.contains('d-none')) ? errorsDiv : warningsDiv;
+        if (insertAfter && insertAfter.parentNode) {
+            insertAfter.parentNode.insertBefore(conflictsDiv, insertAfter.nextSibling);
+        }
     }
     
     // Add validation rules info
@@ -1227,9 +1242,15 @@ function clearValidationFeedback() {
     const warningsDiv = document.getElementById('validationWarnings');
     const valueInput = document.getElementById('configValue');
     
-    errorsDiv.classList.add('d-none');
-    warningsDiv.classList.add('d-none');
-    valueInput.classList.remove('is-invalid', 'is-valid');
+    if (errorsDiv) {
+        errorsDiv.classList.add('d-none');
+    }
+    if (warningsDiv) {
+        warningsDiv.classList.add('d-none');
+    }
+    if (valueInput) {
+        valueInput.classList.remove('is-invalid', 'is-valid');
+    }
     
     // Remove any conflict alerts
     const conflictAlerts = document.querySelectorAll('.alert-warning');

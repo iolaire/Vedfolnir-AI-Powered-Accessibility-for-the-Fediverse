@@ -3,6 +3,39 @@
 // THE SOFTWARE IS PROVIDED "AS IS", WITHOUT WARRANTY OF ANY KIND, EXPRESS OR IMPLIED, INCLUDING BUT NOT LIMITED TO THE WARRANTIES OF MERCHANTABILITY, FITNESS FOR A PARTICULAR PURPOSE AND NONINFRINGEMENT. IN NO EVENT SHALL THE AUTHORS OR COPYRIGHT HOLDERS BE LIABLE FOR ANY CLAIM, DAMAGES OR OTHER LIABILITY, WHETHER IN AN ACTION OF CONTRACT, TORT OR OTHERWISE, ARISING FROM, OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE SOFTWARE.
 // Platform Management JavaScript
 
+// Handle maintenance mode responses
+function handleMaintenanceResponse(response, operation) {
+    if (response.maintenance_active) {
+        const maintenanceInfo = response.maintenance_info || {};
+        const operationInfo = response.operation_info || {};
+        
+        let message = `${operationInfo.icon || '🔧'} ${operationInfo.title || 'Service Unavailable'}`;
+        
+        if (maintenanceInfo.reason) {
+            message += `\n\nReason: ${maintenanceInfo.reason}`;
+        }
+        
+        if (operationInfo.description) {
+            message += `\n\n${operationInfo.description}`;
+        }
+        
+        if (maintenanceInfo.estimated_completion) {
+            const completion = new Date(maintenanceInfo.estimated_completion);
+            message += `\n\nExpected completion: ${completion.toLocaleString()}`;
+        } else if (maintenanceInfo.estimated_duration) {
+            message += `\n\nEstimated duration: ${maintenanceInfo.estimated_duration} minutes`;
+        }
+        
+        if (operationInfo.suggestion) {
+            message += `\n\n${operationInfo.suggestion}`;
+        }
+        
+        showAlert('warning', message, 10000); // Show for 10 seconds
+        return true;
+    }
+    return false;
+}
+
 document.addEventListener('DOMContentLoaded', function() {
     // Initialize add platform form
     const addPlatformForm = document.getElementById('addPlatformForm');
@@ -109,7 +142,10 @@ function handleAddPlatform(event) {
                 window.location.href = redirectUrl;
             }, result.is_first_platform ? 1500 : 1000);
         } else {
-            showAlert('danger', result.error || 'Failed to add platform connection');
+            // Check if this is a maintenance mode response
+            if (!handleMaintenanceResponse(result, 'add_platform')) {
+                showAlert('danger', result.error || 'Failed to add platform connection');
+            }
         }
     })
     .catch(error => {
@@ -274,7 +310,10 @@ function handleEditPlatform(event) {
                 window.location.reload();
             }, 1000);
         } else {
-            showAlert('danger', result.error || 'Failed to update platform connection');
+            // Check if this is a maintenance mode response
+            if (!handleMaintenanceResponse(result, 'edit_platform')) {
+                showAlert('danger', result.error || 'Failed to update platform connection');
+            }
         }
     })
     .catch(error => {
@@ -312,7 +351,10 @@ function switchPlatform(platformId, platformName) {
                 window.location.reload();
             }, 1500);
         } else {
-            showAlert('danger', result.error || 'Failed to switch platform');
+            // Check if this is a maintenance mode response
+            if (!handleMaintenanceResponse(result, 'switch_platform')) {
+                showAlert('danger', result.error || 'Failed to switch platform');
+            }
         }
     })
     .catch(error => {
@@ -348,8 +390,11 @@ function testConnection(platformId, platformName) {
             // Update platform status indicator if exists
             updatePlatformStatus(platformId, 'active');
         } else {
-            showAlert('warning', `⚠️ Connection test failed for ${platformName}: ${result.message}`);
-            updatePlatformStatus(platformId, 'inactive');
+            // Check if this is a maintenance mode response
+            if (!handleMaintenanceResponse(result, 'test_platform')) {
+                showAlert('warning', `⚠️ Connection test failed for ${platformName}: ${result.message}`);
+                updatePlatformStatus(platformId, 'inactive');
+            }
         }
     })
     .catch(error => {

@@ -188,6 +188,16 @@ def set_configuration(key: str):
         success = config_manager.set_configuration(key, value, admin_user_id, reason)
         
         if success:
+            # Refresh maintenance service cache if maintenance-related config was updated
+            if key in ['maintenance_mode', 'maintenance_reason']:
+                maintenance_service = getattr(current_app, 'maintenance_service', None)
+                if maintenance_service:
+                    try:
+                        maintenance_service.refresh_status()
+                        logger.info(f"Maintenance service cache refreshed after {key} update")
+                    except Exception as e:
+                        logger.warning(f"Failed to refresh maintenance service cache: {e}")
+            
             return jsonify({
                 "message": f"Configuration {key} updated successfully",
                 "key": key,
@@ -243,12 +253,26 @@ def set_configurations_batch():
         # Apply configurations
         success_count = 0
         failed_configs = []
+        maintenance_keys_updated = []
         
         for key, value in configurations.items():
             if config_manager.set_configuration(key, value, admin_user_id, reason):
                 success_count += 1
+                # Track maintenance-related keys for cache refresh
+                if key in ['maintenance_mode', 'maintenance_reason']:
+                    maintenance_keys_updated.append(key)
             else:
                 failed_configs.append(key)
+        
+        # Refresh maintenance service cache if maintenance-related configs were updated
+        if maintenance_keys_updated:
+            maintenance_service = getattr(current_app, 'maintenance_service', None)
+            if maintenance_service:
+                try:
+                    maintenance_service.refresh_status()
+                    logger.info(f"Maintenance service cache refreshed after batch update of: {maintenance_keys_updated}")
+                except Exception as e:
+                    logger.warning(f"Failed to refresh maintenance service cache after batch update: {e}")
         
         return jsonify({
             "message": f"Batch update completed: {success_count} successful, {len(failed_configs)} failed",
@@ -612,7 +636,7 @@ def validate_single_configuration(key: str):
             test_configs = current_configs.copy()
             test_configs[key] = value
             
-            conflict_result = validator.detect_conflicts({key: value}, test_configs)
+            conflict_result = validator.detect_conflicts(test_configs)
         else:
             conflict_result = []
         
@@ -620,14 +644,14 @@ def validate_single_configuration(key: str):
             "key": key,
             "value": value,
             "is_valid": validation_result.is_valid,
-            "errors": validation_result.errors,
+            "errors": [issue.message for issue in validation_result.issues],
             "warnings": validation_result.warnings,
             "conflicts": [
                 {
-                    "conflicting_key": conflict.conflicting_key,
-                    "conflict_type": conflict.conflict_type,
+                    "conflicting_keys": conflict.keys,
+                    "conflict_type": conflict.conflict_type.value,
                     "description": conflict.description,
-                    "severity": conflict.severity
+                    "severity": conflict.severity.value
                 } for conflict in conflict_result
             ],
             "data_type": schema.data_type.value,
@@ -681,7 +705,7 @@ def dry_run_configuration_change(key: str):
         current_configs = config_manager.get_all_configurations(admin_user_id)
         test_configs = current_configs.copy()
         test_configs[key] = new_value
-        conflicts = validator.detect_conflicts({key: new_value}, test_configs)
+        conflicts = validator.detect_conflicts(test_configs)
         
         # 4. Related Configuration Analysis
         related_configs = validator.get_related_configurations(key)
