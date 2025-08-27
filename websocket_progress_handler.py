@@ -12,9 +12,9 @@ Replaces the Server-Sent Events (SSE) implementation for better real-time commun
 import json
 import logging
 from typing import Dict, Set, Optional
-from flask import request
+from flask import request, current_app, session
 from flask_socketio import SocketIO, emit, join_room, leave_room, disconnect
-from flask_login import current_user
+from flask_login import current_user, login_user
 from threading import Lock
 from collections import defaultdict
 from datetime import datetime, timedelta
@@ -61,23 +61,43 @@ class WebSocketProgressHandler:
             # Allow connection initially, authentication will be checked on specific events
             logger.info(f"WebSocket connection attempt from {sanitize_for_log(request.remote_addr)}")
             
-            # Check if user is authenticated in Flask-Login context
-            if current_user and current_user.is_authenticated:
-                user_id = str(current_user.id)
-                
-                # Rate limiting check for authenticated users
-                if not self._check_rate_limit(user_id):
-                    logger.warning(f"Rate limit exceeded for user {sanitize_for_log(user_id)}")
-                    emit('error', {'message': 'Rate limit exceeded'})
-                    disconnect()
-                    return False
-                
-                logger.info(f"User {sanitize_for_log(user_id)} connected via WebSocket")
-                emit('connected', {'message': 'Connected successfully'})
-            else:
-                # Allow connection but mark as unauthenticated
-                logger.info(f"Unauthenticated WebSocket connection from {sanitize_for_log(request.remote_addr)} - will require auth for specific events")
-                emit('connected', {'message': 'Connected - authentication required for protected events'})
+            # Attempt to load user from session cookie
+            user_id = None
+            try:
+                # Flask-SocketIO provides access to Flask's session
+                if 'user_id' in session:
+                    user_id = session['user_id']
+                    logger.debug(f"User ID found in Flask session: {user_id}")
+                    
+                    # Load user using the unified_session_manager
+                    unified_session_manager = current_app.unified_session_manager
+                    if unified_session_manager:
+                        user = unified_session_manager.get_user_by_id(user_id)
+                        if user:
+                            login_user(user) # Log in the user for Flask-Login context
+                            logger.info(f"User {sanitize_for_log(str(user.id))} authenticated via WebSocket session")
+                            
+                            # Rate limiting check for authenticated users
+                            if not self._check_rate_limit(str(user.id)):
+                                logger.warning(f"Rate limit exceeded for user {sanitize_for_log(str(user.id))}")
+                                emit('error', {'message': 'Rate limit exceeded'})
+                                disconnect()
+                                return False
+                            
+                            emit('connected', {'message': 'Connected successfully'})
+                            return True
+                        else:
+                            logger.warning(f"User {sanitize_for_log(str(user_id))} not found in DB for WebSocket session")
+                    else:
+                        logger.warning("unified_session_manager not available in current_app for WebSocket auth")
+                else:
+                    logger.debug("No user_id found in Flask session for WebSocket connection")
+            except Exception as e:
+                logger.error(f"Error during WebSocket authentication: {e}", exc_info=True)
+            
+            # If authentication failed or user not found
+            logger.info(f"Unauthenticated WebSocket connection from {sanitize_for_log(request.remote_addr)} - will require auth for specific events")
+            emit('connected', {'message': 'Connected - authentication required for protected events'})
             
             return True
         

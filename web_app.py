@@ -351,13 +351,18 @@ else:
     app.session_error_handler = session_error_handler
 
 # Add CORS headers for API and Socket.IO endpoints
+# Add CORS headers for API and Socket.IO endpoints
 @app.after_request
 def after_request(response):
     """Add CORS headers to API and Socket.IO responses"""
     # Add CORS headers to API endpoints and Socket.IO
     if request.path.startswith('/api/') or request.path.startswith('/socket.io/'):
-        origin = request.headers.get('Origin', '*')
-        response.headers['Access-Control-Allow-Origin'] = origin
+        origin = request.headers.get('Origin')
+        if origin:
+            response.headers['Access-Control-Allow-Origin'] = origin
+        else:
+            response.headers['Access-Control-Allow-Origin'] = '*' # Fallback for non-browser requests
+
         response.headers['Access-Control-Allow-Credentials'] = 'true'
         response.headers['Access-Control-Allow-Methods'] = 'GET, POST, PUT, DELETE, OPTIONS'
         response.headers['Access-Control-Allow-Headers'] = 'Content-Type, Authorization, X-Requested-With, X-CSRF-Token'
@@ -374,7 +379,12 @@ def after_request(response):
 def handle_socketio_options():
     """Handle preflight requests for Socket.IO"""
     response = make_response()
-    response.headers['Access-Control-Allow-Origin'] = request.headers.get('Origin', '*')
+    origin = request.headers.get('Origin')
+    if origin:
+        response.headers['Access-Control-Allow-Origin'] = origin
+    else:
+        response.headers['Access-Control-Allow-Origin'] = '*' # Fallback for non-browser requests
+
     response.headers['Access-Control-Allow-Credentials'] = 'true'
     response.headers['Access-Control-Allow-Methods'] = 'GET, POST, PUT, DELETE, OPTIONS'
     response.headers['Access-Control-Allow-Headers'] = 'Content-Type, Authorization, X-Requested-With, X-CSRF-Token'
