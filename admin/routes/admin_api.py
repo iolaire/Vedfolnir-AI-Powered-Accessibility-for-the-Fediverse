@@ -301,15 +301,24 @@ def register_api_routes(bp):
             system_health = monitor.get_system_health()
             performance_metrics = monitor.get_performance_metrics()
             
+            # Convert dataclass objects to dictionaries for easier access
+            performance_dict = performance_metrics.to_dict()
+            
+            # Extract data from the nested structure returned by service.get_system_metrics
+            queue_stats = metrics.get('queue_statistics', {})
+            service_stats = metrics.get('service_statistics', {})
+            perf_metrics = metrics.get('performance_metrics', {})
+            resource_usage = metrics.get('resource_usage', {})
+            
             combined_metrics = {
-                'active_jobs': metrics.get('active_jobs', 0),
-                'queued_jobs': metrics.get('queued_jobs', 0),
-                'completed_today': metrics.get('completed_today', 0),
-                'failed_jobs': metrics.get('failed_jobs', 0),
-                'success_rate': metrics.get('success_rate', 0),
-                'error_rate': metrics.get('error_rate', 0),
-                'system_load': performance_metrics.get('cpu_usage_percent', 0),
-                'avg_processing_time': metrics.get('avg_processing_time', 0)
+                'active_jobs': queue_stats.get('active_tasks', 0),
+                'queued_jobs': queue_stats.get('queued_count', 0),
+                'completed_today': perf_metrics.get('completed_tasks_24h', 0),
+                'failed_jobs': perf_metrics.get('failed_tasks_24h', 0),
+                'success_rate': perf_metrics.get('success_rate_percent', 0),
+                'error_rate': 100 - perf_metrics.get('success_rate_percent', 100),
+                'system_load': resource_usage.get('cpu_percent', 0),
+                'avg_processing_time': perf_metrics.get('avg_completion_time_seconds', 0)
             }
             
             return jsonify({
@@ -929,10 +938,25 @@ def register_api_routes(bp):
                 
                 limits = service.get_user_job_limits(user_id)
                 
+                # Convert to modal format
+                modal_limits = {
+                    'max_concurrent_jobs': limits.max_concurrent_jobs,
+                    'max_daily_jobs': limits.max_jobs_per_day,
+                    'max_images_per_job': 50,  # Default value, not stored in UserJobLimits
+                    'default_priority': limits.priority_override.value if limits.priority_override else 'normal',
+                    'job_timeout_minutes': limits.max_processing_time_minutes,
+                    'cooldown_minutes': 5,  # Default value, not stored in UserJobLimits
+                    'can_create_jobs': limits.enabled,
+                    'can_cancel_own_jobs': True,  # Default permission
+                    'can_view_job_history': True,  # Default permission
+                    'can_retry_failed_jobs': True,  # Default permission
+                    'admin_notes': ''  # Not stored in UserJobLimits
+                }
+                
                 return jsonify({
                     'success': True,
                     'user_id': user_id,
-                    'limits': limits.to_dict()
+                    'limits': modal_limits
                 })
                 
             except Exception as e:
@@ -958,35 +982,48 @@ def register_api_routes(bp):
                         'error': 'Request data is required'
                     }), 400
                 
-                # Validate limits data
-                required_fields = ['max_concurrent_jobs', 'max_jobs_per_hour', 'max_jobs_per_day']
-                for field in required_fields:
-                    if field not in data:
-                        return jsonify({
-                            'success': False,
-                            'error': f'Missing required field: {field}'
-                        }), 400
-                    
-                    if not isinstance(data[field], int) or data[field] < 0:
-                        return jsonify({
-                            'success': False,
-                            'error': f'Invalid value for {field}: must be a non-negative integer'
-                        }), 400
+                # Validate and convert data to match UserJobLimits format
+                limits_data = {}
                 
-                # Validate optional fields
-                if 'max_processing_time_minutes' in data:
-                    if not isinstance(data['max_processing_time_minutes'], int) or data['max_processing_time_minutes'] <= 0:
-                        return jsonify({
-                            'success': False,
-                            'error': 'max_processing_time_minutes must be a positive integer'
-                        }), 400
+                # Map modal fields to UserJobLimits fields
+                if 'max_concurrent_jobs' in data:
+                    limits_data['max_concurrent_jobs'] = int(data['max_concurrent_jobs'])
                 
-                if 'enabled' in data:
-                    if not isinstance(data['enabled'], bool):
-                        return jsonify({
-                            'success': False,
-                            'error': 'enabled must be a boolean value'
-                        }), 400
+                if 'max_daily_jobs' in data:
+                    limits_data['max_jobs_per_day'] = int(data['max_daily_jobs'])
+                
+                if 'job_timeout_minutes' in data:
+                    limits_data['max_processing_time_minutes'] = int(data['job_timeout_minutes'])
+                
+                # Handle permissions (convert to enabled flag)
+                if 'can_create_jobs' in data:
+                    limits_data['enabled'] = bool(data['can_create_jobs'])
+                
+                # Handle priority override
+                if 'default_priority' in data and data['default_priority'] != 'normal':
+                    from models import JobPriority
+                    try:
+                        limits_data['priority_override'] = JobPriority(data['default_priority'])
+                    except ValueError:
+                        pass  # Ignore invalid priority values
+                
+                # Set reasonable defaults for fields not in modal
+                if 'max_jobs_per_hour' not in limits_data:
+                    # Calculate hourly limit based on daily limit and cooldown
+                    daily_limit = limits_data.get('max_jobs_per_day', 10)
+                    cooldown_minutes = data.get('cooldown_minutes', 5)
+                    # Rough calculation: daily_limit / (24 * 60 / cooldown_minutes)
+                    limits_data['max_jobs_per_hour'] = max(1, min(daily_limit // 4, 25))
+                
+                # Validate required numeric fields
+                numeric_fields = ['max_concurrent_jobs', 'max_jobs_per_day', 'max_processing_time_minutes']
+                for field in numeric_fields:
+                    if field in limits_data:
+                        if not isinstance(limits_data[field], int) or limits_data[field] < 0:
+                            return jsonify({
+                                'success': False,
+                                'error': f'Invalid value for {field}: must be a non-negative integer'
+                            }), 400
                 
                 from multi_tenant_control_service import MultiTenantControlService, UserJobLimits
                 from flask import current_app
@@ -994,8 +1031,8 @@ def register_api_routes(bp):
                 db_manager = current_app.config['db_manager']
                 service = MultiTenantControlService(db_manager)
                 
-                # Create UserJobLimits object from data
-                limits = UserJobLimits.from_dict(data)
+                # Create UserJobLimits object from processed data
+                limits = UserJobLimits.from_dict(limits_data)
                 
                 success = service.set_user_job_limits(current_user.id, user_id, limits)
                 
@@ -1261,4 +1298,61 @@ def register_api_routes(bp):
             return jsonify({
                 'success': False,
                 'error': 'Failed to acknowledge alert'
+            }), 500
+    
+    @bp.route('/api/users/search', methods=['GET'])
+    @admin_api_required
+    def search_users():
+        """Search users for admin operations"""
+        try:
+            query = request.args.get('q', '').strip()
+            
+            if len(query) < 2:
+                return jsonify({
+                    'success': False,
+                    'error': 'Search query must be at least 2 characters'
+                }), 400
+            
+            from flask import current_app
+            from models import User
+            from sqlalchemy import or_
+            
+            db_manager = current_app.config['db_manager']
+            
+            with db_manager.get_session() as session:
+                # Search users by username or email
+                users_query = session.query(User).filter(
+                    or_(
+                        User.username.ilike(f'%{query}%'),
+                        User.email.ilike(f'%{query}%')
+                    )
+                ).limit(20)  # Limit results to prevent excessive data
+                
+                users = users_query.all()
+                
+                user_list = []
+                for user in users:
+                    user_dict = {
+                        'id': user.id,
+                        'username': user.username,
+                        'email': user.email,
+                        'role': user.role.value,
+                        'is_active': user.is_active,
+                        'email_verified': user.email_verified,
+                        'created_at': user.created_at.isoformat() if user.created_at else None
+                    }
+                    user_list.append(user_dict)
+                
+                return jsonify({
+                    'success': True,
+                    'users': user_list,
+                    'total': len(user_list),
+                    'query': query
+                })
+                
+        except Exception as e:
+            logger.error(f"Error searching users with query '{query}': {e}")
+            return jsonify({
+                'success': False,
+                'error': 'Failed to search users'
             }), 500

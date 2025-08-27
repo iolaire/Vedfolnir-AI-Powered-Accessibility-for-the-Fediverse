@@ -489,7 +489,7 @@ class EnhancedDashboard {
         this.userRole = '{{ user_role }}';
         
         this.autoRefreshInterval = null;
-        this.eventSource = null;
+        this.websocket = null;
         this.charts = {};
         this.currentAlertId = null;
         
@@ -822,26 +822,27 @@ class EnhancedDashboard {
         document.getElementById('refreshIndicator').style.display = 'none';
     }
     
-    setupServerSentEvents() {
-        if (typeof(EventSource) !== "undefined") {
-            this.eventSource = new EventSource('/admin/dashboard/stream');
+    setupWebSocket() {
+        if (typeof(io) !== "undefined") {
+            this.websocket = io();
             
-            this.eventSource.onmessage = (event) => {
+            this.websocket.on('connect', () => {
+                console.log('WebSocket connected');
+                this.websocket.emit('join_admin_dashboard');
+            });
+            
+            this.websocket.on('system_metrics_update', (data) => {
                 try {
-                    const data = JSON.parse(event.data);
                     this.handleRealtimeUpdate(data);
                 } catch (e) {
-                    console.error('Error parsing SSE data:', e);
+                    console.error('Error processing WebSocket data:', e);
                 }
-            };
+            });
             
-            this.eventSource.onerror = (error) => {
-                console.error('SSE error:', error);
-                // Reconnect after 5 seconds
-                setTimeout(() => {
-                    this.setupServerSentEvents();
-                }, 5000);
-            };
+            this.websocket.on('connect_error', (error) => {
+                console.error('WebSocket error:', error);
+                // Reconnect automatically handled by Socket.IO
+            });
         }
     }
     
@@ -1073,8 +1074,8 @@ document.addEventListener('DOMContentLoaded', function() {
 
 // Cleanup on page unload
 window.addEventListener('beforeunload', function() {
-    if (dashboard && dashboard.eventSource) {
-        dashboard.eventSource.close();
+    if (dashboard && dashboard.websocket) {
+        dashboard.websocket.disconnect();
     }
 });
 </script>

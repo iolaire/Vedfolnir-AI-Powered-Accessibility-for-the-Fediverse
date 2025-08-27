@@ -462,7 +462,7 @@ services:
   vedfolnir-1:
     build: .
     ports:
-      - "5001:5000"
+      - "5000:5000"
     # ... other config
 
   vedfolnir-2:
@@ -478,7 +478,7 @@ services:
 ### Load Balancer Configuration
 ```nginx
 upstream vedfolnir_cluster {
-    server 127.0.0.1:5001;
+    server 127.0.0.1:5000;
     server 127.0.0.1:5002;
     server 127.0.0.1:5003;
 }

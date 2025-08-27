@@ -7,7 +7,7 @@ Vedfolnir is an accessibility-focused tool that automatically generates and mana
 - **Multi-Platform Support**: Works with Pixelfed, Mastodon, and other ActivityPub platforms
 - **AI-Powered Caption Generation**: Uses Ollama with LLaVA model for intelligent image description
 - **Web-Based Interface**: Complete web application for managing captions and reviewing content
-- **Real-Time Progress Tracking**: Server-Sent Events (SSE) based progress updates for caption generation
+- **Real-Time Progress Tracking**: WebSocket-based progress updates for caption generation
 - **Human Review Workflow**: Comprehensive review interface for approving and editing captions
 - **Enterprise Security**: 100% security score with CSRF protection, input validation, and audit logging
 - **Platform Management**: Multi-account support with encrypted credential storage

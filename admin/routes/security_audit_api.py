@@ -176,7 +176,7 @@ def csrf_metrics():
                 'compliance_metrics': {
                     'total_requests': compliance_metrics.total_requests,
                     'protected_requests': compliance_metrics.protected_requests,
-                    'violations': compliance_metrics.violations,
+                    'violations': compliance_metrics.violation_count,
                     'compliance_rate': compliance_metrics.compliance_rate,
                     'compliance_level': compliance_metrics.compliance_level.value,
                     'violations_by_type': dict(compliance_metrics.violations_by_type),

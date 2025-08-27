@@ -93,4 +93,4 @@ if __name__ == "__main__":
     # Start the web app with debugging
     import web_app
     print("Starting web app with debugging enabled...")
-    web_app.app.run(debug=True, port=5001)  # Use different port to avoid conflicts
+    web_app.app.run(debug=True, port=5000)  # Use different port to avoid conflicts

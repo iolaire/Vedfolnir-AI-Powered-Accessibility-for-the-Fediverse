@@ -20,6 +20,13 @@
                 <i class="bi bi-arrow-clockwise"></i> Refresh Metrics
             </button>
         </div>
+        <div class="btn-group">
+            <span class="btn btn-sm btn-outline-secondary disabled">
+                <span id="websocket-status" class="text-muted">
+                    <i class="bi bi-question-circle"></i> Connecting...
+                </span>
+            </span>
+        </div>
     </div>
 </div>
 
@@ -253,14 +260,175 @@
 </div>
 {% endblock %}
 
-{% block scripts %}
+{% block extra_js %}
 <script>
 console.log('=== SYSTEM MAINTENANCE JAVASCRIPT LOADING ===');
 
 document.addEventListener('DOMContentLoaded', function() {
     console.log('DOM loaded, loading maintenance log');
     loadMaintenanceLog();
+    
+    // Wait for WebSocket client to be available before initializing handlers
+    setTimeout(function() {
+        initializeWebSocketHandlers();
+    }, 100);
 });
+
+function initializeWebSocketHandlers() {
+    // Wait for WebSocket to be available
+    if (window.VedfolnirWS) {
+        console.log('Setting up WebSocket handlers for system maintenance');
+        
+        // Handle system metrics updates
+        window.VedfolnirWS.on('system_metrics_update', function(data) {
+            console.log('Received system metrics update:', data);
+            updateSystemMetrics(data.metrics);
+        });
+        
+        // Handle job updates
+        window.VedfolnirWS.on('job_update', function(data) {
+            console.log('Received job update:', data);
+            updateJobStatus(data.job);
+        });
+        
+        // Handle admin alerts
+        window.VedfolnirWS.on('admin_alert', function(data) {
+            console.log('Received admin alert:', data);
+            handleAdminAlert(data.alert);
+        });
+        
+        // Handle WebSocket connection status
+        window.VedfolnirWS.on('connect', function() {
+            console.log('WebSocket connected - enabling real-time updates');
+            showConnectionStatus('Real-time updates enabled', 'success');
+        });
+        
+        window.VedfolnirWS.on('disconnect', function(reason) {
+            console.log('WebSocket disconnected:', reason);
+            showConnectionStatus('Real-time updates disabled', 'warning');
+        });
+        
+        window.VedfolnirWS.on('error', function(error) {
+            console.error('WebSocket error:', error);
+            showConnectionStatus('Connection error', 'danger');
+        });
+        
+    } else {
+        console.warn('WebSocket client not available, falling back to polling');
+        // Fallback to periodic refresh
+        setInterval(refreshMetrics, 30000);
+    }
+}
+
+function updateSystemMetrics(metrics) {
+    if (!metrics) return;
+    
+    try {
+        // Update system status
+        if (metrics.system_status) {
+            const statusElements = document.querySelectorAll('[data-metric="system_status"]');
+            statusElements.forEach(el => {
+                el.textContent = metrics.system_status;
+                el.className = `badge bg-${metrics.system_status === 'Running' ? 'success' : 'warning'}`;
+            });
+        }
+        
+        // Update active jobs
+        if (metrics.active_jobs !== undefined) {
+            const activeJobsElements = document.querySelectorAll('[data-metric="active_jobs"]');
+            activeJobsElements.forEach(el => {
+                el.textContent = metrics.active_jobs;
+            });
+        }
+        
+        // Update active users
+        if (metrics.active_users !== undefined) {
+            const activeUsersElements = document.querySelectorAll('[data-metric="active_users"]');
+            activeUsersElements.forEach(el => {
+                el.textContent = metrics.active_users;
+            });
+        }
+        
+        // Update CPU usage
+        if (metrics.cpu_usage) {
+            const cpuElements = document.querySelectorAll('[data-metric="cpu_usage"]');
+            cpuElements.forEach(el => {
+                el.textContent = metrics.cpu_usage;
+            });
+            
+            const cpuProgressBars = document.querySelectorAll('[data-progress="cpu_usage"]');
+            cpuProgressBars.forEach(bar => {
+                const percentage = parseFloat(metrics.cpu_usage.replace('%', ''));
+                bar.style.width = metrics.cpu_usage;
+                bar.setAttribute('aria-valuenow', percentage);
+            });
+        }
+        
+        // Update memory usage
+        if (metrics.memory_usage) {
+            const memoryElements = document.querySelectorAll('[data-metric="memory_usage"]');
+            memoryElements.forEach(el => {
+                el.textContent = metrics.memory_usage;
+            });
+            
+            const memoryProgressBars = document.querySelectorAll('[data-progress="memory_usage"]');
+            memoryProgressBars.forEach(bar => {
+                const percentage = parseFloat(metrics.memory_usage.replace('%', ''));
+                bar.style.width = metrics.memory_usage;
+                bar.setAttribute('aria-valuenow', percentage);
+            });
+        }
+        
+        console.log('System metrics updated successfully');
+        
+    } catch (error) {
+        console.error('Error updating system metrics:', error);
+    }
+}
+
+function updateJobStatus(job) {
+    if (!job) return;
+    
+    try {
+        // Update job counters and status displays
+        console.log('Job status updated:', job);
+        
+        // You can add specific job status update logic here
+        // For example, updating job lists, progress bars, etc.
+        
+    } catch (error) {
+        console.error('Error updating job status:', error);
+    }
+}
+
+function handleAdminAlert(alert) {
+    if (!alert) return;
+    
+    try {
+        console.log('Handling admin alert:', alert);
+        
+        // Add alert to maintenance log
+        if (alert.message) {
+            addToMaintenanceLog(`System Alert: ${alert.message}`);
+        }
+        
+        // Show toast notification if available
+        if (window.Vedfolnir && window.Vedfolnir.showToast) {
+            const alertType = alert.level || 'info';
+            window.Vedfolnir.showToast(alert.message, alertType);
+        }
+        
+    } catch (error) {
+        console.error('Error handling admin alert:', error);
+    }
+}
+
+function showConnectionStatus(message, type = 'info') {
+    // Show temporary status message
+    if (window.Vedfolnir && window.Vedfolnir.showToast) {
+        window.Vedfolnir.showToast(message, type);
+    }
+}
 
 function refreshMetrics() {
     // Simple page refresh for metrics

@@ -1,0 +1,139 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>WebSocket Connection Test</title>
+    <style>
+        body { font-family: Arial, sans-serif; margin: 20px; }
+        .status { padding: 10px; margin: 10px 0; border-radius: 5px; }
+        .success { background-color: #d4edda; color: #155724; }
+        .error { background-color: #f8d7da; color: #721c24; }
+        .warning { background-color: #fff3cd; color: #856404; }
+        .info { background-color: #d1ecf1; color: #0c5460; }
+        #log { background-color: #f8f9fa; padding: 10px; border: 1px solid #dee2e6; height: 300px; overflow-y: auto; }
+    </style>
+</head>
+<body>
+    <h1>WebSocket Connection Test</h1>
+    
+    <div id="status" class="status info">Initializing...</div>
+    
+    <button onclick="testConnection()">Test Connection</button>
+    <button onclick="clearLog()">Clear Log</button>
+    
+    <h3>Connection Log:</h3>
+    <div id="log"></div>
+    
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/socket.io/4.7.2/socket.io.js"></script>
+    <script>
+        let socket = null;
+        let connectionAttempts = 0;
+        
+        function log(message, type = 'info') {
+            const logDiv = document.getElementById('log');
+            const timestamp = new Date().toLocaleTimeString();
+            const entry = document.createElement('div');
+            entry.innerHTML = `<strong>[${timestamp}]</strong> ${message}`;
+            entry.style.color = type === 'error' ? 'red' : type === 'success' ? 'green' : type === 'warning' ? 'orange' : 'black';
+            logDiv.appendChild(entry);
+            logDiv.scrollTop = logDiv.scrollHeight;
+            console.log(`[${timestamp}] ${message}`);
+        }
+        
+        function updateStatus(message, type = 'info') {
+            const statusDiv = document.getElementById('status');
+            statusDiv.textContent = message;
+            statusDiv.className = `status ${type}`;
+        }
+        
+        function testConnection() {
+            connectionAttempts++;
+            log(`Connection attempt #${connectionAttempts}`, 'info');
+            
+            if (socket) {
+                log('Disconnecting existing socket...', 'warning');
+                socket.disconnect();
+                socket = null;
+            }
+            
+            try {
+                updateStatus('Connecting to WebSocket server...', 'warning');
+                log('Initializing Socket.IO connection...', 'info');
+                
+                socket = io({
+                    transports: ['websocket', 'polling'],
+                    upgrade: true,
+                    timeout: 10000,
+                    forceNew: true,
+                    reconnection: false  // Disable auto-reconnection for testing
+                });
+                
+                socket.on('connect', function() {
+                    log('✅ Successfully connected to WebSocket server!', 'success');
+                    updateStatus('Connected to WebSocket server', 'success');
+                    
+                    // Test admin dashboard join
+                    log('Attempting to join admin dashboard...', 'info');
+                    socket.emit('join_admin_dashboard');
+                });
+                
+                socket.on('disconnect', function(reason) {
+                    log(`❌ Disconnected from WebSocket server. Reason: ${reason}`, 'error');
+                    updateStatus(`Disconnected: ${reason}`, 'error');
+                });
+                
+                socket.on('connect_error', function(error) {
+                    log(`❌ Connection error: ${error.message || error}`, 'error');
+                    updateStatus(`Connection error: ${error.message || error}`, 'error');
+                });
+                
+                socket.on('admin_dashboard_joined', function(data) {
+                    log(`✅ Successfully joined admin dashboard: ${JSON.stringify(data)}`, 'success');
+                });
+                
+                socket.on('system_metrics_update', function(data) {
+                    log(`📊 Received system metrics update: ${JSON.stringify(data)}`, 'info');
+                });
+                
+                socket.on('job_update', function(data) {
+                    log(`🔄 Received job update: ${JSON.stringify(data)}`, 'info');
+                });
+                
+                socket.on('admin_alert', function(data) {
+                    log(`🚨 Received admin alert: ${JSON.stringify(data)}`, 'warning');
+                });
+                
+                // Set a timeout to check connection status
+                setTimeout(() => {
+                    if (socket && socket.connected) {
+                        log('✅ Connection is stable after 5 seconds', 'success');
+                    } else {
+                        log('❌ Connection failed or unstable after 5 seconds', 'error');
+                        updateStatus('Connection failed or unstable', 'error');
+                    }
+                }, 5000);
+                
+            } catch (error) {
+                log(`❌ Failed to initialize Socket.IO: ${error.message}`, 'error');
+                updateStatus(`Initialization error: ${error.message}`, 'error');
+            }
+        }
+        
+        function clearLog() {
+            document.getElementById('log').innerHTML = '';
+        }
+        
+        // Auto-start connection test
+        document.addEventListener('DOMContentLoaded', function() {
+            log('Page loaded, Socket.IO library available: ' + (typeof io !== 'undefined'), 'info');
+            if (typeof io !== 'undefined') {
+                log('Socket.IO version: ' + (io.version || 'unknown'), 'info');
+            }
+            
+            // Auto-test connection after 1 second
+            setTimeout(testConnection, 1000);
+        });
+    </script>
+</body>
+</html>

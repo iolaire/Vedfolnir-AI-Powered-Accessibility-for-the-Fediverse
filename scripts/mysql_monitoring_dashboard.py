@@ -1054,7 +1054,7 @@ class MySQLMonitoringDashboard:
                 'error': str(e)
             }
     
-    def run_dashboard(self, host: str = '0.0.0.0', port: int = 5001, debug: bool = False):
+    def run_dashboard(self, host: str = '0.0.0.0', port: int = 5000, debug: bool = False):
         """Run the dashboard web application."""
         try:
             logger.info(f"Starting MySQL Monitoring Dashboard on {host}:{port}")
@@ -1113,7 +1113,7 @@ def main():
     ], required=True, help='Action to perform')
     
     parser.add_argument('--host', default='0.0.0.0', help='Dashboard host (default: 0.0.0.0)')
-    parser.add_argument('--port', type=int, default=5001, help='Dashboard port (default: 5001)')
+    parser.add_argument('--port', type=int, default=5000, help='Dashboard port (default: 5000)')
     parser.add_argument('--debug', action='store_true', help='Enable debug mode')
     
     parser.add_argument('--report-type', choices=['performance', 'security', 'backup', 'comprehensive'],

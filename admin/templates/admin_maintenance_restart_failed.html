@@ -279,8 +279,12 @@ document.addEventListener('DOMContentLoaded', function() {
     
     function updateSelectedCount() {
         const selected = Array.from(checkboxes).filter(cb => cb.checked);
-        selectedCountSpan.textContent = selected.length;
-        selectedJobsInput.value = selected.map(cb => cb.value).join(',');
+        if (selectedCountSpan) {
+            selectedCountSpan.textContent = selected.length;
+        }
+        if (selectedJobsInput) {
+            selectedJobsInput.value = selected.map(cb => cb.value).join(',');
+        }
     }
     
     // Update count when checkboxes change
@@ -288,20 +292,24 @@ document.addEventListener('DOMContentLoaded', function() {
         checkbox.addEventListener('change', updateSelectedCount);
     });
     
-    // Handle radio button changes
-    restartAllRadio.addEventListener('change', function() {
-        if (this.checked) {
-            checkboxes.forEach(cb => cb.checked = true);
-            updateSelectedCount();
-        }
-    });
+    // Handle radio button changes (only if elements exist)
+    if (restartAllRadio) {
+        restartAllRadio.addEventListener('change', function() {
+            if (this.checked) {
+                checkboxes.forEach(cb => cb.checked = true);
+                updateSelectedCount();
+            }
+        });
+    }
     
-    restartSelectedRadio.addEventListener('change', function() {
-        if (this.checked) {
-            // Don't change checkbox states, just update the mode
-            updateSelectedCount();
-        }
-    });
+    if (restartSelectedRadio) {
+        restartSelectedRadio.addEventListener('change', function() {
+            if (this.checked) {
+                // Don't change checkbox states, just update the mode
+                updateSelectedCount();
+            }
+        });
+    }
     
     // Initial count
     updateSelectedCount();
@@ -309,8 +317,8 @@ document.addEventListener('DOMContentLoaded', function() {
     // Form submission confirmation
     document.querySelector('form')?.addEventListener('submit', function(e) {
         const confirmed = document.getElementById('confirmRestart')?.checked;
-        const selectedJobs = selectedJobsInput.value.split(',').filter(id => id.length > 0);
-        const restartAll = restartAllRadio.checked;
+        const selectedJobs = selectedJobsInput ? selectedJobsInput.value.split(',').filter(id => id.length > 0) : [];
+        const restartAll = restartAllRadio ? restartAllRadio.checked : false;
         
         if (!confirmed) {
             return; // Let browser validation handle this

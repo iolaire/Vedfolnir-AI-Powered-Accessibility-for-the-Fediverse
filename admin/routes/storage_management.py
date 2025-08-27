@@ -91,7 +91,7 @@ def register_routes(bp):
                 'error': str(e)
             }), 500
     
-    @bp.route('/storage/refresh', methods=['POST'])
+    @bp.route('/storage/refresh', methods=['GET', 'POST'])
     @login_required
     @with_session_error_handling
     def storage_refresh():
@@ -100,6 +100,12 @@ def register_routes(bp):
             flash('Access denied. Admin privileges required.', 'error')
             return redirect(url_for('admin.dashboard'))
         
+        # Handle GET requests by redirecting to storage dashboard
+        if request.method == 'GET':
+            flash('Use the refresh button on the storage dashboard to refresh data.', 'info')
+            return redirect(url_for('admin.storage_dashboard'))
+        
+        # Handle POST requests (actual refresh)
         try:
             storage_dashboard = AdminStorageDashboard()
             
@@ -109,7 +115,9 @@ def register_routes(bp):
             # Get fresh data
             dashboard_data = storage_dashboard.get_storage_dashboard_data()
             
-            flash(f'Storage data refreshed. Current usage: {dashboard_data.formatted_usage} / {dashboard_data.formatted_limit}', 'success')
+            # Use the formatted values from the to_dict() method
+            dashboard_dict = dashboard_data.to_dict()
+            flash(f'Storage data refreshed. Current usage: {dashboard_dict["formatted_usage"]} / {dashboard_dict["formatted_limit"]}', 'success')
             logger.info(f"Storage data refreshed by admin user {current_user.username}")
             
         except Exception as e:

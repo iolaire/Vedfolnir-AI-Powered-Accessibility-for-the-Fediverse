@@ -29,6 +29,13 @@ logger = logging.getLogger(__name__)
 def register_dashboard_routes(bp):
     """Register enhanced dashboard monitoring routes"""
     
+    @bp.route('/websocket-diagnostic')
+    @login_required
+    @require_admin
+    def websocket_diagnostic():
+        """WebSocket connection diagnostic page"""
+        return render_template('websocket_diagnostic.html')
+    
     @bp.route('/dashboard/monitoring')
     @login_required
     @require_admin
@@ -298,38 +305,8 @@ def register_dashboard_routes(bp):
             logger.error(f"Error saving widget configuration: {str(e)}")
             return jsonify({'success': False, 'error': str(e)}), 500
     
-    @bp.route('/dashboard/stream')
-    @login_required
-    @require_admin
-    def dashboard_stream():
-        """Server-Sent Events stream for real-time dashboard updates"""
-        def generate():
-            try:
-                dashboard_service = MonitoringDashboardService(current_app.config['db_manager'])
-                
-                while True:
-                    # Get real-time metrics
-                    metrics = dashboard_service.get_real_time_metrics()
-                    
-                    # Send as SSE
-                    yield f"data: {jsonify(metrics).get_data(as_text=True)}\n\n"
-                    
-                    # Wait before next update
-                    import time
-                    time.sleep(10)  # Update every 10 seconds
-                    
-            except Exception as e:
-                logger.error(f"Error in dashboard stream: {str(e)}")
-                yield f"data: {jsonify({'error': str(e)}).get_data(as_text=True)}\n\n"
-        
-        return Response(
-            generate(),
-            mimetype='text/event-stream',
-            headers={
-                'Cache-Control': 'no-cache',
-                'Connection': 'keep-alive'
-            }
-        )
+    # Dashboard real-time updates are now handled via WebSocket
+    # See websocket_progress_handler.py AdminDashboardWebSocket class
     
     @bp.route('/api/dashboard/health')
     @login_required

@@ -17,7 +17,7 @@ SECURITY_HEADERS_ENABLED = os.getenv('SECURITY_HEADERS_ENABLED', 'true').lower()
 SESSION_VALIDATION_ENABLED = os.getenv('SECURITY_SESSION_VALIDATION_ENABLED', 'true').lower() == 'true'
 ADMIN_CHECKS_ENABLED = os.getenv('SECURITY_ADMIN_CHECKS_ENABLED', 'true').lower() == 'true'
 from flask import Flask, render_template, request, jsonify, redirect, url_for, flash, send_from_directory, g, Response, make_response, current_app, session
-# Removed Flask-SocketIO import - using SSE instead
+from flask_socketio import SocketIO
 from flask_wtf import FlaskForm
 # Import regular WTForms Form class (no Flask-WTF CSRF)
 from wtforms import Form, TextAreaField, SelectField, SubmitField, HiddenField, StringField, PasswordField, BooleanField, IntegerField, FloatField
@@ -69,8 +69,27 @@ app = Flask(__name__)
 config = Config()
 app.config['SECRET_KEY'] = config.webapp.secret_key
 
-# Initialize SSE Progress Handler (replaces SocketIO)
-from sse_progress_handler import SSEProgressHandler
+# Initialize CORS support with more permissive configuration
+from flask_cors import CORS
+CORS(app, 
+     origins="*",  # More permissive for development
+     supports_credentials=True,
+     allow_headers=["Content-Type", "Authorization", "X-Requested-With", "X-CSRF-Token"],
+     methods=["GET", "POST", "PUT", "DELETE", "OPTIONS"],
+     expose_headers=["Content-Type", "X-CSRF-Token"])
+
+# Initialize SocketIO with enhanced CORS configuration
+socketio = SocketIO(app, 
+                   cors_allowed_origins="*",  # More permissive for development
+                   cors_credentials=True,  # Allow credentials (cookies)
+                   async_mode='threading',
+                   allow_upgrades=True,
+                   transports=['polling', 'websocket'],
+                   ping_timeout=60,
+                   ping_interval=25)
+
+# Initialize WebSocket Progress Handler
+from websocket_progress_handler import WebSocketProgressHandler, AdminDashboardWebSocket
 
 app.config['SQLALCHEMY_DATABASE_URI'] = config.storage.database_url
 app.config['SQLALCHEMY_TRACK_MODIFICATIONS'] = False
@@ -248,7 +267,7 @@ if SECURITY_HEADERS_ENABLED:
         # Content Security Policy
         csp = (
             "default-src 'self'; "
-            "script-src 'self' 'unsafe-inline' cdnjs.cloudflare.com https://cdn.jsdelivr.net https://kit.fontawesome.com https://ka-f.fontawesome.com; "
+            "script-src 'self' 'unsafe-inline' cdnjs.cloudflare.com https://cdn.jsdelivr.net https://cdn.socket.io https://kit.fontawesome.com https://ka-f.fontawesome.com; "
             "style-src 'self' 'unsafe-inline' cdnjs.cloudflare.com cdn.jsdelivr.net fonts.googleapis.com https://ka-f.fontawesome.com; "
             "font-src 'self' cdnjs.cloudflare.com cdn.jsdelivr.net fonts.gstatic.com https://ka-f.fontawesome.com; "
             "img-src 'self' data: https:; "
@@ -331,16 +350,35 @@ else:
     session_error_handler = create_session_error_handler(session_cookie_manager)
     app.session_error_handler = session_error_handler
 
-# Add CORS headers for API endpoints
+# Add CORS headers for API and Socket.IO endpoints
 @app.after_request
 def after_request(response):
-    """Add CORS headers to API responses"""
-    # Only add CORS headers to API endpoints
-    if request.path.startswith('/api/'):
-        response.headers['Access-Control-Allow-Origin'] = '*'
+    """Add CORS headers to API and Socket.IO responses"""
+    # Add CORS headers to API endpoints and Socket.IO
+    if request.path.startswith('/api/') or request.path.startswith('/socket.io/'):
+        origin = request.headers.get('Origin', '*')
+        response.headers['Access-Control-Allow-Origin'] = origin
+        response.headers['Access-Control-Allow-Credentials'] = 'true'
         response.headers['Access-Control-Allow-Methods'] = 'GET, POST, PUT, DELETE, OPTIONS'
-        response.headers['Access-Control-Allow-Headers'] = 'Content-Type, Accept, X-Requested-With, X-CSRFToken'
-        response.headers['Access-Control-Max-Age'] = '86400'
+        response.headers['Access-Control-Allow-Headers'] = 'Content-Type, Authorization, X-Requested-With, X-CSRF-Token'
+        response.headers['Access-Control-Expose-Headers'] = 'Content-Type, X-CSRF-Token'
+        
+        # Handle preflight requests
+        if request.method == 'OPTIONS':
+            response.headers['Access-Control-Max-Age'] = '86400'
+    
+    return response
+
+# Add explicit OPTIONS handler for Socket.IO
+@app.route('/socket.io/', methods=['OPTIONS'])
+def handle_socketio_options():
+    """Handle preflight requests for Socket.IO"""
+    response = make_response()
+    response.headers['Access-Control-Allow-Origin'] = request.headers.get('Origin', '*')
+    response.headers['Access-Control-Allow-Credentials'] = 'true'
+    response.headers['Access-Control-Allow-Methods'] = 'GET, POST, PUT, DELETE, OPTIONS'
+    response.headers['Access-Control-Allow-Headers'] = 'Content-Type, Authorization, X-Requested-With, X-CSRF-Token'
+    response.headers['Access-Control-Max-Age'] = '86400'
     return response
 
 # Initialize session state API routes
@@ -511,18 +549,36 @@ register_session_error_handlers(app, request_session_manager, detached_instance_
 progress_tracker = ProgressTracker(db_manager)
 task_queue_manager = TaskQueueManager(db_manager)
 
-# Initialize SSE progress handler with resource cleanup support
+# Initialize WebSocket progress handler with resource cleanup support
 try:
-    sse_progress_handler = SSEProgressHandler(db_manager, progress_tracker, task_queue_manager)
+    websocket_progress_handler = WebSocketProgressHandler(socketio, db_manager, progress_tracker, task_queue_manager)
+    admin_dashboard_websocket = AdminDashboardWebSocket(socketio, db_manager)
 except Exception as e:
-    app.logger.error(f"Failed to initialize SSE progress handler: {sanitize_for_log(str(e))}")
-    # Create a fallback handler to prevent application startup failure
-    class FallbackSSEHandler:
-        def create_event_stream(self, task_id):
-            yield 'data: {"type": "error", "message": "Progress streaming unavailable"}\n\n'
+    app.logger.error(f"Failed to initialize WebSocket progress handler: {sanitize_for_log(str(e))}")
+    
+    # Fallback handlers that do nothing
+    class FallbackWebSocketHandler:
+        def broadcast_progress_update(self, task_id, progress_data):
+            pass
+        def broadcast_task_completion(self, task_id, results):
+            pass
+        def broadcast_task_error(self, task_id, error_message):
+            pass
+        def cleanup_task_connections(self, task_id):
+            pass
         def cleanup(self):
             pass
-    sse_progress_handler = FallbackSSEHandler()
+    
+    class FallbackAdminWebSocketHandler:
+        def broadcast_system_metrics(self, metrics):
+            pass
+        def broadcast_job_update(self, job_data):
+            pass
+        def broadcast_alert(self, alert_data):
+            pass
+    
+    websocket_progress_handler = FallbackWebSocketHandler()
+    admin_dashboard_websocket = FallbackAdminWebSocketHandler()
 
 # Initialize Flask-Login
 login_manager = LoginManager()
@@ -4265,52 +4321,8 @@ if __name__ == '__main__':
         include_traceback=True
     )
 
-@app.route('/api/progress_stream/<task_id>')
-@login_required
-@with_session_error_handling
-def progress_stream(task_id):
-    """Server-Sent Events endpoint for real-time progress updates"""
-    # Verify authentication before starting stream
-    if not current_user or not current_user.is_authenticated:
-        app.logger.warning(f"Unauthenticated SSE connection attempt for task {sanitize_for_log(task_id)}")
-        return Response(
-            'data: {"type": "error", "message": "Authentication required"}\n\n',
-            mimetype='text/event-stream',
-            status=401
-        )
-    
-    app.logger.info(f"SSE connection request for task {sanitize_for_log(task_id)} from user {sanitize_for_log(str(current_user.id))}")
-    
-    # Initialize event stream generator to None for proper resource management
-    event_stream = None
-    try:
-        # Create event stream with proper resource initialization
-        event_stream = sse_progress_handler.create_event_stream(task_id)
-        
-        return Response(
-            event_stream,
-            mimetype='text/event-stream',
-            headers={
-                'Cache-Control': 'no-cache',
-                'Connection': 'keep-alive',
-                'Access-Control-Allow-Origin': '*',
-                'Access-Control-Allow-Headers': 'Cache-Control'
-            }
-        )
-    except Exception as e:
-        app.logger.error(f"Error in progress_stream: {sanitize_for_log(str(e))}")
-        # Clean up event stream resources if initialization failed
-        if event_stream and hasattr(event_stream, 'close'):
-            try:
-                event_stream.close()
-            except Exception as cleanup_error:
-                app.logger.warning(f"Error cleaning up event stream: {sanitize_for_log(str(cleanup_error))}")
-        
-        return Response(
-            'data: {"type": "error", "message": "Stream initialization failed"}\n\n',
-            mimetype='text/event-stream',
-            status=500
-        )
+# WebSocket endpoints are handled by the WebSocketProgressHandler class
+# No HTTP endpoint needed for WebSocket communication
 
 def get_simple_system_health_for_index(db_session):
     """Get a simple system health status for the index route (using existing db_session)"""
@@ -4361,7 +4373,8 @@ def get_simple_system_health_for_index(db_session):
 
 if __name__ == '__main__':
     try:
-        app.run(
+        socketio.run(
+            app,
             host=config.webapp.host,
             port=config.webapp.port,
             debug=config.webapp.debug
@@ -4374,7 +4387,7 @@ if __name__ == '__main__':
     finally:
         # Clean up resources on application shutdown
         try:
-            if 'sse_progress_handler' in globals() and hasattr(sse_progress_handler, 'cleanup'):
-                sse_progress_handler.cleanup()
+            if 'websocket_progress_handler' in globals() and hasattr(websocket_progress_handler, 'cleanup'):
+                websocket_progress_handler.cleanup()
         except Exception as cleanup_error:
             app.logger.warning(f"Error during application cleanup: {sanitize_for_log(str(cleanup_error))}")

@@ -315,43 +315,51 @@ document.addEventListener('DOMContentLoaded', function() {
     const submitButton = document.querySelector('button[type="submit"]');
     const confirmCheckbox = document.getElementById('confirmCleanup');
     
-    // Update button text based on dry run mode
+    // Update button text based on dry run mode (only if button exists)
     function updateButtonText() {
-        if (dryRunCheckbox?.checked) {
-            submitButton.innerHTML = '<i class="bi bi-eye"></i> Preview Cleanup';
-            submitButton.className = 'btn btn-outline-info';
-        } else {
-            submitButton.innerHTML = '<i class="bi bi-broom"></i> Start Cleanup';
-            submitButton.className = 'btn btn-info';
+        if (submitButton) {
+            if (dryRunCheckbox?.checked) {
+                submitButton.innerHTML = '<i class="bi bi-eye"></i> Preview Cleanup';
+                submitButton.className = 'btn btn-outline-info';
+            } else {
+                submitButton.innerHTML = '<i class="bi bi-broom"></i> Start Cleanup';
+                submitButton.className = 'btn btn-info';
+            }
         }
     }
     
-    dryRunCheckbox?.addEventListener('change', updateButtonText);
-    updateButtonText();
+    // Only set up event listeners and call functions if elements exist
+    if (dryRunCheckbox && submitButton) {
+        dryRunCheckbox.addEventListener('change', updateButtonText);
+        updateButtonText();
+    }
     
-    // Form submission confirmation
-    document.querySelector('form')?.addEventListener('submit', function(e) {
-        const confirmed = confirmCheckbox?.checked;
-        const isDryRun = dryRunCheckbox?.checked;
-        const selectedTypes = Array.from(document.querySelectorAll('input[name="cleanup_types"]:checked'));
-        
-        if (!confirmed) {
-            return; // Let browser validation handle this
-        }
-        
-        if (selectedTypes.length === 0) {
-            alert('Please select at least one type of data to clean.');
-            e.preventDefault();
-            return;
-        }
-        
-        const typeNames = selectedTypes.map(cb => cb.nextElementSibling.textContent.trim()).join(', ');
-        const action = isDryRun ? 'preview cleanup for' : 'permanently clean';
-        
-        if (!confirm(`Are you sure you want to ${action}:\\n\\n${typeNames}\\n\\n${isDryRun ? 'This will show what would be cleaned without making changes.' : 'This action cannot be undone (unless you have backups enabled).'}`)) {
-            e.preventDefault();
-        }
-    });
+    // Form submission confirmation (only if form exists)
+    const form = document.querySelector('form');
+    if (form) {
+        form.addEventListener('submit', function(e) {
+            const confirmed = confirmCheckbox?.checked;
+            const isDryRun = dryRunCheckbox?.checked;
+            const selectedTypes = Array.from(document.querySelectorAll('input[name="cleanup_types"]:checked'));
+            
+            if (!confirmed) {
+                return; // Let browser validation handle this
+            }
+            
+            if (selectedTypes.length === 0) {
+                alert('Please select at least one type of data to clean.');
+                e.preventDefault();
+                return;
+            }
+            
+            const typeNames = selectedTypes.map(cb => cb.nextElementSibling.textContent.trim()).join(', ');
+            const action = isDryRun ? 'preview cleanup for' : 'permanently clean';
+            
+            if (!confirm(`Are you sure you want to ${action}:\\n\\n${typeNames}\\n\\n${isDryRun ? 'This will show what would be cleaned without making changes.' : 'This action cannot be undone (unless you have backups enabled).'}`)) {
+                e.preventDefault();
+            }
+        });
+    }
 });
 </script>
 {% endblock %}

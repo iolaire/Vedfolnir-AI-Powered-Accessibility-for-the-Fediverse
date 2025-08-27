@@ -17,20 +17,9 @@ logger = logging.getLogger(__name__)
 def register_websocket_routes(bp):
     """Register WebSocket routes for admin dashboard"""
     
-    @bp.route('/ws/dashboard')
-    def dashboard_websocket():
-        """WebSocket endpoint for real-time dashboard updates"""
-        # Check admin access
-        if not current_user.is_authenticated or current_user.role != UserRole.ADMIN:
-            return "Unauthorized", 401
-        
-        # For now, return a simple response since WebSocket implementation
-        # would require additional setup with Flask-SocketIO or similar
-        return json.dumps({
-            'message': 'WebSocket endpoint placeholder',
-            'status': 'ready',
-            'user_id': current_user.id
-        }), 200, {'Content-Type': 'application/json'}
+    # WebSocket endpoints are now handled by Flask-SocketIO
+    # See websocket_progress_handler.py for WebSocket event handlers
+    pass
 
 class AdminDashboardWebSocket:
     """WebSocket handler for admin dashboard real-time updates"""

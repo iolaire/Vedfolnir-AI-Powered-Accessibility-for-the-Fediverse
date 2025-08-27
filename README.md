@@ -13,7 +13,7 @@ An accessibility-focused tool that automatically generates and manages alt text 
 - **AI-Powered Caption Generation**: Uses Ollama with LLaVA model for intelligent image description
 - **Multi-Platform Support**: Works with Pixelfed, Mastodon, and other ActivityPub platforms
 - **Web-Based Interface**: Complete web application for managing captions and reviewing content
-- **Real-Time Progress Tracking**: Server-Sent Events (SSE) based progress updates for caption generation
+- **Real-Time Progress Tracking**: WebSocket-based progress updates for caption generation
 - **Human Review Workflow**: Comprehensive review interface for approving and editing captions
 
 ### Security & Enterprise Features
@@ -347,7 +347,7 @@ For detailed security information, including security feature toggles, see [Secu
 - **Security Layer**: Comprehensive security middleware
 - **Session Management**: Redis-based session storage with Flask cookie identification
 - **Background Processing**: Asynchronous task processing
-- **Real-time Updates**: Server-Sent Events (SSE) for live progress tracking
+- **Real-time Updates**: WebSocket connections for live progress tracking
 
 ### Key Technologies
 - **Backend**: Python 3.8+, Flask, SQLAlchemy

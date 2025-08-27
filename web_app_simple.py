@@ -286,6 +286,6 @@ if __name__ == '__main__':
     
     app.run(
         host=config.webapp.host,
-        port=5001,  # Use port 5001 to avoid conflict with AirPlay on macOS
+        port=5000,  # Use port 5000 to avoid conflict with AirPlay on macOS
         debug=config.webapp.debug
     )

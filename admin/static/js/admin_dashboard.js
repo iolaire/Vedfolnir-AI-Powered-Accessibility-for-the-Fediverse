@@ -66,41 +66,113 @@ function initializeTooltips() {
 }
 
 /**
- * Connect to WebSocket for real-time updates
+ * Connect to WebSocket for real-time updates using Socket.IO
  */
 function connectWebSocket() {
-    const protocol = window.location.protocol === 'https:' ? 'wss:' : 'ws:';
-    const wsUrl = `${protocol}//${window.location.host}/admin/ws/dashboard`;
-
+    // Check if Socket.IO is available
+    if (typeof io === 'undefined') {
+        console.error('Socket.IO library not loaded. WebSocket functionality disabled.');
+        updateConnectionStatus(false);
+        showNotification('Socket.IO library not available - real-time updates disabled', 'warning');
+        return;
+    }
+    
     try {
-        websocket = new WebSocket(wsUrl);
+        console.log('Initializing Socket.IO connection...');
+        
+        // Initialize Socket.IO connection with better configuration
+        websocket = io({
+            transports: ['polling', 'websocket'], // Allow both transports
+            upgrade: true, // Allow upgrade to WebSocket if available
+            timeout: 10000, // 10 second timeout
+            forceNew: false, // Allow connection reuse
+            reconnection: true, // Enable auto-reconnection
+            reconnectionAttempts: 5,
+            reconnectionDelay: 1000,
+            reconnectionDelayMax: 5000,
+            maxHttpBufferSize: 1e6,
+            pingTimeout: 60000,
+            pingInterval: 25000,
+            withCredentials: true, // Include cookies for authentication
+            extraHeaders: {
+                // Include CSRF token if available
+                'X-CSRF-Token': getCSRFToken()
+            }
+        });
 
-        websocket.onopen = function (event) {
-            console.log('WebSocket connected');
+        websocket.on('connect', function() {
+            console.log('✅ WebSocket connected successfully');
             updateConnectionStatus(true);
-        };
+            showNotification('Real-time updates connected', 'success');
+            
+            // Join admin dashboard room
+            console.log('Joining admin dashboard room...');
+            websocket.emit('join_admin_dashboard');
+        });
 
-        websocket.onmessage = function (event) {
-            const data = JSON.parse(event.data);
+        websocket.on('disconnect', function(reason) {
+            console.log('❌ WebSocket disconnected:', reason);
+            updateConnectionStatus(false);
+            showNotification(`Real-time updates disconnected: ${reason}`, 'warning');
+        });
+
+        websocket.on('admin_dashboard_joined', function(data) {
+            console.log('✅ Joined admin dashboard:', data.message);
+            showNotification('Joined admin dashboard for real-time updates', 'info');
+        });
+
+        websocket.on('system_metrics_update', function(data) {
+            console.log('📊 System metrics update received:', data);
             handleWebSocketMessage(data);
-        };
+        });
 
-        websocket.onclose = function (event) {
-            console.log('WebSocket disconnected');
+        websocket.on('job_update', function(data) {
+            console.log('🔄 Job update received:', data);
+            handleWebSocketMessage(data);
+        });
+
+        websocket.on('admin_alert', function(data) {
+            console.log('🚨 Admin alert received:', data);
+            handleWebSocketMessage(data);
+        });
+
+        websocket.on('error', function(error) {
+            console.error('❌ WebSocket error:', error);
             updateConnectionStatus(false);
+            showNotification(`WebSocket error: ${error}`, 'error');
+        });
 
-            // Attempt to reconnect after 5 seconds
-            setTimeout(connectWebSocket, 5000);
-        };
-
-        websocket.onerror = function (error) {
-            console.error('WebSocket error:', error);
+        websocket.on('connect_error', function(error) {
+            console.error('❌ WebSocket connection error:', error);
             updateConnectionStatus(false);
-        };
+            showNotification(`Connection error: ${error.message || error}`, 'error');
+        });
+
+        websocket.on('reconnect', function(attemptNumber) {
+            console.log(`🔄 WebSocket reconnected after ${attemptNumber} attempts`);
+            updateConnectionStatus(true);
+            showNotification('Real-time updates reconnected', 'success');
+        });
+
+        websocket.on('reconnect_attempt', function(attemptNumber) {
+            console.log(`🔄 WebSocket reconnection attempt ${attemptNumber}`);
+            showNotification(`Reconnecting... (attempt ${attemptNumber})`, 'info');
+        });
+
+        websocket.on('reconnect_error', function(error) {
+            console.error('❌ WebSocket reconnection error:', error);
+        });
+
+        websocket.on('reconnect_failed', function() {
+            console.error('❌ WebSocket reconnection failed after maximum attempts');
+            updateConnectionStatus(false);
+            showNotification('Failed to reconnect - real-time updates disabled', 'error');
+        });
 
     } catch (error) {
-        console.error('Failed to connect WebSocket:', error);
+        console.error('❌ Failed to connect WebSocket:', error);
         updateConnectionStatus(false);
+        showNotification(`Failed to initialize WebSocket: ${error.message}`, 'error');
     }
 }
 
@@ -175,14 +247,26 @@ function refreshDashboard() {
  */
 async function refreshSystemMetrics() {
     try {
+        console.log('Fetching system metrics...');
         const response = await fetch('/admin/api/system-metrics');
+        console.log('System metrics response status:', response.status);
+        
+        if (!response.ok) {
+            throw new Error(`HTTP ${response.status}: ${response.statusText}`);
+        }
+        
         const data = await response.json();
+        console.log('System metrics data:', data);
 
         if (data.success) {
             updateSystemMetrics(data.metrics);
+        } else {
+            console.error('System metrics API returned success=false:', data.error);
+            throw new Error(data.error || 'API returned success=false');
         }
     } catch (error) {
         console.error('Failed to refresh system metrics:', error);
+        showNotification(`Failed to refresh system metrics: ${error.message}`, 'error');
     }
 }
 

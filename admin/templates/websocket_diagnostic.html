@@ -1,0 +1,275 @@
+<!-- Copyright (C) 2025 iolaire mcfadden. -->
+<!-- This program is free software: you can redistribute it and/or modify it under the terms of the GNU Affero General Public License as published by the Free Software Foundation, either version 3 of the License, or (at your option) any later version. -->
+<!-- THE SOFTWARE IS PROVIDED "AS IS", WITHOUT WARRANTY OF ANY KIND, EXPRESS OR IMPLIED, INCLUDING BUT NOT LIMITED TO THE WARRANTIES OF MERCHANTABILITY, FITNESS FOR A PARTICULAR PURPOSE AND NONINFRINGEMENT. IN NO EVENT SHALL THE AUTHORS OR COPYRIGHT HOLDERS BE LIABLE FOR ANY CLAIM, DAMAGES OR OTHER LIABILITY, WHETHER IN AN ACTION OF CONTRACT, TORT OR OTHERWISE, ARISING FROM, OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE SOFTWARE. -->
+
+{% extends "base_admin.html" %}
+
+{% block title %}WebSocket Diagnostic - Admin{% endblock %}
+
+{% block content %}
+<div class="container-fluid">
+    <div class="row">
+        <div class="col-12">
+            <div class="d-flex justify-content-between align-items-center mb-4">
+                <h1 class="h3 mb-0">WebSocket Connection Diagnostic</h1>
+                <div class="btn-group">
+                    <button type="button" class="btn btn-primary" onclick="testConnection()">
+                        <i class="bi bi-arrow-clockwise"></i> Test Connection
+                    </button>
+                    <button type="button" class="btn btn-secondary" onclick="clearLog()">
+                        <i class="bi bi-trash"></i> Clear Log
+                    </button>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <div class="row">
+        <div class="col-md-6">
+            <div class="card">
+                <div class="card-header">
+                    <h5 class="card-title mb-0">Connection Status</h5>
+                </div>
+                <div class="card-body">
+                    <div class="mb-3">
+                        <label class="form-label">Socket.IO Library:</label>
+                        <span id="socketio-status" class="badge bg-secondary">Checking...</span>
+                    </div>
+                    <div class="mb-3">
+                        <label class="form-label">WebSocket Connection:</label>
+                        <span id="websocket-status" class="badge bg-secondary">Not Connected</span>
+                    </div>
+                    <div class="mb-3">
+                        <label class="form-label">Admin Dashboard Room:</label>
+                        <span id="dashboard-room-status" class="badge bg-secondary">Not Joined</span>
+                    </div>
+                    <div class="mb-3">
+                        <label class="form-label">Last Event:</label>
+                        <span id="last-event">None</span>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <div class="col-md-6">
+            <div class="card">
+                <div class="card-header">
+                    <h5 class="card-title mb-0">API Endpoints Test</h5>
+                </div>
+                <div class="card-body">
+                    <div class="mb-3">
+                        <button class="btn btn-sm btn-outline-primary" onclick="testEndpoint('/admin/api/system-metrics')">
+                            Test System Metrics
+                        </button>
+                        <span id="system-metrics-status" class="badge bg-secondary ms-2">Not Tested</span>
+                    </div>
+                    <div class="mb-3">
+                        <button class="btn btn-sm btn-outline-primary" onclick="testEndpoint('/admin/api/jobs/active')">
+                            Test Active Jobs
+                        </button>
+                        <span id="jobs-active-status" class="badge bg-secondary ms-2">Not Tested</span>
+                    </div>
+                    <div class="mb-3">
+                        <button class="btn btn-sm btn-outline-primary" onclick="testEndpoint('/admin/api/alerts')">
+                            Test Alerts
+                        </button>
+                        <span id="alerts-status" class="badge bg-secondary ms-2">Not Tested</span>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <div class="row mt-4">
+        <div class="col-12">
+            <div class="card">
+                <div class="card-header">
+                    <h5 class="card-title mb-0">Event Log</h5>
+                </div>
+                <div class="card-body">
+                    <div id="event-log" style="height: 400px; overflow-y: auto; background-color: #f8f9fa; padding: 15px; border-radius: 5px; font-family: monospace; font-size: 12px;">
+                        <div class="text-muted">Event log will appear here...</div>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+
+<script>
+let socket = null;
+let eventCount = 0;
+
+function logEvent(message, type = 'info') {
+    const log = document.getElementById('event-log');
+    const timestamp = new Date().toLocaleTimeString();
+    const typeClass = {
+        'info': 'text-info',
+        'success': 'text-success',
+        'warning': 'text-warning',
+        'error': 'text-danger'
+    }[type] || 'text-muted';
+    
+    const entry = document.createElement('div');
+    entry.className = typeClass;
+    entry.innerHTML = `[${timestamp}] ${message}`;
+    
+    log.appendChild(entry);
+    log.scrollTop = log.scrollHeight;
+    
+    // Update last event
+    document.getElementById('last-event').textContent = `${timestamp}: ${message}`;
+    
+    eventCount++;
+}
+
+function updateStatus(elementId, status, type = 'secondary') {
+    const element = document.getElementById(elementId);
+    if (element) {
+        element.className = `badge bg-${type}`;
+        element.textContent = status;
+    }
+}
+
+function clearLog() {
+    document.getElementById('event-log').innerHTML = '<div class="text-muted">Event log cleared...</div>';
+    eventCount = 0;
+}
+
+function testConnection() {
+    logEvent('Starting WebSocket connection test...', 'info');
+    
+    // Check if Socket.IO is available
+    if (typeof io === 'undefined') {
+        logEvent('❌ Socket.IO library not available', 'error');
+        updateStatus('socketio-status', 'Not Available', 'danger');
+        return;
+    }
+    
+    logEvent('✅ Socket.IO library is available', 'success');
+    updateStatus('socketio-status', 'Available', 'success');
+    
+    // Disconnect existing connection if any
+    if (socket) {
+        logEvent('Disconnecting existing connection...', 'info');
+        socket.disconnect();
+    }
+    
+    // Create new connection
+    logEvent('Creating new Socket.IO connection...', 'info');
+    socket = io({
+        transports: ['polling', 'websocket'],
+        upgrade: true,
+        timeout: 10000,
+        forceNew: true,
+        reconnection: true,
+        reconnectionAttempts: 3,
+        reconnectionDelay: 1000
+    });
+    
+    // Set up event handlers
+    socket.on('connect', function() {
+        logEvent('✅ WebSocket connected successfully', 'success');
+        updateStatus('websocket-status', 'Connected', 'success');
+        
+        // Join admin dashboard room
+        logEvent('Joining admin dashboard room...', 'info');
+        socket.emit('join_admin_dashboard');
+    });
+    
+    socket.on('disconnect', function(reason) {
+        logEvent(`❌ WebSocket disconnected: ${reason}`, 'warning');
+        updateStatus('websocket-status', 'Disconnected', 'warning');
+        updateStatus('dashboard-room-status', 'Not Joined', 'secondary');
+    });
+    
+    socket.on('admin_dashboard_joined', function(data) {
+        logEvent(`✅ Joined admin dashboard: ${data.message || 'Success'}`, 'success');
+        updateStatus('dashboard-room-status', 'Joined', 'success');
+    });
+    
+    socket.on('system_metrics_update', function(data) {
+        logEvent(`📊 System metrics update received: ${JSON.stringify(data).substring(0, 100)}...`, 'info');
+    });
+    
+    socket.on('job_update', function(data) {
+        logEvent(`🔄 Job update received: ${JSON.stringify(data).substring(0, 100)}...`, 'info');
+    });
+    
+    socket.on('admin_alert', function(data) {
+        logEvent(`🚨 Admin alert received: ${JSON.stringify(data).substring(0, 100)}...`, 'warning');
+    });
+    
+    socket.on('error', function(error) {
+        logEvent(`❌ WebSocket error: ${error}`, 'error');
+        updateStatus('websocket-status', 'Error', 'danger');
+    });
+    
+    socket.on('connect_error', function(error) {
+        logEvent(`❌ Connection error: ${error.message || error}`, 'error');
+        updateStatus('websocket-status', 'Connection Error', 'danger');
+    });
+    
+    socket.on('reconnect', function(attemptNumber) {
+        logEvent(`🔄 Reconnected after ${attemptNumber} attempts`, 'success');
+        updateStatus('websocket-status', 'Reconnected', 'success');
+    });
+    
+    socket.on('reconnect_attempt', function(attemptNumber) {
+        logEvent(`🔄 Reconnection attempt ${attemptNumber}`, 'info');
+    });
+    
+    socket.on('reconnect_error', function(error) {
+        logEvent(`❌ Reconnection error: ${error}`, 'error');
+    });
+    
+    socket.on('reconnect_failed', function() {
+        logEvent('❌ Reconnection failed after maximum attempts', 'error');
+        updateStatus('websocket-status', 'Failed', 'danger');
+    });
+}
+
+async function testEndpoint(endpoint) {
+    const statusId = endpoint.replace(/[^a-zA-Z0-9]/g, '-') + '-status';
+    
+    logEvent(`Testing API endpoint: ${endpoint}`, 'info');
+    updateStatus(statusId, 'Testing...', 'warning');
+    
+    try {
+        const response = await fetch(endpoint);
+        logEvent(`API ${endpoint} - Status: ${response.status}`, response.ok ? 'success' : 'error');
+        
+        if (response.ok) {
+            const data = await response.json();
+            if (data.success) {
+                logEvent(`✅ ${endpoint} - Success`, 'success');
+                updateStatus(statusId, 'Success', 'success');
+            } else {
+                logEvent(`⚠️ ${endpoint} - API returned success=false: ${data.error || 'Unknown error'}`, 'warning');
+                updateStatus(statusId, 'API Error', 'warning');
+            }
+        } else {
+            logEvent(`❌ ${endpoint} - HTTP ${response.status}`, 'error');
+            updateStatus(statusId, `HTTP ${response.status}`, 'danger');
+        }
+    } catch (error) {
+        logEvent(`❌ ${endpoint} - Exception: ${error.message}`, 'error');
+        updateStatus(statusId, 'Exception', 'danger');
+    }
+}
+
+// Initialize on page load
+document.addEventListener('DOMContentLoaded', function() {
+    logEvent('WebSocket diagnostic page loaded', 'info');
+    
+    // Check Socket.IO availability immediately
+    if (typeof io !== 'undefined') {
+        updateStatus('socketio-status', 'Available', 'success');
+        logEvent('✅ Socket.IO library detected', 'success');
+    } else {
+        updateStatus('socketio-status', 'Not Available', 'danger');
+        logEvent('❌ Socket.IO library not detected', 'error');
+    }
+});
+</script>
+{% endblock %}

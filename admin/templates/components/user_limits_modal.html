@@ -21,11 +21,20 @@
                             </div>
                             <div class="card-body">
                                 <div class="mb-3">
-                                    <input type="text" class="form-control" id="userSearch" 
-                                           placeholder="Search users..." onkeyup="filterUsers()">
+                                    <label for="userSearch" class="form-label">Search and Select a user to configure
+                                        their limits</label>
+                                    <input type="text" class="form-control" id="userSearch"
+                                        placeholder="Type username or email to search..." autocomplete="off">
+                                    <div id="userSearchResults" class="dropdown-menu w-100"
+                                        style="display: none; max-height: 200px; overflow-y: auto;">
+                                        <!-- Search results will appear here -->
+                                    </div>
                                 </div>
                                 <div id="usersList" style="max-height: 300px; overflow-y: auto;">
-                                    <!-- Users list will be populated here -->
+                                    <div class="text-center text-muted py-3">
+                                        <i class="bi bi-search"></i>
+                                        <p class="mb-0">Start typing to search for users</p>
+                                    </div>
                                 </div>
                             </div>
                         </div>
@@ -39,109 +48,121 @@
                                 <div id="userLimitsForm" style="display: none;">
                                     <form id="limitsConfigForm">
                                         <input type="hidden" id="selectedUserId">
-                                        
+
                                         <div class="mb-3">
-                                            <h6>Selected User: <span id="selectedUserName" class="text-primary"></span></h6>
-                                            <small class="text-muted">Email: <span id="selectedUserEmail"></span></small>
+                                            <h6>Selected User: <span id="selectedUserName" class="text-primary"></span>
+                                            </h6>
+                                            <small class="text-muted">Email: <span
+                                                    id="selectedUserEmail"></span></small>
                                         </div>
-                                        
+
                                         <div class="row">
                                             <div class="col-md-6">
                                                 <div class="mb-3">
                                                     <label for="maxConcurrentJobs" class="form-label">
                                                         Max Concurrent Jobs
-                                                        <i class="bi bi-info-circle" title="Maximum number of jobs this user can run simultaneously"></i>
+                                                        <i class="bi bi-info-circle"
+                                                            title="Maximum number of jobs this user can run simultaneously"></i>
                                                     </label>
-                                                    <input type="number" class="form-control" id="maxConcurrentJobs" 
-                                                           min="0" max="10" value="2">
+                                                    <input type="number" class="form-control" id="maxConcurrentJobs"
+                                                        min="0" max="10" value="2">
                                                 </div>
-                                                
+
                                                 <div class="mb-3">
                                                     <label for="maxDailyJobs" class="form-label">
                                                         Max Daily Jobs
-                                                        <i class="bi bi-info-circle" title="Maximum number of jobs this user can create per day"></i>
+                                                        <i class="bi bi-info-circle"
+                                                            title="Maximum number of jobs this user can create per day"></i>
                                                     </label>
-                                                    <input type="number" class="form-control" id="maxDailyJobs" 
-                                                           min="0" max="100" value="10">
+                                                    <input type="number" class="form-control" id="maxDailyJobs" min="0"
+                                                        max="100" value="10">
                                                 </div>
-                                                
+
                                                 <div class="mb-3">
                                                     <label for="maxImagesPerJob" class="form-label">
                                                         Max Images Per Job
-                                                        <i class="bi bi-info-circle" title="Maximum number of images per caption generation job"></i>
+                                                        <i class="bi bi-info-circle"
+                                                            title="Maximum number of images per caption generation job"></i>
                                                     </label>
-                                                    <input type="number" class="form-control" id="maxImagesPerJob" 
-                                                           min="1" max="1000" value="50">
+                                                    <input type="number" class="form-control" id="maxImagesPerJob"
+                                                        min="1" max="1000" value="50">
                                                 </div>
                                             </div>
                                             <div class="col-md-6">
                                                 <div class="mb-3">
-                                                    <label for="jobPriority" class="form-label">Default Job Priority</label>
+                                                    <label for="jobPriority" class="form-label">Default Job
+                                                        Priority</label>
                                                     <select class="form-select" id="jobPriority">
                                                         <option value="low">Low</option>
                                                         <option value="normal" selected>Normal</option>
                                                         <option value="high">High</option>
                                                     </select>
                                                 </div>
-                                                
+
                                                 <div class="mb-3">
                                                     <label for="jobTimeoutMinutes" class="form-label">
                                                         Job Timeout (minutes)
-                                                        <i class="bi bi-info-circle" title="Maximum time a job can run before being cancelled"></i>
+                                                        <i class="bi bi-info-circle"
+                                                            title="Maximum time a job can run before being cancelled"></i>
                                                     </label>
-                                                    <input type="number" class="form-control" id="jobTimeoutMinutes" 
-                                                           min="5" max="180" value="30">
+                                                    <input type="number" class="form-control" id="jobTimeoutMinutes"
+                                                        min="5" max="180" value="30">
                                                 </div>
-                                                
+
                                                 <div class="mb-3">
                                                     <label for="cooldownMinutes" class="form-label">
                                                         Cooldown Period (minutes)
-                                                        <i class="bi bi-info-circle" title="Minimum time between job submissions"></i>
+                                                        <i class="bi bi-info-circle"
+                                                            title="Minimum time between job submissions"></i>
                                                     </label>
-                                                    <input type="number" class="form-control" id="cooldownMinutes" 
-                                                           min="0" max="60" value="5">
+                                                    <input type="number" class="form-control" id="cooldownMinutes"
+                                                        min="0" max="60" value="5">
                                                 </div>
                                             </div>
                                         </div>
-                                        
+
                                         <div class="mb-3">
                                             <h6>Permissions</h6>
                                             <div class="form-check">
-                                                <input class="form-check-input" type="checkbox" id="canCreateJobs" checked>
+                                                <input class="form-check-input" type="checkbox" id="canCreateJobs"
+                                                    checked>
                                                 <label class="form-check-label" for="canCreateJobs">
                                                     Can create caption generation jobs
                                                 </label>
                                             </div>
                                             <div class="form-check">
-                                                <input class="form-check-input" type="checkbox" id="canCancelOwnJobs" checked>
+                                                <input class="form-check-input" type="checkbox" id="canCancelOwnJobs"
+                                                    checked>
                                                 <label class="form-check-label" for="canCancelOwnJobs">
                                                     Can cancel own jobs
                                                 </label>
                                             </div>
                                             <div class="form-check">
-                                                <input class="form-check-input" type="checkbox" id="canViewJobHistory" checked>
+                                                <input class="form-check-input" type="checkbox" id="canViewJobHistory"
+                                                    checked>
                                                 <label class="form-check-label" for="canViewJobHistory">
                                                     Can view job history
                                                 </label>
                                             </div>
                                             <div class="form-check">
-                                                <input class="form-check-input" type="checkbox" id="canRetryFailedJobs" checked>
+                                                <input class="form-check-input" type="checkbox" id="canRetryFailedJobs"
+                                                    checked>
                                                 <label class="form-check-label" for="canRetryFailedJobs">
                                                     Can retry failed jobs
                                                 </label>
                                             </div>
                                         </div>
-                                        
+
                                         <div class="mb-3">
                                             <label for="userNotes" class="form-label">Admin Notes</label>
-                                            <textarea class="form-control" id="userNotes" rows="3" 
-                                                      placeholder="Administrative notes about this user's limits..."></textarea>
+                                            <textarea class="form-control" id="userNotes" rows="3"
+                                                placeholder="Administrative notes about this user's limits..."></textarea>
                                         </div>
                                     </form>
                                 </div>
                                 <div id="noUserSelected" class="text-center text-muted py-4">
                                     <i class="bi bi-person-plus"></i>
-                                    <p>Select a user from the list to configure their limits</p>
+                                    <p>Search and select a user to configure their limits</p>
                                 </div>
                             </div>
                         </div>
@@ -150,10 +171,12 @@
             </div>
             <div class="modal-footer">
                 <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Cancel</button>
-                <button type="button" class="btn btn-outline-warning" id="resetUserLimits" onclick="resetUserLimits()" style="display: none;">
+                <button type="button" class="btn btn-outline-warning" id="resetUserLimits" onclick="resetUserLimits()"
+                    style="display: none;">
                     <i class="bi bi-arrow-clockwise"></i> Reset to Defaults
                 </button>
-                <button type="button" class="btn btn-primary" id="saveUserLimits" onclick="saveUserLimits()" style="display: none;">
+                <button type="button" class="btn btn-primary" id="saveUserLimits" onclick="saveUserLimits()"
+                    style="display: none;">
                     <i class="bi bi-save"></i> Save Limits
                 </button>
             </div>

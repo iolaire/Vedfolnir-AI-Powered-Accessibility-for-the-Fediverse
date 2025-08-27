@@ -46,6 +46,13 @@
                 <!-- Admin Notification System -->
                 {% include 'components/admin_notification_system.html' %}
                 
+                <!-- WebSocket Status Indicator -->
+                <div class="nav-item d-flex align-items-center me-3">
+                    <div id="websocket-status" class="text-muted small">
+                        <i class="bi bi-wifi-off"></i> Real-time: Initializing...
+                    </div>
+                </div>
+                
                 <a class="nav-link" href="{{ url_for('index') }}">
                     <i class="bi bi-house"></i> Main App
                 </a>
@@ -108,6 +115,11 @@
                             </a>
                         </li>
                         <li class="nav-item">
+                            <a class="nav-link" href="{{ url_for('admin.storage_dashboard') }}">
+                                <i class="bi bi-hdd"></i> Storage Management
+                            </a>
+                        </li>
+                        <li class="nav-item">
                             <a class="nav-link" href="{{ url_for('admin.monitoring_dashboard') }}">
                                 <i class="bi bi-graph-up"></i> Monitoring
                             </a>
@@ -144,14 +156,63 @@
     <!-- Bootstrap JS -->
     <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.1.3/dist/js/bootstrap.bundle.min.js" onerror="console.warn('Bootstrap JS failed to load from CDN')"></script>
     
+    <!-- Socket.IO with fallback -->
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/socket.io/4.7.2/socket.io.js" crossorigin="anonymous" 
+            onerror="console.warn('Socket.IO failed to load from primary CDN, trying fallback...'); loadSocketIOFallback();"></script>
+    <script>
+        function loadSocketIOFallback() {
+            if (typeof io === 'undefined') {
+                console.log('Loading Socket.IO from fallback CDN...');
+                const script = document.createElement('script');
+                script.src = 'https://cdn.socket.io/4.7.2/socket.io.min.js';
+                script.crossOrigin = 'anonymous';
+                script.onerror = function() {
+                    console.error('Socket.IO failed to load from all CDNs. WebSocket functionality will be disabled.');
+                    // Create a mock io object to prevent errors
+                    window.io = function() {
+                        console.warn('Socket.IO not available - using mock object');
+                        return {
+                            on: function() {},
+                            emit: function() {},
+                            disconnect: function() {},
+                            connected: false
+                        };
+                    };
+                };
+                script.onload = function() {
+                    console.log('Socket.IO loaded from fallback CDN');
+                };
+                document.head.appendChild(script);
+            }
+        }
+        
+        // Check if Socket.IO loaded after a short delay
+        setTimeout(function() {
+            if (typeof io === 'undefined') {
+                console.warn('Socket.IO not detected, attempting fallback...');
+                loadSocketIOFallback();
+            } else {
+                console.log('Socket.IO loaded successfully');
+            }
+        }, 1000);
+    </script>
+    
     <!-- Main app scripts -->
     <script src="{{ url_for('static', filename='js/csrf-handler.js') }}"></script>
     <script src="{{ url_for('static', filename='js/app.js') }}"></script>
     <script src="{{ url_for('static', filename='js/error_handler.js') }}"></script>
     
+    <!-- WebSocket Client -->
+    <script src="{{ url_for('static', filename='js/websocket-client.js') }}"></script>
+    
+    <!-- WebSocket Debug Helper (development only) -->
+    {% if config.get('DEBUG') or request.args.get('debug') %}
+    <script src="{{ url_for('static', filename='js/websocket-debug.js') }}"></script>
+    {% endif %}
+    
     <!-- Custom Admin JS -->
     <script src="{{ url_for('static', filename='js/admin.js') }}"></script>
     
-    {% block scripts %}{% endblock %}
+    {% block extra_js %}{% endblock %}
 </body>
 </html>
