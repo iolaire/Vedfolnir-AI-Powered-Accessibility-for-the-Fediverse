@@ -448,6 +448,176 @@ def main():
             'REDIS_URL': f'redis://:{redis_password}@localhost:6379/0'
         }
     
+    # Get WebSocket configuration
+    print("\nWebSocket Configuration:")
+    print("Configure WebSocket settings for real-time communication")
+    configure_websocket = input("Configure WebSocket settings? (Y/n): ").strip().lower() != 'n'
+    
+    websocket_settings = {}
+    if configure_websocket:
+        print("Choose WebSocket configuration profile:")
+        print("1. Development (relaxed security, verbose logging)")
+        print("2. Testing (partial security, moderate logging)")
+        print("3. Production (full security, minimal logging)")
+        
+        while True:
+            ws_choice = input(f"Enter choice (1-3) [based on security mode: {security_mode}]: ").strip()
+            if not ws_choice:
+                # Use security mode to determine WebSocket profile
+                if security_mode == 'development':
+                    ws_choice = '1'
+                elif security_mode == 'testing':
+                    ws_choice = '2'
+                else:
+                    ws_choice = '3'
+            
+            if ws_choice == '1':
+                websocket_profile = 'development'
+                websocket_settings.update({
+                    'SOCKETIO_REQUIRE_AUTH': 'false',
+                    'SOCKETIO_SESSION_VALIDATION': 'false',
+                    'SOCKETIO_RATE_LIMITING': 'false',
+                    'SOCKETIO_CSRF_PROTECTION': 'false',
+                    'SOCKETIO_LOG_LEVEL': 'DEBUG',
+                    'SOCKETIO_LOG_CONNECTIONS': 'true',
+                    'SOCKETIO_DEBUG': 'true',
+                    'SOCKETIO_ENGINEIO_LOGGER': 'true'
+                })
+                break
+            elif ws_choice == '2':
+                websocket_profile = 'testing'
+                websocket_settings.update({
+                    'SOCKETIO_REQUIRE_AUTH': 'true',
+                    'SOCKETIO_SESSION_VALIDATION': 'true',
+                    'SOCKETIO_RATE_LIMITING': 'true',
+                    'SOCKETIO_CSRF_PROTECTION': 'false',
+                    'SOCKETIO_LOG_LEVEL': 'INFO',
+                    'SOCKETIO_LOG_CONNECTIONS': 'true',
+                    'SOCKETIO_DEBUG': 'false',
+                    'SOCKETIO_ENGINEIO_LOGGER': 'false'
+                })
+                break
+            elif ws_choice == '3':
+                websocket_profile = 'production'
+                websocket_settings.update({
+                    'SOCKETIO_REQUIRE_AUTH': 'true',
+                    'SOCKETIO_SESSION_VALIDATION': 'true',
+                    'SOCKETIO_RATE_LIMITING': 'true',
+                    'SOCKETIO_CSRF_PROTECTION': 'true',
+                    'SOCKETIO_LOG_LEVEL': 'WARNING',
+                    'SOCKETIO_LOG_CONNECTIONS': 'false',
+                    'SOCKETIO_DEBUG': 'false',
+                    'SOCKETIO_ENGINEIO_LOGGER': 'false'
+                })
+                break
+            else:
+                print("Invalid choice. Please enter 1, 2, or 3.")
+        
+        print(f"Selected WebSocket profile: {websocket_profile}")
+        
+        # Common WebSocket settings
+        websocket_settings.update({
+            'SOCKETIO_TRANSPORTS': 'websocket,polling',
+            'SOCKETIO_PING_TIMEOUT': '60000',
+            'SOCKETIO_PING_INTERVAL': '25000',
+            'SOCKETIO_CORS_CREDENTIALS': 'true',
+            'SOCKETIO_CORS_METHODS': 'GET,POST',
+            'SOCKETIO_CORS_HEADERS': 'Content-Type,Authorization',
+            'SOCKETIO_RECONNECTION': 'true',
+            'SOCKETIO_RECONNECTION_ATTEMPTS': '5',
+            'SOCKETIO_RECONNECTION_DELAY': '1000',
+            'SOCKETIO_RECONNECTION_DELAY_MAX': '5000',
+            'SOCKETIO_TIMEOUT': '20000',
+            'SOCKETIO_MAX_CONNECTIONS': '1000',
+            'SOCKETIO_CONNECTION_POOL_SIZE': '10',
+            'SOCKETIO_MAX_HTTP_BUFFER_SIZE': '1000000'
+        })
+        
+        # Advanced WebSocket settings (optional)
+        configure_advanced = input("Configure advanced WebSocket settings? (y/N): ").strip().lower() == 'y'
+        if configure_advanced:
+            print("\nAdvanced WebSocket Configuration:")
+            
+            # Transport settings
+            custom_transports = input("Transport methods (default: websocket,polling): ").strip()
+            if custom_transports:
+                websocket_settings['SOCKETIO_TRANSPORTS'] = custom_transports
+            
+            # Timeout settings
+            custom_ping_timeout = input("Ping timeout in ms (default: 60000): ").strip()
+            if custom_ping_timeout:
+                websocket_settings['SOCKETIO_PING_TIMEOUT'] = custom_ping_timeout
+            
+            custom_ping_interval = input("Ping interval in ms (default: 25000): ").strip()
+            if custom_ping_interval:
+                websocket_settings['SOCKETIO_PING_INTERVAL'] = custom_ping_interval
+            
+            # Connection limits
+            custom_max_connections = input("Max connections (default: 1000): ").strip()
+            if custom_max_connections:
+                websocket_settings['SOCKETIO_MAX_CONNECTIONS'] = custom_max_connections
+            
+            custom_pool_size = input("Connection pool size (default: 10): ").strip()
+            if custom_pool_size:
+                websocket_settings['SOCKETIO_CONNECTION_POOL_SIZE'] = custom_pool_size
+        
+        print(f"✅ WebSocket configuration applied: {websocket_profile} profile")
+        
+    else:
+        # Use default WebSocket settings based on security mode
+        if security_mode == 'development':
+            websocket_settings = {
+                'SOCKETIO_TRANSPORTS': 'websocket,polling',
+                'SOCKETIO_PING_TIMEOUT': '60000',
+                'SOCKETIO_PING_INTERVAL': '25000',
+                'SOCKETIO_CORS_CREDENTIALS': 'true',
+                'SOCKETIO_CORS_METHODS': 'GET,POST',
+                'SOCKETIO_CORS_HEADERS': 'Content-Type,Authorization',
+                'SOCKETIO_RECONNECTION': 'true',
+                'SOCKETIO_RECONNECTION_ATTEMPTS': '5',
+                'SOCKETIO_RECONNECTION_DELAY': '1000',
+                'SOCKETIO_RECONNECTION_DELAY_MAX': '5000',
+                'SOCKETIO_TIMEOUT': '20000',
+                'SOCKETIO_MAX_CONNECTIONS': '1000',
+                'SOCKETIO_CONNECTION_POOL_SIZE': '10',
+                'SOCKETIO_MAX_HTTP_BUFFER_SIZE': '1000000',
+                'SOCKETIO_REQUIRE_AUTH': 'false',
+                'SOCKETIO_SESSION_VALIDATION': 'false',
+                'SOCKETIO_RATE_LIMITING': 'false',
+                'SOCKETIO_CSRF_PROTECTION': 'false',
+                'SOCKETIO_LOG_LEVEL': 'DEBUG',
+                'SOCKETIO_LOG_CONNECTIONS': 'true',
+                'SOCKETIO_DEBUG': 'true',
+                'SOCKETIO_ENGINEIO_LOGGER': 'true'
+            }
+        else:
+            websocket_settings = {
+                'SOCKETIO_TRANSPORTS': 'websocket,polling',
+                'SOCKETIO_PING_TIMEOUT': '60000',
+                'SOCKETIO_PING_INTERVAL': '25000',
+                'SOCKETIO_CORS_CREDENTIALS': 'true',
+                'SOCKETIO_CORS_METHODS': 'GET,POST',
+                'SOCKETIO_CORS_HEADERS': 'Content-Type,Authorization',
+                'SOCKETIO_RECONNECTION': 'true',
+                'SOCKETIO_RECONNECTION_ATTEMPTS': '5',
+                'SOCKETIO_RECONNECTION_DELAY': '1000',
+                'SOCKETIO_RECONNECTION_DELAY_MAX': '5000',
+                'SOCKETIO_TIMEOUT': '20000',
+                'SOCKETIO_MAX_CONNECTIONS': '1000',
+                'SOCKETIO_CONNECTION_POOL_SIZE': '10',
+                'SOCKETIO_MAX_HTTP_BUFFER_SIZE': '1000000',
+                'SOCKETIO_REQUIRE_AUTH': 'true',
+                'SOCKETIO_SESSION_VALIDATION': 'true',
+                'SOCKETIO_RATE_LIMITING': 'true',
+                'SOCKETIO_CSRF_PROTECTION': 'true',
+                'SOCKETIO_LOG_LEVEL': 'WARNING',
+                'SOCKETIO_LOG_CONNECTIONS': 'false',
+                'SOCKETIO_DEBUG': 'false',
+                'SOCKETIO_ENGINEIO_LOGGER': 'false'
+            }
+        
+        print(f"✅ Default WebSocket settings applied for {security_mode} mode")
+    
     # Get admin details from user
     print("\nAdmin User Configuration:")
     admin_username = input("Admin username (default: admin): ").strip() or "admin"
@@ -493,6 +663,12 @@ def main():
     if configure_email:
         print(f"  Email Server: {email_settings['MAIL_SERVER']}:{email_settings['MAIL_PORT']}")
         print(f"  Email Username: {email_settings['MAIL_USERNAME']}")
+    
+    # Show WebSocket configuration
+    if websocket_settings:
+        print(f"  WebSocket Transports: {websocket_settings['SOCKETIO_TRANSPORTS']}")
+        print(f"  WebSocket Security: Auth={websocket_settings['SOCKETIO_REQUIRE_AUTH']}, CSRF={websocket_settings['SOCKETIO_CSRF_PROTECTION']}")
+        print(f"  WebSocket Logging: Level={websocket_settings['SOCKETIO_LOG_LEVEL']}, Debug={websocket_settings['SOCKETIO_DEBUG']}")
     print()
     
     # Create .env file
@@ -624,6 +800,35 @@ MAIL_PASSWORD={email_settings['MAIL_PASSWORD']}
 MAIL_DEFAULT_SENDER={email_settings['MAIL_DEFAULT_SENDER']}
 """
                 env_content += email_config
+            
+            # Add WebSocket settings if not already present
+            if websocket_settings and 'SOCKETIO_TRANSPORTS=' not in env_content:
+                websocket_config = f"""
+# WebSocket Configuration (for real-time communication)
+SOCKETIO_TRANSPORTS={websocket_settings['SOCKETIO_TRANSPORTS']}
+SOCKETIO_PING_TIMEOUT={websocket_settings['SOCKETIO_PING_TIMEOUT']}
+SOCKETIO_PING_INTERVAL={websocket_settings['SOCKETIO_PING_INTERVAL']}
+SOCKETIO_CORS_CREDENTIALS={websocket_settings['SOCKETIO_CORS_CREDENTIALS']}
+SOCKETIO_CORS_METHODS={websocket_settings['SOCKETIO_CORS_METHODS']}
+SOCKETIO_CORS_HEADERS={websocket_settings['SOCKETIO_CORS_HEADERS']}
+SOCKETIO_RECONNECTION={websocket_settings['SOCKETIO_RECONNECTION']}
+SOCKETIO_RECONNECTION_ATTEMPTS={websocket_settings['SOCKETIO_RECONNECTION_ATTEMPTS']}
+SOCKETIO_RECONNECTION_DELAY={websocket_settings['SOCKETIO_RECONNECTION_DELAY']}
+SOCKETIO_RECONNECTION_DELAY_MAX={websocket_settings['SOCKETIO_RECONNECTION_DELAY_MAX']}
+SOCKETIO_TIMEOUT={websocket_settings['SOCKETIO_TIMEOUT']}
+SOCKETIO_MAX_CONNECTIONS={websocket_settings['SOCKETIO_MAX_CONNECTIONS']}
+SOCKETIO_CONNECTION_POOL_SIZE={websocket_settings['SOCKETIO_CONNECTION_POOL_SIZE']}
+SOCKETIO_MAX_HTTP_BUFFER_SIZE={websocket_settings['SOCKETIO_MAX_HTTP_BUFFER_SIZE']}
+SOCKETIO_REQUIRE_AUTH={websocket_settings['SOCKETIO_REQUIRE_AUTH']}
+SOCKETIO_SESSION_VALIDATION={websocket_settings['SOCKETIO_SESSION_VALIDATION']}
+SOCKETIO_RATE_LIMITING={websocket_settings['SOCKETIO_RATE_LIMITING']}
+SOCKETIO_CSRF_PROTECTION={websocket_settings['SOCKETIO_CSRF_PROTECTION']}
+SOCKETIO_LOG_LEVEL={websocket_settings['SOCKETIO_LOG_LEVEL']}
+SOCKETIO_LOG_CONNECTIONS={websocket_settings['SOCKETIO_LOG_CONNECTIONS']}
+SOCKETIO_DEBUG={websocket_settings['SOCKETIO_DEBUG']}
+SOCKETIO_ENGINEIO_LOGGER={websocket_settings['SOCKETIO_ENGINEIO_LOGGER']}
+"""
+                env_content += websocket_config
         else:
             # Create a basic .env file
             database_config = ""

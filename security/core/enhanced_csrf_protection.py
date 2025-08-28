@@ -20,6 +20,11 @@ from flask import request, g, abort, current_app
 # REMOVED: Flask session import - using Redis sessions only
 # DISABLED: Flask-WTF CSRF imports - using custom Redis-aware CSRF system
 # from flask_wtf.csrf import CSRFProtect, ValidationError
+
+# Define ValidationError locally since we're not using Flask-WTF
+class ValidationError(Exception):
+    """CSRF validation error"""
+    pass
 from sqlalchemy.orm import Session
 from security.monitoring.security_event_logger import get_security_event_logger, SecurityEventType
 

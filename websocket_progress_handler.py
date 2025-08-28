@@ -44,10 +44,23 @@ class WebSocketProgressHandler:
         self._rate_limits: Dict[str, datetime] = {}
         self._rate_limit_window = timedelta(seconds=1)  # 1 request per second
         
-        # Register SocketIO event handlers
+        # Namespace manager (will be set by web_app.py)
+        self._namespace_manager = None
+        
+        # Register SocketIO event handlers (legacy mode)
         self._register_handlers()
         
         logger.info("WebSocket Progress Handler initialized")
+    
+    def set_namespace_manager(self, namespace_manager):
+        """
+        Set the namespace manager for integration with new WebSocket system
+        
+        Args:
+            namespace_manager: WebSocketNamespaceManager instance
+        """
+        self._namespace_manager = namespace_manager
+        logger.info("WebSocket Progress Handler integrated with namespace manager")
     
     def _register_handlers(self):
         """Register SocketIO event handlers with security enhancements"""
@@ -248,7 +261,15 @@ class WebSocketProgressHandler:
             task_id: Task ID to broadcast to
             progress_data: Progress data to broadcast
         """
-        self.socketio.emit('progress_update', progress_data, room=task_id)
+        if self._namespace_manager:
+            # Use new namespace system for broadcasting
+            self._namespace_manager.broadcast_to_room(
+                f"task_{task_id}", 'progress_update', progress_data
+            )
+        else:
+            # Fallback to legacy broadcasting
+            self.socketio.emit('progress_update', progress_data, room=task_id)
+        
         logger.debug(f"Broadcasted progress update for task {sanitize_for_log(task_id)}")
     
     def broadcast_task_completion(self, task_id: str, results: dict):
@@ -259,10 +280,19 @@ class WebSocketProgressHandler:
             task_id: Task ID that completed
             results: Task completion results
         """
-        self.socketio.emit('task_completed', {
+        completion_data = {
             'task_id': task_id,
             'results': results
-        }, room=task_id)
+        }
+        
+        if self._namespace_manager:
+            # Use new namespace system for broadcasting
+            self._namespace_manager.broadcast_to_room(
+                f"task_{task_id}", 'task_completed', completion_data
+            )
+        else:
+            # Fallback to legacy broadcasting
+            self.socketio.emit('task_completed', completion_data, room=task_id)
         
         logger.info(f"Broadcasted task completion for task {sanitize_for_log(task_id)}")
         
@@ -277,10 +307,19 @@ class WebSocketProgressHandler:
             task_id: Task ID that failed
             error_message: Error message
         """
-        self.socketio.emit('task_error', {
+        error_data = {
             'task_id': task_id,
             'error': error_message
-        }, room=task_id)
+        }
+        
+        if self._namespace_manager:
+            # Use new namespace system for broadcasting
+            self._namespace_manager.broadcast_to_room(
+                f"task_{task_id}", 'task_error', error_data
+            )
+        else:
+            # Fallback to legacy broadcasting
+            self.socketio.emit('task_error', error_data, room=task_id)
         
         logger.error(f"Broadcasted task error for task {sanitize_for_log(task_id)}: {sanitize_for_log(error_message)}")
     
@@ -362,10 +401,23 @@ class AdminDashboardWebSocket:
         self.db_manager = db_manager
         self.connected_admins = set()
         
+        # Namespace manager (will be set by web_app.py)
+        self._namespace_manager = None
+        
         # Register admin-specific handlers
         self._register_admin_handlers()
         
         logger.info("Admin Dashboard WebSocket handler initialized")
+    
+    def set_namespace_manager(self, namespace_manager):
+        """
+        Set the namespace manager for integration with new WebSocket system
+        
+        Args:
+            namespace_manager: WebSocketNamespaceManager instance
+        """
+        self._namespace_manager = namespace_manager
+        logger.info("Admin Dashboard WebSocket handler integrated with namespace manager")
     
     def _register_admin_handlers(self):
         """Register admin-specific WebSocket handlers"""
@@ -400,27 +452,57 @@ class AdminDashboardWebSocket:
     
     def broadcast_system_metrics(self, metrics: dict):
         """Broadcast system metrics to admin dashboard"""
-        self.socketio.emit('system_metrics_update', {
+        metrics_data = {
             'type': 'system_metrics',
             'metrics': metrics,
             'timestamp': datetime.utcnow().isoformat()
-        }, room='admin_dashboard')
+        }
+        
+        if self._namespace_manager:
+            # Use new namespace system for admin broadcasting
+            from models import UserRole
+            self._namespace_manager.broadcast_to_namespace(
+                '/admin', 'system_metrics_update', metrics_data, role_filter=UserRole.ADMIN
+            )
+        else:
+            # Fallback to legacy broadcasting
+            self.socketio.emit('system_metrics_update', metrics_data, room='admin_dashboard')
     
     def broadcast_job_update(self, job_data: dict):
         """Broadcast job update to admin dashboard"""
-        self.socketio.emit('job_update', {
+        job_update_data = {
             'type': 'job_update',
             'job': job_data,
             'timestamp': datetime.utcnow().isoformat()
-        }, room='admin_dashboard')
+        }
+        
+        if self._namespace_manager:
+            # Use new namespace system for admin broadcasting
+            from models import UserRole
+            self._namespace_manager.broadcast_to_namespace(
+                '/admin', 'job_update', job_update_data, role_filter=UserRole.ADMIN
+            )
+        else:
+            # Fallback to legacy broadcasting
+            self.socketio.emit('job_update', job_update_data, room='admin_dashboard')
     
     def broadcast_alert(self, alert_data: dict):
         """Broadcast alert to admin dashboard"""
-        self.socketio.emit('admin_alert', {
+        alert_broadcast_data = {
             'type': 'alert',
             'alert': alert_data,
             'timestamp': datetime.utcnow().isoformat()
-        }, room='admin_dashboard')
+        }
+        
+        if self._namespace_manager:
+            # Use new namespace system for admin broadcasting
+            from models import UserRole
+            self._namespace_manager.broadcast_to_namespace(
+                '/admin', 'admin_alert', alert_broadcast_data, role_filter=UserRole.ADMIN
+            )
+        else:
+            # Fallback to legacy broadcasting
+            self.socketio.emit('admin_alert', alert_broadcast_data, room='admin_dashboard')
     
     def get_connected_admin_count(self) -> int:
         """Get number of connected admin users"""

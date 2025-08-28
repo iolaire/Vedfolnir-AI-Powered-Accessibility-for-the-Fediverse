@@ -69,26 +69,44 @@ app = Flask(__name__)
 config = Config()
 app.config['SECRET_KEY'] = config.webapp.secret_key
 
-# Initialize CORS support with more permissive configuration
+# Initialize WebSocket system using new standardized components
+from websocket_config_manager import WebSocketConfigManager
+from websocket_cors_manager import CORSManager
+from websocket_factory import WebSocketFactory
+from websocket_auth_handler import WebSocketAuthHandler
+from websocket_namespace_manager import WebSocketNamespaceManager
+
+# Initialize WebSocket configuration manager
+websocket_config_manager = WebSocketConfigManager(config)
+app.logger.info("WebSocket configuration manager initialized")
+
+# Initialize CORS manager with dynamic origin support
+websocket_cors_manager = CORSManager(websocket_config_manager)
+app.logger.info("WebSocket CORS manager initialized")
+
+# Initialize WebSocket factory
+websocket_factory = WebSocketFactory(websocket_config_manager, websocket_cors_manager)
+app.logger.info("WebSocket factory initialized")
+
+# Create SocketIO instance using factory
+socketio = websocket_factory.create_socketio_instance(app)
+app.logger.info("SocketIO instance created using WebSocket factory")
+
+# Store WebSocket components for later use
+app.websocket_config_manager = websocket_config_manager
+app.websocket_cors_manager = websocket_cors_manager
+app.websocket_factory = websocket_factory
+
+# Initialize legacy CORS support for backward compatibility
 from flask_cors import CORS
 CORS(app, 
-     origins="*",  # More permissive for development
+     origins=websocket_cors_manager.get_allowed_origins(),
      supports_credentials=True,
      allow_headers=["Content-Type", "Authorization", "X-Requested-With", "X-CSRF-Token"],
      methods=["GET", "POST", "PUT", "DELETE", "OPTIONS"],
      expose_headers=["Content-Type", "X-CSRF-Token"])
 
-# Initialize SocketIO with enhanced CORS configuration
-socketio = SocketIO(app, 
-                   cors_allowed_origins="*",  # More permissive for development
-                   cors_credentials=True,  # Allow credentials (cookies)
-                   async_mode='threading',
-                   allow_upgrades=True,
-                   transports=['polling', 'websocket'],
-                   ping_timeout=60,
-                   ping_interval=25)
-
-# Initialize WebSocket Progress Handler
+# Initialize WebSocket Progress Handler (legacy import for backward compatibility)
 from websocket_progress_handler import WebSocketProgressHandler, AdminDashboardWebSocket
 
 app.config['SQLALCHEMY_DATABASE_URI'] = config.storage.database_url
@@ -559,12 +577,40 @@ register_session_error_handlers(app, request_session_manager, detached_instance_
 progress_tracker = ProgressTracker(db_manager)
 task_queue_manager = TaskQueueManager(db_manager)
 
-# Initialize WebSocket progress handler with resource cleanup support
+# Initialize WebSocket authentication handler
 try:
+    websocket_auth_handler = WebSocketAuthHandler(
+        db_manager=db_manager,
+        session_manager=unified_session_manager,
+        rate_limit_window=300,  # 5 minutes
+        max_attempts_per_window=10,
+        max_attempts_per_ip=50
+    )
+    app.logger.info("WebSocket authentication handler initialized")
+    
+    # Initialize WebSocket namespace manager
+    websocket_namespace_manager = WebSocketNamespaceManager(socketio, websocket_auth_handler)
+    app.logger.info("WebSocket namespace manager initialized")
+    
+    # Store WebSocket components for access by other modules
+    app.websocket_auth_handler = websocket_auth_handler
+    app.websocket_namespace_manager = websocket_namespace_manager
+    
+    # Initialize WebSocket progress handler with new namespace system
     websocket_progress_handler = WebSocketProgressHandler(socketio, db_manager, progress_tracker, task_queue_manager)
     admin_dashboard_websocket = AdminDashboardWebSocket(socketio, db_manager)
+    
+    # Update progress handler to use new namespace system
+    if hasattr(websocket_progress_handler, 'set_namespace_manager'):
+        websocket_progress_handler.set_namespace_manager(websocket_namespace_manager)
+    
+    if hasattr(admin_dashboard_websocket, 'set_namespace_manager'):
+        admin_dashboard_websocket.set_namespace_manager(websocket_namespace_manager)
+    
+    app.logger.info("WebSocket progress handlers initialized with namespace system")
+    
 except Exception as e:
-    app.logger.error(f"Failed to initialize WebSocket progress handler: {sanitize_for_log(str(e))}")
+    app.logger.error(f"Failed to initialize WebSocket system: {sanitize_for_log(str(e))}")
     
     # Fallback handlers that do nothing
     class FallbackWebSocketHandler:
@@ -578,6 +624,8 @@ except Exception as e:
             pass
         def cleanup(self):
             pass
+        def set_namespace_manager(self, manager):
+            pass
     
     class FallbackAdminWebSocketHandler:
         def broadcast_system_metrics(self, metrics):
@@ -586,9 +634,30 @@ except Exception as e:
             pass
         def broadcast_alert(self, alert_data):
             pass
+        def set_namespace_manager(self, manager):
+            pass
+    
+    class FallbackAuthHandler:
+        def authenticate_connection(self, auth_data=None, namespace='/'):
+            from websocket_auth_handler import AuthenticationResult
+            return AuthenticationResult.SYSTEM_ERROR, None
+        def get_authentication_stats(self):
+            return {'error': 'Authentication handler not available'}
+    
+    class FallbackNamespaceManager:
+        def get_namespace_stats(self, namespace):
+            return {'error': 'Namespace manager not available'}
+        def broadcast_to_namespace(self, namespace, event, data, role_filter=None):
+            return False
     
     websocket_progress_handler = FallbackWebSocketHandler()
     admin_dashboard_websocket = FallbackAdminWebSocketHandler()
+    websocket_auth_handler = FallbackAuthHandler()
+    websocket_namespace_manager = FallbackNamespaceManager()
+    
+    # Store fallback components
+    app.websocket_auth_handler = websocket_auth_handler
+    app.websocket_namespace_manager = websocket_namespace_manager
 
 # Initialize Flask-Login
 login_manager = LoginManager()
@@ -4314,6 +4383,10 @@ register_user_management_routes(app)
 # Register GDPR routes
 from routes.gdpr_routes import gdpr_bp
 app.register_blueprint(gdpr_bp)
+
+# Register WebSocket client configuration routes
+from routes.websocket_client_config_routes import websocket_client_config_bp
+app.register_blueprint(websocket_client_config_bp)
 
 if __name__ == '__main__':
     # Set up logging for web app

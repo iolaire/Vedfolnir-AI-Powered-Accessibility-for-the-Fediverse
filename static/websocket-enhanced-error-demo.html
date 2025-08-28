@@ -1,0 +1,281 @@
+<!-- Copyright (C) 2025 iolaire mcfadden. -->
+<!-- This program is free software: you can redistribute it and/or modify it under the terms of the GNU Affero General Public License as published by the Free Software Foundation, either version 3 of the License, or (at your option) any later version. -->
+<!-- THE SOFTWARE IS PROVIDED "AS IS", WITHOUT WARRANTY OF ANY KIND, EXPRESS OR IMPLIED, INCLUDING BUT NOT LIMITED TO THE WARRANTIES OF MERCHANTABILITY, FITNESS FOR A PARTICULAR PURPOSE AND NONINFRINGEMENT. IN NO EVENT SHALL THE AUTHORS OR COPYRIGHT HOLDERS BE LIABLE FOR ANY CLAIM, DAMAGES OR OTHER LIABILITY, WHETHER IN AN ACTION OF CONTRACT, TORT OR OTHERWISE, ARISING FROM, OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE SOFTWARE. -->
+
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Enhanced WebSocket Error Handling Demo</title>
+    
+    <!-- Bootstrap CSS -->
+    <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/css/bootstrap.min.css" rel="stylesheet">
+    <link href="https://cdn.jsdelivr.net/npm/bootstrap-icons@1.10.0/font/bootstrap-icons.css" rel="stylesheet">
+    
+    <style>
+        .demo-container {
+            max-width: 1200px;
+            margin: 0 auto;
+            padding: 2rem;
+        }
+        
+        .demo-section {
+            background: #f8f9fa;
+            border-radius: 0.5rem;
+            padding: 1.5rem;
+            margin-bottom: 2rem;
+        }
+        
+        .demo-controls {
+            display: flex;
+            gap: 1rem;
+            flex-wrap: wrap;
+            margin-bottom: 1rem;
+        }
+        
+        .status-display {
+            background: white;
+            border: 1px solid #dee2e6;
+            border-radius: 0.375rem;
+            padding: 1rem;
+            margin-top: 1rem;
+        }
+        
+        .log-output {
+            background: #212529;
+            color: #ffffff;
+            border-radius: 0.375rem;
+            padding: 1rem;
+            font-family: monospace;
+            font-size: 0.875rem;
+            max-height: 300px;
+            overflow-y: auto;
+            margin-top: 1rem;
+        }
+        
+        .feature-badge {
+            display: inline-block;
+            background: #e7f3ff;
+            color: #0066cc;
+            padding: 0.25rem 0.5rem;
+            border-radius: 0.25rem;
+            font-size: 0.75rem;
+            margin: 0.125rem;
+        }
+    </style>
+</head>
+<body>
+    <div class="demo-container">
+        <div class="text-center mb-4">
+            <h1><i class="bi bi-wifi me-2"></i>Enhanced WebSocket Error Handling Demo</h1>
+            <p class="lead">Comprehensive error handling and user feedback system for WebSocket connections</p>
+            
+            <div class="mb-3">
+                <span class="feature-badge">CORS Guidance</span>
+                <span class="feature-badge">Visual Status Indicators</span>
+                <span class="feature-badge">Auto Recovery</span>
+                <span class="feature-badge">Fallback Notifications</span>
+                <span class="feature-badge">Debug Diagnostics</span>
+            </div>
+        </div>
+        
+        <!-- Connection Status Section -->
+        <div class="demo-section">
+            <h3><i class="bi bi-activity me-2"></i>Connection Status & Controls</h3>
+            <p>Test the enhanced WebSocket error handling system with various error scenarios.</p>
+            
+            <div class="demo-controls">
+                <button type="button" class="btn btn-success" id="connect-btn">
+                    <i class="bi bi-play-circle me-1"></i>Connect
+                </button>
+                <button type="button" class="btn btn-danger" id="disconnect-btn">
+                    <i class="bi bi-stop-circle me-1"></i>Disconnect
+                </button>
+                <button type="button" class="btn btn-warning" id="simulate-cors-btn">
+                    <i class="bi bi-shield-exclamation me-1"></i>Simulate CORS Error
+                </button>
+                <button type="button" class="btn btn-warning" id="simulate-auth-btn">
+                    <i class="bi bi-person-lock me-1"></i>Simulate Auth Error
+                </button>
+                <button type="button" class="btn btn-warning" id="simulate-network-btn">
+                    <i class="bi bi-wifi-off me-1"></i>Simulate Network Error
+                </button>
+                <button type="button" class="btn btn-info" id="toggle-debug-btn">
+                    <i class="bi bi-bug me-1"></i>Toggle Debug Mode
+                </button>
+            </div>
+            
+            <div class="status-display">
+                <div class="row">
+                    <div class="col-md-6">
+                        <h6>Connection Status</h6>
+                        <div id="connection-status" class="text-muted">Not connected</div>
+                    </div>
+                    <div class="col-md-6">
+                        <h6>Error Handler Status</h6>
+                        <div id="error-handler-status" class="text-muted">Not initialized</div>
+                    </div>
+                </div>
+            </div>
+        </div>
+        
+        <!-- Error Simulation Section -->
+        <div class="demo-section">
+            <h3><i class="bi bi-exclamation-triangle me-2"></i>Error Simulation & Recovery</h3>
+            <p>Test different error scenarios and observe the enhanced error handling responses.</p>
+            
+            <div class="demo-controls">
+                <button type="button" class="btn btn-outline-danger" id="test-cors-guidance-btn">
+                    Test CORS Guidance
+                </button>
+                <button type="button" class="btn btn-outline-warning" id="test-fallback-notifications-btn">
+                    Test Fallback Notifications
+                </button>
+                <button type="button" class="btn btn-outline-info" id="test-recovery-system-btn">
+                    Test Recovery System
+                </button>
+                <button type="button" class="btn btn-outline-secondary" id="export-debug-btn">
+                    Export Debug Info
+                </button>
+            </div>
+            
+            <div class="row mt-3">
+                <div class="col-md-6">
+                    <h6>Recovery Attempts</h6>
+                    <div id="recovery-count" class="badge bg-secondary">0</div>
+                </div>
+                <div class="col-md-6">
+                    <h6>Error Count</h6>
+                    <div id="error-count" class="badge bg-danger">0</div>
+                </div>
+            </div>
+        </div>
+        
+        <!-- Notification Testing Section -->
+        <div class="demo-section">
+            <h3><i class="bi bi-bell me-2"></i>Notification System Testing</h3>
+            <p>Test various notification methods and fallback mechanisms.</p>
+            
+            <div class="demo-controls">
+                <button type="button" class="btn btn-outline-success" id="test-success-notification-btn">
+                    Success Notification
+                </button>
+                <button type="button" class="btn btn-outline-warning" id="test-warning-notification-btn">
+                    Warning Notification
+                </button>
+                <button type="button" class="btn btn-outline-danger" id="test-error-notification-btn">
+                    Error Notification
+                </button>
+                <button type="button" class="btn btn-outline-info" id="test-info-notification-btn">
+                    Info Notification
+                </button>
+            </div>
+        </div>
+        
+        <!-- Debug Information Section -->
+        <div class="demo-section">
+            <h3><i class="bi bi-code-square me-2"></i>Debug Information</h3>
+            <p>Real-time debug information and system diagnostics.</p>
+            
+            <div class="demo-controls">
+                <button type="button" class="btn btn-outline-primary" id="show-system-info-btn">
+                    Show System Info
+                </button>
+                <button type="button" class="btn btn-outline-secondary" id="clear-log-btn">
+                    Clear Log
+                </button>
+            </div>
+            
+            <div class="log-output" id="debug-log">
+                <div class="text-muted">Debug log will appear here...</div>
+            </div>
+        </div>
+    </div>
+    
+    <!-- Bootstrap JS -->
+    <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/js/bootstrap.bundle.min.js"></script>
+    
+    <!-- Socket.IO (Mock for demo) -->
+    <script>
+        // Mock Socket.IO for demo purposes
+        window.io = function(url, options) {
+            return new MockSocketIOClient(url, options);
+        };
+        
+        class MockSocketIOClient {
+            constructor(url, options) {
+                this.url = url;
+                this.options = options || {};
+                this.connected = false;
+                this.events = new Map();
+                this.io = {
+                    engine: { transport: { name: 'websocket' } },
+                    opts: { transports: ['websocket', 'polling'] }
+                };
+            }
+            
+            connect() {
+                setTimeout(() => {
+                    this.connected = true;
+                    this.emit('connect');
+                }, 100);
+            }
+            
+            disconnect() {
+                this.connected = false;
+                this.emit('disconnect', 'io client disconnect');
+            }
+            
+            on(event, callback) {
+                if (!this.events.has(event)) {
+                    this.events.set(event, []);
+                }
+                this.events.get(event).push(callback);
+            }
+            
+            emit(event, data) {
+                if (this.events.has(event)) {
+                    this.events.get(event).forEach(callback => {
+                        try {
+                            callback(data);
+                        } catch (e) {
+                            console.error('Event callback error:', e);
+                        }
+                    });
+                }
+            }
+            
+            simulateError(type) {
+                let error;
+                switch (type) {
+                    case 'cors':
+                        error = new Error('CORS policy blocked the connection');
+                        break;
+                    case 'auth':
+                        error = new Error('Authentication required');
+                        break;
+                    case 'network':
+                        error = new Error('Network connection failed');
+                        break;
+                    default:
+                        error = new Error('Unknown connection error');
+                }
+                
+                this.emit('connect_error', error);
+            }
+        }
+    </script>
+    
+    <!-- WebSocket Components -->
+    <script src="/static/js/websocket-fallback-notifications.js"></script>
+    <script src="/static/js/websocket-connection-status.js"></script>
+    <script src="/static/js/websocket-debug-diagnostics.js"></script>
+    <script src="/static/js/websocket-enhanced-error-handler.js"></script>
+    <script src="/static/js/websocket-enhanced-client-error-handler.js"></script>
+    <script src="/static/js/websocket-enhanced-client-integration-example.js"></script>
+    
+    <!-- Demo Application Script -->
+    <script src="/static/js/websocket-enhanced-error-demo.js"></script>
+</body>
+</html>
