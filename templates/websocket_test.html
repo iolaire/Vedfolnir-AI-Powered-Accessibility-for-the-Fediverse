@@ -1,0 +1,144 @@
+<!-- Copyright (C) 2025 iolaire mcfadden. -->
+<!-- This program is free software: you can redistribute it and/or modify it under the terms of the GNU Affero General Public License as published by the Free Software Foundation, either version 3 of the License, or (at your option) any later version. -->
+<!-- THE SOFTWARE IS PROVIDED "AS IS", WITHOUT WARRANTY OF ANY KIND, EXPRESS OR IMPLIED, INCLUDING BUT NOT LIMITED TO THE WARRANTIES OF MERCHANTABILITY, FITNESS FOR A PARTICULAR PURPOSE AND NONINFRINGEMENT. IN NO EVENT SHALL THE AUTHORS OR COPYRIGHT HOLDERS BE LIABLE FOR ANY CLAIM, DAMAGES OR OTHER LIABILITY, WHETHER IN AN ACTION OF CONTRACT, TORT OR OTHERWISE, ARISING FROM, OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE SOFTWARE. -->
+
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>WebSocket Test - Vedfolnir</title>
+    <style>
+        body { font-family: Arial, sans-serif; margin: 20px; }
+        .status { padding: 10px; margin: 10px 0; border-radius: 5px; }
+        .success { background-color: #d4edda; color: #155724; border: 1px solid #c3e6cb; }
+        .error { background-color: #f8d7da; color: #721c24; border: 1px solid #f5c6cb; }
+        .info { background-color: #d1ecf1; color: #0c5460; border: 1px solid #bee5eb; }
+        #logs { max-height: 400px; overflow-y: auto; border: 1px solid #ccc; padding: 10px; margin: 10px 0; }
+        .log-entry { margin: 2px 0; font-family: monospace; font-size: 12px; }
+    </style>
+</head>
+<body>
+    <h1>WebSocket Client Test</h1>
+    <div id="status" class="status info">Initializing...</div>
+    <div id="logs"></div>
+
+    <!-- Load Socket.IO from CDN -->
+    <script src="https://cdn.socket.io/4.7.2/socket.io.min.js" 
+            crossorigin="anonymous"></script>
+    
+    <!-- Load WebSocket Client Factory -->
+    <script src="{{ url_for('static', filename='js/websocket-client-factory.js') }}"></script>
+
+    <script>
+        const statusDiv = document.getElementById('status');
+        const logsDiv = document.getElementById('logs');
+        
+        function log(message, type = 'info') {
+            console.log(message);
+            const logEntry = document.createElement('div');
+            logEntry.className = 'log-entry';
+            logEntry.textContent = new Date().toLocaleTimeString() + ': ' + message;
+            logsDiv.appendChild(logEntry);
+            logsDiv.scrollTop = logsDiv.scrollHeight;
+        }
+        
+        function setStatus(message, type = 'info') {
+            statusDiv.textContent = message;
+            statusDiv.className = 'status ' + type;
+        }
+        
+        // Override console methods to capture logs (with recursion protection)
+        const originalLog = console.log;
+        const originalError = console.error;
+        const originalWarn = console.warn;
+        
+        let loggingInProgress = false;
+        
+        console.log = function(...args) {
+            originalLog.apply(console, args);
+            if (!loggingInProgress) {
+                loggingInProgress = true;
+                try {
+                    log(args.join(' '), 'info');
+                } finally {
+                    loggingInProgress = false;
+                }
+            }
+        };
+        
+        console.error = function(...args) {
+            originalError.apply(console, args);
+            if (!loggingInProgress) {
+                loggingInProgress = true;
+                try {
+                    log('ERROR: ' + args.join(' '), 'error');
+                } finally {
+                    loggingInProgress = false;
+                }
+            }
+        };
+        
+        console.warn = function(...args) {
+            originalWarn.apply(console, args);
+            if (!loggingInProgress) {
+                loggingInProgress = true;
+                try {
+                    log('WARN: ' + args.join(' '), 'warn');
+                } finally {
+                    loggingInProgress = false;
+                }
+            }
+        };
+        
+        async function testWebSocketFactory() {
+            try {
+                setStatus('Testing WebSocket Client Factory...', 'info');
+                log('Starting WebSocket factory test');
+                
+                // Test factory availability
+                if (typeof WebSocketClientFactory === 'undefined') {
+                    throw new Error('WebSocketClientFactory is not available');
+                }
+                
+                log('WebSocket Client Factory is available');
+                
+                // Create factory instance
+                const factory = new WebSocketClientFactory();
+                log('Factory instance created');
+                
+                // Wait a moment for pre-loading to complete
+                await new Promise(resolve => setTimeout(resolve, 2000));
+                
+                // Test server configuration fetch
+                log('Testing server configuration fetch...');
+                const serverConfig = await factory.getServerConfiguration();
+                log('Server configuration received: ' + JSON.stringify(serverConfig, null, 2));
+                
+                // Test client creation
+                log('Testing client creation...');
+                const client = await factory.createClient({
+                    namespace: '/',
+                    autoConnect: false
+                });
+                
+                if (client) {
+                    log('✅ Client created successfully!');
+                    setStatus('WebSocket client created successfully!', 'success');
+                } else {
+                    throw new Error('Client creation returned null/undefined');
+                }
+                
+            } catch (error) {
+                log('❌ Test failed: ' + error.message);
+                setStatus('Test failed: ' + error.message, 'error');
+            }
+        }
+        
+        // Run test when page loads
+        window.addEventListener('load', () => {
+            setTimeout(testWebSocketFactory, 1000);
+        });
+    </script>
+</body>
+</html>

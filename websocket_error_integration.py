@@ -291,7 +291,7 @@ class WebSocketErrorIntegration:
         
         # Disconnect error handler
         @self.socketio.on('disconnect')
-        def handle_disconnect():
+        def handle_disconnect(auth=None):
             """Handle SocketIO disconnections"""
             try:
                 # Log disconnection for monitoring

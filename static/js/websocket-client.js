@@ -83,7 +83,7 @@ class VedfolnirWebSocket {
             this.connectionState.isAdminMode = isAdminPage;
             
             // Create user client (always needed)
-            this.userClient = this.factory.createClient({
+            this.userClient = await this.factory.createClient({
                 namespace: '/',
                 autoConnect: false,
                 customConfig: {
@@ -94,7 +94,7 @@ class VedfolnirWebSocket {
             
             // Create admin client if on admin page
             if (isAdminPage) {
-                this.adminClient = this.factory.createClient({
+                this.adminClient = await this.factory.createClient({
                     namespace: '/admin',
                     autoConnect: false,
                     customConfig: {
@@ -518,7 +518,7 @@ class VedfolnirWebSocket {
             const isAdminMode = this.connectionState.isAdminMode;
             const namespace = isAdminMode ? '/admin' : '/';
             
-            this.currentClient = this.factory.createClient({
+            this.currentClient = await this.factory.createClient({
                 namespace: namespace,
                 autoConnect: false,
                 customConfig: {
@@ -833,7 +833,8 @@ class VedfolnirWebSocket {
      */
     showConnectionStatus(status, message = '') {
         // If using factory, emit custom event for factory's status system to handle
-        if (this.useFactory) {
+        // Only dispatch if not already handling a factory event to prevent recursion
+        if (this.useFactory && !this._handlingFactoryEvent) {
             window.dispatchEvent(new CustomEvent('websocketStatusChange', {
                 detail: { 
                     status, 
@@ -845,7 +846,7 @@ class VedfolnirWebSocket {
             }));
         }
         
-        // Also update our own status element for backward compatibility
+        // Always update our own status element
         this._updateStatusElement(status, message);
         
         // Update connection state
@@ -1179,14 +1180,14 @@ document.addEventListener('DOMContentLoaded', function() {
             }
         });
         
-        // Listen for factory status updates
+        // Listen for factory status updates (non-recursive)
         window.addEventListener('websocketStatusChange', function(event) {
             const { status, message, namespace } = event.detail;
             console.log(`WebSocket status change: ${status} (${namespace}) - ${message}`);
             
-            // Update UI based on factory status updates
-            if (window.VedfolnirWS && window.VedfolnirWS.showConnectionStatus) {
-                window.VedfolnirWS.showConnectionStatus(status, message);
+            // Update UI directly without calling showConnectionStatus to prevent recursion
+            if (window.VedfolnirWS && window.VedfolnirWS._updateStatusElement) {
+                window.VedfolnirWS._updateStatusElement(status, message);
             }
         });
         

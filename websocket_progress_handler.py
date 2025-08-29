@@ -115,7 +115,7 @@ class WebSocketProgressHandler:
             return True
         
         @self.socketio.on('disconnect')
-        def handle_disconnect():
+        def handle_disconnect(auth=None):
             """Handle client disconnection"""
             if current_user and current_user.is_authenticated:
                 user_id = str(current_user.id)

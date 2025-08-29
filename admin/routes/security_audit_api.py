@@ -165,7 +165,35 @@ def csrf_metrics():
         
         # Get CSRF metrics
         compliance_metrics = csrf_metrics_manager.get_compliance_metrics('24h')
-        dashboard_data = csrf_metrics_manager.get_csrf_dashboard_data()
+        
+        # Convert compliance_level enum to string value safely
+        compliance_level_value = compliance_metrics.compliance_level.value if hasattr(compliance_metrics.compliance_level, 'value') else str(compliance_metrics.compliance_level)
+        
+        # Build compliance metrics dict manually to avoid enum serialization issues
+        compliance_metrics_dict = {
+            'total_requests': compliance_metrics.total_requests,
+            'protected_requests': compliance_metrics.protected_requests,
+            'violations': compliance_metrics.violation_count,
+            'compliance_rate': compliance_metrics.compliance_rate,
+            'compliance_level': compliance_level_value,
+            'violations_by_type': dict(compliance_metrics.violations_by_type),
+            'violations_by_endpoint': dict(compliance_metrics.violations_by_endpoint),
+            'violations_by_ip': dict(compliance_metrics.violations_by_ip),
+            'time_period': compliance_metrics.time_period,
+            'last_updated': compliance_metrics.last_updated.isoformat() if compliance_metrics.last_updated else None
+        }
+        
+        # Get dashboard data but avoid direct serialization
+        dashboard_data_raw = csrf_metrics_manager.get_csrf_dashboard_data()
+        
+        # Extract and clean dashboard data to avoid enum serialization issues
+        dashboard_data = {
+            'recent_violations': dashboard_data_raw.get('recent_violations', []),
+            'top_violation_types': dashboard_data_raw.get('top_violation_types', []),
+            'top_violation_endpoints': dashboard_data_raw.get('top_violation_endpoints', []),
+            'top_violation_ips': dashboard_data_raw.get('top_violation_ips', []),
+            'last_updated': dashboard_data_raw.get('last_updated', datetime.now(timezone.utc).isoformat())
+        }
         
         # Extract recent violations from dashboard data
         recent_violations = dashboard_data.get('recent_violations', [])
@@ -173,16 +201,7 @@ def csrf_metrics():
         return jsonify({
             'status': 'success',
             'data': {
-                'compliance_metrics': {
-                    'total_requests': compliance_metrics.total_requests,
-                    'protected_requests': compliance_metrics.protected_requests,
-                    'violations': compliance_metrics.violation_count,
-                    'compliance_rate': compliance_metrics.compliance_rate,
-                    'compliance_level': compliance_metrics.compliance_level.value,
-                    'violations_by_type': dict(compliance_metrics.violations_by_type),
-                    'violations_by_endpoint': dict(compliance_metrics.violations_by_endpoint),
-                    'violations_by_ip': dict(compliance_metrics.violations_by_ip)
-                },
+                'compliance_metrics': compliance_metrics_dict,
                 'dashboard_data': dashboard_data,
                 'recent_violations': recent_violations,
                 'csrf_enabled': os.getenv('SECURITY_CSRF_ENABLED', 'true').lower() == 'true'

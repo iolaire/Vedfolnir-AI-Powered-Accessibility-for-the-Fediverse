@@ -367,7 +367,7 @@ class WebSocketConfigManager:
             "ping_timeout": self._websocket_config.ping_timeout,
             "ping_interval": self._websocket_config.ping_interval,
             "max_http_buffer_size": self._websocket_config.max_http_buffer_size,
-            "allow_upgrades": True,
+            "allow_upgrades": self._parse_bool("SOCKETIO_ALLOW_UPGRADES", True),
             "transports": self._websocket_config.transports,
         }
         
@@ -387,6 +387,9 @@ class WebSocketConfigManager:
         # Determine server URL from CORS origins
         server_url = self._get_server_url()
         
+        # Determine if WebSocket upgrades should be allowed
+        allow_upgrades = "websocket" in self._websocket_config.transports
+        
         config = {
             "url": server_url,
             "transports": self._websocket_config.transports,
@@ -395,9 +398,9 @@ class WebSocketConfigManager:
             "reconnectionDelay": self._websocket_config.reconnection_delay,
             "reconnectionDelayMax": self._websocket_config.reconnection_delay_max,
             "timeout": self._websocket_config.timeout,
-            "forceNew": False,
-            "upgrade": True,
-            "rememberUpgrade": True,
+            "forceNew": True,  # Force new connection to ensure transport settings are respected
+            "upgrade": allow_upgrades,
+            "rememberUpgrade": allow_upgrades,
         }
         
         self.logger.debug(f"Generated client config: {config}")

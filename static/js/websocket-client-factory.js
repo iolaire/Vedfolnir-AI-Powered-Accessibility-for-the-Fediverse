@@ -15,11 +15,35 @@ class WebSocketClientFactory {
         this.configCache = null;
         this.environmentConfig = null;
         this.validationErrors = [];
+        this.configPromise = null; // Track ongoing config fetch
+        this.preloadAttempted = false; // Prevent multiple preload attempts
         
         // Initialize environment detection
         this._detectEnvironment();
         
         console.log('WebSocket Client Factory initialized');
+        
+        // Pre-load server configuration to avoid race conditions (with delay to avoid recursion)
+        setTimeout(() => {
+            this._preloadConfiguration();
+        }, 100);
+    }
+    
+    /**
+     * Pre-load server configuration to avoid race conditions
+     */
+    async _preloadConfiguration() {
+        if (this.preloadAttempted) {
+            return; // Prevent multiple preload attempts
+        }
+        this.preloadAttempted = true;
+        
+        try {
+            await this.getServerConfiguration();
+            console.log('Server configuration pre-loaded successfully');
+        } catch (error) {
+            console.warn('Failed to pre-load server configuration:', error);
+        }
     }
     
     /**
@@ -31,10 +55,10 @@ class WebSocketClientFactory {
      * @param {Object} options.customConfig - Custom configuration overrides
      * @returns {Object} Configured WebSocket client instance
      */
-    createClient(options = {}) {
+    async createClient(options = {}) {
         try {
             // Validate and merge configuration
-            const config = this._buildClientConfiguration(options);
+            const config = await this._buildClientConfiguration(options);
             
             // Validate configuration
             const validation = this._validateClientConfiguration(config);
@@ -77,6 +101,26 @@ class WebSocketClientFactory {
             return this.configCache;
         }
         
+        // If there's already a config fetch in progress, wait for it
+        if (this.configPromise) {
+            console.log('Config fetch already in progress, waiting...');
+            return await this.configPromise;
+        }
+        
+        // Start the config fetch and store the promise
+        this.configPromise = this._fetchServerConfiguration();
+        
+        try {
+            const config = await this.configPromise;
+            this.configPromise = null; // Clear the promise
+            return config;
+        } catch (error) {
+            this.configPromise = null; // Clear the promise on error
+            throw error;
+        }
+    }
+    
+    async _fetchServerConfiguration() {
         try {
             console.log('Fetching server WebSocket configuration...');
             
@@ -93,7 +137,10 @@ class WebSocketClientFactory {
                 throw new Error(`Failed to fetch server config: ${response.status} ${response.statusText}`);
             }
             
-            const config = await response.json();
+            const responseData = await response.json();
+            
+            // Extract the nested config from the response
+            const config = responseData.success && responseData.config ? responseData.config : responseData;
             
             // Validate server configuration
             if (!this._validateServerConfiguration(config)) {
@@ -234,12 +281,23 @@ class WebSocketClientFactory {
             throw new Error('Socket.IO library not loaded');
         }
         
-        // Extract namespace from config
-        const namespace = config.namespace;
-        delete config.namespace; // Remove namespace from Socket.IO config
+        // Extract URL and namespace from config
+        const url = config.url || window.location.origin;
+        const namespace = config.namespace || '/';
+        
+        // Remove URL and namespace from Socket.IO config to avoid conflicts
+        const socketConfig = { ...config };
+        delete socketConfig.url;
+        delete socketConfig.namespace;
+        
+        // Create full URL with namespace
+        const fullUrl = url + namespace;
+        
+        console.log('Creating Socket.IO client with URL:', fullUrl);
+        console.log('Socket.IO config:', socketConfig);
         
         // Create Socket.IO instance
-        const socket = io(namespace, config);
+        const socket = io(fullUrl, socketConfig);
         
         // Create wrapper client with standardized interface
         const client = new StandardizedWebSocketClient(socket, config, this.environmentConfig);
@@ -691,7 +749,7 @@ class WebSocketClientFactory {
         return {
             native: 'WebSocket' in window,
             socketIO: typeof io !== 'undefined',
-            binaryType: 'WebSocket' in window ? 'arraybuffer' in new WebSocket('ws://localhost') : false
+            binaryType: 'WebSocket' in window // Assume binary support if WebSocket is available
         };
     }
     
@@ -1073,8 +1131,8 @@ class StandardizedWebSocketClient {
 window.WebSocketClientFactory = new WebSocketClientFactory();
 
 // Convenience function for creating clients
-window.createWebSocketClient = function(options = {}) {
-    return window.WebSocketClientFactory.createClient(options);
+window.createWebSocketClient = async function(options = {}) {
+    return await window.WebSocketClientFactory.createClient(options);
 };
 
 // Export for module systems

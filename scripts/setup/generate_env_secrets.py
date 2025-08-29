@@ -474,10 +474,10 @@ def main():
             if ws_choice == '1':
                 websocket_profile = 'development'
                 websocket_settings.update({
-                    'SOCKETIO_REQUIRE_AUTH': 'false',
-                    'SOCKETIO_SESSION_VALIDATION': 'false',
-                    'SOCKETIO_RATE_LIMITING': 'false',
-                    'SOCKETIO_CSRF_PROTECTION': 'false',
+                    'SOCKETIO_REQUIRE_AUTH': 'false',  # WORKING: relaxed for development
+                    'SOCKETIO_SESSION_VALIDATION': 'false',  # WORKING: relaxed for development
+                    'SOCKETIO_RATE_LIMITING': 'false',  # WORKING: relaxed for development
+                    'SOCKETIO_CSRF_PROTECTION': 'false',  # WORKING: relaxed for development
                     'SOCKETIO_LOG_LEVEL': 'DEBUG',
                     'SOCKETIO_LOG_CONNECTIONS': 'true',
                     'SOCKETIO_DEBUG': 'true',
@@ -515,19 +515,25 @@ def main():
         
         print(f"Selected WebSocket profile: {websocket_profile}")
         
-        # Common WebSocket settings
+        # Common WebSocket settings (Final working configuration - UPDATED)
         websocket_settings.update({
-            'SOCKETIO_TRANSPORTS': 'websocket,polling',
-            'SOCKETIO_PING_TIMEOUT': '60000',
-            'SOCKETIO_PING_INTERVAL': '25000',
+            'SOCKETIO_TRANSPORTS': 'polling,websocket',  # FIXED: polling first for better compatibility
+            'SOCKETIO_PING_TIMEOUT': '60',  # seconds
+            'SOCKETIO_PING_INTERVAL': '25',  # seconds
+            'SOCKETIO_ASYNC_MODE': 'threading',
+            'SOCKETIO_CORS_ORIGINS': 'http://127.0.0.1:5000,http://localhost:5000,http://localhost:3000,http://127.0.0.1:3000',
             'SOCKETIO_CORS_CREDENTIALS': 'true',
             'SOCKETIO_CORS_METHODS': 'GET,POST',
             'SOCKETIO_CORS_HEADERS': 'Content-Type,Authorization',
             'SOCKETIO_RECONNECTION': 'true',
-            'SOCKETIO_RECONNECTION_ATTEMPTS': '5',
-            'SOCKETIO_RECONNECTION_DELAY': '1000',
-            'SOCKETIO_RECONNECTION_DELAY_MAX': '5000',
+            'SOCKETIO_RECONNECTION_ATTEMPTS': '10',  # UPDATED: increased for better reliability
+            'SOCKETIO_RECONNECTION_DELAY': '500',  # UPDATED: faster reconnection
+            'SOCKETIO_RECONNECTION_DELAY_MAX': '3000',  # UPDATED: faster max delay
             'SOCKETIO_TIMEOUT': '20000',
+            'SOCKETIO_FORCE_NEW': 'false',
+            'SOCKETIO_UPGRADE': 'true',
+            'SOCKETIO_REMEMBER_UPGRADE': 'true',
+            'SOCKETIO_WITH_CREDENTIALS': 'true',
             'SOCKETIO_MAX_CONNECTIONS': '1000',
             'SOCKETIO_CONNECTION_POOL_SIZE': '10',
             'SOCKETIO_MAX_HTTP_BUFFER_SIZE': '1000000'
@@ -564,27 +570,33 @@ def main():
         print(f"✅ WebSocket configuration applied: {websocket_profile} profile")
         
     else:
-        # Use default WebSocket settings based on security mode
+        # Use default WebSocket settings based on security mode (Final working configuration)
         if security_mode == 'development':
             websocket_settings = {
-                'SOCKETIO_TRANSPORTS': 'websocket,polling',
-                'SOCKETIO_PING_TIMEOUT': '60000',
-                'SOCKETIO_PING_INTERVAL': '25000',
+                'SOCKETIO_TRANSPORTS': 'polling,websocket',  # FIXED: polling first for better compatibility
+                'SOCKETIO_PING_TIMEOUT': '60',
+                'SOCKETIO_PING_INTERVAL': '25',
+                'SOCKETIO_ASYNC_MODE': 'threading',
+                'SOCKETIO_CORS_ORIGINS': 'http://127.0.0.1:5000,http://localhost:5000,http://localhost:3000,http://127.0.0.1:3000',
                 'SOCKETIO_CORS_CREDENTIALS': 'true',
                 'SOCKETIO_CORS_METHODS': 'GET,POST',
                 'SOCKETIO_CORS_HEADERS': 'Content-Type,Authorization',
+                'SOCKETIO_FORCE_NEW': 'false',
+                'SOCKETIO_UPGRADE': 'true',
+                'SOCKETIO_REMEMBER_UPGRADE': 'true',
+                'SOCKETIO_WITH_CREDENTIALS': 'true',
                 'SOCKETIO_RECONNECTION': 'true',
-                'SOCKETIO_RECONNECTION_ATTEMPTS': '5',
-                'SOCKETIO_RECONNECTION_DELAY': '1000',
-                'SOCKETIO_RECONNECTION_DELAY_MAX': '5000',
+                'SOCKETIO_RECONNECTION_ATTEMPTS': '10',
+                'SOCKETIO_RECONNECTION_DELAY': '500',
+                'SOCKETIO_RECONNECTION_DELAY_MAX': '3000',
                 'SOCKETIO_TIMEOUT': '20000',
-                'SOCKETIO_MAX_CONNECTIONS': '1000',
-                'SOCKETIO_CONNECTION_POOL_SIZE': '10',
-                'SOCKETIO_MAX_HTTP_BUFFER_SIZE': '1000000',
-                'SOCKETIO_REQUIRE_AUTH': 'false',
-                'SOCKETIO_SESSION_VALIDATION': 'false',
-                'SOCKETIO_RATE_LIMITING': 'false',
-                'SOCKETIO_CSRF_PROTECTION': 'false',
+                'SOCKETIO_MAX_CONNECTIONS': '100',
+                'SOCKETIO_CONNECTION_POOL_SIZE': '5',
+                'SOCKETIO_MAX_HTTP_BUFFER_SIZE': '500000',
+                'SOCKETIO_REQUIRE_AUTH': 'false',  # FIXED: relaxed for development
+                'SOCKETIO_SESSION_VALIDATION': 'false',  # FIXED: relaxed for development
+                'SOCKETIO_RATE_LIMITING': 'false',  # FIXED: relaxed for development
+                'SOCKETIO_CSRF_PROTECTION': 'false',  # FIXED: relaxed for development
                 'SOCKETIO_LOG_LEVEL': 'DEBUG',
                 'SOCKETIO_LOG_CONNECTIONS': 'true',
                 'SOCKETIO_DEBUG': 'true',
@@ -593,11 +605,17 @@ def main():
         else:
             websocket_settings = {
                 'SOCKETIO_TRANSPORTS': 'websocket,polling',
-                'SOCKETIO_PING_TIMEOUT': '60000',
-                'SOCKETIO_PING_INTERVAL': '25000',
+                'SOCKETIO_PING_TIMEOUT': '60',
+                'SOCKETIO_PING_INTERVAL': '25',
+                'SOCKETIO_ASYNC_MODE': 'threading',
+                'SOCKETIO_CORS_ORIGINS': 'http://127.0.0.1:5000,http://localhost:5000',
                 'SOCKETIO_CORS_CREDENTIALS': 'true',
                 'SOCKETIO_CORS_METHODS': 'GET,POST',
                 'SOCKETIO_CORS_HEADERS': 'Content-Type,Authorization',
+                'SOCKETIO_FORCE_NEW': 'false',
+                'SOCKETIO_UPGRADE': 'true',
+                'SOCKETIO_REMEMBER_UPGRADE': 'true',
+                'SOCKETIO_WITH_CREDENTIALS': 'true',
                 'SOCKETIO_RECONNECTION': 'true',
                 'SOCKETIO_RECONNECTION_ATTEMPTS': '5',
                 'SOCKETIO_RECONNECTION_DELAY': '1000',
@@ -816,6 +834,10 @@ SOCKETIO_RECONNECTION_ATTEMPTS={websocket_settings['SOCKETIO_RECONNECTION_ATTEMP
 SOCKETIO_RECONNECTION_DELAY={websocket_settings['SOCKETIO_RECONNECTION_DELAY']}
 SOCKETIO_RECONNECTION_DELAY_MAX={websocket_settings['SOCKETIO_RECONNECTION_DELAY_MAX']}
 SOCKETIO_TIMEOUT={websocket_settings['SOCKETIO_TIMEOUT']}
+SOCKETIO_FORCE_NEW={websocket_settings['SOCKETIO_FORCE_NEW']}
+SOCKETIO_UPGRADE={websocket_settings['SOCKETIO_UPGRADE']}
+SOCKETIO_REMEMBER_UPGRADE={websocket_settings['SOCKETIO_REMEMBER_UPGRADE']}
+SOCKETIO_WITH_CREDENTIALS={websocket_settings['SOCKETIO_WITH_CREDENTIALS']}
 SOCKETIO_MAX_CONNECTIONS={websocket_settings['SOCKETIO_MAX_CONNECTIONS']}
 SOCKETIO_CONNECTION_POOL_SIZE={websocket_settings['SOCKETIO_CONNECTION_POOL_SIZE']}
 SOCKETIO_MAX_HTTP_BUFFER_SIZE={websocket_settings['SOCKETIO_MAX_HTTP_BUFFER_SIZE']}

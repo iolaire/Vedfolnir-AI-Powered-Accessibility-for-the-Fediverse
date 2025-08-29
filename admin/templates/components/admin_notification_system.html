@@ -387,13 +387,21 @@ class AdminNotificationSystem {
                 'X-CSRFToken': document.querySelector('meta[name="csrf-token"]').getAttribute('content')
             }
         })
-        .then(response => response.json())
+        .then(response => {
+            if (!response.ok) {
+                throw new Error(`HTTP ${response.status}: ${response.statusText}`);
+            }
+            return response.json();
+        })
         .then(data => {
             this.notifications = data.notifications || [];
             this.updateNotificationDisplay();
         })
         .catch(error => {
             console.error('Error loading notifications:', error);
+            // Gracefully handle the error - don't break the page
+            this.notifications = [];
+            this.updateNotificationDisplay();
         });
     }
     

@@ -843,7 +843,7 @@ def setup_performance_monitoring(socketio_instance, performance_monitor: WebSock
         performance_monitor.register_connection(connection_id, connection_info)
         
     @socketio_instance.on('disconnect')
-    def handle_disconnect():
+    def handle_disconnect(auth=None):
         connection_id = request.sid
         performance_monitor.unregister_connection(connection_id, 'client_disconnect')
         

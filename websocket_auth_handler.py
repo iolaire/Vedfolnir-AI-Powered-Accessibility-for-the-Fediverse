@@ -414,24 +414,38 @@ class WebSocketAuthHandler:
             Session ID if found, None otherwise
         """
         try:
-            # Try to get session ID from Flask session first
-            if hasattr(flask_session, 'get'):
-                session_id = flask_session.get('session_id')
-                if session_id:
-                    return session_id
+            # For Redis session system, the session ID is stored in the RedisSession object
+            # Check if we have a current Flask session with the session ID
+            if hasattr(flask_session, 'sid') and flask_session.sid:
+                logger.debug(f"Found session ID from Flask session: {flask_session.sid}")
+                return flask_session.sid
             
             # Try to get from auth data
             if auth_data and isinstance(auth_data, dict):
                 session_id = auth_data.get('session_id')
                 if session_id:
+                    logger.debug(f"Found session ID from auth data: {session_id}")
                     return session_id
             
             # Try to get from request headers
             if request:
                 session_id = request.headers.get('X-Session-ID')
                 if session_id:
+                    logger.debug(f"Found session ID from headers: {session_id}")
                     return session_id
             
+            # For WebSocket connections, try to get from Flask session cookie
+            if request and hasattr(request, 'cookies'):
+                # Get Flask session cookie - this contains the session ID
+                from flask import current_app
+                cookie_name = getattr(current_app, 'session_cookie_name', 
+                                    current_app.config.get('SESSION_COOKIE_NAME', 'session'))
+                session_cookie = request.cookies.get(cookie_name)
+                if session_cookie:
+                    logger.debug(f"Found session ID from cookie: {session_cookie}")
+                    return session_cookie
+            
+            logger.debug("No session ID found in any source")
             return None
             
         except Exception as e:

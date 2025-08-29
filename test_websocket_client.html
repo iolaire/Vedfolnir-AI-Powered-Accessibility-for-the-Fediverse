@@ -1,0 +1,94 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>WebSocket Client Test</title>
+</head>
+<body>
+    <h1>WebSocket Client Test</h1>
+    <div id="status">Initializing...</div>
+    <div id="logs"></div>
+
+    <!-- Load Socket.IO -->
+    <script src="https://cdn.socket.io/4.7.2/socket.io.min.js"></script>
+    
+    <!-- Load WebSocket Client Factory -->
+    <script src="/static/js/websocket-client-factory.js"></script>
+    
+    <!-- Load WebSocket Client -->
+    <script src="/static/js/websocket-client.js"></script>
+
+    <script>
+        const statusDiv = document.getElementById('status');
+        const logsDiv = document.getElementById('logs');
+        
+        function log(message) {
+            console.log(message);
+            const logEntry = document.createElement('div');
+            logEntry.textContent = new Date().toLocaleTimeString() + ': ' + message;
+            logsDiv.appendChild(logEntry);
+        }
+        
+        // Override console.log to capture logs
+        const originalLog = console.log;
+        console.log = function(...args) {
+            originalLog.apply(console, args);
+            log(args.join(' '));
+        };
+        
+        // Override console.error to capture errors
+        const originalError = console.error;
+        console.error = function(...args) {
+            originalError.apply(console, args);
+            log('ERROR: ' + args.join(' '));
+        };
+        
+        async function testWebSocketConnection() {
+            try {
+                statusDiv.textContent = 'Testing WebSocket connection...';
+                log('Starting WebSocket test');
+                
+                // Test the factory directly
+                if (typeof WebSocketClientFactory !== 'undefined') {
+                    log('WebSocket Client Factory is available');
+                    
+                    const factory = new WebSocketClientFactory();
+                    log('Factory instance created');
+                    
+                    // Test server configuration fetch
+                    try {
+                        const serverConfig = await factory.getServerConfiguration();
+                        log('Server configuration: ' + JSON.stringify(serverConfig));
+                    } catch (error) {
+                        log('Failed to get server configuration: ' + error.message);
+                    }
+                    
+                    // Test client creation
+                    try {
+                        const client = await factory.createClient({
+                            namespace: '/',
+                            autoConnect: false
+                        });
+                        log('Client created successfully');
+                        statusDiv.textContent = 'WebSocket client created successfully!';
+                    } catch (error) {
+                        log('Failed to create client: ' + error.message);
+                        statusDiv.textContent = 'Failed to create WebSocket client: ' + error.message;
+                    }
+                } else {
+                    log('WebSocket Client Factory is not available');
+                    statusDiv.textContent = 'WebSocket Client Factory not available';
+                }
+                
+            } catch (error) {
+                log('Test failed: ' + error.message);
+                statusDiv.textContent = 'Test failed: ' + error.message;
+            }
+        }
+        
+        // Run test when page loads
+        window.addEventListener('load', testWebSocketConnection);
+    </script>
+</body>
+</html>

@@ -1,0 +1,99 @@
+<!-- Copyright (C) 2025 iolaire mcfadden. -->
+<!-- This program is free software: you can redistribute it and/or modify it under the terms of the GNU Affero General Public License as published by the Free Software Foundation, either version 3 of the License, or (at your option) any later version. -->
+<!-- THE SOFTWARE IS PROVIDED "AS IS", WITHOUT WARRANTY OF ANY KIND, EXPRESS OR IMPLIED, INCLUDING BUT NOT LIMITED TO THE WARRANTIES OF MERCHANTABILITY, FITNESS FOR A PARTICULAR PURPOSE AND NONINFRINGEMENT. IN NO EVENT SHALL THE AUTHORS OR COPYRIGHT HOLDERS BE LIABLE FOR ANY CLAIM, DAMAGES OR OTHER LIABILITY, WHETHER IN AN ACTION OF CONTRACT, TORT OR OTHERWISE, ARISING FROM, OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE SOFTWARE. -->
+
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Simple WebSocket Test - Vedfolnir</title>
+    <style>
+        body { font-family: Arial, sans-serif; margin: 20px; }
+        .status { padding: 10px; margin: 10px 0; border-radius: 5px; }
+        .success { background-color: #d4edda; color: #155724; border: 1px solid #c3e6cb; }
+        .error { background-color: #f8d7da; color: #721c24; border: 1px solid #f5c6cb; }
+        .info { background-color: #d1ecf1; color: #0c5460; border: 1px solid #bee5eb; }
+    </style>
+</head>
+<body>
+    <h1>Simple WebSocket Test</h1>
+    <div id="status" class="status info">Initializing...</div>
+    <div id="result"></div>
+
+    <!-- Load Socket.IO from CDN -->
+    <script src="https://cdn.socket.io/4.7.2/socket.io.min.js" 
+            crossorigin="anonymous"></script>
+    
+    <!-- Load WebSocket Client Factory -->
+    <script src="{{ url_for('static', filename='js/websocket-client-factory.js') }}"></script>
+
+    <script>
+        const statusDiv = document.getElementById('status');
+        const resultDiv = document.getElementById('result');
+        
+        function setStatus(message, type = 'info') {
+            statusDiv.textContent = message;
+            statusDiv.className = 'status ' + type;
+        }
+        
+        function setResult(message) {
+            resultDiv.innerHTML = '<pre>' + message + '</pre>';
+        }
+        
+        async function testWebSocketFactory() {
+            try {
+                setStatus('Testing WebSocket Client Factory...', 'info');
+                
+                // Test factory availability
+                if (typeof WebSocketClientFactory === 'undefined') {
+                    throw new Error('WebSocketClientFactory is not available');
+                }
+                
+                console.log('WebSocket Client Factory is available');
+                
+                // Create factory instance
+                const factory = new WebSocketClientFactory();
+                console.log('Factory instance created');
+                
+                // Wait a moment for pre-loading to complete
+                await new Promise(resolve => setTimeout(resolve, 3000));
+                
+                // Test server configuration fetch
+                console.log('Testing server configuration fetch...');
+                const serverConfig = await factory.getServerConfiguration();
+                console.log('Server configuration received:', serverConfig);
+                
+                // Test client creation
+                console.log('Testing client creation...');
+                const client = await factory.createClient({
+                    namespace: '/',
+                    autoConnect: false
+                });
+                
+                if (client) {
+                    console.log('✅ Client created successfully!');
+                    setStatus('WebSocket client created successfully!', 'success');
+                    setResult('Client created: ' + JSON.stringify({
+                        namespace: client.nsp || 'unknown',
+                        connected: client.connected || false,
+                        id: client.id || 'not connected'
+                    }, null, 2));
+                } else {
+                    throw new Error('Client creation returned null/undefined');
+                }
+                
+            } catch (error) {
+                console.error('❌ Test failed:', error);
+                setStatus('Test failed: ' + error.message, 'error');
+                setResult('Error: ' + error.message + '\n\nStack: ' + error.stack);
+            }
+        }
+        
+        // Run test when page loads
+        window.addEventListener('load', () => {
+            setTimeout(testWebSocketFactory, 1000);
+        });
+    </script>
+</body>
+</html>

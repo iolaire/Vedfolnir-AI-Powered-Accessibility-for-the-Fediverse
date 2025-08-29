@@ -4388,6 +4388,55 @@ app.register_blueprint(gdpr_bp)
 from routes.websocket_client_config_routes import websocket_client_config_bp
 app.register_blueprint(websocket_client_config_bp)
 
+# WebSocket configuration API endpoint
+@app.route('/api/websocket/client-config')
+def websocket_client_config():
+    """Provide WebSocket client configuration"""
+    try:
+        # For Socket.IO, we use the same origin as the web page
+        # Socket.IO will handle the protocol upgrade automatically
+        server_url = request.url_root.rstrip('/')
+        
+        # Build configuration object
+        client_config = {
+            'url': server_url,
+            'transports': ['websocket', 'polling'],
+            'timeout': 20000,
+            'reconnection': True,
+            'reconnectionAttempts': 5,
+            'reconnectionDelay': 1000,
+            'reconnectionDelayMax': 5000,
+            'pingTimeout': 60000,
+            'pingInterval': 25000,
+            'forceNew': False,
+            'upgrade': True,
+            'rememberUpgrade': True,
+            'withCredentials': True
+        }
+        
+        return jsonify({
+            'success': True,
+            'config': client_config
+        })
+        
+    except Exception as e:
+        app.logger.error(f"Failed to generate WebSocket client config: {e}")
+        return jsonify({
+            'success': False,
+            'error': 'Failed to generate WebSocket configuration'
+        }), 500
+
+# WebSocket test routes (development only)
+@app.route('/websocket-test')
+def websocket_test():
+    """WebSocket client test page"""
+    return render_template('websocket_test.html')
+
+@app.route('/websocket-simple-test')
+def websocket_simple_test():
+    """Simple WebSocket client test page without console overrides"""
+    return render_template('websocket_simple_test.html')
+
 if __name__ == '__main__':
     # Set up logging for web app
     import logging
@@ -4456,11 +4505,14 @@ def get_simple_system_health_for_index(db_session):
 
 if __name__ == '__main__':
     try:
+        # Fixed WebSocket startup configuration to prevent hanging
         socketio.run(
             app,
             host=config.webapp.host,
             port=config.webapp.port,
-            debug=config.webapp.debug
+            debug=config.webapp.debug,
+            use_reloader=False,  # Disable reloader to prevent WebSocket issues
+            log_output=True      # Enable logging for debugging
         )
     except KeyboardInterrupt:
         app.logger.info("Application shutdown requested")

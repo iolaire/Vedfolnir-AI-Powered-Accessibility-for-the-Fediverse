@@ -11,14 +11,15 @@ from models import UserRole
 
 class EditUserForm(FlaskForm):
     """Form for editing an existing user"""
-    user_id = HiddenField('User ID')
+    user_id = HiddenField('User ID', render_kw={'id': 'edit_user_id'})
     username = StringField('Username', validators=[DataRequired(), Length(min=3, max=64)])
     email = StringField('Email', validators=[DataRequired(), Email(), Length(max=120)])
     first_name = StringField('First Name', validators=[Length(max=100)])
     last_name = StringField('Last Name', validators=[Length(max=100)])
-    password = PasswordField('Password')
+    password = PasswordField('Password', render_kw={'autocomplete': 'new-password'})
     confirm_password = PasswordField('Confirm Password', 
-                                    validators=[EqualTo('password', message='Passwords must match')])
+                                    validators=[EqualTo('password', message='Passwords must match')],
+                                    render_kw={'autocomplete': 'new-password'})
     role = SelectField('Role', choices=[(role.value, role.value.capitalize()) for role in UserRole])
     is_active = BooleanField('Active')
     email_verified = BooleanField('Email Verified')
@@ -27,7 +28,7 @@ class EditUserForm(FlaskForm):
 
 class DeleteUserForm(FlaskForm):
     """Form for deleting a user"""
-    user_id = HiddenField('User ID', validators=[DataRequired()])
+    user_id = HiddenField('User ID', validators=[DataRequired()], render_kw={'id': 'delete_user_id'})
     submit = SubmitField('Delete User')
 
 class AddUserForm(FlaskForm):
@@ -36,9 +37,11 @@ class AddUserForm(FlaskForm):
     email = StringField('Email', validators=[DataRequired(), Email(), Length(max=120)])
     first_name = StringField('First Name', validators=[Length(max=100)])
     last_name = StringField('Last Name', validators=[Length(max=100)])
-    password = PasswordField('Password', validators=[DataRequired(), Length(min=6)])
+    password = PasswordField('Password', validators=[DataRequired(), Length(min=6)], 
+                            render_kw={'autocomplete': 'new-password'})
     confirm_password = PasswordField('Confirm Password', 
-                                    validators=[DataRequired(), EqualTo('password', message='Passwords must match')])
+                                    validators=[DataRequired(), EqualTo('password', message='Passwords must match')],
+                                    render_kw={'autocomplete': 'new-password'})
     role = SelectField('Role', choices=[(role.value, role.value.capitalize()) for role in UserRole], validators=[DataRequired()])
     is_active = BooleanField('Active', default=True)
     email_verified = BooleanField('Email Verified', default=True)
@@ -47,7 +50,7 @@ class AddUserForm(FlaskForm):
 
 class ResetPasswordForm(FlaskForm):
     """Form for admin password reset"""
-    user_id = HiddenField('User ID', validators=[DataRequired()])
+    user_id = HiddenField('User ID', validators=[DataRequired()], render_kw={'id': 'reset_password_user_id'})
     reset_method = SelectField('Reset Method', 
                               choices=[('email', 'Send temporary password via email'),
                                      ('generate', 'Generate and display temporary password')],
@@ -57,7 +60,7 @@ class ResetPasswordForm(FlaskForm):
 
 class UserStatusForm(FlaskForm):
     """Form for managing user status"""
-    user_id = HiddenField('User ID', validators=[DataRequired()])
+    user_id = HiddenField('User ID', validators=[DataRequired()], render_kw={'id': 'status_form_user_id'})
     is_active = BooleanField('Account Active')
     email_verified = BooleanField('Email Verified')
     account_locked = BooleanField('Account Locked')
@@ -68,7 +71,7 @@ class UserStatusForm(FlaskForm):
 
 class RoleAssignmentForm(FlaskForm):
     """Form for changing user roles"""
-    user_id = HiddenField('User ID', validators=[DataRequired()])
+    user_id = HiddenField('User ID', validators=[DataRequired()], render_kw={'id': 'role_form_user_id'})
     new_role = SelectField('New Role', 
                           choices=[(role.value, f"{role.value.capitalize()} - {role.name}") for role in UserRole],
                           validators=[DataRequired()])

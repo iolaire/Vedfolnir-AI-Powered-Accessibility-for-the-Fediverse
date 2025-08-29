@@ -305,7 +305,12 @@ function initializeMaintenanceMonitoring() {
     
     function checkMaintenanceStatus() {
         fetch('/api/maintenance/status')
-            .then(response => response.json())
+            .then(response => {
+                if (!response.ok) {
+                    throw new Error(`HTTP ${response.status}: ${response.statusText}`);
+                }
+                return response.json();
+            })
             .then(data => {
                 if (data.success) {
                     const isMaintenanceMode = data.maintenance_mode;
@@ -324,7 +329,11 @@ function initializeMaintenanceMonitoring() {
                 }
             })
             .catch(error => {
-                console.warn('Failed to check maintenance status:', error);
+                // Silently handle maintenance status check errors
+                // This prevents console spam when the API is temporarily unavailable
+                if (console.debug) {
+                    console.debug('Maintenance status check failed (this is normal during startup):', error.message);
+                }
             });
     }
     

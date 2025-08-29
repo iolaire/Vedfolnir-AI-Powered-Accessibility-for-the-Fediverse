@@ -291,32 +291,65 @@ class SessionPerformanceMonitor:
             
             pool = engine.pool
             
-            # Use timeout to prevent hanging on pool operations
-            import signal
+            # Use threading-based timeout instead of signal-based timeout
+            # since signals only work in the main thread
+            import threading
+            import queue
             
-            def timeout_handler(signum, frame):
-                raise TimeoutError("Pool metrics update timed out")
+            def get_pool_metrics():
+                """Get pool metrics in a separate operation"""
+                try:
+                    return {
+                        'pool_size': pool.size(),
+                        'pool_checked_out': pool.checkedout(),
+                        'pool_overflow': pool.overflow(),
+                        'pool_checked_in': pool.checkedin()
+                    }
+                except Exception as e:
+                    raise e
             
-            # Set a 2-second timeout for pool operations
-            old_handler = signal.signal(signal.SIGALRM, timeout_handler)
-            signal.alarm(2)
+            # Use a queue to get results from the operation
+            result_queue = queue.Queue()
+            exception_queue = queue.Queue()
             
-            try:
+            def worker():
+                try:
+                    result = get_pool_metrics()
+                    result_queue.put(result)
+                except Exception as e:
+                    exception_queue.put(e)
+            
+            # Run pool metrics collection with a timeout
+            worker_thread = threading.Thread(target=worker, daemon=True)
+            worker_thread.start()
+            worker_thread.join(timeout=2.0)  # 2-second timeout
+            
+            if worker_thread.is_alive():
+                # Thread is still running, metrics collection timed out
+                self.logger.debug("Pool metrics collection timed out (non-critical)")
+                return
+            
+            # Check if we got an exception
+            if not exception_queue.empty():
+                raise exception_queue.get()
+            
+            # Check if we got results
+            if not result_queue.empty():
+                metrics = result_queue.get()
+                
                 with self.lock:
-                    self.metrics.pool_size = pool.size()
-                    self.metrics.pool_checked_out = pool.checkedout()
-                    self.metrics.pool_overflow = pool.overflow()
-                    self.metrics.pool_checked_in = pool.checkedin()
+                    self.metrics.pool_size = metrics['pool_size']
+                    self.metrics.pool_checked_out = metrics['pool_checked_out']
+                    self.metrics.pool_overflow = metrics['pool_overflow']
+                    self.metrics.pool_checked_in = metrics['pool_checked_in']
                 
                 # Alert on pool exhaustion
                 if self.metrics.pool_checked_out >= self.metrics.pool_size * 0.9:
                     self.logger.warning(f"Database pool near exhaustion: {self.metrics.pool_checked_out}/{self.metrics.pool_size}")
-                    
-            finally:
-                signal.alarm(0)  # Cancel the alarm
-                signal.signal(signal.SIGALRM, old_handler)  # Restore old handler
+            else:
+                self.logger.debug("No pool metrics received (non-critical)")
                 
-        except (TimeoutError, AttributeError, Exception) as e:
+        except (AttributeError, Exception) as e:
             self.logger.debug(f"Error updating pool metrics (non-critical): {e}")
             # Don't let pool metrics errors affect request processing
     
