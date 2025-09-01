@@ -280,7 +280,7 @@ export TEST_BASE_URL=http://127.0.0.1:5000
 
 # Set credentials (if different from defaults)
 export ADMIN_USERNAME=admin
-export ADMIN_PASSWORD="akdr)X&XCN>fe0<RT5$RP^ik"
+export ADMIN_PASSWORD="BEw@e3pA*!Gv{(x9umOwIndQ"
 export USER_EMAIL="iolaire@usa.net"
 export USER_PASSWORD="g9bDFB9JzgEaVZx"
 ```

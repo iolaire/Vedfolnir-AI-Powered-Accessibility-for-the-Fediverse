@@ -309,7 +309,8 @@ def consent_management():
                                 current_app.config.get('BASE_URL', 'http://localhost:5000')
                             )
                     else:
-                        send_notification(f'Consent update failed: {message}', 'error', 'Update Failed')
+                        from notification_helpers import send_error_notification
+                        send_error_notification(f'Consent update failed: {message}', 'Update Failed')
             
             # Handle other consent types as they are implemented
             # (marketing, analytics, third-party sharing)
@@ -400,7 +401,8 @@ def compliance_report():
                     
                     return response
                 else:
-                    send_notification(f'Report generation failed: {message}', 'error', 'Report Generation Failed')
+                    from notification_helpers import send_error_notification
+                    send_error_notification(f'Report generation failed: {message}', 'Report Generation Failed')
                 
         except Exception as e:
             logger.error(f"Error generating compliance report: {e}")
@@ -479,7 +481,8 @@ def data_portability():
                 
                 return response
             else:
-                send_notification(f'Data portability export failed: {message}', 'error', 'Export Failed')
+                from notification_helpers import send_error_notification
+                send_error_notification(f'Data portability export failed: {message}', 'Export Failed')
                 
         except Exception as e:
             logger.error(f"Error processing data portability request: {e}")
@@ -509,7 +512,8 @@ def data_processing_info():
             if success:
                 return render_template('gdpr/privacy_policy.html', processing_info=processing_info)
             else:
-                send_notification(f'Could not retrieve data processing information: {message}', 'error', 'Information Retrieval Failed')
+                from notification_helpers import send_error_notification
+                send_error_notification(f'Could not retrieve data processing information: {message}', 'Information Retrieval Failed')
                 return redirect(url_for('profile.profile'))
             
     except Exception as e:

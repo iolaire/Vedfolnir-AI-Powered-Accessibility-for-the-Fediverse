@@ -606,18 +606,21 @@ class WebSocketNamespaceManager:
         Setup event handlers for user namespace
         """
         @self.socketio.on('join_room', namespace='/')
-        def handle_user_join_room(data):
+        def handle_user_join_room(*args, **kwargs):
             """Handle user joining a room"""
+            data = args[0] if args else kwargs.get('data')
             return self._handle_join_room_request('/', data)
         
         @self.socketio.on('leave_room', namespace='/')
-        def handle_user_leave_room(data):
+        def handle_user_leave_room(*args, **kwargs):
             """Handle user leaving a room"""
+            data = args[0] if args else kwargs.get('data')
             return self._handle_leave_room_request('/', data)
         
         @self.socketio.on('user_activity', namespace='/')
-        def handle_user_activity(data):
+        def handle_user_activity(*args, **kwargs):
             """Handle user activity events"""
+            data = args[0] if args else kwargs.get('data')
             return self._handle_user_activity('/', data)
     
     def _setup_admin_event_handlers(self) -> None:
@@ -625,18 +628,21 @@ class WebSocketNamespaceManager:
         Setup event handlers for admin namespace
         """
         @self.socketio.on('join_room', namespace='/admin')
-        def handle_admin_join_room(data):
+        def handle_admin_join_room(*args, **kwargs):
             """Handle admin joining a room"""
+            data = args[0] if args else kwargs.get('data')
             return self._handle_join_room_request('/admin', data)
         
         @self.socketio.on('leave_room', namespace='/admin')
-        def handle_admin_leave_room(data):
+        def handle_admin_leave_room(*args, **kwargs):
             """Handle admin leaving a room"""
+            data = args[0] if args else kwargs.get('data')
             return self._handle_leave_room_request('/admin', data)
         
         @self.socketio.on('admin_notification', namespace='/admin')
-        def handle_admin_notification(data):
+        def handle_admin_notification(*args, **kwargs):
             """Handle admin notification events"""
+            data = args[0] if args else kwargs.get('data')
             return self._handle_admin_notification('/admin', data)
     
     def _setup_user_room_handlers(self) -> None:
@@ -686,6 +692,19 @@ class WebSocketNamespaceManager:
             True if connection allowed, False otherwise
         """
         try:
+            # Log detailed connection information
+            from flask import request
+            origin = request.headers.get('Origin')
+            user_agent = request.headers.get('User-Agent', 'Unknown')
+            referer = request.headers.get('Referer')
+            
+            self.logger.info(f"🔌 WebSocket connection attempt (Namespace Manager):")
+            self.logger.info(f"  - Origin: {origin}")
+            self.logger.info(f"  - User-Agent: {user_agent[:100]}..." if user_agent and len(user_agent) > 100 else f"  - User-Agent: {user_agent}")
+            self.logger.info(f"  - Referer: {referer}")
+            self.logger.info(f"  - Namespace: {namespace}")
+            self.logger.info(f"  - Auth data: {auth}")
+            
             # Authenticate connection
             auth_result, auth_context = self.auth_handler.authenticate_connection(auth, namespace)
             

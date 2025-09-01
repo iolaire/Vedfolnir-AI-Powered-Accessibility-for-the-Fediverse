@@ -160,7 +160,7 @@ This implementation plan converts the notification system migration design into 
 
 - [x] 20. Implement Playwright Browser Testing Suite
   - Create Playwright test configuration for WebKit browser testing (primary target)
-  - Implement admin authentication tests using credentials: admin / akdr)X&XCN>fe0<RT5$RP^ik
+  - Implement admin authentication tests using credentials: admin / BEw@e3pA*!Gv{(x9umOwIndQ
   - Create user authentication tests using credentials: iolaire@usa.net / g9bDFB9JzgEaVZx
   - Insure users are not overloaded with many notifications
   - Add WebSocket connection validation and console error detection tests

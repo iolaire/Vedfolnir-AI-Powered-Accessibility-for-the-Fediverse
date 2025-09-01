@@ -63,7 +63,7 @@ def debug_login_attempt():
         # Step 4: Attempt login
         print("\n4. Attempting login...")
         username = "admin"
-        password = "akdr)X&XCN>fe0<RT5$RP^ik"
+        password = "BEw@e3pA*!Gv{(x9umOwIndQ"
         
         # Prepare login data
         login_data = {
@@ -173,7 +173,7 @@ def test_direct_authentication():
         user_service = UserService(db_manager)
         
         username = "admin"
-        password = "akdr)X&XCN>fe0<RT5$RP^ik"
+        password = "BEw@e3pA*!Gv{(x9umOwIndQ"
         
         print(f"   Testing credentials for: {username}")
         

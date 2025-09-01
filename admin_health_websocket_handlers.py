@@ -36,13 +36,25 @@ def register_admin_health_websocket_handlers(socketio):
     def handle_admin_connect():
         """Handle admin WebSocket connection"""
         try:
+            # Log detailed connection information
+            from flask import request
+            origin = request.headers.get('Origin')
+            user_agent = request.headers.get('User-Agent', 'Unknown')
+            referer = request.headers.get('Referer')
+            
+            logger.info(f"🔌 Admin WebSocket connection attempt:")
+            logger.info(f"  - Origin: {origin}")
+            logger.info(f"  - User-Agent: {user_agent[:100]}..." if user_agent and len(user_agent) > 100 else f"  - User-Agent: {user_agent}")
+            logger.info(f"  - Referer: {referer}")
+            logger.info(f"  - Namespace: /admin")
+            
             # Verify admin access
             if not current_user.is_authenticated or current_user.role != UserRole.ADMIN:
-                logger.warning(f"Non-admin user attempted to connect to admin namespace: {current_user.id if current_user.is_authenticated else 'anonymous'}")
+                logger.warning(f"❌ Non-admin user attempted to connect to admin namespace: {current_user.id if current_user.is_authenticated else 'anonymous'}")
                 disconnect()
                 return False
             
-            logger.info(f"Admin user {current_user.id} connected to health monitoring")
+            logger.info(f"✅ Admin user {current_user.id} connected to health monitoring")
             
             # Join admin health monitoring room
             join_room('admin_health_monitoring')

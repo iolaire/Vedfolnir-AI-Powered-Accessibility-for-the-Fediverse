@@ -231,11 +231,16 @@ class WebSocketFactory:
                 # Validate origin
                 from flask import request
                 origin = request.headers.get('Origin')
+                self.logger.info(f"WebSocket connection attempt from origin: {origin} to namespace: {namespace}")
                 if origin:
                     is_valid, error_msg = self.cors_manager.validate_websocket_origin(origin, namespace)
                     if not is_valid:
                         self.logger.warning(f"Connection rejected for namespace {namespace}: {error_msg}")
                         return False
+                    else:
+                        self.logger.info(f"Origin validation passed for {origin} to namespace {namespace}")
+                else:
+                    self.logger.info(f"No origin header provided for namespace {namespace} - allowing connection")
                 
                 self.logger.info(f"Client connected successfully to namespace {namespace}")
                 return True

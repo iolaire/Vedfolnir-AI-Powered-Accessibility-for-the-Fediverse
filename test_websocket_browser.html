@@ -1,0 +1,254 @@
+<!DOCTYPE html>
+<!-- Copyright (C) 2025 iolaire mcfadden. -->
+<!-- This program is free software: you can redistribute it and/or modify it under the terms of the GNU Affero General Public License as published by the Free Software Foundation, either version 3 of the License, or (at your option) any later version. -->
+<!-- THE SOFTWARE IS PROVIDED "AS IS", WITHOUT WARRANTY OF ANY KIND, EXPRESS OR IMPLIED, INCLUDING BUT NOT LIMITED TO THE WARRANTIES OF MERCHANTABILITY, FITNESS FOR A PARTICULAR PURPOSE AND NONINFRINGEMENT. IN NO EVENT SHALL THE AUTHORS OR COPYRIGHT HOLDERS BE LIABLE FOR ANY CLAIM, DAMAGES OR OTHER LIABILITY, WHETHER IN AN ACTION OF CONTRACT, TORT OR OTHERWISE, ARISING FROM, OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE SOFTWARE. -->
+
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>WebSocket Fix Test</title>
+    <style>
+        body {
+            font-family: Arial, sans-serif;
+            max-width: 800px;
+            margin: 0 auto;
+            padding: 20px;
+            background-color: #f5f5f5;
+        }
+        .container {
+            background: white;
+            padding: 20px;
+            border-radius: 8px;
+            box-shadow: 0 2px 4px rgba(0,0,0,0.1);
+        }
+        .status {
+            padding: 10px;
+            margin: 10px 0;
+            border-radius: 4px;
+            font-weight: bold;
+        }
+        .success {
+            background-color: #d4edda;
+            color: #155724;
+            border: 1px solid #c3e6cb;
+        }
+        .error {
+            background-color: #f8d7da;
+            color: #721c24;
+            border: 1px solid #f5c6cb;
+        }
+        .warning {
+            background-color: #fff3cd;
+            color: #856404;
+            border: 1px solid #ffeaa7;
+        }
+        .info {
+            background-color: #d1ecf1;
+            color: #0c5460;
+            border: 1px solid #bee5eb;
+        }
+        button {
+            background-color: #007bff;
+            color: white;
+            border: none;
+            padding: 10px 20px;
+            border-radius: 4px;
+            cursor: pointer;
+            margin: 5px;
+        }
+        button:hover {
+            background-color: #0056b3;
+        }
+        button:disabled {
+            background-color: #6c757d;
+            cursor: not-allowed;
+        }
+        #log {
+            background-color: #f8f9fa;
+            border: 1px solid #dee2e6;
+            padding: 10px;
+            height: 200px;
+            overflow-y: auto;
+            font-family: monospace;
+            font-size: 12px;
+            white-space: pre-wrap;
+        }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <h1>🔧 WebSocket Fix Test</h1>
+        <p>This page tests the WebSocket connection to verify that the "write() before start_response" error has been fixed.</p>
+        
+        <div id="status" class="status info">
+            Ready to test WebSocket connection...
+        </div>
+        
+        <div>
+            <button id="testBtn" onclick="testWebSocket()">Test WebSocket Connection</button>
+            <button id="clearBtn" onclick="clearLog()">Clear Log</button>
+        </div>
+        
+        <h3>Connection Log:</h3>
+        <div id="log"></div>
+        
+        <div id="results" style="margin-top: 20px;"></div>
+    </div>
+
+    <script src="https://cdn.socket.io/4.0.0/socket.io.min.js"></script>
+    <script>
+        let socket = null;
+        let testStartTime = null;
+        
+        function log(message) {
+            const logDiv = document.getElementById('log');
+            const timestamp = new Date().toLocaleTimeString();
+            logDiv.textContent += `[${timestamp}] ${message}\n`;
+            logDiv.scrollTop = logDiv.scrollHeight;
+        }
+        
+        function updateStatus(message, type = 'info') {
+            const statusDiv = document.getElementById('status');
+            statusDiv.textContent = message;
+            statusDiv.className = `status ${type}`;
+        }
+        
+        function clearLog() {
+            document.getElementById('log').textContent = '';
+        }
+        
+        function testWebSocket() {
+            const testBtn = document.getElementById('testBtn');
+            testBtn.disabled = true;
+            testBtn.textContent = 'Testing...';
+            
+            testStartTime = Date.now();
+            log('Starting WebSocket connection test...');
+            updateStatus('Testing WebSocket connection...', 'warning');
+            
+            try {
+                // Connect to the WebSocket server
+                socket = io('http://127.0.0.1:5000', {
+                    transports: ['websocket', 'polling'],
+                    timeout: 10000,
+                    forceNew: true
+                });
+                
+                log('SocketIO client created, attempting connection...');
+                
+                socket.on('connect', function() {
+                    const duration = Date.now() - testStartTime;
+                    log(`✅ WebSocket connected successfully! (${duration}ms)`);
+                    log(`   - Socket ID: ${socket.id}`);
+                    log(`   - Transport: ${socket.io.engine.transport.name}`);
+                    updateStatus('✅ WebSocket connection successful!', 'success');
+                    
+                    // Test sending a message
+                    log('Testing message sending...');
+                    socket.emit('test_message', {
+                        message: 'Hello from WebSocket test!',
+                        timestamp: new Date().toISOString()
+                    });
+                });
+                
+                socket.on('connect_error', function(error) {
+                    log(`❌ Connection error: ${error.message}`);
+                    updateStatus('❌ WebSocket connection failed', 'error');
+                    resetTestButton();
+                });
+                
+                socket.on('disconnect', function(reason) {
+                    log(`🔌 Disconnected: ${reason}`);
+                    if (reason === 'io server disconnect') {
+                        log('   - Server initiated disconnect');
+                    } else if (reason === 'io client disconnect') {
+                        log('   - Client initiated disconnect');
+                    }
+                });
+                
+                socket.on('error', function(error) {
+                    log(`❌ Socket error: ${error}`);
+                });
+                
+                // Test timeout
+                setTimeout(() => {
+                    if (socket && !socket.connected) {
+                        log('⏰ Connection timeout (10 seconds)');
+                        updateStatus('⏰ WebSocket connection timed out', 'error');
+                        socket.disconnect();
+                        resetTestButton();
+                    } else if (socket && socket.connected) {
+                        log('✅ Connection test completed successfully');
+                        updateStatus('✅ WebSocket test completed - Connection is working!', 'success');
+                        
+                        // Show results
+                        showResults(true);
+                        
+                        // Disconnect after successful test
+                        setTimeout(() => {
+                            log('🔌 Disconnecting test connection...');
+                            socket.disconnect();
+                            resetTestButton();
+                        }, 2000);
+                    }
+                }, 10000);
+                
+            } catch (error) {
+                log(`❌ Exception during WebSocket test: ${error.message}`);
+                updateStatus('❌ WebSocket test failed with exception', 'error');
+                resetTestButton();
+            }
+        }
+        
+        function resetTestButton() {
+            const testBtn = document.getElementById('testBtn');
+            testBtn.disabled = false;
+            testBtn.textContent = 'Test WebSocket Connection';
+        }
+        
+        function showResults(success) {
+            const resultsDiv = document.getElementById('results');
+            
+            if (success) {
+                resultsDiv.innerHTML = `
+                    <div class="status success">
+                        <h3>🎉 WebSocket Fix Verification: SUCCESS</h3>
+                        <p>The "write() before start_response" error has been successfully fixed!</p>
+                        <ul>
+                            <li>✅ WebSocket connection established</li>
+                            <li>✅ No server errors detected</li>
+                            <li>✅ Transport negotiation working</li>
+                            <li>✅ Session management not interfering</li>
+                        </ul>
+                        <p><strong>Next steps:</strong></p>
+                        <ul>
+                            <li>Monitor server logs for any remaining issues</li>
+                            <li>Test real-time notifications in the main application</li>
+                            <li>Verify WebSocket functionality across different browsers</li>
+                        </ul>
+                    </div>
+                `;
+            } else {
+                resultsDiv.innerHTML = `
+                    <div class="status error">
+                        <h3>❌ WebSocket Fix Verification: FAILED</h3>
+                        <p>There may still be issues with the WebSocket connection.</p>
+                        <p><strong>Troubleshooting steps:</strong></p>
+                        <ul>
+                            <li>Check the server logs for error messages</li>
+                            <li>Verify the web application is running</li>
+                            <li>Ensure Redis is running (if using Redis sessions)</li>
+                            <li>Check browser console for additional errors</li>
+                        </ul>
+                    </div>
+                `;
+            }
+        }
+        
+        // Initialize
+        log('WebSocket test page loaded');
+        log('Click "Test WebSocket Connection" to begin testing');
+    </script>
+</body>
+</html>

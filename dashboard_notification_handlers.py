@@ -56,8 +56,20 @@ class DashboardNotificationHandlers:
         def handle_dashboard_connect(auth):
             """Handle user dashboard WebSocket connection"""
             try:
+                # Log detailed connection information
+                from flask import request
+                origin = request.headers.get('Origin')
+                user_agent = request.headers.get('User-Agent', 'Unknown')
+                referer = request.headers.get('Referer')
+                
+                self.logger.info(f"🔌 Dashboard WebSocket connection attempt:")
+                self.logger.info(f"  - Origin: {origin}")
+                self.logger.info(f"  - User-Agent: {user_agent[:100]}..." if user_agent and len(user_agent) > 100 else f"  - User-Agent: {user_agent}")
+                self.logger.info(f"  - Referer: {referer}")
+                self.logger.info(f"  - Namespace: /")
+                
                 if not current_user.is_authenticated:
-                    self.logger.warning("Unauthenticated user attempted dashboard WebSocket connection")
+                    self.logger.warning("❌ Unauthenticated user attempted dashboard WebSocket connection")
                     return False
                 
                 user_id = current_user.id

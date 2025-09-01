@@ -782,7 +782,7 @@ class TestNotificationSystemWebAppIntegration(unittest.TestCase):
         # Test credentials
         self.admin_credentials = {
             'username': 'admin',
-            'password': 'akdr)X&XCN>fe0<RT5$RP^ik'
+            'password': 'BEw@e3pA*!Gv{(x9umOwIndQ'
         }
         
         self.user_credentials = {

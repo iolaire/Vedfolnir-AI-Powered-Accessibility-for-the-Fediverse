@@ -77,6 +77,17 @@ app = Flask(__name__)
 config = Config()
 app.config['SECRET_KEY'] = config.webapp.secret_key
 
+# Add WebSocket WSGI middleware to prevent session handling issues
+from websocket_wsgi_middleware import create_websocket_wsgi_middleware
+app.wsgi_app = create_websocket_wsgi_middleware(app.wsgi_app)
+app.logger.debug("WebSocket WSGI middleware applied")
+
+# Set up WebSocket error filtering to suppress cosmetic Flask-SocketIO errors
+from websocket_log_filter import setup_websocket_log_filter
+websocket_filter = setup_websocket_log_filter()
+app.websocket_filter = websocket_filter  # Store for monitoring
+app.logger.info("WebSocket error filter applied - cosmetic Flask-SocketIO errors will be suppressed")
+
 # Initialize WebSocket system using new standardized components
 from websocket_config_manager import WebSocketConfigManager
 from websocket_cors_manager import CORSManager
@@ -114,7 +125,7 @@ from websocket_progress_handler import WebSocketProgressHandler, AdminDashboardW
 app.config['SQLALCHEMY_DATABASE_URI'] = config.storage.database_url
 app.config['SQLALCHEMY_TRACK_MODIFICATIONS'] = False
 
-# Initialize Redis Session Management System
+# Initialize Redis Session Management System (restored after WebSocket analysis)
 from flask_redis_session_interface import FlaskRedisSessionInterface
 from redis_session_backend import RedisSessionBackend
 

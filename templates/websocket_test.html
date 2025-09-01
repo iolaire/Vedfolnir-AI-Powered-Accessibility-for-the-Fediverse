@@ -27,8 +27,10 @@
     <script src="https://cdn.socket.io/4.7.2/socket.io.min.js" 
             crossorigin="anonymous"></script>
     
-    <!-- Load WebSocket Client Factory -->
-    <script src="{{ url_for('static', filename='js/websocket-client-factory.js') }}"></script>
+    <!-- Load WebSocket Bundle -->
+    <!-- WebSocket Transport Optimizer -->
+    <script src="{{ url_for('static', filename='js/websocket-transport-optimizer.js') }}"></script>
+    <script src="{{ url_for('static', filename='js/websocket-bundle.js') }}"></script>
 
     <script>
         const statusDiv = document.getElementById('status');

@@ -225,7 +225,8 @@ def login():
                         return redirect(next_page)
                     return redirect(url_for('index'))
                 else:
-                    send_notification(message or 'Invalid username/email or password.', 'error', 'Login Failed')
+                    from notification_helpers import send_error_notification
+                    send_error_notification(message or 'Invalid username/email or password.', 'Login Failed')
                     logger.warning(f"Failed login attempt for {sanitize_for_log(form.username_or_email.data)} from {sanitize_for_log(ip_address)}")
                     
         except Exception as e:
@@ -278,7 +279,8 @@ def forgot_password():
                     send_success_notification("Password reset link sent to your email address.", "Reset Link Sent")
                     logger.info(f"Password reset requested for email {sanitize_for_log(form.email.data)}")
                 else:
-                    send_notification(message or 'Failed to send password reset link.', 'error', 'Reset Failed')
+                    from notification_helpers import send_error_notification
+                    send_error_notification(message or 'Failed to send password reset link.', 'Reset Failed')
                     logger.warning(f"Password reset failed for email {sanitize_for_log(form.email.data)}")
                 
         except Exception as e:
@@ -328,7 +330,8 @@ def reset_password(token):
             token_valid, token_message, user = password_service.verify_reset_token(token)
             
             if not token_valid:
-                send_notification(f'Password reset failed: {token_message}', 'error', 'Password Reset Failed')
+                from notification_helpers import send_error_notification
+                send_error_notification(f'Password reset failed: {token_message}', 'Password Reset Failed')
                 logger.warning(f"Invalid password reset token attempted: {token[:10]}...")
                 return redirect(url_for('user_management.forgot_password'))
             
@@ -419,7 +422,8 @@ def change_password():
                     
                     return redirect(url_for('index'))
                 else:
-                    send_notification(message, 'error', 'Password Change Failed')
+                    from notification_helpers import send_error_notification
+                    send_error_notification(message, 'Password Change Failed')
                     logger.warning(f"Password change failed for user {sanitize_for_log(current_user.username)}: {message}")
                     
         except Exception as e:
@@ -544,7 +548,8 @@ def export_profile_data():
                 logger.info(f"Personal data exported for user {sanitize_for_log(current_user.username)}")
                 return response
             else:
-                send_notification(f'Failed to export personal data: {message}', 'error', 'Data Export Failed')
+                from notification_helpers import send_error_notification
+                send_error_notification(f'Failed to export personal data: {message}', 'Data Export Failed')
                 logger.error(f"Data export failed for user {current_user.id}: {sanitize_for_log(message)}")
                 return redirect(url_for('user_management.profile'))
                 

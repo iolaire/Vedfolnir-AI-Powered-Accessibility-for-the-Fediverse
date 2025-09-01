@@ -225,13 +225,10 @@
     <script src="{{ url_for('static', filename='js/app.js') }}"></script>
     <script src="{{ url_for('static', filename='js/error_handler.js') }}"></script>
     
-    <!-- WebSocket Client -->
-    <script src="{{ url_for('static', filename='js/websocket-client.js') }}"></script>
-    
-    <!-- WebSocket Debug Helper (development only) -->
-    {% if config.get('DEBUG') or request.args.get('debug') %}
-    <script src="{{ url_for('static', filename='js/websocket-debug.js') }}"></script>
-    {% endif %}
+    <!-- WebSocket Bundle (combines factory, client, keep-alive, and debug utilities) -->
+    <!-- WebSocket Transport Optimizer -->
+    <script src="{{ url_for('static', filename='js/websocket-transport-optimizer.js') }}"></script>
+    <script src="{{ url_for('static', filename='js/websocket-bundle.js') }}"></script>
     
     <!-- Custom Admin JS -->
     <script src="{{ url_for('static', filename='js/admin.js') }}"></script>
@@ -240,8 +237,6 @@
     <script src="{{ url_for('admin.static', filename='js/admin-health-notifications.js') }}"></script>
     
     {% block extra_js %}{% endblock %}
-    <!-- WebSocket Keep-Alive Script -->
-    <script src="{{ url_for('static', filename='js/websocket-keepalive.js') }}"></script>
     
     <!-- Admin Unified Notification System Initialization -->
     <script>

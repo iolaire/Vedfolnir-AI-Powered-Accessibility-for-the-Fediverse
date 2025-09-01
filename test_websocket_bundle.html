@@ -1,0 +1,167 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>WebSocket Bundle Test</title>
+    <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.1.3/dist/css/bootstrap.min.css" rel="stylesheet">
+    <link href="https://cdn.jsdelivr.net/npm/bootstrap-icons@1.7.2/font/bootstrap-icons.css" rel="stylesheet">
+</head>
+<body>
+    <div class="container mt-4">
+        <h1>WebSocket Bundle Test</h1>
+        
+        <!-- WebSocket Status Indicator -->
+        <div class="alert alert-info">
+            <div id="websocket-status" class="text-muted small">
+                <i class="bi bi-wifi-off"></i> Real-time: Initializing...
+            </div>
+        </div>
+        
+        <div class="row">
+            <div class="col-md-6">
+                <h3>Connection Status</h3>
+                <div id="connection-info" class="card">
+                    <div class="card-body">
+                        <p>Loading...</p>
+                    </div>
+                </div>
+            </div>
+            
+            <div class="col-md-6">
+                <h3>Test Actions</h3>
+                <div class="d-grid gap-2">
+                    <button id="test-connection" class="btn btn-primary">Test Connection</button>
+                    <button id="check-environment" class="btn btn-secondary">Check Environment</button>
+                    <button id="get-stats" class="btn btn-info">Get Statistics</button>
+                </div>
+            </div>
+        </div>
+        
+        <div class="mt-4">
+            <h3>Console Output</h3>
+            <div id="console-output" class="bg-dark text-light p-3" style="height: 300px; overflow-y: auto; font-family: monospace;">
+                <div>WebSocket Bundle Test Started...</div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Socket.IO -->
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/socket.io/4.7.2/socket.io.js"></script>
+    
+    <!-- WebSocket Bundle -->
+    <script src="static/js/websocket-bundle.js"></script>
+    
+    <script>
+        // Override console.log to display in our output area
+        const originalLog = console.log;
+        const originalError = console.error;
+        const originalWarn = console.warn;
+        
+        function addToConsole(message, type = 'log') {
+            const output = document.getElementById('console-output');
+            const timestamp = new Date().toLocaleTimeString();
+            const className = type === 'error' ? 'text-danger' : type === 'warn' ? 'text-warning' : 'text-light';
+            
+            const div = document.createElement('div');
+            div.className = className;
+            div.innerHTML = `[${timestamp}] ${message}`;
+            output.appendChild(div);
+            output.scrollTop = output.scrollHeight;
+        }
+        
+        console.log = function(...args) {
+            originalLog.apply(console, args);
+            addToConsole(args.join(' '), 'log');
+        };
+        
+        console.error = function(...args) {
+            originalError.apply(console, args);
+            addToConsole(args.join(' '), 'error');
+        };
+        
+        console.warn = function(...args) {
+            originalWarn.apply(console, args);
+            addToConsole(args.join(' '), 'warn');
+        };
+        
+        // Update connection info
+        function updateConnectionInfo() {
+            const info = document.getElementById('connection-info');
+            
+            if (window.VedfolnirWS) {
+                const stats = window.WebSocketDebug ? window.WebSocketDebug.getStats() : null;
+                
+                info.innerHTML = `
+                    <div class="card-body">
+                        <h5>WebSocket Status</h5>
+                        <p><strong>Connected:</strong> ${window.VedfolnirWS.isConnected()}</p>
+                        <p><strong>Reconnect Attempts:</strong> ${window.VedfolnirWS.reconnectAttempts}</p>
+                        <p><strong>Status:</strong> ${window.VedfolnirWS.connectionState.status}</p>
+                        <p><strong>Namespace:</strong> ${window.VedfolnirWS.connectionState.currentNamespace}</p>
+                        <p><strong>Admin Mode:</strong> ${window.VedfolnirWS.connectionState.isAdminMode}</p>
+                        ${stats ? `
+                            <hr>
+                            <h6>Factory Info</h6>
+                            <p><strong>Config Cached:</strong> ${stats.factory ? stats.factory.configCache : 'N/A'}</p>
+                            <p><strong>Validation Errors:</strong> ${stats.factory ? stats.factory.validationErrors.length : 'N/A'}</p>
+                        ` : ''}
+                    </div>
+                `;
+            } else {
+                info.innerHTML = `
+                    <div class="card-body">
+                        <p class="text-warning">WebSocket not initialized yet...</p>
+                    </div>
+                `;
+            }
+        }
+        
+        // Set up event listeners
+        document.addEventListener('DOMContentLoaded', function() {
+            console.log('DOM loaded, setting up test interface...');
+            
+            // Update connection info every 2 seconds
+            setInterval(updateConnectionInfo, 2000);
+            updateConnectionInfo();
+            
+            // Test buttons
+            document.getElementById('test-connection').addEventListener('click', function() {
+                console.log('Testing WebSocket connection...');
+                if (window.WebSocketDebug) {
+                    window.WebSocketDebug.testConnection();
+                } else {
+                    console.error('WebSocketDebug not available');
+                }
+            });
+            
+            document.getElementById('check-environment').addEventListener('click', function() {
+                console.log('Checking WebSocket environment...');
+                if (window.WebSocketDebug) {
+                    window.WebSocketDebug.checkEnvironment();
+                } else {
+                    console.error('WebSocketDebug not available');
+                }
+            });
+            
+            document.getElementById('get-stats').addEventListener('click', function() {
+                console.log('Getting WebSocket statistics...');
+                if (window.WebSocketDebug) {
+                    const stats = window.WebSocketDebug.getStats();
+                    console.log('Statistics:', JSON.stringify(stats, null, 2));
+                } else {
+                    console.error('WebSocketDebug not available');
+                }
+            });
+        });
+        
+        // Listen for WebSocket status changes
+        window.addEventListener('websocketStatusChange', function(event) {
+            console.log('WebSocket status changed:', event.detail);
+            updateConnectionInfo();
+        });
+        
+        console.log('Test page setup complete');
+    </script>
+</body>
+</html>

@@ -132,7 +132,7 @@ class MigrationValidationTools:
         
         # Test data
         self._test_credentials = {
-            'admin': {'username': 'admin', 'password': 'akdr)X&XCN>fe0<RT5$RP^ik'},
+            'admin': {'username': 'admin', 'password': 'BEw@e3pA*!Gv{(x9umOwIndQ'},
             'user': {'username': 'iolaire@usa.net', 'password': 'g9bDFB9JzgEaVZx'}
         }
         

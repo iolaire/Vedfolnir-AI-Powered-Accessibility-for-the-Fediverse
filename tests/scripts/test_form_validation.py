@@ -36,7 +36,7 @@ def test_login_form_validation():
         print("\n2. Testing form with data...")
         form_data = {
             'username_or_email': 'admin',
-            'password': 'akdr)X&XCN>fe0<RT5$RP^ik'
+            'password': 'BEw@e3pA*!Gv{(x9umOwIndQ'
         }
         
         form = LoginForm(data=form_data)
@@ -58,7 +58,7 @@ def test_login_form_validation():
         from werkzeug.datastructures import MultiDict
         request_data = MultiDict([
             ('username_or_email', 'admin'),
-            ('password', 'akdr)X&XCN>fe0<RT5$RP^ik'),
+            ('password', 'BEw@e3pA*!Gv{(x9umOwIndQ'),
             ('csrf_token', 'dummy_token')
         ])
         
@@ -109,7 +109,7 @@ def test_manual_login_request():
         # Prepare form data exactly as a browser would
         form_data = {
             'username_or_email': 'admin',
-            'password': 'akdr)X&XCN>fe0<RT5$RP^ik',
+            'password': 'BEw@e3pA*!Gv{(x9umOwIndQ',
             'remember_me': 'false'  # Add this field
         }
         

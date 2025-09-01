@@ -387,6 +387,8 @@ class WebSocketConfigManager:
             "allow_upgrades": self._parse_bool("SOCKETIO_ALLOW_UPGRADES", True),
             "transports": self._websocket_config.transports,
             "manage_session": False,  # Disable Flask session management for SocketIO to prevent write() before start_response errors
+            "cookie": False,  # Completely disable SocketIO cookies
+            "json": None,  # Use default JSON handling
         }
         
         self.logger.debug(f"Generated SocketIO config - cors_origins: {cors_origins}, cors_allowed_origins: {cors_allowed_origins}")
@@ -454,6 +456,8 @@ class WebSocketConfigManager:
             "allow_upgrades": True,
             "transports": ["websocket", "polling"],
             "manage_session": False,  # Disable Flask session management for SocketIO to prevent write() before start_response errors
+            "cookie": False,  # Completely disable SocketIO cookies
+            "json": None,  # Use default JSON handling
         }
     
     def _get_fallback_client_config(self) -> Dict[str, Any]:

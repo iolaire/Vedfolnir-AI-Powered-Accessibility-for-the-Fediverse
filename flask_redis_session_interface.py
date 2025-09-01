@@ -148,6 +148,34 @@ class FlaskRedisSessionInterface(SessionInterface):
         Returns:
             RedisSession instance or None if no session
         """
+        # Check for WSGI middleware flag first
+        from flask import g
+        if hasattr(g, 'get') and g.get('vedfolnir.websocket_request'):
+            logger.info(f"WebSocket request detected via WSGI middleware: {request.path}")
+            return None
+        
+        # Check if this is a WebSocket request - return empty session for WebSocket
+        is_websocket = (
+            request.headers.get('Upgrade', '').lower() == 'websocket' or
+            request.headers.get('Connection', '').lower() == 'upgrade' or
+            'websocket' in request.headers.get('Connection', '').lower() or
+            request.path.startswith('/socket.io/') or
+            request.args.get('transport') in ['websocket', 'polling'] or
+            request.args.get('EIO') is not None
+        )
+        
+        # Debug logging for WebSocket detection
+        if request.path.startswith('/socket.io/'):
+            logger.info(f"SocketIO request detected: {request.path}")
+            logger.info(f"  - Headers: Upgrade={request.headers.get('Upgrade')}, Connection={request.headers.get('Connection')}")
+            logger.info(f"  - Args: transport={request.args.get('transport')}, EIO={request.args.get('EIO')}")
+            logger.info(f"  - WebSocket detected: {is_websocket}")
+        
+        if is_websocket:
+            logger.info(f"Skipping session creation for WebSocket request: {request.path}")
+            # Return None to completely skip session handling for WebSocket requests
+            return None
+        
         # Get session ID from cookie
         cookie_name = getattr(app, 'session_cookie_name', app.config.get('SESSION_COOKIE_NAME', 'session'))
         sid = request.cookies.get(cookie_name)
@@ -231,6 +259,10 @@ class FlaskRedisSessionInterface(SessionInterface):
                 # Additional check for SocketIO transport parameter
                 elif (hasattr(request, 'args') and 
                       request.args.get('transport') in ['websocket', 'polling']):
+                    is_websocket = True
+                # Check for EIO (Engine.IO) parameter which indicates SocketIO
+                elif (hasattr(request, 'args') and 
+                      request.args.get('EIO') is not None):
                     is_websocket = True
         except Exception:
             # If we can't access request context or there's any error, 
