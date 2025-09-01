@@ -478,7 +478,7 @@ def main():
                     'SOCKETIO_SESSION_VALIDATION': 'false',  # WORKING: relaxed for development
                     'SOCKETIO_RATE_LIMITING': 'false',  # WORKING: relaxed for development
                     'SOCKETIO_CSRF_PROTECTION': 'false',  # WORKING: relaxed for development
-                    'SOCKETIO_LOG_LEVEL': 'DEBUG',
+                    'SOCKETIO_LOG_LEVEL': 'WARNING',
                     'SOCKETIO_LOG_CONNECTIONS': 'true',
                     'SOCKETIO_DEBUG': 'true',
                     'SOCKETIO_ENGINEIO_LOGGER': 'true'
@@ -491,7 +491,7 @@ def main():
                     'SOCKETIO_SESSION_VALIDATION': 'true',
                     'SOCKETIO_RATE_LIMITING': 'true',
                     'SOCKETIO_CSRF_PROTECTION': 'false',
-                    'SOCKETIO_LOG_LEVEL': 'INFO',
+                    'SOCKETIO_LOG_LEVEL': 'WARNING',
                     'SOCKETIO_LOG_CONNECTIONS': 'true',
                     'SOCKETIO_DEBUG': 'false',
                     'SOCKETIO_ENGINEIO_LOGGER': 'false'
@@ -597,7 +597,7 @@ def main():
                 'SOCKETIO_SESSION_VALIDATION': 'false',  # FIXED: relaxed for development
                 'SOCKETIO_RATE_LIMITING': 'false',  # FIXED: relaxed for development
                 'SOCKETIO_CSRF_PROTECTION': 'false',  # FIXED: relaxed for development
-                'SOCKETIO_LOG_LEVEL': 'DEBUG',
+                'SOCKETIO_LOG_LEVEL': 'WARNING',
                 'SOCKETIO_LOG_CONNECTIONS': 'true',
                 'SOCKETIO_DEBUG': 'true',
                 'SOCKETIO_ENGINEIO_LOGGER': 'true'
@@ -1001,7 +1001,7 @@ PLATFORM_ENCRYPTION_KEY={encryption_key}
 FLASK_HOST=127.0.0.1
 FLASK_PORT=5000
 FLASK_DEBUG=false
-LOG_LEVEL=INFO
+LOG_LEVEL=WARNING
 {database_config}
 {redis_config}
 

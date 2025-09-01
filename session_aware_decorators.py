@@ -5,9 +5,10 @@
 import logging
 from functools import wraps
 from datetime import datetime, timezone
-from flask import current_app, redirect, url_for, flash, request
+from flask import current_app, redirect, url_for, request
 from flask_login import current_user
 from sqlalchemy.orm.exc import DetachedInstanceError
+# # from notification_flash_replacement import send_notification  # Removed - using unified notification system  # Removed - using unified notification system
 from sqlalchemy.exc import SQLAlchemyError
 
 logger = logging.getLogger(__name__)
@@ -29,7 +30,9 @@ def with_db_session(f):
             # Get the request-scoped session manager
             if not hasattr(current_app, 'request_session_manager'):
                 logger.error("RequestScopedSessionManager not found in current_app")
-                flash('Database configuration error. Please contact support.', 'error')
+                # Send error notification
+                from notification_helpers import send_error_notification
+                send_error_notification("Database configuration error. Please contact support.", "Configuration Error")
                 return redirect(url_for('login'))
             
             session_manager = current_app.request_session_manager
@@ -56,11 +59,15 @@ def with_db_session(f):
                     
                 except DetachedInstanceError as e:
                     logger.warning(f"DetachedInstanceError for current_user in {f.__name__}: {e}")
-                    flash('Your session has expired. Please log in again.', 'warning')
+                    # Send warning notification
+                    from notification_helpers import send_warning_notification
+                    send_warning_notification("Your session has expired. Please log in again.", "Session Expired")
                     return redirect(url_for('login'))
                 except Exception as e:
                     logger.error(f"Error ensuring current_user attachment in {f.__name__}: {e}")
-                    flash('Authentication error. Please log in again.', 'error')
+                    # Send error notification
+                    from notification_helpers import send_error_notification
+                    send_error_notification("Authentication error. Please log in again.", "Authentication Error")
                     return redirect(url_for('login'))
             
             # Call the original function
@@ -68,15 +75,21 @@ def with_db_session(f):
             
         except DetachedInstanceError as e:
             logger.error(f"DetachedInstanceError in view {f.__name__}: {e}")
-            flash('Database session error. Please try again.', 'error')
+            # Send error notification
+            from notification_helpers import send_error_notification
+            send_error_notification("Database session error. Please try again.", "Database Error")
             return redirect(url_for('index'))
         except SQLAlchemyError as e:
             logger.error(f"Database error in view {f.__name__}: {e}")
-            flash('Database error occurred. Please try again.', 'error')
+            # Send error notification
+            from notification_helpers import send_error_notification
+            send_error_notification("Database error occurred. Please try again.", "Database Error")
             return redirect(url_for('index'))
         except Exception as e:
             logger.error(f"Unexpected error in view {f.__name__}: {e}")
-            flash('An unexpected error occurred. Please try again.', 'error')
+            # Send error notification
+            from notification_helpers import send_error_notification
+            send_error_notification("An unexpected error occurred. Please try again.", "Unexpected Error")
             return redirect(url_for('index'))
     
     return decorated_function
@@ -99,7 +112,9 @@ def require_platform_context(f):
         try:
             # Check authentication
             if not current_user.is_authenticated:
-                flash('Please log in to access this page.', 'info')
+                # Send info notification
+                from notification_helpers import send_info_notification
+                send_info_notification("Please log in to access this page.", "Authentication Required")
                 return redirect(url_for('login', next=request.url))
             
             # Use direct database query instead of current_user.platforms to avoid session issues
@@ -113,7 +128,9 @@ def require_platform_context(f):
                     # Check if user has any platforms
                     user_id = getattr(current_user, 'id', None)
                     if not user_id:
-                        flash('User authentication error. Please log in again.', 'error')
+                        # Send error notification
+                        from notification_helpers import send_error_notification
+                        send_error_notification("User authentication error. Please log in again.", "Authentication Error")
                         return redirect(url_for('user_management.login'))
                     
                     user_platforms = db_session.query(PlatformConnection).filter_by(
@@ -122,7 +139,9 @@ def require_platform_context(f):
                     ).all()
                     
                     if not user_platforms:
-                        flash('You need to set up at least one platform connection to access this feature.', 'warning')
+                        # Send warning notification
+                        from notification_helpers import send_warning_notification
+                        send_warning_notification("You need to set up at least one platform connection to access this feature.", "Platform Setup Required")
                         return redirect(url_for('first_time_setup'))
                     
                     # Check for active platform context
@@ -151,7 +170,9 @@ def require_platform_context(f):
                     
             except Exception as e:
                 logger.error(f"Error checking platform context in {f.__name__}: {e}")
-                flash('Error loading platform information. Please try again.', 'error')
+                # Send error notification
+                from notification_helpers import send_error_notification
+                send_error_notification("Error loading platform information. Please try again.", "Platform Error")
                 return redirect(url_for('platform_management'))
             
             # Call the original function
@@ -159,11 +180,15 @@ def require_platform_context(f):
             
         except DetachedInstanceError as e:
             logger.error(f"DetachedInstanceError in platform-dependent view {f.__name__}: {e}")
-            flash('Database session error. Please log in again.', 'warning')
+            # Send warning notification
+            from notification_helpers import send_warning_notification
+            send_warning_notification("Database session error. Please log in again.", "Session Error")
             return redirect(url_for('login'))
         except Exception as e:
             logger.error(f"Unexpected error in platform-dependent view {f.__name__}: {e}")
-            flash('An unexpected error occurred. Please try again.', 'error')
+            # Send error notification
+            from notification_helpers import send_error_notification
+            send_error_notification("An unexpected error occurred. Please try again.", "Unexpected Error")
             return redirect(url_for('index'))
     
     return decorated_function
@@ -193,17 +218,25 @@ def handle_detached_instance_error(f):
             
             # Provide user-friendly error message based on the view
             if f.__name__ in ['index', 'dashboard']:
-                flash('Your session has expired. Please refresh the page or log in again.', 'warning')
+                # Send warning notification
+                from notification_helpers import send_warning_notification
+                send_warning_notification("Your session has expired. Please refresh the page or log in again.", "Session Expired")
                 return redirect(url_for('login'))
             elif 'platform' in f.__name__.lower():
-                flash('Platform session error. Please select your platform again.', 'warning')
+                # Send warning notification
+                from notification_helpers import send_warning_notification
+                send_warning_notification("Platform session error. Please select your platform again.", "Platform Session Error")
                 return redirect(url_for('platform_management'))
             else:
-                flash('Session error occurred. Please try again.', 'error')
+                # Send error notification
+                from notification_helpers import send_error_notification
+                send_error_notification("Session error occurred. Please try again.", "Session Error")
                 return redirect(url_for('index'))
         except Exception as e:
             logger.error(f"Unexpected error in {f.__name__}: {e}")
-            flash('An unexpected error occurred. Please try again.', 'error')
+            # Send error notification
+            from notification_helpers import send_error_notification
+            send_error_notification("An unexpected error occurred. Please try again.", "Unexpected Error")
             return redirect(url_for('index'))
     
     return decorated_function
@@ -236,7 +269,9 @@ def ensure_user_session_attachment(f):
                 
             except DetachedInstanceError:
                 logger.warning(f"DetachedInstanceError for current_user in {f.__name__}")
-                flash('Your session has expired. Please log in again.', 'warning')
+                # Send warning notification
+                from notification_helpers import send_warning_notification
+                send_warning_notification("Your session has expired. Please log in again.", "Session Expired")
                 return redirect(url_for('login'))
             except Exception as e:
                 logger.error(f"Error ensuring user session attachment in {f.__name__}: {e}")

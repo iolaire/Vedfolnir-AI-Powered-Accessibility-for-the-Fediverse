@@ -24,16 +24,9 @@
     </nav>
 
     <div class="container mt-4">
-        {% with messages = get_flashed_messages(with_categories=true) %}
-            {% if messages %}
-                {% for category, message in messages %}
-                    <div class="alert alert-{{ 'danger' if category == 'error' else category }} alert-dismissible fade show" role="alert">
-                        {{ message }}
-                        <button type="button" class="btn-close" data-bs-dismiss="alert"></button>
-                    </div>
-                {% endfor %}
-            {% endif %}
-        {% endwith %}
+        <!-- Unified Notification System Integration -->
+<!-- Flash messages are now handled by the WebSocket-based notification system -->
+<!-- See static/js/websocket-client-factory.js for notification handling -->
 
         {% block content %}{% endblock %}
     </div>

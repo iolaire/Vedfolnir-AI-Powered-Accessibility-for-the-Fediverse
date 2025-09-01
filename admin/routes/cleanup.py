@@ -2,12 +2,20 @@
 # This program is free software: you can redistribute it and/or modify it under the terms of the GNU Affero General Public License as published by the Free Software Foundation, either version 3 of the License, or (at your option) any later version.
 # THE SOFTWARE IS PROVIDED "AS IS", WITHOUT WARRANTY OF ANY KIND, EXPRESS OR IMPLIED, INCLUDING BUT NOT LIMITED TO THE WARRANTIES OF MERCHANTABILITY, FITNESS FOR A PARTICULAR PURPOSE AND NONINFRINGEMENT. IN NO EVENT SHALL THE AUTHORS OR COPYRIGHT HOLDERS BE LIABLE FOR ANY CLAIM, DAMAGES OR OTHER LIABILITY, WHETHER IN AN ACTION OF CONTRACT, TORT OR OTHERWISE, ARISING FROM, OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE SOFTWARE.
 
+# MIGRATION NOTE: Flash messages in this file have been commented out as part of
+# the notification system migration. The application now uses the unified
+# WebSocket-based notification system. These comments should be replaced with
+# appropriate unified notification calls in a future update.
+
+
+from unified_notification_manager import UnifiedNotificationManager
 """Admin Data Cleanup Routes"""
 
 import logging
-from flask import render_template, request, redirect, url_for, flash, current_app
+from flask import render_template, request, redirect, url_for, current_app
 from flask_login import login_required, current_user
 from models import UserRole, ProcessingStatus
+# from notification_flash_replacement import send_notification  # Removed - using unified notification system
 from session_error_handlers import with_session_error_handling
 from ..services.cleanup_service import CleanupService
 
@@ -22,7 +30,9 @@ def register_routes(bp):
     def cleanup():
         """Admin interface for data cleanup"""
         if not current_user.role == UserRole.ADMIN:
-            flash('Access denied. Admin privileges required.', 'error')
+            # Send error notification
+            from notification_helpers import send_error_notification
+            send_error_notification("Access denied. Admin privileges required.", "Access Denied")
             return redirect(url_for('index'))
             
         db_manager = current_app.config['db_manager']
@@ -39,7 +49,9 @@ def register_routes(bp):
     def cleanup_runs():
         """Handle various cleanup operations"""
         if not current_user.role == UserRole.ADMIN:
-            flash('Access denied', 'error')
+            # Send error notification
+            from notification_helpers import send_error_notification
+            send_error_notification("Access denied.", "Access Denied")
             return redirect(url_for('admin.cleanup'))
         
         db_manager = current_app.config['db_manager']
@@ -53,7 +65,9 @@ def register_routes(bp):
             if operation == 'archive_runs':
                 days = request.form.get('days', type=int)
                 if not days or days < 1:
-                    flash('Invalid number of days', 'error')
+                    # Send error notification
+                    from notification_helpers import send_error_notification
+                    send_error_notification("Invalid number of days.", "Invalid Input")
                     return redirect(url_for('admin.cleanup'))
                 
                 result = cleanup_service.cleanup_old_processing_runs(days=days, dry_run=dry_run)
@@ -63,7 +77,9 @@ def register_routes(bp):
                 days = request.form.get('days', type=int)
                 
                 if not days or days < 1:
-                    flash('Invalid number of days', 'error')
+                    # Send error notification
+                    from notification_helpers import send_error_notification
+                    send_error_notification("Invalid number of days.", "Invalid Input")
                     return redirect(url_for('admin.cleanup'))
                 
                 # Convert status string to enum
@@ -85,7 +101,9 @@ def register_routes(bp):
             elif operation == 'cleanup_user_data':
                 user_id = request.form.get('user_id')
                 if not user_id:
-                    flash('Please select a user', 'error')
+                    # Send error notification
+                    from notification_helpers import send_error_notification
+                    send_error_notification("Please select a user.", "Invalid Input")
                     return redirect(url_for('admin.cleanup'))
                 
                 result = cleanup_service.cleanup_user_data(user_id=user_id, dry_run=dry_run)
@@ -97,7 +115,9 @@ def register_routes(bp):
                 result = cleanup_service.run_full_cleanup(dry_run=dry_run)
                 
             else:
-                flash('Unknown cleanup operation', 'error')
+                # Send error notification
+                from notification_helpers import send_error_notification
+                send_error_notification("Unknown cleanup operation.", "Invalid Operation")
                 return redirect(url_for('admin.cleanup'))
             
             # Handle result
@@ -110,14 +130,26 @@ def register_routes(bp):
                 
                 if 'limit_lifted' in result and result['limit_lifted']:
                     message += " - Storage limits automatically lifted!"
-                    flash(message, 'success')
+                    # Send success notification
+                    from notification_helpers import send_success_notification
+                    send_success_notification(message, "Cleanup Complete")
                 else:
-                    flash(message, 'info' if dry_run else 'success')
+                    # Send notification based on dry run status
+                    from notification_helpers import send_info_notification, send_success_notification
+                    if dry_run:
+                        send_info_notification(message, "Cleanup Preview")
+                    else:
+                        send_success_notification(message, "Cleanup Complete")
             else:
-                flash(f'Error: {result["error"]}', 'error')
+                # Send error notification
+                from notification_helpers import send_error_notification
+                send_error_notification(f'Error: {result["error"]}', "Cleanup Failed")
                 
+                pass
         except Exception as e:
             logger.error(f"Error in cleanup operation {operation}: {e}")
-            flash(f'Cleanup operation failed: {str(e)}', 'error')
+            # Send error notification
+            from notification_helpers import send_error_notification
+            send_error_notification(f'Cleanup operation failed: {str(e)}', "Operation Failed")
         
         return redirect(url_for('admin.cleanup'))

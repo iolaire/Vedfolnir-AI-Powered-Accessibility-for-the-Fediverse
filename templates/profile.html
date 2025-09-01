@@ -5,6 +5,21 @@
 
 {% block title %}User Profile - Vedfolnir{% endblock %}
 
+{% block head %}
+<!-- Page-Specific Notification Integration -->
+{% set page_id = 'user-profile' %}
+{% set page_type = 'user_profile' %}
+{% set notification_config = {
+    'enabled_types': ['user', 'security', 'system', 'maintenance'],
+    'auto_hide': true,
+    'max_notifications': 5,
+    'position': 'top-right',
+    'show_timestamp': true
+} %}
+{% set websocket_events = ['user_profile_update', 'security_notification', 'system_notification', 'notification'] %}
+{% include 'components/page_notification_integration.html' %}
+{% endblock %}
+
 {% block content %}
 <div class="container-fluid py-4">
     <div class="row">

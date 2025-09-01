@@ -561,8 +561,22 @@ class TaskQueueManager:
                 
                 logger.info(f"Admin {sanitize_for_log(str(admin_user_id))} cancelled task {sanitize_for_log(task_id)} - Reason: {sanitize_for_log(reason)}")
                 
-                # TODO: Send notification to user about admin cancellation
-                # This would be implemented in a notification service
+                # Send notification to user about admin cancellation
+                from notification_helpers import send_user_notification
+                from models import NotificationType, NotificationPriority, NotificationCategory
+                send_user_notification(
+                    message=f"Your task has been cancelled by an administrator. Reason: {reason}",
+                    notification_type=NotificationType.WARNING,
+                    title="Task Cancelled",
+                    user_id=task.user_id,
+                    category=NotificationCategory.ADMIN,
+                    priority=NotificationPriority.HIGH,
+                    data={
+                        'task_id': task_id,
+                        'cancelled_by': admin_user_id,
+                        'cancellation_reason': reason
+                    }
+                )
                 
                 return True
                 

@@ -6,6 +6,19 @@
 {% block title %}Generate Captions - Vedfolnir{% endblock %}
 
 {% block head %}
+<!-- Unified Notification System Integration -->
+{% set page_id = 'caption-processing-main' %}
+{% set page_type = 'caption_processing' %}
+{% set notification_config = {
+    'enabled_types': ['caption', 'system', 'maintenance'],
+    'auto_hide': true,
+    'max_notifications': 5,
+    'position': 'top-right',
+    'show_progress': true
+} %}
+{% set websocket_events = ['caption_progress', 'caption_status', 'caption_complete', 'caption_error', 'system_maintenance', 'notification', 'system_notification'] %}
+{% include 'components/page_notification_integration.html' %}
+
 <script src="{{ url_for('static', filename='js/caption_generation.js') }}"></script>
 <style>
     .progress-container {
@@ -174,14 +187,20 @@
                 </div>
             </div>
             
-            {% if active_platform %}
+            {% if current_platform %}
             <div class="alert alert-info">
                 <i class="bi bi-info-circle"></i>
-                <strong>Current Platform:</strong> {{ active_platform.name }} 
-                ({{ active_platform.platform_type|title }})
-                {% if active_platform.username %}
-                - @{{ active_platform.username }}
+                <strong>Current Platform:</strong> {{ current_platform.name }} 
+                ({{ current_platform.type|title }})
+                {% if current_platform.username %}
+                - @{{ current_platform.username }}
                 {% endif %}
+                <span class="float-end">
+                    <small>
+                        <i class="bi bi-wifi"></i> 
+                        Real-time updates: <span id="websocket-status" class="text-muted">Connecting...</span>
+                    </small>
+                </span>
             </div>
             {% endif %}
             

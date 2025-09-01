@@ -11,8 +11,9 @@ Routes for handling GDPR data subject rights and privacy management.
 import json
 import logging
 from datetime import datetime
-from flask import Blueprint, render_template, request, flash, redirect, url_for, jsonify, make_response, current_app
+from flask import Blueprint, render_template, request, redirect, url_for, jsonify, make_response, current_app
 from flask_login import login_required, current_user
+# from notification_flash_replacement import send_notification  # Removed - using unified notification system
 
 from forms.gdpr_forms import (
     DataExportRequestForm, DataRectificationForm, DataErasureRequestForm,
@@ -104,24 +105,36 @@ def data_export():
                     email_success, email_message = gdpr_service.send_data_export_email(current_user, export_data)
                     
                     if email_success:
-                        flash('Your data export has been completed. You will receive an email with instructions to access your data.', 'success')
+                        # Send success notification
+                        from notification_helpers import send_success_notification
+                        send_success_notification("Your data export has been completed. You will receive an email with instructions to access your data.", "Data Export Complete")
+                        pass
                     else:
-                        flash('Data export completed, but we could not send the notification email. Please contact support.', 'warning')
+                        # Send warning notification
+                        from notification_helpers import send_warning_notification
+                        send_warning_notification("Data export completed, but we could not send the notification email. Please contact support.", "Email Notification Failed")
                 
                 # Store export data temporarily for download (if email delivery)
+                        pass
                 if form.delivery_method.data == 'email':
                     # In a real implementation, you might store this in a secure temporary location
                     # For now, we'll just show success message
                     pass
                 
-                flash('Your personal data export has been completed successfully.', 'success')
+                # Send success notification
+                from notification_helpers import send_success_notification
+                send_success_notification("Your personal data export has been completed successfully.", "Data Export Complete")
                 return redirect(url_for('gdpr.data_export'))
             else:
-                flash(f'Data export failed: {message}', 'error')
+                # Send error notification
+                from notification_helpers import send_error_notification
+                send_error_notification(f'Data export failed: {message}', 'Data Export Failed')
                 
         except Exception as e:
             logger.error(f"Error processing data export request: {e}")
-            flash('An error occurred while processing your data export request.', 'error')
+            # Send error notification
+            from notification_helpers import send_error_notification
+            send_error_notification("An error occurred while processing your data export request.", "Processing Error")
     
     return render_template('gdpr/data_export.html', form=form)
 
@@ -167,18 +180,30 @@ def data_rectification():
                 )
                 
                 if success:
-                    flash('Your personal data has been rectified successfully.', 'success')
+                    # Send success notification
+                    from notification_helpers import send_success_notification
+                    send_success_notification("Your personal data has been rectified successfully.", "Data Updated")
                     if 'email' in rectification_data:
-                        flash('Your email address has been updated and requires re-verification. Please check your new email for a verification link.', 'info')
+                        # Send info notification
+                        from notification_helpers import send_info_notification
+                        send_info_notification("Your email address has been updated and requires re-verification. Please check your new email for a verification link.", "Email Verification Required")
+                        pass
                     return redirect(url_for('profile.profile'))
                 else:
-                    flash(f'Data rectification failed: {message}', 'error')
+                    # Send error notification
+                    from notification_helpers import send_error_notification
+                    send_error_notification(f'Data rectification failed: {message}', 'Update Failed')
             else:
-                flash('No changes were detected in your data.', 'info')
+                # Send info notification
+                from notification_helpers import send_info_notification
+                send_info_notification("No changes were detected in your data.", "No Changes")
+                pass
                 
         except Exception as e:
             logger.error(f"Error processing data rectification request: {e}")
-            flash('An error occurred while processing your data rectification request.', 'error')
+            # Send error notification
+            from notification_helpers import send_error_notification
+            send_error_notification("An error occurred while processing your data rectification request.", "Processing Error")
     
     return render_template('gdpr/data_rectification.html', form=form)
 
@@ -220,18 +245,24 @@ def data_erasure():
                     form.erasure_type.data
                 )
                 
-                flash('Your data erasure request has been processed successfully. You will receive a confirmation email.', 'success')
+                # Send success notification
+                from notification_helpers import send_success_notification
+                send_success_notification("Your data erasure request has been processed successfully. You will receive a confirmation email.", "Account Deleted")
                 
                 # Log out user and redirect to home page
                 from flask_login import logout_user
                 logout_user()
                 return redirect(url_for('main.index'))
             else:
-                flash(f'Data erasure failed: {message}', 'error')
+                # Send error notification
+                from notification_helpers import send_error_notification
+                send_error_notification(f'Data erasure failed: {message}', 'Deletion Failed')
                 
         except Exception as e:
             logger.error(f"Error processing data erasure request: {e}")
-            flash('An error occurred while processing your data erasure request.', 'error')
+            # Send error notification
+            from notification_helpers import send_error_notification
+            send_error_notification("An error occurred while processing your data erasure request.", "Processing Error")
     
     return render_template('gdpr/data_erasure.html', form=form)
 
@@ -265,7 +296,9 @@ def consent_management():
                     )
                     
                     if success:
-                        flash(message, 'success')
+                        # Send success notification
+                        from notification_helpers import send_success_notification
+                        send_success_notification(message, 'Consent Updated')
                         
                         # Send confirmation email for consent withdrawal
                         if not form.data_processing_consent.data:
@@ -276,7 +309,7 @@ def consent_management():
                                 current_app.config.get('BASE_URL', 'http://localhost:5000')
                             )
                     else:
-                        flash(f'Consent update failed: {message}', 'error')
+                        send_notification(f'Consent update failed: {message}', 'error', 'Update Failed')
             
             # Handle other consent types as they are implemented
             # (marketing, analytics, third-party sharing)
@@ -285,7 +318,9 @@ def consent_management():
             
         except Exception as e:
             logger.error(f"Error processing consent management: {e}")
-            flash('An error occurred while updating your consent preferences.', 'error')
+            # Send error notification
+            from notification_helpers import send_error_notification
+            send_error_notification("An error occurred while updating your consent preferences.", "Processing Error")
     
     return render_template('gdpr/consent_management.html', form=form)
 
@@ -316,12 +351,16 @@ def privacy_request():
             # In a real implementation, this would create a support ticket
             # For now, we'll just log it and show a success message
             
-            flash('Your privacy request has been submitted successfully. We will respond within 30 days as required by GDPR.', 'success')
+            # Send success notification
+            from notification_helpers import send_success_notification
+            send_success_notification("Your privacy request has been submitted successfully. We will respond within 30 days as required by GDPR.", "Request Submitted")
             return redirect(url_for('gdpr.privacy_request'))
             
         except Exception as e:
             logger.error(f"Error processing privacy request: {e}")
-            flash('An error occurred while submitting your privacy request.', 'error')
+            # Send error notification
+            from notification_helpers import send_error_notification
+            send_error_notification("An error occurred while submitting your privacy request.", "Processing Error")
     
     return render_template('gdpr/privacy_request.html', form=form)
 
@@ -361,11 +400,13 @@ def compliance_report():
                     
                     return response
                 else:
-                    flash(f'Report generation failed: {message}', 'error')
+                    send_notification(f'Report generation failed: {message}', 'error', 'Report Generation Failed')
                 
         except Exception as e:
             logger.error(f"Error generating compliance report: {e}")
-            flash('An error occurred while generating your compliance report.', 'error')
+            # Send error notification
+            from notification_helpers import send_error_notification
+            send_error_notification("An error occurred while generating your compliance report.", "Processing Error")
     
     return render_template('gdpr/privacy_request.html', form=form)
 
@@ -425,7 +466,9 @@ def data_portability():
                     mimetype = 'application/xml'
                     extension = 'xml'
                 else:
-                    flash('API transfer not yet implemented. Please use download format.', 'warning')
+                    # Send warning notification
+                    from notification_helpers import send_warning_notification
+                    send_warning_notification("API transfer not yet implemented. Please use download format.", "Feature Not Available")
                     return redirect(url_for('gdpr.data_portability'))
                 
                 filename = f'vedfolnir_portable_data_{current_user.username}_{datetime.utcnow().strftime("%Y%m%d_%H%M%S")}.{extension}'
@@ -436,11 +479,13 @@ def data_portability():
                 
                 return response
             else:
-                flash(f'Data portability export failed: {message}', 'error')
+                send_notification(f'Data portability export failed: {message}', 'error', 'Export Failed')
                 
         except Exception as e:
             logger.error(f"Error processing data portability request: {e}")
-            flash('An error occurred while processing your data portability request.', 'error')
+            # Send error notification
+            from notification_helpers import send_error_notification
+            send_error_notification("An error occurred while processing your data portability request.", "Processing Error")
     
     return render_template('gdpr/data_export.html', form=form)
 
@@ -464,12 +509,14 @@ def data_processing_info():
             if success:
                 return render_template('gdpr/privacy_policy.html', processing_info=processing_info)
             else:
-                flash(f'Could not retrieve data processing information: {message}', 'error')
+                send_notification(f'Could not retrieve data processing information: {message}', 'error', 'Information Retrieval Failed')
                 return redirect(url_for('profile.profile'))
             
     except Exception as e:
         logger.error(f"Error retrieving data processing info: {e}")
-        flash('An error occurred while retrieving data processing information.', 'error')
+        # Send error notification
+        from notification_helpers import send_error_notification
+        send_error_notification("An error occurred while retrieving data processing information.", "Processing Error")
         return redirect(url_for('profile.profile'))
 
 @gdpr_bp.route('/rights-overview')

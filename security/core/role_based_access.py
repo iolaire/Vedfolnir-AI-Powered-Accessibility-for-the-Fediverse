@@ -2,6 +2,13 @@
 # This program is free software: you can redistribute it and/or modify it under the terms of the GNU Affero General Public License as published by the Free Software Foundation, either version 3 of the License, or (at your option) any later version.
 # THE SOFTWARE IS PROVIDED "AS IS", WITHOUT WARRANTY OF ANY KIND, EXPRESS OR IMPLIED, INCLUDING BUT NOT LIMITED TO THE WARRANTIES OF MERCHANTABILITY, FITNESS FOR A PARTICULAR PURPOSE AND NONINFRINGEMENT. IN NO EVENT SHALL THE AUTHORS OR COPYRIGHT HOLDERS BE LIABLE FOR ANY CLAIM, DAMAGES OR OTHER LIABILITY, WHETHER IN AN ACTION OF CONTRACT, TORT OR OTHERWISE, ARISING FROM, OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE SOFTWARE.
 
+# MIGRATION NOTE: Flash messages in this file have been commented out as part of
+# the notification system migration. The application now uses the unified
+# WebSocket-based notification system. These comments should be replaced with
+# appropriate unified notification calls in a future update.
+
+
+from unified_notification_manager import UnifiedNotificationManager
 """
 Role-Based Access Control System
 
@@ -14,7 +21,7 @@ Requirements: 8.1, 8.2, 8.3, 8.4, 8.5, 1.2, 1.3, 1.4, 1.5
 
 import logging
 from functools import wraps
-from flask import current_app, redirect, url_for, flash, request, abort, jsonify
+from flask import current_app, redirect, url_for, request, abort, jsonify
 from flask_login import current_user
 from models import UserRole, PlatformConnection, Image, Post
 from sqlalchemy.orm.exc import DetachedInstanceError
@@ -35,12 +42,16 @@ def require_role(required_role):
         @wraps(f)
         def decorated_function(*args, **kwargs):
             if not current_user.is_authenticated:
-                flash('Please log in to access this page.', 'info')
+                # Send info notification
+                from notification_helpers import send_info_notification
+                send_info_notification("Please log in to access this page.", "Information")
                 return redirect(url_for('user_management.login', next=request.url))
             
             if not current_user.has_permission(required_role):
                 logger.warning(f"Access denied for user {current_user.id} to {f.__name__}. Required: {required_role.value}, User: {current_user.role.value}")
-                flash('Access denied. Insufficient permissions.', 'error')
+                # Send error notification
+                from notification_helpers import send_error_notification
+                send_error_notification("Access denied. Insufficient permissions.", "Error")
                 
                 # Log security event
                 from models import UserAuditLog
@@ -92,7 +103,9 @@ def platform_access_required(f):
     @wraps(f)
     def decorated_function(*args, **kwargs):
         if not current_user.is_authenticated:
-            flash('Please log in to access this page.', 'info')
+            # Send info notification
+            from notification_helpers import send_info_notification
+            send_info_notification("Please log in to access this page.", "Information")
             return redirect(url_for('user_management.login', next=request.url))
         
         # Admin users have access to all platforms
@@ -113,12 +126,16 @@ def platform_access_required(f):
                     
                     if not platform:
                         logger.warning(f"User {current_user.id} attempted to access platform {platform_id} without permission")
-                        flash('Access denied. You can only access your own platforms.', 'error')
+                        # Send error notification
+                        from notification_helpers import send_error_notification
+                        send_error_notification("Access denied. You can only access your own platforms.", "Error")
                         return redirect(url_for('platform_management'))
                         
             except Exception as e:
                 logger.error(f"Error checking platform access: {e}")
-                flash('Error checking platform access.', 'error')
+                # Send error notification
+                from notification_helpers import send_error_notification
+                send_error_notification("Error checking platform access.", "Error")
                 return redirect(url_for('index'))
         
         return f(*args, **kwargs)
@@ -135,7 +152,9 @@ def content_access_required(f):
     @wraps(f)
     def decorated_function(*args, **kwargs):
         if not current_user.is_authenticated:
-            flash('Please log in to access this page.', 'info')
+            # Send info notification
+            from notification_helpers import send_info_notification
+            send_info_notification("Please log in to access this page.", "Information")
             return redirect(url_for('user_management.login', next=request.url))
         
         # Admin users have access to all content
@@ -161,7 +180,9 @@ def content_access_required(f):
                         
                         if not platform:
                             logger.warning(f"User {current_user.id} attempted to access image {image_id} without permission")
-                            flash('Access denied. You can only access content from your own platforms.', 'error')
+                            # Send error notification
+                            from notification_helpers import send_error_notification
+                            send_error_notification("Access denied. You can only access content from your own platforms.", "Error")
                             return redirect(url_for('review_list'))
                 
                 # Check post access
@@ -176,12 +197,16 @@ def content_access_required(f):
                         
                         if not platform:
                             logger.warning(f"User {current_user.id} attempted to access post {post_id} without permission")
-                            flash('Access denied. You can only access content from your own platforms.', 'error')
+                            # Send error notification
+                            from notification_helpers import send_error_notification
+                            send_error_notification("Access denied. You can only access content from your own platforms.", "Error")
                             return redirect(url_for('index'))
                             
         except Exception as e:
             logger.error(f"Error checking content access: {e}")
-            flash('Error checking content access.', 'error')
+            # Send error notification
+            from notification_helpers import send_error_notification
+            send_error_notification("Error checking content access.", "Error")
             return redirect(url_for('index'))
         
         return f(*args, **kwargs)

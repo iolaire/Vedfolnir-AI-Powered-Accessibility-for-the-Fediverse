@@ -27,6 +27,11 @@
     <link href="{{ url_for('static', filename='css/platform_styles.css') }}" rel="stylesheet">
     <link href="{{ url_for('static', filename='css/fixes.css') }}" rel="stylesheet">
     
+    <!-- Unified Notification System Styles -->
+    <link href="{{ url_for('static', filename='css/unified-notifications.css') }}" rel="stylesheet">
+    <link href="{{ url_for('static', filename='css/notification-ui.css') }}" rel="stylesheet">
+    <link href="{{ url_for('static', filename='css/legacy-notification-fallback.css') }}" rel="stylesheet">
+    
     <!-- Session Management Styles -->
     <style>
         .session-status-indicator {
@@ -228,16 +233,13 @@
     </nav>
 
     <div class="container mt-4" id="main-content">
-        {% with messages = get_flashed_messages(with_categories=true) %}
-            {% if messages %}
-                {% for category, message in messages %}
-                    <div class="alert alert-{{ 'danger' if category == 'error' else 'success' if category == 'success' else 'info' }} alert-dismissible fade show" role="alert">
-                        {{ message }}
-                        <button type="button" class="btn-close" data-bs-dismiss="alert"></button>
-                    </div>
-                {% endfor %}
-            {% endif %}
-        {% endwith %}
+        <!-- Unified Notification Container -->
+        <div id="unified-notification-container" class="notification-container notification-position-top notification-position-right notification-stack-down" role="region" aria-label="Notifications" aria-live="polite"></div>
+        
+        <!-- Flash Message Integration with Unified System -->
+        <!-- Unified Notification System Integration -->
+<!-- Flash messages are now handled by the WebSocket-based notification system -->
+<!-- See static/js/websocket-client-factory.js for notification handling -->
 
         {% block content %}{% endblock %}
     </div>
@@ -247,6 +249,13 @@
     <script src="{{ url_for('static', filename='js/csrf-handler.js') }}"></script>
     <script src="{{ url_for('static', filename='js/websocket-client-factory.js') }}"></script>
     <script src="{{ url_for('static', filename='js/websocket-client.js') }}"></script>
+    
+    <!-- Unified Notification System Scripts -->
+    <script src="{{ url_for('static', filename='js/notification-ui-renderer.js') }}"></script>
+    <script src="{{ url_for('static', filename='js/page_notification_integrator.js') }}"></script>
+    <script src="{{ url_for('static', filename='js/notification-integration.js') }}"></script>
+    <script src="{{ url_for('static', filename='js/legacy-notification-migration.js') }}"></script>
+    
     <script src="{{ url_for('static', filename='js/app.js') }}"></script>
     <script src="{{ url_for('static', filename='js/error_handler.js') }}"></script>
     <script src="{{ url_for('static', filename='js/session-sync.js') }}"></script>
@@ -416,6 +425,65 @@
             }
         }
     </script>
+    
+    <!-- Unified Notification System Initialization -->
+    <script>
+    // Initialize unified notification system
+    document.addEventListener('DOMContentLoaded', function() {
+        // Initialize main notification renderer if not already initialized
+        if (!window.unifiedNotificationRenderer) {
+            window.unifiedNotificationRenderer = new NotificationUIRenderer('unified-notification-container', {
+                position: 'top-right',
+                maxNotifications: 5,
+                autoHide: true,
+                defaultDuration: 5000,
+                theme: 'modern',
+                showIcons: true,
+                allowDismiss: true,
+                pauseOnHover: true
+            });
+        }
+        
+        // Global notification functions
+        window.showNotification = function(message, type = 'info', title = null, options = {}) {
+            return window.unifiedNotificationRenderer.renderNotification({
+                type: type,
+                title: title || (type === 'error' ? 'Error' : type === 'success' ? 'Success' : type === 'warning' ? 'Warning' : 'Information'),
+                message: message,
+                priority: type === 'error' ? 'high' : 'normal',
+                ...options
+            });
+        };
+        
+        window.showSystemAlert = function(message, type = 'warning', persistent = false) {
+            return window.unifiedNotificationRenderer.renderSystemAlert({
+                type: type,
+                title: 'System Alert',
+                message: message,
+                persistent: persistent,
+                priority: 'critical'
+            });
+        };
+        
+        window.showProgress = function(taskId, message, percentage = 0) {
+            return window.unifiedNotificationRenderer.renderProgressUpdate({
+                id: `progress-${taskId}`,
+                taskId: taskId,
+                title: 'Processing...',
+                message: message,
+                percentage: percentage
+            });
+        };
+        
+        // Fallback notification function for legacy compatibility
+        window.showFallbackNotification = function(message, type = 'info', duration = 5000) {
+            return window.showNotification(message, type, null, { duration: duration });
+        };
+        
+        console.log('Unified notification system initialized');
+    });
+    </script>
+    
     {% block scripts %}{% endblock %}
 </body>
 </html>

@@ -1,0 +1,47 @@
+{
+  "report_metadata": {
+    "generated_at": "2025-08-31T14:58:30.996788+00:00",
+    "test_duration": 3.0081300735473633,
+    "system_info": {
+      "platform": "darwin",
+      "python_version": "3.12.5 (main, Aug 29 2024, 09:08:57) [Clang 15.0.0 (clang-1500.3.9.4)]",
+      "cpu_count": 10,
+      "memory_total_gb": 16.0,
+      "timestamp": "2025-08-31T14:58:27.988600+00:00"
+    }
+  },
+  "overall_summary": {
+    "total_test_suites": 1,
+    "total_tests": 0,
+    "total_failures": 0,
+    "total_errors": 1,
+    "total_skipped": 0,
+    "overall_success_rate": 0,
+    "total_execution_time": 3.0081300735473633
+  },
+  "test_suite_results": {
+    "notification": {
+      "test_suite": "NotificationPerformanceTestSuite",
+      "tests_run": 0,
+      "failures": 0,
+      "errors": 1,
+      "skipped": 0,
+      "success_rate": 0,
+      "execution_time": 3.008056879043579,
+      "failure_details": [],
+      "error_details": [
+        "Traceback (most recent call last):\n  File \"/Volumes/Gold/DevContainerTesting/vedfolnir/tests/performance/../../tests/performance/test_notification_performance.py\", line 194, in _setup_notification_system\n    auth_handler = WebSocketAuthHandler(cls.db_manager)\n                   ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^\nTypeError: WebSocketAuthHandler.__init__() missing 1 required positional argument: 'session_manager'\n\nDuring handling of the above exception, another exception occurred:\n\nTraceback (most recent call last):\n  File \"/Volumes/Gold/DevContainerTesting/vedfolnir/tests/performance/../../tests/performance/test_notification_performance.py\", line 175, in setUpClass\n    cls._setup_notification_system()\n  File \"/Volumes/Gold/DevContainerTesting/vedfolnir/tests/performance/../../tests/performance/test_notification_performance.py\", line 217, in _setup_notification_system\n    raise RuntimeError(f\"Failed to setup notification system: {e}\")\nRuntimeError: Failed to setup notification system: WebSocketAuthHandler.__init__() missing 1 required positional argument: 'session_manager'\n"
+      ]
+    }
+  },
+  "performance_benchmarks": {
+    "notification_throughput": "Not measured",
+    "websocket_connection_capacity": "Not measured",
+    "memory_efficiency": "Not measured",
+    "concurrent_user_capacity": "Not measured"
+  },
+  "recommendations": [
+    "Review failures in notification test suite",
+    "Improve reliability in notification - success rate is 0.0%"
+  ]
+}

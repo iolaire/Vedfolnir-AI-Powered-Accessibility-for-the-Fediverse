@@ -10,9 +10,10 @@ Provides admin interface for maintenance mode control and monitoring.
 
 import logging
 from datetime import datetime, timezone, timedelta
-from flask import render_template, request, jsonify, flash, redirect, url_for, current_app
+from flask import render_template, request, jsonify, redirect, url_for, current_app
 from flask_login import login_required, current_user
 from models import UserRole
+# from notification_flash_replacement import send_notification  # Removed - using unified notification system
 from session_error_handlers import with_session_error_handling
 
 logger = logging.getLogger(__name__)
@@ -27,14 +28,54 @@ def register_routes(bp):
     def maintenance_mode_dashboard():
         """Maintenance mode control dashboard"""
         if not current_user.role == UserRole.ADMIN:
-            flash('Access denied. Admin privileges required.', 'error')
+            # Send access denied notification via WebSocket instead of flash
+            try:
+                from unified_notification_manager import AdminNotificationMessage
+                from models import NotificationType, NotificationPriority, NotificationCategory
+                
+                notification_manager = current_app.config.get('notification_manager')
+                if notification_manager:
+                    notification = AdminNotificationMessage(
+                        id=f"access_denied_{int(datetime.now(timezone.utc).timestamp())}",
+                        type=NotificationType.ERROR,
+                        title="Access Denied",
+                        message="Admin privileges required to access maintenance mode.",
+                        user_id=current_user.id,
+                        priority=NotificationPriority.HIGH,
+                        category=NotificationCategory.ADMIN,
+                        admin_only=False
+                    )
+                    notification_manager.send_user_notification(current_user.id, notification)
+            except Exception as e:
+                logger.error(f"Error sending access denied notification: {e}")
+            
             return redirect(url_for('admin.dashboard'))
         
         try:
             # Get maintenance service
             maintenance_service = current_app.config.get('maintenance_service')
             if not maintenance_service:
-                flash('Maintenance service not available', 'error')
+                # Send service unavailable notification via WebSocket instead of flash
+                try:
+                    from unified_notification_manager import AdminNotificationMessage
+                    from models import NotificationType, NotificationPriority, NotificationCategory
+                    
+                    notification_manager = current_app.config.get('notification_manager')
+                    if notification_manager:
+                        notification = AdminNotificationMessage(
+                            id=f"dashboard_service_unavailable_{int(datetime.now(timezone.utc).timestamp())}",
+                            type=NotificationType.ERROR,
+                            title="Service Unavailable",
+                            message="Maintenance service is not available at this time.",
+                            user_id=current_user.id,
+                            priority=NotificationPriority.HIGH,
+                            category=NotificationCategory.ADMIN,
+                            admin_only=True
+                        )
+                        notification_manager.send_admin_notification(notification)
+                except Exception as e:
+                    logger.error(f"Error sending dashboard service unavailable notification: {e}")
+                
                 return redirect(url_for('admin.dashboard'))
             
             # Get current maintenance status
@@ -57,7 +98,27 @@ def register_routes(bp):
         
         except Exception as e:
             logger.error(f"Error loading maintenance mode dashboard: {e}")
-            flash('Error loading maintenance mode dashboard', 'error')
+            # Send error notification via WebSocket instead of flash
+            try:
+                from unified_notification_manager import AdminNotificationMessage
+                from models import NotificationType, NotificationPriority, NotificationCategory
+                
+                notification_manager = current_app.config.get('notification_manager')
+                if notification_manager:
+                    notification = AdminNotificationMessage(
+                        id=f"dashboard_error_{int(datetime.now(timezone.utc).timestamp())}",
+                        type=NotificationType.ERROR,
+                        title="Dashboard Error",
+                        message="Error loading maintenance mode dashboard. Please try again.",
+                        user_id=current_user.id,
+                        priority=NotificationPriority.HIGH,
+                        category=NotificationCategory.ADMIN,
+                        admin_only=True
+                    )
+                    notification_manager.send_admin_notification(notification)
+            except Exception as notification_error:
+                logger.error(f"Error sending dashboard error notification: {notification_error}")
+            
             return redirect(url_for('admin.dashboard'))
     
     @bp.route('/api/maintenance-mode/enable', methods=['POST'])
@@ -132,6 +193,65 @@ def register_routes(bp):
                     administrator=current_user.username
                 )
                 
+                # Send unified maintenance notifications
+                try:
+                    from admin_maintenance_notification_handler import AdminMaintenanceNotificationHandler, MaintenanceNotificationData
+                    from datetime import timedelta
+                    
+                    # Get notification manager
+                    notification_manager = current_app.config.get('notification_manager')
+                    if notification_manager:
+                        maintenance_handler = AdminMaintenanceNotificationHandler(
+                            notification_manager, current_app.db_manager
+                        )
+                        
+                        # Calculate estimated completion
+                        estimated_completion = None
+                        if duration:
+                            estimated_completion = datetime.now(timezone.utc) + timedelta(minutes=duration)
+                        
+                        # Create maintenance notification data
+                        maintenance_data = MaintenanceNotificationData(
+                            operation_type=f"system_maintenance_{mode.value}",
+                            operation_id=f"maintenance_{int(datetime.now(timezone.utc).timestamp())}",
+                            status="started",
+                            estimated_duration=duration,
+                            estimated_completion=estimated_completion,
+                            affected_operations=['caption_generation', 'platform_operations'],
+                            affected_users_count=0,  # Will be calculated by service
+                            admin_action_required=False,
+                            rollback_available=True
+                        )
+                        
+                        # Send admin notification for maintenance start
+                        maintenance_handler.send_maintenance_started_notification(
+                            current_user.id, maintenance_data
+                        )
+                        
+                        # Send system pause notification
+                        maintenance_handler.send_system_pause_notification(
+                            current_user.id, {
+                                'reason': reason,
+                                'duration': duration,
+                                'mode': mode.value,
+                                'affected_operations': ['caption_generation', 'platform_operations'],
+                                'estimated_completion': estimated_completion.isoformat() if estimated_completion else None
+                            }
+                        )
+                    
+                    # Also send notifications to affected users via progress tracker
+                    from progress_tracker import ProgressTracker
+                    progress_tracker = ProgressTracker(current_app.db_manager)
+                    progress_tracker.handle_maintenance_mode_change(True, {
+                        'reason': reason,
+                        'estimated_duration': duration,
+                        'mode': mode.value,
+                        'affects_functionality': ['caption_generation'],
+                        'enabled_by': current_user.username
+                    })
+                except Exception as e:
+                    logger.error(f"Error sending maintenance notifications: {e}")
+                
                 # Get updated status
                 status = maintenance_service.get_maintenance_status()
                 
@@ -178,6 +298,36 @@ def register_routes(bp):
                     details={},
                     administrator=current_user.username
                 )
+                
+                # Send unified maintenance completion notifications
+                try:
+                    from admin_maintenance_notification_handler import AdminMaintenanceNotificationHandler
+                    
+                    # Get notification manager
+                    notification_manager = current_app.config.get('notification_manager')
+                    if notification_manager:
+                        maintenance_handler = AdminMaintenanceNotificationHandler(
+                            notification_manager, current_app.db_manager
+                        )
+                        
+                        # Send system resume notification to admin
+                        maintenance_handler.send_system_resume_notification(
+                            current_user.id, {
+                                'maintenance_duration': 'Completed',
+                                'completed_operations': ['system_maintenance'],
+                                'restored_functionality': ['caption_generation', 'platform_operations']
+                            }
+                        )
+                    
+                    # Also send notifications to affected users via progress tracker
+                    from progress_tracker import ProgressTracker
+                    progress_tracker = ProgressTracker(current_app.db_manager)
+                    progress_tracker.handle_maintenance_mode_change(False, {
+                        'reason': 'Maintenance completed',
+                        'disabled_by': current_user.username
+                    })
+                except Exception as e:
+                    logger.error(f"Error sending maintenance completion notifications: {e}")
                 
                 return jsonify({
                     'success': True,
@@ -288,14 +438,54 @@ def register_routes(bp):
     def maintenance_monitoring_dashboard():
         """Maintenance monitoring dashboard with real-time status"""
         if not current_user.role == UserRole.ADMIN:
-            flash('Access denied. Admin privileges required.', 'error')
+            # Send access denied notification via WebSocket instead of flash
+            try:
+                from unified_notification_manager import AdminNotificationMessage
+                from models import NotificationType, NotificationPriority, NotificationCategory
+                
+                notification_manager = current_app.config.get('notification_manager')
+                if notification_manager:
+                    notification = AdminNotificationMessage(
+                        id=f"monitoring_access_denied_{int(datetime.now(timezone.utc).timestamp())}",
+                        type=NotificationType.ERROR,
+                        title="Access Denied",
+                        message="Admin privileges required to access maintenance monitoring.",
+                        user_id=current_user.id,
+                        priority=NotificationPriority.HIGH,
+                        category=NotificationCategory.ADMIN,
+                        admin_only=False
+                    )
+                    notification_manager.send_user_notification(current_user.id, notification)
+            except Exception as e:
+                logger.error(f"Error sending monitoring access denied notification: {e}")
+            
             return redirect(url_for('admin.dashboard'))
         
         try:
             # Get maintenance service
             maintenance_service = current_app.config.get('maintenance_service')
             if not maintenance_service:
-                flash('Maintenance service not available', 'error')
+                # Send service unavailable notification via WebSocket instead of flash
+                try:
+                    from unified_notification_manager import AdminNotificationMessage
+                    from models import NotificationType, NotificationPriority, NotificationCategory
+                    
+                    notification_manager = current_app.config.get('notification_manager')
+                    if notification_manager:
+                        notification = AdminNotificationMessage(
+                            id=f"monitoring_service_unavailable_{int(datetime.now(timezone.utc).timestamp())}",
+                            type=NotificationType.ERROR,
+                            title="Service Unavailable",
+                            message="Maintenance service is not available for monitoring.",
+                            user_id=current_user.id,
+                            priority=NotificationPriority.HIGH,
+                            category=NotificationCategory.ADMIN,
+                            admin_only=True
+                        )
+                        notification_manager.send_admin_notification(notification)
+                except Exception as e:
+                    logger.error(f"Error sending monitoring service unavailable notification: {e}")
+                
                 return redirect(url_for('admin.dashboard'))
             
             # Collect monitoring data
@@ -306,7 +496,27 @@ def register_routes(bp):
         
         except Exception as e:
             logger.error(f"Error loading maintenance monitoring dashboard: {e}")
-            flash('Error loading maintenance monitoring dashboard', 'error')
+            # Send error notification via WebSocket instead of flash
+            try:
+                from unified_notification_manager import AdminNotificationMessage
+                from models import NotificationType, NotificationPriority, NotificationCategory
+                
+                notification_manager = current_app.config.get('notification_manager')
+                if notification_manager:
+                    notification = AdminNotificationMessage(
+                        id=f"monitoring_dashboard_error_{int(datetime.now(timezone.utc).timestamp())}",
+                        type=NotificationType.ERROR,
+                        title="Dashboard Error",
+                        message="Error loading maintenance monitoring dashboard. Please try again.",
+                        user_id=current_user.id,
+                        priority=NotificationPriority.HIGH,
+                        category=NotificationCategory.ADMIN,
+                        admin_only=True
+                    )
+                    notification_manager.send_admin_notification(notification)
+            except Exception as notification_error:
+                logger.error(f"Error sending monitoring dashboard error notification: {notification_error}")
+            
             return redirect(url_for('admin.dashboard'))
     
     @bp.route('/api/maintenance-mode/monitoring')
@@ -362,6 +572,121 @@ def register_routes(bp):
         
         except Exception as e:
             logger.error(f"Error exporting maintenance monitoring report: {e}")
+            return jsonify({'success': False, 'error': str(e)}), 500
+    
+    @bp.route('/api/maintenance-mode/progress/<operation_id>')
+    @login_required
+    @with_session_error_handling
+    def get_maintenance_progress(operation_id):
+        """Get real-time progress for a maintenance operation"""
+        if not current_user.role == UserRole.ADMIN:
+            return jsonify({'success': False, 'error': 'Access denied'}), 403
+        
+        try:
+            # Get progress handler from app config
+            progress_handler = current_app.config.get('maintenance_progress_handler')
+            if not progress_handler:
+                return jsonify({'success': False, 'error': 'Progress handler not available'}), 500
+            
+            # Get active operations
+            active_operations = progress_handler.get_active_operations()
+            
+            if operation_id not in active_operations:
+                return jsonify({'success': False, 'error': 'Operation not found'}), 404
+            
+            operation_info = active_operations[operation_id]
+            
+            return jsonify({
+                'success': True,
+                'operation': {
+                    'operation_id': operation_id,
+                    'operation_type': operation_info['operation_type'],
+                    'progress_percentage': operation_info.get('progress_percentage', 0),
+                    'current_step': operation_info.get('current_step', 0),
+                    'total_steps': operation_info.get('total_steps'),
+                    'started_at': operation_info['started_at'].isoformat(),
+                    'last_update': operation_info['last_update'].isoformat(),
+                    'status': operation_info['status']
+                }
+            })
+        
+        except Exception as e:
+            logger.error(f"Error getting maintenance progress: {e}")
+            return jsonify({'success': False, 'error': str(e)}), 500
+    
+    @bp.route('/api/maintenance-mode/operations/active')
+    @login_required
+    @with_session_error_handling
+    def get_active_maintenance_operations():
+        """Get all active maintenance operations"""
+        if not current_user.role == UserRole.ADMIN:
+            return jsonify({'success': False, 'error': 'Access denied'}), 403
+        
+        try:
+            # Get progress handler from app config
+            progress_handler = current_app.config.get('maintenance_progress_handler')
+            if not progress_handler:
+                return jsonify({'success': False, 'error': 'Progress handler not available'}), 500
+            
+            # Get active operations
+            active_operations = progress_handler.get_active_operations()
+            
+            # Format operations for response
+            operations = []
+            for operation_id, operation_info in active_operations.items():
+                operations.append({
+                    'operation_id': operation_id,
+                    'operation_type': operation_info['operation_type'],
+                    'progress_percentage': operation_info.get('progress_percentage', 0),
+                    'current_step': operation_info.get('current_step', 0),
+                    'total_steps': operation_info.get('total_steps'),
+                    'started_at': operation_info['started_at'].isoformat(),
+                    'last_update': operation_info['last_update'].isoformat(),
+                    'status': operation_info['status'],
+                    'admin_user_id': operation_info['admin_user_id']
+                })
+            
+            return jsonify({
+                'success': True,
+                'operations': operations,
+                'total_count': len(operations)
+            })
+        
+        except Exception as e:
+            logger.error(f"Error getting active maintenance operations: {e}")
+            return jsonify({'success': False, 'error': str(e)}), 500
+    
+    @bp.route('/api/maintenance-mode/operations/<operation_id>/cancel', methods=['POST'])
+    @login_required
+    @with_session_error_handling
+    def cancel_maintenance_operation(operation_id):
+        """Cancel an active maintenance operation"""
+        if not current_user.role == UserRole.ADMIN:
+            return jsonify({'success': False, 'error': 'Access denied'}), 403
+        
+        try:
+            # Get request data
+            data = request.get_json() or {}
+            cancellation_reason = data.get('reason', 'Operation cancelled by administrator')
+            
+            # Get progress handler from app config
+            progress_handler = current_app.config.get('maintenance_progress_handler')
+            if not progress_handler:
+                return jsonify({'success': False, 'error': 'Progress handler not available'}), 500
+            
+            # Cancel the operation
+            success = progress_handler.cancel_operation(operation_id, cancellation_reason)
+            
+            if success:
+                return jsonify({
+                    'success': True,
+                    'message': f'Operation {operation_id} cancelled successfully'
+                })
+            else:
+                return jsonify({'success': False, 'error': 'Failed to cancel operation'}), 500
+        
+        except Exception as e:
+            logger.error(f"Error cancelling maintenance operation: {e}")
             return jsonify({'success': False, 'error': str(e)}), 500
 
 

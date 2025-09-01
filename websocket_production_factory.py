@@ -251,7 +251,7 @@ class ProductionWebSocketFactory(WebSocketFactory):
                 return self._handle_production_connect(auth, '/user')
             
             @socketio.on('disconnect', namespace='/user')
-            def handle_user_disconnect():
+            def handle_user_disconnect(sid=None):
                 return self._handle_production_disconnect('/user')
             
             # Setup admin namespace with production monitoring
@@ -260,7 +260,7 @@ class ProductionWebSocketFactory(WebSocketFactory):
                 return self._handle_production_connect(auth, '/admin')
             
             @socketio.on('disconnect', namespace='/admin')
-            def handle_admin_disconnect():
+            def handle_admin_disconnect(sid=None):
                 return self._handle_production_disconnect('/admin')
             
             # Setup namespace-specific event handlers

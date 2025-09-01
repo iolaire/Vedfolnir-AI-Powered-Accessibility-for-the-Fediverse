@@ -3,55 +3,39 @@
 // THE SOFTWARE IS PROVIDED "AS IS", WITHOUT WARRANTY OF ANY KIND, EXPRESS OR IMPLIED, INCLUDING BUT NOT LIMITED TO THE WARRANTIES OF MERCHANTABILITY, FITNESS FOR A PARTICULAR PURPOSE AND NONINFRINGEMENT. IN NO EVENT SHALL THE AUTHORS OR COPYRIGHT HOLDERS BE LIABLE FOR ANY CLAIM, DAMAGES OR OTHER LIABILITY, WHETHER IN AN ACTION OF CONTRACT, TORT OR OTHERWISE, ARISING FROM, OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE SOFTWARE.
 // Vedfolnir JavaScript functionality
 
-// Create a simple toast notification system
-class ToastManager {
+// Unified Notification System Integration for Review Page
+class ReviewNotificationManager {
     constructor() {
-        this.container = document.querySelector('.toast-container');
-        if (!this.container) {
-            this.container = document.createElement('div');
-            this.container.className = 'toast-container position-fixed bottom-0 end-0 p-3';
-            document.body.appendChild(this.container);
+        // Initialize unified notification system
+        this.initUnifiedSystem();
+    }
+
+    initUnifiedSystem() {
+        // Initialize Vedfolnir notification system if available
+        if (window.Vedfolnir) {
+            window.Vedfolnir.initNotificationSystem();
         }
     }
 
+    showNotification(message, type = 'info', options = {}) {
+        // Use unified notification system
+        if (window.Vedfolnir && window.Vedfolnir.showNotification) {
+            return window.Vedfolnir.showNotification(message, type, options);
+        } else {
+            // Fallback to console logging
+            console.log(`Review Notification (${type}): ${message}`);
+        }
+    }
+
+    // Legacy method for backward compatibility
     showToast(message, type = 'info') {
-        // Create toast element
-        const toast = document.createElement('div');
-        toast.className = `toast align-items-center text-white bg-${type} border-0`;
-        toast.setAttribute('role', 'alert');
-        // Safely create toast content to prevent XSS
-        const toastContent = document.createElement('div');
-        toastContent.className = 'd-flex';
-        
-        const toastBody = document.createElement('div');
-        toastBody.className = 'toast-body';
-        toastBody.textContent = message; // Use textContent to prevent XSS
-        
-        const closeButton = document.createElement('button');
-        closeButton.type = 'button';
-        closeButton.className = 'btn-close btn-close-white me-2 m-auto';
-        closeButton.setAttribute('data-bs-dismiss', 'toast');
-        
-        toastContent.appendChild(toastBody);
-        toastContent.appendChild(closeButton);
-        toast.appendChild(toastContent);
-
-        this.container.appendChild(toast);
-
-        // Show toast
-        const bsToast = new bootstrap.Toast(toast);
-        bsToast.show();
-
-        // Remove toast element after it's hidden
-        toast.addEventListener('hidden.bs.toast', () => {
-            toast.remove();
-        });
+        return this.showNotification(message, type);
     }
 }
 
 document.addEventListener('DOMContentLoaded', function() {
-    // Initialize toast manager
-    window.toastManager = new ToastManager();
+    // Initialize unified notification manager
+    window.toastManager = new ReviewNotificationManager();
     
     // Find all Approve & Post buttons
     const approvePostButtons = document.querySelectorAll('.btn-approve-post');
@@ -67,7 +51,7 @@ document.addEventListener('DOMContentLoaded', function() {
             const caption = textarea.value.trim();
             
             if (!caption) {
-                window.toastManager.showToast('Please enter a caption before approving and posting.', 'warning');
+                window.toastManager.showNotification('Please enter a caption before approving and posting.', 'warning');
                 return;
             }
             
@@ -103,12 +87,12 @@ document.addEventListener('DOMContentLoaded', function() {
                     batchItem.style.opacity = '0.5';
                     batchItem.querySelector('.batch-actions').innerHTML = '<span class="badge bg-success">Posted to Pixelfed</span>';
                     
-                    // Show toast message
-                    window.toastManager.showToast(message, 'success');
+                    // Show success notification
+                    window.toastManager.showNotification(message, 'success');
                 } else {
                     // Show error message
                     const errorMsg = 'Error: ' + (result.error || 'Failed to update caption');
-                    window.toastManager.showToast(errorMsg, 'danger');
+                    window.toastManager.showNotification(errorMsg, 'error');
                     
                     // Reset button state
                     this.disabled = false;
@@ -118,7 +102,7 @@ document.addEventListener('DOMContentLoaded', function() {
                 console.error('Error updating caption:', error);
                 
                 // Show error message
-                window.toastManager.showToast('Error: Failed to connect to server', 'danger');
+                window.toastManager.showNotification('Error: Failed to connect to server', 'error');
                 
                 // Reset button state
                 this.disabled = false;

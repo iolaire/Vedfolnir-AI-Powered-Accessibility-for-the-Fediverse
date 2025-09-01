@@ -48,6 +48,14 @@ class SessionMiddleware:
         Sets up session context in g object for easy access
         """
         try:
+            # Skip WebSocket requests to prevent interference
+            if (request.headers.get('Upgrade', '').lower() == 'websocket' or
+                'websocket' in request.headers.get('Connection', '').lower() or
+                request.path.startswith('/socket.io/') or
+                request.args.get('transport') in ['websocket', 'polling']):
+                g.session_id = None
+                g.session_context = None
+                return
             # Get session ID from Flask session (managed by Redis session interface)
             session_id = getattr(session, 'sid', None) if hasattr(session, 'sid') else None
             
@@ -124,6 +132,13 @@ class SessionMiddleware:
             Modified response object
         """
         try:
+            # Skip WebSocket requests to prevent WSGI protocol violations
+            if (request.headers.get('Upgrade', '').lower() == 'websocket' or
+                'websocket' in request.headers.get('Connection', '').lower() or
+                request.path.startswith('/socket.io/') or
+                request.args.get('transport') in ['websocket', 'polling']):
+                return response
+            
             # Update session activity if session exists
             if hasattr(g, 'session_id') and g.session_id:
                 # Flask session interface handles TTL updates automatically

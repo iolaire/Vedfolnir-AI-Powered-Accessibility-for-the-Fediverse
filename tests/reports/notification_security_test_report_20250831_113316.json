@@ -1,0 +1,391 @@
+{
+  "summary": {
+    "start_time": 1756654396.365489,
+    "end_time": 1756654396.541378,
+    "duration": 0.1758890151977539,
+    "total_tests": 61,
+    "passed_tests": 49,
+    "failed_tests": 1,
+    "error_tests": 11,
+    "skipped_tests": 0,
+    "success_rate": 80.32786885245902
+  },
+  "security_coverage": {
+    "authentication": {
+      "passed": 0,
+      "total": 6,
+      "percentage": 0.0
+    },
+    "authorization": {
+      "passed": 0,
+      "total": 6,
+      "percentage": 0.0
+    },
+    "input_validation": {
+      "passed": 0,
+      "total": 5,
+      "percentage": 0.0
+    },
+    "xss_prevention": {
+      "passed": 0,
+      "total": 8,
+      "percentage": 0.0
+    },
+    "rate_limiting": {
+      "passed": 0,
+      "total": 6,
+      "percentage": 0.0
+    },
+    "abuse_detection": {
+      "passed": 0,
+      "total": 7,
+      "percentage": 0.0
+    }
+  },
+  "test_results": {
+    "TestNotificationAuthenticationAuthorization.test_passed_0": {
+      "status": "PASS",
+      "duration": 0.0036008358001708984,
+      "error_message": null,
+      "timestamp": "2025-08-31T15:33:16.437774+00:00"
+    },
+    "TestNotificationAuthenticationAuthorization.test_passed_1": {
+      "status": "PASS",
+      "duration": 0.0036008358001708984,
+      "error_message": null,
+      "timestamp": "2025-08-31T15:33:16.437780+00:00"
+    },
+    "TestNotificationAuthenticationAuthorization.test_passed_2": {
+      "status": "PASS",
+      "duration": 0.0036008358001708984,
+      "error_message": null,
+      "timestamp": "2025-08-31T15:33:16.437782+00:00"
+    },
+    "TestNotificationAuthenticationAuthorization.test_passed_3": {
+      "status": "PASS",
+      "duration": 0.0036008358001708984,
+      "error_message": null,
+      "timestamp": "2025-08-31T15:33:16.437783+00:00"
+    },
+    "TestNotificationAuthenticationAuthorization.test_passed_4": {
+      "status": "PASS",
+      "duration": 0.0036008358001708984,
+      "error_message": null,
+      "timestamp": "2025-08-31T15:33:16.437784+00:00"
+    },
+    "TestNotificationAuthenticationAuthorization.test_passed_5": {
+      "status": "PASS",
+      "duration": 0.0036008358001708984,
+      "error_message": null,
+      "timestamp": "2025-08-31T15:33:16.437785+00:00"
+    },
+    "TestNotificationAuthenticationAuthorization.test_passed_6": {
+      "status": "PASS",
+      "duration": 0.0036008358001708984,
+      "error_message": null,
+      "timestamp": "2025-08-31T15:33:16.437786+00:00"
+    },
+    "TestNotificationAuthenticationAuthorization.test_passed_7": {
+      "status": "PASS",
+      "duration": 0.0036008358001708984,
+      "error_message": null,
+      "timestamp": "2025-08-31T15:33:16.437787+00:00"
+    },
+    "TestNotificationAuthenticationAuthorization.test_passed_8": {
+      "status": "PASS",
+      "duration": 0.0036008358001708984,
+      "error_message": null,
+      "timestamp": "2025-08-31T15:33:16.437788+00:00"
+    },
+    "TestNotificationAuthenticationAuthorization.test_passed_9": {
+      "status": "PASS",
+      "duration": 0.0036008358001708984,
+      "error_message": null,
+      "timestamp": "2025-08-31T15:33:16.437789+00:00"
+    },
+    "TestNotificationAuthenticationAuthorization.test_passed_10": {
+      "status": "PASS",
+      "duration": 0.0036008358001708984,
+      "error_message": null,
+      "timestamp": "2025-08-31T15:33:16.437790+00:00"
+    },
+    "TestNotificationAuthenticationAuthorization.test_passed_11": {
+      "status": "PASS",
+      "duration": 0.0036008358001708984,
+      "error_message": null,
+      "timestamp": "2025-08-31T15:33:16.437791+00:00"
+    },
+    "TestNotificationAuthenticationAuthorization.test_passed_12": {
+      "status": "PASS",
+      "duration": 0.0036008358001708984,
+      "error_message": null,
+      "timestamp": "2025-08-31T15:33:16.437792+00:00"
+    },
+    "TestNotificationAuthenticationAuthorization.test_passed_13": {
+      "status": "PASS",
+      "duration": 0.0036008358001708984,
+      "error_message": null,
+      "timestamp": "2025-08-31T15:33:16.437793+00:00"
+    },
+    "TestNotificationAuthenticationAuthorization.test_passed_14": {
+      "status": "PASS",
+      "duration": 0.0036008358001708984,
+      "error_message": null,
+      "timestamp": "2025-08-31T15:33:16.437794+00:00"
+    },
+    "TestNotificationAuthenticationAuthorization.test_passed_15": {
+      "status": "PASS",
+      "duration": 0.0036008358001708984,
+      "error_message": null,
+      "timestamp": "2025-08-31T15:33:16.437795+00:00"
+    },
+    "TestNotificationAuthenticationAuthorization.test_passed_16": {
+      "status": "PASS",
+      "duration": 0.0036008358001708984,
+      "error_message": null,
+      "timestamp": "2025-08-31T15:33:16.437796+00:00"
+    },
+    "TestNotificationAuthenticationAuthorization.test_passed_17": {
+      "status": "PASS",
+      "duration": 0.0036008358001708984,
+      "error_message": null,
+      "timestamp": "2025-08-31T15:33:16.437797+00:00"
+    },
+    "TestNotificationAuthenticationAuthorization.test_passed_18": {
+      "status": "PASS",
+      "duration": 0.0036008358001708984,
+      "error_message": null,
+      "timestamp": "2025-08-31T15:33:16.437798+00:00"
+    },
+    "TestNotificationAuthenticationAuthorization.test_passed_19": {
+      "status": "PASS",
+      "duration": 0.0036008358001708984,
+      "error_message": null,
+      "timestamp": "2025-08-31T15:33:16.437799+00:00"
+    },
+    "TestNotificationInputValidation.test_passed_0": {
+      "status": "PASS",
+      "duration": 0.0006157755851745605,
+      "error_message": null,
+      "timestamp": "2025-08-31T15:33:16.442812+00:00"
+    },
+    "TestNotificationInputValidation.test_passed_1": {
+      "status": "PASS",
+      "duration": 0.0006157755851745605,
+      "error_message": null,
+      "timestamp": "2025-08-31T15:33:16.442815+00:00"
+    },
+    "TestNotificationInputValidation.test_passed_2": {
+      "status": "PASS",
+      "duration": 0.0006157755851745605,
+      "error_message": null,
+      "timestamp": "2025-08-31T15:33:16.442817+00:00"
+    },
+    "TestNotificationInputValidation.test_passed_3": {
+      "status": "PASS",
+      "duration": 0.0006157755851745605,
+      "error_message": null,
+      "timestamp": "2025-08-31T15:33:16.442818+00:00"
+    },
+    "TestNotificationInputValidation.test_passed_4": {
+      "status": "PASS",
+      "duration": 0.0006157755851745605,
+      "error_message": null,
+      "timestamp": "2025-08-31T15:33:16.442819+00:00"
+    },
+    "TestNotificationInputValidation.test_passed_5": {
+      "status": "PASS",
+      "duration": 0.0006157755851745605,
+      "error_message": null,
+      "timestamp": "2025-08-31T15:33:16.442820+00:00"
+    },
+    "TestNotificationInputValidation.test_passed_6": {
+      "status": "PASS",
+      "duration": 0.0006157755851745605,
+      "error_message": null,
+      "timestamp": "2025-08-31T15:33:16.442821+00:00"
+    },
+    "TestNotificationInputValidation.test_passed_7": {
+      "status": "PASS",
+      "duration": 0.0006157755851745605,
+      "error_message": null,
+      "timestamp": "2025-08-31T15:33:16.442822+00:00"
+    },
+    "TestNotificationXSSPrevention.test_passed_0": {
+      "status": "PASS",
+      "duration": 0.0004673004150390625,
+      "error_message": null,
+      "timestamp": "2025-08-31T15:33:16.445687+00:00"
+    },
+    "TestNotificationXSSPrevention.test_passed_1": {
+      "status": "PASS",
+      "duration": 0.0004673004150390625,
+      "error_message": null,
+      "timestamp": "2025-08-31T15:33:16.445691+00:00"
+    },
+    "TestNotificationXSSPrevention.test_passed_2": {
+      "status": "PASS",
+      "duration": 0.0004673004150390625,
+      "error_message": null,
+      "timestamp": "2025-08-31T15:33:16.445692+00:00"
+    },
+    "TestNotificationXSSPrevention.test_passed_3": {
+      "status": "PASS",
+      "duration": 0.0004673004150390625,
+      "error_message": null,
+      "timestamp": "2025-08-31T15:33:16.445693+00:00"
+    },
+    "TestNotificationXSSPrevention.test_passed_4": {
+      "status": "PASS",
+      "duration": 0.0004673004150390625,
+      "error_message": null,
+      "timestamp": "2025-08-31T15:33:16.445694+00:00"
+    },
+    "TestNotificationXSSPrevention.test_passed_5": {
+      "status": "PASS",
+      "duration": 0.0004673004150390625,
+      "error_message": null,
+      "timestamp": "2025-08-31T15:33:16.445695+00:00"
+    },
+    "TestNotificationRateLimiting.test_ip_based_rate_limiting": {
+      "status": "ERROR",
+      "duration": 0,
+      "error_message": "Traceback (most recent call last):\n  File \"/Volumes/Gold/DevContainerTesting/vedfolnir/tests/security/test_notification_security_validation.py\", line 699, in test_ip_based_rate_limiting\n    with patch('flask.request') as mock_request:\n  File \"/Users/iolaire/.pyenv/versions/3.12.5/lib/python3.12/unittest/mock.py\", line 1488, in __enter__\n    elif spec is None and _is_async_obj(original):\n                          ^^^^^^^^^^^^^^^^^^^^^^^\n  File \"/Users/iolaire/.pyenv/versions/3.12.5/lib/python3.12/unittest/mock.py\", line 56, in _is_async_obj\n    if hasattr(obj, '__func__'):\n       ^^^^^^^^^^^^^^^^^^^^^^^^\n  File \"/Users/iolaire/.pyenv/versions/3.12.5/lib/python3.12/site-packages/werkzeug/local.py\", line 311, in __get__\n    obj = instance._get_current_object()\n          ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^\n  File \"/Users/iolaire/.pyenv/versions/3.12.5/lib/python3.12/site-packages/werkzeug/local.py\", line 508, in _get_current_object\n    raise RuntimeError(unbound_message) from None\nRuntimeError: Working outside of request context.\n\nThis typically means that you attempted to use functionality that needed\nan active HTTP request. Consult the documentation on testing for\ninformation about how to avoid this problem.\n",
+      "timestamp": "2025-08-31T15:33:16.453896+00:00"
+    },
+    "TestNotificationRateLimiting.test_passed_0": {
+      "status": "PASS",
+      "duration": 0.0008107185363769531,
+      "error_message": null,
+      "timestamp": "2025-08-31T15:33:16.453900+00:00"
+    },
+    "TestNotificationRateLimiting.test_passed_1": {
+      "status": "PASS",
+      "duration": 0.0008107185363769531,
+      "error_message": null,
+      "timestamp": "2025-08-31T15:33:16.453902+00:00"
+    },
+    "TestNotificationRateLimiting.test_passed_2": {
+      "status": "PASS",
+      "duration": 0.0008107185363769531,
+      "error_message": null,
+      "timestamp": "2025-08-31T15:33:16.453903+00:00"
+    },
+    "TestNotificationRateLimiting.test_passed_3": {
+      "status": "PASS",
+      "duration": 0.0008107185363769531,
+      "error_message": null,
+      "timestamp": "2025-08-31T15:33:16.453904+00:00"
+    },
+    "TestNotificationRateLimiting.test_passed_4": {
+      "status": "PASS",
+      "duration": 0.0008107185363769531,
+      "error_message": null,
+      "timestamp": "2025-08-31T15:33:16.453905+00:00"
+    },
+    "TestNotificationRateLimiting.test_passed_5": {
+      "status": "PASS",
+      "duration": 0.0008107185363769531,
+      "error_message": null,
+      "timestamp": "2025-08-31T15:33:16.453906+00:00"
+    },
+    "TestNotificationRateLimiting.test_passed_6": {
+      "status": "PASS",
+      "duration": 0.0008107185363769531,
+      "error_message": null,
+      "timestamp": "2025-08-31T15:33:16.453907+00:00"
+    },
+    "TestNotificationRateLimiting.test_passed_7": {
+      "status": "PASS",
+      "duration": 0.0008107185363769531,
+      "error_message": null,
+      "timestamp": "2025-08-31T15:33:16.453908+00:00"
+    },
+    "TestNotificationRateLimiting.test_passed_8": {
+      "status": "PASS",
+      "duration": 0.0008107185363769531,
+      "error_message": null,
+      "timestamp": "2025-08-31T15:33:16.453910+00:00"
+    },
+    "TestNotificationSecurityIntegration.test_passed_0": {
+      "status": "PASS",
+      "duration": 0.00924825668334961,
+      "error_message": null,
+      "timestamp": "2025-08-31T15:33:16.490966+00:00"
+    },
+    "TestNotificationSecurityIntegration.test_passed_1": {
+      "status": "PASS",
+      "duration": 0.00924825668334961,
+      "error_message": null,
+      "timestamp": "2025-08-31T15:33:16.490974+00:00"
+    },
+    "TestNotificationSecurityIntegration.test_passed_2": {
+      "status": "PASS",
+      "duration": 0.00924825668334961,
+      "error_message": null,
+      "timestamp": "2025-08-31T15:33:16.490975+00:00"
+    },
+    "TestNotificationSecurityIntegration.test_passed_3": {
+      "status": "PASS",
+      "duration": 0.00924825668334961,
+      "error_message": null,
+      "timestamp": "2025-08-31T15:33:16.490977+00:00"
+    },
+    "TestNotificationAbuseDetection.test_security_performance_impact": {
+      "status": "FAIL",
+      "duration": 0,
+      "error_message": "Traceback (most recent call last):\n  File \"/Volumes/Gold/DevContainerTesting/vedfolnir/tests/security/test_notification_abuse_detection.py\", line 663, in test_security_performance_impact\n    self.assertLess(performance_ratio, 10.0,\nAssertionError: 40.342092514038086 not less than 10.0 : Security measures should not cause excessive performance degradation\n",
+      "timestamp": "2025-08-31T15:33:16.541334+00:00"
+    },
+    "TestNotificationAbuseDetection.test_behavioral_pattern_analysis": {
+      "status": "ERROR",
+      "duration": 0,
+      "error_message": "Traceback (most recent call last):\n  File \"/Users/iolaire/.pyenv/versions/3.12.5/lib/python3.12/unittest/mock.py\", line 1574, in __enter__\n    setattr(self.target, self.attribute, new_attr)\nTypeError: cannot set 'now' attribute of immutable type 'datetime.datetime'\n\nDuring handling of the above exception, another exception occurred:\n\nTraceback (most recent call last):\n  File \"/Volumes/Gold/DevContainerTesting/vedfolnir/tests/security/test_notification_abuse_detection.py\", line 200, in test_behavioral_pattern_analysis\n    with patch('datetime.datetime.now', return_value=mock_datetime):\n  File \"/Users/iolaire/.pyenv/versions/3.12.5/lib/python3.12/unittest/mock.py\", line 1587, in __enter__\n    if not self.__exit__(*sys.exc_info()):\n           ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^\n  File \"/Users/iolaire/.pyenv/versions/3.12.5/lib/python3.12/unittest/mock.py\", line 1593, in __exit__\n    setattr(self.target, self.attribute, self.temp_original)\nTypeError: cannot set 'now' attribute of immutable type 'datetime.datetime'\n",
+      "timestamp": "2025-08-31T15:33:16.541340+00:00"
+    },
+    "TestNotificationAbuseDetection.test_coordinated_attack_detection": {
+      "status": "ERROR",
+      "duration": 0,
+      "error_message": "Traceback (most recent call last):\n  File \"/Volumes/Gold/DevContainerTesting/vedfolnir/tests/security/test_notification_abuse_detection.py\", line 259, in test_coordinated_attack_detection\n    with patch('flask.request') as mock_request:\n  File \"/Users/iolaire/.pyenv/versions/3.12.5/lib/python3.12/unittest/mock.py\", line 1488, in __enter__\n    elif spec is None and _is_async_obj(original):\n                          ^^^^^^^^^^^^^^^^^^^^^^^\n  File \"/Users/iolaire/.pyenv/versions/3.12.5/lib/python3.12/unittest/mock.py\", line 56, in _is_async_obj\n    if hasattr(obj, '__func__'):\n       ^^^^^^^^^^^^^^^^^^^^^^^^\n  File \"/Users/iolaire/.pyenv/versions/3.12.5/lib/python3.12/site-packages/werkzeug/local.py\", line 311, in __get__\n    obj = instance._get_current_object()\n          ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^\n  File \"/Users/iolaire/.pyenv/versions/3.12.5/lib/python3.12/site-packages/werkzeug/local.py\", line 508, in _get_current_object\n    raise RuntimeError(unbound_message) from None\nRuntimeError: Working outside of request context.\n\nThis typically means that you attempted to use functionality that needed\nan active HTTP request. Consult the documentation on testing for\ninformation about how to avoid this problem.\n",
+      "timestamp": "2025-08-31T15:33:16.541342+00:00"
+    },
+    "TestNotificationAbuseDetection.runTest": {
+      "status": "ERROR",
+      "duration": 0,
+      "error_message": "Traceback (most recent call last):\n  File \"/Volumes/Gold/DevContainerTesting/vedfolnir/tests/security/test_notification_abuse_detection.py\", line 378, in test_ip_reputation_checking\n    with patch('flask.request') as mock_request:\n  File \"/Users/iolaire/.pyenv/versions/3.12.5/lib/python3.12/unittest/mock.py\", line 1488, in __enter__\n    elif spec is None and _is_async_obj(original):\n                          ^^^^^^^^^^^^^^^^^^^^^^^\n  File \"/Users/iolaire/.pyenv/versions/3.12.5/lib/python3.12/unittest/mock.py\", line 56, in _is_async_obj\n    if hasattr(obj, '__func__'):\n       ^^^^^^^^^^^^^^^^^^^^^^^^\n  File \"/Users/iolaire/.pyenv/versions/3.12.5/lib/python3.12/site-packages/werkzeug/local.py\", line 311, in __get__\n    obj = instance._get_current_object()\n          ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^\n  File \"/Users/iolaire/.pyenv/versions/3.12.5/lib/python3.12/site-packages/werkzeug/local.py\", line 508, in _get_current_object\n    raise RuntimeError(unbound_message) from None\nRuntimeError: Working outside of request context.\n\nThis typically means that you attempted to use functionality that needed\nan active HTTP request. Consult the documentation on testing for\ninformation about how to avoid this problem.\n",
+      "timestamp": "2025-08-31T15:33:16.541351+00:00"
+    },
+    "TestNotificationAbuseDetection.test_session_hijacking_detection": {
+      "status": "ERROR",
+      "duration": 0,
+      "error_message": "Traceback (most recent call last):\n  File \"/Volumes/Gold/DevContainerTesting/vedfolnir/tests/security/test_notification_abuse_detection.py\", line 407, in test_session_hijacking_detection\n    with patch('flask.request') as mock_request:\n  File \"/Users/iolaire/.pyenv/versions/3.12.5/lib/python3.12/unittest/mock.py\", line 1488, in __enter__\n    elif spec is None and _is_async_obj(original):\n                          ^^^^^^^^^^^^^^^^^^^^^^^\n  File \"/Users/iolaire/.pyenv/versions/3.12.5/lib/python3.12/unittest/mock.py\", line 56, in _is_async_obj\n    if hasattr(obj, '__func__'):\n       ^^^^^^^^^^^^^^^^^^^^^^^^\n  File \"/Users/iolaire/.pyenv/versions/3.12.5/lib/python3.12/site-packages/werkzeug/local.py\", line 311, in __get__\n    obj = instance._get_current_object()\n          ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^\n  File \"/Users/iolaire/.pyenv/versions/3.12.5/lib/python3.12/site-packages/werkzeug/local.py\", line 508, in _get_current_object\n    raise RuntimeError(unbound_message) from None\nRuntimeError: Working outside of request context.\n\nThis typically means that you attempted to use functionality that needed\nan active HTTP request. Consult the documentation on testing for\ninformation about how to avoid this problem.\n",
+      "timestamp": "2025-08-31T15:33:16.541352+00:00"
+    },
+    "TestNotificationAbuseDetection.test_passed_0": {
+      "status": "PASS",
+      "duration": 0.003864618448110727,
+      "error_message": null,
+      "timestamp": "2025-08-31T15:33:16.541354+00:00"
+    },
+    "TestNotificationAbuseDetection.test_passed_1": {
+      "status": "PASS",
+      "duration": 0.003864618448110727,
+      "error_message": null,
+      "timestamp": "2025-08-31T15:33:16.541356+00:00"
+    }
+  },
+  "performance_metrics": {},
+  "compliance_status": {
+    "overall_status": "PASS",
+    "critical_failures": [],
+    "warnings": [
+      "Low coverage in authentication: 0.0% (0/6 tests passed)",
+      "Low coverage in authorization: 0.0% (0/6 tests passed)",
+      "Low coverage in input_validation: 0.0% (0/5 tests passed)",
+      "Low coverage in xss_prevention: 0.0% (0/8 tests passed)",
+      "Low coverage in rate_limiting: 0.0% (0/6 tests passed)",
+      "Low coverage in abuse_detection: 0.0% (0/7 tests passed)"
+    ],
+    "recommendations": []
+  }
+}

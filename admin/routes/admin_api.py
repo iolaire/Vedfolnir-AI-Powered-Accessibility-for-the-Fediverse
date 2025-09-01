@@ -258,6 +258,142 @@ def register_api_routes(bp):
         # This is an alias for the alerts endpoint to handle the 404 error
         return get_alerts()
     
+    @bp.route('/api/health-update', methods=['POST'])
+    @admin_api_required
+    def request_health_update():
+        """Request immediate system health update for admin dashboard"""
+        try:
+            data = request.get_json() or {}
+            force_update = data.get('force_update', False)
+            
+            # Get health integration service
+            health_integration = getattr(current_app, 'admin_health_integration', None)
+            if not health_integration:
+                # Fallback to direct system monitor
+                from system_monitor import SystemMonitor
+                from flask import current_app
+                
+                db_manager = current_app.config['db_manager']
+                system_monitor = SystemMonitor(db_manager)
+                
+                if force_update:
+                    health = system_monitor.get_system_health()
+                    performance = system_monitor.get_performance_metrics()
+                    resources = system_monitor.check_resource_usage()
+                    
+                    return jsonify({
+                        'success': True,
+                        'health_status': health.to_dict(),
+                        'performance_metrics': performance.to_dict(),
+                        'resource_usage': resources.to_dict(),
+                        'update_type': 'direct_monitor',
+                        'timestamp': datetime.utcnow().isoformat()
+                    })
+                else:
+                    health = system_monitor.get_system_health()
+                    return jsonify({
+                        'success': True,
+                        'health_status': health.to_dict(),
+                        'update_type': 'direct_monitor',
+                        'timestamp': datetime.utcnow().isoformat()
+                    })
+            
+            # Use health integration service
+            result = health_integration.send_health_update_notification(
+                user_id=current_user.id,
+                force_update=force_update
+            )
+            
+            return jsonify(result)
+            
+        except Exception as e:
+            logger.error(f"Error requesting health update for admin {current_user.id}: {e}")
+            return jsonify({
+                'success': False,
+                'error': 'Failed to request health update'
+            }), 500
+    
+    @bp.route('/api/health-monitoring/start', methods=['POST'])
+    @admin_api_required
+    def start_health_monitoring():
+        """Start real-time health monitoring"""
+        try:
+            # Get health integration service
+            health_integration = getattr(current_app, 'admin_health_integration', None)
+            if not health_integration:
+                return jsonify({
+                    'success': False,
+                    'error': 'Health monitoring service not available'
+                }), 503
+            
+            # Initialize dashboard notifications
+            result = health_integration.initialize_dashboard_notifications(current_user.id)
+            
+            return jsonify(result)
+            
+        except Exception as e:
+            logger.error(f"Error starting health monitoring for admin {current_user.id}: {e}")
+            return jsonify({
+                'success': False,
+                'error': 'Failed to start health monitoring'
+            }), 500
+    
+    @bp.route('/api/health-monitoring/stop', methods=['POST'])
+    @admin_api_required
+    def stop_health_monitoring():
+        """Stop real-time health monitoring"""
+        try:
+            # Get health integration service
+            health_integration = getattr(current_app, 'admin_health_integration', None)
+            if not health_integration:
+                return jsonify({
+                    'success': False,
+                    'error': 'Health monitoring service not available'
+                }), 503
+            
+            # Stop health monitoring
+            result = health_integration.stop_health_monitoring(current_user.id)
+            
+            return jsonify(result)
+            
+        except Exception as e:
+            logger.error(f"Error stopping health monitoring for admin {current_user.id}: {e}")
+            return jsonify({
+                'success': False,
+                'error': 'Failed to stop health monitoring'
+            }), 500
+    
+    @bp.route('/api/health-monitoring/config', methods=['GET', 'POST'])
+    @admin_api_required
+    def health_monitoring_config():
+        """Get or update health monitoring configuration"""
+        try:
+            # Get health integration service
+            health_integration = getattr(current_app, 'admin_health_integration', None)
+            if not health_integration:
+                return jsonify({
+                    'success': False,
+                    'error': 'Health monitoring service not available'
+                }), 503
+            
+            if request.method == 'GET':
+                # Get current configuration
+                result = health_integration.get_health_monitoring_status(current_user.id)
+                return jsonify(result)
+            
+            elif request.method == 'POST':
+                # Update configuration
+                config_data = request.get_json() or {}
+                result = health_integration.configure_health_alerts(current_user.id, config_data)
+                return jsonify(result)
+                
+        except Exception as e:
+            logger.error(f"Error handling health monitoring config for admin {current_user.id}: {e}")
+            return jsonify({
+                'success': False,
+                'error': 'Failed to handle health monitoring configuration'
+            }), 500
+    
     @bp.route('/alerts/<alert_id>/acknowledge', methods=['POST'])
     @admin_api_required
     def acknowledge_alert(alert_id):

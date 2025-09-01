@@ -380,8 +380,28 @@ class CORSManager:
         """
         allowed_origins = self.get_allowed_origins()
         
+        # Flask-SocketIO CORS configuration
+        # For wildcard access, use "*" string instead of True to avoid EngineIO compatibility issues
+        if (isinstance(allowed_origins, list) and len(allowed_origins) == 1 and allowed_origins[0] == "*") or allowed_origins == "*":
+            cors_origins = "*"  # Use string instead of True for better compatibility
+        elif isinstance(allowed_origins, list) and len(allowed_origins) > 0:
+            # Valid list of origins
+            cors_origins = allowed_origins
+        elif isinstance(allowed_origins, bool):
+            # If somehow a boolean got through, handle it properly
+            cors_origins = "*" if allowed_origins else []
+        elif isinstance(allowed_origins, str):
+            # If it's a string, use it directly
+            cors_origins = allowed_origins
+        else:
+            # Fallback to empty list for any other type
+            self.logger.warning(f"Unexpected allowed_origins type: {type(allowed_origins)}, value: {allowed_origins}")
+            cors_origins = []
+        
+        self.logger.debug(f"CORS config for SocketIO - allowed_origins: {allowed_origins}, cors_origins: {cors_origins}")
+        
         return {
-            'cors_allowed_origins': allowed_origins,
+            'cors_allowed_origins': cors_origins,
             'cors_credentials': True,
         }
     

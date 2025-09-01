@@ -1,0 +1,55 @@
+{
+  "summary": {
+    "start_time": 1756654881.247442,
+    "end_time": 1756654881.337762,
+    "duration": 0.09032011032104492,
+    "total_tests": 61,
+    "passed_tests": 57,
+    "failed_tests": 3,
+    "error_tests": 1,
+    "skipped_tests": 0,
+    "success_rate": 93.44262295081968
+  },
+  "test_results": {
+    "TestNotificationRateLimiting.test_ip_based_rate_limiting": {
+      "status": "FAIL",
+      "error_message": "Traceback (most recent call last):\n  File \"/Volumes/Gold/DevContainerTesting/vedfolnir/tests/security/test_notification_security_validation.py\", line 715, in test_ip_based_rate_limiting\n    self.assertFalse(is_allowed, f\"IP message {i} should be rate limited\")\nAssertionError: True is not false : IP message 10 should be rate limited\n",
+      "timestamp": "2025-08-31T15:41:21.337764+00:00"
+    },
+    "TestNotificationRateLimiting.test_rate_limit_logging_and_monitoring": {
+      "status": "FAIL",
+      "error_message": "Traceback (most recent call last):\n  File \"/Volumes/Gold/DevContainerTesting/vedfolnir/tests/security/test_notification_security_validation.py\", line 794, in test_rate_limit_logging_and_monitoring\n    self.assertFalse(result)\nAssertionError: True is not false\n",
+      "timestamp": "2025-08-31T15:41:21.337768+00:00"
+    },
+    "TestNotificationSecurityIntegration.test_security_event_logging": {
+      "status": "FAIL",
+      "error_message": "Traceback (most recent call last):\n  File \"/Volumes/Gold/DevContainerTesting/vedfolnir/tests/security/test_notification_security_validation.py\", line 903, in test_security_event_logging\n    self.assertGreater(len(security_events), 0, \"Security events should be logged\")\nAssertionError: 0 not greater than 0 : Security events should be logged\n",
+      "timestamp": "2025-08-31T15:41:21.337770+00:00"
+    },
+    "TestNotificationAbuseDetection.test_session_hijacking_detection": {
+      "status": "ERROR",
+      "error_message": "Traceback (most recent call last):\n  File \"/Volumes/Gold/DevContainerTesting/vedfolnir/tests/security/test_notification_abuse_detection.py\", line 427, in test_session_hijacking_detection\n    with patch('flask.request') as mock_request:\n  File \"/Users/iolaire/.pyenv/versions/3.12.5/lib/python3.12/unittest/mock.py\", line 1488, in __enter__\n    elif spec is None and _is_async_obj(original):\n                          ^^^^^^^^^^^^^^^^^^^^^^^\n  File \"/Users/iolaire/.pyenv/versions/3.12.5/lib/python3.12/unittest/mock.py\", line 56, in _is_async_obj\n    if hasattr(obj, '__func__'):\n       ^^^^^^^^^^^^^^^^^^^^^^^^\n  File \"/Users/iolaire/.pyenv/versions/3.12.5/lib/python3.12/site-packages/werkzeug/local.py\", line 311, in __get__\n    obj = instance._get_current_object()\n          ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^\n  File \"/Users/iolaire/.pyenv/versions/3.12.5/lib/python3.12/site-packages/werkzeug/local.py\", line 508, in _get_current_object\n    raise RuntimeError(unbound_message) from None\nRuntimeError: Working outside of request context.\n\nThis typically means that you attempted to use functionality that needed\nan active HTTP request. Consult the documentation on testing for\ninformation about how to avoid this problem.\n",
+      "timestamp": "2025-08-31T15:41:21.337771+00:00"
+    }
+  },
+  "failures": [
+    {
+      "test": "TestNotificationRateLimiting.test_ip_based_rate_limiting",
+      "traceback": "Traceback (most recent call last):\n  File \"/Volumes/Gold/DevContainerTesting/vedfolnir/tests/security/test_notification_security_validation.py\", line 715, in test_ip_based_rate_limiting\n    self.assertFalse(is_allowed, f\"IP message {i} should be rate limited\")\nAssertionError: True is not false : IP message 10 should be rate limited\n"
+    },
+    {
+      "test": "TestNotificationRateLimiting.test_rate_limit_logging_and_monitoring",
+      "traceback": "Traceback (most recent call last):\n  File \"/Volumes/Gold/DevContainerTesting/vedfolnir/tests/security/test_notification_security_validation.py\", line 794, in test_rate_limit_logging_and_monitoring\n    self.assertFalse(result)\nAssertionError: True is not false\n"
+    },
+    {
+      "test": "TestNotificationSecurityIntegration.test_security_event_logging",
+      "traceback": "Traceback (most recent call last):\n  File \"/Volumes/Gold/DevContainerTesting/vedfolnir/tests/security/test_notification_security_validation.py\", line 903, in test_security_event_logging\n    self.assertGreater(len(security_events), 0, \"Security events should be logged\")\nAssertionError: 0 not greater than 0 : Security events should be logged\n"
+    }
+  ],
+  "errors": [
+    {
+      "test": "TestNotificationAbuseDetection.test_session_hijacking_detection",
+      "traceback": "Traceback (most recent call last):\n  File \"/Volumes/Gold/DevContainerTesting/vedfolnir/tests/security/test_notification_abuse_detection.py\", line 427, in test_session_hijacking_detection\n    with patch('flask.request') as mock_request:\n  File \"/Users/iolaire/.pyenv/versions/3.12.5/lib/python3.12/unittest/mock.py\", line 1488, in __enter__\n    elif spec is None and _is_async_obj(original):\n                          ^^^^^^^^^^^^^^^^^^^^^^^\n  File \"/Users/iolaire/.pyenv/versions/3.12.5/lib/python3.12/unittest/mock.py\", line 56, in _is_async_obj\n    if hasattr(obj, '__func__'):\n       ^^^^^^^^^^^^^^^^^^^^^^^^\n  File \"/Users/iolaire/.pyenv/versions/3.12.5/lib/python3.12/site-packages/werkzeug/local.py\", line 311, in __get__\n    obj = instance._get_current_object()\n          ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^\n  File \"/Users/iolaire/.pyenv/versions/3.12.5/lib/python3.12/site-packages/werkzeug/local.py\", line 508, in _get_current_object\n    raise RuntimeError(unbound_message) from None\nRuntimeError: Working outside of request context.\n\nThis typically means that you attempted to use functionality that needed\nan active HTTP request. Consult the documentation on testing for\ninformation about how to avoid this problem.\n"
+    }
+  ]
+}

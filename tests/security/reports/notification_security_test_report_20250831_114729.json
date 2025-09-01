@@ -1,0 +1,16 @@
+{
+  "summary": {
+    "start_time": 1756655248.960314,
+    "end_time": 1756655249.0997949,
+    "duration": 0.1394808292388916,
+    "total_tests": 61,
+    "passed_tests": 61,
+    "failed_tests": 0,
+    "error_tests": 0,
+    "skipped_tests": 0,
+    "success_rate": 100.0
+  },
+  "test_results": {},
+  "failures": [],
+  "errors": []
+}

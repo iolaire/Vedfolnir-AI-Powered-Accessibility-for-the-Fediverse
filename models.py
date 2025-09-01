@@ -73,6 +73,31 @@ class AlertSeverity(Enum):
     HIGH = "high"
     CRITICAL = "critical"
 
+class NotificationType(Enum):
+    """Notification message types"""
+    SUCCESS = "success"
+    WARNING = "warning"
+    ERROR = "error"
+    INFO = "info"
+    PROGRESS = "progress"
+
+class NotificationPriority(Enum):
+    """Notification priority levels"""
+    LOW = "low"
+    NORMAL = "normal"
+    HIGH = "high"
+    CRITICAL = "critical"
+
+class NotificationCategory(Enum):
+    """Notification categories for organization"""
+    SYSTEM = "system"
+    CAPTION = "caption"
+    PLATFORM = "platform"
+    MAINTENANCE = "maintenance"
+    SECURITY = "security"
+    USER = "user"
+    ADMIN = "admin"
+
 class Post(Base):
     __tablename__ = 'posts'
     __table_args__ = mysql_table_args
@@ -1974,3 +1999,69 @@ class StorageEventLog(Base):
     
     def __repr__(self):
         return f"<StorageEventLog {self.event_type} - {self.storage_gb:.2f}GB/{self.limit_gb:.2f}GB>"
+
+
+class NotificationStorage(Base):
+    """Database model for notification persistence"""
+    __tablename__ = 'notifications'
+    __table_args__ = (
+        Index('ix_notification_user_timestamp', 'user_id', 'timestamp'),
+        Index('ix_notification_user_delivered', 'user_id', 'delivered'),
+        Index('ix_notification_user_read', 'user_id', 'read'),
+        Index('ix_notification_category_priority', 'category', 'priority'),
+        Index('ix_notification_expires_at', 'expires_at'),
+        Index('ix_notification_created_at', 'created_at'),
+        {
+            'mysql_engine': 'InnoDB',
+            'mysql_charset': 'utf8mb4',
+            'mysql_collate': 'utf8mb4_unicode_ci',
+            'mysql_row_format': 'DYNAMIC',
+        }
+    )
+    
+    id = Column(String(64), primary_key=True, default=lambda: str(uuid.uuid4()))
+    user_id = Column(Integer, ForeignKey('users.id', ondelete='CASCADE'), nullable=True)
+    type = Column(SQLEnum(NotificationType), nullable=False)
+    priority = Column(SQLEnum(NotificationPriority), nullable=False, default=NotificationPriority.NORMAL)
+    category = Column(SQLEnum(NotificationCategory), nullable=False, default=NotificationCategory.SYSTEM)
+    title = Column(String(255), nullable=False)
+    message = Column(Text, nullable=False)
+    data = Column(Text)  # JSON data
+    timestamp = Column(DateTime, nullable=False, default=datetime.utcnow)
+    expires_at = Column(DateTime, nullable=True)
+    requires_action = Column(Boolean, default=False)
+    action_url = Column(String(500), nullable=True)
+    action_text = Column(String(100), nullable=True)
+    delivered = Column(Boolean, default=False)
+    read = Column(Boolean, default=False)
+    created_at = Column(DateTime, default=datetime.utcnow)
+    updated_at = Column(DateTime, default=datetime.utcnow, onupdate=datetime.utcnow)
+    
+    # Relationships
+    user = relationship("User", backref="notifications")
+    
+    def to_notification_message(self):
+        """Convert to NotificationMessage object"""
+        from unified_notification_manager import NotificationMessage
+        
+        data = json.loads(self.data) if self.data else {}
+        return NotificationMessage(
+            id=self.id,
+            type=self.type,
+            title=self.title,
+            message=self.message,
+            user_id=self.user_id,
+            priority=self.priority,
+            category=self.category,
+            data=data,
+            timestamp=self.timestamp,
+            expires_at=self.expires_at,
+            requires_action=self.requires_action,
+            action_url=self.action_url,
+            action_text=self.action_text,
+            delivered=self.delivered,
+            read=self.read
+        )
+    
+    def __repr__(self):
+        return f"<NotificationStorage {self.id} - {self.type.value} for user {self.user_id}>"

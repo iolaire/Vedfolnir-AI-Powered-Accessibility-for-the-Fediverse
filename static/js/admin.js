@@ -26,8 +26,16 @@ document.addEventListener('DOMContentLoaded', function() {
 });
 
 // Utility functions for admin panel
-function confirmAction(message) {
-    return confirm(message || 'Are you sure you want to perform this action?');
+function confirmAction(message, callback) {
+    // Use unified notification system if available
+    if (window.Vedfolnir && window.Vedfolnir.confirm) {
+        return window.Vedfolnir.confirm(message || 'Are you sure you want to perform this action?', callback);
+    } else {
+        // Fallback to native confirm
+        const result = confirm(message || 'Are you sure you want to perform this action?');
+        if (callback) callback(result);
+        return result;
+    }
 }
 
 function showLoading(element) {

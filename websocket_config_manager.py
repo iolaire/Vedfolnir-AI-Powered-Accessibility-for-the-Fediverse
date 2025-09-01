@@ -147,11 +147,16 @@ class WebSocketConfigManager:
         # Check for explicit CORS origins configuration
         explicit_origins = os.getenv("SOCKETIO_CORS_ORIGINS")
         if explicit_origins:
-            if explicit_origins == "*":
+            # Handle wildcard case
+            if explicit_origins.strip() == "*":
+                return ["*"]
+            # Handle boolean-like strings that might have been set incorrectly
+            elif explicit_origins.lower() in ["true", "1", "yes", "on"]:
+                self.logger.warning("SOCKETIO_CORS_ORIGINS set to boolean-like value, using wildcard")
                 return ["*"]
             else:
                 # Parse comma-separated origins
-                origins.extend([origin.strip() for origin in explicit_origins.split(",")])
+                origins.extend([origin.strip() for origin in explicit_origins.split(",") if origin.strip()])
                 return origins
         
         # Generate origins from FLASK_HOST and FLASK_PORT
@@ -360,8 +365,20 @@ class WebSocketConfigManager:
         if not self._websocket_config:
             return self._get_fallback_socketio_config()
         
+        # Handle CORS origins properly for Flask-SocketIO
+        cors_origins = self._websocket_config.cors_origins
+        if isinstance(cors_origins, list) and len(cors_origins) == 1 and cors_origins[0] == "*":
+            # Flask-SocketIO expects True for wildcard, not ["*"]
+            cors_allowed_origins = True
+        elif isinstance(cors_origins, list) and "*" in cors_origins:
+            # If wildcard is in the list, use True
+            cors_allowed_origins = True
+        else:
+            # Use the list as-is
+            cors_allowed_origins = cors_origins
+        
         config = {
-            "cors_allowed_origins": self._websocket_config.cors_origins,
+            "cors_allowed_origins": cors_allowed_origins,
             "cors_credentials": self._websocket_config.cors_credentials,
             "async_mode": self._websocket_config.async_mode,
             "ping_timeout": self._websocket_config.ping_timeout,
@@ -369,9 +386,10 @@ class WebSocketConfigManager:
             "max_http_buffer_size": self._websocket_config.max_http_buffer_size,
             "allow_upgrades": self._parse_bool("SOCKETIO_ALLOW_UPGRADES", True),
             "transports": self._websocket_config.transports,
+            "manage_session": False,  # Disable Flask session management for SocketIO to prevent write() before start_response errors
         }
         
-        self.logger.debug(f"Generated SocketIO config: {config}")
+        self.logger.debug(f"Generated SocketIO config - cors_origins: {cors_origins}, cors_allowed_origins: {cors_allowed_origins}")
         return config
     
     def get_client_config(self) -> Dict[str, Any]:
@@ -435,6 +453,7 @@ class WebSocketConfigManager:
             "max_http_buffer_size": 1000000,
             "allow_upgrades": True,
             "transports": ["websocket", "polling"],
+            "manage_session": False,  # Disable Flask session management for SocketIO to prevent write() before start_response errors
         }
     
     def _get_fallback_client_config(self) -> Dict[str, Any]:

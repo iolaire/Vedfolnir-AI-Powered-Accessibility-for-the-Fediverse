@@ -3,8 +3,9 @@
 // THE SOFTWARE IS PROVIDED "AS IS", WITHOUT WARRANTY OF ANY KIND, EXPRESS OR IMPLIED, INCLUDING BUT NOT LIMITED TO THE WARRANTIES OF MERCHANTABILITY, FITNESS FOR A PARTICULAR PURPOSE AND NONINFRINGEMENT. IN NO EVENT SHALL THE AUTHORS OR COPYRIGHT HOLDERS BE LIABLE FOR ANY CLAIM, DAMAGES OR OTHER LIABILITY, WHETHER IN AN ACTION OF CONTRACT, TORT OR OTHERWISE, ARISING FROM, OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE SOFTWARE.
 
 /**
- * Enhanced Caption Generation UI
+ * Enhanced Caption Generation UI with Unified Notification System
  * Provides improved job management, error handling, and user experience
+ * Integrated with WebSocket-based real-time notifications
  */
 
 class CaptionGenerationUI {
@@ -12,6 +13,8 @@ class CaptionGenerationUI {
         this.currentTaskId = null;
         this.progressPollingInterval = null;
         this.taskStartTime = null;
+        this.websocketConnected = false;
+        this.notificationIntegrator = null;
         
         this.init();
     }
@@ -24,8 +27,65 @@ class CaptionGenerationUI {
         }
         
         this.setupEventListeners();
+        this.initializeNotificationSystem();
         this.initializeProgressMonitoring();
         this.initializeTaskFilters();
+    }
+    
+    initializeNotificationSystem() {
+        // Initialize page notification integrator for caption processing
+        if (window.PageNotificationIntegrator) {
+            this.notificationIntegrator = new window.PageNotificationIntegrator('caption-processing', 'user');
+            
+            // Register WebSocket event handlers for caption processing
+            this.notificationIntegrator.registerEventHandlers({
+                'caption_progress': (data) => this.handleCaptionProgressNotification(data),
+                'caption_status': (data) => this.handleCaptionStatusNotification(data),
+                'caption_complete': (data) => this.handleCaptionCompleteNotification(data),
+                'caption_error': (data) => this.handleCaptionErrorNotification(data),
+                'system_maintenance': (data) => this.handleMaintenanceNotification(data),
+                'notification': (data) => this.handleGeneralNotification(data)
+            });
+            
+            // Initialize WebSocket connection
+            this.notificationIntegrator.initializeNotifications();
+            
+            // Monitor connection status
+            this.notificationIntegrator.onConnectionChange((connected) => {
+                this.websocketConnected = connected;
+                this.updateConnectionStatus(connected);
+            });
+            
+            console.log('Caption processing notification system initialized');
+            
+            // Setup notification action handlers for caption generation
+            document.addEventListener('notificationAction', (event) => {
+                const { action, notificationId, notification } = event.detail;
+                
+                switch (action) {
+                    case 'review':
+                        this.goToReview();
+                        break;
+                    case 'new_task':
+                        this.startNewTask();
+                        break;
+                    case 'retry':
+                        if (this.currentTaskId) {
+                            this.retryTask(this.currentTaskId);
+                        }
+                        break;
+                    case 'details':
+                        if (this.currentTaskId) {
+                            this.showErrorDetails(this.currentTaskId);
+                        }
+                        break;
+                    default:
+                        console.log('Unknown caption generation notification action:', action);
+                }
+            });
+        } else {
+            console.warn('PageNotificationIntegrator not available, falling back to polling');
+        }
     }
     
     setupEventListeners() {
@@ -98,7 +158,188 @@ class CaptionGenerationUI {
         }
         
         console.log('Starting progress monitoring for task:', this.currentTaskId);
-        this.startProgressPolling();
+        
+        // Use WebSocket notifications if available, otherwise fall back to polling
+        if (this.websocketConnected && this.notificationIntegrator) {
+            console.log('Using WebSocket-based progress monitoring');
+            // WebSocket notifications will handle progress updates
+            // Keep minimal polling as backup
+            this.startBackupPolling();
+        } else {
+            console.log('Using polling-based progress monitoring');
+            this.startProgressPolling();
+        }
+    }
+    
+    handleCaptionProgressNotification(data) {
+        console.log('Received caption progress notification:', data);
+        
+        if (data.task_id && data.task_id !== this.currentTaskId) {
+            return; // Not for current task
+        }
+        
+        // Update progress from WebSocket notification
+        this.updateProgressFromNotification(data);
+        
+        // Show progress notification if significant milestone
+        if (data.show_notification) {
+            this.notificationIntegrator.showNotification({
+                type: 'progress',
+                title: data.title || 'Caption Generation Progress',
+                message: data.message || `Processing: ${data.progress_percent || 0}%`,
+                progress: data.progress_percent || 0,
+                autoHide: data.auto_hide !== false,
+                persistent: data.persistent === true,
+                category: 'caption',
+                data: {
+                    task_id: data.task_id,
+                    progress_percent: data.progress_percent,
+                    current_step: data.current_step,
+                    estimated_completion: data.estimated_completion,
+                    processing_rate: data.processing_rate
+                }
+            });
+        }
+    }
+    
+    handleCaptionStatusNotification(data) {
+        console.log('Received caption status notification:', data);
+        
+        if (data.task_id && data.task_id !== this.currentTaskId) {
+            return; // Not for current task
+        }
+        
+        // Update task status
+        this.updateTaskStatus(data.status, data.message);
+        
+        // Show status notification
+        this.notificationIntegrator.showNotification({
+            type: data.status === 'running' ? 'info' : 'success',
+            title: 'Caption Generation Status',
+            message: data.message || `Task status: ${data.status}`,
+            autoHide: true,
+            category: 'caption'
+        });
+    }
+    
+    handleCaptionCompleteNotification(data) {
+        console.log('Received caption complete notification:', data);
+        
+        if (data.task_id && data.task_id !== this.currentTaskId) {
+            return; // Not for current task
+        }
+        
+        // Handle task completion
+        this.handleTaskCompletion(data);
+        
+        // Show completion notification with enhanced action buttons
+        this.notificationIntegrator.showNotification({
+            type: 'success',
+            title: 'Caption Generation Complete!',
+            message: data.message || `Generated ${data.captions_generated || 0} captions for ${data.images_processed || 0} images.`,
+            autoHide: false,
+            persistent: true,
+            category: 'caption',
+            actions: data.actions || [
+                {
+                    text: 'Review Captions',
+                    action: () => this.goToReview(),
+                    primary: true
+                },
+                {
+                    text: 'Start New Task',
+                    action: () => this.startNewTask()
+                }
+            ],
+            data: {
+                task_id: data.task_id,
+                captions_generated: data.captions_generated,
+                images_processed: data.images_processed,
+                processing_time: data.processing_time,
+                success_rate: data.success_rate
+            }
+        });
+        
+        // Stop progress monitoring
+        this.stopProgressPolling();
+    }
+    
+    handleCaptionErrorNotification(data) {
+        console.log('Received caption error notification:', data);
+        
+        if (data.task_id && data.task_id !== this.currentTaskId) {
+            return; // Not for current task
+        }
+        
+        // Handle task error
+        this.handleTaskError(data);
+        
+        // Show enhanced error notification with retry options and recovery suggestions
+        this.notificationIntegrator.showNotification({
+            type: 'error',
+            title: 'Caption Generation Failed',
+            message: data.message || 'An error occurred during caption generation.',
+            autoHide: false,
+            persistent: true,
+            category: 'caption',
+            actions: data.actions || [
+                {
+                    text: 'Retry Task',
+                    action: () => this.retryTask(data.task_id),
+                    primary: true
+                },
+                {
+                    text: 'View Details',
+                    action: () => this.showErrorDetails(data.task_id)
+                }
+            ],
+            data: {
+                task_id: data.task_id,
+                error_message: data.error_message,
+                error_category: data.error_category,
+                recovery_suggestions: data.recovery_suggestions || []
+            }
+        });
+        
+        // Show recovery suggestions if available
+        if (data.recovery_suggestions && data.recovery_suggestions.length > 0) {
+            this.showRecoverySuggestions(data.recovery_suggestions);
+        }
+        
+        // Stop progress monitoring
+        this.stopProgressPolling();
+    }
+    
+    handleMaintenanceNotification(data) {
+        console.log('Received maintenance notification:', data);
+        
+        // Show maintenance notification
+        this.notificationIntegrator.showNotification({
+            type: 'warning',
+            title: 'System Maintenance',
+            message: data.message || 'System maintenance is in progress. Caption generation may be temporarily unavailable.',
+            autoHide: false,
+            category: 'maintenance',
+            persistent: true
+        });
+        
+        // If maintenance affects caption processing, pause current operations
+        if (data.affects_caption_processing && this.currentTaskId) {
+            this.pauseTaskForMaintenance(data);
+        }
+    }
+    
+    handleGeneralNotification(data) {
+        console.log('Received general notification:', data);
+        
+        // Show general notification
+        this.notificationIntegrator.showNotification({
+            type: data.type || 'info',
+            title: data.title || 'Notification',
+            message: data.message,
+            autoHide: data.auto_hide !== false,
+            category: data.category || 'system'
+        });
     }
     
     startProgressPolling() {
@@ -137,8 +378,261 @@ class CaptionGenerationUI {
                 }
             } catch (error) {
                 console.error('Error polling for progress:', error);
+                
+                // Show connection error notification if WebSocket is not available
+                if (!this.websocketConnected && this.notificationIntegrator) {
+                    this.notificationIntegrator.showNotification({
+                        type: 'warning',
+                        title: 'Connection Issue',
+                        message: 'Having trouble getting progress updates. Retrying...',
+                        autoHide: true,
+                        category: 'system'
+                    });
+                }
             }
         }, 2000);
+    }
+    
+    startBackupPolling() {
+        // Lighter polling when WebSocket is available (every 10 seconds as backup)
+        if (this.progressPollingInterval) {
+            clearInterval(this.progressPollingInterval);
+        }
+        
+        this.progressPollingInterval = setInterval(async () => {
+            if (!this.currentTaskId || this.websocketConnected) {
+                return; // Skip if no task or WebSocket is handling updates
+            }
+            
+            try {
+                const response = await fetch(`/api/caption_generation/status/${this.currentTaskId}`);
+                const data = await response.json();
+                
+                if (data.success && data.status) {
+                    this.updateProgressFromStatus(data.status);
+                }
+            } catch (error) {
+                console.error('Error in backup polling:', error);
+            }
+        }, 10000);
+    }
+    
+    updateProgressFromNotification(data) {
+        const progressData = {
+            task_id: data.task_id,
+            progress_percent: data.progress_percent || 0,
+            current_step: data.current_step || data.message || 'Processing',
+            details: data.details || {}
+        };
+        
+        this.updateProgress(progressData);
+        
+        // Update additional WebSocket-specific data
+        if (data.estimated_completion) {
+            const estimatedCompletion = document.getElementById('estimated-completion');
+            if (estimatedCompletion) {
+                estimatedCompletion.textContent = data.estimated_completion;
+            }
+        }
+        
+        if (data.processing_rate) {
+            const processingRate = document.getElementById('processing-rate');
+            if (processingRate) {
+                processingRate.textContent = data.processing_rate;
+            }
+        }
+    }
+    
+    updateConnectionStatus(connected) {
+        const statusIndicator = document.getElementById('websocket-status');
+        if (statusIndicator) {
+            statusIndicator.className = connected ? 'text-success' : 'text-warning';
+            statusIndicator.textContent = connected ? 'Connected' : 'Reconnecting...';
+        }
+        
+        // Show connection status notification
+        if (this.notificationIntegrator) {
+            if (connected) {
+                this.notificationIntegrator.showNotification({
+                    type: 'success',
+                    title: 'Connection Restored',
+                    message: 'Real-time updates are now available.',
+                    autoHide: true,
+                    category: 'system'
+                });
+            } else {
+                this.notificationIntegrator.showNotification({
+                    type: 'warning',
+                    title: 'Connection Lost',
+                    message: 'Attempting to reconnect for real-time updates...',
+                    autoHide: true,
+                    category: 'system'
+                });
+            }
+        }
+    }
+    
+    updateTaskStatus(status, message) {
+        const statusDiv = document.getElementById('active-task-status');
+        if (statusDiv) {
+            // Update status class
+            statusDiv.className = `task-status ${status}`;
+            
+            // Update status text
+            const statusText = statusDiv.querySelector('.text-capitalize');
+            if (statusText) {
+                statusText.textContent = status;
+            }
+            
+            // Update current step if message provided
+            if (message) {
+                const currentStep = document.getElementById('current-step');
+                if (currentStep) {
+                    currentStep.textContent = message;
+                }
+            }
+        }
+    }
+    
+    pauseTaskForMaintenance(maintenanceData) {
+        // Show maintenance pause notification
+        this.notificationIntegrator.showNotification({
+            type: 'warning',
+            title: 'Task Paused for Maintenance',
+            message: `Caption generation has been paused due to system maintenance. ${maintenanceData.message || ''}`,
+            autoHide: false,
+            category: 'maintenance',
+            persistent: true,
+            actions: [
+                {
+                    text: 'View Maintenance Details',
+                    action: () => this.showMaintenanceDetails(maintenanceData)
+                }
+            ]
+        });
+        
+        // Update UI to show paused state
+        const currentStep = document.getElementById('current-step');
+        if (currentStep) {
+            currentStep.textContent = 'Paused for maintenance';
+        }
+        
+        // Stop progress polling during maintenance
+        this.stopProgressPolling();
+    }
+    
+    showMaintenanceDetails(maintenanceData) {
+        const modal = document.createElement('div');
+        modal.className = 'modal fade';
+        modal.innerHTML = `
+            <div class="modal-dialog">
+                <div class="modal-content">
+                    <div class="modal-header">
+                        <h5 class="modal-title">
+                            <i class="bi bi-tools text-warning"></i>
+                            System Maintenance
+                        </h5>
+                        <button type="button" class="btn-close" data-bs-dismiss="modal"></button>
+                    </div>
+                    <div class="modal-body">
+                        <div class="alert alert-warning">
+                            <h6><i class="bi bi-info-circle"></i> Maintenance Information</h6>
+                            <p>${maintenanceData.message || 'System maintenance is currently in progress.'}</p>
+                        </div>
+                        
+                        ${maintenanceData.estimated_duration ? `
+                        <div class="alert alert-info">
+                            <h6><i class="bi bi-clock"></i> Estimated Duration</h6>
+                            <p>${maintenanceData.estimated_duration} minutes</p>
+                        </div>
+                        ` : ''}
+                        
+                        <div class="alert alert-success">
+                            <h6><i class="bi bi-lightbulb"></i> What You Can Do</h6>
+                            <ul class="mb-0">
+                                <li>Your current task progress has been saved</li>
+                                <li>Caption generation will resume automatically after maintenance</li>
+                                <li>You can safely close this page and return later</li>
+                                <li>Check back in a few minutes for updates</li>
+                            </ul>
+                        </div>
+                    </div>
+                    <div class="modal-footer">
+                        <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">
+                            <i class="bi bi-x"></i> Close
+                        </button>
+                    </div>
+                </div>
+            </div>
+        `;
+        
+        document.body.appendChild(modal);
+        const bootstrapModal = new bootstrap.Modal(modal);
+        bootstrapModal.show();
+        
+        // Clean up modal after it's hidden
+        modal.addEventListener('hidden.bs.modal', () => {
+            document.body.removeChild(modal);
+        });
+    }
+    
+    showRecoverySuggestions(suggestions) {
+        if (!suggestions || suggestions.length === 0) {
+            return;
+        }
+        
+        const modal = document.createElement('div');
+        modal.className = 'modal fade';
+        modal.innerHTML = `
+            <div class="modal-dialog">
+                <div class="modal-content">
+                    <div class="modal-header">
+                        <h5 class="modal-title">
+                            <i class="bi bi-lightbulb text-info"></i>
+                            Recovery Suggestions
+                        </h5>
+                        <button type="button" class="btn-close" data-bs-dismiss="modal"></button>
+                    </div>
+                    <div class="modal-body">
+                        <div class="alert alert-info">
+                            <h6><i class="bi bi-info-circle"></i> Suggested Actions</h6>
+                            <p>Here are some suggestions to resolve the issue:</p>
+                        </div>
+                        
+                        <ul class="list-group list-group-flush">
+                            ${suggestions.map(suggestion => `
+                                <li class="list-group-item">
+                                    <i class="bi bi-arrow-right text-primary"></i>
+                                    ${suggestion}
+                                </li>
+                            `).join('')}
+                        </ul>
+                        
+                        <div class="alert alert-warning mt-3">
+                            <h6><i class="bi bi-exclamation-triangle"></i> Need More Help?</h6>
+                            <p class="mb-0">If these suggestions don't resolve the issue, you can contact support or check the system status page.</p>
+                        </div>
+                    </div>
+                    <div class="modal-footer">
+                        <button type="button" class="btn btn-primary" onclick="captionUI.retryTask('${this.currentTaskId}')">
+                            <i class="bi bi-arrow-clockwise"></i> Try Again
+                        </button>
+                        <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">
+                            <i class="bi bi-x"></i> Close
+                        </button>
+                    </div>
+                </div>
+            </div>
+        `;
+        
+        document.body.appendChild(modal);
+        const bootstrapModal = new bootstrap.Modal(modal);
+        bootstrapModal.show();
+        
+        // Clean up modal after it's hidden
+        modal.addEventListener('hidden.bs.modal', () => {
+            document.body.removeChild(modal);
+        });
     }
     
     stopProgressPolling() {
@@ -439,86 +933,143 @@ class CaptionGenerationUI {
     }
     
     showCompletionAlert(message, taskId) {
-        const alertDiv = document.createElement('div');
-        alertDiv.className = 'alert alert-success alert-dismissible fade show';
-        alertDiv.innerHTML = `
-            <div class="d-flex align-items-start">
-                <div class="flex-grow-1">
-                    <h6><i class="bi bi-check-circle"></i> Caption Generation Complete!</h6>
-                    <p class="mb-2">${message}</p>
-                    <div class="d-flex gap-2">
-                        <button type="button" class="btn btn-sm btn-outline-success" onclick="captionUI.goToReview()">
-                            <i class="bi bi-eye"></i> Review Captions
-                        </button>
-                        <button type="button" class="btn btn-sm btn-outline-success" onclick="captionUI.startNewTask()">
-                            <i class="bi bi-plus-circle"></i> Start New Task
-                        </button>
+        // Use unified notification system
+        if (window.Vedfolnir && window.Vedfolnir.showNotification) {
+            return window.Vedfolnir.showNotification(message, 'success', {
+                title: 'Caption Generation Complete!',
+                persistent: true,
+                actions: [
+                    {
+                        label: 'Review Captions',
+                        type: 'primary',
+                        action: 'review'
+                    },
+                    {
+                        label: 'Start New Task',
+                        type: 'secondary',
+                        action: 'new_task'
+                    }
+                ]
+            });
+        } else {
+            // Fallback to legacy alert display
+            const alertDiv = document.createElement('div');
+            alertDiv.className = 'alert alert-success alert-dismissible fade show';
+            alertDiv.innerHTML = `
+                <div class="d-flex align-items-start">
+                    <div class="flex-grow-1">
+                        <h6><i class="bi bi-check-circle"></i> Caption Generation Complete!</h6>
+                        <p class="mb-2">${message}</p>
+                        <div class="d-flex gap-2">
+                            <button type="button" class="btn btn-sm btn-outline-success" onclick="captionUI.goToReview()">
+                                <i class="bi bi-eye"></i> Review Captions
+                            </button>
+                            <button type="button" class="btn btn-sm btn-outline-success" onclick="captionUI.startNewTask()">
+                                <i class="bi bi-plus-circle"></i> Start New Task
+                            </button>
+                        </div>
                     </div>
+                    <button type="button" class="btn-close" data-bs-dismiss="alert"></button>
                 </div>
-                <button type="button" class="btn-close" data-bs-dismiss="alert"></button>
-            </div>
-        `;
-        
-        const container = document.querySelector('.container');
-        container.insertBefore(alertDiv, container.firstChild);
-        
-        // Auto-redirect to review after 5 seconds if user doesn't interact
-        setTimeout(() => {
-            if (alertDiv.parentNode) {
-                this.goToReview();
+            `;
+            
+            const container = document.querySelector('.container');
+            if (container) {
+                container.insertBefore(alertDiv, container.firstChild);
+                
+                // Auto-redirect to review after 5 seconds if user doesn't interact
+                setTimeout(() => {
+                    if (alertDiv.parentNode) {
+                        this.goToReview();
+                    }
+                }, 5000);
             }
-        }, 5000);
+        }
     }
     
     showEnhancedErrorAlert(errorMessage, taskId) {
-        const alertDiv = document.createElement('div');
-        alertDiv.className = 'alert alert-danger alert-dismissible fade show';
-        alertDiv.innerHTML = `
-            <div class="d-flex align-items-start">
-                <div class="flex-grow-1">
-                    <h6><i class="bi bi-exclamation-triangle"></i> Caption Generation Failed</h6>
-                    <p class="mb-2">${errorMessage}</p>
-                    <div class="d-flex gap-2">
-                        <button type="button" class="btn btn-sm btn-outline-light" onclick="captionUI.retryTask('${taskId}')">
-                            <i class="bi bi-arrow-clockwise"></i> Retry
-                        </button>
-                        <button type="button" class="btn btn-sm btn-outline-light" onclick="captionUI.showErrorDetails('${taskId}')">
-                            <i class="bi bi-info-circle"></i> Details
-                        </button>
+        // Use unified notification system
+        if (window.Vedfolnir && window.Vedfolnir.showNotification) {
+            return window.Vedfolnir.showNotification(errorMessage, 'error', {
+                title: 'Caption Generation Failed',
+                duration: 10000,
+                actions: [
+                    {
+                        label: 'Retry',
+                        type: 'primary',
+                        action: 'retry'
+                    },
+                    {
+                        label: 'Details',
+                        type: 'secondary',
+                        action: 'details'
+                    }
+                ]
+            });
+        } else {
+            // Fallback to legacy alert display
+            const alertDiv = document.createElement('div');
+            alertDiv.className = 'alert alert-danger alert-dismissible fade show';
+            alertDiv.innerHTML = `
+                <div class="d-flex align-items-start">
+                    <div class="flex-grow-1">
+                        <h6><i class="bi bi-exclamation-triangle"></i> Caption Generation Failed</h6>
+                        <p class="mb-2">${errorMessage}</p>
+                        <div class="d-flex gap-2">
+                            <button type="button" class="btn btn-sm btn-outline-light" onclick="captionUI.retryTask('${taskId}')">
+                                <i class="bi bi-arrow-clockwise"></i> Retry
+                            </button>
+                            <button type="button" class="btn btn-sm btn-outline-light" onclick="captionUI.showErrorDetails('${taskId}')">
+                                <i class="bi bi-info-circle"></i> Details
+                            </button>
+                        </div>
                     </div>
+                    <button type="button" class="btn-close btn-close-white" data-bs-dismiss="alert"></button>
                 </div>
-                <button type="button" class="btn-close btn-close-white" data-bs-dismiss="alert"></button>
-            </div>
-        `;
-        
-        const container = document.querySelector('.container');
-        container.insertBefore(alertDiv, container.firstChild);
-        
-        // Auto-dismiss after 10 seconds (longer for error messages)
-        setTimeout(() => {
-            if (alertDiv.parentNode) {
-                alertDiv.remove();
+            `;
+            
+            const container = document.querySelector('.container');
+            if (container) {
+                container.insertBefore(alertDiv, container.firstChild);
+                
+                // Auto-dismiss after 10 seconds (longer for error messages)
+                setTimeout(() => {
+                    if (alertDiv.parentNode) {
+                        alertDiv.remove();
+                    }
+                }, 10000);
             }
-        }, 10000);
+        }
     }
     
     showAlert(message, type) {
-        const alertDiv = document.createElement('div');
-        alertDiv.className = `alert alert-${type} alert-dismissible fade show`;
-        alertDiv.innerHTML = `
-            ${message}
-            <button type="button" class="btn-close" data-bs-dismiss="alert"></button>
-        `;
-        
-        const container = document.querySelector('.container');
-        container.insertBefore(alertDiv, container.firstChild);
-        
-        // Auto-dismiss after 5 seconds
-        setTimeout(() => {
-            if (alertDiv.parentNode) {
-                alertDiv.remove();
+        // Use unified notification system
+        if (window.Vedfolnir && window.Vedfolnir.showNotification) {
+            const notificationType = type === 'danger' ? 'error' : type;
+            return window.Vedfolnir.showNotification(message, notificationType, {
+                duration: 5000
+            });
+        } else {
+            // Fallback to legacy alert display
+            const alertDiv = document.createElement('div');
+            alertDiv.className = `alert alert-${type} alert-dismissible fade show`;
+            alertDiv.innerHTML = `
+                ${message}
+                <button type="button" class="btn-close" data-bs-dismiss="alert"></button>
+            `;
+            
+            const container = document.querySelector('.container');
+            if (container) {
+                container.insertBefore(alertDiv, container.firstChild);
+                
+                // Auto-dismiss after 5 seconds
+                setTimeout(() => {
+                    if (alertDiv.parentNode) {
+                        alertDiv.remove();
+                    }
+                }, 5000);
             }
-        }, 5000);
+        }
     }
     
     // Task management methods

@@ -2,11 +2,19 @@
 # This program is free software: you can redistribute it and/or modify it under the terms of the GNU Affero General Public License as published by the Free Software Foundation, either version 3 of the License, or (at your option) any later version.
 # THE SOFTWARE IS PROVIDED "AS IS", WITHOUT WARRANTY OF ANY KIND, EXPRESS OR IMPLIED, INCLUDING BUT NOT LIMITED TO THE WARRANTIES OF MERCHANTABILITY, FITNESS FOR A PARTICULAR PURPOSE AND NONINFRINGEMENT. IN NO EVENT SHALL THE AUTHORS OR COPYRIGHT HOLDERS BE LIABLE FOR ANY CLAIM, DAMAGES OR OTHER LIABILITY, WHETHER IN AN ACTION OF CONTRACT, TORT OR OTHERWISE, ARISING FROM, OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE SOFTWARE.
 
+# MIGRATION NOTE: Flash messages in this file have been commented out as part of
+# the notification system migration. The application now uses the unified
+# WebSocket-based notification system. These comments should be replaced with
+# appropriate unified notification calls in a future update.
+
+
+from unified_notification_manager import UnifiedNotificationManager
 """Admin System Health Routes"""
 
-from flask import render_template, jsonify, redirect, url_for, flash, current_app
+from flask import render_template, jsonify, redirect, url_for, current_app
 from flask_login import login_required, current_user
 from models import UserRole
+# from notification_flash_replacement import send_notification  # Removed - using unified notification system
 from session_error_handlers import with_session_error_handling
 from security.core.security_middleware import rate_limit
 import asyncio
@@ -224,7 +232,9 @@ def register_routes(bp):
     def health_dashboard():
         """Enhanced health dashboard with multi-tenant caption management"""
         if not current_user.role == UserRole.ADMIN:
-            flash('Access denied. Admin privileges required.', 'error')
+            # Send error notification
+            from notification_helpers import send_error_notification
+            send_error_notification("Access denied. Admin privileges required.", "Access Denied")
             return redirect(url_for('index'))
             
         try:
@@ -286,7 +296,9 @@ def register_routes(bp):
                                  system_config=system_config)
             
         except Exception as e:
-            flash(f'Error loading health dashboard: {str(e)}', 'error')
+            # Send error notification
+            from notification_helpers import send_error_notification
+            send_error_notification(f'Error loading health dashboard: {str(e)}', 'Dashboard Error')
             return redirect(url_for('admin.dashboard'))
 
     @bp.route('/csrf_security_dashboard')
@@ -295,7 +307,9 @@ def register_routes(bp):
     def csrf_security_dashboard():
         """CSRF Security Dashboard"""
         if not current_user.role == UserRole.ADMIN:
-            flash('Access denied. Admin privileges required.', 'error')
+            # Send error notification
+            from notification_helpers import send_error_notification
+            send_error_notification("Access denied. Admin privileges required.", "Access Denied")
             return redirect(url_for('index'))
         return render_template('csrf_security_dashboard.html')
 
@@ -305,7 +319,9 @@ def register_routes(bp):
     def security_audit_dashboard():
         """Security Audit Dashboard"""
         if not current_user.role == UserRole.ADMIN:
-            flash('Access denied. Admin privileges required.', 'error')
+            # Send error notification
+            from notification_helpers import send_error_notification
+            send_error_notification("Access denied. Admin privileges required.", "Access Denied")
             return redirect(url_for('index'))
         return render_template('security_audit_dashboard.html')
 
@@ -322,7 +338,9 @@ def register_routes(bp):
     def session_health_dashboard():
         """Session Health Dashboard"""
         if not current_user.role == UserRole.ADMIN:
-            flash('Access denied. Admin privileges required.', 'error')
+            # Send error notification
+            from notification_helpers import send_error_notification
+            send_error_notification("Access denied. Admin privileges required.", "Access Denied")
             return redirect(url_for('index'))
         return render_template('session_health_dashboard.html')
 
@@ -332,7 +350,9 @@ def register_routes(bp):
     def session_monitoring_dashboard():
         """Session Monitoring Dashboard"""
         if not current_user.role == UserRole.ADMIN:
-            flash('Access denied. Admin privileges required.', 'error')
+            # Send error notification
+            from notification_helpers import send_error_notification
+            send_error_notification("Access denied. Admin privileges required.", "Access Denied")
             return redirect(url_for('index'))
         return render_template('session_monitoring_dashboard.html')
 

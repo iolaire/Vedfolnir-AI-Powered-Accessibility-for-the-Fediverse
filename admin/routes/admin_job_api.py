@@ -4,9 +4,10 @@
 
 """Admin Job Management API Routes"""
 
-from flask import jsonify, request, current_app, session, flash, redirect, url_for
+from flask import jsonify, request, current_app, session, redirect, url_for
 from flask_login import login_required, current_user
 from models import UserRole
+# from notification_flash_replacement import send_notification  # Removed - using unified notification system
 from session_error_handlers import with_session_error_handling
 from functools import wraps
 import logging
@@ -299,7 +300,9 @@ def register_api_routes(bp):
                 if request.is_json:
                     return jsonify({'error': 'Action ID is required'}), 400
                 else:
-                    flash('Action is required', 'error')
+                    # Send error notification
+                    from notification_helpers import send_error_notification
+                    send_error_notification("Action is required", "Error")
                     return redirect(url_for('admin.system_maintenance'))
             
             db_manager = current_app.config['db_manager']
@@ -365,7 +368,9 @@ def register_api_routes(bp):
                 if request.is_json:
                     return jsonify({'error': error_msg}), 400
                 else:
-                    flash(error_msg, 'error')
+                    # Send error notification
+                    from notification_helpers import send_error_notification
+                    send_error_notification(error_msg, "Error")
                     return redirect(url_for('admin.system_maintenance'))
             
             # Log maintenance action
@@ -376,9 +381,13 @@ def register_api_routes(bp):
             else:
                 # Handle form submission response
                 if result['success']:
-                    flash(result.get('message', 'Maintenance action completed successfully'), 'success')
+                    # Send success notification
+                    from notification_helpers import send_success_notification
+                    send_success_notification(result.get('message', 'Maintenance action completed successfully'), "Maintenance Complete")
                 else:
-                    flash(result.get('message', 'Maintenance action failed'), 'error')
+                    # Send error notification
+                    from notification_helpers import send_error_notification
+                    send_error_notification(result.get('message', 'Maintenance action failed'), "Maintenance Failed")
                 return redirect(url_for('admin.system_maintenance'))
         
         except Exception as e:
@@ -386,7 +395,9 @@ def register_api_routes(bp):
             if request.is_json:
                 return jsonify({'error': 'Failed to execute maintenance action'}), 500
             else:
-                flash('Failed to execute maintenance action', 'error')
+                # Send error notification
+                from notification_helpers import send_error_notification
+                send_error_notification("Failed to execute maintenance action", "Error")
                 return redirect(url_for('admin.system_maintenance'))
     
     @bp.route('/api/job-history/<int:user_id>', methods=['GET'])

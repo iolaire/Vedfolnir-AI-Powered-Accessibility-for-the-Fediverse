@@ -25,6 +25,11 @@
     <link href="{{ url_for('static', filename='css/admin.css') }}" rel="stylesheet">
     <link href="{{ url_for('admin.static', filename='css/admin_dashboard.css') }}" rel="stylesheet">
     
+    <!-- Unified Notification System Styles -->
+    <link href="{{ url_for('static', filename='css/unified-notifications.css') }}" rel="stylesheet">
+    <link href="{{ url_for('static', filename='css/notification-ui.css') }}" rel="stylesheet">
+    <link href="{{ url_for('static', filename='css/legacy-notification-fallback.css') }}" rel="stylesheet">
+    
     <!-- Favicon -->
     {% include 'includes/favicon_meta.html' %}
     
@@ -43,8 +48,19 @@
             </a>
             
             <div class="navbar-nav ms-auto">
-                <!-- Admin Notification System -->
-                {% include 'components/admin_notification_system.html' %}
+                <!-- Unified Admin Notification System -->
+                <div id="admin-notification-bell" class="nav-item dropdown">
+                    <button class="btn btn-outline-warning position-relative" type="button" data-bs-toggle="dropdown" aria-expanded="false" title="Admin Notifications">
+                        <i class="bi bi-bell" id="admin-notification-icon"></i>
+                        <span class="position-absolute top-0 start-100 translate-middle badge rounded-pill bg-danger" id="admin-notification-count" style="display: none;">0</span>
+                    </button>
+                    <div class="dropdown-menu dropdown-menu-end" style="width: 300px;">
+                        <h6 class="dropdown-header">Admin Notifications</h6>
+                        <div id="admin-notification-list" class="dropdown-item-text">
+                            <p class="text-muted mb-0">No new notifications</p>
+                        </div>
+                    </div>
+                </div>
                 
                 <!-- WebSocket Status Indicator -->
                 <div class="nav-item d-flex align-items-center me-3">
@@ -125,6 +141,11 @@
                             </a>
                         </li>
                         <li class="nav-item">
+                            <a class="nav-link" href="{{ url_for('admin.performance_dashboard') }}">
+                                <i class="bi bi-speedometer"></i> Performance
+                            </a>
+                        </li>
+                        <li class="nav-item">
                             <a class="nav-link" href="{{ url_for('admin.help_center') }}">
                                 <i class="bi bi-question-circle"></i> Help Center
                             </a>
@@ -135,18 +156,13 @@
 
             <!-- Main Content -->
             <main class="col-md-9 ms-sm-auto col-lg-10 px-md-4">
-                {% with messages = get_flashed_messages(with_categories=true) %}
-                    {% if messages %}
-                        <div class="mt-3">
-                            {% for category, message in messages %}
-                                <div class="alert alert-{{ 'danger' if category == 'error' else category }} alert-dismissible fade show" role="alert">
-                                    {{ message }}
-                                    <button type="button" class="btn-close" data-bs-dismiss="alert"></button>
-                                </div>
-                            {% endfor %}
-                        </div>
-                    {% endif %}
-                {% endwith %}
+                <!-- Unified Admin Notification Container -->
+                <div id="admin-unified-notification-container" class="notification-container notification-position-top notification-position-center notification-stack-down" role="region" aria-label="Admin Notifications" aria-live="polite"></div>
+                
+                <!-- Flash Message Integration for Admin -->
+                <!-- Unified Notification System Integration -->
+<!-- Flash messages are now handled by the WebSocket-based notification system -->
+<!-- See static/js/websocket-client-factory.js for notification handling -->
 
                 {% block content %}{% endblock %}
             </main>
@@ -199,6 +215,13 @@
     
     <!-- Main app scripts -->
     <script src="{{ url_for('static', filename='js/csrf-handler.js') }}"></script>
+    
+    <!-- Unified Notification System Scripts -->
+    <script src="{{ url_for('static', filename='js/notification-ui-renderer.js') }}"></script>
+    <script src="{{ url_for('static', filename='js/page_notification_integrator.js') }}"></script>
+    <script src="{{ url_for('static', filename='js/notification-integration.js') }}"></script>
+    <script src="{{ url_for('static', filename='js/legacy-notification-migration.js') }}"></script>
+    
     <script src="{{ url_for('static', filename='js/app.js') }}"></script>
     <script src="{{ url_for('static', filename='js/error_handler.js') }}"></script>
     
@@ -213,8 +236,70 @@
     <!-- Custom Admin JS -->
     <script src="{{ url_for('static', filename='js/admin.js') }}"></script>
     
+    <!-- Admin Health Notifications -->
+    <script src="{{ url_for('admin.static', filename='js/admin-health-notifications.js') }}"></script>
+    
     {% block extra_js %}{% endblock %}
     <!-- WebSocket Keep-Alive Script -->
     <script src="{{ url_for('static', filename='js/websocket-keepalive.js') }}"></script>
+    
+    <!-- Admin Unified Notification System Initialization -->
+    <script>
+    // Initialize admin notification system
+    document.addEventListener('DOMContentLoaded', function() {
+        // Initialize admin notification renderer if not already initialized
+        if (!window.adminNotificationRenderer) {
+            window.adminNotificationRenderer = new NotificationUIRenderer('admin-unified-notification-container', {
+                position: 'top-center',
+                maxNotifications: 8,
+                autoHide: true,
+                defaultDuration: 7000,
+                theme: 'modern',
+                showIcons: true,
+                allowDismiss: true,
+                showTimestamp: true,
+                pauseOnHover: true
+            });
+        }
+        
+        // Global admin notification functions
+        window.showAdminNotification = function(message, type = 'info', title = null, options = {}) {
+            return window.adminNotificationRenderer.renderNotification({
+                type: type,
+                title: title || (type === 'error' ? 'Error' : type === 'success' ? 'Success' : type === 'warning' ? 'Warning' : 'Information'),
+                message: message,
+                priority: type === 'error' ? 'high' : 'normal',
+                ...options
+            });
+        };
+        
+        window.showAdminAlert = function(message, type = 'warning', persistent = false) {
+            return window.adminNotificationRenderer.renderSystemAlert({
+                type: type,
+                title: 'System Alert',
+                message: message,
+                persistent: persistent,
+                priority: 'critical'
+            });
+        };
+        
+        window.showAdminProgress = function(taskId, message, percentage = 0) {
+            return window.adminNotificationRenderer.renderProgressUpdate({
+                id: `admin-progress-${taskId}`,
+                taskId: taskId,
+                title: 'Processing...',
+                message: message,
+                percentage: percentage
+            });
+        };
+        
+        // Legacy alert replacement function
+        window.showLegacyAlert = function(message, type = 'info') {
+            return window.showAdminNotification(message, type);
+        };
+        
+        console.log('Admin unified notification system initialized');
+    });
+    </script>
 </body>
 </html>

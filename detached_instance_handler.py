@@ -231,14 +231,17 @@ def create_global_detached_instance_handler(app, session_manager):
         
         # Try to recover by redirecting to a safe page
         if request.endpoint == 'dashboard':
-            flash('Your session has expired. Please log in again.', 'warning')
+            # Session expired - handled by unified notification system
+            pass
             return redirect(url_for('login'))
         elif request.endpoint and 'platform' in request.endpoint:
-            flash('Platform connection issue. Please try again.', 'warning')
+            # Platform connection issue - handled by unified notification system
+            pass
             return redirect(url_for('dashboard'))
         
         # For other endpoints, return a generic error
-        flash('A database connection issue occurred. Please try again.', 'error')
+        # Database connection issue - handled by unified notification system
+        pass
         return redirect(url_for('index') if 'index' in app.view_functions else url_for('login'))
     
     @app.errorhandler(SQLAlchemyError)
@@ -251,7 +254,8 @@ def create_global_detached_instance_handler(app, session_manager):
             return handle_detached_instance_error(error)
         
         # Handle other SQLAlchemy errors
-        flash('A database error occurred. Please try again.', 'error')
+        # Database error - handled by unified notification system
+        pass
         return redirect(url_for('index') if 'index' in app.view_functions else url_for('login'))
     
     # Store handler in app for access by other components

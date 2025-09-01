@@ -1,0 +1,140 @@
+/* Copyright (C) 2025 iolaire mcfadden. */
+/* This program is free software: you can redistribute it and/or modify it under the terms of the GNU Affero General Public License as published by the Free Software Foundation, either version 3 of the License, or (at your option) any later version. */
+/* THE SOFTWARE IS PROVIDED "AS IS", WITHOUT WARRANTY OF ANY KIND, EXPRESS OR IMPLIED, INCLUDING BUT NOT LIMITED TO THE WARRANTIES OF MERCHANTABILITY, FITNESS FOR A PARTICULAR PURPOSE AND NONINFRINGEMENT. IN NO EVENT SHALL THE AUTHORS OR COPYRIGHT HOLDERS BE LIABLE FOR ANY CLAIM, DAMAGES OR OTHER LIABILITY, WHETHER IN AN ACTION OF CONTRACT, TORT OR OTHERWISE, ARISING FROM, OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE SOFTWARE. */
+
+/**
+ * Legacy Notification Fallback Styles
+ * 
+ * Provides fallback styles for any remaining legacy notification references
+ * that haven't been migrated to the unified notification system yet.
+ * This ensures visual consistency during the migration process.
+ */
+
+/* Hide legacy notification containers that might still exist */
+.legacy-notification-container,
+.old-notification-system,
+.flash-message-container {
+    display: none !important;
+}
+
+/* Legacy alert fallback - redirect to unified system styling */
+.alert.legacy-alert {
+    display: none !important;
+}
+
+/* Ensure legacy notification JavaScript doesn't interfere */
+.js-legacy-notification {
+    display: none !important;
+}
+
+/* Legacy notification bell styles - redirect to unified system */
+.legacy-notification-bell {
+    display: none !important;
+}
+
+/* Legacy toast styles - redirect to unified system */
+.legacy-toast,
+.old-toast-container {
+    display: none !important;
+}
+
+/* Legacy progress notification styles */
+.legacy-progress-notification {
+    display: none !important;
+}
+
+/* Legacy admin notification styles */
+.legacy-admin-notification,
+.old-admin-alert {
+    display: none !important;
+}
+
+/* Screen reader announcement for migration */
+.notification-migration-announcement {
+    position: absolute;
+    left: -10000px;
+    width: 1px;
+    height: 1px;
+    overflow: hidden;
+}
+
+/* Ensure unified notification system takes precedence */
+.notification-container {
+    z-index: 9999 !important;
+}
+
+.notification {
+    z-index: 10000 !important;
+}
+
+/* Legacy compatibility classes that redirect to unified system */
+.show-notification,
+.display-notification,
+.notification-display {
+    /* These classes should trigger JavaScript to use unified system */
+}
+
+/* Legacy notification positioning fallback */
+.legacy-notification-top-right,
+.legacy-notification-top-left,
+.legacy-notification-bottom-right,
+.legacy-notification-bottom-left {
+    display: none !important;
+}
+
+/* Legacy notification type fallback */
+.legacy-notification-success,
+.legacy-notification-error,
+.legacy-notification-warning,
+.legacy-notification-info {
+    display: none !important;
+}
+
+/* Migration helper styles */
+.notification-system-migrated {
+    /* Marker class for successfully migrated components */
+}
+
+.notification-system-legacy {
+    /* Marker class for components that still need migration */
+    opacity: 0.5;
+    pointer-events: none;
+}
+
+/* Accessibility improvements for migration period */
+[aria-label*="legacy notification"],
+[aria-label*="old notification"] {
+    display: none !important;
+}
+
+/* Ensure proper focus management during migration */
+.notification-container:focus-within {
+    outline: 2px solid #007bff;
+    outline-offset: 2px;
+}
+
+/* Print styles - hide all notifications */
+@media print {
+    .notification-container,
+    .legacy-notification-container,
+    .alert,
+    .toast {
+        display: none !important;
+    }
+}
+
+/* High contrast mode support */
+@media (prefers-contrast: high) {
+    .notification-container {
+        border: 2px solid #000;
+    }
+}
+
+/* Reduced motion support */
+@media (prefers-reduced-motion: reduce) {
+    .notification-container *,
+    .legacy-notification-container * {
+        animation: none !important;
+        transition: none !important;
+    }
+}

@@ -1,0 +1,51 @@
+{
+  "report_metadata": {
+    "generated_at": "2025-08-31T15:03:05.343600+00:00",
+    "test_duration": 42.08734631538391,
+    "system_info": {
+      "platform": "darwin",
+      "python_version": "3.12.5 (main, Aug 29 2024, 09:08:57) [Clang 15.0.0 (clang-1500.3.9.4)]",
+      "cpu_count": 10,
+      "memory_total_gb": 16.0,
+      "timestamp": "2025-08-31T15:02:23.256078+00:00"
+    }
+  },
+  "overall_summary": {
+    "total_test_suites": 1,
+    "total_tests": 5,
+    "total_failures": 5,
+    "total_errors": 0,
+    "total_skipped": 0,
+    "overall_success_rate": 0.0,
+    "total_execution_time": 42.08734631538391
+  },
+  "test_suite_results": {
+    "memory": {
+      "test_suite": "MemoryUsageTestSuite",
+      "tests_run": 5,
+      "failures": 5,
+      "errors": 0,
+      "skipped": 0,
+      "success_rate": 0.0,
+      "execution_time": 42.08325409889221,
+      "failure_details": [
+        "Traceback (most recent call last):\n  File \"/Volumes/Gold/DevContainerTesting/vedfolnir/tests/performance/../../tests/performance/test_memory_usage.py\", line 554, in test_concurrent_operations_memory_impact\n    self.assertFalse(leak_detection['potential_leak'], \"No memory leak should be detected during concurrent operations\")\nAssertionError: True is not false : No memory leak should be detected during concurrent operations\n\nStdout:\n\n=== Testing Concurrent Operations Memory Impact ===\nConcurrent Operations Memory Impact Results:\n  - Concurrent threads: 8\n  - Operations per thread: 50\n  - Total operations completed: 400\n  - Total errors: 0\n  - Execution time: 1.55s\n  - Operations per second: 258.24\n  - Start memory: 95.0MB\n  - Peak memory: 104.1MB\n  - Final memory: 104.1MB\n  - Total growth: 9.1MB\n  - Memory per operation: 23.36KB\n  - GC object count change: 15210\n  - Potential leak detected: True\n",
+        "Traceback (most recent call last):\n  File \"/Volumes/Gold/DevContainerTesting/vedfolnir/tests/performance/../../tests/performance/test_memory_usage.py\", line 724, in test_garbage_collection_effectiveness\n    self.assertGreater(sum(collected_counts), 0, \"Garbage collection should collect some objects\")\nAssertionError: 0 not greater than 0 : Garbage collection should collect some objects\n\nStdout:\n\n=== Testing Garbage Collection Effectiveness ===\nPhase 1: Creating notifications without GC...\nPhase 2: Forcing garbage collection...\nPhase 3: Creating notifications after GC...\nGarbage Collection Effectiveness Results:\n  - Stress notifications created: 500\n  - GC time: 18.50ms\n  - Objects collected by generation: [0, 0, 0]\n  - Memory before GC: 110.8MB\n  - Memory after GC: 112.8MB\n  - GC effectiveness: -1.76%\n  - Start memory: 106.3MB\n  - Peak memory: 113.4MB\n  - Final memory: 113.4MB\n  - Total growth: 7.1MB\n",
+        "Traceback (most recent call last):\n  File \"/Volumes/Gold/DevContainerTesting/vedfolnir/tests/performance/../../tests/performance/test_memory_usage.py\", line 628, in test_long_running_memory_stability\n    self.assertFalse(leak_detection['potential_leak'], \"No memory leak should be detected in long-running operations\")\nAssertionError: True is not false : No memory leak should be detected in long-running operations\n\nStdout:\n\n=== Testing Long-Running Memory Stability ===\nLong-Running Memory Stability Results:\n  - Test duration: 30.02s\n  - Operations completed: 266\n  - Operations per second: 8.86\n  - Start memory: 114.2MB\n  - Peak memory: 114.9MB\n  - Final memory: 111.9MB\n  - Total growth: -2.4MB\n  - Growth rate: -0.079MB/sec\n  - Memory growth rate per snapshot: -0.335MB\n  - Potential leak detected: True\n",
+        "Traceback (most recent call last):\n  File \"/Volumes/Gold/DevContainerTesting/vedfolnir/tests/performance/../../tests/performance/test_memory_usage.py\", line 362, in test_notification_creation_memory_usage\n    self.assertLess(memory_per_notification, 10, \"Memory per notification should be < 10KB\")\nAssertionError: 12.896 not less than 10 : Memory per notification should be < 10KB\n\nStdout:\n\n=== Testing Notification Creation Memory Usage ===\nBatch 0: 100 notifications in 0.27s\nBatch 1: 100 notifications in 0.26s\nBatch 2: 100 notifications in 0.30s\nBatch 3: 100 notifications in 0.27s\nBatch 4: 100 notifications in 0.30s\nBatch 5: 100 notifications in 0.25s\nBatch 6: 100 notifications in 0.31s\nBatch 7: 100 notifications in 0.52s\nBatch 8: 100 notifications in 0.25s\nBatch 9: 100 notifications in 0.28s\nNotification Creation Memory Results:\n  - Total notifications created: 1000\n  - Start memory: 113.4MB\n  - Peak memory: 126.0MB\n  - Final memory: 126.0MB\n  - Total growth: 12.6MB\n  - Memory per notification: 12.90KB\n  - Memory growth rate: 0.732MB/snapshot\n  - Object growth rate: 783.9 objects/snapshot\n  - Potential leak detected: True\n",
+        "Traceback (most recent call last):\n  File \"/Volumes/Gold/DevContainerTesting/vedfolnir/tests/performance/../../tests/performance/test_memory_usage.py\", line 447, in test_offline_queue_memory_efficiency\n    self.assertFalse(leak_detection['potential_leak'], \"No significant memory leak should be detected in queue operations\")\nAssertionError: True is not false : No significant memory leak should be detected in queue operations\n\nStdout:\n\n=== Testing Offline Queue Memory Efficiency ===\nQueue Batch 0: 500 messages queued in 0.59s\nQueue Batch 1: 500 messages queued in 0.56s\nQueue Batch 2: 500 messages queued in 0.57s\nQueue Batch 3: 500 messages queued in 0.60s\nQueue Batch 4: 500 messages queued in 0.59s\nUser 204: 100 pending notifications\nUser 205: 100 pending notifications\nUser 206: 100 pending notifications\nUser 207: 100 pending notifications\nUser 208: 100 pending notifications\nUser 209: 100 pending notifications\nUser 210: 100 pending notifications\nUser 211: 100 pending notifications\nUser 212: 100 pending notifications\nUser 213: 100 pending notifications\nOffline Queue Memory Efficiency Results:\n  - Offline users: 10\n  - Total messages queued: 2500\n  - Messages cleaned up: 0\n  - Start memory: 127.3MB\n  - Peak memory: 130.8MB\n  - Final memory: 130.8MB\n  - Total growth: 3.5MB\n  - Memory per queued message: 1.44KB\n  - Retrieval time: 0.13s\n  - Cleanup time: 0.01s\n  - Potential leak detected: True\n"
+      ],
+      "error_details": []
+    }
+  },
+  "performance_benchmarks": {
+    "notification_throughput": "Not measured",
+    "websocket_connection_capacity": "Not measured",
+    "memory_efficiency": "Not measured",
+    "concurrent_user_capacity": "Not measured"
+  },
+  "recommendations": [
+    "Review failures in memory test suite",
+    "Improve reliability in memory - success rate is 0.0%"
+  ]
+}

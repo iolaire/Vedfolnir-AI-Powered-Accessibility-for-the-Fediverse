@@ -14,9 +14,10 @@ Requirements: 1.2, 1.3, 1.4, 1.5
 
 import logging
 from functools import wraps
-from flask import current_app, redirect, url_for, flash, request, jsonify
+from flask import current_app, redirect, url_for, request, jsonify
 from flask_login import current_user
 from models import UserRole, UserAuditLog
+# from notification_flash_replacement import send_notification  # Removed - using unified notification system
 from sqlalchemy.exc import SQLAlchemyError
 
 logger = logging.getLogger(__name__)
@@ -31,12 +32,16 @@ def admin_required(f):
     @wraps(f)
     def decorated_function(*args, **kwargs):
         if not current_user.is_authenticated:
-            flash('Please log in to access the admin interface.', 'info')
+            # Send info notification
+            from notification_helpers import send_info_notification
+            send_info_notification("Please log in to access the admin interface.", "Information")
             return redirect(url_for('user_management.login', next=request.url))
         
         if current_user.role != UserRole.ADMIN:
             logger.warning(f"Non-admin user {current_user.id} attempted to access admin function {f.__name__}")
-            flash('Access denied. Administrator privileges required.', 'error')
+            # Send error notification
+            from notification_helpers import send_error_notification
+            send_error_notification("Access denied. Administrator privileges required.", "Error")
             
             # Log security event
             try:
@@ -107,7 +112,9 @@ def admin_required(f):
             
         except Exception as e:
             logger.error(f"Error in admin access control for {f.__name__}: {e}")
-            flash('An error occurred while accessing the admin interface.', 'error')
+            # Send error notification
+            from notification_helpers import send_error_notification
+            send_error_notification("An error occurred while accessing the admin interface.", "Error")
             return redirect(url_for('index'))
     
     return decorated_function
@@ -184,7 +191,9 @@ def admin_session_preservation(f):
                 except Exception as restore_error:
                     logger.error(f"Failed to restore admin session after error: {restore_error}")
             
-            flash('An error occurred during the admin operation.', 'error')
+            # Send error notification
+            from notification_helpers import send_error_notification
+            send_error_notification("An error occurred during the admin operation.", "Error")
             return redirect(url_for('admin.user_management'))
     
     return decorated_function
@@ -317,7 +326,9 @@ def ensure_admin_count(f):
                                 'error': 'Cannot delete or modify the last administrator account'
                             }), 400
                         else:
-                            flash('Cannot delete or modify the last administrator account.', 'error')
+                            # Send error notification
+                            from notification_helpers import send_error_notification
+                            send_error_notification("Cannot delete or modify the last administrator account.", "Error")
                             return redirect(url_for('admin.user_management'))
                     
             except Exception as e:
@@ -325,7 +336,9 @@ def ensure_admin_count(f):
                 if request.is_json:
                     return jsonify({'success': False, 'error': 'Error validating admin count'}), 500
                 else:
-                    flash('Error validating admin count.', 'error')
+                    # Send error notification
+                    from notification_helpers import send_error_notification
+                    send_error_notification("Error validating admin count.", "Error")
                     return redirect(url_for('admin.user_management'))
         
         return f(*args, **kwargs)

@@ -2,6 +2,11 @@
 # This program is free software: you can redistribute it and/or modify it under the terms of the GNU Affero General Public License as published by the Free Software Foundation, either version 3 of the License, or (at your option) any later version.
 # THE SOFTWARE IS PROVIDED "AS IS", WITHOUT WARRANTY OF ANY KIND, EXPRESS OR IMPLIED, INCLUDING BUT NOT LIMITED TO THE WARRANTIES OF MERCHANTABILITY, FITNESS FOR A PARTICULAR PURPOSE AND NONINFRINGEMENT. IN NO EVENT SHALL THE AUTHORS OR COPYRIGHT HOLDERS BE LIABLE FOR ANY CLAIM, DAMAGES OR OTHER LIABILITY, WHETHER IN AN ACTION OF CONTRACT, TORT OR OTHERWISE, ARISING FROM, OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE SOFTWARE.
 
+
+# NOTE: Flash messages in this test file have been replaced with comments
+# as part of the notification system migration. The actual application now
+# uses the unified WebSocket-based notification system.
+
 """
 Tests for login route with proper session management to prevent DetachedInstanceError.
 
@@ -219,7 +224,7 @@ class TestLoginSessionManagement(unittest.TestCase):
                             
                             if not platform_data:
                                 # First-time user - redirect to platform setup
-                                flash('Welcome! Please set up your first platform connection to get started.', 'info')
+                                # Unified notification: Welcome! Please set up your first platform connection to get started. (info)
                                 return redirect(url_for('first_time_setup'))
                             
                             # Create Flask-based session with default platform using extracted data
@@ -244,17 +249,17 @@ class TestLoginSessionManagement(unittest.TestCase):
                                     # Welcome message with platform info
                                     flash(f'Welcome back! Connected to {default_platform["name"]} ({default_platform["platform_type"].title()})', 'success')
                                 else:
-                                    flash('Login successful, but there was an issue setting up your platform context', 'warning')
+                                    # Unified notification: Login successful, but there was an issue setting up your platform context (warning)
                                 return response
                             except Exception as e:
-                                flash('An unexpected error occurred during login. Please try again.', 'error')
+                                # Unified notification: An unexpected error occurred during login. Please try again. (error)
                         else:
-                            flash('Invalid username or password', 'error')
+                            # Unified notification: Invalid username or password (error)
                             
                 except SQLAlchemyError as e:
-                    flash('Database error occurred during login. Please try again.', 'error')
+                    # Unified notification: Database error occurred during login. Please try again. (error)
                 except Exception as e:
-                    flash('An unexpected error occurred during login. Please try again.', 'error')
+                    # Unified notification: An unexpected error occurred during login. Please try again. (error)
                     
             return render_template_string('<form method="post">{{ form.hidden_tag() }}{{ form.username() }}{{ form.password() }}{{ form.submit() }}</form>', form=form)
         

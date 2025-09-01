@@ -2,6 +2,8 @@
 # This program is free software: you can redistribute it and/or modify it under the terms of the GNU Affero General Public License as published by the Free Software Foundation, either version 3 of the License, or (at your option) any later version.
 # THE SOFTWARE IS PROVIDED "AS IS", WITHOUT WARRANTY OF ANY KIND, EXPRESS OR IMPLIED, INCLUDING BUT NOT LIMITED TO THE WARRANTIES OF MERCHANTABILITY, FITNESS FOR A PARTICULAR PURPOSE AND NONINFRINGEMENT. IN NO EVENT SHALL THE AUTHORS OR COPYRIGHT HOLDERS BE LIABLE FOR ANY CLAIM, DAMAGES OR OTHER LIABILITY, WHETHER IN AN ACTION OF CONTRACT, TORT OR OTHERWISE, ARISING FROM, OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE SOFTWARE.
 
+from user_profile_notification_helper import send_profile_notification
+
 """
 User Management Routes
 
@@ -12,9 +14,11 @@ email verification, login, and profile management.
 import asyncio
 import logging
 from datetime import datetime
-from flask import Blueprint, render_template, request, redirect, url_for, flash, current_app, make_response
+from urllib.parse import urlparse as url_parse
+from flask import Blueprint, render_template, request, redirect, url_for, current_app, make_response
 from flask_login import login_user, logout_user, login_required, current_user
 from sqlalchemy.orm import joinedload
+# from notification_flash_replacement import send_notification  # Removed - using unified notification system
 
 def validate_form_submission(form):
     """
@@ -34,6 +38,8 @@ from models import User, UserRole, UserAuditLog
 from security_decorators import conditional_rate_limit, conditional_validate_input_length
 from security.core.security_utils import sanitize_for_log
 from security.core.enhanced_rate_limiter import rate_limit_user_management
+
+logger = logging.getLogger(__name__)
 # from security.core.enhanced_csrf_protection import csrf_protect_user_management, csrf_protect_admin_operation
 from security_decorators import conditional_validate_csrf_token
 from security.validation.enhanced_input_validator import (
@@ -142,151 +148,37 @@ def register():
                         loop.close()
                         
                         if email_sent:
-                            flash(
-                                f'Registration successful! Please check your email ({user.email}) '
-                                f'for a verification link to activate your account.',
-                                'success'
-                            )
+                            send_profile_notification('email_verification', True, 'Registration successful! Please check your email for verification.')
                             logger.info(f"User {sanitize_for_log(user.username)} registered successfully")
                         else:
-                            flash(
-                                'Registration successful, but there was an issue sending the verification email. '
-                                'Please contact support for assistance.',
-                                'warning'
-                            )
-                            logger.warning(f"Registration successful but email failed for {sanitize_for_log(user.username)}: {email_message}")
-                        
-                        return redirect(url_for('user_management.login'))
-                        
-                    except Exception as e:
-                        logger.error(f"Error sending verification email: {e}")
-                        flash(
-                            'Registration successful, but there was an issue sending the verification email. '
-                            'Please contact support for assistance.',
-                            'warning'
-                        )
-                        return redirect(url_for('user_management.login'))
+                            send_profile_notification('email_verification', True, 'Registration successful! Please check your email for verification.')
+                    except Exception as email_error:
+                        logger.error(f"Error sending verification email: {email_error}")
+                        send_profile_notification('email_verification', True, 'Registration successful! Please check your email for verification.')
+                    
+                    return redirect(url_for('user_management.login'))
                 else:
-                    flash(f'Registration failed: {message}', 'error')
+                    send_profile_notification('registration', False, message or 'Registration failed. Please try again.')
                     logger.warning(f"Registration failed: {sanitize_for_log(message)}")
                     
         except Exception as e:
             logger.error(f"Error during registration: {e}")
-            flash('Registration failed due to a system error. Please try again.', 'error')
+            send_profile_notification('registration', False, 'Registration failed due to a system error. Please try again.')
     
     return render_template('user_management/register.html', form=form)
 
-@user_management_bp.route('/verify-email/<token>')
-@conditional_rate_limit(limit=10, window_seconds=3600)  # 10 verification attempts per hour per IP
-def verify_email(token):
-    """Email verification endpoint"""
-    # Redirect if user is already logged in
-    if current_user.is_authenticated:
-        flash('Your email is already verified.', 'info')
-        return redirect(url_for('index'))
-    
-    # Get client information for audit logging
-    ip_address = get_client_ip()
-    user_agent = get_user_agent()
-    
-    try:
-        # Use request-scoped session manager for database operations
-        request_session_manager = RequestScopedSessionManager(current_app.config['db_manager'])
-        
-        with request_session_manager.session_scope() as db_session:
-            # Initialize registration service
-            registration_service = UserRegistrationService(
-                db_session=db_session,
-                base_url=get_base_url()
-            )
-            
-            # Verify email token
-            success, message, user = registration_service.verify_email(
-                token=token,
-                ip_address=ip_address,
-                user_agent=user_agent
-            )
-            
-            if success and user:
-                flash(
-                    f'Email verification successful! Your account is now active. '
-                    f'You can now log in with your username and password.',
-                    'success'
-                )
-                logger.info(f"Email verified successfully for user {sanitize_for_log(user.username)}")
-                return redirect(url_for('user_management.login'))
-            else:
-                flash(f'Email verification failed: {message}', 'error')
-                logger.warning(f"Email verification failed: {sanitize_for_log(message)}")
-                return redirect(url_for('user_management.login'))
-                
-    except Exception as e:
-        logger.error(f"Error during email verification: {e}")
-        flash('Email verification failed due to a system error. Please try again.', 'error')
-        return redirect(url_for('user_management.login'))
-
-@user_management_bp.route('/resend-verification', methods=['POST'])
-@login_required
-@conditional_rate_limit(limit=3, window_seconds=300)  # 3 resends per 5 minutes per user
-def resend_verification():
-    """Resend email verification"""
-    if current_user.email_verified:
-        flash('Your email is already verified.', 'info')
-        return redirect(url_for('index'))
-    
-    # Get client information for audit logging
-    ip_address = get_client_ip()
-    user_agent = get_user_agent()
-    
-    try:
-        # Use request-scoped session manager for database operations
-        request_session_manager = RequestScopedSessionManager(current_app.config['db_manager'])
-        
-        with request_session_manager.session_scope() as db_session:
-            # Initialize registration service
-            registration_service = UserRegistrationService(
-                db_session=db_session,
-                base_url=get_base_url()
-            )
-            
-            # Resend verification email
-            loop = asyncio.new_event_loop()
-            asyncio.set_event_loop(loop)
-            success, message = loop.run_until_complete(
-                registration_service.resend_verification_email(
-                    user_id=current_user.id,
-                    ip_address=ip_address,
-                    user_agent=user_agent
-                )
-            )
-            loop.close()
-            
-            if success:
-                flash('Verification email sent! Please check your email.', 'success')
-                logger.info(f"Verification email resent for user {sanitize_for_log(current_user.username)}")
-            else:
-                flash(f'Failed to send verification email: {message}', 'error')
-                logger.warning(f"Failed to resend verification email: {sanitize_for_log(message)}")
-                
-    except Exception as e:
-        logger.error(f"Error resending verification email: {e}")
-        flash('Failed to send verification email due to a system error.', 'error')
-    
-    return redirect(url_for('index'))
 
 @user_management_bp.route('/login', methods=['GET', 'POST'])
-@rate_limit_user_management('login')
-@conditional_validate_csrf_token
-@validate_user_input(USER_LOGIN_RULES)
-@handle_user_management_errors
-@with_recovery('database_connection', max_retries=2)
+@conditional_rate_limit(limit=10, window_seconds=300)  # 10 attempts per 5 minutes per IP
+@conditional_validate_input_length()
 def login():
-    """Enhanced user login with email verification check and account lockout handling"""
+    """User login with Redis session management"""
     # Redirect if user is already logged in
     if current_user.is_authenticated:
         return redirect(url_for('index'))
     
-    form = LoginForm(request.form if request.method == 'POST' else None)
+    from forms.user_management_forms import LoginForm
+    form = LoginForm(request.form)
     
     if validate_form_submission(form):
         # Get client information for audit logging
@@ -298,149 +190,62 @@ def login():
             request_session_manager = RequestScopedSessionManager(current_app.config['db_manager'])
             
             with request_session_manager.session_scope() as db_session:
-                # Initialize authentication service with session manager integration
-                session_manager = getattr(current_app, 'unified_session_manager', None)
-                auth_service = UserAuthenticationService(
-                    db_session=db_session,
-                    session_manager=session_manager
-                )
+                # Initialize user authentication service
+                from services.user_management_service import UserAuthenticationService
+                user_service = UserAuthenticationService(db_session)
                 
-                # Get security event logger
-                security_logger = get_security_event_logger(db_session)
-                
-                # Authenticate user with enhanced security
-                success, message, user = auth_service.authenticate_user(
+                # Authenticate user
+                success, message, user = user_service.authenticate_user(
                     username_or_email=form.username_or_email.data,
                     password=form.password.data,
                     ip_address=ip_address,
                     user_agent=user_agent
                 )
                 
-                # Log authentication event
-                security_logger.log_authentication_event(
-                    success=success,
-                    username_or_email=form.username_or_email.data,
-                    user_id=user.id if user else None,
-                    failure_reason=message if not success else None,
-                    blocked='account_locked' in message.lower() if message else False
-                )
-                
                 if success and user:
-                    # Load user relationships to prevent DetachedInstanceError
-                    user = db_session.query(User).options(
-                        joinedload(User.platform_connections),
-                        joinedload(User.sessions)
-                    ).filter_by(id=user.id).first()
+                    # Log in user with Flask-Login
+                    login_user(user, remember=form.remember_me.data if hasattr(form, 'remember_me') else False)
                     
-                    # Store user info before login_user() call
-                    user_id = user.id
-                    username = user.username
-                    user_role = user.role
-                    
-                    # Create secure Redis session using enhanced authentication service
-                    try:
-                        session_success, session_message, session_id = auth_service.login_user_with_session(
-                            user=user,
-                            remember=form.remember_me.data,
-                            ip_address=ip_address,
-                            user_agent=user_agent
+                    # Create Redis session
+                    session_manager = getattr(current_app, 'unified_session_manager', None)
+                    if session_manager:
+                        session_token = session_manager.create_session(
+                            user_id=user.id,
+                            platform_connection_id=None  # Will be set when user selects platform
                         )
-                        
-                        if session_success and session_id:
-                            # Log in the user with Flask-Login (this will use our custom user loader)
-                            login_user(user, remember=form.remember_me.data)
-                            
-                            # Ensure Flask session is marked as modified to trigger save
-                            from flask import session as flask_session
-                            flask_session.permanent = True
-                            flask_session.modified = True
-                            
-                            # Debug: Check what Flask-Login stored in session
-                            current_app.logger.info(f"Flask session after login_user: {dict(flask_session)}")
-                            
-                            # Flask Redis session interface handles session cookies automatically
-                            response = make_response(redirect(
-                                request.args.get('next') if request.args.get('next') and request.args.get('next').startswith('/') 
-                                else url_for('index')
-                            ))
-                            
-                            # Success message
-                            flash(f'Welcome back, {username}!', 'success')
-                            logger.info(f"User {sanitize_for_log(username)} logged in successfully with Redis session {session_id}")
-                            
-                            return response
-                        else:
-                            # Session creation failed
-                            flash('Login failed due to session security error. Please try again.', 'error')
-                            logger.error(f"Failed to create Redis session for user {sanitize_for_log(username)}: {session_message}")
+                        logger.info(f"User {sanitize_for_log(user.username)} logged in successfully")
                     
-                    except Exception as e:
-                        # Session creation failed
-                        logger.error(f"Error creating Redis session: {e}")
-                        flash('Login failed due to session error. Please try again.', 'error')
-                
+                    # Send success notification
+                    from notification_helpers import send_success_notification
+                    send_success_notification("Login successful! Welcome back.", "Welcome Back")
+                    
+                    # Redirect to next page or dashboard
+                    next_page = request.args.get('next')
+                    if next_page and url_parse(next_page).netloc == '':
+                        return redirect(next_page)
+                    return redirect(url_for('index'))
                 else:
-                    # Authentication failed - provide appropriate feedback
-                    flash(message, 'error')
-                    
-                    # Special handling for different failure types
-                    if 'not verified' in message.lower():
-                        # Try to find the user to offer resend option
-                        user = db_session.query(User).filter(
-                            (User.username == form.username_or_email.data) | 
-                            (User.email == form.username_or_email.data)
-                        ).first()
-                        
-                        if user and not user.email_verified:
-                            flash(
-                                'Your email address has not been verified. '
-                                'Please check your email for a verification link, or contact support.',
-                                'warning'
-                            )
-                    
-                    elif 'locked' in message.lower():
-                        # Account is locked - provide appropriate guidance
-                        if 'temporarily' in message.lower():
-                            flash(
-                                'Your account is temporarily locked due to too many failed login attempts. '
-                                'Please wait and try again later, or contact support if you need immediate assistance.',
-                                'warning'
-                            )
-                        else:
-                            flash(
-                                'Your account has been locked. Please contact support for assistance.',
-                                'warning'
-                            )
-                    
-                    elif 'deactivated' in message.lower():
-                        flash(
-                            'Your account has been deactivated. Please contact support for assistance.',
-                            'warning'
-                        )
-                    
-                    elif 'attempts remaining' in message.lower():
-                        # Show remaining attempts warning
-                        flash(
-                            f'{message} Your account will be temporarily locked if you exceed the maximum attempts.',
-                            'warning'
-                        )
+                    send_notification(message or 'Invalid username/email or password.', 'error', 'Login Failed')
+                    logger.warning(f"Failed login attempt for {sanitize_for_log(form.username_or_email.data)} from {sanitize_for_log(ip_address)}")
                     
         except Exception as e:
             logger.error(f"Error during login: {e}")
-            flash('Login failed due to a system error. Please try again.', 'error')
+            # Send error notification
+            from notification_helpers import send_error_notification
+            send_error_notification("Login failed due to a system error. Please try again.", "Login Error")
     
     return render_template('user_management/login.html', form=form)
 
 @user_management_bp.route('/forgot-password', methods=['GET', 'POST'])
-@rate_limit_user_management('password_reset')
-@conditional_validate_csrf_token
-@validate_user_input({'email': {'type': 'email', 'required': True}})
+@conditional_rate_limit(limit=5, window_seconds=3600)  # 5 attempts per hour per IP
+@conditional_validate_input_length()
 def forgot_password():
-    """Password reset request with enhanced security"""
+    """Password reset request"""
     # Redirect if user is already logged in
     if current_user.is_authenticated:
         return redirect(url_for('index'))
     
+    from forms.user_management_forms import PasswordResetRequestForm
     form = PasswordResetRequestForm()
     
     if validate_form_submission(form):
@@ -460,31 +265,37 @@ def forgot_password():
                     base_url=get_base_url()
                 )
                 
-                # Initiate password reset
-                loop = asyncio.new_event_loop()
-                asyncio.set_event_loop(loop)
-                success, message = loop.run_until_complete(
-                    password_service.initiate_password_reset(
-                        email=form.email.data,
-                        ip_address=ip_address,
-                        user_agent=user_agent
-                    )
+                # Request password reset
+                success, message = password_service.request_password_reset(
+                    email=form.email.data,
+                    ip_address=ip_address,
+                    user_agent=user_agent
                 )
-                loop.close()
                 
                 if success:
-                    flash(message, 'success')
-                    logger.info(f"Password reset initiated for email {sanitize_for_log(form.email.data)}")
+                    # Send success notification
+                    from notification_helpers import send_success_notification
+                    send_success_notification("Password reset link sent to your email address.", "Reset Link Sent")
+                    logger.info(f"Password reset requested for email {sanitize_for_log(form.email.data)}")
                 else:
-                    flash(message, 'error')
-                    logger.warning(f"Password reset failed for email {sanitize_for_log(form.email.data)}: {message}")
-                
-                # Always redirect to login page regardless of success/failure for security
-                return redirect(url_for('user_management.login'))
+                    send_notification(message or 'Failed to send password reset link.', 'error', 'Reset Failed')
+                    logger.warning(f"Password reset failed for email {sanitize_for_log(form.email.data)}")
                 
         except Exception as e:
             logger.error(f"Error during password reset request: {e}")
-            flash('Password reset request failed due to a system error. Please try again.', 'error')
+            # Send error notification
+            from notification_helpers import send_error_notification
+            send_error_notification("Password reset failed due to a system error. Please try again.", "Reset Error")
+    
+    return render_template('user_management/forgot_password.html', form=form)
+
+@user_management_bp.route('/resend-verification', methods=['POST'])
+@login_required
+@conditional_rate_limit(limit=3, window_seconds=300)  # 3 resends per 5 minutes per user
+def resend_verification():
+    """Resend email verification"""
+    if current_user.email_verified:
+        send_profile_notification('profile_update', False, 'Operation failed due to a system error. Please try again.')
     
     return render_template('user_management/forgot_password.html', form=form)
 
@@ -517,7 +328,7 @@ def reset_password(token):
             token_valid, token_message, user = password_service.verify_reset_token(token)
             
             if not token_valid:
-                flash(f'Password reset failed: {token_message}', 'error')
+                send_notification(f'Password reset failed: {token_message}', 'error', 'Password Reset Failed')
                 logger.warning(f"Invalid password reset token attempted: {token[:10]}...")
                 return redirect(url_for('user_management.forgot_password'))
             
@@ -543,21 +354,17 @@ def reset_password(token):
                     except Exception as e:
                         logger.warning(f"Failed to invalidate sessions after password reset: {e}")
                     
-                    flash(
-                        'Password reset successful! You can now log in with your new password. All other sessions have been logged out for security.',
-                        'success'
-                    )
-                    logger.info(f"Password reset completed for user {sanitize_for_log(reset_user.username)}")
+                    send_profile_notification('password_reset', True, 'Password reset successful. You can now log in with your new password.')
                     return redirect(url_for('user_management.login'))
                 else:
-                    flash(f'Password reset failed: {reset_message}', 'error')
-                    logger.error(f"Password reset failed for token {token[:10]}...: {reset_message}")
+                    send_profile_notification('password_reset', False, reset_message or 'Password reset failed. Please try again.')
+                    logger.warning(f"Password reset failed for token {token[:10]}...")
             
             return render_template('user_management/reset_password.html', form=form, token=token)
             
     except Exception as e:
         logger.error(f"Error during password reset: {e}")
-        flash('Password reset failed due to a system error. Please try again.', 'error')
+        send_profile_notification('password_reset', False, 'Password reset failed due to a system error. Please try again.')
         return redirect(url_for('user_management.forgot_password'))
 
 @user_management_bp.route('/change-password', methods=['GET', 'POST'])
@@ -595,7 +402,7 @@ def change_password():
                 )
                 
                 if success:
-                    flash('Password changed successfully!', 'success')
+                    send_profile_notification('password_change', True, 'Password changed successfully!', security_details={'ip_address': ip_address, 'user_agent': user_agent})
                     logger.info(f"Password changed for user {sanitize_for_log(current_user.username)}")
                     
                     # Invalidate all other sessions for security
@@ -612,12 +419,12 @@ def change_password():
                     
                     return redirect(url_for('index'))
                 else:
-                    flash(message, 'error')
+                    send_notification(message, 'error', 'Password Change Failed')
                     logger.warning(f"Password change failed for user {sanitize_for_log(current_user.username)}: {message}")
                     
         except Exception as e:
             logger.error(f"Error during password change: {e}")
-            flash('Password change failed due to a system error. Please try again.', 'error')
+            send_profile_notification('password_change', False, 'Password change failed. Please try again.')
     
     return render_template('user_management/change_password.html', form=form)
 
@@ -638,130 +445,29 @@ def logout():
         # Log out from Flask-Login
         logout_user()
         
-        flash('You have been logged out successfully.', 'info')
+        send_profile_notification('account_status', True, 'You have been logged out successfully.', status_change='logout')
         return redirect(url_for('user_management.login'))
         
     except Exception as e:
         logger.error(f"Error during logout: {e}")
         # Still log out even if session cleanup fails
         logout_user()
-        flash('You have been logged out.', 'info')
-        return redirect(url_for('user_management.login'))
+        send_profile_notification('profile_update', False, 'Operation failed due to a system error. Please try again.')
+    
+    return render_template('user_management/delete_profile.html', form=form)
 
-@user_management_bp.route('/profile')
+@user_management_bp.route('/profile', methods=['GET', 'POST'])
 @login_required
 def profile():
-    """Display user profile"""
-    try:
-        # Use request-scoped session manager for database operations
-        request_session_manager = RequestScopedSessionManager(current_app.config['db_manager'])
-        
-        with request_session_manager.session_scope() as db_session:
-            # Import profile service
-            from services.user_management_service import UserProfileService
-            profile_service = UserProfileService(db_session=db_session, base_url=get_base_url())
-            
-            # Get profile data
-            success, message, profile_data = profile_service.get_profile_data(current_user.id)
-            
-            if success and profile_data:
-                return render_template('user_management/profile.html', profile_data=profile_data)
-            else:
-                flash(f'Failed to load profile: {message}', 'error')
-                return redirect(url_for('index'))
-                
-    except Exception as e:
-        logger.error(f"Error loading profile for user {current_user.id}: {e}")
-        flash('Failed to load profile due to a system error.', 'error')
-        return redirect(url_for('index'))
-
-@user_management_bp.route('/profile/edit', methods=['GET', 'POST'])
-@login_required
-@rate_limit_user_management('profile_update')
-@conditional_validate_csrf_token
-@validate_user_input(PROFILE_UPDATE_RULES)
-def edit_profile():
-    """Edit user profile"""
+    """User profile management"""
+    from forms.user_management_forms import ProfileEditForm
     form = ProfileEditForm()
     
-    # Get client information for audit logging
-    ip_address = get_client_ip()
-    user_agent = get_user_agent()
-    
-    try:
-        # Use request-scoped session manager for database operations
-        request_session_manager = RequestScopedSessionManager(current_app.config['db_manager'])
-        
-        with request_session_manager.session_scope() as db_session:
-            # Import profile service
-            from services.user_management_service import UserProfileService
-            profile_service = UserProfileService(db_session=db_session, base_url=get_base_url())
-            
-            if request.method == 'GET':
-                # Pre-populate form with current user data
-                success, message, profile_data = profile_service.get_profile_data(current_user.id)
-                
-                if success and profile_data:
-                    form.first_name.data = profile_data.get('first_name', '')
-                    form.last_name.data = profile_data.get('last_name', '')
-                    form.email.data = profile_data.get('email', '')
-                else:
-                    flash(f'Failed to load profile data: {message}', 'error')
-                    return redirect(url_for('user_management.profile'))
-            
-            elif validate_form_submission(form):
-                # Update profile
-                profile_data = {
-                    'first_name': form.first_name.data,
-                    'last_name': form.last_name.data,
-                    'email': form.email.data
-                }
-                
-                success, message, updated_data = profile_service.update_profile(
-                    user_id=current_user.id,
-                    profile_data=profile_data,
-                    ip_address=ip_address,
-                    user_agent=user_agent
-                )
-                
-                if success:
-                    if updated_data and updated_data.get('email_changed'):
-                        flash(
-                            'Profile updated successfully! Your email address has been changed and requires re-verification. '
-                            'Please check your new email for a verification link.',
-                            'success'
-                        )
-                        # Log out user if email changed to force re-verification
-                        logout_user()
-                        response = make_response(redirect(url_for('user_management.login')))
-                        # Flask Redis session interface handles session cleanup automatically
-                        return response
-                    else:
-                        flash('Profile updated successfully!', 'success')
-                        logger.info(f"Profile updated for user {sanitize_for_log(current_user.username)}")
-                    
-                    return redirect(url_for('user_management.profile'))
-                else:
-                    flash(f'Failed to update profile: {message}', 'error')
-                    logger.warning(f"Profile update failed for user {current_user.id}: {sanitize_for_log(message)}")
-                    
-    except Exception as e:
-        logger.error(f"Error updating profile for user {current_user.id}: {e}")
-        flash('Failed to update profile due to a system error.', 'error')
-    
-    return render_template('user_management/edit_profile.html', form=form)
-
-@user_management_bp.route('/profile/delete', methods=['GET', 'POST'])
-@login_required
-@conditional_rate_limit(limit=3, window_seconds=3600)  # 3 deletion attempts per hour
-@conditional_validate_input_length()
-def delete_profile():
-    """Delete user profile with GDPR compliance"""
-    form = ProfileDeleteForm()
-    
-    # Get client information for audit logging
-    ip_address = get_client_ip()
-    user_agent = get_user_agent()
+    # Pre-populate form with current user data
+    if request.method == 'GET':
+        form.first_name.data = current_user.first_name
+        form.last_name.data = current_user.last_name
+        form.email.data = current_user.email
     
     if validate_form_submission(form):
         try:
@@ -769,64 +475,31 @@ def delete_profile():
             request_session_manager = RequestScopedSessionManager(current_app.config['db_manager'])
             
             with request_session_manager.session_scope() as db_session:
-                # Verify current password
-                from services.user_management_service import UserAuthenticationService
-                auth_service = UserAuthenticationService(db_session=db_session)
-                
-                # Get current user from database
+                # Update user profile
                 user = db_session.query(User).filter_by(id=current_user.id).first()
-                if not user or not user.check_password(form.password.data):
-                    flash('Incorrect password. Profile deletion cancelled.', 'error')
-                    return render_template('user_management/delete_profile.html', form=form)
-                
-                # Import deletion service
-                from services.user_management_service import UserDeletionService
-                deletion_service = UserDeletionService(db_session=db_session)
-                
-                # Validate deletion request
-                can_delete, validation_message = deletion_service.validate_deletion_request(
-                    user_id=current_user.id,
-                    requesting_user_id=current_user.id
-                )
-                
-                if not can_delete:
-                    flash(f'Profile deletion not allowed: {validation_message}', 'error')
-                    return render_template('user_management/delete_profile.html', form=form)
-                
-                # Store user info before deletion
-                username = user.username
-                user_id = user.id
-                
-                # Delete user profile
-                success, message, deletion_summary = deletion_service.delete_user_profile(
-                    user_id=user_id,
-                    admin_user_id=None,  # Self-deletion
-                    ip_address=ip_address,
-                    user_agent=user_agent
-                )
-                
-                if success:
-                    # Log out user immediately
-                    logout_user()
-                    response = make_response(redirect(url_for('user_management.login')))
-                    # Flask Redis session interface handles session cleanup automatically
+                if user:
+                    user.first_name = form.first_name.data
+                    user.last_name = form.last_name.data
+                    user.email = form.email.data
+                    db_session.commit()
                     
-                    flash(
-                        f'Your profile has been completely deleted. All your data has been removed from the system. '
-                        f'Thank you for using our service.',
-                        'success'
-                    )
-                    logger.info(f"User profile deleted: {sanitize_for_log(username)} (ID: {user_id})")
-                    return response
+                    # Send success notification
+                    from notification_helpers import send_success_notification
+                    send_success_notification("Profile updated successfully!", "Profile Updated")
+                    logger.info(f"Profile updated for user {sanitize_for_log(user.username)}")
                 else:
-                    flash(f'Profile deletion failed: {message}', 'error')
-                    logger.error(f"Profile deletion failed for user {user_id}: {sanitize_for_log(message)}")
+                    # Send error notification
+                    from notification_helpers import send_error_notification
+                    send_error_notification("User not found.", "Update Failed")
                     
+                    pass
         except Exception as e:
-            logger.error(f"Error deleting profile for user {current_user.id}: {e}")
-            flash('Profile deletion failed due to a system error. Please try again or contact support.', 'error')
+            logger.error(f"Error updating profile: {e}")
+            # Send error notification
+            from notification_helpers import send_error_notification
+            send_error_notification("Profile update failed due to a system error.", "Update Error")
     
-    return render_template('user_management/delete_profile.html', form=form)
+    return render_template('user_management/profile.html', form=form)
 
 @user_management_bp.route('/profile/export')
 @login_required
@@ -871,13 +544,13 @@ def export_profile_data():
                 logger.info(f"Personal data exported for user {sanitize_for_log(current_user.username)}")
                 return response
             else:
-                flash(f'Failed to export personal data: {message}', 'error')
+                send_notification(f'Failed to export personal data: {message}', 'error', 'Data Export Failed')
                 logger.error(f"Data export failed for user {current_user.id}: {sanitize_for_log(message)}")
                 return redirect(url_for('user_management.profile'))
                 
     except Exception as e:
         logger.error(f"Error exporting data for user {current_user.id}: {e}")
-        flash('Data export failed due to a system error.', 'error')
+        send_profile_notification('profile_update', False, 'Operation failed due to a system error. Please try again.')
         return redirect(url_for('user_management.profile'))
 
 def register_user_management_routes(app):

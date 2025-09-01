@@ -1,0 +1,45 @@
+{
+  "report_metadata": {
+    "generated_at": "2025-08-31T15:01:55.151262+00:00",
+    "test_duration": 10.17980408668518,
+    "system_info": {
+      "platform": "darwin",
+      "python_version": "3.12.5 (main, Aug 29 2024, 09:08:57) [Clang 15.0.0 (clang-1500.3.9.4)]",
+      "cpu_count": 10,
+      "memory_total_gb": 16.0,
+      "timestamp": "2025-08-31T15:01:44.971246+00:00"
+    }
+  },
+  "overall_summary": {
+    "total_test_suites": 1,
+    "total_tests": 6,
+    "total_failures": 0,
+    "total_errors": 0,
+    "total_skipped": 0,
+    "overall_success_rate": 100.0,
+    "total_execution_time": 10.17980408668518
+  },
+  "test_suite_results": {
+    "notification": {
+      "test_suite": "NotificationPerformanceTestSuite",
+      "tests_run": 6,
+      "failures": 0,
+      "errors": 0,
+      "skipped": 0,
+      "success_rate": 100.0,
+      "execution_time": 10.17957592010498,
+      "failure_details": [],
+      "error_details": []
+    }
+  },
+  "performance_benchmarks": {
+    "notification_throughput": "Not measured",
+    "websocket_connection_capacity": "Not measured",
+    "memory_efficiency": "Not measured",
+    "concurrent_user_capacity": "Not measured"
+  },
+  "recommendations": [
+    "All performance tests passed successfully",
+    "Consider running tests with higher load parameters for stress testing"
+  ]
+}

@@ -129,66 +129,177 @@
 </div>
 
 <script>
-// Admin Dashboard Component JavaScript
+// Admin Dashboard Component JavaScript with WebSocket Health Notifications
 (function() {
     'use strict';
     
-    // Function to update system health status
-    function updateSystemHealth() {
+    let websocketConnected = false;
+    let healthNotificationHandler = null;
+    
+    // Initialize WebSocket connection for real-time health notifications
+    function initializeHealthNotifications() {
+        try {
+            // Initialize page notifications for admin dashboard
+            if (typeof window.PageNotificationIntegrator !== 'undefined') {
+                healthNotificationHandler = new window.PageNotificationIntegrator('admin_dashboard', {
+                    namespace: '/admin',
+                    enableHealthMonitoring: true,
+                    notificationTypes: ['admin', 'system', 'security'],
+                    onHealthUpdate: handleHealthUpdate,
+                    onConnectionChange: handleConnectionChange
+                });
+                
+                healthNotificationHandler.initialize();
+            } else {
+                console.warn('PageNotificationIntegrator not available, falling back to polling');
+                fallbackToPolling();
+            }
+        } catch (error) {
+            console.error('Failed to initialize health notifications:', error);
+            fallbackToPolling();
+        }
+    }
+    
+    // Handle real-time health updates via WebSocket
+    function handleHealthUpdate(healthData) {
+        try {
+            console.log('Received health update:', healthData);
+            
+            const statusElement = document.getElementById('system-health-status');
+            const detailsElement = document.getElementById('system-health-details');
+            
+            if (!statusElement || !detailsElement) {
+                return;
+            }
+            
+            // Update status from WebSocket data
+            if (healthData.system_health_data && healthData.system_health_data.health_status) {
+                const health = healthData.system_health_data.health_status;
+                updateHealthDisplay(statusElement, detailsElement, health);
+            } else if (healthData.data && healthData.data.health_status) {
+                const health = healthData.data.health_status;
+                updateHealthDisplay(statusElement, detailsElement, health);
+            }
+            
+            // Show notification for critical health changes
+            if (healthData.priority === 'critical' || healthData.type === 'error') {
+                showHealthAlert(healthData);
+            }
+            
+        } catch (error) {
+            console.error('Error handling health update:', error);
+        }
+    }
+    
+    // Handle WebSocket connection changes
+    function handleConnectionChange(connected) {
+        websocketConnected = connected;
+        console.log('WebSocket health monitoring:', connected ? 'connected' : 'disconnected');
+        
+        if (!connected) {
+            // Fall back to polling if WebSocket disconnects
+            setTimeout(fallbackToPolling, 5000);
+        }
+    }
+    
+    // Update health display elements
+    function updateHealthDisplay(statusElement, detailsElement, healthData) {
+        try {
+            const status = healthData.status || 'unknown';
+            
+            // Update status display
+            statusElement.innerHTML = status.charAt(0).toUpperCase() + status.slice(1);
+            
+            // Set status color class
+            statusElement.className = 'fw-bold fs-4 mb-1';
+            if (status === 'healthy') {
+                statusElement.classList.add('text-success');
+            } else if (status === 'warning' || status === 'degraded') {
+                statusElement.classList.add('text-warning');
+            } else if (status === 'critical') {
+                statusElement.classList.add('text-danger');
+            } else {
+                statusElement.classList.add('text-secondary');
+            }
+            
+            // Update details
+            if (healthData.database_status && healthData.redis_status) {
+                const components = [];
+                if (healthData.database_status === 'healthy') components.push('database');
+                if (healthData.redis_status === 'healthy') components.push('redis');
+                
+                const totalComponents = 4; // database, redis, ollama, storage
+                detailsElement.textContent = `${components.length}/${totalComponents} components healthy`;
+            } else {
+                detailsElement.textContent = 'Real-time monitoring active';
+            }
+            
+        } catch (error) {
+            console.error('Error updating health display:', error);
+        }
+    }
+    
+    // Show health alert notification
+    function showHealthAlert(healthData) {
+        try {
+            // Create alert element
+            const alertContainer = document.createElement('div');
+            alertContainer.className = `alert alert-${healthData.type === 'error' ? 'danger' : 'warning'} alert-dismissible fade show position-fixed`;
+            alertContainer.style.cssText = 'top: 20px; right: 20px; z-index: 9999; max-width: 400px;';
+            
+            alertContainer.innerHTML = `
+                <div class="d-flex align-items-center">
+                    <i class="bi bi-exclamation-triangle-fill me-2"></i>
+                    <div>
+                        <strong>${healthData.title || 'System Health Alert'}</strong>
+                        <div class="small">${healthData.message || 'System health issue detected'}</div>
+                    </div>
+                </div>
+                <button type="button" class="btn-close" data-bs-dismiss="alert"></button>
+            `;
+            
+            document.body.appendChild(alertContainer);
+            
+            // Auto-remove after 10 seconds
+            setTimeout(() => {
+                if (alertContainer.parentNode) {
+                    alertContainer.remove();
+                }
+            }, 10000);
+            
+        } catch (error) {
+            console.error('Error showing health alert:', error);
+        }
+    }
+    
+    // Fallback to polling when WebSocket is not available
+    function fallbackToPolling() {
+        if (websocketConnected) {
+            return; // Don't start polling if WebSocket is connected
+        }
+        
+        console.log('Using fallback polling for health updates');
+        updateSystemHealthPolling();
+        setInterval(updateSystemHealthPolling, 30000);
+    }
+    
+    // Function to update system health status via polling (fallback)
+    function updateSystemHealthPolling() {
         const statusElement = document.getElementById('system-health-status');
         const detailsElement = document.getElementById('system-health-details');
         
         if (!statusElement || !detailsElement) {
-            return; // Elements not found, skip update
+            return;
         }
         
-        // Fetch health status from the same endpoint as admin health dashboard
+        // Fetch health status from admin health endpoint
         fetch('/admin/health')
             .then(response => response.json())
             .then(data => {
-                console.log('Health check response:', data); // Debug logging
+                console.log('Health check response (polling):', data);
                 
                 if (data.status) {
-                    const status = data.status;
-                    const components = data.components || {};
-                    
-                    console.log('Components received:', Object.keys(components)); // Debug logging
-                    
-                    // Update status display
-                    statusElement.innerHTML = status.charAt(0).toUpperCase() + status.slice(1);
-                    
-                    // Set status color class using Bootstrap classes
-                    statusElement.className = 'fw-bold fs-4 mb-1';
-                    if (status === 'healthy') {
-                        statusElement.classList.add('text-success');
-                    } else if (status === 'degraded') {
-                        statusElement.classList.add('text-warning');
-                    } else {
-                        statusElement.classList.add('text-danger');
-                    }
-                    
-                    // Update details with component status
-                    const componentNames = Object.keys(components);
-                    const expectedComponents = ['database', 'ollama', 'storage', 'sessions'];
-                    
-                    if (componentNames.length > 0) {
-                        const healthyComponents = componentNames.filter(name => {
-                            const componentStatus = components[name];
-                            return componentStatus === 'healthy' || 
-                                   (typeof componentStatus === 'string' && !componentStatus.includes('unhealthy'));
-                        });
-                        
-                        // Use expected component count for better display
-                        const totalComponents = Math.max(componentNames.length, expectedComponents.length);
-                        
-                        if (healthyComponents.length === totalComponents && totalComponents === expectedComponents.length) {
-                            detailsElement.textContent = `All ${totalComponents} components healthy`;
-                        } else {
-                            detailsElement.textContent = `${healthyComponents.length}/${totalComponents} components healthy`;
-                        }
-                    } else {
-                        detailsElement.textContent = 'System operational';
-                    }
+                    updateHealthDisplay(statusElement, detailsElement, data);
                 } else {
                     // Handle error response
                     statusElement.innerHTML = 'Unknown';
@@ -204,12 +315,67 @@
             });
     }
     
-    // Update system health on page load
+    // Request immediate health update
+    function requestHealthUpdate() {
+        try {
+            if (healthNotificationHandler && websocketConnected) {
+                // Request via WebSocket
+                healthNotificationHandler.requestHealthUpdate();
+            } else {
+                // Request via API
+                fetch('/admin/api/health-update', {
+                    method: 'POST',
+                    headers: {
+                        'Content-Type': 'application/json',
+                        'X-CSRFToken': document.querySelector('meta[name="csrf-token"]')?.getAttribute('content') || ''
+                    },
+                    body: JSON.stringify({ force_update: true })
+                })
+                .then(response => response.json())
+                .then(data => {
+                    if (data.success && data.health_status) {
+                        const statusElement = document.getElementById('system-health-status');
+                        const detailsElement = document.getElementById('system-health-details');
+                        if (statusElement && detailsElement) {
+                            updateHealthDisplay(statusElement, detailsElement, data.health_status);
+                        }
+                    }
+                })
+                .catch(error => {
+                    console.error('Error requesting health update:', error);
+                });
+            }
+        } catch (error) {
+            console.error('Error requesting health update:', error);
+        }
+    }
+    
+    // Initialize on page load
     document.addEventListener('DOMContentLoaded', function() {
-        updateSystemHealth();
+        // Initialize WebSocket health notifications
+        initializeHealthNotifications();
         
-        // Set up periodic updates every 30 seconds
-        setInterval(updateSystemHealth, 30000);
+        // Add click handler for manual health refresh
+        const healthCard = document.querySelector('#system-health-status').closest('.card');
+        if (healthCard) {
+            healthCard.style.cursor = 'pointer';
+            healthCard.addEventListener('click', requestHealthUpdate);
+            healthCard.title = 'Click to refresh health status';
+        }
+        
+        // Initialize with polling as backup
+        setTimeout(() => {
+            if (!websocketConnected) {
+                fallbackToPolling();
+            }
+        }, 2000);
+    });
+    
+    // Cleanup on page unload
+    window.addEventListener('beforeunload', function() {
+        if (healthNotificationHandler) {
+            healthNotificationHandler.cleanup();
+        }
     });
 })();
 </script>

@@ -583,7 +583,7 @@ class WebSocketNamespaceManager:
             return self._handle_namespace_connect('/', auth)
         
         @self.socketio.on('disconnect', namespace='/')
-        def handle_user_disconnect():
+        def handle_user_disconnect(sid=None):
             """Handle user namespace disconnection"""
             return self._handle_namespace_disconnect('/')
     
@@ -597,7 +597,7 @@ class WebSocketNamespaceManager:
             return self._handle_namespace_connect('/admin', auth)
         
         @self.socketio.on('disconnect', namespace='/admin')
-        def handle_admin_disconnect():
+        def handle_admin_disconnect(sid=None):
             """Handle admin namespace disconnection"""
             return self._handle_namespace_disconnect('/admin')
     

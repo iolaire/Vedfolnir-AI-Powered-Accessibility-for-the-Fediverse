@@ -12,7 +12,7 @@ import logging
 import threading
 import json
 from datetime import datetime, timezone
-from typing import Optional, Dict, Any, Callable
+from typing import Optional, Dict, Any, Callable, List
 from dataclasses import dataclass, asdict
 from sqlalchemy.exc import SQLAlchemyError
 
@@ -135,6 +135,9 @@ class ProgressTracker:
                 updated_at=datetime.now(timezone.utc)
             )
             
+            # Send WebSocket notification for real-time updates
+            self._send_progress_notification(task.user_id, progress_status)
+            
             # Notify callbacks
             self._notify_callbacks(task_id, progress_status)
             
@@ -147,6 +150,344 @@ class ProgressTracker:
             return False
         finally:
             session.close()
+    
+    def _send_progress_notification(self, user_id: int, progress_status: ProgressStatus):
+        """
+        Send WebSocket notification for progress update using unified notification system
+        
+        Args:
+            user_id: User ID to send notification to
+            progress_status: Progress status data
+        """
+        try:
+            # Import here to avoid circular imports
+            from unified_notification_manager import UnifiedNotificationManager, NotificationMessage
+            from models import NotificationType, NotificationPriority, NotificationCategory
+            
+            # Get notification manager from Flask app context
+            from flask import current_app
+            if hasattr(current_app, 'notification_manager'):
+                notification_manager = current_app.notification_manager
+                
+                # Determine if this is a significant progress milestone
+                is_milestone = (
+                    progress_status.progress_percent % 20 == 0 or  # Every 20%
+                    progress_status.progress_percent >= 90 or      # Near completion
+                    progress_status.progress_percent == 0 or       # Starting
+                    'error' in progress_status.current_step.lower() or  # Error states
+                    'complete' in progress_status.current_step.lower()   # Completion
+                )
+                
+                # Create progress notification message
+                notification = NotificationMessage(
+                    id=f"caption_progress_{progress_status.task_id}_{progress_status.progress_percent}",
+                    type=NotificationType.INFO,
+                    title="Caption Generation Progress",
+                    message=f"{progress_status.current_step} - {progress_status.progress_percent}%",
+                    user_id=user_id,
+                    priority=NotificationPriority.NORMAL,
+                    category=NotificationCategory.CAPTION,
+                    data={
+                        'task_id': progress_status.task_id,
+                        'progress_percent': progress_status.progress_percent,
+                        'current_step': progress_status.current_step,
+                        'details': progress_status.details,
+                        'show_notification': is_milestone,
+                        'estimated_completion': self._calculate_estimated_completion(progress_status),
+                        'processing_rate': self._calculate_processing_rate(progress_status),
+                        'notification_type': 'caption_progress',
+                        'persistent': progress_status.progress_percent >= 100,  # Keep completion notifications
+                        'auto_hide': progress_status.progress_percent < 100,    # Auto-hide progress updates
+                        'category': 'caption'
+                    }
+                )
+                
+                # Send notification
+                success = notification_manager.send_user_notification(user_id, notification)
+                
+                if success:
+                    logger.debug(f"Sent progress notification for task {sanitize_for_log(progress_status.task_id)}")
+                else:
+                    logger.warning(f"Failed to send progress notification for task {sanitize_for_log(progress_status.task_id)}")
+            else:
+                logger.debug("Notification manager not available, skipping WebSocket notification")
+                
+        except Exception as e:
+            logger.error(f"Error sending progress notification: {sanitize_for_log(str(e))}")
+    
+    def _calculate_estimated_completion(self, progress_status: ProgressStatus) -> str:
+        """Calculate estimated completion time based on progress"""
+        try:
+            if progress_status.started_at and progress_status.progress_percent > 0:
+                elapsed = datetime.now(timezone.utc) - progress_status.started_at
+                total_estimated = elapsed / (progress_status.progress_percent / 100)
+                remaining = total_estimated - elapsed
+                
+                if remaining.total_seconds() > 0:
+                    minutes = int(remaining.total_seconds() / 60)
+                    if minutes > 60:
+                        hours = minutes // 60
+                        minutes = minutes % 60
+                        return f"~{hours}h {minutes}m"
+                    else:
+                        return f"~{minutes}m"
+                else:
+                    return "Almost done"
+            return "Calculating..."
+        except Exception:
+            return "Unknown"
+    
+    def _calculate_processing_rate(self, progress_status: ProgressStatus) -> str:
+        """Calculate processing rate based on progress"""
+        try:
+            if (progress_status.started_at and 
+                progress_status.details.get('images_processed', 0) > 0):
+                
+                elapsed = datetime.now(timezone.utc) - progress_status.started_at
+                elapsed_minutes = elapsed.total_seconds() / 60
+                
+                if elapsed_minutes > 0:
+                    rate = progress_status.details['images_processed'] / elapsed_minutes
+                    return f"{rate:.1f} images/min"
+            return "-"
+        except Exception:
+            return "-"
+    
+    def complete_progress(self, task_id: str, results: Any):
+        """
+        Mark progress as complete and send completion notification
+        
+        Args:
+            task_id: The task ID to complete
+            results: Generation results
+        """
+        session = self.db_manager.get_session()
+        try:
+            task = session.query(CaptionGenerationTask).filter_by(id=task_id).first()
+            
+            if not task:
+                logger.warning(f"Task {sanitize_for_log(task_id)} not found for completion")
+                return
+            
+            # Update task status
+            task.current_step = "Completed"
+            task.progress_percent = 100
+            session.commit()
+            
+            # Send completion notification
+            self._send_completion_notification(task.user_id, task_id, results)
+            
+            logger.info(f"Completed progress tracking for task {sanitize_for_log(task_id)}")
+            
+        except SQLAlchemyError as e:
+            session.rollback()
+            logger.error(f"Database error completing progress: {sanitize_for_log(str(e))}")
+        finally:
+            session.close()
+    
+    def fail_progress(self, task_id: str, error_message: str, error_details: Dict[str, Any] = None):
+        """
+        Mark progress as failed and send error notification
+        
+        Args:
+            task_id: The task ID that failed
+            error_message: Error message
+            error_details: Additional error details
+        """
+        if error_details is None:
+            error_details = {}
+            
+        session = self.db_manager.get_session()
+        try:
+            task = session.query(CaptionGenerationTask).filter_by(id=task_id).first()
+            
+            if not task:
+                logger.warning(f"Task {sanitize_for_log(task_id)} not found for failure")
+                return
+            
+            # Update task status
+            task.current_step = "Failed"
+            task.progress_percent = 100  # Complete but failed
+            session.commit()
+            
+            # Send error notification
+            self._send_error_notification(task.user_id, task_id, error_message, error_details)
+            
+            logger.info(f"Failed progress tracking for task {sanitize_for_log(task_id)}: {sanitize_for_log(error_message)}")
+            
+        except SQLAlchemyError as e:
+            session.rollback()
+            logger.error(f"Database error failing progress: {sanitize_for_log(str(e))}")
+        finally:
+            session.close()
+    
+    def _send_completion_notification(self, user_id: int, task_id: str, results: Any):
+        """Send WebSocket notification for task completion"""
+        try:
+            from unified_notification_manager import UnifiedNotificationManager, NotificationMessage
+            from models import NotificationType, NotificationPriority, NotificationCategory
+            from flask import current_app
+            
+            if hasattr(current_app, 'notification_manager'):
+                notification_manager = current_app.notification_manager
+                
+                # Extract results data
+                captions_generated = getattr(results, 'captions_generated', 0)
+                images_processed = getattr(results, 'images_processed', 0)
+                
+                notification = NotificationMessage(
+                    id=f"caption_complete_{task_id}",
+                    type=NotificationType.SUCCESS,
+                    title="Caption Generation Complete!",
+                    message=f"Successfully generated {captions_generated} captions for {images_processed} images.",
+                    user_id=user_id,
+                    priority=NotificationPriority.HIGH,
+                    category=NotificationCategory.CAPTION,
+                    data={
+                        'task_id': task_id,
+                        'captions_generated': captions_generated,
+                        'images_processed': images_processed,
+                        'status': 'completed',
+                        'redirect_url': '/review/batches',
+                        'show_actions': True
+                    },
+                    requires_action=True,
+                    action_url='/review/batches',
+                    action_text='Review Captions'
+                )
+                
+                notification_manager.send_user_notification(user_id, notification)
+                logger.debug(f"Sent completion notification for task {sanitize_for_log(task_id)}")
+                
+        except Exception as e:
+            logger.error(f"Error sending completion notification: {sanitize_for_log(str(e))}")
+    
+    def _send_error_notification(self, user_id: int, task_id: str, error_message: str, error_details: Dict[str, Any]):
+        """Send WebSocket notification for task error"""
+        try:
+            from unified_notification_manager import UnifiedNotificationManager, NotificationMessage
+            from models import NotificationType, NotificationPriority, NotificationCategory
+            from flask import current_app
+            
+            if hasattr(current_app, 'notification_manager'):
+                notification_manager = current_app.notification_manager
+                
+                notification = NotificationMessage(
+                    id=f"caption_error_{task_id}",
+                    type=NotificationType.ERROR,
+                    title="Caption Generation Failed",
+                    message=error_message,
+                    user_id=user_id,
+                    priority=NotificationPriority.HIGH,
+                    category=NotificationCategory.CAPTION,
+                    data={
+                        'task_id': task_id,
+                        'error_message': error_message,
+                        'error_category': error_details.get('error_category', 'unknown'),
+                        'recovery_suggestions': error_details.get('recovery_suggestions', []),
+                        'status': 'failed',
+                        'show_retry': True
+                    },
+                    requires_action=True
+                )
+                
+                notification_manager.send_user_notification(user_id, notification)
+                logger.debug(f"Sent error notification for task {sanitize_for_log(task_id)}")
+                
+        except Exception as e:
+            logger.error(f"Error sending error notification: {sanitize_for_log(str(e))}")
+    
+    def send_maintenance_notification(self, user_id: int, maintenance_data: Dict[str, Any]):
+        """
+        Send maintenance notification for caption processing interruption
+        
+        Args:
+            user_id: User ID to notify
+            maintenance_data: Maintenance information
+        """
+        try:
+            from unified_notification_manager import UnifiedNotificationManager, NotificationMessage
+            from models import NotificationType, NotificationPriority, NotificationCategory
+            from flask import current_app
+            
+            if hasattr(current_app, 'notification_manager'):
+                notification_manager = current_app.notification_manager
+                
+                notification = NotificationMessage(
+                    id=f"caption_maintenance_{user_id}_{int(datetime.now(timezone.utc).timestamp())}",
+                    type=NotificationType.WARNING,
+                    title="System Maintenance",
+                    message=maintenance_data.get('message', 'Caption generation is temporarily paused for system maintenance.'),
+                    user_id=user_id,
+                    priority=NotificationPriority.HIGH,
+                    category=NotificationCategory.MAINTENANCE,
+                    data={
+                        'affects_caption_processing': True,
+                        'estimated_duration': maintenance_data.get('estimated_duration'),
+                        'maintenance_type': maintenance_data.get('maintenance_type', 'system'),
+                        'resume_time': maintenance_data.get('resume_time')
+                    }
+                )
+                
+                notification_manager.send_user_notification(user_id, notification)
+                logger.info(f"Sent maintenance notification to user {user_id}")
+                
+        except Exception as e:
+            logger.error(f"Error sending maintenance notification: {sanitize_for_log(str(e))}")
+    
+    def handle_maintenance_mode_change(self, maintenance_enabled: bool, maintenance_info: Dict[str, Any]):
+        """
+        Handle maintenance mode changes that affect caption processing
+        
+        Args:
+            maintenance_enabled: Whether maintenance mode is enabled
+            maintenance_info: Maintenance information
+        """
+        try:
+            from flask import current_app
+            
+            if not hasattr(current_app, 'notification_manager'):
+                return
+            
+            # Get all users with active caption generation tasks
+            session = self.db_manager.get_session()
+            try:
+                active_tasks = session.query(CaptionGenerationTask).filter(
+                    CaptionGenerationTask.status.in_([TaskStatus.QUEUED, TaskStatus.RUNNING])
+                ).all()
+                
+                for task in active_tasks:
+                    if maintenance_enabled:
+                        # Send maintenance notification for task interruption
+                        self.send_maintenance_notification(task.user_id, {
+                            'message': maintenance_info.get('reason', 'System maintenance is in progress. Caption generation has been paused.'),
+                            'estimated_duration': maintenance_info.get('estimated_duration'),
+                            'affects_functionality': ['caption_generation'],
+                            'maintenance_type': 'system',
+                            'task_id': task.id
+                        })
+                        
+                        # Update task status to indicate maintenance pause
+                        self.send_caption_status_notification(
+                            task.user_id,
+                            task.id,
+                            'paused',
+                            'Caption generation paused for system maintenance'
+                        )
+                    else:
+                        # Send maintenance completion notification
+                        self.send_caption_status_notification(
+                            task.user_id,
+                            task.id,
+                            'resumed',
+                            'Caption generation resumed after maintenance'
+                        )
+                
+            finally:
+                session.close()
+                
+        except Exception as e:
+            logger.error(f"Error handling maintenance mode change: {sanitize_for_log(str(e))}")
     
     def get_progress(self, task_id: str, user_id: int = None) -> Optional[ProgressStatus]:
         """
@@ -368,3 +709,113 @@ class ProgressTracker:
             self.update_progress(task_id, step, percent, details or {})
         
         return progress_callback
+    
+    def send_caption_status_notification(self, user_id: int, task_id: str, status: str, message: str = None):
+        """
+        Send caption generation status notification
+        
+        Args:
+            user_id: User ID to send notification to
+            task_id: Task ID
+            status: Status (running, paused, resumed)
+            message: Optional status message
+        """
+        try:
+            from unified_notification_manager import UnifiedNotificationManager, NotificationMessage
+            from models import NotificationType, NotificationPriority, NotificationCategory
+            from flask import current_app
+            
+            if hasattr(current_app, 'notification_manager'):
+                notification_manager = current_app.notification_manager
+                
+                # Determine notification type based on status
+                notification_type = NotificationType.INFO
+                if status == 'paused':
+                    notification_type = NotificationType.WARNING
+                elif status == 'resumed':
+                    notification_type = NotificationType.SUCCESS
+                
+                notification = NotificationMessage(
+                    id=f"caption_status_{task_id}_{status}",
+                    type=notification_type,
+                    title="Caption Generation Status",
+                    message=message or f"Caption generation {status}",
+                    user_id=user_id,
+                    priority=NotificationPriority.NORMAL,
+                    category=NotificationCategory.CAPTION,
+                    data={
+                        'task_id': task_id,
+                        'status': status,
+                        'notification_type': 'caption_status',
+                        'auto_hide': True,
+                        'category': 'caption'
+                    }
+                )
+                
+                notification_manager.send_user_notification(user_id, notification)
+                logger.debug(f"Sent status notification for task {sanitize_for_log(task_id)}: {status}")
+                
+        except Exception as e:
+            logger.error(f"Error sending status notification: {sanitize_for_log(str(e))}")
+    
+    def send_caption_error_notification(self, user_id: int, task_id: str, error_message: str, 
+                                      error_category: str = None, recovery_suggestions: List[str] = None):
+        """
+        Send caption generation error notification with retry options
+        
+        Args:
+            user_id: User ID to send notification to
+            task_id: Task ID
+            error_message: Error message
+            error_category: Optional error category
+            recovery_suggestions: Optional recovery suggestions
+        """
+        try:
+            from unified_notification_manager import UnifiedNotificationManager, NotificationMessage
+            from models import NotificationType, NotificationPriority, NotificationCategory
+            from flask import current_app
+            
+            if hasattr(current_app, 'notification_manager'):
+                notification_manager = current_app.notification_manager
+                
+                notification = NotificationMessage(
+                    id=f"caption_error_{task_id}",
+                    type=NotificationType.ERROR,
+                    title="Caption Generation Failed",
+                    message=error_message,
+                    user_id=user_id,
+                    priority=NotificationPriority.HIGH,
+                    category=NotificationCategory.CAPTION,
+                    requires_action=True,
+                    action_url=f"/api/caption_generation/retry/{task_id}",
+                    action_text="Retry Task",
+                    data={
+                        'task_id': task_id,
+                        'error_message': error_message,
+                        'error_category': error_category or 'unknown',
+                        'recovery_suggestions': recovery_suggestions or [],
+                        'notification_type': 'caption_error',
+                        'persistent': True,
+                        'auto_hide': False,
+                        'category': 'caption',
+                        'actions': [
+                            {
+                                'text': 'Retry Task',
+                                'url': f'/api/caption_generation/retry/{task_id}',
+                                'method': 'POST',
+                                'primary': True
+                            },
+                            {
+                                'text': 'View Details',
+                                'url': f'/api/caption_generation/error_details/{task_id}',
+                                'primary': False
+                            }
+                        ]
+                    }
+                )
+                
+                notification_manager.send_user_notification(user_id, notification)
+                logger.error(f"Sent error notification for task {sanitize_for_log(task_id)}: {sanitize_for_log(error_message)}")
+                
+        except Exception as e:
+            logger.error(f"Error sending error notification: {sanitize_for_log(str(e))}")

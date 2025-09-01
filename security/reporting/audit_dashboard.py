@@ -42,7 +42,9 @@ def audit_dashboard():
     
     except Exception as e:
         logger.error(f"Error loading audit dashboard: {e}")
-        flash('Error loading security audit dashboard', 'error')
+        # Send error notification
+        from notification_helpers import send_error_notification
+        send_error_notification('Error loading security audit dashboard', 'Dashboard Error')
         return redirect(url_for('index'))
 
 @audit_dashboard_bp.route('/api/generate-report')

@@ -1,0 +1,171 @@
+<!-- Copyright (C) 2025 iolaire mcfadden. -->
+<!-- This program is free software: you can redistribute it and/or modify it under the terms of the GNU Affero General Public License as published by the Free Software Foundation, either version 3 of the License, or (at your option) any later version. -->
+<!-- THE SOFTWARE IS PROVIDED "AS IS", WITHOUT WARRANTY OF ANY KIND, EXPRESS OR IMPLIED, INCLUDING BUT NOT LIMITED TO THE WARRANTIES OF MERCHANTABILITY, FITNESS FOR A PARTICULAR PURPOSE AND NONINFRINGEMENT. IN NO EVENT SHALL THE AUTHORS OR COPYRIGHT HOLDERS BE LIABLE FOR ANY CLAIM, DAMAGES OR OTHER LIABILITY, WHETHER IN AN ACTION OF CONTRACT, TORT OR OTHERWISE, ARISING FROM, OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE SOFTWARE. -->
+
+<!-- Page-Specific Notification Integration Component -->
+<!-- 
+Usage: Include this component in page templates that need specific notification configurations
+Variables:
+- page_id: Unique identifier for the page
+- page_type: Type of page (user_dashboard, caption_processing, platform_management, admin_dashboard, etc.)
+- notification_config: Configuration object for notifications
+- websocket_events: Array of WebSocket events to listen for
+-->
+
+{% if page_id and page_type %}
+<!-- Page-Specific Notification Container -->
+<div id="{{ page_id }}-notifications" 
+     class="notification-container notification-position-{{ notification_config.position or 'top-right' }} notification-stack-down" 
+     role="region" 
+     aria-label="{{ page_type|title }} Notifications" 
+     aria-live="polite"
+     data-page-id="{{ page_id }}"
+     data-page-type="{{ page_type }}"></div>
+
+<script>
+document.addEventListener('DOMContentLoaded', function() {
+    // Page-specific notification configuration
+    const pageNotificationConfig = {
+        containerId: '{{ page_id }}-notifications',
+        pageId: '{{ page_id }}',
+        pageType: '{{ page_type }}',
+        position: '{{ notification_config.position or 'top-right' }}',
+        maxNotifications: {{ notification_config.max_notifications or 5 }},
+        autoHide: {{ 'true' if notification_config.auto_hide else 'false' }},
+        defaultDuration: {{ notification_config.default_duration or 5000 }},
+        showProgress: {{ 'true' if notification_config.show_progress else 'false' }},
+        enabledTypes: {{ notification_config.enabled_types|tojson if notification_config.enabled_types else '[]' }},
+        theme: '{{ notification_config.theme or 'modern' }}',
+        showIcons: {{ 'true' if notification_config.show_icons != false else 'false' }},
+        allowDismiss: {{ 'true' if notification_config.allow_dismiss != false else 'false' }},
+        showTimestamp: {{ 'true' if notification_config.show_timestamp else 'false' }}
+    };
+    
+    // Initialize page-specific notification renderer
+    const pageNotificationRenderer = new NotificationUIRenderer(pageNotificationConfig.containerId, {
+        position: pageNotificationConfig.position,
+        maxNotifications: pageNotificationConfig.maxNotifications,
+        autoHide: pageNotificationConfig.autoHide,
+        defaultDuration: pageNotificationConfig.defaultDuration,
+        theme: pageNotificationConfig.theme,
+        showIcons: pageNotificationConfig.showIcons,
+        allowDismiss: pageNotificationConfig.allowDismiss,
+        showTimestamp: pageNotificationConfig.showTimestamp,
+        pauseOnHover: true
+    });
+    
+    // Store renderer globally for page access
+    window['{{ page_id }}NotificationRenderer'] = pageNotificationRenderer;
+    
+    // Page-specific notification functions
+    window['show{{ page_id|title }}Notification'] = function(message, type = 'info', title = null, options = {}) {
+        // Check if notification type is enabled for this page
+        if (pageNotificationConfig.enabledTypes.length > 0 && 
+            !pageNotificationConfig.enabledTypes.includes(type) && 
+            !pageNotificationConfig.enabledTypes.includes('all')) {
+            console.log(`Notification type '${type}' not enabled for page '{{ page_id }}'`);
+            return null;
+        }
+        
+        return pageNotificationRenderer.renderNotification({
+            type: type,
+            title: title || (type === 'error' ? 'Error' : type === 'success' ? 'Success' : type === 'warning' ? 'Warning' : 'Information'),
+            message: message,
+            priority: type === 'error' ? 'high' : 'normal',
+            ...options
+        });
+    };
+    
+    {% if notification_config.show_progress %}
+    window['show{{ page_id|title }}Progress'] = function(taskId, message, percentage = 0, label = null) {
+        return pageNotificationRenderer.renderProgressUpdate({
+            id: `{{ page_id }}-progress-${taskId}`,
+            taskId: taskId,
+            title: 'Processing...',
+            message: message,
+            percentage: percentage,
+            label: label || `${percentage}%`
+        });
+    };
+    {% endif %}
+    
+    // WebSocket event integration
+    {% if websocket_events %}
+    const websocketEvents = {{ websocket_events|tojson }};
+    
+    // Listen for WebSocket events and convert to notifications
+    websocketEvents.forEach(function(eventName) {
+        document.addEventListener(eventName, function(event) {
+            const data = event.detail || {};
+            
+            // Handle different event types
+            switch(eventName) {
+                case 'caption_progress':
+                    if (pageNotificationConfig.showProgress && data.percentage !== undefined) {
+                        window['show{{ page_id|title }}Progress'](
+                            data.task_id || 'caption',
+                            data.message || 'Processing captions...',
+                            data.percentage,
+                            data.label
+                        );
+                    }
+                    break;
+                    
+                case 'caption_complete':
+                    window['show{{ page_id|title }}Notification'](
+                        data.message || 'Caption processing completed successfully!',
+                        'success',
+                        'Caption Processing Complete'
+                    );
+                    break;
+                    
+                case 'caption_error':
+                    window['show{{ page_id|title }}Notification'](
+                        data.message || 'An error occurred during caption processing.',
+                        'error',
+                        'Caption Processing Error'
+                    );
+                    break;
+                    
+                case 'system_maintenance':
+                    window['show{{ page_id|title }}Notification'](
+                        data.message || 'System maintenance is in progress.',
+                        'warning',
+                        'System Maintenance',
+                        { persistent: true, priority: 'high' }
+                    );
+                    break;
+                    
+                case 'notification':
+                case 'system_notification':
+                    window['show{{ page_id|title }}Notification'](
+                        data.message,
+                        data.type || 'info',
+                        data.title,
+                        {
+                            priority: data.priority || 'normal',
+                            persistent: data.persistent || false,
+                            duration: data.duration
+                        }
+                    );
+                    break;
+                    
+                default:
+                    // Generic notification handling
+                    if (data.message) {
+                        window['show{{ page_id|title }}Notification'](
+                            data.message,
+                            data.type || 'info',
+                            data.title
+                        );
+                    }
+                    break;
+            }
+        });
+    });
+    {% endif %}
+    
+    console.log('Page notification integration initialized for {{ page_id }} ({{ page_type }})');
+});
+</script>
+{% endif %}

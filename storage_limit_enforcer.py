@@ -484,8 +484,20 @@ class StorageLimitEnforcer:
                 # Enforce storage limit blocking
                 self._enforce_storage_limit(metrics, "Automatic enforcement - storage limit reached")
                 
-                # TODO: Trigger email notifications (will be implemented in task 5)
-                # TODO: Trigger user notifications (will be implemented in task 6)
+                # Send admin notification about storage limit enforcement
+                from notification_helpers import send_admin_notification
+                from models import NotificationType, NotificationPriority
+                send_admin_notification(
+                    message=f"Storage limit enforcement triggered. Current usage: {metrics.total_size_mb:.2f}MB",
+                    notification_type=NotificationType.WARNING,
+                    title="Storage Limit Enforcement",
+                    priority=NotificationPriority.HIGH,
+                    system_health_data={
+                        'storage_usage_mb': metrics.total_size_mb,
+                        'storage_limit_mb': self.storage_limit_mb,
+                        'enforcement_reason': "Automatic enforcement - storage limit reached"
+                    }
+                )
                 
                 logger.info("Storage limit reached actions completed")
             else:

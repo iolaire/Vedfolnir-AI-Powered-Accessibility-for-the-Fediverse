@@ -18,8 +18,11 @@ def register_routes(bp):
     def job_management():
         """Admin job management interface with context switching"""
         if not current_user.role == UserRole.ADMIN:
-            from flask import flash, redirect, url_for
-            flash('Access denied. Admin privileges required.', 'error')
+            from flask import redirect, url_for
+            # from notification_flash_replacement import send_notification  # Removed - using unified notification system
+            # Send error notification
+            from notification_helpers import send_error_notification
+            send_error_notification("Access denied. Admin privileges required.", "Access Denied")
             return redirect(url_for('index'))
         
         db_manager = current_app.config['db_manager']
@@ -48,8 +51,11 @@ def register_routes(bp):
     def bulk_actions():
         """Bulk actions management page"""
         if not current_user.role == UserRole.ADMIN:
-            from flask import flash, redirect, url_for
-            flash('Access denied. Admin privileges required.', 'error')
+            from flask import redirect, url_for
+            # from notification_flash_replacement import send_notification  # Removed - using unified notification system
+            # Send error notification
+            from notification_helpers import send_error_notification
+            send_error_notification("Access denied. Admin privileges required.", "Access Denied")
             return redirect(url_for('index'))
         
         db_manager = current_app.config['db_manager']
@@ -125,8 +131,11 @@ def register_routes(bp):
     def system_maintenance():
         """System maintenance management page"""
         if not current_user.role == UserRole.ADMIN:
-            from flask import flash, redirect, url_for
-            flash('Access denied. Admin privileges required.', 'error')
+            from flask import redirect, url_for
+            # from notification_flash_replacement import send_notification  # Removed - using unified notification system
+            # Send error notification
+            from notification_helpers import send_error_notification
+            send_error_notification("Access denied. Admin privileges required.", "Access Denied")
             return redirect(url_for('index'))
         
         db_manager = current_app.config['db_manager']
@@ -229,8 +238,11 @@ def register_routes(bp):
     def pause_system():
         """Pause system maintenance page"""
         if not current_user.role == UserRole.ADMIN:
-            from flask import flash, redirect, url_for
-            flash('Access denied. Admin privileges required.', 'error')
+            from flask import redirect, url_for
+            # from notification_flash_replacement import send_notification  # Removed - using unified notification system
+            # Send error notification
+            from notification_helpers import send_error_notification
+            send_error_notification("Access denied. Admin privileges required.", "Access Denied")
             return redirect(url_for('index'))
         
         # Check current maintenance mode status
@@ -253,8 +265,11 @@ def register_routes(bp):
     def resume_system():
         """Resume system maintenance page"""
         if not current_user.role == UserRole.ADMIN:
-            from flask import flash, redirect, url_for
-            flash('Access denied. Admin privileges required.', 'error')
+            from flask import redirect, url_for
+            # from notification_flash_replacement import send_notification  # Removed - using unified notification system
+            # Send error notification
+            from notification_helpers import send_error_notification
+            send_error_notification("Access denied. Admin privileges required.", "Access Denied")
             return redirect(url_for('index'))
         
         # Check current maintenance mode status
@@ -279,8 +294,11 @@ def register_routes(bp):
     def clear_queue():
         """Clear job queue maintenance page"""
         if not current_user.role == UserRole.ADMIN:
-            from flask import flash, redirect, url_for
-            flash('Access denied. Admin privileges required.', 'error')
+            from flask import redirect, url_for
+            # from notification_flash_replacement import send_notification  # Removed - using unified notification system
+            # Send error notification
+            from notification_helpers import send_error_notification
+            send_error_notification("Access denied. Admin privileges required.", "Access Denied")
             return redirect(url_for('index'))
         
         db_manager = current_app.config['db_manager']
@@ -301,8 +319,11 @@ def register_routes(bp):
     def restart_failed():
         """Restart failed jobs maintenance page"""
         if not current_user.role == UserRole.ADMIN:
-            from flask import flash, redirect, url_for
-            flash('Access denied. Admin privileges required.', 'error')
+            from flask import redirect, url_for
+            # from notification_flash_replacement import send_notification  # Removed - using unified notification system
+            # Send error notification
+            from notification_helpers import send_error_notification
+            send_error_notification("Access denied. Admin privileges required.", "Access Denied")
             return redirect(url_for('index'))
         
         db_manager = current_app.config['db_manager']
@@ -339,8 +360,11 @@ def register_routes(bp):
     def cleanup_data():
         """Cleanup old data maintenance page"""
         if not current_user.role == UserRole.ADMIN:
-            from flask import flash, redirect, url_for
-            flash('Access denied. Admin privileges required.', 'error')
+            from flask import redirect, url_for
+            # from notification_flash_replacement import send_notification  # Removed - using unified notification system
+            # Send error notification
+            from notification_helpers import send_error_notification
+            send_error_notification("Access denied. Admin privileges required.", "Access Denied")
             return redirect(url_for('index'))
         
         db_manager = current_app.config['db_manager']
@@ -385,8 +409,11 @@ def register_routes(bp):
     def job_history(user_id):
         """Job history page for a specific user"""
         if not current_user.role == UserRole.ADMIN and current_user.id != user_id:
-            from flask import flash, redirect, url_for
-            flash('Access denied. You can only view your own job history.', 'error')
+            from flask import redirect, url_for
+            # from notification_flash_replacement import send_notification  # Removed - using unified notification system
+            # Send error notification
+            from notification_helpers import send_error_notification
+            send_error_notification("Access denied. You can only view your own job history.", "Error")
             return redirect(url_for('admin.job_management'))
         
         db_manager = current_app.config['db_manager']
@@ -397,8 +424,11 @@ def register_routes(bp):
             # Get user information
             user = session.query(User).filter_by(id=user_id).first()
             if not user:
-                from flask import flash, redirect, url_for
-                flash('User not found.', 'error')
+                from flask import redirect, url_for
+                # from notification_flash_replacement import send_notification  # Removed - using unified notification system
+                # Send error notification
+                from notification_helpers import send_error_notification
+                send_error_notification("User not found.", "Error")
                 return redirect(url_for('admin.job_management'))
             
             # Get job history for the user
@@ -437,8 +467,11 @@ def register_routes(bp):
     def help_center():
         """Admin help center"""
         if not current_user.role == UserRole.ADMIN:
-            from flask import flash, redirect, url_for
-            flash('Access denied. Admin privileges required.', 'error')
+            from flask import redirect, url_for
+            # from notification_flash_replacement import send_notification  # Removed - using unified notification system
+            # Send error notification
+            from notification_helpers import send_error_notification
+            send_error_notification("Access denied. Admin privileges required.", "Access Denied")
             return redirect(url_for('index'))
         
         return render_template('admin_help_center.html')
@@ -449,8 +482,11 @@ def register_routes(bp):
     def system_logs():
         """System logs viewer"""
         if not current_user.role == UserRole.ADMIN:
-            from flask import flash, redirect, url_for
-            flash('Access denied. Admin privileges required.', 'error')
+            from flask import redirect, url_for
+            # from notification_flash_replacement import send_notification  # Removed - using unified notification system
+            # Send error notification
+            from notification_helpers import send_error_notification
+            send_error_notification("Access denied. Admin privileges required.", "Access Denied")
             return redirect(url_for('index'))
         
         import os

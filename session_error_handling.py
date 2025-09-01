@@ -11,9 +11,10 @@ including user-friendly error messages, automatic recovery, and proper redirects
 
 from logging import getLogger
 from typing import Optional, Dict, Any, Callable
-from flask import request, redirect, url_for, flash, make_response, jsonify, render_template
+from flask import request, redirect, url_for, make_response, jsonify, render_template
 from unified_session_manager import SessionValidationError, SessionExpiredError, SessionNotFoundError
 from session_cookie_manager import SessionCookieManager
+# # from notification_flash_replacement import send_notification  # Removed - using unified notification system  # Removed - using unified notification system
 
 logger = getLogger(__name__)
 
@@ -66,7 +67,9 @@ class SessionErrorHandler:
             }
             response = make_response(jsonify(response_data), 401)
         else:
-            flash(self.error_messages['session_expired'], self.flash_categories['session_expired'])
+            # Send warning notification
+            from notification_helpers import send_warning_notification
+            send_warning_notification("Your session has expired. Please log in again.", "Session Expired")
             next_url = request.url if request.url != request.base_url else None
             login_url = url_for('login', next=next_url) if next_url else url_for('login')
             response = make_response(redirect(login_url))
@@ -97,7 +100,9 @@ class SessionErrorHandler:
             }
             response = make_response(jsonify(response_data), 401)
         else:
-            flash(self.error_messages['session_not_found'], self.flash_categories['session_not_found'])
+            # Send error notification
+            from notification_helpers import send_error_notification
+            send_error_notification("Session not found. Please log in again.", "Session Not Found")
             next_url = request.url if request.url != request.base_url else None
             login_url = url_for('login', next=next_url) if next_url else url_for('login')
             response = make_response(redirect(login_url))
@@ -135,7 +140,9 @@ class SessionErrorHandler:
             }
             response = make_response(jsonify(response_data), 401)
         else:
-            flash(self.error_messages[error_type], self.flash_categories[error_type])
+            # Send error notification
+            from notification_helpers import send_error_notification
+            send_error_notification("Session validation failed. Please log in again.", "Session Validation Failed")
             next_url = request.url if request.url != request.base_url else None
             login_url = url_for('login', next=next_url) if next_url else url_for('login')
             response = make_response(redirect(login_url))
@@ -165,7 +172,9 @@ class SessionErrorHandler:
             }
             response = make_response(jsonify(response_data), 500)
         else:
-            flash(self.error_messages['session_general_error'], self.flash_categories['session_general_error'])
+            # Send error notification
+            from notification_helpers import send_error_notification
+            send_error_notification("A session error occurred. Please try again.", "Session Error")
             # For general errors, redirect to current page or index
             response = make_response(redirect(request.referrer or url_for('index')))
         

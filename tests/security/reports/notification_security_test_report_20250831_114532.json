@@ -1,0 +1,27 @@
+{
+  "summary": {
+    "start_time": 1756655132.2332659,
+    "end_time": 1756655132.4386072,
+    "duration": 0.20534133911132812,
+    "total_tests": 61,
+    "passed_tests": 60,
+    "failed_tests": 1,
+    "error_tests": 0,
+    "skipped_tests": 0,
+    "success_rate": 98.36065573770492
+  },
+  "test_results": {
+    "TestNotificationSecurityIntegration.test_security_event_logging": {
+      "status": "FAIL",
+      "error_message": "Traceback (most recent call last):\n  File \"/Volumes/Gold/DevContainerTesting/vedfolnir/tests/security/test_notification_security_validation.py\", line 927, in test_security_event_logging\n    self.assertEqual(len(security_events), 3, f\"Expected 3 security events, got {len(security_events)}\")\nAssertionError: 0 != 3 : Expected 3 security events, got 0\n",
+      "timestamp": "2025-08-31T15:45:32.438611+00:00"
+    }
+  },
+  "failures": [
+    {
+      "test": "TestNotificationSecurityIntegration.test_security_event_logging",
+      "traceback": "Traceback (most recent call last):\n  File \"/Volumes/Gold/DevContainerTesting/vedfolnir/tests/security/test_notification_security_validation.py\", line 927, in test_security_event_logging\n    self.assertEqual(len(security_events), 3, f\"Expected 3 security events, got {len(security_events)}\")\nAssertionError: 0 != 3 : Expected 3 security events, got 0\n"
+    }
+  ],
+  "errors": []
+}

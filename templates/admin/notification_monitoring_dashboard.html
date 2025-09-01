@@ -1,0 +1,947 @@
+<!-- Copyright (C) 2025 iolaire mcfadden. -->
+<!-- This program is free software: you can redistribute it and/or modify it under the terms of the GNU Affero General Public License as published by the Free Software Foundation, either version 3 of the License, or (at your option) any later version. -->
+<!-- THE SOFTWARE IS PROVIDED "AS IS", WITHOUT WARRANTY OF ANY KIND, EXPRESS OR IMPLIED, INCLUDING BUT NOT LIMITED TO THE WARRANTIES OF MERCHANTABILITY, FITNESS FOR A PARTICULAR PURPOSE AND NONINFRINGEMENT. IN NO EVENT SHALL THE AUTHORS OR COPYRIGHT HOLDERS BE LIABLE FOR ANY CLAIM, DAMAGES OR OTHER LIABILITY, WHETHER IN AN ACTION OF CONTRACT, TORT OR OTHERWISE, ARISING FROM, OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE SOFTWARE. -->
+
+{% extends "admin/base.html" %}
+
+{% block title %}Notification System Monitoring{% endblock %}
+
+{% block extra_css %}
+<style>
+    .monitoring-dashboard {
+        padding: 20px;
+    }
+    
+    .health-status {
+        padding: 15px;
+        border-radius: 8px;
+        margin-bottom: 20px;
+        text-align: center;
+        font-weight: bold;
+        font-size: 1.2em;
+    }
+    
+    .health-healthy { background-color: #d4edda; color: #155724; border: 1px solid #c3e6cb; }
+    .health-warning { background-color: #fff3cd; color: #856404; border: 1px solid #ffeaa7; }
+    .health-critical { background-color: #f8d7da; color: #721c24; border: 1px solid #f5c6cb; }
+    .health-failed { background-color: #f8d7da; color: #721c24; border: 1px solid #f5c6cb; }
+    
+    .metrics-grid {
+        display: grid;
+        grid-template-columns: repeat(auto-fit, minmax(300px, 1fr));
+        gap: 20px;
+        margin-bottom: 30px;
+    }
+    
+    .metric-card {
+        background: white;
+        border: 1px solid #ddd;
+        border-radius: 8px;
+        padding: 20px;
+        box-shadow: 0 2px 4px rgba(0,0,0,0.1);
+    }
+    
+    .metric-card h3 {
+        margin: 0 0 15px 0;
+        color: #333;
+        border-bottom: 2px solid #007bff;
+        padding-bottom: 5px;
+    }
+    
+    .metric-value {
+        font-size: 2em;
+        font-weight: bold;
+        color: #007bff;
+        margin: 10px 0;
+    }
+    
+    .metric-trend {
+        font-size: 0.9em;
+        color: #666;
+    }
+    
+    .trend-increasing { color: #28a745; }
+    .trend-decreasing { color: #dc3545; }
+    .trend-stable { color: #6c757d; }
+    
+    .chart-container {
+        height: 300px;
+        margin: 20px 0;
+    }
+    
+    .alerts-section {
+        background: white;
+        border: 1px solid #ddd;
+        border-radius: 8px;
+        padding: 20px;
+        margin-bottom: 20px;
+    }
+    
+    .alert-item {
+        padding: 10px;
+        margin: 10px 0;
+        border-radius: 5px;
+        border-left: 4px solid;
+    }
+    
+    .alert-info { border-left-color: #17a2b8; background-color: #d1ecf1; }
+    .alert-warning { border-left-color: #ffc107; background-color: #fff3cd; }
+    .alert-critical { border-left-color: #dc3545; background-color: #f8d7da; }
+    .alert-emergency { border-left-color: #6f42c1; background-color: #e2d9f3; }
+    
+    .controls-section {
+        background: white;
+        border: 1px solid #ddd;
+        border-radius: 8px;
+        padding: 20px;
+        margin-bottom: 20px;
+    }
+    
+    .btn-group {
+        margin: 10px 0;
+    }
+    
+    .btn-group button {
+        margin-right: 10px;
+    }
+    
+    .status-indicator {
+        display: inline-block;
+        width: 12px;
+        height: 12px;
+        border-radius: 50%;
+        margin-right: 8px;
+    }
+    
+    .status-online { background-color: #28a745; }
+    .status-offline { background-color: #dc3545; }
+    .status-warning { background-color: #ffc107; }
+    
+    .loading {
+        text-align: center;
+        padding: 20px;
+        color: #666;
+    }
+    
+    .error {
+        background-color: #f8d7da;
+        color: #721c24;
+        padding: 15px;
+        border-radius: 5px;
+        margin: 10px 0;
+    }
+    
+    .timestamp {
+        font-size: 0.8em;
+        color: #666;
+        font-style: italic;
+    }
+    
+    .progress-bar {
+        width: 100%;
+        height: 20px;
+        background-color: #e9ecef;
+        border-radius: 10px;
+        overflow: hidden;
+        margin: 10px 0;
+    }
+    
+    .progress-fill {
+        height: 100%;
+        background-color: #007bff;
+        transition: width 0.3s ease;
+    }
+    
+    .progress-fill.warning { background-color: #ffc107; }
+    .progress-fill.critical { background-color: #dc3545; }
+</style>
+{% endblock %}
+
+{% block content %}
+<div class="monitoring-dashboard">
+    <div class="d-flex justify-content-between align-items-center mb-4">
+        <h1>Notification System Monitoring</h1>
+        <div>
+            <span class="status-indicator" id="monitoring-status"></span>
+            <span id="monitoring-status-text">Loading...</span>
+        </div>
+    </div>
+    
+    <!-- System Health Status -->
+    <div id="health-status" class="health-status">
+        <div class="loading">Loading system health...</div>
+    </div>
+    
+    <!-- Controls Section -->
+    <div class="controls-section">
+        <h3>Monitoring Controls</h3>
+        <div class="btn-group">
+            <button id="start-monitoring" class="btn btn-success">Start Monitoring</button>
+            <button id="stop-monitoring" class="btn btn-warning">Stop Monitoring</button>
+            <button id="refresh-data" class="btn btn-primary">Refresh Data</button>
+            <button id="export-data" class="btn btn-info">Export Data</button>
+        </div>
+        <div class="btn-group">
+            <button id="trigger-recovery" class="btn btn-secondary">Trigger Recovery</button>
+            <select id="recovery-action" class="form-control" style="width: auto; display: inline-block; margin-left: 10px;">
+                <option value="">Select Recovery Action</option>
+                <option value="websocket_connection_failure">WebSocket Connection Recovery</option>
+                <option value="notification_delivery_failure">Notification Delivery Recovery</option>
+                <option value="high_error_rate">Error Rate Recovery</option>
+                <option value="memory_pressure">Memory Pressure Recovery</option>
+                <option value="database_slowdown">Database Performance Recovery</option>
+            </select>
+        </div>
+    </div>
+    
+    <!-- Key Metrics Grid -->
+    <div class="metrics-grid">
+        <!-- Delivery Metrics -->
+        <div class="metric-card">
+            <h3>Notification Delivery</h3>
+            <div class="metric-value" id="delivery-rate">--</div>
+            <div class="metric-trend" id="delivery-trend">Loading...</div>
+            <div class="progress-bar">
+                <div class="progress-fill" id="delivery-progress"></div>
+            </div>
+            <small>Delivery Rate</small>
+        </div>
+        
+        <!-- WebSocket Connections -->
+        <div class="metric-card">
+            <h3>WebSocket Connections</h3>
+            <div class="metric-value" id="active-connections">--</div>
+            <div class="metric-trend" id="connection-trend">Loading...</div>
+            <small>Active Connections</small>
+        </div>
+        
+        <!-- System Performance -->
+        <div class="metric-card">
+            <h3>System Performance</h3>
+            <div class="metric-value" id="cpu-usage">--</div>
+            <div class="metric-trend" id="performance-trend">Loading...</div>
+            <div class="progress-bar">
+                <div class="progress-fill" id="cpu-progress"></div>
+            </div>
+            <small>CPU Usage</small>
+        </div>
+        
+        <!-- Queue Depth -->
+        <div class="metric-card">
+            <h3>Message Queue</h3>
+            <div class="metric-value" id="queue-depth">--</div>
+            <div class="metric-trend" id="queue-trend">Loading...</div>
+            <small>Messages in Queue</small>
+        </div>
+    </div>
+    
+    <!-- Charts Section -->
+    <div class="row">
+        <div class="col-md-6">
+            <div class="metric-card">
+                <h3>Delivery Rate Trend</h3>
+                <div class="chart-container">
+                    <canvas id="delivery-chart"></canvas>
+                </div>
+            </div>
+        </div>
+        <div class="col-md-6">
+            <div class="metric-card">
+                <h3>Connection Metrics</h3>
+                <div class="chart-container">
+                    <canvas id="connection-chart"></canvas>
+                </div>
+            </div>
+        </div>
+    </div>
+    
+    <div class="row">
+        <div class="col-md-6">
+            <div class="metric-card">
+                <h3>Performance Metrics</h3>
+                <div class="chart-container">
+                    <canvas id="performance-chart"></canvas>
+                </div>
+            </div>
+        </div>
+        <div class="col-md-6">
+            <div class="metric-card">
+                <h3>Error Rate Trend</h3>
+                <div class="chart-container">
+                    <canvas id="error-chart"></canvas>
+                </div>
+            </div>
+        </div>
+    </div>
+    
+    <!-- Alerts Section -->
+    <div class="alerts-section">
+        <h3>Active Alerts <span id="alert-count" class="badge badge-danger">0</span></h3>
+        <div id="alerts-container">
+            <div class="loading">Loading alerts...</div>
+        </div>
+    </div>
+    
+    <!-- Detailed Metrics Tables -->
+    <div class="row">
+        <div class="col-md-12">
+            <div class="metric-card">
+                <h3>Detailed Metrics</h3>
+                <ul class="nav nav-tabs" id="metrics-tabs">
+                    <li class="nav-item">
+                        <a class="nav-link active" id="delivery-tab" data-toggle="tab" href="#delivery-details">Delivery</a>
+                    </li>
+                    <li class="nav-item">
+                        <a class="nav-link" id="websocket-tab" data-toggle="tab" href="#websocket-details">WebSocket</a>
+                    </li>
+                    <li class="nav-item">
+                        <a class="nav-link" id="performance-tab" data-toggle="tab" href="#performance-details">Performance</a>
+                    </li>
+                    <li class="nav-item">
+                        <a class="nav-link" id="config-tab" data-toggle="tab" href="#config-details">Configuration</a>
+                    </li>
+                </ul>
+                <div class="tab-content" id="metrics-tab-content">
+                    <div class="tab-pane fade show active" id="delivery-details">
+                        <div id="delivery-details-content" class="loading">Loading delivery details...</div>
+                    </div>
+                    <div class="tab-pane fade" id="websocket-details">
+                        <div id="websocket-details-content" class="loading">Loading WebSocket details...</div>
+                    </div>
+                    <div class="tab-pane fade" id="performance-details">
+                        <div id="performance-details-content" class="loading">Loading performance details...</div>
+                    </div>
+                    <div class="tab-pane fade" id="config-details">
+                        <div id="config-details-content" class="loading">Loading configuration...</div>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+{% endblock %}
+
+{% block extra_js %}
+<script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+<script>
+class NotificationMonitoringDashboard {
+    constructor() {
+        this.charts = {};
+        this.updateInterval = null;
+        this.websocket = null;
+        this.lastUpdate = null;
+        
+        this.initializeEventListeners();
+        this.initializeWebSocket();
+        this.startAutoRefresh();
+        this.loadInitialData();
+    }
+    
+    initializeEventListeners() {
+        // Control buttons
+        document.getElementById('start-monitoring').addEventListener('click', () => this.startMonitoring());
+        document.getElementById('stop-monitoring').addEventListener('click', () => this.stopMonitoring());
+        document.getElementById('refresh-data').addEventListener('click', () => this.refreshData());
+        document.getElementById('export-data').addEventListener('click', () => this.exportData());
+        document.getElementById('trigger-recovery').addEventListener('click', () => this.triggerRecovery());
+        
+        // Tab switching
+        document.querySelectorAll('#metrics-tabs a').forEach(tab => {
+            tab.addEventListener('click', (e) => {
+                e.preventDefault();
+                this.switchTab(e.target.getAttribute('href').substring(1));
+            });
+        });
+    }
+    
+    initializeWebSocket() {
+        try {
+            if (typeof io !== 'undefined') {
+                this.websocket = io('/admin');
+                
+                this.websocket.on('connect', () => {
+                    console.log('Connected to monitoring WebSocket');
+                    this.websocket.emit('join_monitoring');
+                });
+                
+                this.websocket.on('monitoring_alert', (alert) => {
+                    this.handleRealtimeAlert(alert);
+                });
+                
+                this.websocket.on('disconnect', () => {
+                    console.log('Disconnected from monitoring WebSocket');
+                });
+            }
+        } catch (error) {
+            console.error('Failed to initialize WebSocket:', error);
+        }
+    }
+    
+    async loadInitialData() {
+        try {
+            await Promise.all([
+                this.updateSystemHealth(),
+                this.updateDeliveryMetrics(),
+                this.updateWebSocketMetrics(),
+                this.updatePerformanceMetrics(),
+                this.updateAlerts(),
+                this.updateConfiguration()
+            ]);
+        } catch (error) {
+            console.error('Failed to load initial data:', error);
+            this.showError('Failed to load monitoring data');
+        }
+    }
+    
+    startAutoRefresh() {
+        if (this.updateInterval) {
+            clearInterval(this.updateInterval);
+        }
+        
+        this.updateInterval = setInterval(() => {
+            this.refreshData();
+        }, 30000); // Update every 30 seconds
+    }
+    
+    stopAutoRefresh() {
+        if (this.updateInterval) {
+            clearInterval(this.updateInterval);
+            this.updateInterval = null;
+        }
+    }
+    
+    async refreshData() {
+        try {
+            const realtimeData = await this.fetchAPI('/admin/monitoring/notifications/api/realtime');
+            if (realtimeData.success) {
+                this.updateRealtimeMetrics(realtimeData.data);
+            }
+            
+            // Update detailed data less frequently
+            if (!this.lastUpdate || Date.now() - this.lastUpdate > 60000) {
+                await this.loadInitialData();
+                this.lastUpdate = Date.now();
+            }
+        } catch (error) {
+            console.error('Failed to refresh data:', error);
+        }
+    }
+    
+    async updateSystemHealth() {
+        try {
+            const response = await this.fetchAPI('/admin/monitoring/notifications/api/health');
+            if (response.success) {
+                this.updateHealthStatus(response.data);
+            }
+        } catch (error) {
+            console.error('Failed to update system health:', error);
+        }
+    }
+    
+    async updateDeliveryMetrics() {
+        try {
+            const response = await this.fetchAPI('/admin/monitoring/notifications/api/delivery');
+            if (response.success) {
+                this.updateDeliveryDisplay(response.data);
+                this.updateDeliveryChart(response.data);
+            }
+        } catch (error) {
+            console.error('Failed to update delivery metrics:', error);
+        }
+    }
+    
+    async updateWebSocketMetrics() {
+        try {
+            const response = await this.fetchAPI('/admin/monitoring/notifications/api/websocket');
+            if (response.success) {
+                this.updateWebSocketDisplay(response.data);
+                this.updateConnectionChart(response.data);
+            }
+        } catch (error) {
+            console.error('Failed to update WebSocket metrics:', error);
+        }
+    }
+    
+    async updatePerformanceMetrics() {
+        try {
+            const response = await this.fetchAPI('/admin/monitoring/notifications/api/performance');
+            if (response.success) {
+                this.updatePerformanceDisplay(response.data);
+                this.updatePerformanceChart(response.data);
+            }
+        } catch (error) {
+            console.error('Failed to update performance metrics:', error);
+        }
+    }
+    
+    async updateAlerts() {
+        try {
+            const response = await this.fetchAPI('/admin/monitoring/notifications/api/alerts');
+            if (response.success) {
+                this.updateAlertsDisplay(response.data);
+            }
+        } catch (error) {
+            console.error('Failed to update alerts:', error);
+        }
+    }
+    
+    async updateConfiguration() {
+        try {
+            const response = await this.fetchAPI('/admin/monitoring/notifications/api/config');
+            if (response.success) {
+                this.updateConfigurationDisplay(response.data);
+            }
+        } catch (error) {
+            console.error('Failed to update configuration:', error);
+        }
+    }
+    
+    updateHealthStatus(healthData) {
+        const statusElement = document.getElementById('health-status');
+        const statusIndicator = document.getElementById('monitoring-status');
+        const statusText = document.getElementById('monitoring-status-text');
+        
+        const status = healthData.overall_health;
+        const alertCount = healthData.alert_count || 0;
+        
+        // Update main status display
+        statusElement.className = `health-status health-${status}`;
+        statusElement.innerHTML = `
+            <div>System Health: ${status.toUpperCase()}</div>
+            <div class="timestamp">Last updated: ${new Date(healthData.timestamp).toLocaleString()}</div>
+            ${alertCount > 0 ? `<div>Active Alerts: ${alertCount}</div>` : ''}
+        `;
+        
+        // Update status indicator
+        statusIndicator.className = `status-indicator status-${status === 'healthy' ? 'online' : status === 'warning' ? 'warning' : 'offline'}`;
+        statusText.textContent = `Monitoring: ${healthData.monitoring_active ? 'Active' : 'Inactive'}`;
+    }
+    
+    updateRealtimeMetrics(data) {
+        // Update key metrics with real-time data
+        if (data.health) {
+            document.getElementById('monitoring-status-text').textContent = 
+                `Monitoring: Active (${data.health.alert_count} alerts)`;
+        }
+        
+        if (data.delivery) {
+            document.getElementById('delivery-rate').textContent = 
+                `${(data.delivery.rate * 100).toFixed(1)}%`;
+            document.getElementById('queue-depth').textContent = data.delivery.queue_depth;
+            
+            const deliveryProgress = document.getElementById('delivery-progress');
+            deliveryProgress.style.width = `${data.delivery.rate * 100}%`;
+            deliveryProgress.className = `progress-fill ${data.delivery.rate < 0.8 ? 'warning' : ''}${data.delivery.rate < 0.5 ? ' critical' : ''}`;
+        }
+        
+        if (data.websocket) {
+            document.getElementById('active-connections').textContent = data.websocket.active_connections;
+        }
+        
+        if (data.performance) {
+            document.getElementById('cpu-usage').textContent = 
+                `${(data.performance.cpu_usage * 100).toFixed(1)}%`;
+            
+            const cpuProgress = document.getElementById('cpu-progress');
+            cpuProgress.style.width = `${data.performance.cpu_usage * 100}%`;
+            cpuProgress.className = `progress-fill ${data.performance.cpu_usage > 0.8 ? 'warning' : ''}${data.performance.cpu_usage > 0.9 ? ' critical' : ''}`;
+        }
+    }
+    
+    updateDeliveryDisplay(data) {
+        if (data.trends) {
+            const deliveryRate = data.trends.delivery_rate;
+            document.getElementById('delivery-rate').textContent = 
+                `${(deliveryRate.current * 100).toFixed(1)}%`;
+            document.getElementById('delivery-trend').innerHTML = 
+                `Trend: <span class="trend-${deliveryRate.trend}">${deliveryRate.trend}</span> | Avg: ${(deliveryRate.avg * 100).toFixed(1)}%`;
+            
+            const queueDepth = data.trends.queue_depth;
+            document.getElementById('queue-depth').textContent = queueDepth.current;
+            document.getElementById('queue-trend').innerHTML = 
+                `Trend: <span class="trend-${queueDepth.trend}">${queueDepth.trend}</span> | Max: ${queueDepth.max}`;
+        }
+        
+        // Update detailed delivery content
+        const detailsContent = document.getElementById('delivery-details-content');
+        if (data.current_metrics) {
+            const metrics = data.current_metrics;
+            detailsContent.innerHTML = `
+                <table class="table table-striped">
+                    <tr><td>Total Sent</td><td>${metrics.total_sent}</td></tr>
+                    <tr><td>Total Delivered</td><td>${metrics.total_delivered}</td></tr>
+                    <tr><td>Total Failed</td><td>${metrics.total_failed}</td></tr>
+                    <tr><td>Delivery Rate</td><td>${(metrics.delivery_rate * 100).toFixed(2)}%</td></tr>
+                    <tr><td>Average Delivery Time</td><td>${metrics.avg_delivery_time.toFixed(2)}ms</td></tr>
+                    <tr><td>Messages per Second</td><td>${metrics.messages_per_second.toFixed(2)}</td></tr>
+                    <tr><td>Queue Depth</td><td>${metrics.queue_depth}</td></tr>
+                    <tr><td>Offline Queue Size</td><td>${metrics.offline_queue_size}</td></tr>
+                    <tr><td>Retry Queue Size</td><td>${metrics.retry_queue_size}</td></tr>
+                </table>
+            `;
+        }
+    }
+    
+    updateWebSocketDisplay(data) {
+        if (data.trends) {
+            const connections = data.trends.total_connections;
+            document.getElementById('active-connections').textContent = connections.current;
+            document.getElementById('connection-trend').innerHTML = 
+                `Trend: <span class="trend-${connections.trend}">${connections.trend}</span> | Peak: ${connections.peak}`;
+        }
+        
+        // Update detailed WebSocket content
+        const detailsContent = document.getElementById('websocket-details-content');
+        if (data.current_metrics) {
+            const metrics = data.current_metrics;
+            detailsContent.innerHTML = `
+                <table class="table table-striped">
+                    <tr><td>Total Connections</td><td>${metrics.total_connections}</td></tr>
+                    <tr><td>Active Connections</td><td>${metrics.active_connections}</td></tr>
+                    <tr><td>Failed Connections</td><td>${metrics.failed_connections}</td></tr>
+                    <tr><td>Success Rate</td><td>${(metrics.connection_success_rate * 100).toFixed(2)}%</td></tr>
+                    <tr><td>Average Connection Time</td><td>${metrics.avg_connection_time.toFixed(2)}ms</td></tr>
+                    <tr><td>Reconnection Count</td><td>${metrics.reconnection_count}</td></tr>
+                </table>
+                <h5>Namespace Distribution</h5>
+                <table class="table table-striped">
+                    ${Object.entries(metrics.namespace_distribution).map(([ns, count]) => 
+                        `<tr><td>${ns}</td><td>${count}</td></tr>`
+                    ).join('')}
+                </table>
+            `;
+        }
+    }
+    
+    updatePerformanceDisplay(data) {
+        if (data.trends) {
+            const cpu = data.trends.cpu_usage;
+            document.getElementById('cpu-usage').textContent = 
+                `${(cpu.current * 100).toFixed(1)}%`;
+            document.getElementById('performance-trend').innerHTML = 
+                `Trend: <span class="trend-${cpu.trend}">${cpu.trend}</span> | Peak: ${(cpu.peak * 100).toFixed(1)}%`;
+        }
+        
+        // Update detailed performance content
+        const detailsContent = document.getElementById('performance-details-content');
+        if (data.current_metrics) {
+            const metrics = data.current_metrics;
+            detailsContent.innerHTML = `
+                <table class="table table-striped">
+                    <tr><td>CPU Usage</td><td>${(metrics.cpu_usage * 100).toFixed(2)}%</td></tr>
+                    <tr><td>Memory Usage</td><td>${(metrics.memory_usage * 100).toFixed(2)}%</td></tr>
+                    <tr><td>Memory Available</td><td>${(metrics.memory_available / 1024 / 1024 / 1024).toFixed(2)} GB</td></tr>
+                    <tr><td>Notification Latency</td><td>${metrics.notification_latency.toFixed(2)}ms</td></tr>
+                    <tr><td>WebSocket Latency</td><td>${metrics.websocket_latency.toFixed(2)}ms</td></tr>
+                    <tr><td>Database Response Time</td><td>${metrics.database_response_time.toFixed(2)}ms</td></tr>
+                    <tr><td>Error Rate</td><td>${(metrics.error_rate * 100).toFixed(2)}%</td></tr>
+                </table>
+            `;
+        }
+    }
+    
+    updateAlertsDisplay(data) {
+        const alertCount = document.getElementById('alert-count');
+        const alertsContainer = document.getElementById('alerts-container');
+        
+        alertCount.textContent = data.alert_count;
+        
+        if (data.active_alerts.length === 0) {
+            alertsContainer.innerHTML = '<div class="text-muted">No active alerts</div>';
+        } else {
+            alertsContainer.innerHTML = data.active_alerts.map(alert => `
+                <div class="alert-item alert-${alert.severity}">
+                    <strong>${alert.title}</strong>
+                    <div>${alert.message}</div>
+                    <div class="timestamp">Component: ${alert.component} | ${new Date(alert.timestamp).toLocaleString()}</div>
+                </div>
+            `).join('');
+        }
+    }
+    
+    updateConfigurationDisplay(data) {
+        const detailsContent = document.getElementById('config-details-content');
+        detailsContent.innerHTML = `
+            <table class="table table-striped">
+                <tr><td>Monitoring Interval</td><td>${data.monitoring_interval} seconds</td></tr>
+                <tr><td>Monitoring Active</td><td>${data.monitoring_active ? 'Yes' : 'No'}</td></tr>
+                <tr><td>Delivery Metrics History</td><td>${data.metrics_history_size.delivery_metrics} entries</td></tr>
+                <tr><td>Connection Metrics History</td><td>${data.metrics_history_size.connection_metrics} entries</td></tr>
+                <tr><td>Performance Metrics History</td><td>${data.metrics_history_size.performance_metrics} entries</td></tr>
+            </table>
+            <h5>Alert Thresholds</h5>
+            <table class="table table-striped">
+                ${Object.entries(data.alert_thresholds).map(([key, value]) => 
+                    `<tr><td>${key.replace(/_/g, ' ')}</td><td>${value}</td></tr>`
+                ).join('')}
+            </table>
+            <h5>Available Recovery Actions</h5>
+            <ul>
+                ${data.recovery_actions.map(action => `<li>${action.replace(/_/g, ' ')}</li>`).join('')}
+            </ul>
+        `;
+    }
+    
+    updateDeliveryChart(data) {
+        if (!data.time_series || data.time_series.length === 0) return;
+        
+        const ctx = document.getElementById('delivery-chart').getContext('2d');
+        
+        if (this.charts.delivery) {
+            this.charts.delivery.destroy();
+        }
+        
+        this.charts.delivery = new Chart(ctx, {
+            type: 'line',
+            data: {
+                labels: data.time_series.map(d => new Date(d.timestamp).toLocaleTimeString()),
+                datasets: [{
+                    label: 'Delivery Rate',
+                    data: data.time_series.map(d => d.delivery_rate * 100),
+                    borderColor: 'rgb(75, 192, 192)',
+                    tension: 0.1
+                }, {
+                    label: 'Messages/sec',
+                    data: data.time_series.map(d => d.messages_per_second),
+                    borderColor: 'rgb(255, 99, 132)',
+                    tension: 0.1,
+                    yAxisID: 'y1'
+                }]
+            },
+            options: {
+                responsive: true,
+                maintainAspectRatio: false,
+                scales: {
+                    y: {
+                        beginAtZero: true,
+                        max: 100,
+                        title: { display: true, text: 'Delivery Rate (%)' }
+                    },
+                    y1: {
+                        type: 'linear',
+                        display: true,
+                        position: 'right',
+                        title: { display: true, text: 'Messages/sec' }
+                    }
+                }
+            }
+        });
+    }
+    
+    updateConnectionChart(data) {
+        if (!data.time_series || data.time_series.length === 0) return;
+        
+        const ctx = document.getElementById('connection-chart').getContext('2d');
+        
+        if (this.charts.connection) {
+            this.charts.connection.destroy();
+        }
+        
+        this.charts.connection = new Chart(ctx, {
+            type: 'line',
+            data: {
+                labels: data.time_series.map(d => new Date(d.timestamp).toLocaleTimeString()),
+                datasets: [{
+                    label: 'Active Connections',
+                    data: data.time_series.map(d => d.active_connections),
+                    borderColor: 'rgb(54, 162, 235)',
+                    tension: 0.1
+                }, {
+                    label: 'Success Rate (%)',
+                    data: data.time_series.map(d => d.connection_success_rate * 100),
+                    borderColor: 'rgb(255, 206, 86)',
+                    tension: 0.1,
+                    yAxisID: 'y1'
+                }]
+            },
+            options: {
+                responsive: true,
+                maintainAspectRatio: false,
+                scales: {
+                    y: {
+                        beginAtZero: true,
+                        title: { display: true, text: 'Connections' }
+                    },
+                    y1: {
+                        type: 'linear',
+                        display: true,
+                        position: 'right',
+                        beginAtZero: true,
+                        max: 100,
+                        title: { display: true, text: 'Success Rate (%)' }
+                    }
+                }
+            }
+        });
+    }
+    
+    updatePerformanceChart(data) {
+        if (!data.time_series || data.time_series.length === 0) return;
+        
+        const ctx = document.getElementById('performance-chart').getContext('2d');
+        
+        if (this.charts.performance) {
+            this.charts.performance.destroy();
+        }
+        
+        this.charts.performance = new Chart(ctx, {
+            type: 'line',
+            data: {
+                labels: data.time_series.map(d => new Date(d.timestamp).toLocaleTimeString()),
+                datasets: [{
+                    label: 'CPU Usage (%)',
+                    data: data.time_series.map(d => d.cpu_usage * 100),
+                    borderColor: 'rgb(255, 99, 132)',
+                    tension: 0.1
+                }, {
+                    label: 'Memory Usage (%)',
+                    data: data.time_series.map(d => d.memory_usage * 100),
+                    borderColor: 'rgb(54, 162, 235)',
+                    tension: 0.1
+                }]
+            },
+            options: {
+                responsive: true,
+                maintainAspectRatio: false,
+                scales: {
+                    y: {
+                        beginAtZero: true,
+                        max: 100,
+                        title: { display: true, text: 'Usage (%)' }
+                    }
+                }
+            }
+        });
+    }
+    
+    handleRealtimeAlert(alert) {
+        // Show notification for new alert
+        this.showNotification(`New ${alert.severity} alert: ${alert.title}`, alert.severity);
+        
+        // Refresh alerts display
+        this.updateAlerts();
+    }
+    
+    async startMonitoring() {
+        try {
+            const response = await this.fetchAPI('/admin/monitoring/notifications/api/start', 'POST');
+            if (response.success) {
+                this.showNotification('Monitoring started successfully', 'success');
+                this.refreshData();
+            } else {
+                this.showError(response.error || 'Failed to start monitoring');
+            }
+        } catch (error) {
+            this.showError('Failed to start monitoring: ' + error.message);
+        }
+    }
+    
+    async stopMonitoring() {
+        try {
+            const response = await this.fetchAPI('/admin/monitoring/notifications/api/stop', 'POST');
+            if (response.success) {
+                this.showNotification('Monitoring stopped successfully', 'warning');
+                this.refreshData();
+            } else {
+                this.showError(response.error || 'Failed to stop monitoring');
+            }
+        } catch (error) {
+            this.showError('Failed to stop monitoring: ' + error.message);
+        }
+    }
+    
+    async triggerRecovery() {
+        const actionSelect = document.getElementById('recovery-action');
+        const actionType = actionSelect.value;
+        
+        if (!actionType) {
+            this.showError('Please select a recovery action');
+            return;
+        }
+        
+        try {
+            const response = await this.fetchAPI('/admin/monitoring/notifications/api/recovery', 'POST', {
+                action_type: actionType
+            });
+            
+            if (response.success) {
+                this.showNotification(response.message, 'success');
+                this.refreshData();
+            } else {
+                this.showError(response.error || 'Recovery action failed');
+            }
+        } catch (error) {
+            this.showError('Failed to trigger recovery: ' + error.message);
+        }
+    }
+    
+    exportData() {
+        // This would implement data export functionality
+        this.showNotification('Data export functionality coming soon', 'info');
+    }
+    
+    switchTab(tabId) {
+        // Update active tab
+        document.querySelectorAll('#metrics-tabs a').forEach(tab => {
+            tab.classList.remove('active');
+        });
+        document.querySelector(`#${tabId.replace('-details', '-tab')}`).classList.add('active');
+        
+        // Update active content
+        document.querySelectorAll('.tab-pane').forEach(pane => {
+            pane.classList.remove('show', 'active');
+        });
+        document.getElementById(tabId).classList.add('show', 'active');
+    }
+    
+    async fetchAPI(url, method = 'GET', data = null) {
+        const options = {
+            method,
+            headers: {
+                'Content-Type': 'application/json',
+            }
+        };
+        
+        if (data) {
+            options.body = JSON.stringify(data);
+        }
+        
+        const response = await fetch(url, options);
+        return await response.json();
+    }
+    
+    showNotification(message, type = 'info') {
+        // Simple notification system
+        const notification = document.createElement('div');
+        notification.className = `alert alert-${type} alert-dismissible fade show`;
+        notification.style.position = 'fixed';
+        notification.style.top = '20px';
+        notification.style.right = '20px';
+        notification.style.zIndex = '9999';
+        notification.innerHTML = `
+            ${message}
+            <button type="button" class="close" data-dismiss="alert">
+                <span>&times;</span>
+            </button>
+        `;
+        
+        document.body.appendChild(notification);
+        
+        setTimeout(() => {
+            if (notification.parentNode) {
+                notification.parentNode.removeChild(notification);
+            }
+        }, 5000);
+    }
+    
+    showError(message) {
+        this.showNotification(message, 'danger');
+    }
+}
+
+// Initialize dashboard when page loads
+document.addEventListener('DOMContentLoaded', () => {
+    new NotificationMonitoringDashboard();
+});
+</script>
+{% endblock %}

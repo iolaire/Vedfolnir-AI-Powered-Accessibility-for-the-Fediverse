@@ -484,42 +484,84 @@ class UserAuthenticationService:
                                user_agent: Optional[str] = None) -> Tuple[bool, str, Optional[str]]:
         """Login user and create secure session with SessionManager integration"""
         try:
+            logger.info(f"=== SESSION CREATION DEBUG START for user {user.username} ===")
+            
             if not self.session_manager:
                 logger.error("Session manager not available for secure session creation")
                 return False, "Session management not available", None
             
+            logger.info(f"Session manager type: {type(self.session_manager).__name__}")
+            logger.info(f"Session manager methods: {[m for m in dir(self.session_manager) if not m.startswith('_')]}")
+            
             # Get user's default platform for session context
             platform_connection_id = None
-            if user.role != UserRole.ADMIN:  # Non-admin users need platform context
-                default_platform = next(
-                    (pc for pc in user.platform_connections if pc.is_default and pc.is_active),
+            platform_name = None
+            platform_type = None
+            
+            logger.info(f"User {user.username} has {len(user.platform_connections)} platform connections")
+            
+            # All users (including admins) can have platform context if they have platforms
+            default_platform = next(
+                (pc for pc in user.platform_connections if pc.is_default and pc.is_active),
+                None
+            )
+            if default_platform:
+                platform_connection_id = default_platform.id
+                platform_name = default_platform.name
+                platform_type = default_platform.platform_type
+                logger.info(f"Found default platform: {platform_name} (ID: {platform_connection_id})")
+            else:
+                # If no default platform, try to get the first active platform
+                first_platform = next(
+                    (pc for pc in user.platform_connections if pc.is_active),
                     None
                 )
-                if default_platform:
-                    platform_connection_id = default_platform.id
+                if first_platform:
+                    platform_connection_id = first_platform.id
+                    platform_name = first_platform.name
+                    platform_type = first_platform.platform_type
+                    logger.info(f"Found first active platform: {platform_name} (ID: {platform_connection_id})")
+                else:
+                    logger.info("No active platform connections found for user")
             
-            # Create database session
+            # Create Redis session (not database session)
+            logger.info(f"Creating session with platform_connection_id: {platform_connection_id}")
             session_id = self.session_manager.create_session(
                 user_id=user.id,
                 platform_connection_id=platform_connection_id
             )
             
+            logger.info(f"Session creation result: session_id = {session_id}")
+            
             if session_id:
+                # Verify session was created with platform data
+                if hasattr(self.session_manager, 'get_session_data'):
+                    session_data = self.session_manager.get_session_data(session_id)
+                    logger.info(f"Created session data: {session_data}")
+                    
+                    if session_data and platform_connection_id:
+                        has_platform_data = 'platform_connection_id' in session_data
+                        logger.info(f"Session contains platform data: {has_platform_data}")
+                        if has_platform_data:
+                            logger.info(f"Platform data in session: platform_connection_id={session_data.get('platform_connection_id')}, platform_name={session_data.get('platform_name')}")
+                
                 # Log session creation
                 UserAuditLog.log_action(
                     self.db_session,
                     action="session_created",
                     user_id=user.id,
-                    details=f"Database session created from {ip_address or 'unknown IP'}",
+                    details=f"Redis session created from {ip_address or 'unknown IP'} with platform {platform_connection_id}",
                     ip_address=ip_address,
                     user_agent=user_agent
                 )
                 self.db_session.commit()
                 
-                logger.info(f"Secure session created for user {user.username}")
+                logger.info(f"✓ Secure Redis session created for user {user.username} with session ID {session_id}")
+                logger.info(f"=== SESSION CREATION DEBUG END ===")
                 return True, "Session created successfully", session_id
             else:
-                logger.error(f"Failed to create database session for user {user.username}")
+                logger.error(f"✗ Failed to create Redis session for user {user.username}")
+                logger.info(f"=== SESSION CREATION DEBUG END ===")
                 return False, "Failed to create secure session", None
                 
         except Exception as e:

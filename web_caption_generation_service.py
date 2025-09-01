@@ -420,8 +420,20 @@ class WebCaptionGenerationService:
             # Complete the task
             self.task_queue_manager.complete_task(task_id, success=True)
             
-            # Complete progress tracking
+            # Complete progress tracking with enhanced notification
             self.progress_tracker.complete_progress(task_id, results)
+            
+            # Send completion notification with action buttons
+            self.progress_tracker.send_caption_complete_notification(
+                task.user_id, 
+                task_id, 
+                {
+                    'captions_generated': results.captions_generated,
+                    'images_processed': results.images_processed,
+                    'processing_time': results.processing_time_seconds,
+                    'success_rate': results.success_rate
+                }
+            )
             
             # Trigger review workflow integration
             self._trigger_review_workflow_integration(task_id, task.user_id, results)
@@ -457,11 +469,16 @@ class WebCaptionGenerationService:
                     'pattern_matched': enhanced_error_info.pattern_matched
                 }
                 
-                self.progress_tracker.update_progress(
+                # Use fail_progress method for proper error notification
+                self.progress_tracker.fail_progress(task_id, user_message, error_details)
+                
+                # Send enhanced error notification with retry options
+                self.progress_tracker.send_caption_error_notification(
+                    task.user_id,
                     task_id,
-                    "Failed",
-                    100,
-                    error_details
+                    user_message,
+                    error_category=error_details.get('error_category'),
+                    recovery_suggestions=error_details.get('recovery_suggestions', [])
                 )
                 
                 # Check if admin escalation is needed
@@ -472,7 +489,7 @@ class WebCaptionGenerationService:
                 logger.error(f"Error in enhanced recovery handling: {sanitize_for_log(str(recovery_error))}")
                 # Fallback to original error handling
                 self.task_queue_manager.complete_task(task_id, success=False, error_message=str(e))
-                self.progress_tracker.update_progress(task_id, "Failed", 100, {'error': str(e)})
+                self.progress_tracker.fail_progress(task_id, str(e), {'error': str(e)})
     
     async def shutdown(self):
         """Shutdown the service and clean up background tasks"""

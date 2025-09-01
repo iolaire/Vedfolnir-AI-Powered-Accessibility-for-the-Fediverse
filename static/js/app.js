@@ -206,77 +206,77 @@ function showQuickNavigation() {
     }, 100);
 }
 
-// Utility functions
+// Unified Notification System Integration
 window.Vedfolnir = {
-    // Show toast notification
-    showToast: function(message, type = 'info') {
-        const toastContainer = document.querySelector('.toast-container') || createToastContainer();
-        const toast = document.createElement('div');
-        
-        // Sanitize type parameter to prevent CSS injection
-        const sanitizedType = ['primary', 'secondary', 'success', 'danger', 'warning', 'info', 'light', 'dark'].includes(type) ? type : 'info';
-        
-        toast.className = `toast align-items-center text-white bg-${sanitizedType} border-0`;
-        toast.setAttribute('role', 'alert');
-        
-        // Sanitize message to prevent XSS
-        const sanitizedMessage = this.sanitizeHtml(message);
-        
-        toast.innerHTML = `
-            <div class="d-flex">
-                <div class="toast-body">${sanitizedMessage}</div>
-                <button type="button" class="btn-close btn-close-white me-2 m-auto" data-bs-dismiss="toast"></button>
-            </div>
-        `;
-        
-        toastContainer.appendChild(toast);
-        const bsToast = new bootstrap.Toast(toast);
-        bsToast.show();
-        
-        // Remove from DOM after hiding
-        toast.addEventListener('hidden.bs.toast', () => {
-            toast.remove();
-        });
+    // Initialize unified notification system
+    notificationRenderer: null,
+    
+    // Initialize notification system
+    initNotificationSystem: function() {
+        if (!this.notificationRenderer && window.NotificationUIRenderer) {
+            this.notificationRenderer = new window.NotificationUIRenderer('vedfolnir-notifications', {
+                position: 'top-right',
+                maxNotifications: 5,
+                autoHide: true,
+                defaultDuration: 5000
+            });
+            console.log('Unified notification system initialized');
+        }
     },
     
-    // Confirm dialog with modern styling
-    confirm: function(message, callback) {
-        const modal = document.createElement('div');
-        modal.className = 'modal fade';
+    // Show notification using unified system
+    showNotification: function(message, type = 'info', options = {}) {
+        this.initNotificationSystem();
         
-        // Sanitize message to prevent XSS
-        const sanitizedMessage = this.sanitizeHtml(message);
+        if (this.notificationRenderer) {
+            return this.notificationRenderer.renderNotification({
+                type: type === 'danger' ? 'error' : type, // Map Bootstrap types
+                message: message,
+                title: options.title,
+                duration: options.duration,
+                persistent: options.persistent,
+                actions: options.actions
+            });
+        } else {
+            // Fallback to console if unified system not available
+            console.log(`Notification (${type}): ${message}`);
+        }
+    },
+    
+    // Legacy showToast method - redirects to unified system
+    showToast: function(message, type = 'info') {
+        return this.showNotification(message, type);
+    },
+    
+    // Confirm dialog using unified notification system
+    confirm: function(message, callback, options = {}) {
+        this.initNotificationSystem();
         
-        modal.innerHTML = `
-            <div class="modal-dialog modal-dialog-centered">
-                <div class="modal-content">
-                    <div class="modal-header border-0">
-                        <h5 class="modal-title">Confirm Action</h5>
-                    </div>
-                    <div class="modal-body">
-                        <p class="mb-0">${sanitizedMessage}</p>
-                    </div>
-                    <div class="modal-footer border-0">
-                        <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Cancel</button>
-                        <button type="button" class="btn btn-primary" id="confirmBtn">Confirm</button>
-                    </div>
-                </div>
-            </div>
-        `;
-        
-        document.body.appendChild(modal);
-        const bsModal = new bootstrap.Modal(modal);
-        
-        modal.querySelector('#confirmBtn').addEventListener('click', () => {
-            callback(true);
-            bsModal.hide();
-        });
-        
-        modal.addEventListener('hidden.bs.modal', () => {
-            modal.remove();
-        });
-        
-        bsModal.show();
+        if (this.notificationRenderer) {
+            return this.notificationRenderer.renderNotification({
+                type: 'warning',
+                title: options.title || 'Confirm Action',
+                message: message,
+                persistent: true,
+                actions: [
+                    {
+                        label: 'Cancel',
+                        type: 'secondary',
+                        action: 'cancel'
+                    },
+                    {
+                        label: 'Confirm',
+                        type: 'primary',
+                        action: 'confirm'
+                    }
+                ]
+            });
+        } else {
+            // Fallback to native confirm
+            const result = confirm(message);
+            if (callback) callback(result);
+            return result;
+        }
     },
     
     // HTML sanitization utility
@@ -290,13 +290,35 @@ window.Vedfolnir = {
     }
 };
 
-// Create toast container if it doesn't exist
-function createToastContainer() {
-    const container = document.createElement('div');
-    container.className = 'toast-container position-fixed bottom-0 end-0 p-3';
-    document.body.appendChild(container);
-    return container;
-}
+// Initialize unified notification system on page load
+document.addEventListener('DOMContentLoaded', function() {
+    // Initialize Vedfolnir notification system
+    if (window.Vedfolnir) {
+        window.Vedfolnir.initNotificationSystem();
+        
+        // Setup notification action handlers
+        document.addEventListener('notificationAction', function(event) {
+            const { action, notificationId, notification } = event.detail;
+            
+            switch (action) {
+                case 'confirm':
+                    // Handle confirmation actions
+                    console.log('Notification confirmed:', notificationId);
+                    break;
+                case 'cancel':
+                    // Handle cancellation actions
+                    console.log('Notification cancelled:', notificationId);
+                    break;
+                case 'dismiss':
+                    // Handle dismiss actions
+                    console.log('Notification dismissed:', notificationId);
+                    break;
+                default:
+                    console.log('Unknown notification action:', action);
+            }
+        });
+    }
+});
 
 // Maintenance mode monitoring
 function initializeMaintenanceMonitoring() {
@@ -341,57 +363,79 @@ function initializeMaintenanceMonitoring() {
         // Remove existing alert if present
         hideMaintenanceAlert();
         
-        // Create maintenance alert
-        maintenanceAlert = document.createElement('div');
-        maintenanceAlert.className = 'alert alert-warning alert-dismissible fade show position-fixed';
-        maintenanceAlert.style.cssText = `
-            top: 0;
-            left: 0;
-            right: 0;
-            z-index: 9999;
-            margin: 0;
-            border-radius: 0;
-            border: none;
-            border-bottom: 3px solid #f0ad4e;
-        `;
-        
-        const reasonText = reason ? ` Reason: ${reason}` : '';
-        maintenanceAlert.innerHTML = `
-            <div class="container-fluid">
-                <div class="d-flex align-items-center">
-                    <i class="bi bi-exclamation-triangle-fill me-2"></i>
-                    <strong>System Maintenance Mode Active</strong>
-                    <span class="ms-2">${reasonText}</span>
-                    <button type="button" class="btn-close ms-auto" data-bs-dismiss="alert"></button>
+        // Use unified notification system
+        if (window.Vedfolnir && window.Vedfolnir.showNotification) {
+            const reasonText = reason ? ` Reason: ${reason}` : '';
+            maintenanceAlert = window.Vedfolnir.showNotification(
+                `System Maintenance Mode Active${reasonText}`,
+                'warning',
+                {
+                    title: 'System Maintenance',
+                    persistent: true,
+                    actions: [
+                        {
+                            label: 'Dismiss',
+                            type: 'secondary',
+                            action: 'dismiss'
+                        }
+                    ]
+                }
+            );
+        } else {
+            // Fallback to legacy alert display
+            maintenanceAlert = document.createElement('div');
+            maintenanceAlert.className = 'alert alert-warning alert-dismissible fade show position-fixed';
+            maintenanceAlert.style.cssText = `
+                top: 0;
+                left: 0;
+                right: 0;
+                z-index: 9999;
+                margin: 0;
+                border-radius: 0;
+                border: none;
+                border-bottom: 3px solid #f0ad4e;
+            `;
+            
+            const reasonText = reason ? ` Reason: ${reason}` : '';
+            maintenanceAlert.innerHTML = `
+                <div class="container-fluid">
+                    <div class="d-flex align-items-center">
+                        <i class="bi bi-exclamation-triangle-fill me-2"></i>
+                        <strong>System Maintenance Mode Active</strong>
+                        <span class="ms-2">${reasonText}</span>
+                        <button type="button" class="btn-close ms-auto" data-bs-dismiss="alert"></button>
+                    </div>
                 </div>
-            </div>
-        `;
+            `;
+            
+            document.body.insertBefore(maintenanceAlert, document.body.firstChild);
+            document.body.style.paddingTop = maintenanceAlert.offsetHeight + 'px';
+            
+            maintenanceAlert.addEventListener('closed.bs.alert', function() {
+                document.body.style.paddingTop = '';
+                maintenanceAlert = null;
+            });
+        }
         
-        // Insert at the top of the body
-        document.body.insertBefore(maintenanceAlert, document.body.firstChild);
-        
-        // Adjust body padding to account for fixed alert
-        document.body.style.paddingTop = maintenanceAlert.offsetHeight + 'px';
-        
-        // Handle alert dismissal
-        maintenanceAlert.addEventListener('closed.bs.alert', function() {
-            document.body.style.paddingTop = '';
-            maintenanceAlert = null;
-        });
-        
-        console.log('Maintenance mode alert displayed:', reasonText);
+        console.log('Maintenance mode alert displayed:', reason ? ` Reason: ${reason}` : '');
     }
     
     function hideMaintenanceAlert() {
         if (maintenanceAlert) {
-            const bsAlert = bootstrap.Alert.getInstance(maintenanceAlert);
-            if (bsAlert) {
-                bsAlert.close();
-            } else {
-                maintenanceAlert.remove();
-                document.body.style.paddingTop = '';
-                maintenanceAlert = null;
+            // If using unified system, dismiss by ID
+            if (window.Vedfolnir && window.Vedfolnir.notificationRenderer && typeof maintenanceAlert === 'string') {
+                window.Vedfolnir.notificationRenderer.dismissNotification(maintenanceAlert);
+            } else if (maintenanceAlert.nodeType) {
+                // Legacy DOM element cleanup
+                const bsAlert = bootstrap.Alert.getInstance(maintenanceAlert);
+                if (bsAlert) {
+                    bsAlert.close();
+                } else {
+                    maintenanceAlert.remove();
+                    document.body.style.paddingTop = '';
+                }
             }
+            maintenanceAlert = null;
         }
     }
     

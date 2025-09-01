@@ -42,20 +42,22 @@ class PlatformAccessMiddleware:
         """Set up platform access context before each request."""
         if not current_user.is_authenticated:
             return
-        
-        try:
-            # Cache user's accessible platforms in g for the request
-            g.user_accessible_platforms = self._get_user_accessible_platforms()
-            g.user_accessible_platform_ids = [p.id for p in g.user_accessible_platforms]
-            
-            # Set up content filtering context
-            g.platform_access_middleware_active = True
-            
-        except Exception as e:
-            logger.error(f"Error setting up platform access context: {e}")
-            g.user_accessible_platforms = []
-            g.user_accessible_platform_ids = []
-            g.platform_access_middleware_active = False
+
+        # Check if platforms are already loaded for this request context
+        if not hasattr(g, 'user_accessible_platforms'):
+            try:
+                # Cache user's accessible platforms in g for the request
+                g.user_accessible_platforms = self._get_user_accessible_platforms()
+                g.user_accessible_platform_ids = [p.id for p in g.user_accessible_platforms]
+                
+                # Set up content filtering context
+                g.platform_access_middleware_active = True
+                
+            except Exception as e:
+                logger.error(f"Error setting up platform access context: {e}")
+                g.user_accessible_platforms = []
+                g.user_accessible_platform_ids = []
+                g.platform_access_middleware_active = False
     
     def teardown(self, exception):
         """Clean up platform access context after request."""

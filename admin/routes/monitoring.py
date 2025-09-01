@@ -4,9 +4,10 @@
 
 """Admin Monitoring Routes"""
 
-from flask import render_template, jsonify, redirect, url_for, flash, current_app
+from flask import render_template, jsonify, redirect, url_for, current_app
 from flask_login import login_required, current_user
 from models import UserRole
+# from notification_flash_replacement import send_notification  # Removed - using unified notification system
 from session_error_handlers import with_session_error_handling
 from security.core.security_middleware import rate_limit
 
@@ -19,7 +20,9 @@ def register_routes(bp):
     def monitoring_dashboard():
         """Administrative monitoring dashboard"""
         if not current_user.role == UserRole.ADMIN:
-            flash('Access denied. Admin privileges required.', 'error')
+            # Send error notification
+            from notification_helpers import send_error_notification
+            send_error_notification("Access denied. Admin privileges required.", "Access Denied")
             return redirect(url_for('index'))
             
         try:
@@ -37,7 +40,9 @@ def register_routes(bp):
                                  
         except Exception as e:
             current_app.logger.error(f"Error loading monitoring dashboard: {str(e)}")
-            flash('Error loading monitoring dashboard.', 'error')
+            # Send error notification
+            from notification_helpers import send_error_notification
+            send_error_notification("Error loading monitoring dashboard.", "Error")
             return redirect(url_for('admin.dashboard'))
 
     @bp.route('/api/system_overview')

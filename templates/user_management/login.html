@@ -83,25 +83,9 @@
                     </div>
 
                     <!-- Email Verification Notice -->
-                    {% with messages = get_flashed_messages(category_filter=['warning']) %}
-                        {% if messages %}
-                            {% for message in messages %}
-                                {% if 'not verified' in message %}
-                                    <div class="alert alert-warning mt-3" role="alert">
-                                        <i class="fas fa-exclamation-triangle me-2"></i>
-                                        {{ message }}
-                                        <hr>
-                                        <p class="mb-0">
-                                            <small>
-                                                If you need a new verification email, please contact support or 
-                                                try logging in again after checking your email.
-                                            </small>
-                                        </p>
-                                    </div>
-                                {% endif %}
-                            {% endfor %}
-                        {% endif %}
-                    {% endwith %}
+                    <!-- Unified Notification System Integration -->
+<!-- Flash messages are now handled by the WebSocket-based notification system -->
+<!-- See static/js/websocket-client-factory.js for notification handling -->
                 </div>
             </div>
         </div>

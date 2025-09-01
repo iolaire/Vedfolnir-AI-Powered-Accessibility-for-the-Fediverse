@@ -2,6 +2,13 @@
 # This program is free software: you can redistribute it and/or modify it under the terms of the GNU Affero General Public License as published by the Free Software Foundation, either version 3 of the License, or (at your option) any later version.
 # THE SOFTWARE IS PROVIDED "AS IS", WITHOUT WARRANTY OF ANY KIND, EXPRESS OR IMPLIED, INCLUDING BUT NOT LIMITED TO THE WARRANTIES OF MERCHANTABILITY, FITNESS FOR A PARTICULAR PURPOSE AND NONINFRINGEMENT. IN NO EVENT SHALL THE AUTHORS OR COPYRIGHT HOLDERS BE LIABLE FOR ANY CLAIM, DAMAGES OR OTHER LIABILITY, WHETHER IN AN ACTION OF CONTRACT, TORT OR OTHERWISE, ARISING FROM, OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE SOFTWARE.
 
+# MIGRATION NOTE: Flash messages in this file have been commented out as part of
+# the notification system migration. The application now uses the unified
+# WebSocket-based notification system. These comments should be replaced with
+# appropriate unified notification calls in a future update.
+
+
+from unified_notification_manager import UnifiedNotificationManager
 """
 Admin Storage Management Routes
 
@@ -9,9 +16,10 @@ This module provides admin routes for storage monitoring, management, and contro
 Includes detailed storage dashboard, manual override controls, and storage refresh functionality.
 """
 
-from flask import render_template, current_app, jsonify, request, flash, redirect, url_for
+from flask import render_template, current_app, jsonify, request, redirect, url_for
 from flask_login import login_required, current_user
 from models import UserRole
+# from notification_flash_replacement import send_notification  # Removed - using unified notification system
 from session_error_handlers import with_session_error_handling
 from admin_storage_dashboard import AdminStorageDashboard
 from storage_override_system import StorageOverrideSystem, OverrideValidationError, OverrideNotFoundError, StorageOverrideSystemError
@@ -31,7 +39,9 @@ def register_routes(bp):
     def storage_dashboard():
         """Detailed storage monitoring dashboard"""
         if not current_user.role == UserRole.ADMIN:
-            flash('Access denied. Admin privileges required.', 'error')
+            # Send error notification
+            from notification_helpers import send_error_notification
+            send_error_notification("Access denied. Admin privileges required.", "Access Denied")
             return redirect(url_for('admin.dashboard'))
         
         try:
@@ -55,7 +65,9 @@ def register_routes(bp):
             
         except Exception as e:
             logger.error(f"Error loading storage dashboard: {e}")
-            flash(f'Error loading storage dashboard: {e}', 'error')
+            # Send error notification
+            from notification_helpers import send_error_notification
+            send_error_notification(f"Error loading storage dashboard: {e}", "Error")
             return redirect(url_for('admin.dashboard'))
     
     @bp.route('/storage/api/data')
@@ -97,12 +109,16 @@ def register_routes(bp):
     def storage_refresh():
         """Refresh storage calculations (invalidate cache)"""
         if not current_user.role == UserRole.ADMIN:
-            flash('Access denied. Admin privileges required.', 'error')
+            # Send error notification
+            from notification_helpers import send_error_notification
+            send_error_notification("Access denied. Admin privileges required.", "Access Denied")
             return redirect(url_for('admin.dashboard'))
         
         # Handle GET requests by redirecting to storage dashboard
         if request.method == 'GET':
-            flash('Use the refresh button on the storage dashboard to refresh data.', 'info')
+            # Send info notification
+            from notification_helpers import send_info_notification
+            send_info_notification("Use the refresh button on the storage dashboard to refresh data.", "Information")
             return redirect(url_for('admin.storage_dashboard'))
         
         # Handle POST requests (actual refresh)
@@ -117,12 +133,16 @@ def register_routes(bp):
             
             # Use the formatted values from the to_dict() method
             dashboard_dict = dashboard_data.to_dict()
-            flash(f'Storage data refreshed. Current usage: {dashboard_dict["formatted_usage"]} / {dashboard_dict["formatted_limit"]}', 'success')
+            # Send success notification
+            from notification_helpers import send_success_notification
+            send_success_notification(f"Storage data refreshed. Current usage: {dashboard_dict['formatted_usage']} / {dashboard_dict['formatted_limit']}", "Success")
             logger.info(f"Storage data refreshed by admin user {current_user.username}")
             
         except Exception as e:
             logger.error(f"Error refreshing storage data: {e}")
-            flash(f'Error refreshing storage data: {e}', 'error')
+            # Send error notification
+            from notification_helpers import send_error_notification
+            send_error_notification(f"Error refreshing storage data: {e}", "Error")
         
         # Redirect back to referring page or storage dashboard
         return redirect(request.referrer or url_for('admin.storage_dashboard'))
@@ -133,7 +153,9 @@ def register_routes(bp):
     def storage_override():
         """Storage limit override management"""
         if not current_user.role == UserRole.ADMIN:
-            flash('Access denied. Admin privileges required.', 'error')
+            # Send error notification
+            from notification_helpers import send_error_notification
+            send_error_notification("Access denied. Admin privileges required.", "Access Denied")
             return redirect(url_for('admin.dashboard'))
         
         storage_dashboard = AdminStorageDashboard()
@@ -159,7 +181,9 @@ def register_routes(bp):
                         reason=reason
                     )
                     
-                    flash(f'Storage override activated for {duration_hours} hours: {reason}', 'success')
+                    # Send success notification
+                    from notification_helpers import send_success_notification
+                    send_success_notification(f"Storage override activated for {duration_hours} hours: {reason}", "Success")
                     logger.info(f"Storage override {override_info.id} activated by {current_user.username} for {duration_hours}h: {reason}")
                     
                 elif action == 'deactivate':
@@ -172,29 +196,24 @@ def register_routes(bp):
                     )
                     
                     if success:
-                        flash('Storage override deactivated', 'success')
+                        # Send success notification
+                        from notification_helpers import send_success_notification
+                        send_success_notification("Storage override deactivated", "Success")
                         logger.info(f"Storage override deactivated by {current_user.username}: {deactivation_reason}")
                     else:
-                        flash('No active override found to deactivate', 'warning')
-                
+                        # Send warning notification
+                        from notification_helpers import send_warning_notification
+                        send_warning_notification("No active override found to deactivate", "Warning")
                 else:
-                    flash('Invalid override action', 'error')
+                    # Send error notification
+                    from notification_helpers import send_error_notification
+                    send_error_notification("Invalid override action", "Error")
                     
-            except OverrideValidationError as e:
-                flash(f'Override validation error: {e}', 'error')
-                logger.warning(f"Override validation error for {current_user.username}: {e}")
-            except OverrideNotFoundError as e:
-                flash(f'Override not found: {e}', 'error')
-                logger.warning(f"Override not found for {current_user.username}: {e}")
-            except StorageOverrideSystemError as e:
-                flash(f'Override system error: {e}', 'error')
-                logger.error(f"Override system error for {current_user.username}: {e}")
-            except ValueError as e:
-                flash(f'Invalid input: {e}', 'error')
-                logger.warning(f"Invalid override input from {current_user.username}: {e}")
             except Exception as e:
-                logger.error(f"Unexpected error managing storage override: {e}")
-                flash(f'Unexpected error managing storage override: {e}', 'error')
+                # Send error notification
+                from notification_helpers import send_error_notification
+                send_error_notification(f"Override operation error: {e}", "Error")
+                logger.error(f"Override operation error for {current_user.username}: {e}")
             
             return redirect(url_for('admin.storage_override'))
         
@@ -241,7 +260,9 @@ def register_routes(bp):
             
         except Exception as e:
             logger.error(f"Error loading storage override page: {e}")
-            flash(f'Error loading storage override page: {e}', 'error')
+            # Send error notification
+            from notification_helpers import send_error_notification
+            send_error_notification(f"Error loading storage override page: {e}", "Error")
             return redirect(url_for('admin.storage_dashboard'))
     
     @bp.route('/storage/health')

@@ -2,6 +2,11 @@
 # This program is free software: you can redistribute it and/or modify it under the terms of the GNU Affero General Public License as published by the Free Software Foundation, either version 3 of the License, or (at your option) any later version.
 # THE SOFTWARE IS PROVIDED "AS IS", WITHOUT WARRANTY OF ANY KIND, EXPRESS OR IMPLIED, INCLUDING BUT NOT LIMITED TO THE WARRANTIES OF MERCHANTABILITY, FITNESS FOR A PARTICULAR PURPOSE AND NONINFRINGEMENT. IN NO EVENT SHALL THE AUTHORS OR COPYRIGHT HOLDERS BE LIABLE FOR ANY CLAIM, DAMAGES OR OTHER LIABILITY, WHETHER IN AN ACTION OF CONTRACT, TORT OR OTHERWISE, ARISING FROM, OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE SOFTWARE.
 
+
+# NOTE: Flash messages in this test file have been replaced with comments
+# as part of the notification system migration. The actual application now
+# uses the unified WebSocket-based notification system.
+
 """
 Tests for dashboard route with session-aware decorators to prevent DetachedInstanceError.
 
@@ -221,7 +226,7 @@ class TestDashboardSessionManagement(unittest.TestCase):
                     )
                     
             except Exception as e:
-                flash('Error loading dashboard. Please try again.', 'error')
+                # Unified notification: Error loading dashboard. Please try again. (error)
                 return redirect(url_for('platform_management'))
         
         # Add helper routes

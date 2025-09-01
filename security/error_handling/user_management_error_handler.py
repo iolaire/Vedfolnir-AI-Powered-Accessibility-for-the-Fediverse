@@ -334,7 +334,9 @@ class UserManagementErrorHandler:
                 return response
             
             # Handle web requests
-            flash(user_message, 'error')
+            # Send error notification
+            from notification_helpers import send_error_notification
+            send_error_notification(user_message, 'User Management Error')
             
             # Use custom template if provided
             if template_name:
@@ -473,7 +475,9 @@ def graceful_degradation(fallback_response=None, log_error=True):
                 if request.is_json:
                     return jsonify({'error': True, 'message': 'Service temporarily unavailable'}), 503
                 else:
-                    flash('Some features may be temporarily unavailable.', 'warning')
+                    # Send warning notification
+                    from notification_helpers import send_warning_notification
+                    send_warning_notification('Some features may be temporarily unavailable.', 'Service Warning')
                     return redirect(url_for('index'))
         
         return decorated_function

@@ -17,9 +17,10 @@ from dotenv import load_dotenv
 # Load environment variables first
 load_dotenv()
 
-from flask import Flask, render_template, request, jsonify, redirect, url_for, flash, session, g
+from flask import Flask, render_template, request, jsonify, redirect, url_for, session, g
 from flask_login import LoginManager, UserMixin, login_user as flask_login_user, logout_user as flask_logout_user, login_required, current_user
 from functools import wraps
+# from notification_flash_replacement import send_notification  # Removed - using unified notification system
 
 # Import our simplified session management
 from flask_redis_session import init_redis_session
@@ -99,7 +100,9 @@ def require_login(f):
     @wraps(f)
     def decorated_function(*args, **kwargs):
         if not is_logged_in():
-            flash('Please log in to access this page.', 'error')
+            # Send error notification
+            from notification_helpers import send_error_notification
+            send_error_notification("Please log in to access this page.", "Authentication Required")
             return redirect(url_for('login'))
         return f(*args, **kwargs)
     return decorated_function
@@ -109,7 +112,9 @@ def require_platform(f):
     @wraps(f)
     def decorated_function(*args, **kwargs):
         if not get_platform_context():
-            flash('Please select a platform first.', 'error')
+            # Send error notification
+            from notification_helpers import send_error_notification
+            send_error_notification("Please select a platform first.", "Platform Required")
             return redirect(url_for('platform_management'))
         return f(*args, **kwargs)
     return decorated_function
@@ -148,7 +153,9 @@ def login():
         password = request.form.get('password')
         
         if not username or not password:
-            flash('Username and password are required.', 'error')
+            # Send error notification
+            from notification_helpers import send_error_notification
+            send_error_notification("Username and password are required.", "Missing Credentials")
             return render_template('login_simple.html')
         
         # Authenticate user
@@ -178,10 +185,14 @@ def login():
                     default_platform = next((p for p in platforms if p.is_default), platforms[0])
                     set_platform_context(default_platform.id)
                 
-                flash(f'Welcome back, {user.username}!', 'success')
+                # Send success notification
+                from notification_helpers import send_success_notification
+                send_success_notification(f'Welcome back, {user.username}!', 'Login Successful')
                 return redirect(url_for('index'))
             else:
-                flash('Invalid username or password.', 'error')
+                # Send error notification
+                from notification_helpers import send_error_notification
+                send_error_notification("Invalid username or password.", "Login Failed")
                 
         finally:
             db_manager.close_session(session)
@@ -197,7 +208,9 @@ def logout():
     # Also logout with Flask-Login
     flask_logout_user()
     
-    flash('You have been logged out.', 'info')
+    # Send info notification
+    from notification_helpers import send_info_notification
+    send_info_notification("You have been logged out.", "Logged Out")
     return redirect(url_for('login'))
 
 @app.route('/platform_management')
@@ -238,9 +251,13 @@ def switch_platform(platform_id):
         
         if platform:
             set_platform_context(platform_id)
-            flash(f'Switched to platform: {platform.name}', 'success')
+            # Send success notification
+            from notification_helpers import send_success_notification
+            send_success_notification(f'Switched to platform: {platform.name}', 'Platform Switched')
         else:
-            flash('Platform not found or access denied.', 'error')
+            # Send error notification
+            from notification_helpers import send_error_notification
+            send_error_notification("Platform not found or access denied.", "Platform Switch Failed")
             
     finally:
         db_manager.close_session(session)

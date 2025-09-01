@@ -169,12 +169,12 @@ def setup_authenticated_handlers(socketio: SocketIO, auth_handler: WebSocketAuth
             return False
     
     @socketio.on('disconnect', namespace='/')
-    def handle_user_disconnect():
+    def handle_user_disconnect(sid=None):
         """Handle user disconnection"""
         logger.info("User disconnected from WebSocket")
     
     @socketio.on('disconnect', namespace='/admin')
-    def handle_admin_disconnect():
+    def handle_admin_disconnect(sid=None):
         """Handle admin disconnection"""
         logger.info("Admin disconnected from WebSocket")
     

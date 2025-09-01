@@ -1,0 +1,407 @@
+{
+  "summary": {
+    "start_time": 1756653580.379318,
+    "end_time": 1756653580.6527,
+    "duration": 0.27338194847106934,
+    "total_tests": 63,
+    "passed_tests": 16,
+    "failed_tests": 11,
+    "error_tests": 36,
+    "skipped_tests": 0,
+    "success_rate": 25.396825396825395
+  },
+  "security_coverage": {
+    "authentication": {
+      "passed": 0,
+      "total": 6,
+      "percentage": 0.0
+    },
+    "authorization": {
+      "passed": 0,
+      "total": 6,
+      "percentage": 0.0
+    },
+    "input_validation": {
+      "passed": 0,
+      "total": 5,
+      "percentage": 0.0
+    },
+    "xss_prevention": {
+      "passed": 0,
+      "total": 8,
+      "percentage": 0.0
+    },
+    "rate_limiting": {
+      "passed": 0,
+      "total": 6,
+      "percentage": 0.0
+    },
+    "abuse_detection": {
+      "passed": 0,
+      "total": 7,
+      "percentage": 0.0
+    }
+  },
+  "test_results": {
+    "TestNotificationAuthenticationAuthorization.test_admin_role_permissions": {
+      "status": "ERROR",
+      "duration": 0,
+      "error_message": "Traceback (most recent call last):\n  File \"/Volumes/Gold/DevContainerTesting/vedfolnir/tests/security/test_notification_authentication_authorization.py\", line 44, in setUp\n    self.mock_namespace_manager._user_connections = defaultdict(set)\n                                                    ^^^^^^^^^^^\nNameError: name 'defaultdict' is not defined\n",
+      "timestamp": "2025-08-31T15:19:40.415907+00:00"
+    },
+    "TestNotificationAuthenticationAuthorization.test_audit_logging_for_security_events": {
+      "status": "ERROR",
+      "duration": 0,
+      "error_message": "Traceback (most recent call last):\n  File \"/Volumes/Gold/DevContainerTesting/vedfolnir/tests/security/test_notification_authentication_authorization.py\", line 44, in setUp\n    self.mock_namespace_manager._user_connections = defaultdict(set)\n                                                    ^^^^^^^^^^^\nNameError: name 'defaultdict' is not defined\n",
+      "timestamp": "2025-08-31T15:19:40.415918+00:00"
+    },
+    "TestNotificationAuthenticationAuthorization.test_authentication_token_validation": {
+      "status": "ERROR",
+      "duration": 0,
+      "error_message": "Traceback (most recent call last):\n  File \"/Volumes/Gold/DevContainerTesting/vedfolnir/tests/security/test_notification_authentication_authorization.py\", line 44, in setUp\n    self.mock_namespace_manager._user_connections = defaultdict(set)\n                                                    ^^^^^^^^^^^\nNameError: name 'defaultdict' is not defined\n",
+      "timestamp": "2025-08-31T15:19:40.415920+00:00"
+    },
+    "TestNotificationAuthenticationAuthorization.test_cross_user_access_prevention": {
+      "status": "ERROR",
+      "duration": 0,
+      "error_message": "Traceback (most recent call last):\n  File \"/Volumes/Gold/DevContainerTesting/vedfolnir/tests/security/test_notification_authentication_authorization.py\", line 44, in setUp\n    self.mock_namespace_manager._user_connections = defaultdict(set)\n                                                    ^^^^^^^^^^^\nNameError: name 'defaultdict' is not defined\n",
+      "timestamp": "2025-08-31T15:19:40.415922+00:00"
+    },
+    "TestNotificationAuthenticationAuthorization.test_input_sanitization_for_notifications": {
+      "status": "ERROR",
+      "duration": 0,
+      "error_message": "Traceback (most recent call last):\n  File \"/Volumes/Gold/DevContainerTesting/vedfolnir/tests/security/test_notification_authentication_authorization.py\", line 44, in setUp\n    self.mock_namespace_manager._user_connections = defaultdict(set)\n                                                    ^^^^^^^^^^^\nNameError: name 'defaultdict' is not defined\n",
+      "timestamp": "2025-08-31T15:19:40.415923+00:00"
+    },
+    "TestNotificationAuthenticationAuthorization.test_invalid_user_permissions": {
+      "status": "ERROR",
+      "duration": 0,
+      "error_message": "Traceback (most recent call last):\n  File \"/Volumes/Gold/DevContainerTesting/vedfolnir/tests/security/test_notification_authentication_authorization.py\", line 44, in setUp\n    self.mock_namespace_manager._user_connections = defaultdict(set)\n                                                    ^^^^^^^^^^^\nNameError: name 'defaultdict' is not defined\n",
+      "timestamp": "2025-08-31T15:19:40.415924+00:00"
+    },
+    "TestNotificationAuthenticationAuthorization.test_message_routing_authorization": {
+      "status": "ERROR",
+      "duration": 0,
+      "error_message": "Traceback (most recent call last):\n  File \"/Volumes/Gold/DevContainerTesting/vedfolnir/tests/security/test_notification_authentication_authorization.py\", line 44, in setUp\n    self.mock_namespace_manager._user_connections = defaultdict(set)\n                                                    ^^^^^^^^^^^\nNameError: name 'defaultdict' is not defined\n",
+      "timestamp": "2025-08-31T15:19:40.415925+00:00"
+    },
+    "TestNotificationAuthenticationAuthorization.test_moderator_role_permissions": {
+      "status": "ERROR",
+      "duration": 0,
+      "error_message": "Traceback (most recent call last):\n  File \"/Volumes/Gold/DevContainerTesting/vedfolnir/tests/security/test_notification_authentication_authorization.py\", line 44, in setUp\n    self.mock_namespace_manager._user_connections = defaultdict(set)\n                                                    ^^^^^^^^^^^\nNameError: name 'defaultdict' is not defined\n",
+      "timestamp": "2025-08-31T15:19:40.415926+00:00"
+    },
+    "TestNotificationAuthenticationAuthorization.test_namespace_authorization_admin": {
+      "status": "ERROR",
+      "duration": 0,
+      "error_message": "Traceback (most recent call last):\n  File \"/Volumes/Gold/DevContainerTesting/vedfolnir/tests/security/test_notification_authentication_authorization.py\", line 44, in setUp\n    self.mock_namespace_manager._user_connections = defaultdict(set)\n                                                    ^^^^^^^^^^^\nNameError: name 'defaultdict' is not defined\n",
+      "timestamp": "2025-08-31T15:19:40.415927+00:00"
+    },
+    "TestNotificationAuthenticationAuthorization.test_namespace_authorization_non_admin": {
+      "status": "ERROR",
+      "duration": 0,
+      "error_message": "Traceback (most recent call last):\n  File \"/Volumes/Gold/DevContainerTesting/vedfolnir/tests/security/test_notification_authentication_authorization.py\", line 44, in setUp\n    self.mock_namespace_manager._user_connections = defaultdict(set)\n                                                    ^^^^^^^^^^^\nNameError: name 'defaultdict' is not defined\n",
+      "timestamp": "2025-08-31T15:19:40.415928+00:00"
+    },
+    "TestNotificationAuthenticationAuthorization.test_privilege_escalation_prevention": {
+      "status": "ERROR",
+      "duration": 0,
+      "error_message": "Traceback (most recent call last):\n  File \"/Volumes/Gold/DevContainerTesting/vedfolnir/tests/security/test_notification_authentication_authorization.py\", line 44, in setUp\n    self.mock_namespace_manager._user_connections = defaultdict(set)\n                                                    ^^^^^^^^^^^\nNameError: name 'defaultdict' is not defined\n",
+      "timestamp": "2025-08-31T15:19:40.415929+00:00"
+    },
+    "TestNotificationAuthenticationAuthorization.test_rate_limiting_by_user_role": {
+      "status": "ERROR",
+      "duration": 0,
+      "error_message": "Traceback (most recent call last):\n  File \"/Volumes/Gold/DevContainerTesting/vedfolnir/tests/security/test_notification_authentication_authorization.py\", line 44, in setUp\n    self.mock_namespace_manager._user_connections = defaultdict(set)\n                                                    ^^^^^^^^^^^\nNameError: name 'defaultdict' is not defined\n",
+      "timestamp": "2025-08-31T15:19:40.415930+00:00"
+    },
+    "TestNotificationAuthenticationAuthorization.test_reviewer_role_permissions": {
+      "status": "ERROR",
+      "duration": 0,
+      "error_message": "Traceback (most recent call last):\n  File \"/Volumes/Gold/DevContainerTesting/vedfolnir/tests/security/test_notification_authentication_authorization.py\", line 44, in setUp\n    self.mock_namespace_manager._user_connections = defaultdict(set)\n                                                    ^^^^^^^^^^^\nNameError: name 'defaultdict' is not defined\n",
+      "timestamp": "2025-08-31T15:19:40.415931+00:00"
+    },
+    "TestNotificationAuthenticationAuthorization.test_secure_message_transmission": {
+      "status": "ERROR",
+      "duration": 0,
+      "error_message": "Traceback (most recent call last):\n  File \"/Volumes/Gold/DevContainerTesting/vedfolnir/tests/security/test_notification_authentication_authorization.py\", line 44, in setUp\n    self.mock_namespace_manager._user_connections = defaultdict(set)\n                                                    ^^^^^^^^^^^\nNameError: name 'defaultdict' is not defined\n",
+      "timestamp": "2025-08-31T15:19:40.415932+00:00"
+    },
+    "TestNotificationAuthenticationAuthorization.test_sensitive_data_protection": {
+      "status": "ERROR",
+      "duration": 0,
+      "error_message": "Traceback (most recent call last):\n  File \"/Volumes/Gold/DevContainerTesting/vedfolnir/tests/security/test_notification_authentication_authorization.py\", line 44, in setUp\n    self.mock_namespace_manager._user_connections = defaultdict(set)\n                                                    ^^^^^^^^^^^\nNameError: name 'defaultdict' is not defined\n",
+      "timestamp": "2025-08-31T15:19:40.415933+00:00"
+    },
+    "TestNotificationAuthenticationAuthorization.test_session_based_authorization": {
+      "status": "ERROR",
+      "duration": 0,
+      "error_message": "Traceback (most recent call last):\n  File \"/Volumes/Gold/DevContainerTesting/vedfolnir/tests/security/test_notification_authentication_authorization.py\", line 44, in setUp\n    self.mock_namespace_manager._user_connections = defaultdict(set)\n                                                    ^^^^^^^^^^^\nNameError: name 'defaultdict' is not defined\n",
+      "timestamp": "2025-08-31T15:19:40.415934+00:00"
+    },
+    "TestNotificationAuthenticationAuthorization.test_unauthorized_access_prevention": {
+      "status": "ERROR",
+      "duration": 0,
+      "error_message": "Traceback (most recent call last):\n  File \"/Volumes/Gold/DevContainerTesting/vedfolnir/tests/security/test_notification_authentication_authorization.py\", line 44, in setUp\n    self.mock_namespace_manager._user_connections = defaultdict(set)\n                                                    ^^^^^^^^^^^\nNameError: name 'defaultdict' is not defined\n",
+      "timestamp": "2025-08-31T15:19:40.415935+00:00"
+    },
+    "TestNotificationAuthenticationAuthorization.test_viewer_role_permissions": {
+      "status": "ERROR",
+      "duration": 0,
+      "error_message": "Traceback (most recent call last):\n  File \"/Volumes/Gold/DevContainerTesting/vedfolnir/tests/security/test_notification_authentication_authorization.py\", line 44, in setUp\n    self.mock_namespace_manager._user_connections = defaultdict(set)\n                                                    ^^^^^^^^^^^\nNameError: name 'defaultdict' is not defined\n",
+      "timestamp": "2025-08-31T15:19:40.415935+00:00"
+    },
+    "TestNotificationAuthenticationAuthorization.test_websocket_authentication_failure": {
+      "status": "ERROR",
+      "duration": 0,
+      "error_message": "Traceback (most recent call last):\n  File \"/Volumes/Gold/DevContainerTesting/vedfolnir/tests/security/test_notification_authentication_authorization.py\", line 44, in setUp\n    self.mock_namespace_manager._user_connections = defaultdict(set)\n                                                    ^^^^^^^^^^^\nNameError: name 'defaultdict' is not defined\n",
+      "timestamp": "2025-08-31T15:19:40.415936+00:00"
+    },
+    "TestNotificationAuthenticationAuthorization.test_websocket_authentication_integration": {
+      "status": "ERROR",
+      "duration": 0,
+      "error_message": "Traceback (most recent call last):\n  File \"/Volumes/Gold/DevContainerTesting/vedfolnir/tests/security/test_notification_authentication_authorization.py\", line 44, in setUp\n    self.mock_namespace_manager._user_connections = defaultdict(set)\n                                                    ^^^^^^^^^^^\nNameError: name 'defaultdict' is not defined\n",
+      "timestamp": "2025-08-31T15:19:40.415937+00:00"
+    },
+    "TestNotificationInputValidation.test_passed_0": {
+      "status": "PASS",
+      "duration": 0.0031711161136627197,
+      "error_message": null,
+      "timestamp": "2025-08-31T15:19:40.441404+00:00"
+    },
+    "TestNotificationInputValidation.test_passed_1": {
+      "status": "PASS",
+      "duration": 0.0031711161136627197,
+      "error_message": null,
+      "timestamp": "2025-08-31T15:19:40.441414+00:00"
+    },
+    "TestNotificationInputValidation.test_passed_2": {
+      "status": "PASS",
+      "duration": 0.0031711161136627197,
+      "error_message": null,
+      "timestamp": "2025-08-31T15:19:40.441420+00:00"
+    },
+    "TestNotificationInputValidation.test_passed_3": {
+      "status": "PASS",
+      "duration": 0.0031711161136627197,
+      "error_message": null,
+      "timestamp": "2025-08-31T15:19:40.441439+00:00"
+    },
+    "TestNotificationInputValidation.test_passed_4": {
+      "status": "PASS",
+      "duration": 0.0031711161136627197,
+      "error_message": null,
+      "timestamp": "2025-08-31T15:19:40.441442+00:00"
+    },
+    "TestNotificationInputValidation.test_passed_5": {
+      "status": "PASS",
+      "duration": 0.0031711161136627197,
+      "error_message": null,
+      "timestamp": "2025-08-31T15:19:40.441444+00:00"
+    },
+    "TestNotificationInputValidation.test_passed_6": {
+      "status": "PASS",
+      "duration": 0.0031711161136627197,
+      "error_message": null,
+      "timestamp": "2025-08-31T15:19:40.441447+00:00"
+    },
+    "TestNotificationInputValidation.test_passed_7": {
+      "status": "PASS",
+      "duration": 0.0031711161136627197,
+      "error_message": null,
+      "timestamp": "2025-08-31T15:19:40.441450+00:00"
+    },
+    "TestNotificationXSSPrevention.test_javascript_context_encoding": {
+      "status": "FAIL",
+      "duration": 0,
+      "error_message": "Traceback (most recent call last):\n  File \"/Volumes/Gold/DevContainerTesting/vedfolnir/tests/security/test_notification_security_validation.py\", line 457, in test_javascript_context_encoding\n    self.assertNotIn(\"'; alert(\", str(encoded_message.data['callback']))\nAssertionError: \"'; alert(\" unexpectedly found in \"'; alert('xss'); var x='\"\n",
+      "timestamp": "2025-08-31T15:19:40.457571+00:00"
+    },
+    "TestNotificationXSSPrevention.test_passed_0": {
+      "status": "PASS",
+      "duration": 0.0026313463846842446,
+      "error_message": null,
+      "timestamp": "2025-08-31T15:19:40.457633+00:00"
+    },
+    "TestNotificationXSSPrevention.test_passed_1": {
+      "status": "PASS",
+      "duration": 0.0026313463846842446,
+      "error_message": null,
+      "timestamp": "2025-08-31T15:19:40.457637+00:00"
+    },
+    "TestNotificationXSSPrevention.test_passed_2": {
+      "status": "PASS",
+      "duration": 0.0026313463846842446,
+      "error_message": null,
+      "timestamp": "2025-08-31T15:19:40.457640+00:00"
+    },
+    "TestNotificationXSSPrevention.test_passed_3": {
+      "status": "PASS",
+      "duration": 0.0026313463846842446,
+      "error_message": null,
+      "timestamp": "2025-08-31T15:19:40.457642+00:00"
+    },
+    "TestNotificationXSSPrevention.test_passed_4": {
+      "status": "PASS",
+      "duration": 0.0026313463846842446,
+      "error_message": null,
+      "timestamp": "2025-08-31T15:19:40.457645+00:00"
+    },
+    "TestNotificationRateLimiting.test_burst_detection": {
+      "status": "FAIL",
+      "duration": 0,
+      "error_message": "Traceback (most recent call last):\n  File \"/Volumes/Gold/DevContainerTesting/vedfolnir/tests/security/test_notification_security_validation.py\", line 655, in test_burst_detection\n    self.assertTrue(is_burst, f\"Message {i} should be detected as burst\")\nAssertionError: False is not true : Message 5 should be detected as burst\n",
+      "timestamp": "2025-08-31T15:19:40.548966+00:00"
+    },
+    "TestNotificationRateLimiting.test_priority_based_rate_limiting": {
+      "status": "FAIL",
+      "duration": 0,
+      "error_message": "Traceback (most recent call last):\n  File \"/Volumes/Gold/DevContainerTesting/vedfolnir/tests/security/test_notification_security_validation.py\", line 621, in test_priority_based_rate_limiting\n    self.assertFalse(normal_result)\nAssertionError: True is not false\n",
+      "timestamp": "2025-08-31T15:19:40.548981+00:00"
+    },
+    "TestNotificationRateLimiting.test_rate_limit_logging_and_monitoring": {
+      "status": "FAIL",
+      "duration": 0,
+      "error_message": "Traceback (most recent call last):\n  File \"/Volumes/Gold/DevContainerTesting/vedfolnir/tests/security/test_notification_security_validation.py\", line 777, in test_rate_limit_logging_and_monitoring\n    mock_logger.warning.assert_called()\n  File \"/Users/iolaire/.pyenv/versions/3.12.5/lib/python3.12/unittest/mock.py\", line 916, in assert_called\n    raise AssertionError(msg)\nAssertionError: Expected 'warning' to have been called.\n",
+      "timestamp": "2025-08-31T15:19:40.548989+00:00"
+    },
+    "TestNotificationRateLimiting.test_rate_limit_recovery": {
+      "status": "FAIL",
+      "duration": 0,
+      "error_message": "Traceback (most recent call last):\n  File \"/Volumes/Gold/DevContainerTesting/vedfolnir/tests/security/test_notification_security_validation.py\", line 749, in test_rate_limit_recovery\n    self.assertTrue(self.notification_manager._is_rate_limited(user_id))\nAssertionError: False is not true\n",
+      "timestamp": "2025-08-31T15:19:40.548991+00:00"
+    },
+    "TestNotificationRateLimiting.test_abuse_pattern_detection": {
+      "status": "ERROR",
+      "duration": 0,
+      "error_message": "Traceback (most recent call last):\n  File \"/Volumes/Gold/DevContainerTesting/vedfolnir/tests/security/test_notification_security_validation.py\", line 673, in test_abuse_pattern_detection\n    is_spam = self.notification_manager._detect_spam_pattern(user_id, spam_message)\n              ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^\nAttributeError: 'UnifiedNotificationManager' object has no attribute '_detect_spam_pattern'. Did you mean: '_detect_burst_pattern'?\n",
+      "timestamp": "2025-08-31T15:19:40.548992+00:00"
+    },
+    "TestNotificationRateLimiting.runTest": {
+      "status": "ERROR",
+      "duration": 0,
+      "error_message": "Traceback (most recent call last):\n  File \"/Volumes/Gold/DevContainerTesting/vedfolnir/tests/security/test_notification_security_validation.py\", line 793, in test_adaptive_rate_limiting\n    with patch.object(self.notification_manager, '_get_system_load', return_value=load_info):\n  File \"/Users/iolaire/.pyenv/versions/3.12.5/lib/python3.12/unittest/mock.py\", line 1461, in __enter__\n    original, local = self.get_original()\n                      ^^^^^^^^^^^^^^^^^^^\n  File \"/Users/iolaire/.pyenv/versions/3.12.5/lib/python3.12/unittest/mock.py\", line 1434, in get_original\n    raise AttributeError(\nAttributeError: <unified_notification_manager.UnifiedNotificationManager object at 0x106b8a7b0> does not have the attribute '_get_system_load'\n",
+      "timestamp": "2025-08-31T15:19:40.549016+00:00"
+    },
+    "TestNotificationRateLimiting.test_ip_based_rate_limiting": {
+      "status": "ERROR",
+      "duration": 0,
+      "error_message": "Traceback (most recent call last):\n  File \"/Volumes/Gold/DevContainerTesting/vedfolnir/tests/security/test_notification_security_validation.py\", line 699, in test_ip_based_rate_limiting\n    with patch('flask.request') as mock_request:\n  File \"/Users/iolaire/.pyenv/versions/3.12.5/lib/python3.12/unittest/mock.py\", line 1488, in __enter__\n    elif spec is None and _is_async_obj(original):\n                          ^^^^^^^^^^^^^^^^^^^^^^^\n  File \"/Users/iolaire/.pyenv/versions/3.12.5/lib/python3.12/unittest/mock.py\", line 56, in _is_async_obj\n    if hasattr(obj, '__func__'):\n       ^^^^^^^^^^^^^^^^^^^^^^^^\n  File \"/Users/iolaire/.pyenv/versions/3.12.5/lib/python3.12/site-packages/werkzeug/local.py\", line 311, in __get__\n    obj = instance._get_current_object()\n          ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^\n  File \"/Users/iolaire/.pyenv/versions/3.12.5/lib/python3.12/site-packages/werkzeug/local.py\", line 508, in _get_current_object\n    raise RuntimeError(unbound_message) from None\nRuntimeError: Working outside of request context.\n\nThis typically means that you attempted to use functionality that needed\nan active HTTP request. Consult the documentation on testing for\ninformation about how to avoid this problem.\n",
+      "timestamp": "2025-08-31T15:19:40.549035+00:00"
+    },
+    "TestNotificationRateLimiting.test_rate_limit_bypass_for_system_messages": {
+      "status": "ERROR",
+      "duration": 0,
+      "error_message": "Traceback (most recent call last):\n  File \"/Volumes/Gold/DevContainerTesting/vedfolnir/tests/security/test_notification_security_validation.py\", line 727, in test_rate_limit_bypass_for_system_messages\n    result = self.notification_manager._check_system_message_bypass(user_id, system_message)\n             ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^\nAttributeError: 'UnifiedNotificationManager' object has no attribute '_check_system_message_bypass'\n",
+      "timestamp": "2025-08-31T15:19:40.549037+00:00"
+    },
+    "TestNotificationSecurityIntegration.test_security_event_logging": {
+      "status": "FAIL",
+      "duration": 0,
+      "error_message": "Traceback (most recent call last):\n  File \"/Volumes/Gold/DevContainerTesting/vedfolnir/tests/security/test_notification_security_validation.py\", line 912, in test_security_event_logging\n    self.assertGreater(len(security_events), 0, \"Security events should be logged\")\nAssertionError: 0 not greater than 0 : Security events should be logged\n",
+      "timestamp": "2025-08-31T15:19:40.553469+00:00"
+    },
+    "TestNotificationSecurityIntegration.test_passed_0": {
+      "status": "PASS",
+      "duration": 0.0010477900505065918,
+      "error_message": null,
+      "timestamp": "2025-08-31T15:19:40.553473+00:00"
+    },
+    "TestNotificationSecurityIntegration.test_passed_1": {
+      "status": "PASS",
+      "duration": 0.0010477900505065918,
+      "error_message": null,
+      "timestamp": "2025-08-31T15:19:40.553475+00:00"
+    },
+    "TestNotificationSecurityIntegration.test_passed_2": {
+      "status": "PASS",
+      "duration": 0.0010477900505065918,
+      "error_message": null,
+      "timestamp": "2025-08-31T15:19:40.553476+00:00"
+    },
+    "TestNotificationAbuseDetection.test_content_entropy_analysis": {
+      "status": "FAIL",
+      "duration": 0,
+      "error_message": "Traceback (most recent call last):\n  File \"/Volumes/Gold/DevContainerTesting/vedfolnir/tests/security/test_notification_abuse_detection.py\", line 328, in test_content_entropy_analysis\n    self.assertGreater(avg_high_entropy, avg_low_entropy,\nAssertionError: 1.0 not greater than 1.0 : Human-like content should have higher entropy than bot-like content\n",
+      "timestamp": "2025-08-31T15:19:40.652665+00:00"
+    },
+    "TestNotificationAbuseDetection.test_content_similarity_detection": {
+      "status": "FAIL",
+      "duration": 0,
+      "error_message": "Traceback (most recent call last):\n  File \"/Volumes/Gold/DevContainerTesting/vedfolnir/tests/security/test_notification_abuse_detection.py\", line 126, in test_content_similarity_detection\n    self.assertGreater(similarity_scores[i], 0.7,\nAssertionError: 0.0 not greater than 0.7 : Message 1 should have high similarity to previous messages\n",
+      "timestamp": "2025-08-31T15:19:40.652670+00:00"
+    },
+    "TestNotificationAbuseDetection.test_frequency_analysis_detection": {
+      "status": "FAIL",
+      "duration": 0,
+      "error_message": "Traceback (most recent call last):\n  File \"/Volumes/Gold/DevContainerTesting/vedfolnir/tests/security/test_notification_abuse_detection.py\", line 175, in test_frequency_analysis_detection\n    self.assertTrue(is_abnormal, f\"Rapid message {i} should be flagged as abnormal\")\nAssertionError: False is not true : Rapid message 2 should be flagged as abnormal\n",
+      "timestamp": "2025-08-31T15:19:40.652672+00:00"
+    },
+    "TestNotificationAbuseDetection.test_machine_learning_anomaly_detection": {
+      "status": "FAIL",
+      "duration": 0,
+      "error_message": "Traceback (most recent call last):\n  File \"/Volumes/Gold/DevContainerTesting/vedfolnir/tests/security/test_notification_abuse_detection.py\", line 564, in test_machine_learning_anomaly_detection\n    self.assertTrue(is_anomalous, \"Anomalous message should be detected\")\nAssertionError: False is not true : Anomalous message should be detected\n",
+      "timestamp": "2025-08-31T15:19:40.652673+00:00"
+    },
+    "TestNotificationAbuseDetection.test_security_performance_impact": {
+      "status": "FAIL",
+      "duration": 0,
+      "error_message": "Traceback (most recent call last):\n  File \"/Volumes/Gold/DevContainerTesting/vedfolnir/tests/security/test_notification_abuse_detection.py\", line 663, in test_security_performance_impact\n    self.assertLess(performance_ratio, 10.0,\nAssertionError: 84.04183387756348 not less than 10.0 : Security measures should not cause excessive performance degradation\n",
+      "timestamp": "2025-08-31T15:19:40.652675+00:00"
+    },
+    "TestNotificationAbuseDetection.test_behavioral_pattern_analysis": {
+      "status": "ERROR",
+      "duration": 0,
+      "error_message": "Traceback (most recent call last):\n  File \"/Users/iolaire/.pyenv/versions/3.12.5/lib/python3.12/unittest/mock.py\", line 1574, in __enter__\n    setattr(self.target, self.attribute, new_attr)\nTypeError: cannot set 'now' attribute of immutable type 'datetime.datetime'\n\nDuring handling of the above exception, another exception occurred:\n\nTraceback (most recent call last):\n  File \"/Volumes/Gold/DevContainerTesting/vedfolnir/tests/security/test_notification_abuse_detection.py\", line 200, in test_behavioral_pattern_analysis\n    with patch('datetime.datetime.now', return_value=mock_datetime):\n  File \"/Users/iolaire/.pyenv/versions/3.12.5/lib/python3.12/unittest/mock.py\", line 1587, in __enter__\n    if not self.__exit__(*sys.exc_info()):\n           ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^\n  File \"/Users/iolaire/.pyenv/versions/3.12.5/lib/python3.12/unittest/mock.py\", line 1593, in __exit__\n    setattr(self.target, self.attribute, self.temp_original)\nTypeError: cannot set 'now' attribute of immutable type 'datetime.datetime'\n",
+      "timestamp": "2025-08-31T15:19:40.652676+00:00"
+    },
+    "TestNotificationAbuseDetection.test_coordinated_attack_detection": {
+      "status": "ERROR",
+      "duration": 0,
+      "error_message": "Traceback (most recent call last):\n  File \"/Volumes/Gold/DevContainerTesting/vedfolnir/tests/security/test_notification_abuse_detection.py\", line 259, in test_coordinated_attack_detection\n    with patch('flask.request') as mock_request:\n  File \"/Users/iolaire/.pyenv/versions/3.12.5/lib/python3.12/unittest/mock.py\", line 1488, in __enter__\n    elif spec is None and _is_async_obj(original):\n                          ^^^^^^^^^^^^^^^^^^^^^^^\n  File \"/Users/iolaire/.pyenv/versions/3.12.5/lib/python3.12/unittest/mock.py\", line 56, in _is_async_obj\n    if hasattr(obj, '__func__'):\n       ^^^^^^^^^^^^^^^^^^^^^^^^\n  File \"/Users/iolaire/.pyenv/versions/3.12.5/lib/python3.12/site-packages/werkzeug/local.py\", line 311, in __get__\n    obj = instance._get_current_object()\n          ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^\n  File \"/Users/iolaire/.pyenv/versions/3.12.5/lib/python3.12/site-packages/werkzeug/local.py\", line 508, in _get_current_object\n    raise RuntimeError(unbound_message) from None\nRuntimeError: Working outside of request context.\n\nThis typically means that you attempted to use functionality that needed\nan active HTTP request. Consult the documentation on testing for\ninformation about how to avoid this problem.\n",
+      "timestamp": "2025-08-31T15:19:40.652678+00:00"
+    },
+    "TestNotificationAbuseDetection.runTest": {
+      "status": "ERROR",
+      "duration": 0,
+      "error_message": "Traceback (most recent call last):\n  File \"/Volumes/Gold/DevContainerTesting/vedfolnir/tests/security/test_notification_abuse_detection.py\", line 378, in test_ip_reputation_checking\n    with patch('flask.request') as mock_request:\n  File \"/Users/iolaire/.pyenv/versions/3.12.5/lib/python3.12/unittest/mock.py\", line 1488, in __enter__\n    elif spec is None and _is_async_obj(original):\n                          ^^^^^^^^^^^^^^^^^^^^^^^\n  File \"/Users/iolaire/.pyenv/versions/3.12.5/lib/python3.12/unittest/mock.py\", line 56, in _is_async_obj\n    if hasattr(obj, '__func__'):\n       ^^^^^^^^^^^^^^^^^^^^^^^^\n  File \"/Users/iolaire/.pyenv/versions/3.12.5/lib/python3.12/site-packages/werkzeug/local.py\", line 311, in __get__\n    obj = instance._get_current_object()\n          ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^\n  File \"/Users/iolaire/.pyenv/versions/3.12.5/lib/python3.12/site-packages/werkzeug/local.py\", line 508, in _get_current_object\n    raise RuntimeError(unbound_message) from None\nRuntimeError: Working outside of request context.\n\nThis typically means that you attempted to use functionality that needed\nan active HTTP request. Consult the documentation on testing for\ninformation about how to avoid this problem.\n",
+      "timestamp": "2025-08-31T15:19:40.652688+00:00"
+    },
+    "TestNotificationAbuseDetection.test_session_hijacking_detection": {
+      "status": "ERROR",
+      "duration": 0,
+      "error_message": "Traceback (most recent call last):\n  File \"/Volumes/Gold/DevContainerTesting/vedfolnir/tests/security/test_notification_abuse_detection.py\", line 407, in test_session_hijacking_detection\n    with patch('flask.request') as mock_request:\n  File \"/Users/iolaire/.pyenv/versions/3.12.5/lib/python3.12/unittest/mock.py\", line 1488, in __enter__\n    elif spec is None and _is_async_obj(original):\n                          ^^^^^^^^^^^^^^^^^^^^^^^\n  File \"/Users/iolaire/.pyenv/versions/3.12.5/lib/python3.12/unittest/mock.py\", line 56, in _is_async_obj\n    if hasattr(obj, '__func__'):\n       ^^^^^^^^^^^^^^^^^^^^^^^^\n  File \"/Users/iolaire/.pyenv/versions/3.12.5/lib/python3.12/site-packages/werkzeug/local.py\", line 311, in __get__\n    obj = instance._get_current_object()\n          ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^\n  File \"/Users/iolaire/.pyenv/versions/3.12.5/lib/python3.12/site-packages/werkzeug/local.py\", line 508, in _get_current_object\n    raise RuntimeError(unbound_message) from None\nRuntimeError: Working outside of request context.\n\nThis typically means that you attempted to use functionality that needed\nan active HTTP request. Consult the documentation on testing for\ninformation about how to avoid this problem.\n",
+      "timestamp": "2025-08-31T15:19:40.652690+00:00"
+    }
+  },
+  "performance_metrics": {},
+  "compliance_status": {
+    "overall_status": "FAIL",
+    "critical_failures": [
+      {
+        "test": "TestNotificationAuthenticationAuthorization.test_admin_role_permissions",
+        "status": "ERROR",
+        "error": "Traceback (most recent call last):\n  File \"/Volumes/Gold/DevContainerTesting/vedfolnir/tests/security/test_notification_authentication_authorization.py\", line 44, in setUp\n    self.mock_namespace_manager._user_connections = defaultdict(set)\n                                                    ^^^^^^^^^^^\nNameError: name 'defaultdict' is not defined\n"
+      },
+      {
+        "test": "TestNotificationAuthenticationAuthorization.test_unauthorized_access_prevention",
+        "status": "ERROR",
+        "error": "Traceback (most recent call last):\n  File \"/Volumes/Gold/DevContainerTesting/vedfolnir/tests/security/test_notification_authentication_authorization.py\", line 44, in setUp\n    self.mock_namespace_manager._user_connections = defaultdict(set)\n                                                    ^^^^^^^^^^^\nNameError: name 'defaultdict' is not defined\n"
+      },
+      {
+        "test": "TestNotificationAuthenticationAuthorization.test_privilege_escalation_prevention",
+        "status": "ERROR",
+        "error": "Traceback (most recent call last):\n  File \"/Volumes/Gold/DevContainerTesting/vedfolnir/tests/security/test_notification_authentication_authorization.py\", line 44, in setUp\n    self.mock_namespace_manager._user_connections = defaultdict(set)\n                                                    ^^^^^^^^^^^\nNameError: name 'defaultdict' is not defined\n"
+      }
+    ],
+    "warnings": [
+      "Low coverage in authentication: 0.0% (0/6 tests passed)",
+      "Low coverage in authorization: 0.0% (0/6 tests passed)",
+      "Low coverage in input_validation: 0.0% (0/5 tests passed)",
+      "Low coverage in xss_prevention: 0.0% (0/8 tests passed)",
+      "Low coverage in rate_limiting: 0.0% (0/6 tests passed)",
+      "Low coverage in abuse_detection: 0.0% (0/7 tests passed)"
+    ],
+    "recommendations": []
+  }
+}

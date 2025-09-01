@@ -1,0 +1,45 @@
+{
+  "summary": {
+    "start_time": 1756655009.9827032,
+    "end_time": 1756655010.127689,
+    "duration": 0.14498567581176758,
+    "total_tests": 61,
+    "passed_tests": 58,
+    "failed_tests": 3,
+    "error_tests": 0,
+    "skipped_tests": 0,
+    "success_rate": 95.08196721311475
+  },
+  "test_results": {
+    "TestNotificationRateLimiting.test_ip_based_rate_limiting": {
+      "status": "FAIL",
+      "error_message": "Traceback (most recent call last):\n  File \"/Volumes/Gold/DevContainerTesting/vedfolnir/tests/security/test_notification_security_validation.py\", line 726, in test_ip_based_rate_limiting\n    self.assertFalse(is_allowed, f\"IP message {i} should be rate limited\")\nAssertionError: True is not false : IP message 10 should be rate limited\n",
+      "timestamp": "2025-08-31T15:43:30.127695+00:00"
+    },
+    "TestNotificationRateLimiting.test_rate_limit_logging_and_monitoring": {
+      "status": "FAIL",
+      "error_message": "Traceback (most recent call last):\n  File \"/Volumes/Gold/DevContainerTesting/vedfolnir/tests/security/test_notification_security_validation.py\", line 798, in test_rate_limit_logging_and_monitoring\n    self.assertFalse(result, \"Rate limited message should be rejected\")\nAssertionError: True is not false : Rate limited message should be rejected\n",
+      "timestamp": "2025-08-31T15:43:30.127704+00:00"
+    },
+    "TestNotificationSecurityIntegration.test_security_event_logging": {
+      "status": "FAIL",
+      "error_message": "Traceback (most recent call last):\n  File \"/Volumes/Gold/DevContainerTesting/vedfolnir/tests/security/test_notification_security_validation.py\", line 907, in test_security_event_logging\n    self.assertGreaterEqual(len(security_events), 3, \"At least 3 security events should be logged\")\nAssertionError: 0 not greater than or equal to 3 : At least 3 security events should be logged\n",
+      "timestamp": "2025-08-31T15:43:30.127707+00:00"
+    }
+  },
+  "failures": [
+    {
+      "test": "TestNotificationRateLimiting.test_ip_based_rate_limiting",
+      "traceback": "Traceback (most recent call last):\n  File \"/Volumes/Gold/DevContainerTesting/vedfolnir/tests/security/test_notification_security_validation.py\", line 726, in test_ip_based_rate_limiting\n    self.assertFalse(is_allowed, f\"IP message {i} should be rate limited\")\nAssertionError: True is not false : IP message 10 should be rate limited\n"
+    },
+    {
+      "test": "TestNotificationRateLimiting.test_rate_limit_logging_and_monitoring",
+      "traceback": "Traceback (most recent call last):\n  File \"/Volumes/Gold/DevContainerTesting/vedfolnir/tests/security/test_notification_security_validation.py\", line 798, in test_rate_limit_logging_and_monitoring\n    self.assertFalse(result, \"Rate limited message should be rejected\")\nAssertionError: True is not false : Rate limited message should be rejected\n"
+    },
+    {
+      "test": "TestNotificationSecurityIntegration.test_security_event_logging",
+      "traceback": "Traceback (most recent call last):\n  File \"/Volumes/Gold/DevContainerTesting/vedfolnir/tests/security/test_notification_security_validation.py\", line 907, in test_security_event_logging\n    self.assertGreaterEqual(len(security_events), 3, \"At least 3 security events should be logged\")\nAssertionError: 0 not greater than or equal to 3 : At least 3 security events should be logged\n"
+    }
+  ],
+  "errors": []
+}

@@ -5,7 +5,22 @@
 
 {% block title %}Dashboard - Vedfolnir{% endblock %}
 
+{% block head %}
+<!-- Page-Specific Notification Integration -->
+{% set page_id = 'user-dashboard' %}
+{% set page_type = 'user_dashboard' %}
+{% set notification_config = {
+    'enabled_types': ['system', 'caption', 'platform', 'maintenance', 'user'],
+    'auto_hide': true,
+    'max_notifications': 5,
+    'position': 'top-right'
+} %}
+{% set websocket_events = ['dashboard_update', 'system_notification', 'maintenance_notification', 'notification'] %}
+{% include 'components/page_notification_integration.html' %}
+{% endblock %}
+
 {% block content %}
+
 <!-- Role-based Dashboard Display -->
 {% if is_viewer %}
     <!-- Viewer Dashboard -->
@@ -290,8 +305,179 @@
 </div>
 {% endif %}
 
+<!-- Unified Notification System Integration -->
 <script>
-// Auto-refresh stats every 30 seconds
+// Initialize unified notification system for user dashboard
+document.addEventListener('DOMContentLoaded', function() {
+    // Initialize page notification integrator
+    if (typeof PageNotificationIntegrator !== 'undefined') {
+        window.dashboardNotifications = new PageNotificationIntegrator(
+            'user-dashboard',
+            'user_dashboard',
+            {
+                notification_config: {
+                    enabled_types: ['system', 'caption', 'platform', 'maintenance'],
+                    auto_hide: true,
+                    max_notifications: 5,
+                    position: 'top-right',
+                    show_progress: false
+                },
+                websocket_config: {
+                    namespace: '/',
+                    events: [
+                        'caption_progress', 'caption_status', 'platform_status',
+                        'notification', 'user_activity', 'system_notification'
+                    ],
+                    auto_connect: true,
+                    reconnect_on_error: true
+                },
+                ui_config: {
+                    container_id: 'user-dashboard-notifications',
+                    theme: 'default',
+                    animations: true,
+                    sound_enabled: false
+                }
+            }
+        );
+        
+        // Initialize the notification system
+        window.dashboardNotifications.initialize().then(() => {
+            console.log('Dashboard notifications initialized successfully');
+            
+            // Show welcome notification for new sessions
+            if (sessionStorage.getItem('dashboard_welcome_shown') !== 'true') {
+                window.dashboardNotifications.showNotification({
+                    type: 'info',
+                    title: 'Welcome to Vedfolnir',
+                    message: 'Real-time notifications are now active',
+                    auto_hide: true,
+                    duration: 4000
+                });
+                sessionStorage.setItem('dashboard_welcome_shown', 'true');
+            }
+            
+        }).catch(error => {
+            console.error('Failed to initialize dashboard notifications:', error);
+            // Fallback to basic notifications
+            initializeFallbackNotifications();
+        });
+        
+        // Register dashboard-specific event handlers
+        window.handleCaptionProgress = function(data) {
+            if (data.progress !== undefined) {
+                window.dashboardNotifications.showNotification({
+                    type: 'progress',
+                    title: 'Caption Generation',
+                    message: data.message || 'Processing images...',
+                    progress: data.progress,
+                    auto_hide: false,
+                    id: 'caption-progress'
+                });
+            }
+        };
+        
+        window.handlePlatformStatus = function(data) {
+            const type = data.status === 'connected' ? 'success' : 
+                        data.status === 'error' ? 'error' : 'warning';
+            
+            window.dashboardNotifications.showNotification({
+                type: type,
+                title: 'Platform Status',
+                message: data.message || `Platform ${data.status}`,
+                auto_hide: true,
+                duration: 5000
+            });
+        };
+        
+        window.handleUserActivity = function(data) {
+            // Update dashboard stats in real-time
+            if (data.stats) {
+                updateDashboardStats(data.stats);
+            }
+            
+            // Show activity notifications if significant
+            if (data.notification) {
+                window.dashboardNotifications.showNotification({
+                    type: data.notification.type || 'info',
+                    title: data.notification.title || 'Activity Update',
+                    message: data.notification.message,
+                    auto_hide: true,
+                    duration: 3000
+                });
+            }
+        };
+        
+    } else {
+        console.warn('PageNotificationIntegrator not available, using fallback');
+        initializeFallbackNotifications();
+    }
+});
+
+// Fallback notification system for compatibility
+function initializeFallbackNotifications() {
+    console.log('Initializing fallback notification system');
+    
+    // Create simple notification container if not exists
+    let container = document.getElementById('user-dashboard-notifications');
+    if (!container) {
+        container = document.createElement('div');
+        container.id = 'user-dashboard-notifications';
+        container.className = 'notification-container fallback';
+        container.style.cssText = `
+            position: fixed;
+            top: 20px;
+            right: 20px;
+            z-index: 9999;
+            max-width: 400px;
+        `;
+        document.body.appendChild(container);
+    }
+    
+    // Simple notification function
+    window.showFallbackNotification = function(message, type = 'info', duration = 5000) {
+        const notification = document.createElement('div');
+        notification.className = `alert alert-${type === 'error' ? 'danger' : type} alert-dismissible fade show`;
+        notification.innerHTML = `
+            ${message}
+            <button type="button" class="btn-close" data-bs-dismiss="alert"></button>
+        `;
+        
+        container.appendChild(notification);
+        
+        if (duration > 0) {
+            setTimeout(() => {
+                if (notification.parentNode) {
+                    notification.remove();
+                }
+            }, duration);
+        }
+    };
+}
+
+// Update dashboard stats in real-time
+function updateDashboardStats(stats) {
+    const statElements = {
+        'total_posts': document.querySelector('.stats-card:nth-child(1) h2'),
+        'total_images': document.querySelector('.stats-card:nth-child(2) h2'),
+        'pending_review': document.querySelector('.stats-card:nth-child(3) h2'),
+        'posted': document.querySelector('.stats-card:nth-child(4) h2')
+    };
+    
+    Object.entries(stats).forEach(([key, value]) => {
+        const element = statElements[key];
+        if (element && element.textContent !== value.toString()) {
+            element.textContent = value.toLocaleString();
+            // Add update animation
+            element.style.transform = 'scale(1.1)';
+            element.style.transition = 'transform 0.2s ease';
+            setTimeout(() => {
+                element.style.transform = 'scale(1)';
+            }, 200);
+        }
+    });
+}
+
+// Enhanced auto-refresh with notification integration
 setInterval(function() {
     // Only refresh if user is active (to save resources)
     if (document.visibilityState === 'visible') {
@@ -304,9 +490,11 @@ setInterval(function() {
                 const newStats = newDoc.querySelectorAll('.stats-card h2');
                 const currentStats = document.querySelectorAll('.stats-card h2');
                 
+                let hasChanges = false;
                 newStats.forEach((newStat, index) => {
                     if (currentStats[index] && newStat.textContent !== currentStats[index].textContent) {
                         currentStats[index].textContent = newStat.textContent;
+                        hasChanges = true;
                         // Add a subtle animation to indicate update
                         currentStats[index].style.transform = 'scale(1.1)';
                         setTimeout(() => {
@@ -314,9 +502,39 @@ setInterval(function() {
                         }, 200);
                     }
                 });
+                
+                // Show notification if stats changed significantly
+                if (hasChanges && window.dashboardNotifications) {
+                    window.dashboardNotifications.showNotification({
+                        type: 'info',
+                        title: 'Stats Updated',
+                        message: 'Dashboard statistics have been refreshed',
+                        auto_hide: true,
+                        duration: 2000
+                    });
+                }
             })
-            .catch(error => console.log('Stats refresh failed:', error));
+            .catch(error => {
+                console.log('Stats refresh failed:', error);
+                // Show error notification
+                if (window.dashboardNotifications) {
+                    window.dashboardNotifications.showNotification({
+                        type: 'warning',
+                        title: 'Refresh Failed',
+                        message: 'Unable to update dashboard statistics',
+                        auto_hide: true,
+                        duration: 3000
+                    });
+                }
+            });
     }
 }, 30000);
+
+// Cleanup on page unload
+window.addEventListener('beforeunload', function() {
+    if (window.dashboardNotifications && typeof window.dashboardNotifications.cleanup === 'function') {
+        window.dashboardNotifications.cleanup();
+    }
+});
 </script>
 {% endblock %}

@@ -68,7 +68,9 @@ def register_dashboard_routes(bp):
             
         except Exception as e:
             logger.error(f"Error loading enhanced monitoring dashboard: {str(e)}")
-            flash('Error loading monitoring dashboard.', 'error')
+            # Send error notification
+            from notification_helpers import send_error_notification
+            send_error_notification('Error loading monitoring dashboard.', 'Dashboard Error')
             return redirect(url_for('admin.dashboard'))
     
     @bp.route('/api/dashboard/config')
@@ -184,7 +186,9 @@ def register_dashboard_routes(bp):
             
         except Exception as e:
             logger.error(f"Error loading reports dashboard: {str(e)}")
-            flash('Error loading reports dashboard.', 'error')
+            # Send error notification
+            from notification_helpers import send_error_notification
+            send_error_notification('Error loading reports dashboard.', 'Dashboard Error')
             return redirect(url_for('admin.dashboard'))
     
     @bp.route('/api/reports/generate', methods=['POST'])
@@ -281,7 +285,9 @@ def register_dashboard_routes(bp):
             
         except Exception as e:
             logger.error(f"Error loading widget customization: {str(e)}")
-            flash('Error loading widget customization.', 'error')
+            # Send error notification
+            from notification_helpers import send_error_notification
+            send_error_notification('Error loading widget customization.', 'Dashboard Error')
             return redirect(url_for('admin.dashboard'))
     
     @bp.route('/api/dashboard/widgets/save', methods=['POST'])

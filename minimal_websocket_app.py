@@ -86,7 +86,7 @@ def handle_connect():
     return True
 
 @socketio.on('disconnect')
-def handle_disconnect():
+def handle_disconnect(sid=None):
     print("Client disconnected from default namespace")
 
 @socketio.on('connect', namespace='/admin')
@@ -95,7 +95,7 @@ def handle_admin_connect():
     return True
 
 @socketio.on('disconnect', namespace='/admin')
-def handle_admin_disconnect():
+def handle_admin_disconnect(sid=None):
     print("Client disconnected from admin namespace")
 
 @socketio.on('test_message')

@@ -2,6 +2,13 @@
 # This program is free software: you can redistribute it and/or modify it under the terms of the GNU Affero General Public License as published by the Free Software Foundation, either version 3 of the License, or (at your option) any later version.
 # THE SOFTWARE IS PROVIDED "AS IS", WITHOUT WARRANTY OF ANY KIND, EXPRESS OR IMPLIED, INCLUDING BUT NOT LIMITED TO THE WARRANTIES OF MERCHANTABILITY, FITNESS FOR A PARTICULAR PURPOSE AND NONINFRINGEMENT. IN NO EVENT SHALL THE AUTHORS OR COPYRIGHT HOLDERS BE LIABLE FOR ANY CLAIM, DAMAGES OR OTHER LIABILITY, WHETHER IN AN ACTION OF CONTRACT, TORT OR OTHERWISE, ARISING FROM, OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE SOFTWARE.
 
+# MIGRATION NOTE: Flash messages in this file have been commented out as part of
+# the notification system migration. The application now uses the unified
+# WebSocket-based notification system. These comments should be replaced with
+# appropriate unified notification calls in a future update.
+
+
+from unified_notification_manager import UnifiedNotificationManager
 """
 CSRF Error Handler
 
@@ -13,7 +20,7 @@ import json
 import logging
 from typing import Dict, Any, Optional, Tuple
 from datetime import datetime
-from flask import request, jsonify, render_template, redirect, url_for, flash
+from flask import request, jsonify, render_template, redirect, url_for
 # Removed Flask-WTF CSRFError import - using werkzeug Forbidden
 from werkzeug.exceptions import Forbidden
 from security.core.security_utils import sanitize_for_log
@@ -158,19 +165,24 @@ class CSRFErrorHandler:
         """
         # Flash error message
         error_message = self.error_messages.get(error_type, self.error_messages['general_csrf_error'])
-        flash(error_message, 'error')
+        # Send error notification
+        from notification_helpers import send_error_notification, send_info_notification
+        send_error_notification(error_message, 'CSRF Error')
         
         # Add retry guidance
         retry_guidance = self._get_retry_guidance(error_type)
         if retry_guidance:
-            flash(f"Suggestion: {retry_guidance}", 'info')
+            send_info_notification(f"Suggestion: {retry_guidance}", 'Retry Guidance')
         
         # Note: Form data preservation disabled in database session mode
         # TODO: Implement database-based form data preservation if needed
         if preserved_data:
-            flash('Please re-enter your form data and try submitting again.', 'info')
+            # Send info notification
+            from notification_helpers import send_info_notification
+            send_info_notification("Please re-enter your form data and try submitting again.", "Information")
         
         # Redirect to referrer or home page
+            pass
         redirect_url = request.referrer or url_for('index')
         
         try:
@@ -195,7 +207,9 @@ class CSRFErrorHandler:
                 'message': 'Please refresh the page and try again.'
             }), 403
         else:
-            flash('Security validation failed. Please refresh the page and try again.', 'error')
+            # Send error notification
+            from notification_helpers import send_error_notification
+            send_error_notification("Security validation failed. Please refresh the page and try again.", "Error")
             return redirect(request.referrer or url_for('index')), 403
     
     def _get_retry_guidance(self, error_type: str) -> str:

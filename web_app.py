@@ -1,6 +1,14 @@
 # Copyright (C) 2025 iolaire mcfadden.
 # This program is free software: you can redistribute it and/or modify it under the terms of the GNU Affero General Public License as published by the Free Software Foundation, either version 3 of the License, or (at your option) any later version.
 # THE SOFTWARE IS PROVIDED "AS IS", WITHOUT WARRANTY OF ANY KIND, EXPRESS OR IMPLIED, INCLUDING BUT NOT LIMITED TO THE WARRANTIES OF MERCHANTABILITY, FITNESS FOR A PARTICULAR PURPOSE AND NONINFRINGEMENT. IN NO EVENT SHALL THE AUTHORS OR COPYRIGHT HOLDERS BE LIABLE FOR ANY CLAIM, DAMAGES OR OTHER LIABILITY, WHETHER IN AN ACTION OF CONTRACT, TORT OR OTHERWISE, ARISING FROM, OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE SOFTWARE.
+
+# MIGRATION NOTE: Flash messages in this file have been commented out as part of
+# the notification system migration. The application now uses the unified
+# WebSocket-based notification system. These comments should be replaced with
+# appropriate unified notification calls in a future update.
+
+
+from user_profile_notification_helper import send_profile_notification
 import os
 import asyncio
 from datetime import datetime, timedelta, timezone
@@ -16,7 +24,7 @@ INPUT_VALIDATION_ENABLED = os.getenv('SECURITY_INPUT_VALIDATION_ENABLED', 'true'
 SECURITY_HEADERS_ENABLED = os.getenv('SECURITY_HEADERS_ENABLED', 'true').lower() == 'true'
 SESSION_VALIDATION_ENABLED = os.getenv('SECURITY_SESSION_VALIDATION_ENABLED', 'true').lower() == 'true'
 ADMIN_CHECKS_ENABLED = os.getenv('SECURITY_ADMIN_CHECKS_ENABLED', 'true').lower() == 'true'
-from flask import Flask, render_template, request, jsonify, redirect, url_for, flash, send_from_directory, g, Response, make_response, current_app, session
+from flask import Flask, render_template, request, jsonify, redirect, url_for, send_from_directory, g, Response, make_response, current_app, session
 from flask_socketio import SocketIO
 from flask_wtf import FlaskForm
 # Import regular WTForms Form class (no Flask-WTF CSRF)
@@ -78,24 +86,18 @@ from websocket_namespace_manager import WebSocketNamespaceManager
 
 # Initialize WebSocket configuration manager
 websocket_config_manager = WebSocketConfigManager(config)
-app.logger.info("WebSocket configuration manager initialized")
+app.logger.debug("WebSocket configuration manager initialized")
 
 # Initialize CORS manager with dynamic origin support
 websocket_cors_manager = CORSManager(websocket_config_manager)
-app.logger.info("WebSocket CORS manager initialized")
+app.logger.debug("WebSocket CORS manager initialized")
 
 # Initialize WebSocket factory
 websocket_factory = WebSocketFactory(websocket_config_manager, websocket_cors_manager)
-app.logger.info("WebSocket factory initialized")
+app.logger.debug("WebSocket factory initialized")
 
-# Create SocketIO instance using factory
-socketio = websocket_factory.create_socketio_instance(app)
-app.logger.info("SocketIO instance created using WebSocket factory")
-
-# Store WebSocket components for later use
-app.websocket_config_manager = websocket_config_manager
-app.websocket_cors_manager = websocket_cors_manager
-app.websocket_factory = websocket_factory
+# WebSocket authentication handler will be initialized after session manager
+# WebSocket namespace manager and SocketIO will be initialized after session manager
 
 # Initialize legacy CORS support for backward compatibility
 from flask_cors import CORS
@@ -119,7 +121,7 @@ from redis_session_backend import RedisSessionBackend
 # Initialize Redis session backend
 try:
     redis_backend = RedisSessionBackend.from_env()
-    app.logger.info("Redis session backend initialized successfully")
+    app.logger.debug("Redis session backend initialized successfully")
     
     # Set up Flask Redis session interface
     redis_session_interface = FlaskRedisSessionInterface(
@@ -128,7 +130,7 @@ try:
         session_timeout=int(os.getenv('REDIS_SESSION_TIMEOUT', '7200'))
     )
     app.session_interface = redis_session_interface
-    app.logger.info("Flask Redis session interface configured")
+    app.logger.debug("Flask Redis session interface configured")
     
     # Store Redis backend for later use
     app.redis_backend = redis_backend
@@ -168,7 +170,7 @@ if CSRF_ENABLED:
     # Disable Flask-WTF CSRF since we're using our custom Redis-aware CSRF system
     app.config['WTF_CSRF_ENABLED'] = False
     csrf = None  # No Flask-WTF CSRF protection
-    app.logger.info("Using custom Redis-aware CSRF protection (Flask-WTF CSRF disabled)")
+    app.logger.debug("Using custom Redis-aware CSRF protection (Flask-WTF CSRF disabled)")
 else:
     app.config['WTF_CSRF_ENABLED'] = False
     app.logger.warning("CSRF protection disabled - DO NOT USE IN PRODUCTION")
@@ -180,7 +182,7 @@ else:
 # Initialize pre-authentication session handler for CSRF tokens
 from pre_auth_session import PreAuthSessionHandler
 pre_auth_handler = PreAuthSessionHandler(app)
-app.logger.info("Pre-authentication session handler initialized for CSRF tokens")
+app.logger.debug("Pre-authentication session handler initialized for CSRF tokens")
 
 # Initialize enhanced CSRF token manager
 from security.core.csrf_token_manager import initialize_csrf_token_manager
@@ -192,18 +194,25 @@ platform_access_middleware = PlatformAccessMiddleware(app)
 # Template context processor for role-based access control
 @app.context_processor
 def inject_role_context():
-    """Inject role-based context into templates and auto-set default platform in session"""
+    """Inject role-based context into templates using current session context"""
     if current_user.is_authenticated:
+        # Use session context for platform information instead of manual detection
+        session_context = get_current_session_context()
+        
+        # Get platform stats using session-aware methods
         platform_stats = platform_access_middleware.get_user_platform_stats()
         content_stats = platform_access_middleware.get_user_content_stats()
         
-        # Auto-set default platform in Flask session if not already set
-        default_platform = platform_stats.get('default_platform')
-        if default_platform and not session.get('platform_connection_id'):
-            session['platform_connection_id'] = default_platform.id
-            session['platform_name'] = default_platform.name
-            session.permanent = True
-            app.logger.info(f"Auto-selected default platform {default_platform.name} (ID: {default_platform.id}) for user {current_user.id}")
+        # Get current platform from session context
+        current_platform = None
+        if session_context and session_context.get('platform_connection_id'):
+            # Build current platform info from session context
+            current_platform = {
+                'id': session_context.get('platform_connection_id'),
+                'name': session_context.get('platform_name'),
+                'type': session_context.get('platform_type'),
+                'instance_url': session_context.get('platform_instance_url')
+            }
         
         context = {
             'user_role': current_user.role,
@@ -211,7 +220,7 @@ def inject_role_context():
             'is_viewer': current_user.role == UserRole.VIEWER,
             'user_platforms': platform_stats.get('platforms', []),
             'user_platform_count': platform_stats.get('platform_count', 0),
-            'current_platform': default_platform,
+            'current_platform': current_platform,
             'pending_review_count': content_stats.get('pending_review', 0),
             'total_images_count': content_stats.get('total_images', 0)
         }
@@ -269,6 +278,13 @@ if SECURITY_HEADERS_ENABLED:
     @app.after_request
     def add_security_headers(response):
         """Add comprehensive security headers to all responses"""
+        # Skip WebSocket requests to prevent WSGI protocol violations
+        if (request.headers.get('Upgrade', '').lower() == 'websocket' or
+            'websocket' in request.headers.get('Connection', '').lower() or
+            request.path.startswith('/socket.io/') or
+            request.args.get('transport') in ['websocket', 'polling']):
+            return response
+        
         # Prevent clickjacking
         response.headers['X-Frame-Options'] = 'DENY'
         
@@ -287,8 +303,7 @@ if SECURITY_HEADERS_ENABLED:
             "default-src 'self'; "
             "script-src 'self' 'unsafe-inline' cdnjs.cloudflare.com https://cdn.jsdelivr.net https://cdn.socket.io https://kit.fontawesome.com https://ka-f.fontawesome.com; "
             "style-src 'self' 'unsafe-inline' cdnjs.cloudflare.com cdn.jsdelivr.net fonts.googleapis.com https://ka-f.fontawesome.com; "
-            "font-src 'self' cdnjs.cloudflare.com cdn.jsdelivr.net fonts.gstatic.com https://ka-f.fontawesome.com; "
-            "img-src 'self' data: https:; "
+            "font-src 'self' data: https:; "
             "connect-src 'self' ws: wss:; "
             "frame-ancestors 'none'"
         )
@@ -331,7 +346,7 @@ if hasattr(app, 'redis_backend') and app.redis_backend:
         redis_backend=app.redis_backend,
         session_timeout=int(os.getenv('REDIS_SESSION_TIMEOUT', '7200'))
     )
-    app.logger.info("Redis-based session manager initialized")
+    app.logger.debug("Redis-based session manager initialized")
 else:
     # Fallback to old session manager if Redis not available
     from session_factory import create_session_manager
@@ -346,23 +361,107 @@ else:
 app.unified_session_manager = unified_session_manager
 app.session_manager = unified_session_manager  # For compatibility
 
+# Now initialize WebSocket components that require session manager
+# Initialize WebSocket authentication handler
+websocket_auth_handler = WebSocketAuthHandler(
+    db_manager=db_manager,
+    session_manager=unified_session_manager
+)
+app.logger.debug("WebSocket authentication handler initialized")
+
+# Create SocketIO instance using factory first
+socketio = websocket_factory.create_socketio_instance(app)
+app.logger.debug("SocketIO instance created using WebSocket factory")
+
+# Initialize WebSocket namespace manager with SocketIO instance
+websocket_namespace_manager = WebSocketNamespaceManager(socketio, websocket_auth_handler)
+app.logger.debug("WebSocket namespace manager initialized")
+
+# Store WebSocket components for later use
+app.websocket_config_manager = websocket_config_manager
+app.websocket_cors_manager = websocket_cors_manager
+app.websocket_factory = websocket_factory
+app.websocket_auth_handler = websocket_auth_handler
+app.websocket_namespace_manager = websocket_namespace_manager
+
+# Initialize unified notification system components
+from unified_notification_manager import UnifiedNotificationManager
+from notification_message_router import NotificationMessageRouter
+from notification_persistence_manager import NotificationPersistenceManager
+from dashboard_notification_handlers import register_dashboard_notification_handlers
+
+# Initialize unified notification system
+try:
+    # Initialize notification persistence manager
+    notification_persistence_manager = NotificationPersistenceManager(db_manager)
+    app.logger.debug("Notification persistence manager initialized")
+    
+    # Initialize notification message router
+    notification_message_router = NotificationMessageRouter(websocket_namespace_manager)
+    app.logger.debug("Notification message router initialized")
+    
+    # Initialize unified notification manager
+    unified_notification_manager = UnifiedNotificationManager(
+        websocket_factory=websocket_factory,
+        auth_handler=websocket_auth_handler,
+        namespace_manager=websocket_namespace_manager,
+        db_manager=db_manager
+    )
+    app.logger.debug("Unified notification manager initialized")
+    
+    # Register dashboard notification handlers
+    dashboard_handlers = register_dashboard_notification_handlers(socketio, unified_notification_manager)
+    app.logger.debug("Dashboard notification handlers registered")
+    
+    # Register admin health WebSocket handlers
+    # Temporarily disabled to fix WebSocket disconnect handler conflicts
+    # from admin_health_websocket_handlers import register_admin_health_websocket_handlers
+    # register_admin_health_websocket_handlers(socketio)
+    # app.logger.info("Admin health WebSocket handlers registered")
+    
+    # Initialize page notification integrator
+    from page_notification_integrator import PageNotificationIntegrator
+    page_notification_integrator = PageNotificationIntegrator(
+        websocket_factory=websocket_factory,
+        auth_handler=websocket_auth_handler,
+        namespace_manager=websocket_namespace_manager,
+        notification_manager=unified_notification_manager
+    )
+    app.logger.debug("Page notification integrator initialized")
+    
+    # Store notification components for later use
+    app.notification_persistence_manager = notification_persistence_manager
+    app.notification_message_router = notification_message_router
+    app.unified_notification_manager = unified_notification_manager
+    app.notification_manager = unified_notification_manager  # Alias for progress tracker
+    app.dashboard_handlers = dashboard_handlers
+    app.page_notification_integrator = page_notification_integrator
+    
+except Exception as e:
+    app.logger.error(f"Failed to initialize unified notification system: {e}")
+    # Continue without notification system - will use fallback
+    app.unified_notification_manager = None
+    app.notification_manager = None
+    app.dashboard_handlers = None
+    app.page_notification_integrator = None
+
 # Initialize session middleware
 if hasattr(app, 'redis_backend') and app.redis_backend:
     session_middleware = SessionMiddleware(app, unified_session_manager)
-    app.logger.info("Redis session middleware initialized")
+    app.logger.debug("Redis session middleware initialized")
 else:
     # Keep existing cookie manager for fallback
     from session_cookie_manager import create_session_cookie_manager
     session_cookie_manager = create_session_cookie_manager(app.config)
     app.session_cookie_manager = session_cookie_manager
-    app.logger.info("Using fallback session cookie manager")
+    app.logger.debug("Using fallback session cookie manager")
 
 # Initialize session error handler
 from session_error_handling import create_session_error_handler
 if hasattr(app, 'redis_backend') and app.redis_backend:
     # For Redis sessions, we don't need the old session cookie manager
     session_error_handler = None
-    app.logger.info("Session error handler skipped for Redis sessions")
+    app.logger.debug("Session error handler skipped for Redis sessions")
 else:
     # For fallback sessions, use the session cookie manager
     session_error_handler = create_session_error_handler(session_cookie_manager)
@@ -373,6 +472,12 @@ else:
 @app.after_request
 def after_request(response):
     """Add CORS headers to API and Socket.IO responses"""
+    # Skip WebSocket requests to prevent WSGI protocol violations
+    if (request.headers.get('Upgrade', '').lower() == 'websocket' or
+        'websocket' in request.headers.get('Connection', '').lower() or
+        request.args.get('transport') == 'websocket'):
+        return response
+    
     # Add CORS headers to API endpoints and Socket.IO
     if request.path.startswith('/api/') or request.path.startswith('/socket.io/'):
         origin = request.headers.get('Origin')
@@ -447,7 +552,7 @@ session_performance_monitor = initialize_performance_monitoring(app, request_ses
 # Initialize session performance optimizations
 try:
     optimization_results = initialize_session_optimizations(db_manager)
-    app.logger.info(f"Session performance optimizations initialized: {optimization_results}")
+    app.logger.debug(f"Session performance optimizations initialized: {optimization_results}")
 except Exception as e:
     app.logger.error(f"Failed to initialize session performance optimizations: {e}")
 
@@ -476,9 +581,9 @@ app.config['session_manager'] = unified_session_manager  # For backward compatib
 try:
     from debug_session_routes import register_debug_routes
     register_debug_routes(app)
-    app.logger.info("Debug session routes registered")
+    app.logger.debug("Debug session routes registered")
 except ImportError:
-    app.logger.info("Debug session routes not available")
+    app.logger.debug("Debug session routes not available")
 
 # Initialize Redis platform manager
 from redis_platform_manager import get_redis_platform_manager
@@ -492,7 +597,7 @@ if hasattr(app, 'redis_backend') and app.redis_backend:
         db_manager, 
         encryption_key
     )
-    app.logger.info("Redis platform manager initialized with Redis backend")
+    app.logger.debug("Redis platform manager initialized with Redis backend")
 else:
     # Fallback: try to get redis_client from unified_session_manager if available
     redis_client = getattr(unified_session_manager, 'redis_client', None)
@@ -502,7 +607,7 @@ else:
             db_manager, 
             encryption_key
         )
-        app.logger.info("Redis platform manager initialized with fallback client")
+        app.logger.debug("Redis platform manager initialized with fallback client")
     else:
         redis_platform_manager = None
         app.logger.warning("Redis platform manager not initialized - no Redis client available")
@@ -520,7 +625,7 @@ register_session_alert_routes(app)
 # Register security audit API routes
 from admin.routes.security_audit_api import register_security_audit_api_routes
 register_security_audit_api_routes(app)
-app.logger.info("Security audit API routes registered")
+app.logger.debug("Security audit API routes registered")
 
 # Initialize security middleware
 security_middleware = SecurityMiddleware(app)
@@ -586,11 +691,11 @@ try:
         max_attempts_per_window=10,
         max_attempts_per_ip=50
     )
-    app.logger.info("WebSocket authentication handler initialized")
+    app.logger.debug("WebSocket authentication handler initialized")
     
     # Initialize WebSocket namespace manager
     websocket_namespace_manager = WebSocketNamespaceManager(socketio, websocket_auth_handler)
-    app.logger.info("WebSocket namespace manager initialized")
+    app.logger.debug("WebSocket namespace manager initialized")
     
     # Store WebSocket components for access by other modules
     app.websocket_auth_handler = websocket_auth_handler
@@ -607,7 +712,7 @@ try:
     if hasattr(admin_dashboard_websocket, 'set_namespace_manager'):
         admin_dashboard_websocket.set_namespace_manager(websocket_namespace_manager)
     
-    app.logger.info("WebSocket progress handlers initialized with namespace system")
+    app.logger.debug("WebSocket progress handlers initialized with namespace system")
     
 except Exception as e:
     app.logger.error(f"Failed to initialize WebSocket system: {sanitize_for_log(str(e))}")
@@ -684,7 +789,7 @@ def validate_favicon_assets():
         app.logger.warning(f"Missing favicon/logo assets: {missing_assets}")
         return False
     else:
-        app.logger.info("All required favicon and logo assets are present")
+        app.logger.debug("All required favicon and logo assets are present")
         return True
 
 # Validate assets on startup
@@ -734,7 +839,7 @@ def load_user(user_id):
                 app.logger.debug(f"User loaded successfully: {user.username} (ID: {user.id})")
                 return SessionAwareUser(user, request_session_manager)
             else:
-                app.logger.info(f"User not found or inactive for ID: {user_id_int}")
+                app.logger.debug(f"User not found or inactive for ID: {user_id_int}")
                 return None
                 
     except SQLAlchemyError as e:
@@ -764,19 +869,25 @@ def role_required(role):
                     user_id = getattr(current_user, 'id', None)
                     if not user_id:
                         app.logger.warning("User ID not accessible from current_user")
-                        flash('User authentication error. Please log in again.', 'error')
+                        # Send error notification
+                        from notification_helpers import send_error_notification
+                        send_error_notification("User authentication error. Please log in again.", "Error")
                         logout_user()
                         return redirect(url_for('user_management.login'))
                         
                     server_user = session.query(User).get(user_id)
                     if not server_user:
                         app.logger.warning(f"User account not found for ID: {user_id}")
-                        flash('User account not found.', 'error')
+                        # Send error notification
+                        from notification_helpers import send_error_notification
+                        send_error_notification("User account not found.", "Error")
                         logout_user()
                         return redirect(url_for('user_management.login'))
                     if not server_user.is_active:
                         app.logger.warning(f"Inactive user attempted access: {sanitize_for_log(server_user.username)}")
-                        flash('Your account has been deactivated.', 'error')
+                        # Send error notification
+                        from notification_helpers import send_error_notification
+                        send_error_notification("Your account has been deactivated.", "Error")
                         logout_user()
                         return redirect(url_for('user_management.login'))
                     
@@ -788,7 +899,9 @@ def role_required(role):
                     # Use server-side user data for role validation
                     if not server_user.has_permission(role):
                         app.logger.warning(f"Access denied: user {sanitize_for_log(server_user.username)} (role: {sanitize_for_log(server_user.role.value if server_user.role else 'None')}) attempted to access {sanitize_for_log(role.value)} resource")
-                        flash('You do not have permission to access this page.', 'error')
+                        # Send error notification
+                        from notification_helpers import send_error_notification
+                        send_error_notification("You do not have permission to access this page.", "Error")
                         return redirect(url_for('index'))
                     
                     app.logger.debug(f"Access granted: user {sanitize_for_log(server_user.username)} has {sanitize_for_log(role.value)} permission")
@@ -796,7 +909,9 @@ def role_required(role):
                     g.validated_user_role = server_user.role
             except SQLAlchemyError as e:
                 app.logger.error(f"Database error during authorization: {sanitize_for_log(str(e))}")
-                flash('Authorization error. Please try again.', 'error')
+                # Send error notification
+                from notification_helpers import send_error_notification
+                send_error_notification("Authorization error. Please try again.", "Error")
                 return redirect(url_for('user_management.login'))
             
             return f(*args, **kwargs)
@@ -819,7 +934,9 @@ def platform_required(f):
             with request_session_manager.session_scope() as db_session:
                 user_id = getattr(current_user, 'id', None)
                 if not user_id:
-                    flash('User authentication error. Please log in again.', 'error')
+                    # Send error notification
+                    from notification_helpers import send_error_notification
+                    send_error_notification("User authentication error. Please log in again.", "Error")
                     return redirect(url_for('user_management.login'))
                     
                 user_platforms = db_session.query(PlatformConnection).filter_by(
@@ -828,10 +945,14 @@ def platform_required(f):
                 ).count()
                 
                 if user_platforms == 0:
-                    flash('You need to set up at least one platform connection to access this feature.', 'warning')
+                    # Send warning notification
+                    from notification_helpers import send_warning_notification
+                    send_warning_notification("You need to set up at least one platform connection to access this feature.", "Warning")
                     return redirect(url_for('first_time_setup'))
                 else:
-                    flash('Please select a platform to continue.', 'warning')
+                    # Send warning notification
+                    from notification_helpers import send_warning_notification
+                    send_warning_notification("Please select a platform to continue.", "Warning")
                     return redirect(url_for('platform_management'))
         
         return f(*args, **kwargs)
@@ -849,14 +970,18 @@ def platform_access_required(platform_type=None, instance_url=None):
             # Get current platform context and validate with fresh database query
             context = get_current_session_context()
             if not context or not context.get('platform_connection_id'):
-                flash('No active platform connection found.', 'error')
+                # Send error notification
+                from notification_helpers import send_error_notification
+                send_error_notification("No active platform connection found.", "Error")
                 return redirect(url_for('platform_management'))
             
             # Get current platform from database to avoid DetachedInstanceError
             with request_session_manager.session_scope() as db_session:
                 user_id = getattr(current_user, 'id', None)
                 if not user_id:
-                    flash('User authentication error. Please log in again.', 'error')
+                    # Send error notification
+                    from notification_helpers import send_error_notification
+                    send_error_notification("User authentication error. Please log in again.", "Error")
                     return redirect(url_for('user_management.login'))
                     
                 current_platform = db_session.query(PlatformConnection).filter_by(
@@ -866,7 +991,9 @@ def platform_access_required(platform_type=None, instance_url=None):
                 ).first()
                 
                 if not current_platform:
-                    flash('Current platform connection is no longer available.', 'error')
+                    # Send error notification
+                    from notification_helpers import send_error_notification
+                    send_error_notification("Current platform connection is no longer available.", "Error")
                     return redirect(url_for('platform_management'))
                 
                 # Extract platform data before closing session
@@ -875,12 +1002,16 @@ def platform_access_required(platform_type=None, instance_url=None):
             
             # Validate platform type if specified
             if platform_type and platform_type_actual != platform_type:
-                flash(f'This feature requires a {platform_type.title()} connection. Current platform: {platform_type_actual.title()}', 'error')
+                # Send error notification
+                from notification_helpers import send_error_notification
+                send_error_notification(f'This feature requires a {platform_type.title()} connection. Current platform: {platform_type_actual.title()}', "Platform Mismatch")
                 return redirect(url_for('platform_management'))
             
             # Validate instance URL if specified
             if instance_url and instance_url_actual != instance_url:
-                flash(f'This feature requires access to {instance_url}. Current instance: {instance_url_actual}', 'error')
+                # Send error notification
+                from notification_helpers import send_error_notification
+                send_error_notification("f'This feature requires access to {instance_url}. Current instance: {instance_url_actual}'", "Error")
                 return redirect(url_for('platform_management'))
             
             return f(*args, **kwargs)
@@ -991,13 +1122,17 @@ def logout_all():
         # Log out the user from Flask-Login
         logout_user()
         
-        flash('You have been logged out from all sessions', 'info')
+        # Send info notification
+        from notification_helpers import send_info_notification
+        send_info_notification("You have been logged out from all sessions", "Information")
         
     except Exception as e:
         app.logger.error(f"Error during logout_all: {sanitize_for_log(str(e))}")
         # Still proceed with logout even if cleanup fails
         logout_user()
-        flash('Error logging out from all sessions', 'error')
+        # Send error notification
+        from notification_helpers import send_error_notification
+        send_error_notification("Error logging out from all sessions", "Error")
     
     # Create response with cleared session cookie
     response = make_response(redirect(url_for('user_management.login')))
@@ -1218,13 +1353,25 @@ def index():
                         'created_at': datetime.now(timezone.utc)
                     })
             
+            # Initialize unified notification system for dashboard
+            notification_config = {
+                'page_type': 'user_dashboard',
+                'enabled_types': ['system', 'caption', 'platform', 'maintenance'],
+                'auto_hide': True,
+                'max_notifications': 5,
+                'position': 'top-right',
+                'show_progress': False
+            }
+            
             return render_template('index.html', stats=stats, current_platform=platform_dict, 
                                  recent_stats=recent_stats, performance_stats=performance_stats,
-                                 system_health=system_health, alerts=alerts)
+                                 system_health=system_health, alerts=alerts,
+                                 notification_config=notification_config)
             
     except Exception as e:
         app.logger.error(f"Error loading dashboard: {sanitize_for_log(str(e))}")
-        flash('Error loading dashboard. Please try again.', 'error')
+        from dashboard_notification_helpers import send_dashboard_notification
+        send_dashboard_notification('Error loading dashboard. Please try again.', 'error', 'Dashboard Error')
         return redirect(url_for('platform_management'))
 
 # Admin cleanup routes are handled by the admin blueprint at /admin/cleanup
@@ -1351,7 +1498,9 @@ def review_single(image_id):
             joinedload(Image.post)
         ).filter_by(id=image_id).first()
         if not image:
-            flash(f'Image with ID {image_id} not found', 'error')
+            # Send error notification
+            from notification_helpers import send_error_notification
+            send_error_notification("f'Image with ID {image_id} not found'", "Error")
             return redirect(url_for('review_list'))
             
         form = ReviewForm(request.form)
@@ -1394,9 +1543,15 @@ def review_submit(image_id):
         
         if success:
             from markupsafe import escape
-            flash(f'Image review submitted successfully! Status: {escape(status.value)}', 'success')
+            # Send success notification
+            from notification_helpers import send_success_notification
+            send_success_notification(f'Image review submitted successfully! Status: {escape(status.value)}', "Review Submitted")
+            pass
         else:
-            flash('Error submitting review. Image may not exist.', 'error')
+            # Send error notification
+            from notification_helpers import send_error_notification
+            send_error_notification("Error submitting review. Image may not exist.", "Error")
+            pass
         
         # Redirect to next image or review list - validate URL to prevent open redirect
         next_url = request.args.get('next')
@@ -1408,7 +1563,10 @@ def review_submit(image_id):
     # If form validation failed, show errors
     for field, errors in form.errors.items():
         for error in errors:
-            flash(f'{field}: {error}', 'error')
+            # Send error notification
+            from notification_helpers import send_error_notification
+            send_error_notification("f'{field}: {error}'", "Error")
+            pass
     
     return redirect(url_for('review_single', image_id=image_id))
 
@@ -1422,7 +1580,9 @@ def batch_review():
         # Get current platform context
         context = get_current_session_context()
         if not context or not context.get('platform_connection_id'):
-            flash('No active platform connection found.', 'error')
+            # Send error notification
+            from notification_helpers import send_error_notification
+            send_error_notification("No active platform connection found.", "Error")
             return redirect(url_for('platform_management'))
         
         platform_connection_id = context['platform_connection_id']
@@ -1855,7 +2015,9 @@ def post_approved():
     # Get current platform context
     context = get_current_session_context()
     if not context or not context.get('platform_connection_id'):
-        flash('No active platform connection found.', 'error')
+        # Send error notification
+        from notification_helpers import send_error_notification
+        send_error_notification("No active platform connection found.", "Error")
         return redirect(url_for('platform_management'))
     
     platform_connection_id = context['platform_connection_id']
@@ -1872,19 +2034,25 @@ def post_approved():
         ).order_by(Image.original_post_date.desc().nullslast(), Image.updated_at.desc()).limit(10).all()
         
         if not approved_images:
-            flash('No approved images to post for current platform', 'info')
+            # Send info notification
+            from notification_helpers import send_info_notification
+            send_info_notification("No approved images to post for current platform", "Information")
             return redirect(url_for('index'))
         
         # Get platform connection for authentication
         platform_connection = approved_images[0].platform_connection
         if not platform_connection:
-            flash('Platform connection not found', 'error')
+            # Send error notification
+            from notification_helpers import send_error_notification
+            send_error_notification("Platform connection not found", "Error")
             return redirect(url_for('platform_management'))
         
         # Extract platform config before session closes
         platform_config = platform_connection.to_activitypub_config()
         if not platform_config:
-            flash('Failed to create platform config', 'error')
+            # Send error notification
+            from notification_helpers import send_error_notification
+            send_error_notification("Failed to create platform config", "Error")
             return redirect(url_for('platform_management'))
             
         # Extract the necessary data from images before closing the session
@@ -1982,7 +2150,13 @@ def post_approved():
         except Exception as e:
             app.logger.error(f"Error updating image status: {str(e)}")
     
-    flash(f'Successfully posted {posted_count} of {len(image_data)} approved captions', 'success')
+    # Send unified notification instead of flash
+    from dashboard_notification_helpers import send_dashboard_notification
+    send_dashboard_notification(
+        f'Successfully posted {posted_count} of {len(image_data)} approved captions', 
+        'success', 
+        'Captions Posted'
+    )
     return redirect(url_for('index'))
 
 def update_platform_media_description(image_data, platform_config):
@@ -2066,7 +2240,9 @@ def platform_management():
                              
     except Exception as e:
         app.logger.error(f"Error in platform management: {sanitize_for_log(str(e))}")
-        flash('An error occurred while loading platform management.', 'error')
+        # Send error notification
+        from notification_helpers import send_error_notification
+        send_error_notification("An error occurred while loading platform management.", "Error")
         return redirect(url_for('index'))
         for platform_info in user_summary['platforms']:
             if platform_info['id'] == current_platform.id:
@@ -2118,7 +2294,9 @@ def switch_platform(platform_id):
             ).first()
             
             if not platform:
-                flash('Platform not found or not accessible', 'error')
+                # Send error notification
+                from notification_helpers import send_error_notification
+                send_error_notification("Platform not found or not accessible", "Error")
                 return redirect(url_for('platform_management'))
             
             platform_name = platform.name  # Extract before session closes
@@ -2132,7 +2310,9 @@ def switch_platform(platform_id):
                     # Cancel the active task
                     cancelled = caption_service.cancel_generation(active_task.id, current_user.id)
                     if cancelled:
-                        flash('Active caption generation task was cancelled due to platform switch.', 'warning')
+                        # Send warning notification
+                        from notification_helpers import send_warning_notification
+                        send_warning_notification("Active caption generation task was cancelled due to platform switch.", "Warning")
                         app.logger.info(f"Cancelled active caption generation task {sanitize_for_log(active_task.id)} due to platform switch")
                     else:
                         app.logger.warning(f"Failed to cancel active caption generation task {sanitize_for_log(active_task.id)} during platform switch")
@@ -2149,14 +2329,25 @@ def switch_platform(platform_id):
                 session['platform_name'] = platform_name
                 session.permanent = True  # Ensure session persists
                 
-                flash(f'Switched to platform: {platform_name}', 'success')
+                # Send unified notification instead of flash
+                from dashboard_notification_helpers import send_platform_status_notification, send_dashboard_notification
+                
+                # Send platform status notification
+                send_platform_status_notification('switched', platform_name, platform.id)
+                
+                # Also send general success notification as fallback
+                send_dashboard_notification(f'Switched to platform: {platform_name}', 'success', 'Platform Switched')
+                
                 app.logger.info(f"User {sanitize_for_log(current_user.username)} switched to platform {sanitize_for_log(platform_name)}")
             else:
-                flash('Failed to switch platform', 'error')
+                # Send error notification
+                from dashboard_notification_helpers import send_dashboard_notification
+                send_dashboard_notification('Failed to switch platform', 'error', 'Platform Switch Failed')
             
     except Exception as e:
         app.logger.error(f"Error switching platform: {e}")
-        flash('Error switching platform', 'error')
+        from dashboard_notification_helpers import send_dashboard_notification
+        send_dashboard_notification('Error switching platform', 'error', 'Platform Switch Error')
     
     # Redirect back to the referring page or platform management
     return redirect(request.referrer or url_for('platform_management'))
@@ -2880,263 +3071,167 @@ def test_route():
 # Caption Generation Routes
 @app.route('/caption_generation')
 @login_required
+@platform_required
 @rate_limit(limit=10, window_seconds=60)
 @with_session_error_handling
 def caption_generation():
-    """Caption generation page - relies on global template context processor for platform data"""
+    """Caption generation page - uses global context processor for platform information"""
     try:
-        # The global template context processor (@app.context_processor) already provides:
-        # - current_platform: from platform_stats.get('default_platform')
-        # - user_platforms: from platform_stats.get('platforms', [])
-        # So we don't need to do platform identification here!
+        # Platform context is automatically validated by @platform_required decorator
+        # Platform information is provided by the global context processor (inject_role_context)
+        # which includes: current_platform, user_platforms, user_platform_count
         
-        # Initialize caption generation service
-        caption_service = WebCaptionGenerationService(db_manager)
-        
-        # Initialize storage user notification system
-        from storage_user_notification_system import StorageUserNotificationSystem
-        storage_notification_system = StorageUserNotificationSystem()
-        
-        # Get storage status for template context
-        storage_status = storage_notification_system.get_storage_status_for_template()
-        
-        # Check if user has an active task
-        active_task = caption_service.task_queue_manager.get_user_active_task(current_user.id)
-        
-        # Get user's task history
-        task_history = []
-        try:
-            import asyncio
-            loop = asyncio.new_event_loop()
-            asyncio.set_event_loop(loop)
-            task_history = loop.run_until_complete(
-                caption_service.get_user_task_history(current_user.id, limit=5)
-            )
-            loop.close()
-        except Exception as e:
-            app.logger.error(f"Error getting task history: {sanitize_for_log(str(e))}")
-        
-        # Get user's current settings - we need to get the current platform ID from session context
-        user_settings = None
+        # Get current session context for platform connection ID (needed for settings)
         context = get_current_session_context()
-        platform_connection_id = context.get('platform_connection_id') if context else None
+        if not context or not context.get('platform_connection_id'):
+            app.logger.warning(f"No platform context found for user {current_user.id}")
+            # Send warning notification
+            from notification_helpers import send_warning_notification
+            send_warning_notification("No active platform connection found. Please select a platform to continue.", "Warning")
+            return redirect(url_for('platform_management'))
         
-        if platform_connection_id:
-            try:
-                redis_platform_manager = app.config.get('redis_platform_manager')
-                if redis_platform_manager:
-                    user_settings_dict = redis_platform_manager.get_user_settings(current_user.id, platform_connection_id)
-                    if user_settings_dict:
-                        # Convert to dataclass if needed
-                        from models import CaptionGenerationUserSettings
-                        # Create a mock settings record to use the to_settings_dataclass method
-                        mock_settings = CaptionGenerationUserSettings()
-                        for key, value in user_settings_dict.items():
-                            if hasattr(mock_settings, key):
-                                setattr(mock_settings, key, value)
-                        user_settings = mock_settings.to_settings_dataclass()
-                        app.logger.debug(f"Retrieved user settings from Redis for user {current_user.id}, platform {platform_connection_id}")
-                    else:
-                        app.logger.info(f"No user settings found for user {current_user.id}, platform {platform_connection_id}")
-                
-            except Exception as e:
-                app.logger.error(f"Error getting user settings from Redis: {sanitize_for_log(str(e))}")
-            
-            # Fallback to database if Redis settings lookup failed
-            if not user_settings:
+        platform_connection_id = context['platform_connection_id']
+        
+        # Initialize caption generation service with error handling
+        try:
+            caption_service = WebCaptionGenerationService(db_manager)
+        except Exception as e:
+            app.logger.error(f"Failed to initialize caption generation service for user {current_user.id}: {sanitize_for_log(str(e))}")
+            # Send error notification
+            from notification_helpers import send_error_notification
+            send_error_notification("Caption generation service is temporarily unavailable. Please try again later.", "Error")
+            return redirect(url_for('index'))
+        
+        # Initialize storage user notification system with error handling
+        try:
+            from storage_user_notification_system import StorageUserNotificationSystem
+            storage_notification_system = StorageUserNotificationSystem()
+            storage_status = storage_notification_system.get_storage_status_for_template()
+        except Exception as e:
+            app.logger.error(f"Failed to get storage status for user {current_user.id}: {sanitize_for_log(str(e))}")
+            # Continue with empty storage status rather than failing completely
+            storage_status = {}
+        
+        # Check if user has an active task with error handling
+        active_task = None
+        try:
+            active_task = caption_service.task_queue_manager.get_user_active_task(current_user.id)
+        except Exception as e:
+            app.logger.error(f"Failed to get active task for user {current_user.id}: {sanitize_for_log(str(e))}")
+            # Continue without active task info rather than failing
+        
+        # Get user's task history with improved error handling
+        task_history = []
+        try:
+            import threading
+            def get_history_in_thread():
+                import asyncio
+                loop = asyncio.new_event_loop()
+                asyncio.set_event_loop(loop)
+                nonlocal task_history
                 try:
-                    with unified_session_manager.get_db_session() as session:
-                        from models import CaptionGenerationUserSettings
-                        user_settings_record = session.query(CaptionGenerationUserSettings).filter_by(
-                            user_id=current_user.id,
-                            platform_connection_id=platform_connection_id
-                        ).first()
+                    task_history = loop.run_until_complete(
+                        caption_service.get_user_task_history(current_user.id, limit=5)
+                    )
+                except Exception as thread_e:
+                    app.logger.error(f"Error in task history thread for user {current_user.id}: {sanitize_for_log(str(thread_e))}")
+                finally:
+                    loop.close()
+            
+            thread = threading.Thread(target=get_history_in_thread, daemon=True)
+            thread.start()
+            thread.join(timeout=5)  # Add timeout to prevent hanging
+            
+            if thread.is_alive():
+                app.logger.warning(f"Task history retrieval timed out for user {current_user.id}")
+                
+        except Exception as e:
+            app.logger.error(f"Failed to retrieve task history for user {current_user.id}: {sanitize_for_log(str(e))}")
+            # Continue with empty task history rather than failing
+        
+        # Get user's current settings with Redis-first, database-fallback pattern
+        user_settings = None
+        
+        # Try Redis first for better performance
+        try:
+            redis_platform_manager = app.config.get('redis_platform_manager')
+            if redis_platform_manager:
+                user_settings_dict = redis_platform_manager.get_user_settings(current_user.id, platform_connection_id)
+                if user_settings_dict:
+                    # Convert to dataclass if needed
+                    from models import CaptionGenerationUserSettings
+                    # Create a mock settings record to use the to_settings_dataclass method
+                    mock_settings = CaptionGenerationUserSettings()
+                    for key, value in user_settings_dict.items():
+                        if hasattr(mock_settings, key):
+                            setattr(mock_settings, key, value)
+                    user_settings = mock_settings.to_settings_dataclass()
+                    app.logger.debug(f"Retrieved user settings from Redis for user {current_user.id}, platform {platform_connection_id}")
+                else:
+                    app.logger.debug(f"No user settings found in Redis for user {current_user.id}, platform {platform_connection_id}")
+                    
+        except Exception as e:
+            app.logger.warning(f"Redis settings retrieval failed for user {current_user.id}, platform {platform_connection_id}: {sanitize_for_log(str(e))}")
+            # Continue to database fallback
+        
+        # Fallback to database if Redis settings lookup failed or returned no results
+        if not user_settings:
+            try:
+                with db_manager.get_session() as session:
+                    from models import CaptionGenerationUserSettings
+                    user_settings_record = session.query(CaptionGenerationUserSettings).filter_by(
+                        user_id=current_user.id,
+                        platform_connection_id=platform_connection_id
+                    ).first()
+                    
+                    if user_settings_record:
+                        user_settings = user_settings_record.to_settings_dataclass()
+                        app.logger.debug(f"Retrieved user settings from database for user {current_user.id}, platform {platform_connection_id}")
+                    else:
+                        app.logger.debug(f"No user settings found in database for user {current_user.id}, platform {platform_connection_id}")
                         
-                        if user_settings_record:
-                            user_settings = user_settings_record.to_settings_dataclass()
-                except Exception as e:
-                    app.logger.error(f"Error getting user settings from database: {sanitize_for_log(str(e))}")
-        
-        # Create form with current settings
-        form = CaptionGenerationForm(request.form if request.method == 'POST' else None)
-        if user_settings:
-            form.max_posts_per_run.data = user_settings.max_posts_per_run
-            form.max_caption_length.data = user_settings.max_caption_length
-            form.optimal_min_length.data = user_settings.optimal_min_length
-            form.optimal_max_length.data = user_settings.optimal_max_length
-            form.reprocess_existing.data = user_settings.reprocess_existing
-            form.processing_delay.data = user_settings.processing_delay
-        
-        return render_template('caption_generation.html',
-                             form=form,
-                             active_task=active_task,
-                             task_history=task_history,
-                             user_settings=user_settings,
-                             **storage_status)
-                             
-    except Exception as e:
-        app.logger.error(f"Error loading caption generation page: {sanitize_for_log(str(e))}")
-        flash('An error occurred while loading the caption generation page.', 'error')
-        return redirect(url_for('index'))
-        
-        # Initialize caption generation service
-        caption_service = WebCaptionGenerationService(db_manager)
-        
-        # Check if user has an active task
-        active_task = caption_service.task_queue_manager.get_user_active_task(current_user.id)
-        
-        # Get user's task history
-        task_history = []
-        try:
-            import asyncio
-            loop = asyncio.new_event_loop()
-            asyncio.set_event_loop(loop)
-            task_history = loop.run_until_complete(
-                caption_service.get_user_task_history(current_user.id, limit=5)
-            )
-            loop.close()
-        except Exception as e:
-            app.logger.error(f"Error getting task history: {sanitize_for_log(str(e))}")
-        
-        # Get user's current settings using the platform we already identified
-        user_settings = None
-        redis_platform_manager = app.config.get('redis_platform_manager')
-        
-        try:
-            # We already have the platform data from our identification, so use it directly
-            # Get user settings from Redis (with database fallback)
-            if redis_platform_manager:
-                user_settings_dict = redis_platform_manager.get_user_settings(current_user.id, platform_connection_id)
-                if user_settings_dict:
-                    # Convert to dataclass if needed
-                    from models import CaptionGenerationUserSettings
-                    # Create a mock settings record to use the to_settings_dataclass method
-                    mock_settings = CaptionGenerationUserSettings()
-                    for key, value in user_settings_dict.items():
-                        if hasattr(mock_settings, key):
-                            setattr(mock_settings, key, value)
-                    user_settings = mock_settings.to_settings_dataclass()
-                    app.logger.debug(f"Retrieved user settings from Redis for user {current_user.id}, platform {platform_connection_id}")
-                else:
-                    app.logger.info(f"No user settings found for user {current_user.id}, platform {platform_connection_id}")
-            
-        except Exception as e:
-            app.logger.error(f"Error getting user settings from Redis: {sanitize_for_log(str(e))}")
-        
-        # Fallback to database if Redis settings lookup failed
-        if not user_settings:
-            try:
-                with unified_session_manager.get_db_session() as session:
-                    from models import CaptionGenerationUserSettings
-                    user_settings_record = session.query(CaptionGenerationUserSettings).filter_by(
-                        user_id=current_user.id,
-                        platform_connection_id=platform_connection_id
-                    ).first()
-                    
-                    if user_settings_record:
-                        user_settings = user_settings_record.to_settings_dataclass()
             except Exception as e:
-                app.logger.error(f"Error getting user settings from database: {sanitize_for_log(str(e))}")
+                app.logger.error(f"Database settings retrieval failed for user {current_user.id}, platform {platform_connection_id}: {sanitize_for_log(str(e))}")
+                # Continue with no user settings rather than failing completely
         
         # Create form with current settings
-        form = CaptionGenerationForm(request.form if request.method == 'POST' else None)
-        if user_settings:
-            form.max_posts_per_run.data = user_settings.max_posts_per_run
-            form.max_caption_length.data = user_settings.max_caption_length
-            form.optimal_min_length.data = user_settings.optimal_min_length
-            form.optimal_max_length.data = user_settings.optimal_max_length
-            form.reprocess_existing.data = user_settings.reprocess_existing
-            form.processing_delay.data = user_settings.processing_delay
-        
-        return render_template('caption_generation.html',
-                             form=form,
-                             active_task=active_task,
-                             task_history=task_history,
-                             user_settings=user_settings)
-                             
-    except Exception as e:
-        app.logger.error(f"Error loading caption generation page: {sanitize_for_log(str(e))}")
-        flash('An error occurred while loading the caption generation page.', 'error')
-        return redirect(url_for('index'))
-        
-        # Initialize caption generation service
-        caption_service = WebCaptionGenerationService(db_manager)
-        
-        # Check if user has an active task
-        active_task = caption_service.task_queue_manager.get_user_active_task(current_user.id)
-        
-        # Get user's task history
-        task_history = []
         try:
-            import asyncio
-            loop = asyncio.new_event_loop()
-            asyncio.set_event_loop(loop)
-            task_history = loop.run_until_complete(
-                caption_service.get_user_task_history(current_user.id, limit=5)
-            )
-            loop.close()
+            form = CaptionGenerationForm(request.form if request.method == 'POST' else None)
+            if user_settings:
+                form.max_posts_per_run.data = user_settings.max_posts_per_run
+                form.max_caption_length.data = user_settings.max_caption_length
+                form.optimal_min_length.data = user_settings.optimal_min_length
+                form.optimal_max_length.data = user_settings.optimal_max_length
+                form.reprocess_existing.data = user_settings.reprocess_existing
+                form.processing_delay.data = user_settings.processing_delay
         except Exception as e:
-            app.logger.error(f"Error getting task history: {sanitize_for_log(str(e))}")
+            app.logger.error(f"Failed to create caption generation form for user {current_user.id}: {sanitize_for_log(str(e))}")
+            # Send error notification
+            from notification_helpers import send_error_notification
+            send_error_notification("Error initializing caption generation form. Please try again.", "Error")
+            return redirect(url_for('index'))
         
-        # Get user's current settings using the platform we already identified
-        user_settings = None
-        redis_platform_manager = app.config.get('redis_platform_manager')
-        
+        # Render template with comprehensive error handling
         try:
-            # We already have the platform data from our identification, so use it directly
-            # Get user settings from Redis (with database fallback)
-            if redis_platform_manager:
-                user_settings_dict = redis_platform_manager.get_user_settings(current_user.id, platform_connection_id)
-                if user_settings_dict:
-                    # Convert to dataclass if needed
-                    from models import CaptionGenerationUserSettings
-                    # Create a mock settings record to use the to_settings_dataclass method
-                    mock_settings = CaptionGenerationUserSettings()
-                    for key, value in user_settings_dict.items():
-                        if hasattr(mock_settings, key):
-                            setattr(mock_settings, key, value)
-                    user_settings = mock_settings.to_settings_dataclass()
-                    app.logger.debug(f"Retrieved user settings from Redis for user {current_user.id}, platform {platform_connection_id}")
-                else:
-                    app.logger.info(f"No user settings found for user {current_user.id}, platform {platform_connection_id}")
+            return render_template('caption_generation.html',
+                                 form=form,
+                                 active_task=active_task,
+                                 task_history=task_history,
+                                 user_settings=user_settings,
+                                 **storage_status)
+        except Exception as e:
+            app.logger.error(f"Template rendering failed for caption generation page, user {current_user.id}: {sanitize_for_log(str(e))}")
+            # Send error notification
+            from notification_helpers import send_error_notification
+            send_error_notification("Error loading caption generation page. Please try again.", "Error")
+            return redirect(url_for('index'))
             
-        except Exception as e:
-            app.logger.error(f"Error getting user settings from Redis: {sanitize_for_log(str(e))}")
-        
-        # Fallback to database if Redis settings lookup failed
-        if not user_settings:
-            try:
-                with unified_session_manager.get_db_session() as session:
-                    from models import CaptionGenerationUserSettings
-                    user_settings_record = session.query(CaptionGenerationUserSettings).filter_by(
-                        user_id=current_user.id,
-                        platform_connection_id=platform_connection_id
-                    ).first()
-                    
-                    if user_settings_record:
-                        user_settings = user_settings_record.to_settings_dataclass()
-            except Exception as e:
-                app.logger.error(f"Error getting user settings from database: {sanitize_for_log(str(e))}")
-        
-        # Create form with current settings
-        form = CaptionGenerationForm(request.form if request.method == 'POST' else None)
-        if user_settings:
-            form.max_posts_per_run.data = user_settings.max_posts_per_run
-            form.max_caption_length.data = user_settings.max_caption_length
-            form.optimal_min_length.data = user_settings.optimal_min_length
-            form.optimal_max_length.data = user_settings.optimal_max_length
-            form.reprocess_existing.data = user_settings.reprocess_existing
-            form.processing_delay.data = user_settings.processing_delay
-        
-        return render_template('caption_generation.html',
-                             form=form,
-                             active_task=active_task,
-                             task_history=task_history,
-                             user_settings=user_settings)
-                             
     except Exception as e:
-        app.logger.error(f"Error loading caption generation page: {sanitize_for_log(str(e))}")
-        flash('Error loading caption generation page.', 'error')
+        # Catch-all error handler for any unexpected errors
+        app.logger.error(f"Unexpected error in caption generation route for user {current_user.id}: {sanitize_for_log(str(e))}")
+        # Send error notification
+        from notification_helpers import send_error_notification
+        send_error_notification("An unexpected error occurred while loading the caption generation page. Please try again.", "Error")
         return redirect(url_for('index'))
 
 @app.route('/start_caption_generation', methods=['POST'])
@@ -3598,7 +3693,9 @@ def caption_settings():
         # Get current platform context
         context = get_current_session_context()
         if not context or not context.get('platform_connection_id'):
-            flash('No active platform connection found.', 'error')
+            # Send error notification
+            from notification_helpers import send_error_notification
+            send_error_notification("No active platform connection found.", "Error")
             return redirect(url_for('platform_management'))
         
         platform_connection_id = context['platform_connection_id']
@@ -3619,12 +3716,12 @@ def caption_settings():
                 form.processing_delay.data = user_settings_dict.get('processing_delay', 1.0)
                 app.logger.debug(f"Retrieved user settings from Redis for caption settings form")
             else:
-                app.logger.info(f"No user settings found in Redis, using defaults for caption settings form")
+                app.logger.debug(f"No user settings found in Redis, using defaults for caption settings form")
                 
         except Exception as e:
             app.logger.error(f"Error getting user settings from Redis: {sanitize_for_log(str(e))}")
             # Fallback to database if Redis fails
-            with unified_session_manager.get_db_session() as session:
+            with db_manager.get_session() as session:
                 from models import CaptionGenerationUserSettings
                 user_settings_record = session.query(CaptionGenerationUserSettings).filter_by(
                     user_id=current_user.id,
@@ -3647,7 +3744,9 @@ def caption_settings():
             
     except Exception as e:
         app.logger.error(f"Error loading caption settings page: {sanitize_for_log(str(e))}")
-        flash('Error loading caption settings page.', 'error')
+        # Send error notification
+        from notification_helpers import send_error_notification
+        send_error_notification("Error loading caption settings page.", "Error")
         return redirect(url_for('index'))
 
 @app.route('/api/caption_settings', methods=['GET'])
@@ -3711,7 +3810,9 @@ def save_caption_settings():
             # Get current platform context
             context = get_current_session_context()
             if not context or not context.get('platform_connection_id'):
-                flash('No active platform connection found.', 'error')
+                # Send error notification
+                from notification_helpers import send_error_notification
+                send_error_notification("No active platform connection found.", "Error")
                 return redirect(url_for('platform_management'))
             
             platform_connection_id = context['platform_connection_id']
@@ -3744,23 +3845,31 @@ def save_caption_settings():
                 )
                 
                 if success:
-                    flash('Caption generation settings saved successfully.', 'success')
+                    send_profile_notification('settings_change', True, 'Caption generation settings saved successfully!', setting_name='caption_settings')
                     app.logger.info(f"Saved caption settings for user {sanitize_for_log(str(current_user.id))} platform {sanitize_for_log(str(platform_connection_id))}")
                 else:
-                    flash('Failed to save caption generation settings.', 'error')
+                    # Send error notification
+                    from notification_helpers import send_error_notification
+                    send_error_notification("Failed to save caption generation settings.", "Error")
                     
+                    pass
             finally:
                 loop.close()
                 
         except Exception as e:
             app.logger.error(f"Error saving caption settings: {sanitize_for_log(str(e))}")
-            flash('Error saving caption generation settings.', 'error')
+            # Send error notification
+            from notification_helpers import send_error_notification
+            send_error_notification("Error saving caption generation settings.", "Error")
     else:
         # Form validation failed
         for field, errors in form.errors.items():
             for error in errors:
-                flash(f'{field}: {error}', 'error')
+                # Send error notification
+                from notification_helpers import send_error_notification
+                send_error_notification("f'{field}: {error}'", "Error")
     
+                pass
     return redirect(url_for('caption_settings'))
 
 @app.route('/api/validate_caption_settings', methods=['POST'])
@@ -3850,7 +3959,9 @@ def review_batches():
         # Get current platform context
         context = get_current_session_context()
         if not context or not context.get('platform_connection_id'):
-            flash('No active platform connection found.', 'error')
+            # Send error notification
+            from notification_helpers import send_error_notification
+            send_error_notification("No active platform connection found.", "Error")
             return redirect(url_for('platform_management'))
         
         platform_connection_id = context['platform_connection_id']
@@ -3872,7 +3983,9 @@ def review_batches():
                              
     except Exception as e:
         app.logger.error(f"Error loading review batches: {sanitize_for_log(str(e))}")
-        flash('Error loading review batches.', 'error')
+        # Send error notification
+        from notification_helpers import send_error_notification
+        send_error_notification("Error loading review batches.", "Error")
         return redirect(url_for('index'))
 
 @app.route('/review/batch/<batch_id>')
@@ -3922,7 +4035,9 @@ def review_batch(batch_id):
                              
     except Exception as e:
         app.logger.error(f"Error loading batch review: {sanitize_for_log(str(e))}")
-        flash('Error loading batch for review.', 'error')
+        # Send error notification
+        from notification_helpers import send_error_notification
+        send_error_notification("Error loading batch for review.", "Error")
         return redirect(url_for('review_batches'))
 
 @app.route('/api/review/batch/<batch_id>/quality_metrics')
@@ -4268,7 +4383,7 @@ def api_update_user_settings():
             else:
                 # Fallback to database if Redis update fails
                 app.logger.warning("Redis settings update failed, falling back to database")
-                with unified_session_manager.get_db_session() as session:
+                with db_manager.get_session() as session:
                     from models import CaptionGenerationUserSettings
                     
                     # Get existing settings or create new ones
@@ -4388,10 +4503,21 @@ app.register_blueprint(gdpr_bp)
 from routes.websocket_client_config_routes import websocket_client_config_bp
 app.register_blueprint(websocket_client_config_bp)
 
-# WebSocket configuration API endpoint
-@app.route('/api/websocket/client-config')
+# WebSocket configuration API endpoint with explicit CORS handling
+@app.route('/api/websocket/client-config', methods=['GET', 'OPTIONS'])
 def websocket_client_config():
-    """Provide WebSocket client configuration"""
+    """Provide WebSocket client configuration with proper CORS headers"""
+    
+    # Handle OPTIONS preflight request
+    if request.method == 'OPTIONS':
+        response = make_response()
+        response.headers['Access-Control-Allow-Origin'] = request.headers.get('Origin', '*')
+        response.headers['Access-Control-Allow-Methods'] = 'GET, OPTIONS'
+        response.headers['Access-Control-Allow-Headers'] = 'Content-Type, Authorization, X-Requested-With, X-CSRF-Token'
+        response.headers['Access-Control-Allow-Credentials'] = 'true'
+        response.headers['Access-Control-Max-Age'] = '86400'  # 24 hours
+        return response
+    
     try:
         # For Socket.IO, we use the same origin as the web page
         # Socket.IO will handle the protocol upgrade automatically
@@ -4414,10 +4540,352 @@ def websocket_client_config():
             'withCredentials': True
         }
         
-        return jsonify({
+        # Create response with explicit CORS headers
+        response = make_response(jsonify({
             'success': True,
             'config': client_config
+        }))
+        
+        # Add CORS headers explicitly
+        origin = request.headers.get('Origin')
+        if origin:
+            # Check if origin is allowed
+            allowed_origins = websocket_cors_manager.get_allowed_origins()
+            if origin in allowed_origins or '*' in allowed_origins:
+                response.headers['Access-Control-Allow-Origin'] = origin
+            else:
+                # Fallback to same-origin for security
+                response.headers['Access-Control-Allow-Origin'] = request.url_root.rstrip('/')
+        else:
+            # No origin header, allow same-origin
+            response.headers['Access-Control-Allow-Origin'] = request.url_root.rstrip('/')
+        
+        response.headers['Access-Control-Allow-Credentials'] = 'true'
+        response.headers['Access-Control-Allow-Methods'] = 'GET, OPTIONS'
+        response.headers['Access-Control-Allow-Headers'] = 'Content-Type, Authorization, X-Requested-With, X-CSRF-Token'
+        
+        return response
+        
+    except Exception as e:
+        logger.error(f"Error getting WebSocket client config: {e}")
+        
+        # Create error response with CORS headers
+        response = make_response(jsonify({
+            'success': False,
+            'error': 'Failed to get WebSocket configuration'
+        }), 500)
+        
+        # Add CORS headers to error response too
+        origin = request.headers.get('Origin')
+        if origin:
+            allowed_origins = websocket_cors_manager.get_allowed_origins()
+            if origin in allowed_origins or '*' in allowed_origins:
+                response.headers['Access-Control-Allow-Origin'] = origin
+            else:
+                response.headers['Access-Control-Allow-Origin'] = request.url_root.rstrip('/')
+        else:
+            response.headers['Access-Control-Allow-Origin'] = request.url_root.rstrip('/')
+        
+        response.headers['Access-Control-Allow-Credentials'] = 'true'
+        
+        return response
+
+
+# Page Notification API endpoints
+@app.route('/api/notifications/page/register', methods=['POST'])
+@login_required
+@validate_csrf_token
+def register_page_notification():
+    """Register a page for notification integration"""
+    try:
+        data = request.get_json()
+        page_id = data.get('page_id')
+        page_type = data.get('page_type')
+        config = data.get('config', {})
+        
+        if not page_id or not page_type:
+            return jsonify({
+                'success': False,
+                'error': 'page_id and page_type are required'
+            }), 400
+        
+        # Get notification integrator from app context
+        if hasattr(current_app, 'page_notification_integrator'):
+            integrator = current_app.page_notification_integrator
+            
+            # Register page integration
+            from page_notification_integrator import PageType, PageNotificationConfig
+            
+            try:
+                page_type_enum = PageType(page_type)
+            except ValueError:
+                return jsonify({
+                    'success': False,
+                    'error': f'Invalid page_type: {page_type}'
+                }), 400
+            
+            # Create configuration
+            page_config = PageNotificationConfig(
+                page_type=page_type_enum,
+                enabled_types=set(config.get('enabled_types', [])),
+                auto_hide=config.get('auto_hide', True),
+                max_notifications=config.get('max_notifications', 5),
+                position=config.get('position', 'top-right'),
+                show_progress=config.get('show_progress', False)
+            )
+            
+            # Register integration
+            integration_info = integrator.register_page_integration(page_id, page_type_enum, page_config)
+            
+            return jsonify({
+                'success': True,
+                'message': 'Page registered successfully',
+                'config': integration_info
+            })
+        else:
+            return jsonify({
+                'success': False,
+                'error': 'Page notification integrator not available'
+            }), 503
+            
+    except Exception as e:
+        logger.error(f"Error registering page notification: {e}")
+        return jsonify({
+            'success': False,
+            'error': 'Failed to register page notification'
+        }), 500
+
+
+@app.route('/api/notifications/page/websocket-config', methods=['POST'])
+@login_required
+@validate_csrf_token
+def get_page_websocket_config():
+    """Get WebSocket configuration for a page"""
+    try:
+        data = request.get_json()
+        page_id = data.get('page_id')
+        
+        if not page_id:
+            return jsonify({
+                'success': False,
+                'error': 'page_id is required'
+            }), 400
+        
+        # Determine namespace based on user role and page type
+        namespace = '/admin' if current_user.role.value == 'admin' and page_id.startswith('admin-') else '/'
+        
+        # WebSocket configuration
+        websocket_config = {
+            'namespace': namespace,
+            'events': [
+                'connect', 'disconnect', 'notification',
+                'caption_progress', 'caption_status', 'caption_complete', 'caption_error',
+                'system_maintenance', 'platform_status', 'user_activity'
+            ],
+            'rooms': [
+                f'user_{current_user.id}',
+                'caption_progress' if 'caption' in page_id else None,
+                'system_notifications'
+            ],
+            'auto_join': True,
+            'reconnect': True
+        }
+        
+        # Remove None values
+        websocket_config['rooms'] = [room for room in websocket_config['rooms'] if room is not None]
+        
+        return jsonify({
+            'success': True,
+            'websocket_config': websocket_config
         })
+        
+    except Exception as e:
+        logger.error(f"Error getting WebSocket config: {e}")
+        return jsonify({
+            'success': False,
+            'error': 'Failed to get WebSocket configuration'
+        }), 500
+
+
+@app.route('/api/notifications/page/event-handlers', methods=['POST'])
+@login_required
+@validate_csrf_token
+def get_page_event_handlers():
+    """Get event handler configuration for a page"""
+    try:
+        data = request.get_json()
+        page_id = data.get('page_id')
+        custom_handlers = data.get('custom_handlers', {})
+        
+        if not page_id:
+            return jsonify({
+                'success': False,
+                'error': 'page_id is required'
+            }), 400
+        
+        # Default event handlers based on page type
+        default_handlers = {}
+        
+        if 'caption' in page_id:
+            default_handlers.update({
+                'caption_progress': 'handleCaptionProgress',
+                'caption_status': 'handleCaptionStatus',
+                'caption_complete': 'handleCaptionComplete',
+                'caption_error': 'handleCaptionError'
+            })
+        
+        if 'admin' in page_id:
+            default_handlers.update({
+                'system_status': 'handleSystemStatus',
+                'admin_notification': 'handleAdminNotification',
+                'security_alert': 'handleSecurityAlert'
+            })
+        
+        # Common handlers for all pages
+        default_handlers.update({
+            'notification': 'handleGeneralNotification',
+            'system_maintenance': 'handleMaintenanceNotification'
+        })
+        
+        # Merge with custom handlers
+        handlers = {**default_handlers, **custom_handlers}
+        
+        # Middleware configuration
+        middleware = [
+            'validateNotificationPermissions',
+            'logNotificationEvents',
+            'handleNotificationErrors'
+        ]
+        
+        return jsonify({
+            'success': True,
+            'handler_config': {
+                'handlers': handlers,
+                'middleware': middleware
+            }
+        })
+        
+    except Exception as e:
+        logger.error(f"Error getting event handlers: {e}")
+        return jsonify({
+            'success': False,
+            'error': 'Failed to get event handler configuration'
+        }), 500
+
+
+@app.route('/api/notifications/page/initialize', methods=['POST'])
+@login_required
+@validate_csrf_token
+def initialize_page_notifications():
+    """Initialize server-side page notifications"""
+    try:
+        data = request.get_json()
+        page_id = data.get('page_id')
+        
+        if not page_id:
+            return jsonify({
+                'success': False,
+                'error': 'page_id is required'
+            }), 400
+        
+        # Initialize page notifications on server side
+        if hasattr(current_app, 'page_notification_integrator'):
+            integrator = current_app.page_notification_integrator
+            
+            # Initialize notifications for the page
+            success = integrator.initialize_page_notifications(page_id, current_user.id)
+            
+            if success:
+                return jsonify({
+                    'success': True,
+                    'message': 'Page notifications initialized successfully'
+                })
+            else:
+                return jsonify({
+                    'success': False,
+                    'error': 'Failed to initialize page notifications'
+                }), 500
+        else:
+            return jsonify({
+                'success': False,
+                'error': 'Page notification integrator not available'
+            }), 503
+            
+    except Exception as e:
+        logger.error(f"Error initializing page notifications: {e}")
+        return jsonify({
+            'success': False,
+            'error': 'Failed to initialize page notifications'
+        }), 500
+
+
+@app.route('/api/notifications/page/cleanup', methods=['POST'])
+@login_required
+@validate_csrf_token
+def cleanup_page_notifications():
+    """Cleanup page notifications"""
+    try:
+        data = request.get_json()
+        page_id = data.get('page_id')
+        
+        if not page_id:
+            return jsonify({
+                'success': False,
+                'error': 'page_id is required'
+            }), 400
+        
+        # Cleanup page notifications
+        if hasattr(current_app, 'page_notification_integrator'):
+            integrator = current_app.page_notification_integrator
+            
+            # Cleanup notifications for the page
+            integrator.cleanup_page_integration(page_id)
+            
+            return jsonify({
+                'success': True,
+                'message': 'Page notifications cleaned up successfully'
+            })
+        else:
+            return jsonify({
+                'success': True,
+                'message': 'No cleanup needed - integrator not available'
+            })
+            
+    except Exception as e:
+        logger.error(f"Error cleaning up page notifications: {e}")
+        return jsonify({
+            'success': False,
+            'error': 'Failed to cleanup page notifications'
+        }), 500
+
+
+@app.route('/api/notifications/page/status/<page_id>')
+@login_required
+def get_page_notification_status(page_id):
+    """Get notification status for a page"""
+    try:
+        if hasattr(current_app, 'page_notification_integrator'):
+            integrator = current_app.page_notification_integrator
+            
+            # Get page status
+            status = integrator.get_page_status(page_id)
+            
+            return jsonify({
+                'success': True,
+                'status': status
+            })
+        else:
+            return jsonify({
+                'success': False,
+                'error': 'Page notification integrator not available'
+            }), 503
+            
+    except Exception as e:
+        logger.error(f"Error getting page notification status: {e}")
+        return jsonify({
+            'success': False,
+            'error': 'Failed to get page notification status'
+        }), 500
         
     except Exception as e:
         app.logger.error(f"Failed to generate WebSocket client config: {e}")
@@ -4512,7 +4980,8 @@ if __name__ == '__main__':
             port=config.webapp.port,
             debug=config.webapp.debug,
             use_reloader=False,  # Disable reloader to prevent WebSocket issues
-            log_output=True      # Enable logging for debugging
+            log_output=True,      # Enable logging for debugging
+            allow_unsafe_werkzeug=True # Allow running with Werkzeug in development
         )
     except KeyboardInterrupt:
         app.logger.info("Application shutdown requested")

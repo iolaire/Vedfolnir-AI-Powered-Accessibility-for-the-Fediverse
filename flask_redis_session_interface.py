@@ -212,6 +212,37 @@ class FlaskRedisSessionInterface(SessionInterface):
             session: Session object to save
             response: Response object to set cookie on
         """
+        # Check if this is a WebSocket request - skip cookie operations for WebSocket
+        from flask import request, has_request_context
+        is_websocket = False
+        try:
+            # Check if we have a request context and if it's a WebSocket request
+            if has_request_context():
+                # Check for WebSocket upgrade headers or SocketIO paths
+                if (hasattr(request, 'headers') and 
+                    (request.headers.get('Upgrade', '').lower() == 'websocket' or
+                     request.headers.get('Connection', '').lower() == 'upgrade' or
+                     'websocket' in request.headers.get('Connection', '').lower() or
+                     (hasattr(request, 'path') and request.path.startswith('/socket.io/')))):
+                    is_websocket = True
+                # Also check if the response object is None or invalid (common in WebSocket contexts)
+                elif response is None:
+                    is_websocket = True
+                # Additional check for SocketIO transport parameter
+                elif (hasattr(request, 'args') and 
+                      request.args.get('transport') in ['websocket', 'polling']):
+                    is_websocket = True
+        except Exception:
+            # If we can't access request context or there's any error, 
+            # check if response is None which often indicates WebSocket
+            if response is None:
+                is_websocket = True
+        
+        # For WebSocket connections, skip all session operations to prevent WSGI violations
+        if is_websocket:
+            logger.info(f"Skipping session save for WebSocket request (session {getattr(session, 'sid', 'no-sid')})")
+            return
+        
         domain = self.get_cookie_domain(app)
         path = self.get_cookie_path(app)
         
@@ -236,13 +267,17 @@ class FlaskRedisSessionInterface(SessionInterface):
                 except redis.RedisError as e:
                     logger.error(f"Redis error deleting session: {e}")
             
-            # Clear cookie
-            cookie_name = getattr(app, 'session_cookie_name', app.config.get('SESSION_COOKIE_NAME', 'session'))
-            response.delete_cookie(
-                cookie_name,
-                domain=domain,
-                path=path
-            )
+            # Clear cookie (skip for WebSocket requests)
+            if not is_websocket and response is not None and hasattr(response, 'delete_cookie'):
+                try:
+                    cookie_name = getattr(app, 'session_cookie_name', app.config.get('SESSION_COOKIE_NAME', 'session'))
+                    response.delete_cookie(
+                        cookie_name,
+                        domain=domain,
+                        path=path
+                    )
+                except Exception as e:
+                    logger.warning(f"Failed to delete session cookie: {e}")
             return
         
         # Skip saving if session is empty and new (but allow saving if it has data)
@@ -287,27 +322,38 @@ class FlaskRedisSessionInterface(SessionInterface):
         else:
             logger.info(f"Skipping save: session {session.sid} has no data and is not modified")
         
-        # Set cookie (always set cookie if we have a session ID)
-        if hasattr(session, 'sid') and session.sid:
-            cookie_exp = None
-            if getattr(session, 'permanent', False):
-                # Use current configured timeout for cookie expiration
-                current_timeout = self._get_configured_session_timeout()
-                cookie_exp = datetime.now(timezone.utc) + timedelta(seconds=current_timeout)
-            
-            cookie_name = getattr(app, 'session_cookie_name', app.config.get('SESSION_COOKIE_NAME', 'session'))
-            response.set_cookie(
-                cookie_name,
-                session.sid,
-                expires=cookie_exp,
-                httponly=self.get_cookie_httponly(app),
-                domain=domain,
-                path=path,
-                secure=self.get_cookie_secure(app),
-                samesite=self.get_cookie_samesite(app)
-            )
-            
-            logger.info(f"Set session cookie for session {session.sid}")
+        # Set cookie (always set cookie if we have a session ID and it's not a WebSocket request)
+        if hasattr(session, 'sid') and session.sid and not is_websocket and response is not None:
+            try:
+                # Additional check to ensure response object has the set_cookie method
+                if not hasattr(response, 'set_cookie'):
+                    logger.warning(f"Response object missing set_cookie method for session {session.sid}")
+                    return
+                
+                cookie_exp = None
+                if getattr(session, 'permanent', False):
+                    # Use current configured timeout for cookie expiration
+                    current_timeout = self._get_configured_session_timeout()
+                    cookie_exp = datetime.now(timezone.utc) + timedelta(seconds=current_timeout)
+                
+                cookie_name = getattr(app, 'session_cookie_name', app.config.get('SESSION_COOKIE_NAME', 'session'))
+                response.set_cookie(
+                    cookie_name,
+                    session.sid,
+                    expires=cookie_exp,
+                    httponly=self.get_cookie_httponly(app),
+                    domain=domain,
+                    path=path,
+                    secure=self.get_cookie_secure(app),
+                    samesite=self.get_cookie_samesite(app)
+                )
+                
+                logger.info(f"Set session cookie for session {session.sid}")
+            except Exception as e:
+                # If setting cookie fails (e.g., for WebSocket), just log and continue
+                logger.warning(f"Failed to set session cookie for {session.sid}: {e}")
+        elif is_websocket or response is None:
+            logger.info(f"Skipping cookie set for WebSocket request (session {getattr(session, 'sid', 'no-sid')})")
     
     def get_session_data(self, sid: str) -> Optional[Dict[str, Any]]:
         """

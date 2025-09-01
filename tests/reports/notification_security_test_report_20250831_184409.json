@@ -1,0 +1,618 @@
+{
+  "summary": {
+    "start_time": 1756680249.571841,
+    "end_time": 1756680249.702645,
+    "duration": 0.13080406188964844,
+    "total_tests": 115,
+    "passed_tests": 92,
+    "failed_tests": 23,
+    "error_tests": 0,
+    "skipped_tests": 0,
+    "success_rate": 80.0
+  },
+  "security_coverage": {
+    "authentication": {
+      "passed": 6,
+      "total": 6,
+      "percentage": 100.0
+    },
+    "authorization": {
+      "passed": 6,
+      "total": 6,
+      "percentage": 100.0
+    },
+    "input_validation": {
+      "passed": 5,
+      "total": 5,
+      "percentage": 100.0
+    },
+    "xss_prevention": {
+      "passed": 8,
+      "total": 8,
+      "percentage": 100.0
+    },
+    "rate_limiting": {
+      "passed": 6,
+      "total": 6,
+      "percentage": 100.0
+    },
+    "abuse_detection": {
+      "passed": 7,
+      "total": 7,
+      "percentage": 100.0
+    }
+  },
+  "test_results": {
+    "TestNotificationAuthenticationAuthorization.test_admin_role_permissions": {
+      "status": "PASS",
+      "duration": 0.0018613457679748536,
+      "error_message": null,
+      "timestamp": "2025-08-31T22:44:09.609297+00:00"
+    },
+    "TestNotificationAuthenticationAuthorization.test_audit_logging_for_security_events": {
+      "status": "PASS",
+      "duration": 0.0018613457679748536,
+      "error_message": null,
+      "timestamp": "2025-08-31T22:44:09.609302+00:00"
+    },
+    "TestNotificationAuthenticationAuthorization.test_authentication_token_validation": {
+      "status": "PASS",
+      "duration": 0.0018613457679748536,
+      "error_message": null,
+      "timestamp": "2025-08-31T22:44:09.609304+00:00"
+    },
+    "TestNotificationAuthenticationAuthorization.test_cross_user_access_prevention": {
+      "status": "PASS",
+      "duration": 0.0018613457679748536,
+      "error_message": null,
+      "timestamp": "2025-08-31T22:44:09.609305+00:00"
+    },
+    "TestNotificationAuthenticationAuthorization.test_input_sanitization_for_notifications": {
+      "status": "PASS",
+      "duration": 0.0018613457679748536,
+      "error_message": null,
+      "timestamp": "2025-08-31T22:44:09.609306+00:00"
+    },
+    "TestNotificationAuthenticationAuthorization.test_invalid_user_permissions": {
+      "status": "PASS",
+      "duration": 0.0018613457679748536,
+      "error_message": null,
+      "timestamp": "2025-08-31T22:44:09.609307+00:00"
+    },
+    "TestNotificationAuthenticationAuthorization.test_message_routing_authorization": {
+      "status": "PASS",
+      "duration": 0.0018613457679748536,
+      "error_message": null,
+      "timestamp": "2025-08-31T22:44:09.609308+00:00"
+    },
+    "TestNotificationAuthenticationAuthorization.test_moderator_role_permissions": {
+      "status": "PASS",
+      "duration": 0.0018613457679748536,
+      "error_message": null,
+      "timestamp": "2025-08-31T22:44:09.609309+00:00"
+    },
+    "TestNotificationAuthenticationAuthorization.test_namespace_authorization_admin": {
+      "status": "PASS",
+      "duration": 0.0018613457679748536,
+      "error_message": null,
+      "timestamp": "2025-08-31T22:44:09.609310+00:00"
+    },
+    "TestNotificationAuthenticationAuthorization.test_namespace_authorization_non_admin": {
+      "status": "PASS",
+      "duration": 0.0018613457679748536,
+      "error_message": null,
+      "timestamp": "2025-08-31T22:44:09.609311+00:00"
+    },
+    "TestNotificationAuthenticationAuthorization.test_privilege_escalation_prevention": {
+      "status": "PASS",
+      "duration": 0.0018613457679748536,
+      "error_message": null,
+      "timestamp": "2025-08-31T22:44:09.609312+00:00"
+    },
+    "TestNotificationAuthenticationAuthorization.test_rate_limiting_by_user_role": {
+      "status": "PASS",
+      "duration": 0.0018613457679748536,
+      "error_message": null,
+      "timestamp": "2025-08-31T22:44:09.609313+00:00"
+    },
+    "TestNotificationAuthenticationAuthorization.test_reviewer_role_permissions": {
+      "status": "PASS",
+      "duration": 0.0018613457679748536,
+      "error_message": null,
+      "timestamp": "2025-08-31T22:44:09.609315+00:00"
+    },
+    "TestNotificationAuthenticationAuthorization.test_secure_message_transmission": {
+      "status": "PASS",
+      "duration": 0.0018613457679748536,
+      "error_message": null,
+      "timestamp": "2025-08-31T22:44:09.609316+00:00"
+    },
+    "TestNotificationAuthenticationAuthorization.test_sensitive_data_protection": {
+      "status": "PASS",
+      "duration": 0.0018613457679748536,
+      "error_message": null,
+      "timestamp": "2025-08-31T22:44:09.609317+00:00"
+    },
+    "TestNotificationAuthenticationAuthorization.test_session_based_authorization": {
+      "status": "PASS",
+      "duration": 0.0018613457679748536,
+      "error_message": null,
+      "timestamp": "2025-08-31T22:44:09.609318+00:00"
+    },
+    "TestNotificationAuthenticationAuthorization.test_unauthorized_access_prevention": {
+      "status": "PASS",
+      "duration": 0.0018613457679748536,
+      "error_message": null,
+      "timestamp": "2025-08-31T22:44:09.609319+00:00"
+    },
+    "TestNotificationAuthenticationAuthorization.test_viewer_role_permissions": {
+      "status": "PASS",
+      "duration": 0.0018613457679748536,
+      "error_message": null,
+      "timestamp": "2025-08-31T22:44:09.609320+00:00"
+    },
+    "TestNotificationAuthenticationAuthorization.test_websocket_authentication_failure": {
+      "status": "PASS",
+      "duration": 0.0018613457679748536,
+      "error_message": null,
+      "timestamp": "2025-08-31T22:44:09.609322+00:00"
+    },
+    "TestNotificationAuthenticationAuthorization.test_websocket_authentication_integration": {
+      "status": "PASS",
+      "duration": 0.0018613457679748536,
+      "error_message": null,
+      "timestamp": "2025-08-31T22:44:09.609323+00:00"
+    },
+    "TestNotificationAuthenticationSecurity.test_admin_role_permissions": {
+      "status": "PASS",
+      "duration": 0.0003707011540730794,
+      "error_message": null,
+      "timestamp": "2025-08-31T22:44:09.611661+00:00"
+    },
+    "TestNotificationAuthenticationSecurity.test_authentication_token_validation": {
+      "status": "PASS",
+      "duration": 0.0003707011540730794,
+      "error_message": null,
+      "timestamp": "2025-08-31T22:44:09.611663+00:00"
+    },
+    "TestNotificationAuthenticationSecurity.test_moderator_role_permissions": {
+      "status": "PASS",
+      "duration": 0.0003707011540730794,
+      "error_message": null,
+      "timestamp": "2025-08-31T22:44:09.611665+00:00"
+    },
+    "TestNotificationAuthenticationSecurity.test_reviewer_role_permissions": {
+      "status": "PASS",
+      "duration": 0.0003707011540730794,
+      "error_message": null,
+      "timestamp": "2025-08-31T22:44:09.611666+00:00"
+    },
+    "TestNotificationAuthenticationSecurity.test_viewer_role_permissions": {
+      "status": "PASS",
+      "duration": 0.0003707011540730794,
+      "error_message": null,
+      "timestamp": "2025-08-31T22:44:09.611667+00:00"
+    },
+    "TestNotificationAuthenticationSecurity.test_websocket_authentication_integration": {
+      "status": "PASS",
+      "duration": 0.0003707011540730794,
+      "error_message": null,
+      "timestamp": "2025-08-31T22:44:09.611668+00:00"
+    },
+    "TestNotificationAuthorizationSecurity.test_cross_user_access_prevention": {
+      "status": "PASS",
+      "duration": 0.0002803802490234375,
+      "error_message": null,
+      "timestamp": "2025-08-31T22:44:09.613444+00:00"
+    },
+    "TestNotificationAuthorizationSecurity.test_message_routing_authorization": {
+      "status": "PASS",
+      "duration": 0.0002803802490234375,
+      "error_message": null,
+      "timestamp": "2025-08-31T22:44:09.613447+00:00"
+    },
+    "TestNotificationAuthorizationSecurity.test_namespace_authorization_admin": {
+      "status": "PASS",
+      "duration": 0.0002803802490234375,
+      "error_message": null,
+      "timestamp": "2025-08-31T22:44:09.613449+00:00"
+    },
+    "TestNotificationAuthorizationSecurity.test_namespace_authorization_non_admin": {
+      "status": "PASS",
+      "duration": 0.0002803802490234375,
+      "error_message": null,
+      "timestamp": "2025-08-31T22:44:09.613450+00:00"
+    },
+    "TestNotificationAuthorizationSecurity.test_privilege_escalation_prevention": {
+      "status": "PASS",
+      "duration": 0.0002803802490234375,
+      "error_message": null,
+      "timestamp": "2025-08-31T22:44:09.613451+00:00"
+    },
+    "TestNotificationAuthorizationSecurity.test_unauthorized_access_prevention": {
+      "status": "PASS",
+      "duration": 0.0002803802490234375,
+      "error_message": null,
+      "timestamp": "2025-08-31T22:44:09.613452+00:00"
+    },
+    "TestNotificationInputValidation.test_data_field_validation": {
+      "status": "PASS",
+      "duration": 0.0005654990673065186,
+      "error_message": null,
+      "timestamp": "2025-08-31T22:44:09.618048+00:00"
+    },
+    "TestNotificationInputValidation.test_html_tag_sanitization": {
+      "status": "PASS",
+      "duration": 0.0005654990673065186,
+      "error_message": null,
+      "timestamp": "2025-08-31T22:44:09.618051+00:00"
+    },
+    "TestNotificationInputValidation.test_javascript_injection_prevention": {
+      "status": "PASS",
+      "duration": 0.0005654990673065186,
+      "error_message": null,
+      "timestamp": "2025-08-31T22:44:09.618052+00:00"
+    },
+    "TestNotificationInputValidation.test_json_serialization_safety": {
+      "status": "PASS",
+      "duration": 0.0005654990673065186,
+      "error_message": null,
+      "timestamp": "2025-08-31T22:44:09.618053+00:00"
+    },
+    "TestNotificationInputValidation.test_message_length_validation": {
+      "status": "PASS",
+      "duration": 0.0005654990673065186,
+      "error_message": null,
+      "timestamp": "2025-08-31T22:44:09.618054+00:00"
+    },
+    "TestNotificationInputValidation.test_sql_injection_prevention": {
+      "status": "PASS",
+      "duration": 0.0005654990673065186,
+      "error_message": null,
+      "timestamp": "2025-08-31T22:44:09.618055+00:00"
+    },
+    "TestNotificationInputValidation.test_title_length_validation": {
+      "status": "PASS",
+      "duration": 0.0005654990673065186,
+      "error_message": null,
+      "timestamp": "2025-08-31T22:44:09.618056+00:00"
+    },
+    "TestNotificationInputValidation.test_url_validation_in_action_urls": {
+      "status": "PASS",
+      "duration": 0.0005654990673065186,
+      "error_message": null,
+      "timestamp": "2025-08-31T22:44:09.618057+00:00"
+    },
+    "TestNotificationInputValidationSecurity.runTest": {
+      "status": "FAIL",
+      "duration": 0,
+      "error_message": "Traceback (most recent call last):\n  File \"/Volumes/Gold/DevContainerTesting/vedfolnir/tests/security/test_notification_input_validation_security.py\", line 244, in test_url_validation_in_action_urls\n    self.assertFalse(is_valid, f\"URL should be invalid: {url}\")\nAssertionError: True is not false : URL should be invalid: https://malicious.com/redirect?url=javascript:alert('xss')\n",
+      "timestamp": "2025-08-31T22:44:09.620483+00:00"
+    },
+    "TestNotificationInputValidationSecurity.test_data_field_validation": {
+      "status": "PASS",
+      "duration": 0.00046739578247070315,
+      "error_message": null,
+      "timestamp": "2025-08-31T22:44:09.620485+00:00"
+    },
+    "TestNotificationInputValidationSecurity.test_json_serialization_safety": {
+      "status": "PASS",
+      "duration": 0.00046739578247070315,
+      "error_message": null,
+      "timestamp": "2025-08-31T22:44:09.620486+00:00"
+    },
+    "TestNotificationInputValidationSecurity.test_message_length_validation": {
+      "status": "PASS",
+      "duration": 0.00046739578247070315,
+      "error_message": null,
+      "timestamp": "2025-08-31T22:44:09.620488+00:00"
+    },
+    "TestNotificationInputValidationSecurity.test_title_length_validation": {
+      "status": "PASS",
+      "duration": 0.00046739578247070315,
+      "error_message": null,
+      "timestamp": "2025-08-31T22:44:09.620489+00:00"
+    },
+    "TestNotificationInputValidationSecurity.test_url_validation_in_action_urls": {
+      "status": "PASS",
+      "duration": 0.00046739578247070315,
+      "error_message": null,
+      "timestamp": "2025-08-31T22:44:09.620490+00:00"
+    },
+    "TestNotificationXSSPrevention.test_attribute_value_encoding": {
+      "status": "PASS",
+      "duration": 0.0005544821421305338,
+      "error_message": null,
+      "timestamp": "2025-08-31T22:44:09.623892+00:00"
+    },
+    "TestNotificationXSSPrevention.test_content_security_policy_compliance": {
+      "status": "PASS",
+      "duration": 0.0005544821421305338,
+      "error_message": null,
+      "timestamp": "2025-08-31T22:44:09.623896+00:00"
+    },
+    "TestNotificationXSSPrevention.test_css_context_encoding": {
+      "status": "PASS",
+      "duration": 0.0005544821421305338,
+      "error_message": null,
+      "timestamp": "2025-08-31T22:44:09.623897+00:00"
+    },
+    "TestNotificationXSSPrevention.test_html_entity_encoding": {
+      "status": "PASS",
+      "duration": 0.0005544821421305338,
+      "error_message": null,
+      "timestamp": "2025-08-31T22:44:09.623898+00:00"
+    },
+    "TestNotificationXSSPrevention.test_javascript_context_encoding": {
+      "status": "PASS",
+      "duration": 0.0005544821421305338,
+      "error_message": null,
+      "timestamp": "2025-08-31T22:44:09.623899+00:00"
+    },
+    "TestNotificationXSSPrevention.test_url_context_encoding": {
+      "status": "PASS",
+      "duration": 0.0005544821421305338,
+      "error_message": null,
+      "timestamp": "2025-08-31T22:44:09.623900+00:00"
+    },
+    "TestNotificationXSSPreventionSecurity.runTest": {
+      "status": "FAIL",
+      "duration": 0,
+      "error_message": "Traceback (most recent call last):\n  File \"/Volumes/Gold/DevContainerTesting/vedfolnir/tests/security/test_notification_xss_prevention_security.py\", line 146, in test_javascript_injection_prevention\n    self.assertTrue(is_safe, f\"JavaScript injection should be prevented: {injection_attempt}\")\nAssertionError: False is not true : JavaScript injection should be prevented: onfocus=alert('xss')\n",
+      "timestamp": "2025-08-31T22:44:09.628199+00:00"
+    },
+    "TestNotificationXSSPreventionSecurity.test_attribute_value_encoding": {
+      "status": "PASS",
+      "duration": 0.0005202293395996094,
+      "error_message": null,
+      "timestamp": "2025-08-31T22:44:09.628201+00:00"
+    },
+    "TestNotificationXSSPreventionSecurity.test_content_security_policy_compliance": {
+      "status": "PASS",
+      "duration": 0.0005202293395996094,
+      "error_message": null,
+      "timestamp": "2025-08-31T22:44:09.628202+00:00"
+    },
+    "TestNotificationXSSPreventionSecurity.test_css_context_encoding": {
+      "status": "PASS",
+      "duration": 0.0005202293395996094,
+      "error_message": null,
+      "timestamp": "2025-08-31T22:44:09.628203+00:00"
+    },
+    "TestNotificationXSSPreventionSecurity.test_html_entity_encoding": {
+      "status": "PASS",
+      "duration": 0.0005202293395996094,
+      "error_message": null,
+      "timestamp": "2025-08-31T22:44:09.628204+00:00"
+    },
+    "TestNotificationXSSPreventionSecurity.test_html_tag_sanitization": {
+      "status": "PASS",
+      "duration": 0.0005202293395996094,
+      "error_message": null,
+      "timestamp": "2025-08-31T22:44:09.628205+00:00"
+    },
+    "TestNotificationXSSPreventionSecurity.test_javascript_context_encoding": {
+      "status": "PASS",
+      "duration": 0.0005202293395996094,
+      "error_message": null,
+      "timestamp": "2025-08-31T22:44:09.628206+00:00"
+    },
+    "TestNotificationXSSPreventionSecurity.test_javascript_injection_prevention": {
+      "status": "PASS",
+      "duration": 0.0005202293395996094,
+      "error_message": null,
+      "timestamp": "2025-08-31T22:44:09.628207+00:00"
+    },
+    "TestNotificationXSSPreventionSecurity.test_url_context_encoding": {
+      "status": "PASS",
+      "duration": 0.0005202293395996094,
+      "error_message": null,
+      "timestamp": "2025-08-31T22:44:09.628208+00:00"
+    },
+    "TestNotificationRateLimiting.test_abuse_pattern_detection": {
+      "status": "PASS",
+      "duration": 0.0004395961761474609,
+      "error_message": null,
+      "timestamp": "2025-08-31T22:44:09.632701+00:00"
+    },
+    "TestNotificationRateLimiting.test_adaptive_rate_limiting": {
+      "status": "PASS",
+      "duration": 0.0004395961761474609,
+      "error_message": null,
+      "timestamp": "2025-08-31T22:44:09.632703+00:00"
+    },
+    "TestNotificationRateLimiting.test_burst_detection": {
+      "status": "PASS",
+      "duration": 0.0004395961761474609,
+      "error_message": null,
+      "timestamp": "2025-08-31T22:44:09.632705+00:00"
+    },
+    "TestNotificationRateLimiting.test_ip_based_rate_limiting": {
+      "status": "PASS",
+      "duration": 0.0004395961761474609,
+      "error_message": null,
+      "timestamp": "2025-08-31T22:44:09.632706+00:00"
+    },
+    "TestNotificationRateLimiting.test_priority_based_rate_limiting": {
+      "status": "PASS",
+      "duration": 0.0004395961761474609,
+      "error_message": null,
+      "timestamp": "2025-08-31T22:44:09.632707+00:00"
+    },
+    "TestNotificationRateLimiting.test_rate_limit_bypass_for_system_messages": {
+      "status": "PASS",
+      "duration": 0.0004395961761474609,
+      "error_message": null,
+      "timestamp": "2025-08-31T22:44:09.632708+00:00"
+    },
+    "TestNotificationRateLimiting.test_rate_limit_logging_and_monitoring": {
+      "status": "PASS",
+      "duration": 0.0004395961761474609,
+      "error_message": null,
+      "timestamp": "2025-08-31T22:44:09.632709+00:00"
+    },
+    "TestNotificationRateLimiting.test_rate_limit_recovery": {
+      "status": "PASS",
+      "duration": 0.0004395961761474609,
+      "error_message": null,
+      "timestamp": "2025-08-31T22:44:09.632710+00:00"
+    },
+    "TestNotificationRateLimiting.test_role_based_rate_limiting": {
+      "status": "PASS",
+      "duration": 0.0004395961761474609,
+      "error_message": null,
+      "timestamp": "2025-08-31T22:44:09.632711+00:00"
+    },
+    "TestNotificationRateLimiting.test_user_rate_limiting": {
+      "status": "PASS",
+      "duration": 0.0004395961761474609,
+      "error_message": null,
+      "timestamp": "2025-08-31T22:44:09.632712+00:00"
+    },
+    "TestNotificationRateLimitingSecurity.test_burst_detection": {
+      "status": "PASS",
+      "duration": 0.0008848110834757487,
+      "error_message": null,
+      "timestamp": "2025-08-31T22:44:09.638124+00:00"
+    },
+    "TestNotificationRateLimitingSecurity.test_ip_based_rate_limiting": {
+      "status": "PASS",
+      "duration": 0.0008848110834757487,
+      "error_message": null,
+      "timestamp": "2025-08-31T22:44:09.638126+00:00"
+    },
+    "TestNotificationRateLimitingSecurity.test_priority_based_rate_limiting": {
+      "status": "PASS",
+      "duration": 0.0008848110834757487,
+      "error_message": null,
+      "timestamp": "2025-08-31T22:44:09.638127+00:00"
+    },
+    "TestNotificationRateLimitingSecurity.test_rate_limit_recovery": {
+      "status": "PASS",
+      "duration": 0.0008848110834757487,
+      "error_message": null,
+      "timestamp": "2025-08-31T22:44:09.638129+00:00"
+    },
+    "TestNotificationRateLimitingSecurity.test_role_based_rate_limiting": {
+      "status": "PASS",
+      "duration": 0.0008848110834757487,
+      "error_message": null,
+      "timestamp": "2025-08-31T22:44:09.638130+00:00"
+    },
+    "TestNotificationRateLimitingSecurity.test_user_rate_limiting": {
+      "status": "PASS",
+      "duration": 0.0008848110834757487,
+      "error_message": null,
+      "timestamp": "2025-08-31T22:44:09.638130+00:00"
+    },
+    "TestNotificationSecurityIntegration.test_end_to_end_security_validation": {
+      "status": "PASS",
+      "duration": 0.010087728500366211,
+      "error_message": null,
+      "timestamp": "2025-08-31T22:44:09.678570+00:00"
+    },
+    "TestNotificationSecurityIntegration.test_security_configuration_validation": {
+      "status": "PASS",
+      "duration": 0.010087728500366211,
+      "error_message": null,
+      "timestamp": "2025-08-31T22:44:09.678574+00:00"
+    },
+    "TestNotificationSecurityIntegration.test_security_event_logging": {
+      "status": "PASS",
+      "duration": 0.010087728500366211,
+      "error_message": null,
+      "timestamp": "2025-08-31T22:44:09.678575+00:00"
+    },
+    "TestNotificationSecurityIntegration.test_security_metrics_collection": {
+      "status": "PASS",
+      "duration": 0.010087728500366211,
+      "error_message": null,
+      "timestamp": "2025-08-31T22:44:09.678576+00:00"
+    },
+    "TestNotificationAbuseDetection.test_adaptive_security_measures": {
+      "status": "PASS",
+      "duration": 0.0018335305727445162,
+      "error_message": null,
+      "timestamp": "2025-08-31T22:44:09.702565+00:00"
+    },
+    "TestNotificationAbuseDetection.test_automated_threat_response": {
+      "status": "PASS",
+      "duration": 0.0018335305727445162,
+      "error_message": null,
+      "timestamp": "2025-08-31T22:44:09.702574+00:00"
+    },
+    "TestNotificationAbuseDetection.test_behavioral_pattern_analysis": {
+      "status": "PASS",
+      "duration": 0.0018335305727445162,
+      "error_message": null,
+      "timestamp": "2025-08-31T22:44:09.702578+00:00"
+    },
+    "TestNotificationAbuseDetection.test_content_entropy_analysis": {
+      "status": "PASS",
+      "duration": 0.0018335305727445162,
+      "error_message": null,
+      "timestamp": "2025-08-31T22:44:09.702580+00:00"
+    },
+    "TestNotificationAbuseDetection.test_content_similarity_detection": {
+      "status": "PASS",
+      "duration": 0.0018335305727445162,
+      "error_message": null,
+      "timestamp": "2025-08-31T22:44:09.702582+00:00"
+    },
+    "TestNotificationAbuseDetection.test_coordinated_attack_detection": {
+      "status": "PASS",
+      "duration": 0.0018335305727445162,
+      "error_message": null,
+      "timestamp": "2025-08-31T22:44:09.702586+00:00"
+    },
+    "TestNotificationAbuseDetection.test_false_positive_reduction": {
+      "status": "PASS",
+      "duration": 0.0018335305727445162,
+      "error_message": null,
+      "timestamp": "2025-08-31T22:44:09.702588+00:00"
+    },
+    "TestNotificationAbuseDetection.test_frequency_analysis_detection": {
+      "status": "PASS",
+      "duration": 0.0018335305727445162,
+      "error_message": null,
+      "timestamp": "2025-08-31T22:44:09.702591+00:00"
+    },
+    "TestNotificationAbuseDetection.test_ip_reputation_checking": {
+      "status": "PASS",
+      "duration": 0.0018335305727445162,
+      "error_message": null,
+      "timestamp": "2025-08-31T22:44:09.702593+00:00"
+    },
+    "TestNotificationAbuseDetection.test_machine_learning_anomaly_detection": {
+      "status": "PASS",
+      "duration": 0.0018335305727445162,
+      "error_message": null,
+      "timestamp": "2025-08-31T22:44:09.702595+00:00"
+    },
+    "TestNotificationAbuseDetection.test_privilege_escalation_detection": {
+      "status": "PASS",
+      "duration": 0.0018335305727445162,
+      "error_message": null,
+      "timestamp": "2025-08-31T22:44:09.702597+00:00"
+    },
+    "TestNotificationAbuseDetection.test_security_performance_impact": {
+      "status": "PASS",
+      "duration": 0.0018335305727445162,
+      "error_message": null,
+      "timestamp": "2025-08-31T22:44:09.702599+00:00"
+    },
+    "TestNotificationAbuseDetection.test_session_hijacking_detection": {
+      "status": "PASS",
+      "duration": 0.0018335305727445162,
+      "error_message": null,
+      "timestamp": "2025-08-31T22:44:09.702601+00:00"
+    }
+  },
+  "performance_metrics": {},
+  "compliance_status": {
+    "overall_status": "PASS",
+    "critical_failures": [],
+    "warnings": [],
+    "recommendations": []
+  }
+}

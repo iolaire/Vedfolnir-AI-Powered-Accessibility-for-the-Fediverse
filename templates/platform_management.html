@@ -13,12 +13,19 @@
         <div class="col-12">
             {{ maintenance_status.banner_html|safe }}
             {% if maintenance_status.mode != 'test' %}
-            <div class="alert alert-info">
-                <i class="bi bi-info-circle"></i>
-                <strong>Platform Operations Restricted:</strong>
-                Platform switching, connection testing, and credential updates are temporarily disabled during maintenance.
-                You can continue using your current platform connection.
-            </div>
+            <script>
+            document.addEventListener('DOMContentLoaded', function() {
+                if (window.unifiedNotificationRenderer) {
+                    window.unifiedNotificationRenderer.renderNotification({
+                        type: 'info',
+                        title: 'Platform Operations Restricted',
+                        message: 'Platform switching, connection testing, and credential updates are temporarily disabled during maintenance. You can continue using your current platform connection.',
+                        persistent: true,
+                        priority: 'high'
+                    });
+                }
+            });
+            </script>
             {% endif %}
         </div>
     </div>
@@ -74,9 +81,10 @@
                         </div>
                     </div>
                     {% else %}
-                    <div class="alert alert-warning">
-                        <i class="bi bi-exclamation-triangle"></i>
-                        No platform selected. Please add and select a platform connection.
+                    <div class="text-center py-4">
+                        <i class="bi bi-exclamation-triangle text-warning fs-1"></i>
+                        <h5 class="mt-3">No Platform Selected</h5>
+                        <p class="text-muted">Please add and select a platform connection to get started.</p>
                     </div>
                     {% endif %}
                 </div>
@@ -189,9 +197,10 @@
 
                     <!-- Mobile-friendly summary -->
                     <div class="d-md-none mt-3">
-                        <div class="alert alert-info">
-                            <i class="bi bi-info-circle"></i>
-                            <strong>{{ user_platforms|length }} platform{{ 's' if user_platforms|length != 1 else '' }}
+                        <div class="card bg-light">
+                            <div class="card-body text-center">
+                                <i class="bi bi-info-circle text-info"></i>
+                                <strong>{{ user_platforms|length }} platform{{ 's' if user_platforms|length != 1 else '' }}
                                 configured</strong><br>
                             <small>Tap any platform card to view actions</small>
                         </div>
@@ -311,9 +320,10 @@
                     aria-label="Close"></button>
             </div>
             <div class="modal-body">
-                <div class="alert alert-warning">
-                    <i class="bi bi-warning"></i>
-                    <strong>Warning:</strong> This action cannot be undone!
+                <div class="card border-warning">
+                    <div class="card-body">
+                        <i class="bi bi-exclamation-triangle text-warning"></i>
+                        <strong>Warning:</strong> This action cannot be undone!
                 </div>
 
                 <p>You are about to delete the platform connection:</p>
@@ -379,5 +389,27 @@
     </div>
 </div>
 
+<!-- Include unified notification system -->
+<script src="{{ url_for('static', filename='js/notification_ui_renderer.js') }}"></script>
+<script src="{{ url_for('static', filename='js/page_notification_integrator.js') }}"></script>
+
+<!-- Include WebSocket-enabled platform management -->
+<script src="{{ url_for('static', filename='js/platform_management_websocket.js') }}"></script>
+
+<!-- Include legacy platform management for fallback -->
 <script src="{{ url_for('static', filename='js/platform_management.js') }}"></script>
+
+<!-- Initialize page notifications -->
+<script>
+document.addEventListener('DOMContentLoaded', function() {
+    // Initialize page notification system for platform management
+    if (window.PageNotificationIntegrator) {
+        window.pageNotifications = new PageNotificationIntegrator('platform_management');
+        console.log('Platform management page notifications initialized');
+    }
+    
+    // Mark page type for WebSocket integration
+    document.body.setAttribute('data-page-type', 'platform_management');
+});
+</script>
 {% endblock %}

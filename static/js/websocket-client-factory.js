@@ -130,7 +130,8 @@ class WebSocketClientFactory {
                     'Content-Type': 'application/json',
                     'X-Requested-With': 'XMLHttpRequest'
                 },
-                credentials: 'same-origin'
+                credentials: 'same-origin',
+                mode: 'cors'  // Explicitly enable CORS mode
             });
             
             if (!response.ok) {
@@ -446,11 +447,19 @@ class WebSocketClientFactory {
     _handleTransportError(error, client, config) {
         console.warn('Transport error detected, trying alternative transport');
         
-        // Switch to alternative transport
-        const currentTransports = client.io.opts.transports;
-        if (currentTransports.includes('websocket') && currentTransports.includes('polling')) {
-            // Switch to polling only
-            client._reconfigureTransports(['polling']);
+        // Switch to alternative transport - check if client.io and opts exist
+        if (client && client.io && client.io.opts && client.io.opts.transports) {
+            const currentTransports = client.io.opts.transports;
+            if (currentTransports.includes('websocket') && currentTransports.includes('polling')) {
+                // Switch to polling only
+                client._reconfigureTransports(['polling']);
+            }
+        } else if (config && config.transports && config.transports.includes('polling')) {
+            // Fallback to config transports if client.io.opts is not available
+            console.warn('Client opts not available, using config transports');
+            if (client && typeof client._reconfigureTransports === 'function') {
+                client._reconfigureTransports(['polling']);
+            }
         }
         
         this._updateConnectionStatus('transport_error', 'Switching transport method');

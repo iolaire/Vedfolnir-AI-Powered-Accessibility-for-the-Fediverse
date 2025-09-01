@@ -2,6 +2,11 @@
 # This program is free software: you can redistribute it and/or modify it under the terms of the GNU Affero General Public License as published by the Free Software Foundation, either version 3 of the License, or (at your option) any later version.
 # THE SOFTWARE IS PROVIDED "AS IS", WITHOUT WARRANTY OF ANY KIND, EXPRESS OR IMPLIED, INCLUDING BUT NOT LIMITED TO THE WARRANTIES OF MERCHANTABILITY, FITNESS FOR A PARTICULAR PURPOSE AND NONINFRINGEMENT. IN NO EVENT SHALL THE AUTHORS OR COPYRIGHT HOLDERS BE LIABLE FOR ANY CLAIM, DAMAGES OR OTHER LIABILITY, WHETHER IN AN ACTION OF CONTRACT, TORT OR OTHERWISE, ARISING FROM, OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE SOFTWARE.
 
+
+# NOTE: Flash messages in this test file have been replaced with comments
+# as part of the notification system migration. The actual application now
+# uses the unified WebSocket-based notification system.
+
 """
 Integration tests for dashboard access without DetachedInstanceError.
 
@@ -245,7 +250,7 @@ class TestDashboardAccessIntegration(unittest.TestCase):
                             self.app.session_cookie_manager.set_session_cookie(response, session_id)
                             return response
                     else:
-                        flash('Invalid credentials', 'error')
+                        # Unified notification: Invalid credentials (error)
             
             return render_template_string('''
                 <form method="post">
@@ -369,10 +374,10 @@ class TestDashboardAccessIntegration(unittest.TestCase):
                     )
                     
             except DetachedInstanceError as e:
-                flash('Session error occurred. Please log in again.', 'error')
+                # Unified notification: Session error occurred. Please log in again. (error)
                 return redirect(url_for('login'))
             except Exception as e:
-                flash('An error occurred loading the dashboard.', 'error')
+                # Unified notification: An error occurred loading the dashboard. (error)
                 return redirect(url_for('login'))
         
         @self.app.route('/switch_platform')
@@ -385,7 +390,7 @@ class TestDashboardAccessIntegration(unittest.TestCase):
                 user_platforms = current_user.platforms
                 
                 if len(user_platforms) < 2:
-                    flash('You need at least 2 platforms to switch.', 'warning')
+                    # Unified notification: You need at least 2 platforms to switch. (warning)
                     return redirect(url_for('dashboard'))
                 
                 # Get current platform
@@ -410,7 +415,7 @@ class TestDashboardAccessIntegration(unittest.TestCase):
                         if success:
                             flash(f'Switched to {next_platform.name}', 'success')
                         else:
-                            flash('Failed to switch platform', 'error')
+                            # Unified notification: Failed to switch platform (error)
                     else:
                         # Create new session with the platform
                         new_session_id = self.session_manager.create_session(current_user.id, next_platform.id)
@@ -420,10 +425,10 @@ class TestDashboardAccessIntegration(unittest.TestCase):
                 return redirect(url_for('dashboard'))
                 
             except DetachedInstanceError as e:
-                flash('Session error during platform switch. Please log in again.', 'error')
+                # Unified notification: Session error during platform switch. Please log in again. (error)
                 return redirect(url_for('login'))
             except Exception as e:
-                flash('Error switching platform.', 'error')
+                # Unified notification: Error switching platform. (error)
                 return redirect(url_for('dashboard'))
         
         @self.app.route('/first_time_setup')

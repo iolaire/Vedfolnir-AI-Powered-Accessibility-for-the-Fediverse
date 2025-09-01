@@ -21,8 +21,11 @@ def register_routes(bp):
     def dashboard():
         """Admin landing page and dashboard overview"""
         if not current_user.role == UserRole.ADMIN:
-            from flask import flash, redirect, url_for
-            flash('Access denied. Admin privileges required.', 'error')
+            from flask import redirect, url_for
+            # from notification_flash_replacement import send_notification  # Removed - using unified notification system
+            # Send error notification
+            from notification_helpers import send_error_notification
+            send_error_notification("Access denied. Admin privileges required.", "Access Denied")
             return redirect(url_for('index'))
             
         db_manager = current_app.config['db_manager']
@@ -106,8 +109,11 @@ def register_routes(bp):
     def configuration_management():
         """System configuration management page"""
         if not current_user.role == UserRole.ADMIN:
-            from flask import flash, redirect, url_for
-            flash('Access denied. Admin privileges required.', 'error')
+            from flask import redirect, url_for
+            # from notification_flash_replacement import send_notification  # Removed - using unified notification system
+            # Send error notification
+            from notification_helpers import send_error_notification
+            send_error_notification("Access denied. Admin privileges required.", "Access Denied")
             return redirect(url_for('admin.dashboard'))
             
         return render_template('configuration_management.html')

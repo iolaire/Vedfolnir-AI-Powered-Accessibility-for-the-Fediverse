@@ -67,7 +67,13 @@ class WebSocketFactory:
             socketio_config = self._get_unified_socketio_config()
             
             self.logger.info("Creating SocketIO instance with configuration:")
-            self.logger.info(f"  - CORS Origins: {len(socketio_config.get('cors_allowed_origins', []))} origins")
+            cors_origins = socketio_config.get('cors_allowed_origins', [])
+            if cors_origins is True or cors_origins == "*":
+                self.logger.info(f"  - CORS Origins: Wildcard (*) - all origins allowed")
+            elif isinstance(cors_origins, list):
+                self.logger.info(f"  - CORS Origins: {len(cors_origins)} origins")
+            else:
+                self.logger.info(f"  - CORS Origins: {cors_origins}")
             self.logger.info(f"  - Async Mode: {socketio_config.get('async_mode', 'threading')}")
             self.logger.info(f"  - Transports: {socketio_config.get('transports', ['websocket', 'polling'])}")
             self.logger.info(f"  - Ping Timeout: {socketio_config.get('ping_timeout', 60)}s")
@@ -182,14 +188,18 @@ class WebSocketFactory:
         Args:
             socketio: SocketIO instance to configure
         """
+        # Check if authentication is required from environment
+        import os
+        auth_required = os.getenv('SOCKETIO_REQUIRE_AUTH', 'true').lower() == 'true'
+        
         default_namespaces = {
             '/': {
                 'description': 'Default namespace for user connections',
-                'auth_required': True,
+                'auth_required': auth_required,
             },
             '/admin': {
                 'description': 'Admin namespace for administrative functions',
-                'auth_required': True,
+                'auth_required': auth_required,  # Admin namespace respects the same setting for development
                 'admin_only': True,
             }
         }
@@ -235,7 +245,7 @@ class WebSocketFactory:
                 return False
         
         @socketio.on('disconnect', namespace=namespace)
-        def handle_disconnect():
+        def handle_disconnect(sid=None):
             """Handle client disconnection"""
             try:
                 self.logger.info(f"Client disconnected from namespace {namespace}")
