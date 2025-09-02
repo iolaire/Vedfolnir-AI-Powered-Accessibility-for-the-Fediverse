@@ -77,34 +77,29 @@ app = Flask(__name__)
 config = Config()
 app.config['SECRET_KEY'] = config.webapp.secret_key
 
-# Add WebSocket WSGI middleware to prevent session handling issues
-from websocket_wsgi_middleware import create_websocket_wsgi_middleware
-app.wsgi_app = create_websocket_wsgi_middleware(app.wsgi_app)
-app.logger.debug("WebSocket WSGI middleware applied")
-
-# Set up WebSocket error filtering to suppress cosmetic Flask-SocketIO errors
-from websocket_log_filter import setup_websocket_log_filter
-websocket_filter = setup_websocket_log_filter()
-app.websocket_filter = websocket_filter  # Store for monitoring
-app.logger.info("WebSocket error filter applied - cosmetic Flask-SocketIO errors will be suppressed")
-
-# Initialize WebSocket system using new standardized components
-from websocket_config_manager import WebSocketConfigManager
-from websocket_cors_manager import CORSManager
-from websocket_factory import WebSocketFactory
-from websocket_auth_handler import WebSocketAuthHandler
-from websocket_namespace_manager import WebSocketNamespaceManager
+# Initialize WebSocket system using consolidated components
+from app.websocket.core.config_manager import ConsolidatedWebSocketConfigManager
+from app.websocket.core.factory import WebSocketFactory
+from app.websocket.core.auth_handler import WebSocketAuthHandler
+from app.websocket.core.namespace_manager import WebSocketNamespaceManager
+from app.websocket.middleware.security_manager import ConsolidatedWebSocketSecurityManager
+from app.websocket.services.error_handler import ConsolidatedWebSocketErrorHandler
 
 # Initialize WebSocket configuration manager
-websocket_config_manager = WebSocketConfigManager(config)
+websocket_config_manager = ConsolidatedWebSocketConfigManager(config)
+websocket_config = websocket_config_manager.get_websocket_config()
 app.logger.debug("WebSocket configuration manager initialized")
 
-# Initialize CORS manager with dynamic origin support
-websocket_cors_manager = CORSManager(websocket_config_manager)
-app.logger.debug("WebSocket CORS manager initialized")
+# Initialize WebSocket security manager
+websocket_security_manager = ConsolidatedWebSocketSecurityManager()
+app.logger.debug("WebSocket security manager initialized")
+
+# Initialize WebSocket error handler
+websocket_error_handler = ConsolidatedWebSocketErrorHandler()
+app.logger.debug("WebSocket error handler initialized")
 
 # Initialize WebSocket factory
-websocket_factory = WebSocketFactory(websocket_config_manager, websocket_cors_manager)
+websocket_factory = WebSocketFactory(websocket_config_manager)
 app.logger.debug("WebSocket factory initialized")
 
 # WebSocket authentication handler will be initialized after session manager
@@ -113,14 +108,13 @@ app.logger.debug("WebSocket factory initialized")
 # Initialize legacy CORS support for backward compatibility
 from flask_cors import CORS
 CORS(app, 
-     origins=websocket_cors_manager.get_allowed_origins(),
-     supports_credentials=True,
-     allow_headers=["Content-Type", "Authorization", "X-Requested-With", "X-CSRF-Token"],
-     methods=["GET", "POST", "PUT", "DELETE", "OPTIONS"],
+     origins=websocket_config.cors_origins,
+     supports_credentials=websocket_config.cors_credentials,
+     allow_headers=websocket_config.cors_headers,
+     methods=websocket_config.cors_methods,
      expose_headers=["Content-Type", "X-CSRF-Token"])
 
-# Initialize WebSocket Progress Handler (legacy import for backward compatibility)
-from websocket_progress_handler import WebSocketProgressHandler, AdminDashboardWebSocket
+# Progress handler now integrated into consolidated WebSocket system
 
 app.config['SQLALCHEMY_DATABASE_URI'] = config.storage.database_url
 app.config['SQLALCHEMY_TRACK_MODIFICATIONS'] = False
@@ -368,6 +362,9 @@ else:
     )
     app.logger.warning("Using fallback session manager (Redis not available)")
 
+from app.websocket.core.auth_handler import WebSocketAuthHandler
+from app.websocket.core.namespace_manager import WebSocketNamespaceManager
+
 # Store unified_session_manager on app object for direct access
 app.unified_session_manager = unified_session_manager
 app.session_manager = unified_session_manager  # For compatibility
@@ -376,7 +373,10 @@ app.session_manager = unified_session_manager  # For compatibility
 # Initialize WebSocket authentication handler
 websocket_auth_handler = WebSocketAuthHandler(
     db_manager=db_manager,
-    session_manager=unified_session_manager
+    session_manager=unified_session_manager,
+    rate_limit_window=60,  # 1 minute window
+    max_attempts_per_window=100,  # 100 attempts per user per minute
+    max_attempts_per_ip=500  # 500 attempts per IP per minute
 )
 app.logger.debug("WebSocket authentication handler initialized")
 
@@ -390,7 +390,8 @@ app.logger.debug("WebSocket namespace manager initialized")
 
 # Store WebSocket components for later use
 app.websocket_config_manager = websocket_config_manager
-app.websocket_cors_manager = websocket_cors_manager
+app.websocket_security_manager = websocket_security_manager
+app.websocket_error_handler = websocket_error_handler
 app.websocket_factory = websocket_factory
 app.websocket_auth_handler = websocket_auth_handler
 app.websocket_namespace_manager = websocket_namespace_manager
@@ -698,9 +699,9 @@ try:
     websocket_auth_handler = WebSocketAuthHandler(
         db_manager=db_manager,
         session_manager=unified_session_manager,
-        rate_limit_window=300,  # 5 minutes
-        max_attempts_per_window=10,
-        max_attempts_per_ip=50
+        rate_limit_window=60,  # 1 minute
+        max_attempts_per_window=100,  # 100 attempts per user per minute
+        max_attempts_per_ip=500  # 500 attempts per IP per minute
     )
     app.logger.debug("WebSocket authentication handler initialized")
     
@@ -713,15 +714,12 @@ try:
     app.websocket_namespace_manager = websocket_namespace_manager
     
     # Initialize WebSocket progress handler with new namespace system
-    websocket_progress_handler = WebSocketProgressHandler(socketio, db_manager, progress_tracker, task_queue_manager)
-    admin_dashboard_websocket = AdminDashboardWebSocket(socketio, db_manager)
+    from app.websocket.progress.progress_handler import WebSocketProgressHandler
+    websocket_progress_handler = WebSocketProgressHandler()
     
     # Update progress handler to use new namespace system
     if hasattr(websocket_progress_handler, 'set_namespace_manager'):
         websocket_progress_handler.set_namespace_manager(websocket_namespace_manager)
-    
-    if hasattr(admin_dashboard_websocket, 'set_namespace_manager'):
-        admin_dashboard_websocket.set_namespace_manager(websocket_namespace_manager)
     
     app.logger.debug("WebSocket progress handlers initialized with namespace system")
     
@@ -755,7 +753,7 @@ except Exception as e:
     
     class FallbackAuthHandler:
         def authenticate_connection(self, auth_data=None, namespace='/'):
-            from websocket_auth_handler import AuthenticationResult
+            from app.websocket.core.auth_handler import AuthenticationResult
             return AuthenticationResult.SYSTEM_ERROR, None
         def get_authentication_stats(self):
             return {'error': 'Authentication handler not available'}
@@ -767,7 +765,6 @@ except Exception as e:
             return False
     
     websocket_progress_handler = FallbackWebSocketHandler()
-    admin_dashboard_websocket = FallbackAdminWebSocketHandler()
     websocket_auth_handler = FallbackAuthHandler()
     websocket_namespace_manager = FallbackNamespaceManager()
     

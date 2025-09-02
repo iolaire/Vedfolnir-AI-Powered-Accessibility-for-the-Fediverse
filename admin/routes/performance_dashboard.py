@@ -389,7 +389,7 @@ def register_routes(bp):
             return redirect(url_for('admin.dashboard'))
         
         try:
-            return render_template('admin/performance_dashboard.html')
+            return render_template('performance_dashboard.html')
         except Exception as e:
             logger.error(f"Failed to load performance dashboard: {e}")
             # Send error notification

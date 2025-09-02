@@ -18,7 +18,7 @@ from flask import Flask
 # Add project root to path for imports
 sys.path.insert(0, os.path.join(os.path.dirname(__file__), '..', '..'))
 
-from websocket_factory import WebSocketFactory
+from app.websocket.core.factory import WebSocketFactory
 from websocket_config_manager import WebSocketConfigManager
 from websocket_cors_manager import CORSManager
 from config import Config

@@ -18,7 +18,7 @@ from unittest.mock import patch, MagicMock
 # Add project root to path for imports
 sys.path.insert(0, os.path.join(os.path.dirname(__file__), '..', '..'))
 
-from websocket_config_manager import WebSocketConfigManager, WebSocketConfig
+from app.websocket.core.config_manager import ConsolidatedWebSocketConfigManager, WebSocketConfig
 from config import Config
 
 

@@ -26,9 +26,9 @@ from sqlalchemy import Column, Integer, String, Text, DateTime, Boolean, Foreign
 from sqlalchemy.ext.declarative import declarative_base
 from sqlalchemy.orm import relationship
 
-from websocket_factory import WebSocketFactory
-from websocket_auth_handler import WebSocketAuthHandler, AuthenticationContext
-from websocket_namespace_manager import WebSocketNamespaceManager
+from app.websocket.core.factory import WebSocketFactory
+from app.websocket.core.auth_handler import WebSocketAuthHandler, AuthenticationContext
+from app.websocket.core.namespace_manager import WebSocketNamespaceManager
 from models import UserRole, Base, NotificationStorage, NotificationType, NotificationPriority, NotificationCategory
 from database import DatabaseManager
 

@@ -16,9 +16,9 @@ from dataclasses import dataclass
 from enum import Enum
 from flask import Flask, request, session, current_app
 
-from websocket_factory import WebSocketFactory
-from websocket_auth_handler import WebSocketAuthHandler
-from websocket_namespace_manager import WebSocketNamespaceManager
+from app.websocket.core.factory import WebSocketFactory
+from app.websocket.core.auth_handler import WebSocketAuthHandler
+from app.websocket.core.namespace_manager import WebSocketNamespaceManager
 from unified_notification_manager import UnifiedNotificationManager
 
 logger = logging.getLogger(__name__)

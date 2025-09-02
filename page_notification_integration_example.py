@@ -16,11 +16,11 @@ from dotenv import load_dotenv
 from config import Config
 from database import DatabaseManager
 from session_manager_v2 import SessionManagerV2
-from websocket_factory import WebSocketFactory
+from app.websocket.core.factory import WebSocketFactory
 from websocket_config_manager import WebSocketConfigManager
 from websocket_cors_manager import CORSManager
-from websocket_auth_handler import WebSocketAuthHandler
-from websocket_namespace_manager import WebSocketNamespaceManager
+from app.websocket.core.auth_handler import WebSocketAuthHandler
+from app.websocket.core.namespace_manager import WebSocketNamespaceManager
 from unified_notification_manager import UnifiedNotificationManager
 from page_notification_integrator import PageNotificationIntegrator, PageType
 from routes.page_notification_routes import register_page_notification_routes

@@ -11,8 +11,8 @@ server environment settings, CORS configuration, and client environment detectio
 
 import logging
 from flask import Blueprint, jsonify, request, current_app
-from websocket_config_manager import WebSocketConfigManager
-from websocket_cors_manager import CORSManager
+from app.websocket.core.config_manager import ConsolidatedWebSocketConfigManager as WebSocketConfigManager
+# CORS functionality is now integrated into the config manager
 
 logger = logging.getLogger(__name__)
 

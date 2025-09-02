@@ -20,7 +20,7 @@ from enum import Enum
 
 from flask_socketio import emit, join_room, leave_room
 
-from websocket_namespace_manager import WebSocketNamespaceManager
+from app.websocket.core.namespace_manager import WebSocketNamespaceManager
 from unified_notification_manager import (
     NotificationMessage, AdminNotificationMessage, SystemNotificationMessage,
     NotificationType, NotificationPriority, NotificationCategory

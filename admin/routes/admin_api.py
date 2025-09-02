@@ -263,6 +263,7 @@ def register_api_routes(bp):
     def request_health_update():
         """Request immediate system health update for admin dashboard"""
         try:
+            from flask import current_app
             data = request.get_json() or {}
             force_update = data.get('force_update', False)
             
@@ -271,7 +272,6 @@ def register_api_routes(bp):
             if not health_integration:
                 # Fallback to direct system monitor
                 from system_monitor import SystemMonitor
-                from flask import current_app
                 
                 db_manager = current_app.config['db_manager']
                 system_monitor = SystemMonitor(db_manager)

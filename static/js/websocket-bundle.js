@@ -894,6 +894,15 @@ window.WebSocketKeepAlive = null;
 
 // Initialize when DOM is ready
 document.addEventListener('DOMContentLoaded', function() {
+    // Check if user is authenticated before initializing WebSocket
+    const isLoginPage = window.location.pathname.includes('/login') || 
+                       window.location.pathname === '/' && !document.body.classList.contains('authenticated');
+    
+    if (isLoginPage) {
+        console.log('🔒 Skipping WebSocket initialization on login page');
+        return;
+    }
+    
     console.log('🚀 Initializing WebSocket bundle...');
     
     // Update status to show initialization
@@ -922,6 +931,57 @@ document.addEventListener('DOMContentLoaded', function() {
         console.error('❌ WebSocket bundle initialization failed:', error);
     });
 });
+
+// Global function to initialize WebSocket after login
+window.initializeWebSocketAfterLogin = function() {
+    console.log('🚀 Initializing WebSocket after login...');
+    
+    // Update status to show initialization
+    const statusElement = document.getElementById('websocket-status');
+    if (statusElement) {
+        statusElement.innerHTML = '<i class="bi bi-hourglass-split"></i> Real-time: Loading...';
+    }
+    
+    try {
+        // Initialize WebSocket factory
+        window.WebSocketFactory = new WebSocketClientFactory();
+        
+        // Initialize main WebSocket connection
+        window.VedfolnirWS = new VedfolnirWebSocket(window.WebSocketFactory);
+        
+        // Connect WebSocket
+        window.VedfolnirWS.connect().then(() => {
+            console.log('✅ WebSocket bundle initialization completed');
+            
+            // Initialize keep-alive manager
+            if (window.VedfolnirWS.socket) {
+                window.WebSocketKeepAlive = new WebSocketKeepAlive(window.VedfolnirWS.socket);
+                console.log('✅ WebSocket keep-alive initialized');
+            }
+            
+            // Update status to show success
+            if (statusElement) {
+                statusElement.innerHTML = '<i class="bi bi-wifi text-success"></i> Real-time: Connected';
+            }
+            
+        }).catch((error) => {
+            console.error('❌ WebSocket initialization failed after login:', error);
+            
+            // Update status to show error
+            if (statusElement) {
+                statusElement.innerHTML = '<i class="bi bi-wifi-off text-danger"></i> Real-time: Error';
+            }
+        });
+        
+    } catch (error) {
+        console.error('❌ WebSocket bundle initialization failed:', error);
+        
+        // Update status to show error
+        if (statusElement) {
+            statusElement.innerHTML = '<i class="bi bi-wifi-off text-danger"></i> Real-time: Error';
+        }
+    }
+};
 
 // Cleanup on page unload
 window.addEventListener('beforeunload', function() {

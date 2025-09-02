@@ -23,8 +23,8 @@ from collections import deque, defaultdict
 import statistics
 
 from unified_notification_manager import UnifiedNotificationManager
-from websocket_performance_monitor import WebSocketPerformanceMonitor, PerformanceLevel, LoadLevel
-from websocket_namespace_manager import WebSocketNamespaceManager
+from app.websocket.services.performance_monitor import ConsolidatedWebSocketPerformanceMonitor as WebSocketPerformanceMonitor, PerformanceLevel, LoadLevel
+from app.websocket.core.namespace_manager import WebSocketNamespaceManager
 from database import DatabaseManager
 from models import NotificationStorage, NotificationType, NotificationPriority, NotificationCategory
 

@@ -27,9 +27,9 @@ from unified_notification_manager import (
     UnifiedNotificationManager, NotificationMessage, 
     AdminNotificationMessage, SystemNotificationMessage
 )
-from websocket_factory import WebSocketFactory
-from websocket_auth_handler import WebSocketAuthHandler
-from websocket_namespace_manager import WebSocketNamespaceManager
+from app.websocket.core.factory import WebSocketFactory
+from app.websocket.core.auth_handler import WebSocketAuthHandler
+from app.websocket.core.namespace_manager import WebSocketNamespaceManager
 from database import DatabaseManager
 from models import NotificationType, NotificationPriority, NotificationCategory
 

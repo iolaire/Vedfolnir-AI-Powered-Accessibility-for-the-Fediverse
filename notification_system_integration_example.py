@@ -12,11 +12,10 @@ with the existing WebSocket CORS framework for a complete notification system.
 import uuid
 from datetime import datetime, timezone, timedelta
 
-from websocket_factory import WebSocketFactory
-from websocket_auth_handler import WebSocketAuthHandler
-from websocket_namespace_manager import WebSocketNamespaceManager
-from websocket_config_manager import WebSocketConfigManager
-from websocket_cors_manager import CORSManager
+from app.websocket.core.factory import WebSocketFactory
+from app.websocket.core.auth_handler import WebSocketAuthHandler
+from app.websocket.core.namespace_manager import WebSocketNamespaceManager
+from app.websocket.core.config_manager import ConsolidatedWebSocketConfigManager as WebSocketConfigManager
 
 from unified_notification_manager import (
     UnifiedNotificationManager, NotificationMessage, AdminNotificationMessage,
@@ -43,8 +42,7 @@ def create_notification_system(app, db_manager):
     """
     # Initialize WebSocket framework components
     config_manager = WebSocketConfigManager()
-    cors_manager = CORSManager(config_manager)
-    websocket_factory = WebSocketFactory(config_manager, cors_manager, db_manager)
+    websocket_factory = WebSocketFactory(config_manager, db_manager)
     
     # Create SocketIO instance
     socketio = websocket_factory.create_socketio_instance(app)

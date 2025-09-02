@@ -2,22 +2,23 @@ def setup_middleware(app):
     """Setup application middleware"""
     
     # Add WebSocket WSGI middleware
-    from websocket_wsgi_middleware import create_websocket_wsgi_middleware
+    # WebSocket middleware now integrated into consolidated system
+    pass
     app.wsgi_app = create_websocket_wsgi_middleware(app.wsgi_app)
     app.logger.debug("WebSocket WSGI middleware applied")
     
     # Set up WebSocket error filtering
-    from websocket_log_filter import setup_websocket_log_filter
+    # WebSocket log filtering now integrated into consolidated error handler
+    pass
     websocket_filter = setup_websocket_log_filter()
     app.websocket_filter = websocket_filter
     app.logger.info("WebSocket error filter applied")
     
     # Initialize WebSocket system
-    from websocket_config_manager import WebSocketConfigManager
-    from websocket_cors_manager import CORSManager
-    from websocket_factory import WebSocketFactory
-    from websocket_auth_handler import WebSocketAuthHandler
-    from websocket_namespace_manager import WebSocketNamespaceManager
+    from app.websocket.core.config_manager import ConsolidatedWebSocketConfigManager as WebSocketConfigManager
+    from app.websocket.core.factory import WebSocketFactory
+    from app.websocket.core.auth_handler import WebSocketAuthHandler
+    from app.websocket.core.namespace_manager import WebSocketNamespaceManager
     
     # Initialize WebSocket configuration manager
     from config import Config
