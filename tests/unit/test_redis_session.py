@@ -17,7 +17,7 @@ from dotenv import load_dotenv
 load_dotenv()
 
 # Add project root to path
-sys.path.insert(0, os.path.dirname(os.path.abspath(__file__)))
+sys.path.insert(0, os.path.join(os.path.dirname(__file__), '..', '..'))
 
 def test_redis_connection():
     """Test Redis connection"""
@@ -133,45 +133,72 @@ def test_session_operations(app, redis_client, config):
         print(f"❌ Session operations failed: {e}")
         return False
 
-def test_simple_session_manager():
-    """Test simple session manager"""
-    print("\n🔍 Testing simple session manager...")
+def test_session_manager_v2():
+    """Test session manager v2 (production session manager)"""
+    print("\n🔍 Testing session manager v2...")
     
     try:
-        from simple_session_manager import SessionManager
+        from session_manager_v2 import SessionManagerV2
+        from redis_session_backend import RedisSessionBackend
+        from database import DatabaseManager
         from config import Config
         
         config = Config()
-        redis_client = redis.from_url(config.redis.url)
         
-        # Create session manager
-        session_manager = SessionManager(redis_client)
+        # Create required dependencies
+        db_manager = DatabaseManager(config)
+        redis_backend = RedisSessionBackend.from_env()
         
-        print("✅ Simple session manager created!")
+        # Create session manager v2
+        session_manager = SessionManagerV2(db_manager, redis_backend)
+        
+        print("✅ Session manager v2 created successfully!")
         print(f"   Manager type: {type(session_manager).__name__}")
+        print(f"   Redis backend: {hasattr(session_manager, 'redis_backend')}")
+        print(f"   Database manager: {hasattr(session_manager, 'db_manager')}")
+        print(f"   Session timeout: {session_manager.session_timeout}s")
         
         return True
         
     except Exception as e:
-        print(f"❌ Simple session manager failed: {e}")
+        print(f"❌ Session manager v2 failed: {e}")
         return False
 
-def test_web_app_imports():
-    """Test web app imports"""
-    print("\n🔍 Testing web app imports...")
+def test_session_manager_imports():
+    """Test all production session manager imports"""
+    print("\n🔍 Testing session manager imports...")
     
     try:
-        # Test importing the simplified web app
-        import web_app_simple
+        from session_manager_v2 import SessionManagerV2
+        from unified_session_manager import UnifiedSessionManager
+        from redis_session_manager import RedisSessionManager
         
-        print("✅ Simplified web app imported successfully!")
-        print(f"   App type: {type(web_app_simple.app).__name__}")
-        print(f"   Session interface: {type(web_app_simple.app.session_interface).__name__}")
+        print("✅ All production session managers imported successfully!")
+        print(f"   SessionManagerV2: {SessionManagerV2}")
+        print(f"   UnifiedSessionManager: {UnifiedSessionManager}")
+        print(f"   RedisSessionManager: {RedisSessionManager}")
         
         return True
         
     except Exception as e:
-        print(f"❌ Web app import failed: {e}")
+        print(f"❌ Session manager imports failed: {e}")
+        return False
+
+def test_main_web_app_imports():
+    """Test main web app imports"""
+    print("\n🔍 Testing main web app imports...")
+    
+    try:
+        # Test importing the main web app
+        import web_app
+        
+        print("✅ Main web app imported successfully!")
+        print(f"   App type: {type(web_app.app).__name__}")
+        
+        return True
+        
+    except Exception as e:
+        print(f"❌ Main web app import failed: {e}")
         return False
 
 def main():
@@ -194,11 +221,14 @@ def main():
     # Test session operations
     session_ops_ok = test_session_operations(app, redis_client, config)
     
-    # Test simple session manager
-    session_manager_ok = test_simple_session_manager()
+    # Test session manager v2
+    session_manager_v2_ok = test_session_manager_v2()
     
-    # Test web app imports
-    web_app_ok = test_web_app_imports()
+    # Test session manager imports
+    session_manager_imports_ok = test_session_manager_imports()
+    
+    # Test main web app imports
+    web_app_ok = test_main_web_app_imports()
     
     # Summary
     print("\n" + "=" * 60)
@@ -206,14 +236,16 @@ def main():
     print(f"   Redis Connection: {'✅ OK' if redis_client else '❌ Failed'}")
     print(f"   Flask-Redis Interface: {'✅ OK' if session_interface else '❌ Failed'}")
     print(f"   Session Operations: {'✅ OK' if session_ops_ok else '❌ Failed'}")
-    print(f"   Session Manager: {'✅ OK' if session_manager_ok else '❌ Failed'}")
+    print(f"   Session Manager V2: {'✅ OK' if session_manager_v2_ok else '❌ Failed'}")
+    print(f"   Session Manager Imports: {'✅ OK' if session_manager_imports_ok else '❌ Failed'}")
     print(f"   Web App Import: {'✅ OK' if web_app_ok else '❌ Failed'}")
     
     all_tests_passed = all([
         redis_client is not None,
         session_interface is not None,
         session_ops_ok,
-        session_manager_ok,
+        session_manager_v2_ok,
+        session_manager_imports_ok,
         web_app_ok
     ])
     
@@ -223,8 +255,8 @@ def main():
         print("   ✅ Redis stores all session data on the server")
         print("   ✅ Flask manages session cookies with unique session IDs")
         print("   ✅ Session IDs are used as keys to retrieve data from Redis")
-        print("\nYou can now run the simplified web app:")
-        print("   python3 web_app_simple.py")
+        print("\nYou can now run the main web app:")
+        print("   python3 web_app.py")
     else:
         print("\n⚠️  Some tests failed. Please check the errors above.")
     
