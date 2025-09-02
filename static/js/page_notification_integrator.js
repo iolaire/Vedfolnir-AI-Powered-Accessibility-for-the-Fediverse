@@ -976,4 +976,7 @@ window.handlePageError = function(data) {
     console.error('Page notification error:', data);
 };
 
+// Export PageNotificationIntegrator to global scope
+window.PageNotificationIntegrator = PageNotificationIntegrator;
+
 console.log('Page Notification Integrator loaded');

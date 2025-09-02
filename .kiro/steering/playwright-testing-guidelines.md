@@ -9,7 +9,7 @@ This document establishes mandatory guidelines for Playwright browser testing in
 All Playwright test commands MUST be prefixed with `timeout 120` to prevent infinite hangs:
 
 ```bash
-# CORRECT - Always use timeout prefix
+# CORRECT - Always use timeout prefix (run from tests/playwright directory)
 timeout 120 npx playwright test --config=0830_17_52_playwright.config.js
 
 # WRONG - Missing timeout prefix
@@ -183,15 +183,26 @@ test.afterEach(async ({ page }) => {
 
 ## Command Examples
 
+### Working Directory Requirements
+**IMPORTANT**: All Playwright commands must be run from the `tests/playwright/` directory:
+
+```bash
+# Navigate to the correct directory first
+cd tests/playwright
+
+# Then run Playwright commands
+timeout 120 npx playwright test --config=0830_17_52_playwright.config.js
+```
+
 ### Individual Test Execution
 ```bash
-# Run specific test file
+# Run specific test file (run from tests/playwright directory)
 timeout 120 npx playwright test --config=0830_17_52_playwright.config.js tests/0830_17_52_test_admin_authentication.js --timeout=120
 
-# Run with debug mode
+# Run with debug mode (run from tests/playwright directory)
 timeout 120 npx playwright test --config=0830_17_52_playwright.config.js tests/0830_17_52_test_admin_authentication.js --debug --timeout=120
 
-# Run with verbose output
+# Run with verbose output (run from tests/playwright directory)
 timeout 120 npx playwright test --config=0830_17_52_playwright.config.js --reporter=list --timeout=120
 ```
 
@@ -228,6 +239,51 @@ When authentication tests fail:
 4. **Review Session**: Check session management and cookies
 
 ### Common Authentication Issues and Fixes
+
+#### Page.evaluate() Security Errors (CRITICAL)
+**Problem**: `SecurityError: The operation is insecure` when using `page.evaluate()` to clear localStorage/sessionStorage.
+
+**Root Cause**: WebKit browser security restrictions prevent `page.evaluate()` from accessing localStorage/sessionStorage in certain contexts, particularly when the page hasn't fully loaded or when running in secure contexts.
+
+**Error Example**:
+```
+Error: page.evaluate: SecurityError: The operation is insecure.
+  await page.evaluate(() => {
+    localStorage.clear();
+    sessionStorage.clear();
+  });
+```
+
+**Solution**: Avoid using `page.evaluate()` for storage cleanup. Use safer alternatives:
+
+```javascript
+// CORRECT - Safe cleanup methods
+test.beforeEach(async ({ page }) => {
+  // Only clear cookies - this is safe and sufficient for most tests
+  await page.context().clearCookies();
+  
+  // Alternative: Navigate to a clean page first if storage cleanup is needed
+  await page.goto('about:blank');
+  await page.context().clearCookies();
+});
+
+// WRONG - Causes SecurityError in WebKit
+test.beforeEach(async ({ page }) => {
+  await page.context().clearCookies();
+  await page.evaluate(() => {
+    localStorage.clear();      // SecurityError!
+    sessionStorage.clear();    // SecurityError!
+  });
+});
+```
+
+**Prevention**:
+- Avoid `page.evaluate()` for storage operations in test setup/cleanup
+- Use `page.context().clearCookies()` for authentication cleanup
+- If storage cleanup is absolutely necessary, navigate to a page first
+- Test cleanup methods in isolation before using in test suites
+
+**Impact**: This issue affects all WebKit-based browsers (Safari) and can cause entire test suites to fail.
 
 #### Null Page Object Errors
 **Problem**: `Cannot read properties of null (reading 'goto')` errors in authentication utilities.
@@ -271,6 +327,52 @@ async function ensureLoggedOut(page) {
 - Provide meaningful error messages for debugging
 - Test utility functions independently before using in test suites
 
+#### NetworkIdle Timeout Issues
+**Problem**: Tests timeout when using `waitUntil: 'networkidle'` navigation option.
+
+**Root Cause**: The `networkidle` wait condition requires no network activity for 500ms, which can be problematic with WebSocket connections, polling requests, or other background network activity.
+
+**Error Example**:
+```
+page.goto: Timeout 15000ms exceeded.
+Call log:
+  - navigating to "http://127.0.0.1:5000/logout", waiting until "networkidle"
+```
+
+**Solution**: Use more reliable wait conditions:
+
+```javascript
+// CORRECT - Use domcontentloaded for faster, more reliable navigation
+await page.goto('/login', { 
+  waitUntil: 'domcontentloaded',
+  timeout: 30000 
+});
+
+// CORRECT - Use load if you need resources loaded
+await page.goto('/admin', { 
+  waitUntil: 'load',
+  timeout: 30000 
+});
+
+// WRONG - networkidle can timeout with WebSocket connections
+await page.goto('/login', { 
+  waitUntil: 'networkidle',  // Problematic with active WebSockets
+  timeout: 15000 
+});
+```
+
+**Best Practices**:
+- Use `domcontentloaded` for most navigation needs
+- Use `load` only when you need all resources loaded
+- Avoid `networkidle` in applications with WebSocket connections
+- Increase timeouts to 30000ms (30 seconds) for navigation
+- Follow navigation with explicit element waits when needed
+
+**Prevention**:
+- Always specify `waitUntil: 'domcontentloaded'` explicitly
+- Use element-specific waits after navigation: `await page.waitForSelector('form')`
+- Test navigation patterns in isolation before using in test suites
+
 ## CI/CD Integration
 
 ### Environment Variables
@@ -294,6 +396,8 @@ export USER_PASSWORD="g9bDFB9JzgEaVZx"
     npx playwright install webkit
     timeout 120 npm test
 ```
+
+**Note**: Always ensure the working directory is set to `tests/playwright` before running any Playwright commands in CI/CD pipelines.
 
 ## Quality Standards
 

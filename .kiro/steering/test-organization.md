@@ -445,6 +445,46 @@ tests/playwright/
 // Page load times and performance metrics
 ```
 
+### Playwright Security Considerations
+
+#### Page.evaluate() Security Restrictions
+**CRITICAL**: WebKit browsers have strict security restrictions on `page.evaluate()` operations.
+
+**Issue**: Using `page.evaluate()` to clear localStorage/sessionStorage causes `SecurityError: The operation is insecure`.
+
+**Solution**: Use safer cleanup methods:
+```javascript
+// CORRECT - Safe cleanup
+test.beforeEach(async ({ page }) => {
+  await page.context().clearCookies();
+});
+
+// WRONG - Causes SecurityError in WebKit
+test.beforeEach(async ({ page }) => {
+  await page.evaluate(() => {
+    localStorage.clear();    // SecurityError!
+    sessionStorage.clear();  // SecurityError!
+  });
+});
+```
+
+#### Navigation Timeout Prevention
+**Issue**: `networkidle` wait conditions timeout with WebSocket connections.
+
+**Solution**: Use `domcontentloaded` for reliable navigation:
+```javascript
+// CORRECT - Reliable navigation
+await page.goto('/login', { 
+  waitUntil: 'domcontentloaded',
+  timeout: 30000 
+});
+
+// WRONG - Times out with WebSockets
+await page.goto('/login', { 
+  waitUntil: 'networkidle'  // Problematic
+});
+```
+
 ### Playwright Configuration Requirements
 
 #### Headless Mode Setting

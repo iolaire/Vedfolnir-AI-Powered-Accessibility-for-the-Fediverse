@@ -159,3 +159,7 @@ scripts/setup/generate_env_secrets_ILM.py
 #playwright tests
 tests/playwright
 .aider*
+
+
+#GEMINI.md
+GEMINI.md

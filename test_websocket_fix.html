@@ -1,0 +1,90 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>WebSocket Fix Test</title>
+    <style>
+        body { font-family: Arial, sans-serif; margin: 20px; }
+        .log { margin: 5px 0; padding: 5px; border-left: 3px solid #ccc; }
+        .success { border-color: #28a745; background: #d4edda; }
+        .error { border-color: #dc3545; background: #f8d7da; }
+        .info { border-color: #17a2b8; background: #d1ecf1; }
+    </style>
+</head>
+<body>
+    <h1>WebSocket Fix Test</h1>
+    <p>Testing the fixed WebSocket transport optimizer...</p>
+    
+    <div id="logs"></div>
+    <button onclick="testConnection()">Test Connection</button>
+    <button onclick="clearLogs()">Clear Logs</button>
+
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/socket.io/4.7.2/socket.io.js"></script>
+    <script src="static/js/websocket-transport-optimizer.js"></script>
+    
+    <script>
+        function log(message, type = 'info') {
+            const logs = document.getElementById('logs');
+            const div = document.createElement('div');
+            div.className = `log ${type}`;
+            div.innerHTML = `[${new Date().toLocaleTimeString()}] ${message}`;
+            logs.appendChild(div);
+            logs.scrollTop = logs.scrollHeight;
+            console.log(message);
+        }
+
+        function clearLogs() {
+            document.getElementById('logs').innerHTML = '';
+        }
+
+        function testConnection() {
+            log('Starting WebSocket connection test...', 'info');
+            
+            // Get optimized configuration
+            const config = window.getOptimizedWebSocketConfig();
+            log(`Using configuration: ${JSON.stringify(config)}`, 'info');
+            
+            // Create socket connection
+            const socket = io('http://127.0.0.1:5000/admin', config);
+            
+            // Monitor the connection
+            window.monitorWebSocketConnection(socket);
+            
+            socket.on('connect', () => {
+                log('✅ Connected successfully!', 'success');
+                log(`Transport: ${socket.io.engine.transport.name}`, 'info');
+            });
+            
+            socket.on('connect_error', (error) => {
+                log(`❌ Connection error: ${error.message}`, 'error');
+            });
+            
+            socket.on('disconnect', (reason) => {
+                log(`🔌 Disconnected: ${reason}`, 'info');
+            });
+            
+            // Monitor transport changes
+            socket.io.engine.on('upgrade', () => {
+                log(`⬆️ Upgraded to ${socket.io.engine.transport.name}`, 'success');
+            });
+            
+            socket.io.engine.on('upgradeError', (error) => {
+                log(`❌ Upgrade error: ${error.message}`, 'error');
+            });
+            
+            // Test for 30 seconds then disconnect
+            setTimeout(() => {
+                log('Test completed, disconnecting...', 'info');
+                socket.disconnect();
+            }, 30000);
+        }
+
+        // Auto-start test when page loads
+        window.addEventListener('load', () => {
+            log('Page loaded, WebSocket transport optimizer ready', 'info');
+            log(`Browser detected: ${window.webSocketTransportOptimizer.browserInfo.name} ${window.webSocketTransportOptimizer.browserInfo.version}`, 'info');
+        });
+    </script>
+</body>
+</html>

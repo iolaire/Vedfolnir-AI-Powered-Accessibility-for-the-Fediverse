@@ -109,12 +109,13 @@ class WebSocketTransportOptimizer {
         // Browser-specific optimizations
         switch (this.browserInfo.name) {
             case 'safari':
-                // Safari has stricter WebSocket validation
+                // Safari has stricter WebSocket validation - use polling only to avoid upgrade errors
                 config.transports = ['polling']; // Start with polling only
-                config.upgrade = false; // Disable upgrade initially
+                config.upgrade = false; // Disable upgrade to prevent errors
                 config.timeout = 30000; // Longer timeout for Safari
                 config.reconnectionDelay = 2000; // Slower reconnection
-                console.log('🍎 Safari detected - using polling-first configuration');
+                config.rememberUpgrade = false; // Never remember upgrades in Safari
+                console.log('🍎 Safari detected - using polling-only configuration to avoid upgrade errors');
                 break;
                 
             case 'chrome':
@@ -249,13 +250,19 @@ class WebSocketTransportOptimizer {
         // Wait for stable polling connection before attempting upgrade
         setTimeout(() => {
             if (socket.connected && socket.io.engine.transport.name === 'polling') {
-                console.log('🔄 Attempting WebSocket upgrade after stable polling connection');
+                console.log('🔄 Checking if WebSocket upgrade is possible after stable polling connection');
                 
                 try {
-                    // Enable upgrade
-                    socket.io.engine.upgrade();
+                    // In Socket.IO v4.x, upgrades happen automatically if enabled
+                    // We can only enable upgrade by updating the engine options
+                    if (socket.io.engine && socket.io.engine.opts) {
+                        socket.io.engine.opts.upgrade = true;
+                        console.log('✅ WebSocket upgrade enabled in engine options');
+                    } else {
+                        console.log('ℹ️ WebSocket upgrade will happen automatically if supported');
+                    }
                 } catch (error) {
-                    console.warn('WebSocket upgrade attempt failed:', error);
+                    console.warn('WebSocket upgrade configuration failed:', error);
                     this.recordConnectionAttempt('websocket', false, error.message);
                 }
             }
@@ -296,10 +303,11 @@ class WebSocketTransportOptimizer {
             this.recordConnectionAttempt('websocket', false, error.message);
         });
         
-        // Enable upgrade for conservative configurations
+        // Note: In Socket.IO v4.x, upgrades happen automatically when enabled
+        // Manual upgrade triggering is not supported via public API
         if (this.optimizedConfig.transports.includes('polling') && 
             !this.optimizedConfig.transports.includes('websocket')) {
-            this.enableWebSocketUpgrade(socket);
+            console.log('ℹ️ Using polling-only configuration - WebSocket upgrade disabled');
         }
     }
     
