@@ -36,7 +36,7 @@ class PlatformService:
     def switch_platform(self, platform_id):
         """Switch to a different platform"""
         try:
-            from request_scoped_session_manager import request_session_manager
+            unified_session_manager = getattr(current_app, 'unified_session_manager', None)
             
             with request_session_manager.session_scope() as db_session:
                 platform = db_session.query(PlatformConnection).filter_by(

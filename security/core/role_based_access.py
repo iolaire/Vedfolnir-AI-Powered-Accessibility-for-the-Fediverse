@@ -70,7 +70,7 @@ def require_role(required_role):
                 except Exception as e:
                     logger.error(f"Failed to log access denied event: {e}")
                 
-                return redirect(url_for('index'))
+                return redirect(url_for('main.index'))
             
             return f(*args, **kwargs)
         return decorated_function
@@ -129,14 +129,14 @@ def platform_access_required(f):
                         # Send error notification
                         from notification_helpers import send_error_notification
                         send_error_notification("Access denied. You can only access your own platforms.", "Error")
-                        return redirect(url_for('platform_management'))
+                        return redirect(url_for('platform.management'))
                         
             except Exception as e:
                 logger.error(f"Error checking platform access: {e}")
                 # Send error notification
                 from notification_helpers import send_error_notification
                 send_error_notification("Error checking platform access.", "Error")
-                return redirect(url_for('index'))
+                return redirect(url_for('main.index'))
         
         return f(*args, **kwargs)
     return decorated_function
@@ -183,7 +183,7 @@ def content_access_required(f):
                             # Send error notification
                             from notification_helpers import send_error_notification
                             send_error_notification("Access denied. You can only access content from your own platforms.", "Error")
-                            return redirect(url_for('review_list'))
+                            return redirect(url_for('review.review_list'))
                 
                 # Check post access
                 if post_id:
@@ -200,14 +200,14 @@ def content_access_required(f):
                             # Send error notification
                             from notification_helpers import send_error_notification
                             send_error_notification("Access denied. You can only access content from your own platforms.", "Error")
-                            return redirect(url_for('index'))
+                            return redirect(url_for('main.index'))
                             
         except Exception as e:
             logger.error(f"Error checking content access: {e}")
             # Send error notification
             from notification_helpers import send_error_notification
             send_error_notification("Error checking content access.", "Error")
-            return redirect(url_for('index'))
+            return redirect(url_for('main.index'))
         
         return f(*args, **kwargs)
     return decorated_function

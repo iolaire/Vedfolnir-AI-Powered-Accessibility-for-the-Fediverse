@@ -405,19 +405,12 @@ class AIServiceMonitor:
         
         while not self._stop_monitoring.is_set():
             try:
-                # Perform health check
-                loop = asyncio.new_event_loop()
-                asyncio.set_event_loop(loop)
+                # Perform health check using proper async pattern
+                health_check = asyncio.run(self.check_service_health())
+                self._update_status(health_check)
                 
-                try:
-                    health_check = loop.run_until_complete(self.check_service_health())
-                    self._update_status(health_check)
-                    
-                    logger.debug(f"AI service health check: {health_check.status.value} "
-                               f"({health_check.response_time_ms:.1f}ms)")
-                    
-                finally:
-                    loop.close()
+                logger.debug(f"AI service health check: {health_check.status.value} "
+                           f"({health_check.response_time_ms:.1f}ms)")
                 
             except Exception as e:
                 logger.error(f"Error in monitoring loop: {sanitize_for_log(str(e))}")

@@ -78,19 +78,19 @@ def with_db_session(f):
             # Send error notification
             from notification_helpers import send_error_notification
             send_error_notification("Database session error. Please try again.", "Database Error")
-            return redirect(url_for('index'))
+            return redirect(url_for('main.index'))
         except SQLAlchemyError as e:
             logger.error(f"Database error in view {f.__name__}: {e}")
             # Send error notification
             from notification_helpers import send_error_notification
             send_error_notification("Database error occurred. Please try again.", "Database Error")
-            return redirect(url_for('index'))
+            return redirect(url_for('main.index'))
         except Exception as e:
             logger.error(f"Unexpected error in view {f.__name__}: {e}")
             # Send error notification
             from notification_helpers import send_error_notification
             send_error_notification("An unexpected error occurred. Please try again.", "Unexpected Error")
-            return redirect(url_for('index'))
+            return redirect(url_for('main.index'))
     
     return decorated_function
 
@@ -173,7 +173,7 @@ def require_platform_context(f):
                 # Send error notification
                 from notification_helpers import send_error_notification
                 send_error_notification("Error loading platform information. Please try again.", "Platform Error")
-                return redirect(url_for('platform_management'))
+                return redirect(url_for('platform.management'))
             
             # Call the original function
             return f(*args, **kwargs)
@@ -189,7 +189,7 @@ def require_platform_context(f):
             # Send error notification
             from notification_helpers import send_error_notification
             send_error_notification("An unexpected error occurred. Please try again.", "Unexpected Error")
-            return redirect(url_for('index'))
+            return redirect(url_for('main.index'))
     
     return decorated_function
 
@@ -226,18 +226,18 @@ def handle_detached_instance_error(f):
                 # Send warning notification
                 from notification_helpers import send_warning_notification
                 send_warning_notification("Platform session error. Please select your platform again.", "Platform Session Error")
-                return redirect(url_for('platform_management'))
+                return redirect(url_for('platform.management'))
             else:
                 # Send error notification
                 from notification_helpers import send_error_notification
                 send_error_notification("Session error occurred. Please try again.", "Session Error")
-                return redirect(url_for('index'))
+                return redirect(url_for('main.index'))
         except Exception as e:
             logger.error(f"Unexpected error in {f.__name__}: {e}")
             # Send error notification
             from notification_helpers import send_error_notification
             send_error_notification("An unexpected error occurred. Please try again.", "Unexpected Error")
-            return redirect(url_for('index'))
+            return redirect(url_for('main.index'))
     
     return decorated_function
 

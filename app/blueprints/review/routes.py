@@ -1,109 +1,126 @@
-from flask import Blueprint, render_template, redirect, url_for, request, current_app
+from flask import Blueprint, render_template, request, jsonify, redirect, url_for, current_app
 from flask_login import login_required, current_user
-from security.core.role_based_access import require_viewer_or_higher
-from session_aware_decorators import with_session_error_handling, require_platform_context
-from security.core.security_utils import sanitize_for_log
-from app.utils.responses import success_response, error_response
+from models import ProcessingStatus, Image, PlatformConnection
+from wtforms import Form, HiddenField, TextAreaField, SubmitField
+from wtforms.validators import DataRequired, Length
 
 review_bp = Blueprint('review', __name__, url_prefix='/review')
 
+class ReviewForm(Form):
+    """Form for reviewing image captions"""
+    image_id = HiddenField('Image ID', validators=[DataRequired()])
+    caption = TextAreaField('Caption', validators=[DataRequired(), Length(max=500)])
+    submit = SubmitField('Submit Review')
+
 @review_bp.route('/')
 @login_required
-@require_viewer_or_higher
-@require_platform_context
-@with_session_error_handling
-def index():
-    """Review interface for generated captions"""
+def review_list():
+    """List images pending review"""
+    page = request.args.get('page', 1, type=int)
+    per_page = 12
+    
     try:
-        from models import Image, ProcessingStatus
-        from database import DatabaseManager
-        from session_middleware_v2 import get_current_session_context
+        unified_session_manager = getattr(current_app, 'unified_session_manager', None)
+        if not unified_session_manager:
+            return render_template('review.html', images=[], page=1, total_pages=1)
         
-        db_manager = DatabaseManager()
-        context = get_current_session_context()
-        
-        if not context or not context.get('platform_connection_id'):
-            from notification_helpers import send_warning_notification
-            send_warning_notification("No active platform connection found.", "Warning")
-            return redirect(url_for('platform.management'))
-        
-        platform_connection_id = context['platform_connection_id']
-        
-        # Get images for review
-        with db_manager.get_session() as session:
-            images = session.query(Image).filter_by(
-                user_id=current_user.id,
-                platform_connection_id=platform_connection_id,
-                processing_status=ProcessingStatus.COMPLETED
-            ).order_by(Image.created_at.desc()).limit(20).all()
-        
-        return render_template('review.html', images=images)
-        
+        with unified_session_manager.get_db_session() as session:
+            # Get images pending review
+            query = session.query(Image).filter_by(status=ProcessingStatus.PENDING)
+            
+            # Filter by user's platforms if not admin
+            if current_user.role.name != 'ADMIN':
+                user_platforms = session.query(PlatformConnection).filter_by(
+                    user_id=current_user.id, is_active=True
+                ).all()
+                platform_ids = [p.id for p in user_platforms]
+                if platform_ids:
+                    query = query.filter(Image.platform_connection_id.in_(platform_ids))
+            
+            total = query.count()
+            images = query.offset((page - 1) * per_page).limit(per_page).all()
+            total_pages = (total + per_page - 1) // per_page
+            
+            return render_template('review.html', 
+                                 images=images,
+                                 page=page,
+                                 total_pages=total_pages)
+                                 
     except Exception as e:
-        current_app.logger.error(f"Error in review interface: {sanitize_for_log(str(e))}")
-        from notification_helpers import send_error_notification
-        send_error_notification("Error loading review interface.", "Error")
-        return redirect(url_for('index'))
+        current_app.logger.error(f"Error loading review list: {str(e)}")
+        return render_template('review.html', images=[], page=1, total_pages=1)
 
-@review_bp.route('/<int:image_id>')
+@review_bp.route('/<int:image_id>', methods=['GET', 'POST'])
 @login_required
-@require_viewer_or_higher
-@require_platform_context
-@with_session_error_handling
-def single(image_id):
-    """Review single image"""
+def review_single(image_id):
+    """Review a single image - GET to view, POST to submit"""
     try:
-        from models import Image
-        from database import DatabaseManager
+        unified_session_manager = getattr(current_app, 'unified_session_manager', None)
+        if not unified_session_manager:
+            return redirect(url_for('review.review_list'))
         
-        db_manager = DatabaseManager()
-        
-        with db_manager.get_session() as session:
-            image = session.query(Image).filter_by(
-                id=image_id,
-                user_id=current_user.id
-            ).first()
+        with unified_session_manager.get_db_session() as session:
+            image = session.query(Image).filter_by(id=image_id).first()
             
             if not image:
-                from notification_helpers import send_error_notification
-                send_error_notification("Image not found.", "Error")
-                return redirect(url_for('review.index'))
-        
-        return render_template('review_single.html', image=image)
-        
+                return redirect(url_for('review.review_list'))
+                
+            form = ReviewForm(request.form)
+            form.image_id.data = image_id
+            
+            if request.method == 'POST' and form.validate():
+                # Handle form submission
+                caption = form.caption.data.strip()
+                image.generated_caption = caption
+                image.status = ProcessingStatus.APPROVED
+                session.commit()
+                return redirect(url_for('review.review_list'))
+            else:
+                # Display form for GET request
+                form.caption.data = image.generated_caption or ""
+                return render_template('review_single.html', image=image, form=form)
+            
     except Exception as e:
-        current_app.logger.error(f"Error in single review: {sanitize_for_log(str(e))}")
-        return redirect(url_for('review.index'))
+        current_app.logger.error(f"Error in single review: {str(e)}")
+        return redirect(url_for('review.review_list'))
 
 @review_bp.route('/batch')
 @login_required
-@require_platform_context
-@with_session_error_handling
-def batch():
+def batch_review():
     """Batch review interface"""
     try:
-        from models import Image, ProcessingStatus
-        from database import DatabaseManager
-        from session_middleware_v2 import get_current_session_context
+        unified_session_manager = getattr(current_app, 'unified_session_manager', None)
+        if not unified_session_manager:
+            return render_template('batch_review.html', batches=[])
         
-        db_manager = DatabaseManager()
-        context = get_current_session_context()
-        
-        if not context or not context.get('platform_connection_id'):
-            return redirect(url_for('platform.management'))
-        
-        platform_connection_id = context['platform_connection_id']
-        
-        # Get images for batch review
-        with db_manager.get_session() as session:
-            images = session.query(Image).filter_by(
-                user_id=current_user.id,
-                platform_connection_id=platform_connection_id,
-                processing_status=ProcessingStatus.COMPLETED
-            ).order_by(Image.created_at.desc()).limit(50).all()
-        
-        return render_template('batch_review.html', images=images)
-        
+        with unified_session_manager.get_db_session() as session:
+            # Get images grouped by platform for batch review
+            query = session.query(Image).filter_by(status=ProcessingStatus.PENDING)
+            
+            # Filter by user's platforms if not admin
+            if current_user.role.name != 'ADMIN':
+                user_platforms = session.query(PlatformConnection).filter_by(
+                    user_id=current_user.id, is_active=True
+                ).all()
+                platform_ids = [p.id for p in user_platforms]
+                if platform_ids:
+                    query = query.filter(Image.platform_connection_id.in_(platform_ids))
+            
+            images = query.limit(50).all()  # Limit for batch processing
+            return render_template('batch_review.html', images=images)
+            
     except Exception as e:
-        current_app.logger.error(f"Error in batch review: {sanitize_for_log(str(e))}")
-        return redirect(url_for('index'))
+        current_app.logger.error(f"Error loading batch review: {str(e)}")
+        return render_template('batch_review.html', images=[])
+
+@review_bp.route('/review_batches')
+@login_required
+def review_batches():
+    """Redirect to batch review"""
+    return redirect(url_for('review.batch_review'))
+
+@review_bp.route('/review_batch/<int:batch_id>')
+@login_required
+def review_batch(batch_id):
+    """Review specific batch - redirect to batch review for now"""
+    return redirect(url_for('review.batch_review'))

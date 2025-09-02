@@ -242,7 +242,7 @@ def create_global_detached_instance_handler(app, session_manager):
         # For other endpoints, return a generic error
         # Database connection issue - handled by unified notification system
         pass
-        return redirect(url_for('index') if 'index' in app.view_functions else url_for('login'))
+        return redirect(url_for('main.index') if 'index' in app.view_functions else url_for('login'))
     
     @app.errorhandler(SQLAlchemyError)
     def handle_sqlalchemy_error(error):
@@ -256,7 +256,7 @@ def create_global_detached_instance_handler(app, session_manager):
         # Handle other SQLAlchemy errors
         # Database error - handled by unified notification system
         pass
-        return redirect(url_for('index') if 'index' in app.view_functions else url_for('login'))
+        return redirect(url_for('main.index') if 'index' in app.view_functions else url_for('login'))
     
     # Store handler in app for access by other components
     app.detached_instance_handler = handler

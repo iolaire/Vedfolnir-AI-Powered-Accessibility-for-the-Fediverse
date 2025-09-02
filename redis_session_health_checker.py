@@ -19,7 +19,7 @@ from logging import getLogger
 from models import UserSession, User, PlatformConnection
 from database import DatabaseManager
 from unified_session_manager import UnifiedSessionManager
-from session_manager_v2 import SessionManagerV2
+from session_manager import SessionManager
 from session_monitoring import get_session_monitor
 from session_config import get_session_config
 from security.core.security_utils import sanitize_for_log
@@ -56,13 +56,13 @@ class SessionSystemHealth:
 class RedisSessionHealthChecker:
     """Enhanced session health checker supporting both Redis and database sessions"""
     
-    def __init__(self, db_manager: DatabaseManager, session_manager: Union[SessionManagerV2, UnifiedSessionManager]):
+    def __init__(self, db_manager: DatabaseManager, session_manager: Union[SessionManager, UnifiedSessionManager]):
         self.db_manager = db_manager
         self.session_manager = session_manager
         self.config = get_session_config()
         
         # Detect session manager type
-        self.is_redis_session_manager = isinstance(session_manager, SessionManagerV2)
+        self.is_redis_session_manager = isinstance(session_manager, SessionManager)
         self.session_manager_type = "redis" if self.is_redis_session_manager else "database"
         
         # Health check thresholds
@@ -83,8 +83,8 @@ class RedisSessionHealthChecker:
         """Get session counts from the appropriate source (Redis or Database)"""
         try:
             if self.is_redis_session_manager:
-                # Get session counts from Redis via SessionManagerV2
-                # SessionManagerV2 uses RedisSessionBackend which may not have get_session_stats
+                # Get session counts from Redis via SessionManager
+                # SessionManager uses RedisSessionBackend which may not have get_session_stats
                 # We'll use the session manager's methods instead
                 try:
                     # Try to get active session count through cleanup method (returns count)
@@ -140,7 +140,7 @@ class RedisSessionHealthChecker:
             expired_sessions = session_counts['expired_sessions']
             
             if self.is_redis_session_manager:
-                # Test Redis connectivity via SessionManagerV2
+                # Test Redis connectivity via SessionManager
                 redis_connected = True
                 try:
                     # Test Redis connection by attempting a simple operation
@@ -156,7 +156,7 @@ class RedisSessionHealthChecker:
                 details = {
                     "session_manager_type": "redis",
                     "redis_connected": redis_connected,
-                    "backend_type": "SessionManagerV2",
+                    "backend_type": "SessionManager",
                     "total_sessions": total_sessions,
                     "active_sessions": active_sessions,
                     "expired_sessions": expired_sessions
@@ -297,6 +297,6 @@ class RedisSessionHealthChecker:
             }
         }
 
-def get_redis_session_health_checker(db_manager: DatabaseManager, session_manager: Union[SessionManagerV2, UnifiedSessionManager]) -> RedisSessionHealthChecker:
+def get_redis_session_health_checker(db_manager: DatabaseManager, session_manager: Union[SessionManager, UnifiedSessionManager]) -> RedisSessionHealthChecker:
     """Get or create Redis-compatible session health checker instance"""
     return RedisSessionHealthChecker(db_manager, session_manager)

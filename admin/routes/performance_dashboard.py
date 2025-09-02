@@ -21,6 +21,7 @@ from models import UserRole
 # from notification_flash_replacement import send_notification  # Removed - using unified notification system
 from session_error_handlers import with_session_error_handling
 from security.core.security_middleware import rate_limit
+from ..security.admin_access_control import admin_required
 
 logger = logging.getLogger(__name__)
 
@@ -379,15 +380,9 @@ def register_routes(bp):
     
     @bp.route('/performance')
     @login_required
-    @with_session_error_handling
+    @admin_required
     def performance_dashboard():
         """Main performance dashboard page"""
-        if not current_user.role == UserRole.ADMIN:
-            # Send error notification
-            from notification_helpers import send_error_notification
-            send_error_notification('Admin privileges required to access performance dashboard.', 'Access Denied')
-            return redirect(url_for('admin.dashboard'))
-        
         try:
             return render_template('performance_dashboard.html')
         except Exception as e:
@@ -400,7 +395,6 @@ def register_routes(bp):
     @bp.route('/api/performance/metrics')
     @login_required
     @rate_limit(limit=60, window_seconds=60)
-    @with_session_error_handling
     def api_current_metrics():
         """API endpoint for current performance metrics"""
         if not current_user.role == UserRole.ADMIN:
@@ -421,7 +415,6 @@ def register_routes(bp):
     @bp.route('/api/performance/trends')
     @login_required
     @rate_limit(limit=30, window_seconds=60)
-    @with_session_error_handling
     def api_performance_trends():
         """API endpoint for performance trends"""
         if not current_user.role == UserRole.ADMIN:
@@ -442,7 +435,6 @@ def register_routes(bp):
     @bp.route('/api/performance/health')
     @login_required
     @rate_limit(limit=60, window_seconds=60)
-    @with_session_error_handling
     def api_system_health():
         """API endpoint for system health status"""
         if not current_user.role == UserRole.ADMIN:
@@ -462,7 +454,6 @@ def register_routes(bp):
     @bp.route('/api/performance/recommendations')
     @login_required
     @rate_limit(limit=30, window_seconds=60)
-    @with_session_error_handling
     def api_optimization_recommendations():
         """API endpoint for optimization recommendations"""
         if not current_user.role == UserRole.ADMIN:
@@ -482,7 +473,6 @@ def register_routes(bp):
     @bp.route('/api/performance/apply-recommendation', methods=['POST'])
     @login_required
     @rate_limit(limit=10, window_seconds=60)
-    @with_session_error_handling
     def api_apply_recommendation():
         """API endpoint to apply optimization recommendation"""
         if not current_user.role == UserRole.ADMIN:
@@ -517,7 +507,6 @@ def register_routes(bp):
     @bp.route('/api/performance/optimization-report')
     @login_required
     @rate_limit(limit=10, window_seconds=60)
-    @with_session_error_handling
     def api_optimization_report():
         """API endpoint for comprehensive optimization report"""
         if not current_user.role == UserRole.ADMIN:

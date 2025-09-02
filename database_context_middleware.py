@@ -8,7 +8,7 @@ from flask import Flask, g, current_app
 from flask_login import current_user
 from sqlalchemy.exc import SQLAlchemyError
 from sqlalchemy.orm.exc import DetachedInstanceError
-from request_scoped_session_manager import RequestScopedSessionManager
+from session_manager import SessionManager
 from models import PlatformConnection, User
 from security.core.security_utils import sanitize_for_log
 
@@ -25,13 +25,13 @@ class DatabaseContextMiddleware:
     - Preventing DetachedInstanceError throughout the request lifecycle
     """
     
-    def __init__(self, app: Flask, session_manager: RequestScopedSessionManager):
+    def __init__(self, app: Flask, session_manager: SessionManager):
         """
         Initialize the database context middleware.
         
         Args:
             app: Flask application instance
-            session_manager: RequestScopedSessionManager for handling database sessions
+            session_manager: SessionManager for handling database sessions
         """
         self.app = app
         self.session_manager = session_manager
@@ -229,8 +229,8 @@ class DatabaseContextMiddleware:
                 # Get active platform - check session context first
                 active_platform_id = None
                 try:
-                    from redis_session_middleware import get_current_platform_id
-                    active_platform_id = get_current_platform_id()
+                    from redis_session_backend import get_platform_id
+                    active_platform_id = get_platform_id()
                 except Exception:
                     pass
                 
@@ -310,8 +310,8 @@ class DatabaseContextMiddleware:
             # Find active platform - check session context first
             active_platform_id = None
             try:
-                from redis_session_middleware import get_current_platform_id
-                active_platform_id = get_current_platform_id()
+                from redis_session_backend import get_platform_id
+                active_platform_id = get_platform_id()
             except Exception:
                 pass
             

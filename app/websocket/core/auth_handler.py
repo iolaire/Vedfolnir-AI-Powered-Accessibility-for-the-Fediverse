@@ -23,7 +23,7 @@ from flask_socketio import disconnect
 
 from models import User, UserRole, PlatformConnection
 from database import DatabaseManager
-from session_manager_v2 import SessionManagerV2
+from session_manager import SessionManager
 from security.core.security_utils import sanitize_for_log, mask_sensitive_data
 
 logger = logging.getLogger(__name__)
@@ -78,7 +78,7 @@ class WebSocketAuthHandler:
     security event logging, and rate limiting for connection attempts.
     """
     
-    def __init__(self, db_manager: DatabaseManager, session_manager: SessionManagerV2,
+    def __init__(self, db_manager: DatabaseManager, session_manager: SessionManager,
                  rate_limit_window: int = 300, max_attempts_per_window: int = 10,
                  max_attempts_per_ip: int = 50):
         """

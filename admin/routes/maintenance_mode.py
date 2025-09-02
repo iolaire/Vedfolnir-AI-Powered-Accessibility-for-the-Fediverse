@@ -24,7 +24,6 @@ def register_routes(bp):
     
     @bp.route('/maintenance-mode')
     @login_required
-    @with_session_error_handling
     def maintenance_mode_dashboard():
         """Maintenance mode control dashboard"""
         if not current_user.role == UserRole.ADMIN:
@@ -123,7 +122,6 @@ def register_routes(bp):
     
     @bp.route('/api/maintenance-mode/enable', methods=['POST'])
     @login_required
-    @with_session_error_handling
     def enable_maintenance_mode():
         """Enable maintenance mode via API"""
         if not current_user.role == UserRole.ADMIN:
@@ -276,7 +274,6 @@ def register_routes(bp):
     
     @bp.route('/api/maintenance-mode/disable', methods=['POST'])
     @login_required
-    @with_session_error_handling
     def disable_maintenance_mode():
         """Disable maintenance mode via API"""
         if not current_user.role == UserRole.ADMIN:
@@ -342,7 +339,6 @@ def register_routes(bp):
     
     @bp.route('/api/maintenance-mode/status')
     @login_required
-    @with_session_error_handling
     def get_maintenance_status():
         """Get current maintenance status via API"""
         if not current_user.role == UserRole.ADMIN:
@@ -383,7 +379,6 @@ def register_routes(bp):
     
     @bp.route('/api/maintenance-mode/validate', methods=['POST'])
     @login_required
-    @with_session_error_handling
     def validate_maintenance_config():
         """Validate maintenance mode configuration using comprehensive validator"""
         if not current_user.role == UserRole.ADMIN:
@@ -434,7 +429,6 @@ def register_routes(bp):
     
     @bp.route('/maintenance-monitoring')
     @login_required
-    @with_session_error_handling
     def maintenance_monitoring_dashboard():
         """Maintenance monitoring dashboard with real-time status"""
         if not current_user.role == UserRole.ADMIN:
@@ -521,7 +515,6 @@ def register_routes(bp):
     
     @bp.route('/api/maintenance-mode/monitoring')
     @login_required
-    @with_session_error_handling
     def get_maintenance_monitoring_data():
         """Get maintenance monitoring data via API"""
         if not current_user.role == UserRole.ADMIN:
@@ -547,7 +540,6 @@ def register_routes(bp):
     
     @bp.route('/api/maintenance-mode/monitoring/export')
     @login_required
-    @with_session_error_handling
     def export_maintenance_monitoring_report():
         """Export maintenance monitoring report"""
         if not current_user.role == UserRole.ADMIN:
@@ -576,7 +568,6 @@ def register_routes(bp):
     
     @bp.route('/api/maintenance-mode/progress/<operation_id>')
     @login_required
-    @with_session_error_handling
     def get_maintenance_progress(operation_id):
         """Get real-time progress for a maintenance operation"""
         if not current_user.role == UserRole.ADMIN:
@@ -616,7 +607,6 @@ def register_routes(bp):
     
     @bp.route('/api/maintenance-mode/operations/active')
     @login_required
-    @with_session_error_handling
     def get_active_maintenance_operations():
         """Get all active maintenance operations"""
         if not current_user.role == UserRole.ADMIN:
@@ -658,7 +648,6 @@ def register_routes(bp):
     
     @bp.route('/api/maintenance-mode/operations/<operation_id>/cancel', methods=['POST'])
     @login_required
-    @with_session_error_handling
     def cancel_maintenance_operation(operation_id):
         """Cancel an active maintenance operation"""
         if not current_user.role == UserRole.ADMIN:

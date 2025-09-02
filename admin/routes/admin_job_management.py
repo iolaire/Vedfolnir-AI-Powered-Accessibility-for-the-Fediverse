@@ -14,7 +14,6 @@ def register_routes(bp):
     
     @bp.route('/job-management')
     @login_required
-    @with_session_error_handling
     def job_management():
         """Admin job management interface with context switching"""
         if not current_user.role == UserRole.ADMIN:
@@ -23,7 +22,7 @@ def register_routes(bp):
             # Send error notification
             from notification_helpers import send_error_notification
             send_error_notification("Access denied. Admin privileges required.", "Access Denied")
-            return redirect(url_for('index'))
+            return redirect(url_for('main.index'))
         
         db_manager = current_app.config['db_manager']
         
@@ -47,7 +46,6 @@ def register_routes(bp):
     
     @bp.route('/bulk-actions')
     @login_required
-    @with_session_error_handling
     def bulk_actions():
         """Bulk actions management page"""
         if not current_user.role == UserRole.ADMIN:
@@ -56,7 +54,7 @@ def register_routes(bp):
             # Send error notification
             from notification_helpers import send_error_notification
             send_error_notification("Access denied. Admin privileges required.", "Access Denied")
-            return redirect(url_for('index'))
+            return redirect(url_for('main.index'))
         
         db_manager = current_app.config['db_manager']
         
@@ -127,7 +125,6 @@ def register_routes(bp):
     
     @bp.route('/system-maintenance')
     @login_required
-    @with_session_error_handling
     def system_maintenance():
         """System maintenance management page"""
         if not current_user.role == UserRole.ADMIN:
@@ -136,7 +133,7 @@ def register_routes(bp):
             # Send error notification
             from notification_helpers import send_error_notification
             send_error_notification("Access denied. Admin privileges required.", "Access Denied")
-            return redirect(url_for('index'))
+            return redirect(url_for('main.index'))
         
         db_manager = current_app.config['db_manager']
         
@@ -234,7 +231,6 @@ def register_routes(bp):
     
     @bp.route('/maintenance/pause-system')
     @login_required
-    @with_session_error_handling
     def pause_system():
         """Pause system maintenance page"""
         if not current_user.role == UserRole.ADMIN:
@@ -243,7 +239,7 @@ def register_routes(bp):
             # Send error notification
             from notification_helpers import send_error_notification
             send_error_notification("Access denied. Admin privileges required.", "Access Denied")
-            return redirect(url_for('index'))
+            return redirect(url_for('main.index'))
         
         # Check current maintenance mode status
         db_manager = current_app.config['db_manager']
@@ -261,7 +257,6 @@ def register_routes(bp):
     
     @bp.route('/maintenance/resume-system')
     @login_required
-    @with_session_error_handling
     def resume_system():
         """Resume system maintenance page"""
         if not current_user.role == UserRole.ADMIN:
@@ -270,7 +265,7 @@ def register_routes(bp):
             # Send error notification
             from notification_helpers import send_error_notification
             send_error_notification("Access denied. Admin privileges required.", "Access Denied")
-            return redirect(url_for('index'))
+            return redirect(url_for('main.index'))
         
         # Check current maintenance mode status
         db_manager = current_app.config['db_manager']
@@ -290,7 +285,6 @@ def register_routes(bp):
     
     @bp.route('/maintenance/clear-queue')
     @login_required
-    @with_session_error_handling
     def clear_queue():
         """Clear job queue maintenance page"""
         if not current_user.role == UserRole.ADMIN:
@@ -299,7 +293,7 @@ def register_routes(bp):
             # Send error notification
             from notification_helpers import send_error_notification
             send_error_notification("Access denied. Admin privileges required.", "Access Denied")
-            return redirect(url_for('index'))
+            return redirect(url_for('main.index'))
         
         db_manager = current_app.config['db_manager']
         
@@ -315,7 +309,6 @@ def register_routes(bp):
     
     @bp.route('/maintenance/restart-failed')
     @login_required
-    @with_session_error_handling
     def restart_failed():
         """Restart failed jobs maintenance page"""
         if not current_user.role == UserRole.ADMIN:
@@ -324,7 +317,7 @@ def register_routes(bp):
             # Send error notification
             from notification_helpers import send_error_notification
             send_error_notification("Access denied. Admin privileges required.", "Access Denied")
-            return redirect(url_for('index'))
+            return redirect(url_for('main.index'))
         
         db_manager = current_app.config['db_manager']
         
@@ -356,7 +349,6 @@ def register_routes(bp):
     
     @bp.route('/maintenance/cleanup-data')
     @login_required
-    @with_session_error_handling
     def cleanup_data():
         """Cleanup old data maintenance page"""
         if not current_user.role == UserRole.ADMIN:
@@ -365,7 +357,7 @@ def register_routes(bp):
             # Send error notification
             from notification_helpers import send_error_notification
             send_error_notification("Access denied. Admin privileges required.", "Access Denied")
-            return redirect(url_for('index'))
+            return redirect(url_for('main.index'))
         
         db_manager = current_app.config['db_manager']
         
@@ -405,7 +397,6 @@ def register_routes(bp):
     
     @bp.route('/job-history/<int:user_id>')
     @login_required
-    @with_session_error_handling
     def job_history(user_id):
         """Job history page for a specific user"""
         if not current_user.role == UserRole.ADMIN and current_user.id != user_id:
@@ -463,7 +454,6 @@ def register_routes(bp):
     
     @bp.route('/help')
     @login_required
-    @with_session_error_handling
     def help_center():
         """Admin help center"""
         if not current_user.role == UserRole.ADMIN:
@@ -472,13 +462,12 @@ def register_routes(bp):
             # Send error notification
             from notification_helpers import send_error_notification
             send_error_notification("Access denied. Admin privileges required.", "Access Denied")
-            return redirect(url_for('index'))
+            return redirect(url_for('main.index'))
         
         return render_template('admin_help_center.html')
     
     @bp.route('/logs')
     @login_required
-    @with_session_error_handling
     def system_logs():
         """System logs viewer"""
         if not current_user.role == UserRole.ADMIN:
@@ -487,7 +476,7 @@ def register_routes(bp):
             # Send error notification
             from notification_helpers import send_error_notification
             send_error_notification("Access denied. Admin privileges required.", "Access Denied")
-            return redirect(url_for('index'))
+            return redirect(url_for('main.index'))
         
         import os
         from datetime import datetime
@@ -554,8 +543,24 @@ def get_job_statistics(admin_user_id, admin_mode=True):
         
         return stats
         
+    except ImportError as e:
+        current_app.logger.error(f"Missing dependency for job statistics: {e}")
+        return {
+            'total_active': 0,
+            'personal_active': 0,
+            'admin_managed': 0,
+            'queued': 0
+        }
+    except (KeyError, AttributeError) as e:
+        current_app.logger.error(f"Configuration error getting job statistics: {e}")
+        return {
+            'total_active': 0,
+            'personal_active': 0,
+            'admin_managed': 0,
+            'queued': 0
+        }
     except Exception as e:
-        current_app.logger.error(f"Error getting job statistics: {e}")
+        current_app.logger.error(f"Unexpected error getting job statistics: {e}")
         return {
             'total_active': 0,
             'personal_active': 0,
@@ -594,8 +599,14 @@ def get_admin_jobs(admin_user_id):
         
         return formatted_jobs
         
+    except ImportError as e:
+        current_app.logger.error(f"Missing dependency for admin jobs: {e}")
+        return []
+    except (KeyError, AttributeError) as e:
+        current_app.logger.error(f"Configuration error getting admin jobs: {e}")
+        return []
     except Exception as e:
-        current_app.logger.error(f"Error getting admin jobs: {e}")
+        current_app.logger.error(f"Unexpected error getting admin jobs: {e}")
         return []
 
 def get_personal_jobs(admin_user_id):

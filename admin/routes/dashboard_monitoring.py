@@ -20,6 +20,7 @@ from flask_login import login_required, current_user
 from models import UserRole
 from security.core.role_based_access import require_admin
 from session_error_handlers import with_session_error_handling
+from utils.response_helpers import success_response, error_response
 from monitoring_dashboard_service import (
     MonitoringDashboardService, ReportType, ReportFormat, DashboardWidgetType
 )
@@ -39,7 +40,6 @@ def register_dashboard_routes(bp):
     @bp.route('/dashboard/monitoring')
     @login_required
     @require_admin
-    @with_session_error_handling
     def enhanced_monitoring_dashboard():
         """Enhanced real-time monitoring dashboard"""
         try:
@@ -82,14 +82,11 @@ def register_dashboard_routes(bp):
             dashboard_service = MonitoringDashboardService(current_app.config['db_manager'])
             config = dashboard_service.get_dashboard_config(current_user.role)
             
-            return jsonify({
-                'success': True,
-                'config': config
-            })
+            return success_response({'config': config})
             
         except Exception as e:
             logger.error(f"Error getting dashboard config: {str(e)}")
-            return jsonify({'success': False, 'error': str(e)}), 500
+            return error_response(str(e), 500)
     
     @bp.route('/api/dashboard/widget/<widget_id>')
     @login_required
@@ -178,7 +175,6 @@ def register_dashboard_routes(bp):
     @bp.route('/dashboard/reports')
     @login_required
     @require_admin
-    @with_session_error_handling
     def reports_dashboard():
         """Historical reports dashboard"""
         try:
@@ -269,7 +265,6 @@ def register_dashboard_routes(bp):
     @bp.route('/dashboard/widgets/customize')
     @login_required
     @require_admin
-    @with_session_error_handling
     def customize_widgets():
         """Widget customization interface"""
         try:

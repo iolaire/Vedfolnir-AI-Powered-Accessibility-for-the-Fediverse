@@ -95,7 +95,7 @@
 
 <!-- Filter panel -->
 <div id="filter-panel" class="filter-panel mb-3" style="display: none;">
-    <form id="filter-form" method="GET" action="{{ url_for('batch_review') }}">
+    <form id="filter-form" method="GET" action="{{ url_for('review.batch_review') }}">
         <div class="row g-3">
             <div class="col-md-3">
                 <label for="category" class="form-label">Image Category</label>
@@ -156,7 +156,7 @@
             </div>
             <div class="col-md-6 d-flex align-items-end">
                 <button type="submit" class="btn btn-primary me-2">Apply Filters</button>
-                <a href="{{ url_for('batch_review') }}" class="btn btn-outline-secondary">Clear Filters</a>
+                <a href="{{ url_for('review.batch_review') }}" class="btn btn-outline-secondary">Clear Filters</a>
             </div>
         </div>
     </form>
@@ -169,25 +169,25 @@
     {% if filters.category %}
         <span class="badge bg-secondary filter-badge">
             Category: {{ filters.category }}
-            <a href="{{ url_for('batch_review', category=None, quality_score=filters.quality_score, needs_review=filters.needs_review, post_id=filters.post_id, sort_by=filters.sort_by, sort_order=filters.sort_order, per_page=pagination.per_page) }}" class="text-white text-decoration-none">×</a>
+            <a href="{{ url_for('review.batch_review', category=None, quality_score=filters.quality_score, needs_review=filters.needs_review, post_id=filters.post_id, sort_by=filters.sort_by, sort_order=filters.sort_order, per_page=pagination.per_page) }}" class="text-white text-decoration-none">×</a>
         </span>
     {% endif %}
     {% if filters.quality_score %}
         <span class="badge bg-secondary filter-badge">
             Quality: Below {{ filters.quality_score }}%
-            <a href="{{ url_for('batch_review', category=filters.category, quality_score=None, needs_review=filters.needs_review, post_id=filters.post_id, sort_by=filters.sort_by, sort_order=filters.sort_order, per_page=pagination.per_page) }}" class="text-white text-decoration-none">×</a>
+            <a href="{{ url_for('review.batch_review', category=filters.category, quality_score=None, needs_review=filters.needs_review, post_id=filters.post_id, sort_by=filters.sort_by, sort_order=filters.sort_order, per_page=pagination.per_page) }}" class="text-white text-decoration-none">×</a>
         </span>
     {% endif %}
     {% if filters.needs_review == 'yes' %}
         <span class="badge bg-secondary filter-badge">
             Needs Special Review
-            <a href="{{ url_for('batch_review', category=filters.category, quality_score=filters.quality_score, needs_review=None, post_id=filters.post_id, sort_by=filters.sort_by, sort_order=filters.sort_order, per_page=pagination.per_page) }}" class="text-white text-decoration-none">×</a>
+            <a href="{{ url_for('review.batch_review', category=filters.category, quality_score=filters.quality_score, needs_review=None, post_id=filters.post_id, sort_by=filters.sort_by, sort_order=filters.sort_order, per_page=pagination.per_page) }}" class="text-white text-decoration-none">×</a>
         </span>
     {% endif %}
     {% if filters.post_id %}
         <span class="badge bg-secondary filter-badge">
             Post ID: {{ filters.post_id }}
-            <a href="{{ url_for('batch_review', category=filters.category, quality_score=filters.quality_score, needs_review=filters.needs_review, post_id=None, sort_by=filters.sort_by, sort_order=filters.sort_order, per_page=pagination.per_page) }}" class="text-white text-decoration-none">×</a>
+            <a href="{{ url_for('review.batch_review', category=filters.category, quality_score=filters.quality_score, needs_review=filters.needs_review, post_id=None, sort_by=filters.sort_by, sort_order=filters.sort_order, per_page=pagination.per_page) }}" class="text-white text-decoration-none">×</a>
         </span>
     {% endif %}
 </div>
@@ -340,7 +340,7 @@
     <nav aria-label="Batch review pagination">
         <ul class="pagination">
             <li class="page-item {% if not pagination.has_prev %}disabled{% endif %}">
-                <a class="page-link" href="{{ url_for('batch_review', page=pagination.page-1, per_page=pagination.per_page, category=filters.category, quality_score=filters.quality_score, needs_review=filters.needs_review, post_id=filters.post_id, sort_by=filters.sort_by, sort_order=filters.sort_order) }}" aria-label="Previous">
+                <a class="page-link" href="{{ url_for('review.batch_review', page=pagination.page-1, per_page=pagination.per_page, category=filters.category, quality_score=filters.quality_score, needs_review=filters.needs_review, post_id=filters.post_id, sort_by=filters.sort_by, sort_order=filters.sort_order) }}" aria-label="Previous">
                     <span aria-hidden="true">&laquo;</span>
                 </a>
             </li>
@@ -350,7 +350,7 @@
             
             {% if start_page > 1 %}
                 <li class="page-item">
-                    <a class="page-link" href="{{ url_for('batch_review', page=1, per_page=pagination.per_page, category=filters.category, quality_score=filters.quality_score, needs_review=filters.needs_review, post_id=filters.post_id, sort_by=filters.sort_by, sort_order=filters.sort_order) }}">1</a>
+                    <a class="page-link" href="{{ url_for('review.batch_review', page=1, per_page=pagination.per_page, category=filters.category, quality_score=filters.quality_score, needs_review=filters.needs_review, post_id=filters.post_id, sort_by=filters.sort_by, sort_order=filters.sort_order) }}">1</a>
                 </li>
                 {% if start_page > 2 %}
                     <li class="page-item disabled">
@@ -361,7 +361,7 @@
             
             {% for p in range(start_page, end_page + 1) %}
                 <li class="page-item {% if p == pagination.page %}active{% endif %}">
-                    <a class="page-link" href="{{ url_for('batch_review', page=p, per_page=pagination.per_page, category=filters.category, quality_score=filters.quality_score, needs_review=filters.needs_review, post_id=filters.post_id, sort_by=filters.sort_by, sort_order=filters.sort_order) }}">{{ p }}</a>
+                    <a class="page-link" href="{{ url_for('review.batch_review', page=p, per_page=pagination.per_page, category=filters.category, quality_score=filters.quality_score, needs_review=filters.needs_review, post_id=filters.post_id, sort_by=filters.sort_by, sort_order=filters.sort_order) }}">{{ p }}</a>
                 </li>
             {% endfor %}
             
@@ -372,12 +372,12 @@
                     </li>
                 {% endif %}
                 <li class="page-item">
-                    <a class="page-link" href="{{ url_for('batch_review', page=pagination.total_pages, per_page=pagination.per_page, category=filters.category, quality_score=filters.quality_score, needs_review=filters.needs_review, post_id=filters.post_id, sort_by=filters.sort_by, sort_order=filters.sort_order) }}">{{ pagination.total_pages }}</a>
+                    <a class="page-link" href="{{ url_for('review.batch_review', page=pagination.total_pages, per_page=pagination.per_page, category=filters.category, quality_score=filters.quality_score, needs_review=filters.needs_review, post_id=filters.post_id, sort_by=filters.sort_by, sort_order=filters.sort_order) }}">{{ pagination.total_pages }}</a>
                 </li>
             {% endif %}
             
             <li class="page-item {% if not pagination.has_next %}disabled{% endif %}">
-                <a class="page-link" href="{{ url_for('batch_review', page=pagination.page+1, per_page=pagination.per_page, category=filters.category, quality_score=filters.quality_score, needs_review=filters.needs_review, post_id=filters.post_id, sort_by=filters.sort_by, sort_order=filters.sort_order) }}" aria-label="Next">
+                <a class="page-link" href="{{ url_for('review.batch_review', page=pagination.page+1, per_page=pagination.per_page, category=filters.category, quality_score=filters.quality_score, needs_review=filters.needs_review, post_id=filters.post_id, sort_by=filters.sort_by, sort_order=filters.sort_order) }}" aria-label="Next">
                     <span aria-hidden="true">&raquo;</span>
                 </a>
             </li>

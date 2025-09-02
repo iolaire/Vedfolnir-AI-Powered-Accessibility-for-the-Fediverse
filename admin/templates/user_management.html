@@ -464,7 +464,7 @@
                 <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
             </div>
             <form method="POST" action="{{ url_for('admin.update_user_role') }}">
-                <input type="hidden" name="csrf_token" value="{{ csrf_token() }}"/>
+                <input type="hidden" name="csrf_token" value="{{ csrf_token }}"/>
                 <input type="hidden" id="role_user_id" name="user_id">
                 <div class="modal-body">
                     <p>Change role for user <strong id="role_username"></strong>?</p>
@@ -606,7 +606,7 @@
                 <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
             </div>
             <form method="POST" action="{{ url_for('admin.reset_user_password') }}">
-                <input type="hidden" name="csrf_token" value="{{ csrf_token() }}"/>
+                <input type="hidden" name="csrf_token" value="{{ csrf_token }}"/>
                 <input type="hidden" id="reset_user_id" name="user_id">
                 <div class="modal-body">
                     <p>Reset password for user <strong id="reset_username"></strong>?</p>
@@ -649,7 +649,7 @@
                 <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
             </div>
             <form method="POST" action="{{ url_for('admin.update_user_status') }}">
-                <input type="hidden" name="csrf_token" value="{{ csrf_token() }}"/>
+                <input type="hidden" name="csrf_token" value="{{ csrf_token }}"/>
                 <input type="hidden" id="status_user_id" name="user_id">
                 <div class="modal-body">
                     <h6>User: <strong id="status_username"></strong></h6>

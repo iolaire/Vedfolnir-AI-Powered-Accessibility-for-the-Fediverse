@@ -104,7 +104,17 @@ class RedisSessionBackend:
         Returns:
             RedisSessionBackend instance configured from environment
         """
+        import os
+        from dotenv import load_dotenv
+        
+        # Ensure environment variables are loaded
+        load_dotenv()
+        
         redis_url = os.getenv('REDIS_URL')
+        redis_password = os.getenv('REDIS_PASSWORD')
+        
+        logger.debug(f"Redis URL from env: {redis_url[:20]}..." if redis_url else "No Redis URL")
+        logger.debug(f"Redis password from env: {'***' if redis_password else 'None'}")
         
         if redis_url:
             return cls(redis_url=redis_url)
@@ -113,7 +123,7 @@ class RedisSessionBackend:
                 host=os.getenv('REDIS_HOST', 'localhost'),
                 port=int(os.getenv('REDIS_PORT', '6379')),
                 db=int(os.getenv('REDIS_DB', '0')),
-                password=os.getenv('REDIS_PASSWORD'),
+                password=redis_password,
                 ssl=os.getenv('REDIS_SSL', 'false').lower() == 'true',
                 key_prefix=os.getenv('REDIS_SESSION_PREFIX', 'vedfolnir:session:')
             )

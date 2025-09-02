@@ -350,7 +350,7 @@ class UserManagementErrorHandler:
                     pass
             
             # Default redirect for web requests
-            return redirect(url_for('index'))
+            return redirect(url_for('main.index'))
             
         except Exception as e:
             # Fallback error handling
@@ -478,7 +478,7 @@ def graceful_degradation(fallback_response=None, log_error=True):
                     # Send warning notification
                     from notification_helpers import send_warning_notification
                     send_warning_notification('Some features may be temporarily unavailable.', 'Service Warning')
-                    return redirect(url_for('index'))
+                    return redirect(url_for('main.index'))
         
         return decorated_function
     return decorator

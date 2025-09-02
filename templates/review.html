@@ -22,7 +22,7 @@
             <div class="col-md-8">
                 <h6 class="mb-2">Platform Filter:</h6>
                 <div class="btn-group" role="group" aria-label="Platform filter">
-                    <a href="{{ url_for('review_list', page=1) }}" 
+                    <a href="{{ url_for('review.review_list', page=1) }}" 
                        class="btn btn-sm {{ 'btn-primary' if not selected_platform or selected_platform == active_platform.id|string else 'btn-outline-primary' }}">
                         {% if active_platform %}
                         <i class="bi bi-{{ 'mastodon' if active_platform.platform_type == 'mastodon' else 'image' }}"></i>
@@ -31,13 +31,13 @@
                         Current
                         {% endif %}
                     </a>
-                    <a href="{{ url_for('review_list', platform='all', page=1) }}" 
+                    <a href="{{ url_for('review.review_list', platform='all', page=1) }}" 
                        class="btn btn-sm {{ 'btn-primary' if selected_platform == 'all' else 'btn-outline-primary' }}">
                         <i class="bi bi-globe"></i> All Platforms
                     </a>
                     {% for platform in user_platforms %}
                         {% if platform.id != active_platform.id %}
-                        <a href="{{ url_for('review_list', platform=platform.id, page=1) }}" 
+                        <a href="{{ url_for('review.review_list', platform=platform.id, page=1) }}" 
                            class="btn btn-sm {{ 'btn-primary' if selected_platform == platform.id|string else 'btn-outline-primary' }}">
                             <i class="bi bi-{{ 'mastodon' if platform.platform_type == 'mastodon' else 'image' }}"></i>
                             {{ platform.name }}
@@ -119,7 +119,7 @@
                 </p>
             </div>
             <div class="card-footer">
-                <a href="{{ url_for('review_single', image_id=image.id) }}" 
+                <a href="{{ url_for('review.review_single', image_id=image.id) }}" 
                    class="btn btn-primary btn-sm">Review</a>
             </div>
         </div>
@@ -132,21 +132,21 @@
     <ul class="pagination justify-content-center">
         {% if has_prev %}
             <li class="page-item">
-                <a class="page-link" href="{{ url_for('review_list', page=page-1, platform=selected_platform) }}">Previous</a>
+                <a class="page-link" href="{{ url_for('review.review_list', page=page-1, platform=selected_platform) }}">Previous</a>
             </li>
         {% endif %}
         
         {% for page_num in range(1, (total // per_page) + 2) %}
             {% if page_num <= 10 %}
                 <li class="page-item {% if page_num == page %}active{% endif %}">
-                    <a class="page-link" href="{{ url_for('review_list', page=page_num) }}">{{ page_num }}</a>
+                    <a class="page-link" href="{{ url_for('review.review_list', page=page_num) }}">{{ page_num }}</a>
                 </li>
             {% endif %}
         {% endfor %}
         
         {% if has_next %}
             <li class="page-item">
-                <a class="page-link" href="{{ url_for('review_list', page=page+1, platform=selected_platform) }}">Next</a>
+                <a class="page-link" href="{{ url_for('review.review_list', page=page+1, platform=selected_platform) }}">Next</a>
             </li>
         {% endif %}
     </ul>

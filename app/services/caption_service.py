@@ -68,26 +68,12 @@ class CaptionService:
             return None
     
     def _get_task_history(self, caption_service):
-        """Get user's task history"""
+        """Get user's task history - Fixed: Simplified async pattern"""
         try:
-            import threading, asyncio
-            task_history = []
-            
-            def get_history():
-                loop = asyncio.new_event_loop()
-                asyncio.set_event_loop(loop)
-                nonlocal task_history
-                try:
-                    task_history = loop.run_until_complete(
-                        caption_service.get_user_task_history(current_user.id, limit=5)
-                    )
-                finally:
-                    loop.close()
-            
-            thread = threading.Thread(target=get_history, daemon=True)
-            thread.start()
-            thread.join(timeout=5)
-            
+            # Use asyncio.run instead of manual event loop + threading
+            task_history = asyncio.run(
+                caption_service.get_user_task_history(current_user.id, limit=5)
+            )
             return task_history
         except Exception as e:
             current_app.logger.error(f"Failed to get task history: {sanitize_for_log(str(e))}")

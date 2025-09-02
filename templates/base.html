@@ -7,7 +7,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <meta name="csrf-token" content="{{ csrf_token() }}">
+    <meta name="csrf-token" content="{{ csrf_token }}">
     <title>{% block title %}Vedfolnir{% endblock %}</title>
     
     <!-- Preconnect to external resources -->
@@ -77,7 +77,7 @@
     
     <nav class="navbar navbar-expand-lg navbar-dark bg-dark">
         <div class="container">
-            <a class="navbar-brand d-flex align-items-center" href="{{ url_for('index') }}" aria-label="Vedfolnir - Go to dashboard">
+            <a class="navbar-brand d-flex align-items-center" href="{{ url_for('main.index') }}" aria-label="Vedfolnir - Go to dashboard">
                 <img src="{{ url_for('static', filename='images/Logo.png') }}" 
                      alt="Vedfolnir Logo" 
                      class="navbar-logo me-2"
@@ -91,7 +91,7 @@
             <div class="collapse navbar-collapse" id="navbarNav">
                 <ul class="navbar-nav me-auto">
                     <li class="nav-item">
-                        <a class="nav-link" href="{{ url_for('index') }}">Dashboard</a>
+                        <a class="nav-link" href="{{ url_for('main.index') }}">Dashboard</a>
                     </li>
                     {% if current_user_safe %}
                         <li class="nav-item dropdown">
@@ -99,10 +99,10 @@
                                 Review
                             </a>
                             <ul class="dropdown-menu" aria-labelledby="reviewDropdown">
-                                <li><a class="dropdown-item" href="{{ url_for('review_list') }}">
+                                <li><a class="dropdown-item" href="{{ url_for('review.review_list') }}">
                                     <i class="bi bi-image"></i> Individual Images
                                 </a></li>
-                                <li><a class="dropdown-item" href="{{ url_for('batch_review') }}">
+                                <li><a class="dropdown-item" href="{{ url_for('review.batch_review') }}">
                                     <i class="bi bi-grid-3x3"></i> Batch Review
                                 </a></li>
                             </ul>
@@ -132,7 +132,7 @@
                                 {% for platform in user_platforms %}
                                     {% if platform.id != active_platform.id %}
                                     <li>
-                                        <a class="dropdown-item platform-switch-item" href="#" onclick="quickSwitchPlatform({{ platform.id }}, '{{ platform.name }}')">
+                                        <a class="dropdown-item platform-switch-item" href="#" onclick="quickSwitchPlatform({ platform.id }, '{ platform.name }')">
                                             <i class="bi bi-{{ 'mastodon' if platform.platform_type == 'mastodon' else 'image' }}"></i>
                                             {{ platform.name }}
                                             {% if platform.is_default %}
@@ -155,7 +155,7 @@
                                 </span></li>
                                 <li><hr class="dropdown-divider"></li>
                                 {% endif %}
-                                <li><a class="dropdown-item" href="{{ url_for('platform_management') }}">
+                                <li><a class="dropdown-item" href="{{ url_for('platform.management') }}">
                                     <i class="bi bi-gear"></i> Manage Platforms
                                 </a></li>
                             </ul>
@@ -209,15 +209,15 @@
                                     <i class="bi bi-shield-lock me-2"></i>Privacy Policy
                                 </a></li>
                                 {% if current_user_safe and (current_user_safe.role_value == 'admin' or (current_user_safe.role and current_user_safe.role.value == 'admin')) %}
-                                <li><a class="dropdown-item" href="{{ url_for('admin.dashboard') }}">
+                                <li><a class="dropdown-item" href="/admin">
                                     <i class="bi bi-shield-check me-2"></i>Site Administration
                                 </a></li>
                                 {% endif %}
                                 <li><hr class="dropdown-divider"></li>
-                                <li><a class="dropdown-item" href="{{ url_for('logout_all') }}" onclick="handleLogout(event)">
+                                <li><a class="dropdown-item" href="{{ url_for('static.logout_all') }}" onclick="handleLogout(event)">
                                     <i class="bi bi-box-arrow-right me-2"></i>Logout
                                 </a></li>
-                                <li><a class="dropdown-item" href="{{ url_for('logout_all') }}" onclick="handleLogoutAll(event)">
+                                <li><a class="dropdown-item" href="{{ url_for('static.logout_all') }}" onclick="handleLogoutAll(event)">
                                     <i class="bi bi-power me-2"></i>Logout All Devices
                                 </a></li>
                             </ul>

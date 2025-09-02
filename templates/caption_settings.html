@@ -99,7 +99,7 @@
                 </div>
                 <div class="card-body">
                     <form method="POST" action="{{ url_for('save_caption_settings') }}" id="settings-form">
-                        <input type="hidden" name="csrf_token" value="{{ csrf_token() }}">
+                        <input type="hidden" name="csrf_token" value="{{ csrf_token }}">
                         
                         <div class="settings-form">
                             <h6><i class="bi bi-list-ol"></i> Processing Limits</h6>

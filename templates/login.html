@@ -24,7 +24,7 @@
                         <!-- Login Form -->
                         <form method="POST" action="{{ url_for('user_management.login') }}">
                             <!-- Custom CSRF token (Redis-aware) -->
-                            <input type="hidden" name="csrf_token" value="{{ csrf_token() }}">
+                            <input type="hidden" name="csrf_token" value="{{ csrf_token }}">
                             
                             <div class="mb-4">
                                 <label for="username" class="form-label">

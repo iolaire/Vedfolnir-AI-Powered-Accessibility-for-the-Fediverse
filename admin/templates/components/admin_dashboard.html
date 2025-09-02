@@ -59,7 +59,7 @@
                     <small class="text-muted">Connected</small>
                 </div>
                 <div class="card-footer bg-transparent border-0 pt-0">
-                    <a href="{{ url_for('platform_management') }}" class="btn btn-primary btn-sm">
+                    <a href="{{ url_for('platform.management') }}" class="btn btn-primary btn-sm">
                         <i class="bi bi-plus-circle me-1"></i>Configure
                     </a>
                 </div>
@@ -74,7 +74,7 @@
                     <small class="text-muted">{{ stats.total_posts or 0 }} posts</small>
                 </div>
                 <div class="card-footer bg-transparent border-0 pt-0">
-                    <a href="{{ url_for('batch_review') }}" class="btn btn-primary btn-sm">
+                    <a href="{{ url_for('review.batch_review') }}" class="btn btn-primary btn-sm">
                         <i class="bi bi-eye me-1"></i>Review
                     </a>
                 </div>
@@ -115,7 +115,7 @@
                             </a>
                         </div>
                         <div class="col-lg-3 col-md-6">
-                            <a href="{{ url_for('platform_management') }}" class="btn btn-outline-info w-100 h-100 d-flex flex-column align-items-center justify-content-center py-3 text-decoration-none">
+                            <a href="{{ url_for('platform.management') }}" class="btn btn-outline-info w-100 h-100 d-flex flex-column align-items-center justify-content-center py-3 text-decoration-none">
                                 <i class="bi bi-gear-wide-connected fs-1 mb-2"></i>
                                 <span class="fw-semibold">Platform Config</span>
                                 <small class="text-muted mt-1">Configure platforms</small>

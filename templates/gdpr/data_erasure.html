@@ -27,7 +27,7 @@
                     </div>
 
                     <form method="POST" id="erasureForm">
-                        <input type="hidden" name="csrf_token" value="{{ csrf_token() }}">
+                        <input type="hidden" name="csrf_token" value="{{ csrf_token }}">
                         
                         <div class="mb-3">
                             {{ form.erasure_type.label(class="form-label") }}

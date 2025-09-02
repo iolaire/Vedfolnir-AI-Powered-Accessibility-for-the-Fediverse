@@ -10,13 +10,13 @@
         <h3 class="nav-section-title">Content Management</h3>
         <ul class="nav-list">
             <li class="nav-item">
-                <a href="{{ url_for('index') }}" class="nav-link {{ 'active' if request.endpoint == 'index' }}">
+                <a href="{{ url_for('main.index') }}" class="nav-link {{ 'active' if request.endpoint == 'index' }}">
                     <i class="icon-home" aria-hidden="true"></i>
                     <span>Dashboard</span>
                 </a>
             </li>
             <li class="nav-item">
-                <a href="{{ url_for('review_list') }}" class="nav-link {{ 'active' if request.endpoint == 'review_list' }}">
+                <a href="{{ url_for('review.review_list') }}" class="nav-link {{ 'active' if request.endpoint == 'review_list' }}">
                     <i class="icon-review" aria-hidden="true"></i>
                     <span>Review Images</span>
                     {% if pending_review_count > 0 %}
@@ -25,7 +25,7 @@
                 </a>
             </li>
             <li class="nav-item">
-                <a href="{{ url_for('review_batches') }}" class="nav-link {{ 'active' if request.endpoint == 'review_batches' }}">
+                <a href="{{ url_for('review.review_batches') }}" class="nav-link {{ 'active' if request.endpoint == 'review_batches' }}">
                     <i class="icon-batch" aria-hidden="true"></i>
                     <span>Review Batches</span>
                 </a>
@@ -43,7 +43,7 @@
         <h3 class="nav-section-title">Platform Management</h3>
         <ul class="nav-list">
             <li class="nav-item">
-                <a href="{{ url_for('platform_management') }}" class="nav-link {{ 'active' if request.endpoint == 'platform_management' }}">
+                <a href="{{ url_for('platform.management') }}" class="nav-link {{ 'active' if request.endpoint == 'platform_management' }}">
                     <i class="icon-platform" aria-hidden="true"></i>
                     <span>My Platforms</span>
                     {% if user_platform_count > 0 %}

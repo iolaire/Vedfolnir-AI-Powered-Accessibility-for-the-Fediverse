@@ -1001,12 +1001,9 @@ class PlatformConnection(Base):
                 async with ActivityPubClient(config) as client:
                     return await client.test_connection()
             
-            # Create new event loop for the test
+            # Run the async test_connection method - Fixed: Use asyncio.run
             try:
-                loop = asyncio.new_event_loop()
-                asyncio.set_event_loop(loop)
-                result = loop.run_until_complete(_test_async())
-                loop.close()
+                result = asyncio.run(_test_async())
                 
                 # Ensure we return a tuple
                 if isinstance(result, tuple) and len(result) == 2:

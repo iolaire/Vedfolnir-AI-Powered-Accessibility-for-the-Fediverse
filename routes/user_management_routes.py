@@ -52,7 +52,7 @@ from security.error_handling.user_management_error_handler import (
     UserManagementError, ValidationError, AuthenticationError, DatabaseError
 )
 from security.error_handling.system_recovery import with_recovery, SystemRecoveryManager
-from request_scoped_session_manager import RequestScopedSessionManager
+from session_manager import SessionManager
 
 logger = logging.getLogger(__name__)
 
@@ -93,7 +93,7 @@ def register():
     """User registration with email verification"""
     # Redirect if user is already logged in
     if current_user.is_authenticated:
-        return redirect(url_for('index'))
+        return redirect(url_for('main.index'))
     
     form = UserRegistrationForm()
     
@@ -104,9 +104,9 @@ def register():
         
         try:
             # Use request-scoped session manager for database operations
-            request_session_manager = RequestScopedSessionManager(current_app.config['db_manager'])
+            unified_session_manager = getattr(current_app, "unified_session_manager", None)
             
-            with request_session_manager.session_scope() as db_session:
+            with unified_session_manager.get_db_session() as db_session:
                 # Initialize registration service
                 registration_service = UserRegistrationService(
                     db_session=db_session,
@@ -175,7 +175,7 @@ def login():
     """User login with Redis session management"""
     # Redirect if user is already logged in
     if current_user.is_authenticated:
-        return redirect(url_for('index'))
+        return redirect(url_for('main.index'))
     
     from forms.user_management_forms import LoginForm
     form = LoginForm(request.form)
@@ -187,9 +187,9 @@ def login():
         
         try:
             # Use request-scoped session manager for database operations
-            request_session_manager = RequestScopedSessionManager(current_app.config['db_manager'])
+            unified_session_manager = getattr(current_app, "unified_session_manager", None)
             
-            with request_session_manager.session_scope() as db_session:
+            with unified_session_manager.get_db_session() as db_session:
                 # Initialize user authentication service
                 from services.user_management_service import UserAuthenticationService
                 user_service = UserAuthenticationService(db_session)
@@ -223,7 +223,7 @@ def login():
                     next_page = request.args.get('next')
                     if next_page and url_parse(next_page).netloc == '':
                         return redirect(next_page)
-                    return redirect(url_for('index'))
+                    return redirect(url_for('main.index'))
                 else:
                     from notification_helpers import send_error_notification
                     send_error_notification(message or 'Invalid username/email or password.', 'Login Failed')
@@ -244,7 +244,7 @@ def forgot_password():
     """Password reset request"""
     # Redirect if user is already logged in
     if current_user.is_authenticated:
-        return redirect(url_for('index'))
+        return redirect(url_for('main.index'))
     
     from forms.user_management_forms import PasswordResetRequestForm
     form = PasswordResetRequestForm()
@@ -256,9 +256,9 @@ def forgot_password():
         
         try:
             # Use request-scoped session manager for database operations
-            request_session_manager = RequestScopedSessionManager(current_app.config['db_manager'])
+            unified_session_manager = getattr(current_app, "unified_session_manager", None)
             
-            with request_session_manager.session_scope() as db_session:
+            with unified_session_manager.get_db_session() as db_session:
                 # Initialize password management service
                 from services.user_management_service import PasswordManagementService
                 password_service = PasswordManagementService(
@@ -308,7 +308,7 @@ def reset_password(token):
     """Password reset completion with token validation"""
     # Redirect if user is already logged in
     if current_user.is_authenticated:
-        return redirect(url_for('index'))
+        return redirect(url_for('main.index'))
     
     # Get client information for audit logging
     ip_address = get_client_ip()
@@ -316,9 +316,9 @@ def reset_password(token):
     
     try:
         # Use request-scoped session manager for database operations
-        request_session_manager = RequestScopedSessionManager(current_app.config['db_manager'])
+        unified_session_manager = getattr(current_app, "unified_session_manager", None)
         
-        with request_session_manager.session_scope() as db_session:
+        with unified_session_manager.get_db_session() as db_session:
             # Initialize password management service
             from services.user_management_service import PasswordManagementService
             password_service = PasswordManagementService(
@@ -385,9 +385,9 @@ def change_password():
         
         try:
             # Use request-scoped session manager for database operations
-            request_session_manager = RequestScopedSessionManager(current_app.config['db_manager'])
+            unified_session_manager = getattr(current_app, "unified_session_manager", None)
             
-            with request_session_manager.session_scope() as db_session:
+            with unified_session_manager.get_db_session() as db_session:
                 # Initialize password management service
                 from services.user_management_service import PasswordManagementService
                 password_service = PasswordManagementService(
@@ -420,7 +420,7 @@ def change_password():
                     except Exception as e:
                         logger.warning(f"Failed to invalidate other sessions after password change: {e}")
                     
-                    return redirect(url_for('index'))
+                    return redirect(url_for('main.index'))
                 else:
                     from notification_helpers import send_error_notification
                     send_error_notification(message, 'Password Change Failed')
@@ -457,6 +457,52 @@ def logout():
         # Still log out even if session cleanup fails
         logout_user()
         send_profile_notification('profile_update', False, 'Operation failed due to a system error. Please try again.')
+        return redirect(url_for('user_management.login'))
+
+@user_management_bp.route('/delete_profile', methods=['GET', 'POST'])
+@login_required
+def delete_profile():
+    """Delete user profile"""
+    from forms.user_management_forms import DeleteProfileForm
+    form = DeleteProfileForm()
+    
+    if validate_form_submission(form):
+        try:
+            # Verify password before deletion
+            if not current_user.check_password(form.password.data):
+                send_profile_notification('profile_update', False, 'Incorrect password. Profile deletion cancelled.')
+                return render_template('user_management/delete_profile.html', form=form)
+            
+            # Use request-scoped session manager for database operations
+            unified_session_manager = getattr(current_app, "unified_session_manager", None)
+            
+            with unified_session_manager.get_db_session() as db_session:
+                # Delete user profile
+                user = db_session.query(User).filter_by(id=current_user.id).first()
+                if user:
+                    # Clean up user sessions first
+                    try:
+                        session_manager = getattr(current_app, 'unified_session_manager', None)
+                        if session_manager:
+                            session_manager.cleanup_user_sessions(current_user.id)
+                    except Exception as e:
+                        logger.warning(f"Failed to cleanup sessions during profile deletion: {e}")
+                    
+                    # Log out user
+                    logout_user()
+                    
+                    # Delete user record
+                    db_session.delete(user)
+                    db_session.commit()
+                    
+                    logger.info(f"Profile deleted for user {sanitize_for_log(user.username)}")
+                    return redirect(url_for('user_management.register'))
+                else:
+                    send_profile_notification('profile_update', False, 'User not found.')
+                    
+        except Exception as e:
+            logger.error(f"Error during profile deletion: {e}")
+            send_profile_notification('profile_update', False, 'Profile deletion failed. Please try again.')
     
     return render_template('user_management/delete_profile.html', form=form)
 
@@ -476,9 +522,9 @@ def profile():
     if validate_form_submission(form):
         try:
             # Use request-scoped session manager for database operations
-            request_session_manager = RequestScopedSessionManager(current_app.config['db_manager'])
+            unified_session_manager = getattr(current_app, "unified_session_manager", None)
             
-            with request_session_manager.session_scope() as db_session:
+            with unified_session_manager.get_db_session() as db_session:
                 # Update user profile
                 user = db_session.query(User).filter_by(id=current_user.id).first()
                 if user:
@@ -516,9 +562,9 @@ def export_profile_data():
     
     try:
         # Use request-scoped session manager for database operations
-        request_session_manager = RequestScopedSessionManager(current_app.config['db_manager'])
+        unified_session_manager = getattr(current_app, "unified_session_manager", None)
         
-        with request_session_manager.session_scope() as db_session:
+        with unified_session_manager.get_db_session() as db_session:
             # Import profile service
             from services.user_management_service import UserProfileService
             profile_service = UserProfileService(db_session=db_session, base_url=get_base_url())

@@ -131,7 +131,7 @@ class SessionErrorHandler:
                             # Send info notification
                             from notification_helpers import send_info_notification
                             send_info_notification("Session refreshed. Please select your platform.", "Session Refreshed")
-                            return redirect(url_for('platform_management'))
+                            return redirect(url_for('platform.management'))
                             
             except Exception as recovery_error:
                 logger.error(f"Recovery failed for {endpoint}: {sanitize_for_log(str(recovery_error))}")
@@ -143,7 +143,7 @@ class SessionErrorHandler:
             # Send warning notification
             from notification_helpers import send_warning_notification
             send_warning_notification("Platform connection issue detected. Please verify your platform settings.", "Platform Issue")
-            return redirect(url_for('platform_management'))
+            return redirect(url_for('platform.management'))
             
         elif endpoint in ['review', 'batch_review']:
             # Review endpoints - try to recover or redirect to dashboard
@@ -314,8 +314,12 @@ class SessionErrorHandler:
         """
         try:
             # Clear database session if exists
-            from redis_session_middleware import get_current_session_id
-            session_id = get_current_session_id()
+            try:
+                from redis_session_backend import get_session_id
+            except ImportError:
+                def get_session_id():
+                    return None
+            session_id = get_session_id()
             if session_id:
                 # Use the existing session manager to destroy the session
                 # This ensures we use the correctly configured db_manager
@@ -476,7 +480,7 @@ def register_session_error_handlers(app, session_manager, detached_instance_hand
                                 # Send info notification
                                 from notification_helpers import send_info_notification
                                 send_info_notification("Please select a platform to continue.", "Platform Selection Required")
-                                return redirect(url_for('platform_management'))
+                                return redirect(url_for('platform.management'))
                         except Exception:
                             # If we can't get session context, let other handlers deal with it
                             pass
@@ -490,7 +494,7 @@ def register_session_error_handlers(app, session_manager, detached_instance_hand
                                 # Send error notification
                                 from notification_helpers import send_error_notification
                                 send_error_notification("Access denied. Admin privileges required.", "Access Denied")
-                                return redirect(url_for('index'))
+                                return redirect(url_for('main.index'))
                         except (Exception, ImportError):
                             # If we can't check role, let the @role_required decorator handle it
                             pass

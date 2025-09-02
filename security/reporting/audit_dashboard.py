@@ -45,7 +45,7 @@ def audit_dashboard():
         # Send error notification
         from notification_helpers import send_error_notification
         send_error_notification('Error loading security audit dashboard', 'Dashboard Error')
-        return redirect(url_for('index'))
+        return redirect(url_for('main.index'))
 
 @audit_dashboard_bp.route('/api/generate-report')
 @login_required

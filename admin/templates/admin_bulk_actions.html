@@ -39,7 +39,7 @@
             <div class="card-body">
                 {% if jobs %}
                     <form id="bulkActionsForm" method="post">
-                        <input type="hidden" name="csrf_token" value="{{ csrf_token() }}"/>
+                        <input type="hidden" name="csrf_token" value="{{ csrf_token }}"/>
                         
                         {% for job in jobs %}
                         <div class="form-check mb-3 p-3 border rounded">

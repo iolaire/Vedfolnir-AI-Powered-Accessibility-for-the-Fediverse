@@ -134,11 +134,14 @@ class SystemMonitor:
             self.redis_client = redis_client
         else:
             try:
-                # Create Redis client with default settings
+                # Create Redis client with environment settings
+                import os
+                redis_password = os.getenv('REDIS_PASSWORD')
                 self.redis_client = redis.Redis(
-                    host='localhost',
-                    port=6379,
+                    host=os.getenv('REDIS_HOST', 'localhost'),
+                    port=int(os.getenv('REDIS_PORT', '6379')),
                     db=1,  # Use different DB for metrics
+                    password=redis_password,
                     decode_responses=True,
                     socket_connect_timeout=5,
                     socket_timeout=5

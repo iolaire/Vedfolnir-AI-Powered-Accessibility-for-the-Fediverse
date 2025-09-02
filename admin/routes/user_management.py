@@ -67,7 +67,6 @@ def register_routes(bp):
     @bp.route('/users')
     @login_required
     @admin_required
-    @with_session_error_handling
     def user_management():
         """User management interface with filtering and pagination"""
             
@@ -153,7 +152,6 @@ def register_routes(bp):
     @rate_limit(limit=10, window_seconds=60)
     @validate_input_length()
     @enhanced_input_validation
-    @with_session_error_handling
     def edit_user():
         """Edit an existing user"""
         if not current_user.role == UserRole.ADMIN:
@@ -240,7 +238,6 @@ def register_routes(bp):
 
     @bp.route('/users/delete', methods=['POST'])
     @login_required
-    @with_session_error_handling
     def delete_user():
         """Delete a user with enhanced validation"""
         if not current_user.role == UserRole.ADMIN:
@@ -313,7 +310,6 @@ def register_routes(bp):
     @rate_limit(limit=10, window_seconds=60)
     @validate_input_length()
     @enhanced_input_validation
-    @with_session_error_handling
     def add_user():
         """Add a new user with enhanced functionality"""
         if not current_user.role == UserRole.ADMIN:
@@ -412,7 +408,6 @@ def register_routes(bp):
     
     @bp.route('/users/<int:user_id>/details')
     @login_required
-    @with_session_error_handling
     def get_user_details(user_id):
         """Get detailed user information"""
         if not current_user.role == UserRole.ADMIN:
@@ -440,7 +435,6 @@ def register_routes(bp):
     @bp.route('/users/<int:user_id>/resend-verification', methods=['POST'])
     @login_required
     @rate_limit(limit=5, window_seconds=300)  # 5 requests per 5 minutes
-    @with_session_error_handling
     def resend_verification_email(user_id):
         """Resend email verification for a user"""
         if not current_user.role == UserRole.ADMIN:
@@ -483,7 +477,6 @@ def register_routes(bp):
     @rate_limit(limit=10, window_seconds=60)
     @validate_input_length()
     @enhanced_input_validation
-    @with_session_error_handling
     def update_user_role():
         """Update user role"""
         if not current_user.role == UserRole.ADMIN:
@@ -566,7 +559,6 @@ def register_routes(bp):
     @rate_limit(limit=10, window_seconds=60)
     @validate_input_length()
     @enhanced_input_validation
-    @with_session_error_handling
     def update_user_status():
         """Update user account status"""
         if not current_user.role == UserRole.ADMIN:
@@ -686,7 +678,6 @@ def register_routes(bp):
     @bp.route('/users/password/reset', methods=['POST'])
     @login_required
     @rate_limit(limit=5, window_seconds=300)  # 5 resets per 5 minutes
-    @with_session_error_handling
     def reset_user_password():
         """Reset user password as admin"""
         if not current_user.role == UserRole.ADMIN:

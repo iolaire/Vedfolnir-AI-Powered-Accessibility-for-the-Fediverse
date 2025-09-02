@@ -136,7 +136,7 @@
                 <small class="text-muted">Statistics and operations are filtered to this platform</small>
             </div>
             <div>
-                <a href="{{ url_for('platform_management') }}" class="btn btn-sm btn-outline-primary">
+                <a href="{{ url_for('platform.management') }}" class="btn btn-sm btn-outline-primary">
                     <i class="bi bi-arrow-repeat"></i> Switch Platform
                 </a>
             </div>
@@ -151,7 +151,7 @@
                 <small>Showing global statistics across all platforms</small>
             </div>
             <div>
-                <a href="{{ url_for('platform_management') }}" class="btn btn-sm btn-warning">
+                <a href="{{ url_for('platform.management') }}" class="btn btn-sm btn-warning">
                     <i class="bi bi-plus-circle"></i> Select Platform
                 </a>
             </div>
@@ -218,7 +218,7 @@
         </div>
         <div class="card-body">
             <form action="{{ url_for('admin.cleanup_runs') }}" method="post">
-                <input type="hidden" name="csrf_token" value="{{ csrf_token() }}"/>
+                <input type="hidden" name="csrf_token" value="{{ csrf_token }}"/>
                 <input type="hidden" name="operation" value="archive_runs"/>
                 <div class="mb-3">
                     <label for="runs_days" class="form-label">Archive runs older than (days)</label>
@@ -242,7 +242,7 @@
         <div class="card-body">
             <p class="text-muted">Remove processing runs that are stuck, abandoned, or have no associated platform connection.</p>
             <form action="{{ url_for('admin.cleanup_runs') }}" method="post">
-                <input type="hidden" name="csrf_token" value="{{ csrf_token() }}"/>
+                <input type="hidden" name="csrf_token" value="{{ csrf_token }}"/>
                 <div class="mb-3">
                     <label for="orphan_hours" class="form-label">Clean up runs older than (hours)</label>
                     <input type="number" class="form-control" id="orphan_hours" name="hours" value="24" min="0.1" max="168" step="0.1">
@@ -284,7 +284,7 @@
             {% endif %}
             
             <form action="{{ url_for('admin.cleanup_runs') }}" method="post">
-                <input type="hidden" name="csrf_token" value="{{ csrf_token() }}"/>
+                <input type="hidden" name="csrf_token" value="{{ csrf_token }}"/>
                 <input type="hidden" name="operation" value="cleanup_images"/>
                 <div class="mb-3">
                     <label for="image_status" class="form-label">Image Status</label>
@@ -315,7 +315,7 @@
         </div>
         <div class="card-body">
             <form action="{{ url_for('admin.cleanup_runs') }}" method="post">
-                <input type="hidden" name="csrf_token" value="{{ csrf_token() }}"/>
+                <input type="hidden" name="csrf_token" value="{{ csrf_token }}"/>
                 <input type="hidden" name="operation" value="cleanup_orphaned_posts"/>
                 <div class="form-check mb-3">
                     <input class="form-check-input" type="checkbox" id="posts_dry_run" name="dry_run" checked>
@@ -334,7 +334,7 @@
         </div>
         <div class="card-body">
             <form action="{{ url_for('admin.cleanup_runs') }}" method="post">
-                <input type="hidden" name="csrf_token" value="{{ csrf_token() }}"/>
+                <input type="hidden" name="csrf_token" value="{{ csrf_token }}"/>
                 <input type="hidden" name="operation" value="cleanup_user_data"/>
                 <div class="mb-3">
                     <label for="user_id" class="form-label">Select User</label>
@@ -381,7 +381,7 @@
             <p class="text-muted">This will delete all image files from the storage/images directory. This operation typically frees the most storage space.</p>
             
             <form action="{{ url_for('admin.cleanup_runs') }}" method="post">
-                <input type="hidden" name="csrf_token" value="{{ csrf_token() }}"/>
+                <input type="hidden" name="csrf_token" value="{{ csrf_token }}"/>
                 <input type="hidden" name="operation" value="cleanup_storage_images"/>
                 <div class="form-check mb-3">
                     <input class="form-check-input" type="checkbox" id="storage_dry_run" name="dry_run" checked>
@@ -424,7 +424,7 @@
                 </ul>
             </div>
             <form action="{{ url_for('admin.cleanup_runs') }}" method="post">
-                <input type="hidden" name="csrf_token" value="{{ csrf_token() }}"/>
+                <input type="hidden" name="csrf_token" value="{{ csrf_token }}"/>
                 <input type="hidden" name="operation" value="full_cleanup"/>
                 <div class="form-check mb-3">
                     <input class="form-check-input" type="checkbox" id="all_dry_run" name="dry_run" checked>

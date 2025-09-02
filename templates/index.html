@@ -72,7 +72,7 @@
                 </small>
             </div>
             <div>
-                <a href="{{ url_for('platform_management') }}" class="btn btn-sm btn-outline-primary">
+                <a href="{{ url_for('platform.management') }}" class="btn btn-sm btn-outline-primary">
                     <i class="bi bi-gear"></i> Manage
                 </a>
             </div>
@@ -89,7 +89,7 @@
                 <small>Please configure a platform connection to view data.</small>
             </div>
             <div>
-                <a href="{{ url_for('platform_management') }}" class="btn btn-sm btn-warning">
+                <a href="{{ url_for('platform.management') }}" class="btn btn-sm btn-warning">
                     <i class="bi bi-plus-circle"></i> Add Platform
                 </a>
             </div>
@@ -168,19 +168,19 @@
             <div class="card-body">
                 <div class="row g-3">
                     <div class="col-md-6">
-                        <a href="{{ url_for('review_list') }}" class="btn btn-primary btn-lg w-100 d-flex align-items-center justify-content-center">
+                        <a href="{{ url_for('review.review_list') }}" class="btn btn-primary btn-lg w-100 d-flex align-items-center justify-content-center">
                             <i class="bi bi-eye me-2"></i>
                             Review Images
                         </a>
                     </div>
                     <div class="col-md-6">
-                        <a href="{{ url_for('batch_review') }}" class="btn btn-outline-primary btn-lg w-100 d-flex align-items-center justify-content-center">
+                        <a href="{{ url_for('review.batch_review') }}" class="btn btn-outline-primary btn-lg w-100 d-flex align-items-center justify-content-center">
                             <i class="bi bi-grid-3x3 me-2"></i>
                             Batch Review
                         </a>
                     </div>
                     <div class="col-md-6">
-                        <a href="{{ url_for('post_approved') }}" class="btn btn-success btn-lg w-100 d-flex align-items-center justify-content-center">
+                        <a href="{{ url_for('static.post_approved') }}" class="btn btn-success btn-lg w-100 d-flex align-items-center justify-content-center">
                             <i class="bi bi-cloud-upload me-2"></i>
                             Post Approved
                         </a>

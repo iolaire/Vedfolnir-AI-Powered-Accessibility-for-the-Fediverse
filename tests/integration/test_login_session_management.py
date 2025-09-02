@@ -181,7 +181,7 @@ class TestLoginSessionManagement(unittest.TestCase):
             
             # Redirect if user is already logged in
             if current_user.is_authenticated:
-                return redirect(url_for('index'))
+                return redirect(url_for('main.index'))
                 
             form = LoginForm()
             if form.validate_on_submit():
@@ -242,7 +242,7 @@ class TestLoginSessionManagement(unittest.TestCase):
                                 session_id = self.session_manager.create_user_session(user_id, default_platform['id'])
                                 
                                 # Store session ID in the response cookie
-                                response = make_response(redirect(url_for('index')))
+                                response = make_response(redirect(url_for('main.index')))
                                 self.app.session_cookie_manager.set_session_cookie(response, session_id)
 
                                 if session_id:

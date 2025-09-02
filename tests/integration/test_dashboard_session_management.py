@@ -227,7 +227,7 @@ class TestDashboardSessionManagement(unittest.TestCase):
                     
             except Exception as e:
                 # Unified notification: Error loading dashboard. Please try again. (error)
-                return redirect(url_for('platform_management'))
+                return redirect(url_for('platform.management'))
         
         # Add helper routes
         @self.app.route('/first_time_setup')

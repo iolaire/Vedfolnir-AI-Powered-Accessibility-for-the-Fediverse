@@ -262,7 +262,7 @@ async function refreshSystemMetrics() {
         console.log('System metrics data:', data);
 
         if (data.success) {
-            updateSystemMetrics(data.metrics);
+            updateSystemMetrics(data);
         } else {
             console.error('System metrics API returned success=false:', data.error);
             throw new Error(data.error || 'API returned success=false');

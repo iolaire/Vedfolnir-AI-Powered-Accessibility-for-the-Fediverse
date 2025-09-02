@@ -10,7 +10,7 @@ with proper session management integration to prevent DetachedInstanceError.
 import logging
 from flask import Flask
 from flask_login import LoginManager
-from request_scoped_session_manager import RequestScopedSessionManager
+from session_manager import SessionManager
 from database_context_middleware import DatabaseContextMiddleware
 from session_aware_user import SessionAwareUser
 from detached_instance_handler import create_global_detached_instance_handler
@@ -84,7 +84,7 @@ class SessionManagedFlaskApp:
     def _initialize_session_management(self):
         """Initialize request-scoped session management components."""
         # Create request-scoped session manager
-        self.request_session_manager = RequestScopedSessionManager(self.db_manager)
+        self.request_session_manager = SessionManager(self.db_manager)
         
         # Create database context middleware
         self.database_context_middleware = DatabaseContextMiddleware(

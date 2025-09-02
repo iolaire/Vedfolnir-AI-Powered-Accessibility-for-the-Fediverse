@@ -183,7 +183,7 @@ class CSRFErrorHandler:
         
         # Redirect to referrer or home page
             pass
-        redirect_url = request.referrer or url_for('index')
+        redirect_url = request.referrer or url_for('main.index')
         
         try:
             return redirect(redirect_url), 403
@@ -210,7 +210,7 @@ class CSRFErrorHandler:
             # Send error notification
             from notification_helpers import send_error_notification
             send_error_notification("Security validation failed. Please refresh the page and try again.", "Error")
-            return redirect(request.referrer or url_for('index')), 403
+            return redirect(request.referrer or url_for('main.index')), 403
     
     def _get_retry_guidance(self, error_type: str) -> str:
         """Get retry guidance for specific error type

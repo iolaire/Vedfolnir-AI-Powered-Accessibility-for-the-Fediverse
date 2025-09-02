@@ -1207,14 +1207,28 @@ class DatabaseManager:
                     stats['platform_info'] = None
                     
             else:
-                # Get global statistics
+                # Get global statistics with optimized single query
+                from sqlalchemy import func, case
+                
+                # Single aggregated query for all image statistics
+                image_stats = session.query(
+                    func.count(Image.id).label('total_images'),
+                    func.sum(case((Image.status == ProcessingStatus.PENDING, 1), else_=0)).label('pending_review'),
+                    func.sum(case((Image.status == ProcessingStatus.APPROVED, 1), else_=0)).label('approved'),
+                    func.sum(case((Image.status == ProcessingStatus.POSTED, 1), else_=0)).label('posted'),
+                    func.sum(case((Image.status == ProcessingStatus.REJECTED, 1), else_=0)).label('rejected')
+                ).first()
+                
+                # Single query for post count
+                total_posts = session.query(func.count(Post.id)).scalar()
+                
                 stats = {
-                    'total_posts': session.query(Post).count(),
-                    'total_images': session.query(Image).count(),
-                    'pending_review': session.query(Image).filter_by(status=ProcessingStatus.PENDING).count(),
-                    'approved': session.query(Image).filter_by(status=ProcessingStatus.APPROVED).count(),
-                    'posted': session.query(Image).filter_by(status=ProcessingStatus.POSTED).count(),
-                    'rejected': session.query(Image).filter_by(status=ProcessingStatus.REJECTED).count(),
+                    'total_posts': total_posts or 0,
+                    'total_images': image_stats.total_images or 0,
+                    'pending_review': image_stats.pending_review or 0,
+                    'approved': image_stats.approved or 0,
+                    'posted': image_stats.posted or 0,
+                    'rejected': image_stats.rejected or 0,
                 }
             
             return stats

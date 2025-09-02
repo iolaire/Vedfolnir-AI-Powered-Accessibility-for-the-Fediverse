@@ -300,19 +300,22 @@ def _add_recovery_routes(app: Flask, integration: SystemRecoveryIntegration):
         # Force startup recovery (can be run multiple times)
         integration._startup_recovery_completed = False
         
-        # Run recovery in background
-        import threading
-        def run_recovery():
-            loop = asyncio.new_event_loop()
-            asyncio.set_event_loop(loop)
-            try:
-                result = loop.run_until_complete(integration.perform_startup_recovery())
-                logger.info(f"Force recovery completed: {result}")
-            finally:
-                loop.close()
+        # Run recovery using proper async pattern
+        import asyncio
+        from concurrent.futures import ThreadPoolExecutor
         
-        recovery_thread = threading.Thread(target=run_recovery, daemon=True)
-        recovery_thread.start()
+        async def run_recovery_async():
+            try:
+                result = await integration.perform_startup_recovery()
+                logger.info(f"Force recovery completed: {result}")
+                return result
+            except Exception as e:
+                logger.error(f"Recovery failed: {e}")
+                raise
+        
+        # Use thread pool executor instead of manual event loop
+        with ThreadPoolExecutor() as executor:
+            future = executor.submit(asyncio.run, run_recovery_async())
         
         return jsonify({"message": "Recovery initiated", "status": "started"})
 

@@ -176,7 +176,7 @@ class SessionErrorHandler:
             from notification_helpers import send_error_notification
             send_error_notification("A session error occurred. Please try again.", "Session Error")
             # For general errors, redirect to current page or index
-            response = make_response(redirect(request.referrer or url_for('index')))
+            response = make_response(redirect(request.referrer or url_for('main.index')))
         
         return response
     

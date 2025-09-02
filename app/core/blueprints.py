@@ -1,9 +1,17 @@
 def register_blueprints(app):
     """Register all application blueprints"""
     
-    # Register authentication blueprint
+    # Register main blueprint (dashboard)
+    from app.blueprints.main import main_bp
+    app.register_blueprint(main_bp)
+    
+    # Register auth blueprint
     from app.blueprints.auth import auth_bp
     app.register_blueprint(auth_bp)
+    
+    # Register GDPR blueprint
+    from app.blueprints.gdpr import gdpr_bp
+    app.register_blueprint(gdpr_bp)
     
     # Register platform management blueprint
     from app.blueprints.platform import platform_bp
@@ -21,15 +29,6 @@ def register_blueprints(app):
     from app.blueprints.api import api_bp
     app.register_blueprint(api_bp)
     
-    # Register existing admin blueprint
-    from admin import create_admin_blueprint
-    admin_bp = create_admin_blueprint(app)
-    app.register_blueprint(admin_bp)
-    
-    # Register existing GDPR routes
-    from routes.gdpr_routes import gdpr_bp
-    app.register_blueprint(gdpr_bp)
-    
-    # Register existing WebSocket client config routes
-    from routes.websocket_client_config_routes import websocket_client_config_bp
-    app.register_blueprint(websocket_client_config_bp)
+    # Register static/utility blueprint
+    from app.blueprints.static import static_bp
+    app.register_blueprint(static_bp)

@@ -59,7 +59,7 @@
                     </div>
 
                     <form method="POST" novalidate id="deleteForm">
-                        <input type="hidden" name="csrf_token" value="{{ csrf_token() }}">
+                        <input type="hidden" name="csrf_token" value="{{ csrf_token }}">
                         
                         <div class="mb-3">
                             {{ form.confirmation.label(class="form-label fw-bold") }}

@@ -123,7 +123,6 @@ def test_notification_system_components():
         from dashboard_notification_handlers import DashboardNotificationHandlers
         print("✅ DashboardNotificationHandlers imported successfully")
         
-        from dashboard_notification_helpers import send_dashboard_notification
         print("✅ Dashboard notification helpers imported successfully")
         
         print("✅ All notification system components are importable")

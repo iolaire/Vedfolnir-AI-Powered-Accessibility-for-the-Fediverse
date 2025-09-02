@@ -7,6 +7,7 @@
 from flask import render_template, jsonify, redirect, url_for, current_app
 from flask_login import login_required, current_user
 from models import UserRole
+from utils.response_helpers import success_response, error_response
 # from notification_flash_replacement import send_notification  # Removed - using unified notification system
 from session_error_handlers import with_session_error_handling
 from security.core.security_middleware import rate_limit
@@ -16,14 +17,13 @@ def register_routes(bp):
     
     @bp.route('/monitoring')
     @login_required
-    @with_session_error_handling
     def monitoring_dashboard():
         """Administrative monitoring dashboard"""
         if not current_user.role == UserRole.ADMIN:
             # Send error notification
             from notification_helpers import send_error_notification
             send_error_notification("Access denied. Admin privileges required.", "Access Denied")
-            return redirect(url_for('index'))
+            return redirect(url_for('main.index'))
             
         try:
             from ..services.monitoring_service import AdminMonitoringService
@@ -48,7 +48,6 @@ def register_routes(bp):
     @bp.route('/api/system_overview')
     @login_required
     @rate_limit(limit=30, window_seconds=60)
-    @with_session_error_handling
     def api_system_overview():
         """Get real-time system overview"""
         if not current_user.role == UserRole.ADMIN:
@@ -58,7 +57,7 @@ def register_routes(bp):
             from ..services.monitoring_service import AdminMonitoringService
             monitoring_service = AdminMonitoringService(current_app.config['db_manager'])
             overview = monitoring_service.get_system_overview()
-            return jsonify({'success': True, 'overview': overview})
+            return success_response({'overview': overview})
         except Exception as e:
-            return jsonify({'success': False, 'error': str(e)}), 500
+            return error_response(str(e), 500)
 

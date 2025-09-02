@@ -3,7 +3,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <meta name="csrf-token" content="{{ csrf_token() }}">
+    <meta name="csrf-token" content="{{ csrf_token }}">
     <title>{% block title %}Admin - Vedfolnir{% endblock %}</title>
     
     <!-- Preconnect to external resources -->
@@ -69,10 +69,10 @@
                     </div>
                 </div>
                 
-                <a class="nav-link" href="{{ url_for('index') }}">
+                <a class="nav-link" href="{{ url_for('main.index') }}">
                     <i class="bi bi-house"></i> Main App
                 </a>
-                <a class="nav-link" href="{{ url_for('logout_all') }}">
+                <a class="nav-link" href="{{ url_for('static.logout_all') }}">
                     <i class="bi bi-box-arrow-right"></i> Logout
                 </a>
             </div>
@@ -91,7 +91,7 @@
                             </a>
                         </li>
                         <li class="nav-item">
-                            <a class="nav-link" href="{{ url_for('admin.job_management') }}">
+                            <a class="nav-link" href="/admin/job-management">
                                 <i class="bi bi-briefcase"></i> Job Management
                             </a>
                         </li>

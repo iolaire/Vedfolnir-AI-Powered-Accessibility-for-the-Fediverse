@@ -35,7 +35,6 @@ def register_routes(bp):
     
     @bp.route('/storage')
     @login_required
-    @with_session_error_handling
     def storage_dashboard():
         """Detailed storage monitoring dashboard"""
         if not current_user.role == UserRole.ADMIN:
@@ -72,7 +71,6 @@ def register_routes(bp):
     
     @bp.route('/storage/api/data')
     @login_required
-    @with_session_error_handling
     def storage_api_data():
         """API endpoint for storage data (for AJAX updates)"""
         if not current_user.role == UserRole.ADMIN:
@@ -105,7 +103,6 @@ def register_routes(bp):
     
     @bp.route('/storage/refresh', methods=['GET', 'POST'])
     @login_required
-    @with_session_error_handling
     def storage_refresh():
         """Refresh storage calculations (invalidate cache)"""
         if not current_user.role == UserRole.ADMIN:
@@ -149,7 +146,6 @@ def register_routes(bp):
     
     @bp.route('/storage/override', methods=['GET', 'POST'])
     @login_required
-    @with_session_error_handling
     def storage_override():
         """Storage limit override management"""
         if not current_user.role == UserRole.ADMIN:
@@ -267,7 +263,6 @@ def register_routes(bp):
     
     @bp.route('/storage/health')
     @login_required
-    @with_session_error_handling
     def storage_health():
         """Storage system health check endpoint"""
         if not current_user.role == UserRole.ADMIN:
@@ -292,7 +287,6 @@ def register_routes(bp):
     
     @bp.route('/storage/api/override/status')
     @login_required
-    @with_session_error_handling
     def override_status_api():
         """API endpoint for current override status"""
         if not current_user.role == UserRole.ADMIN:
@@ -327,7 +321,6 @@ def register_routes(bp):
     
     @bp.route('/storage/api/override/activate', methods=['POST'])
     @login_required
-    @with_session_error_handling
     def activate_override_api():
         """API endpoint for activating storage override"""
         if not current_user.role == UserRole.ADMIN:
@@ -369,7 +362,6 @@ def register_routes(bp):
     
     @bp.route('/storage/api/override/deactivate', methods=['POST'])
     @login_required
-    @with_session_error_handling
     def deactivate_override_api():
         """API endpoint for deactivating storage override"""
         if not current_user.role == UserRole.ADMIN:
@@ -412,7 +404,6 @@ def register_routes(bp):
     
     @bp.route('/storage/api/override/cleanup', methods=['POST'])
     @login_required
-    @with_session_error_handling
     def cleanup_overrides_api():
         """API endpoint for cleaning up expired overrides"""
         if not current_user.role == UserRole.ADMIN:
@@ -439,7 +430,6 @@ def register_routes(bp):
     
     @bp.route('/storage/api/override/statistics')
     @login_required
-    @with_session_error_handling
     def override_statistics_api():
         """API endpoint for override statistics"""
         if not current_user.role == UserRole.ADMIN:

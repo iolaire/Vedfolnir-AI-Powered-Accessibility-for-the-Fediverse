@@ -26,14 +26,13 @@ def register_routes(bp):
     
     @bp.route('/cleanup')
     @login_required
-    @with_session_error_handling
     def cleanup():
         """Admin interface for data cleanup"""
         if not current_user.role == UserRole.ADMIN:
             # Send error notification
             from notification_helpers import send_error_notification
             send_error_notification("Access denied. Admin privileges required.", "Access Denied")
-            return redirect(url_for('index'))
+            return redirect(url_for('main.index'))
             
         db_manager = current_app.config['db_manager']
         cleanup_service = CleanupService(db_manager, current_app.config.get('config'))
@@ -45,7 +44,6 @@ def register_routes(bp):
 
     @bp.route('/cleanup/runs', methods=['POST'])
     @login_required
-    @with_session_error_handling
     def cleanup_runs():
         """Handle various cleanup operations"""
         if not current_user.role == UserRole.ADMIN:

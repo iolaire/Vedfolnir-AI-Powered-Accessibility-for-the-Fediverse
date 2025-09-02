@@ -10,7 +10,7 @@ def register_all_routes(bp):
     from . import user_management
     from . import system_health
     from . import monitoring
-    from . import dashboard_monitoring
+    # from . import dashboard_monitoring  # Temporarily disabled due to import issues
     from . import cleanup
     from . import admin_api
     from . import security_audit_api
@@ -27,7 +27,7 @@ def register_all_routes(bp):
     user_management.register_routes(bp)
     system_health.register_routes(bp)
     monitoring.register_routes(bp)
-    dashboard_monitoring.register_dashboard_routes(bp)
+    # dashboard_monitoring.register_dashboard_routes(bp)  # Temporarily disabled
     cleanup.register_routes(bp)
     admin_api.register_api_routes(bp)
     # Note: security_audit_api registers itself with the app, not blueprint

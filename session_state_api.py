@@ -11,9 +11,17 @@ using database sessions as the single source of truth.
 
 from logging import getLogger
 from datetime import datetime, timezone
-from flask import jsonify, request, g, make_response
+from flask import jsonify, request, g, make_response, session
+from flask_login import current_user
 # Removed Flask-WTF CSRF import - using custom CSRF system
-from redis_session_middleware import get_current_session_id, validate_current_session as is_session_authenticated
+
+def get_session_id():
+    """Get current session ID"""
+    return session.get('_id', None)
+
+def validate_session():
+    """Validate current session"""
+    return current_user.is_authenticated if hasattr(current_user, 'is_authenticated') else False
 
 logger = getLogger(__name__)
 
@@ -41,9 +49,9 @@ def create_session_state_routes(app):
         try:
             # Get current session information using direct session access
             from flask import session
-            session_id = get_current_session_id()
+            session_id = get_session_id()
             
-            if not session or not is_session_authenticated():
+            if not session or not validate_session():
                 response = jsonify({
                     'success': True,
                     'authenticated': False,
@@ -103,7 +111,7 @@ def create_session_state_routes(app):
             JSON response with validation result
         """
         try:
-            session_id = get_current_session_id()
+            session_id = get_session_id()
             
             if not session_id:
                 return jsonify({
@@ -153,7 +161,7 @@ def create_session_state_routes(app):
         """
         try:
             from flask import session
-            session_id = get_current_session_id()
+            session_id = get_session_id()
             
             if not session or not session_id:
                 return jsonify({

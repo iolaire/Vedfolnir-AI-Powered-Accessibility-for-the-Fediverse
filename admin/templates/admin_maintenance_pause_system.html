@@ -95,7 +95,7 @@
                 </div>
                 {% else %}
                 <form method="post" action="/admin/api/system-maintenance/execute">
-                    <input type="hidden" name="csrf_token" value="{{ csrf_token() }}" />
+                    <input type="hidden" name="csrf_token" value="{{ csrf_token }}" />
                     <input type="hidden" name="action" value="pause_system" />
 
                     <div class="mb-4">

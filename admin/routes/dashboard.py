@@ -17,7 +17,6 @@ def register_routes(bp):
     @bp.route('/')
     @bp.route('/dashboard')
     @login_required
-    @with_session_error_handling
     def dashboard():
         """Admin landing page and dashboard overview"""
         if not current_user.role == UserRole.ADMIN:
@@ -26,7 +25,7 @@ def register_routes(bp):
             # Send error notification
             from notification_helpers import send_error_notification
             send_error_notification("Access denied. Admin privileges required.", "Access Denied")
-            return redirect(url_for('index'))
+            return redirect(url_for('main.index'))
             
         db_manager = current_app.config['db_manager']
         
@@ -34,20 +33,38 @@ def register_routes(bp):
         with db_manager.get_session() as session:
             from models import User, PlatformConnection, Image, Post
             from datetime import datetime, timedelta
+            from sqlalchemy import func, case
             
-            # Basic counts
-            stats = {
-                'total_users': session.query(User).count(),
-                'active_users': session.query(User).filter_by(is_active=True).count(),
-                'total_platforms': session.query(PlatformConnection).count(),
-                'total_images': session.query(Image).count(),
-                'total_posts': session.query(Post).count(),
-            }
-            
-            # Recent activity (last 24 hours)
+            # Optimized single query for all counts
             yesterday = datetime.utcnow() - timedelta(days=1)
-            stats['new_users_24h'] = session.query(User).filter(User.created_at >= yesterday).count()
-            stats['recent_logins'] = session.query(User).filter(User.last_login >= yesterday).count()
+            
+            # Single aggregated query for user statistics
+            user_stats = session.query(
+                func.count(User.id).label('total_users'),
+                func.sum(case((User.is_active == True, 1), else_=0)).label('active_users'),
+                func.sum(case((User.created_at >= yesterday, 1), else_=0)).label('new_users_24h'),
+                func.sum(case((User.last_login >= yesterday, 1), else_=0)).label('recent_logins')
+            ).first()
+            
+            # Single query for platform count
+            platform_count = session.query(func.count(PlatformConnection.id)).scalar()
+            
+            # Single query for content counts
+            content_stats = session.query(
+                func.count(Image.id).label('total_images'),
+                func.count(Post.id).label('total_posts')
+            ).select_from(Image).outerjoin(Post).first()
+            
+            # Build stats dictionary
+            stats = {
+                'total_users': user_stats.total_users or 0,
+                'active_users': user_stats.active_users or 0,
+                'new_users_24h': user_stats.new_users_24h or 0,
+                'recent_logins': user_stats.recent_logins or 0,
+                'total_platforms': platform_count or 0,
+                'total_images': content_stats.total_images or 0,
+                'total_posts': content_stats.total_posts or 0,
+            }
         
         # Get basic system health status
         try:
@@ -105,7 +122,6 @@ def register_routes(bp):
     
     @bp.route('/configuration')
     @login_required
-    @with_session_error_handling
     def configuration_management():
         """System configuration management page"""
         if not current_user.role == UserRole.ADMIN:

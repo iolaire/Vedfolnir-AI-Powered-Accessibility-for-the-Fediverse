@@ -25,7 +25,6 @@ def register_routes(bp):
     
     @bp.route('/health')
     @login_required
-    @with_session_error_handling
     def health_check():
         """Comprehensive health check endpoint using HealthChecker"""
         if not current_user.role == UserRole.ADMIN:
@@ -192,7 +191,6 @@ def register_routes(bp):
 
     @bp.route('/health/detailed')
     @login_required
-    @with_session_error_handling
     def health_check_detailed():
         """Detailed health check endpoint"""
         if not current_user.role == UserRole.ADMIN:
@@ -228,14 +226,13 @@ def register_routes(bp):
 
     @bp.route('/health/dashboard')
     @login_required
-    @with_session_error_handling
     def health_dashboard():
         """Enhanced health dashboard with multi-tenant caption management"""
         if not current_user.role == UserRole.ADMIN:
             # Send error notification
             from notification_helpers import send_error_notification
             send_error_notification("Access denied. Admin privileges required.", "Access Denied")
-            return redirect(url_for('index'))
+            return redirect(url_for('main.index'))
             
         try:
             db_manager = current_app.config['db_manager']
@@ -303,57 +300,52 @@ def register_routes(bp):
 
     @bp.route('/csrf_security_dashboard')
     @login_required
-    @with_session_error_handling
     def csrf_security_dashboard():
         """CSRF Security Dashboard"""
         if not current_user.role == UserRole.ADMIN:
             # Send error notification
             from notification_helpers import send_error_notification
             send_error_notification("Access denied. Admin privileges required.", "Access Denied")
-            return redirect(url_for('index'))
+            return redirect(url_for('main.index'))
         return render_template('csrf_security_dashboard.html')
 
     @bp.route('/security_audit_dashboard')
     @login_required
-    @with_session_error_handling
     def security_audit_dashboard():
         """Security Audit Dashboard"""
         if not current_user.role == UserRole.ADMIN:
             # Send error notification
             from notification_helpers import send_error_notification
             send_error_notification("Access denied. Admin privileges required.", "Access Denied")
-            return redirect(url_for('index'))
+            return redirect(url_for('main.index'))
         return render_template('security_audit_dashboard.html')
 
     @bp.route('/security_audit')
     @login_required
-    @with_session_error_handling
     def security_audit():
         """Security Audit Dashboard (alias)"""
         return security_audit_dashboard()
 
     @bp.route('/session_health_dashboard')
     @login_required
-    @with_session_error_handling
     def session_health_dashboard():
         """Session Health Dashboard"""
         if not current_user.role == UserRole.ADMIN:
             # Send error notification
             from notification_helpers import send_error_notification
             send_error_notification("Access denied. Admin privileges required.", "Access Denied")
-            return redirect(url_for('index'))
+            return redirect(url_for('main.index'))
         return render_template('session_health_dashboard.html')
 
     @bp.route('/session_monitoring_dashboard')
     @login_required
-    @with_session_error_handling
     def session_monitoring_dashboard():
         """Session Monitoring Dashboard"""
         if not current_user.role == UserRole.ADMIN:
             # Send error notification
             from notification_helpers import send_error_notification
             send_error_notification("Access denied. Admin privileges required.", "Access Denied")
-            return redirect(url_for('index'))
+            return redirect(url_for('main.index'))
         return render_template('session_monitoring_dashboard.html')
 
 def get_system_metrics(admin_user_id):

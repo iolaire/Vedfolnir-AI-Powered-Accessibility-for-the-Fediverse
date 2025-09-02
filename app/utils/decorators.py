@@ -45,6 +45,6 @@ def safe_execute(operation_name):
                 current_app.logger.error(f"Error in {operation_name}: {sanitize_for_log(str(e))}")
                 from notification_helpers import send_error_notification
                 send_error_notification(f"Error in {operation_name}", "Error")
-                return redirect(url_for('index'))
+                return redirect(url_for('main.index'))
         return wrapper
     return decorator

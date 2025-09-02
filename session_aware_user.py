@@ -9,7 +9,7 @@ from flask_login import UserMixin
 from sqlalchemy.exc import SQLAlchemyError
 from sqlalchemy.orm.exc import DetachedInstanceError
 from models import User, PlatformConnection
-from request_scoped_session_manager import RequestScopedSessionManager
+from session_manager import SessionManager
 
 logger = logging.getLogger(__name__)
 
@@ -19,13 +19,13 @@ class SessionAwareUser(UserMixin):
     by maintaining proper session attachment throughout the request lifecycle.
     """
     
-    def __init__(self, user: User, session_manager: RequestScopedSessionManager):
+    def __init__(self, user: User, session_manager: SessionManager):
         """
         Initialize SessionAwareUser with a User object and session manager.
         
         Args:
             user: The User model instance to wrap
-            session_manager: RequestScopedSessionManager instance for session management
+            session_manager: SessionManager instance for session management
         """
         self._user_id = user.id
         self._session_manager = session_manager

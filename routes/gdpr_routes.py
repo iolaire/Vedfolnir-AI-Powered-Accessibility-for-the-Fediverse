@@ -29,7 +29,7 @@ def validate_form_submission(form):
     return request.method == 'POST' and form.validate()
 from services.gdpr_service import GDPRDataSubjectService, GDPRPrivacyService
 from services.user_management_service import UserProfileService
-from request_scoped_session_manager import RequestScopedSessionManager
+from session_manager import SessionManager
 from models import UserAuditLog
 
 logger = logging.getLogger(__name__)
@@ -51,7 +51,7 @@ def data_export():
     
     if validate_form_submission(form):
         try:
-            request_session_manager = RequestScopedSessionManager(current_app.config['db_manager'])
+            request_session_manager = SessionManager(current_app.config['db_manager'])
             
             with request_session_manager.session_scope() as db_session:
                 gdpr_service = GDPRDataSubjectService(db_session, current_app.config.get('BASE_URL', 'http://localhost:5000'))
@@ -152,7 +152,7 @@ def data_rectification():
     
     if validate_form_submission(form):
         try:
-            request_session_manager = RequestScopedSessionManager(current_app.config['db_manager'])
+            request_session_manager = SessionManager(current_app.config['db_manager'])
             
             with request_session_manager.session_scope() as db_session:
                 gdpr_service = GDPRDataSubjectService(db_session)
@@ -215,7 +215,7 @@ def data_erasure():
     
     if validate_form_submission(form):
         try:
-            request_session_manager = RequestScopedSessionManager(current_app.config['db_manager'])
+            request_session_manager = SessionManager(current_app.config['db_manager'])
             
             with request_session_manager.session_scope() as db_session:
                 gdpr_service = GDPRDataSubjectService(db_session)
@@ -279,7 +279,7 @@ def consent_management():
     
     if validate_form_submission(form):
         try:
-            request_session_manager = RequestScopedSessionManager(current_app.config['db_manager'])
+            request_session_manager = SessionManager(current_app.config['db_manager'])
             
             with request_session_manager.session_scope() as db_session:
                 privacy_service = GDPRPrivacyService(db_session)
@@ -333,7 +333,7 @@ def privacy_request():
     
     if validate_form_submission(form):
         try:
-            request_session_manager = RequestScopedSessionManager(current_app.config['db_manager'])
+            request_session_manager = SessionManager(current_app.config['db_manager'])
             
             with request_session_manager.session_scope() as db_session:
                 ip_address, user_agent = get_client_info()
@@ -373,7 +373,7 @@ def compliance_report():
     
     if validate_form_submission(form):
         try:
-            request_session_manager = RequestScopedSessionManager(current_app.config['db_manager'])
+            request_session_manager = SessionManager(current_app.config['db_manager'])
             
             with request_session_manager.session_scope() as db_session:
                 privacy_service = GDPRPrivacyService(db_session)
@@ -420,7 +420,7 @@ def data_portability():
     
     if validate_form_submission(form):
         try:
-            request_session_manager = RequestScopedSessionManager(current_app.config['db_manager'])
+            request_session_manager = SessionManager(current_app.config['db_manager'])
             
             with request_session_manager.session_scope() as db_session:
                 gdpr_service = GDPRDataSubjectService(db_session, current_app.config.get('BASE_URL', 'http://localhost:5000'))
@@ -502,7 +502,7 @@ def privacy_policy():
 def data_processing_info():
     """Display data processing information for the user"""
     try:
-        request_session_manager = RequestScopedSessionManager(current_app.config['db_manager'])
+        request_session_manager = SessionManager(current_app.config['db_manager'])
         
         with request_session_manager.session_scope() as db_session:
             gdpr_service = GDPRDataSubjectService(db_session)

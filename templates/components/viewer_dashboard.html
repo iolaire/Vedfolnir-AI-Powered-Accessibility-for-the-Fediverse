@@ -23,7 +23,7 @@
                 <div class="stat-label">My Platforms</div>
             </div>
             <div class="stat-action">
-                <a href="{{ url_for('platform_management') }}" class="btn btn-sm btn-outline-primary">Manage</a>
+                <a href="{{ url_for('platform.management') }}" class="btn btn-sm btn-outline-primary">Manage</a>
             </div>
         </div>
 
@@ -37,7 +37,7 @@
             </div>
             <div class="stat-action">
                 {% if pending_review_count > 0 %}
-                <a href="{{ url_for('review_list') }}" class="btn btn-sm btn-primary">Review</a>
+                <a href="{{ url_for('review.review_list') }}" class="btn btn-sm btn-primary">Review</a>
                 {% else %}
                 <span class="text-muted">All caught up!</span>
                 {% endif %}
@@ -53,7 +53,7 @@
                 <div class="stat-label">Total Images</div>
             </div>
             <div class="stat-action">
-                <a href="{{ url_for('review_list') }}" class="btn btn-sm btn-outline-secondary">View All</a>
+                <a href="{{ url_for('review.review_list') }}" class="btn btn-sm btn-outline-secondary">View All</a>
             </div>
         </div>
 
@@ -67,7 +67,7 @@
                 <div class="stat-label">Approved</div>
             </div>
             <div class="stat-action">
-                <a href="{{ url_for('post_approved') }}" class="btn btn-sm btn-success">Post</a>
+                <a href="{{ url_for('static.post_approved') }}" class="btn btn-sm btn-success">Post</a>
             </div>
         </div>
         {% endif %}
@@ -95,7 +95,7 @@
                         Switch Platform
                     </button>
                     {% endif %}
-                    <a href="{{ url_for('platform_management') }}" class="btn btn-outline-secondary btn-sm">
+                    <a href="{{ url_for('platform.management') }}" class="btn btn-outline-secondary btn-sm">
                         Manage
                     </a>
                 </div>
@@ -135,7 +135,7 @@
                 </div>
             </a>
 
-            <a href="{{ url_for('review_list') }}" class="action-card">
+            <a href="{{ url_for('review.review_list') }}" class="action-card">
                 <div class="action-icon">
                     <i class="icon-review" aria-hidden="true"></i>
                 </div>
@@ -148,7 +148,7 @@
                 </div>
             </a>
 
-            <a href="{{ url_for('review_batches') }}" class="action-card">
+            <a href="{{ url_for('review.review_batches') }}" class="action-card">
                 <div class="action-icon">
                     <i class="icon-batch" aria-hidden="true"></i>
                 </div>
