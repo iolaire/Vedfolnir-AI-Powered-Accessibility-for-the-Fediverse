@@ -14,7 +14,7 @@ from unittest.mock import Mock, patch
 from config import Config
 from database import DatabaseManager
 from models import User, PlatformConnection, UserSession, UserRole
-from redis_session_manager import RedisSessionManager as SessionManager
+from session_manager_v2 import SessionManagerV2 as SessionManager
 from unified_session_manager import get_current_platform_context
 from sqlalchemy import create_engine
 from sqlalchemy.orm import sessionmaker

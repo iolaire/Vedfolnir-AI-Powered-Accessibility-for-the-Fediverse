@@ -15,7 +15,7 @@ from unittest.mock import patch
 from config import Config
 from database import DatabaseManager
 from models import User, PlatformConnection, UserSession, UserRole
-from redis_session_manager import RedisSessionManager as SessionManager
+from session_manager_v2 import SessionManagerV2 as SessionManager
 
 class TestSessionSecurity(unittest.TestCase):
     """Test session validation prevents security issues"""

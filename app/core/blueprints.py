@@ -9,6 +9,18 @@ def register_blueprints(app):
     from app.blueprints.platform import platform_bp
     app.register_blueprint(platform_bp)
     
+    # Register caption generation blueprint
+    from app.blueprints.caption import caption_bp
+    app.register_blueprint(caption_bp)
+    
+    # Register review blueprint
+    from app.blueprints.review import review_bp
+    app.register_blueprint(review_bp)
+    
+    # Register API blueprint
+    from app.blueprints.api import api_bp
+    app.register_blueprint(api_bp)
+    
     # Register existing admin blueprint
     from admin import create_admin_blueprint
     admin_bp = create_admin_blueprint(app)

@@ -34,7 +34,7 @@ from maintenance_operation_classifier import MaintenanceOperationClassifier, Ope
 from maintenance_session_manager import MaintenanceSessionManager
 from maintenance_status_api import MaintenanceStatusAPI
 from configuration_service import ConfigurationService
-from redis_session_manager import RedisSessionManager
+from session_manager_v2 import SessionManagerV2
 from tests.test_helpers.mock_configurations import MockConfigurationService
 from tests.test_helpers.mock_user_helper import create_test_user_with_platforms, cleanup_test_user
 

@@ -126,7 +126,7 @@ def verify_redis_session_manager():
     print("\n🔍 Verifying RedisSessionManager...")
     
     try:
-        from redis_session_manager import RedisSessionManager
+        from session_manager_v2 import SessionManagerV2
         from config import Config
         from database import DatabaseManager
         

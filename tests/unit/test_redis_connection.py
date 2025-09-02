@@ -120,7 +120,7 @@ def test_session_manager():
     try:
         from config import Config
         from database import DatabaseManager
-        from redis_session_manager import RedisSessionManager
+        from session_manager_v2 import SessionManagerV2
         
         print("\nTesting Redis session manager...")
         

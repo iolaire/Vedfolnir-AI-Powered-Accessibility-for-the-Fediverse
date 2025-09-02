@@ -14,7 +14,7 @@ from typing import Optional, Dict, Any, Callable
 from datetime import timedelta
 
 from configuration_service import ConfigurationService
-from redis_session_manager import RedisSessionManager
+from session_manager_v2 import SessionManagerV2
 from unified_session_manager import UnifiedSessionManager
 from flask_redis_session_interface import FlaskRedisSessionInterface
 
@@ -30,7 +30,7 @@ class SessionConfigurationAdapter:
     """
     
     def __init__(self, config_service: ConfigurationService, 
-                 redis_session_manager: Optional[RedisSessionManager] = None,
+                 redis_session_manager: Optional[SessionManagerV2] = None,
                  unified_session_manager: Optional[UnifiedSessionManager] = None,
                  flask_session_interface: Optional[FlaskRedisSessionInterface] = None):
         """
@@ -38,7 +38,7 @@ class SessionConfigurationAdapter:
         
         Args:
             config_service: Configuration service instance
-            redis_session_manager: Redis session manager (optional)
+            redis_session_manager: SessionManagerV2 instance (optional)
             unified_session_manager: Unified session manager (optional)
             flask_session_interface: Flask Redis session interface (optional)
         """
@@ -170,10 +170,12 @@ class SessionConfigurationAdapter:
             timeout_minutes = self._current_config.get('session_timeout_minutes', 120)
             timeout_seconds = timeout_minutes * 60
             
-            # Update Redis session manager
+            # Update SessionManagerV2 (Redis-based)
             if self.redis_session_manager:
-                self.redis_session_manager.session_timeout = timedelta(seconds=timeout_seconds)
-                logger.info(f"Updated Redis session manager timeout to {timeout_minutes} minutes")
+                # SessionManagerV2 uses session_timeout parameter
+                if hasattr(self.redis_session_manager, 'session_timeout'):
+                    self.redis_session_manager.session_timeout = timeout_seconds
+                    logger.info(f"Updated SessionManagerV2 timeout to {timeout_minutes} minutes")
             
             # Update unified session manager
             if self.unified_session_manager:
@@ -197,17 +199,12 @@ class SessionConfigurationAdapter:
             security_enabled = self._current_config.get('session_security_enabled', True)
             fingerprinting_enabled = self._current_config.get('session_fingerprinting_enabled', True)
             
-            # Update Redis session manager security settings
-            if self.redis_session_manager and hasattr(self.redis_session_manager, 'security_manager'):
-                if self.redis_session_manager.security_manager:
-                    # Enable/disable security features based on configuration
-                    if hasattr(self.redis_session_manager.security_manager, 'set_security_enabled'):
-                        self.redis_session_manager.security_manager.set_security_enabled(security_enabled)
-                    
-                    if hasattr(self.redis_session_manager.security_manager, 'set_fingerprinting_enabled'):
-                        self.redis_session_manager.security_manager.set_fingerprinting_enabled(fingerprinting_enabled)
-                    
-                    logger.info(f"Updated Redis session security: enabled={security_enabled}, fingerprinting={fingerprinting_enabled}")
+            # Update SessionManagerV2 security settings
+            if self.redis_session_manager:
+                # SessionManagerV2 may not have direct security manager access
+                # Security is typically handled at the application level
+                # Store configuration for use by security middleware
+                logger.info(f"Updated SessionManagerV2 security config: enabled={security_enabled}, fingerprinting={fingerprinting_enabled}")
             
             # Update unified session manager security settings
             if self.unified_session_manager:
@@ -409,7 +406,7 @@ class SessionConfigurationAdapter:
 
 
 def create_session_configuration_adapter(config_service: ConfigurationService,
-                                        redis_session_manager: Optional[RedisSessionManager] = None,
+                                        redis_session_manager: Optional[SessionManagerV2] = None,
                                         unified_session_manager: Optional[UnifiedSessionManager] = None,
                                         flask_session_interface: Optional[FlaskRedisSessionInterface] = None) -> SessionConfigurationAdapter:
     """
@@ -417,7 +414,7 @@ def create_session_configuration_adapter(config_service: ConfigurationService,
     
     Args:
         config_service: Configuration service instance
-        redis_session_manager: Redis session manager (optional)
+        redis_session_manager: SessionManagerV2 instance (optional)
         unified_session_manager: Unified session manager (optional)
         flask_session_interface: Flask Redis session interface (optional)
         

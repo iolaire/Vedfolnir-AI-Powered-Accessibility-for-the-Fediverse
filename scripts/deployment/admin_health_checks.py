@@ -676,8 +676,8 @@ class AdminHealthChecker:
             session_components = []
             
             try:
-                from redis_session_manager import RedisSessionManager
-                session_components.append('RedisSessionManager')
+                from session_manager_v2 import SessionManagerV2
+                session_components.append('SessionManagerV2')
             except ImportError:
                 pass
             

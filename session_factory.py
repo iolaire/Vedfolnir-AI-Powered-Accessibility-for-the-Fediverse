@@ -36,7 +36,8 @@ def create_session_manager(db_manager: DatabaseManager, config: Optional[Session
     
     if session_storage == 'redis':
         try:
-            from redis_session_manager import RedisSessionManager
+            from session_manager_v2 import SessionManagerV2
+            from redis_session_backend import RedisSessionBackend
             
             # Get Redis configuration from environment
             redis_host = os.getenv('REDIS_HOST', 'localhost')
@@ -45,18 +46,21 @@ def create_session_manager(db_manager: DatabaseManager, config: Optional[Session
             redis_password = os.getenv('REDIS_PASSWORD')
             redis_ssl = os.getenv('REDIS_SSL', 'false').lower() == 'true'
             
-            logger.info(f"Creating Redis session manager: {redis_host}:{redis_port}")
+            logger.info(f"Creating Redis session manager V2: {redis_host}:{redis_port}")
             
-            return RedisSessionManager(
+            # Create Redis backend
+            redis_backend = RedisSessionBackend(
+                host=redis_host,
+                port=redis_port,
+                db=redis_db,
+                password=redis_password,
+                ssl=redis_ssl
+            )
+            
+            return SessionManagerV2(
                 db_manager=db_manager,
-                config=config,
-                redis_host=redis_host,
-                redis_port=redis_port,
-                redis_db=redis_db,
-                redis_password=redis_password,
-                redis_ssl=redis_ssl,
-                security_manager=security_manager,
-                monitor=monitor
+                redis_backend=redis_backend,
+                session_timeout=config.session_timeout if config else 7200
             )
             
         except ImportError as e:

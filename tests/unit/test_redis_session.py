@@ -171,7 +171,8 @@ def test_session_manager_imports():
     try:
         from session_manager_v2 import SessionManagerV2
         from unified_session_manager import UnifiedSessionManager
-        from redis_session_manager import RedisSessionManager
+        # RedisSessionManager has been replaced by SessionManagerV2
+        # from redis_session_manager import RedisSessionManager
         
         print("✅ All production session managers imported successfully!")
         print(f"   SessionManagerV2: {SessionManagerV2}")

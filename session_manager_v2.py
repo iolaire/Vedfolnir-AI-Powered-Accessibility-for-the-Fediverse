@@ -112,7 +112,8 @@ class SessionManagerV2:
                     'role': user.role.value if hasattr(user.role, 'value') else str(user.role),
                     'created_at': datetime.now(timezone.utc).isoformat(),
                     'last_activity': datetime.now(timezone.utc).isoformat(),
-                    'csrf_token': str(uuid.uuid4())
+                    'csrf_token': str(uuid.uuid4()),
+                    'session_fingerprint': self._create_session_fingerprint()
                 }
                 
                 # Add platform information if available
@@ -147,6 +148,17 @@ class SessionManagerV2:
                 except SQLAlchemyError as e:
                     logger.warning(f"Failed to create database session record: {e}")
                     # Don't fail session creation if database audit fails
+                
+                # Create security audit event
+                self._create_security_audit_event(
+                    'session_created',
+                    user.id,
+                    session_id,
+                    {
+                        'platform_connection_id': platform_connection_id,
+                        'session_fingerprint': session_data.get('session_fingerprint')
+                    }
+                )
                 
                 logger.info(f"Created session {session_id} for user {sanitize_for_log(user.username)}")
                 return session_id
@@ -441,3 +453,68 @@ class SessionManagerV2:
         """
         with self.db_manager.get_session() as db_session:
             yield db_session
+    
+    # Security Methods (added for feature parity with UnifiedSessionManager)
+    
+    def _create_session_fingerprint(self) -> Optional[str]:
+        """Create session fingerprint for security"""
+        try:
+            # Create a simple hash-based fingerprint using available request data
+            import hashlib
+            
+            user_agent = self._get_user_agent() or ''
+            client_ip = self._get_client_ip() or ''
+            
+            # Create fingerprint from user agent and IP
+            fingerprint_data = f"{user_agent}:{client_ip}"
+            fingerprint = hashlib.sha256(fingerprint_data.encode()).hexdigest()
+            
+            return fingerprint[:32]  # Return first 32 characters
+            
+        except Exception as e:
+            logger.debug(f"Error creating session fingerprint: {e}")
+            return None
+    
+    def _get_user_agent(self) -> Optional[str]:
+        """Get user agent from request"""
+        try:
+            return request.headers.get('User-Agent')
+        except Exception:
+            return None
+    
+    def _get_client_ip(self) -> Optional[str]:
+        """Get client IP address from request"""
+        try:
+            # Check for forwarded IP first (proxy/load balancer)
+            forwarded_ip = request.environ.get('HTTP_X_FORWARDED_FOR')
+            if forwarded_ip:
+                # Take the first IP if multiple are present
+                return forwarded_ip.split(',')[0].strip()
+            
+            # Fallback to direct connection IP
+            return request.environ.get('REMOTE_ADDR')
+        except Exception:
+            return None
+    
+    def _create_security_audit_event(self, event_type: str, user_id: int, session_id: str, details: Dict[str, Any]):
+        """Create security audit event"""
+        try:
+            # Log security event for audit purposes
+            audit_data = {
+                'event_type': event_type,
+                'user_id': user_id,
+                'session_id': session_id,
+                'timestamp': datetime.now(timezone.utc).isoformat(),
+                'client_ip': self._get_client_ip(),
+                'user_agent': self._get_user_agent(),
+                'details': details
+            }
+            
+            # Log to security audit log
+            logger.info(f"Security audit event: {sanitize_for_log(audit_data)}")
+            
+            # Store in database for compliance (optional - could be implemented later)
+            # This would integrate with a security audit service if available
+            
+        except Exception as e:
+            logger.debug(f"Error creating security audit event: {e}")

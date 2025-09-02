@@ -34,7 +34,7 @@ from config import Config
 from database import DatabaseManager
 from models import User, PlatformConnection, UserRole
 from request_scoped_session_manager import RequestScopedSessionManager
-from redis_session_manager import RedisSessionManager as SessionManager
+from session_manager_v2 import SessionManagerV2 as SessionManager
 from unified_session_manager import get_current_platform_context
 from session_aware_user import SessionAwareUser
 from database_context_middleware import DatabaseContextMiddleware

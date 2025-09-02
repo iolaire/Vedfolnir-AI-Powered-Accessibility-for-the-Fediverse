@@ -34,7 +34,7 @@ from config import Config
 from database import DatabaseManager
 from models import User, PlatformConnection, UserRole, Post, Image, ProcessingStatus
 from request_scoped_session_manager import RequestScopedSessionManager
-from redis_session_manager import RedisSessionManager as SessionManager
+from session_manager_v2 import SessionManagerV2 as SessionManager
 from database_context_middleware import DatabaseContextMiddleware
 from session_aware_user import SessionAwareUser
 from tests.test_helpers.mock_user_helper import MockUserHelper

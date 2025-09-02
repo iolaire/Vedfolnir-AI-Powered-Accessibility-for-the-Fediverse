@@ -31,7 +31,7 @@ from config import Config
 from database import DatabaseManager
 from models import User, PlatformConnection, UserRole
 from request_scoped_session_manager import RequestScopedSessionManager
-from redis_session_manager import RedisSessionManager as SessionManager
+from session_manager_v2 import SessionManagerV2 as SessionManager
 from database_context_middleware import DatabaseContextMiddleware
 from tests.test_helpers.mock_user_helper import MockUserHelper
 from sqlalchemy.exc import SQLAlchemyError

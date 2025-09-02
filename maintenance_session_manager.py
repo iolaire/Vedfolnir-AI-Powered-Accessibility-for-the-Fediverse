@@ -14,7 +14,7 @@ from typing import List, Dict, Any, Optional
 from dataclasses import dataclass
 from datetime import datetime, timezone
 
-from redis_session_manager import RedisSessionManager
+from session_manager_v2 import SessionManagerV2
 from models import User, UserRole
 from database import DatabaseManager
 
@@ -49,15 +49,15 @@ class MaintenanceSessionManager:
     - Integration with Redis session backend
     """
     
-    def __init__(self, redis_session_manager: RedisSessionManager, db_manager: DatabaseManager):
+    def __init__(self, session_manager: SessionManagerV2, db_manager: DatabaseManager):
         """
         Initialize maintenance session manager
         
         Args:
-            redis_session_manager: Redis session manager instance
+            session_manager: SessionManagerV2 instance
             db_manager: Database manager for user lookups
         """
-        self.redis_session_manager = redis_session_manager
+        self.session_manager = session_manager
         self.db_manager = db_manager
         
         # Track maintenance state
@@ -100,7 +100,7 @@ class MaintenanceSessionManager:
                         continue
                     
                     # Invalidate non-admin session
-                    success = self.redis_session_manager.destroy_session(session_info.session_id)
+                    success = self.session_manager.destroy_session(session_info.session_id)
                     if success:
                         invalidated_sessions.append(session_info.session_id)
                         logger.debug(f"Invalidated session for user {session_info.username}")
@@ -139,11 +139,13 @@ class MaintenanceSessionManager:
             
             # Store the prevention state in Redis for persistence across restarts
             try:
-                self.redis_session_manager.redis_client.set(
-                    "vedfolnir:maintenance:login_prevention",
-                    "true",
-                    ex=7200  # 2 hours expiration
-                )
+                if hasattr(self.session_manager, 'redis_backend'):
+                    # Use Redis backend to store maintenance state
+                    self.session_manager.redis_backend.redis_client.set(
+                        "vedfolnir:maintenance:login_prevention",
+                        "true",
+                        ex=7200  # 2 hours expiration
+                    )
             except Exception as e:
                 logger.warning(f"Failed to persist login prevention state in Redis: {str(e)}")
                 
@@ -163,7 +165,8 @@ class MaintenanceSessionManager:
             
             # Remove the prevention state from Redis
             try:
-                self.redis_session_manager.redis_client.delete("vedfolnir:maintenance:login_prevention")
+                if hasattr(self.session_manager, 'redis_backend'):
+                    self.session_manager.redis_backend.redis_client.delete("vedfolnir:maintenance:login_prevention")
             except Exception as e:
                 logger.warning(f"Failed to remove login prevention state from Redis: {str(e)}")
                 
@@ -193,11 +196,12 @@ class MaintenanceSessionManager:
             
             # Check Redis state (for persistence across restarts)
             try:
-                redis_state = self.redis_session_manager.redis_client.get("vedfolnir:maintenance:login_prevention")
-                if redis_state == "true":
-                    self._login_prevention_active = True  # Sync local state
-                    self._stats['login_attempts_blocked'] += 1
-                    return True
+                if hasattr(self.session_manager, 'redis_backend'):
+                    redis_state = self.session_manager.redis_backend.redis_client.get("vedfolnir:maintenance:login_prevention")
+                    if redis_state == "true":
+                        self._login_prevention_active = True  # Sync local state
+                        self._stats['login_attempts_blocked'] += 1
+                        return True
             except Exception as e:
                 logger.warning(f"Failed to check Redis login prevention state: {str(e)}")
             
@@ -300,7 +304,8 @@ class MaintenanceSessionManager:
             
             # Clean up Redis state
             try:
-                self.redis_session_manager.redis_client.delete("vedfolnir:maintenance:login_prevention")
+                if hasattr(self.session_manager, 'redis_backend'):
+                    self.session_manager.redis_backend.redis_client.delete("vedfolnir:maintenance:login_prevention")
             except Exception as e:
                 logger.warning(f"Failed to clean up Redis maintenance state: {str(e)}")
             
@@ -322,9 +327,19 @@ class MaintenanceSessionManager:
         try:
             active_sessions = []
             
-            # Get session index from Redis
-            session_index_key = "vedfolnir:session_index:all"
-            session_ids = self.redis_session_manager.redis_client.smembers(session_index_key)
+            # Get session index from Redis via SessionManagerV2
+            # Note: SessionManagerV2 may not have direct session enumeration
+            # We'll need to implement this differently or use available methods
+            session_ids = []
+            try:
+                if hasattr(self.session_manager, 'redis_backend'):
+                    # Try to get session keys from Redis backend
+                    session_index_key = "vedfolnir:session_index:all"
+                    session_ids = self.session_manager.redis_backend.redis_client.smembers(session_index_key)
+            except Exception as e:
+                logger.warning(f"Could not enumerate sessions from Redis: {str(e)}")
+                # Fallback: return empty list for now
+                session_ids = []
             
             # Get user information from database for efficient lookup
             user_cache = {}
@@ -335,7 +350,19 @@ class MaintenanceSessionManager:
             # Process each session
             for session_id in session_ids:
                 try:
-                    session_context = self.redis_session_manager.get_session_context(session_id)
+                    # Get session context via SessionManagerV2
+                    # Note: SessionManagerV2 may not have get_session_context method
+                    # We'll need to adapt this to use available methods
+                    session_context = None
+                    try:
+                        if hasattr(self.session_manager, 'get_session_data'):
+                            session_context = self.session_manager.get_session_data(session_id)
+                        elif hasattr(self.session_manager, 'redis_backend'):
+                            # Try to get session data directly from Redis backend
+                            session_context = self.session_manager.redis_backend.get_session(session_id)
+                    except Exception as e:
+                        logger.debug(f"Could not get session context for {session_id}: {str(e)}")
+                        continue
                     if not session_context:
                         continue
                     

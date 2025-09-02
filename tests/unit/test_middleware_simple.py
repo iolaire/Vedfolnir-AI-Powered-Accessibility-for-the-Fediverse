@@ -14,7 +14,7 @@ from flask import g
 from config import Config
 from database import DatabaseManager
 from models import User, PlatformConnection, UserSession, UserRole
-from session_manager import SessionManager, get_current_platform_context, get_current_platform
+from unified_session_manager import UnifiedSessionManager as SessionManager, get_current_platform_context, get_current_platform
 from redis_session_middleware import get_current_session_context, get_current_session_id
 from web_app import app
 

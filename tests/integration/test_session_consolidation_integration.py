@@ -55,7 +55,7 @@ class TestSessionConsolidationIntegration(unittest.TestCase):
     def setup_test_app(self):
         """Set up Flask test app with session consolidation"""
         from flask import Flask
-        from redis_session_manager import RedisSessionManager
+        from session_manager_v2 import SessionManagerV2
         from session_cookie_manager import create_session_cookie_manager
         from redis_session_middleware import get_current_session_context, get_current_session_id
         from session_security import create_session_security_manager
