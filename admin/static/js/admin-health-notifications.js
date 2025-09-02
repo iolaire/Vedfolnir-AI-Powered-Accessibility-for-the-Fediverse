@@ -52,26 +52,28 @@ class AdminHealthNotifications {
     initialize() {
         try {
             // Check if Socket.IO is available
-            if (typeof io === 'undefined') {
-                console.error('Socket.IO not available for admin health notifications');
-                this.triggerCallback('onError', { error: 'Socket.IO not available' });
-                return false;
+            // Use unified WebSocket connection instead of creating new one
+            if (window.VedfolnirWS && window.VedfolnirWS.socket) {
+                this.socket = window.VedfolnirWS.socket;
+                this.setupEventHandlers();
+                this.connected = true;
+                console.log('Admin health notifications using unified WebSocket connection');
+                return true;
             }
             
-            // Create WebSocket connection
-            this.socket = io(this.options.namespace, {
-                autoConnect: false,
-                reconnection: true,
-                reconnectionAttempts: this.options.reconnectAttempts,
-                reconnectionDelay: this.options.reconnectDelay
-            });
+            // Wait for unified WebSocket to be available
+            const checkForWebSocket = () => {
+                if (window.VedfolnirWS && window.VedfolnirWS.socket) {
+                    this.socket = window.VedfolnirWS.socket;
+                    this.setupEventHandlers();
+                    this.connected = true;
+                    console.log('Admin health notifications connected to unified WebSocket');
+                } else {
+                    setTimeout(checkForWebSocket, 100);
+                }
+            };
             
-            // Set up event handlers
-            this.setupEventHandlers();
-            
-            // Connect to WebSocket
-            this.connect();
-            
+            checkForWebSocket();
             console.log('Admin health notifications initialized');
             return true;
             
@@ -173,8 +175,12 @@ class AdminHealthNotifications {
      * Connect to WebSocket
      */
     connect() {
-        if (this.socket && !this.connected) {
-            this.socket.connect();
+        // Connection is handled by unified WebSocket system
+        if (this.socket && this.socket.connected) {
+            this.connected = true;
+            console.log('Admin health notifications already connected via unified WebSocket');
+        } else {
+            console.log('Waiting for unified WebSocket connection...');
         }
     }
     

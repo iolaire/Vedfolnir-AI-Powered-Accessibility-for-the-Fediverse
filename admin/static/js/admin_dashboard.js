@@ -78,102 +78,105 @@ function connectWebSocket() {
     }
     
     try {
-        console.log('Initializing Socket.IO connection...');
+        console.log('Using unified WebSocket connection...');
         
-        // Initialize Socket.IO connection with better configuration
-        websocket = io({
-            transports: ['polling', 'websocket'], // Allow both transports
-            upgrade: true, // Allow upgrade to WebSocket if available
-            timeout: 10000, // 10 second timeout
-            forceNew: false, // Allow connection reuse
-            reconnection: true, // Enable auto-reconnection
-            reconnectionAttempts: 5,
-            reconnectionDelay: 1000,
-            reconnectionDelayMax: 5000,
-            maxHttpBufferSize: 1e6,
-            pingTimeout: 60000,
-            pingInterval: 25000,
-            withCredentials: true, // Include cookies for authentication
-            extraHeaders: {
-                // Include CSRF token if available
-                'X-CSRF-Token': getCSRFToken()
-            }
-        });
-
-        websocket.on('connect', function() {
-            console.log('✅ WebSocket connected successfully');
-            updateConnectionStatus(true);
-            showNotification('Real-time updates connected', 'success');
-            
-            // Join admin dashboard room
-            console.log('Joining admin dashboard room...');
-            websocket.emit('join_admin_dashboard');
-        });
-
-        websocket.on('disconnect', function(reason) {
-            console.log('❌ WebSocket disconnected:', reason);
-            updateConnectionStatus(false);
-            showNotification(`Real-time updates disconnected: ${reason}`, 'warning');
-        });
-
-        websocket.on('admin_dashboard_joined', function(data) {
-            console.log('✅ Joined admin dashboard:', data.message);
-            showNotification('Joined admin dashboard for real-time updates', 'info');
-        });
-
-        websocket.on('system_metrics_update', function(data) {
-            console.log('📊 System metrics update received:', data);
-            handleWebSocketMessage(data);
-        });
-
-        websocket.on('job_update', function(data) {
-            console.log('🔄 Job update received:', data);
-            handleWebSocketMessage(data);
-        });
-
-        websocket.on('admin_alert', function(data) {
-            console.log('🚨 Admin alert received:', data);
-            handleWebSocketMessage(data);
-        });
-
-        websocket.on('error', function(error) {
-            console.error('❌ WebSocket error:', error);
-            updateConnectionStatus(false);
-            showNotification(`WebSocket error: ${error}`, 'error');
-        });
-
-        websocket.on('connect_error', function(error) {
-            console.error('❌ WebSocket connection error:', error);
-            updateConnectionStatus(false);
-            showNotification(`Connection error: ${error.message || error}`, 'error');
-        });
-
-        websocket.on('reconnect', function(attemptNumber) {
-            console.log(`🔄 WebSocket reconnected after ${attemptNumber} attempts`);
-            updateConnectionStatus(true);
-            showNotification('Real-time updates reconnected', 'success');
-        });
-
-        websocket.on('reconnect_attempt', function(attemptNumber) {
-            console.log(`🔄 WebSocket reconnection attempt ${attemptNumber}`);
-            showNotification(`Reconnecting... (attempt ${attemptNumber})`, 'info');
-        });
-
-        websocket.on('reconnect_error', function(error) {
-            console.error('❌ WebSocket reconnection error:', error);
-        });
-
-        websocket.on('reconnect_failed', function() {
-            console.error('❌ WebSocket reconnection failed after maximum attempts');
-            updateConnectionStatus(false);
-            showNotification('Failed to reconnect - real-time updates disabled', 'error');
-        });
-
+        // Use unified WebSocket connection instead of creating new one
+        if (window.VedfolnirWS && window.VedfolnirWS.socket) {
+            websocket = window.VedfolnirWS.socket;
+            setupWebSocketHandlers();
+            console.log('Admin dashboard connected to unified WebSocket');
+        } else {
+            // Wait for unified WebSocket to be available
+            const checkForWebSocket = () => {
+                if (window.VedfolnirWS && window.VedfolnirWS.socket) {
+                    websocket = window.VedfolnirWS.socket;
+                    setupWebSocketHandlers();
+                    console.log('Admin dashboard connected to unified WebSocket');
+                } else {
+                    setTimeout(checkForWebSocket, 100);
+                }
+            };
+            checkForWebSocket();
+        }
+        
     } catch (error) {
-        console.error('❌ Failed to connect WebSocket:', error);
+        console.error('❌ WebSocket initialization failed:', error);
         updateConnectionStatus(false);
-        showNotification(`Failed to initialize WebSocket: ${error.message}`, 'error');
+        showNotification('Failed to initialize real-time updates', 'error');
     }
+}
+
+function setupWebSocketHandlers() {
+    if (!websocket) return;
+    
+    websocket.on('connect', function() {
+        console.log('✅ WebSocket connected successfully');
+        updateConnectionStatus(true);
+        showNotification('Real-time updates connected', 'success');
+        
+        // Join admin dashboard room
+        console.log('Joining admin dashboard room...');
+        websocket.emit('join_admin_dashboard');
+    });
+
+    websocket.on('disconnect', function(reason) {
+        console.log('❌ WebSocket disconnected:', reason);
+        updateConnectionStatus(false);
+        showNotification(`Real-time updates disconnected: ${reason}`, 'warning');
+    });
+
+    websocket.on('admin_dashboard_joined', function(data) {
+        console.log('✅ Joined admin dashboard:', data.message);
+        showNotification('Joined admin dashboard for real-time updates', 'info');
+    });
+
+    websocket.on('system_metrics_update', function(data) {
+        console.log('📊 System metrics update received:', data);
+        handleWebSocketMessage(data);
+    });
+
+    websocket.on('job_update', function(data) {
+        console.log('🔄 Job update received:', data);
+        handleWebSocketMessage(data);
+    });
+
+    websocket.on('admin_alert', function(data) {
+        console.log('🚨 Admin alert received:', data);
+        handleWebSocketMessage(data);
+    });
+
+    websocket.on('error', function(error) {
+        console.error('❌ WebSocket error:', error);
+        updateConnectionStatus(false);
+        showNotification(`WebSocket error: ${error}`, 'error');
+    });
+
+    websocket.on('connect_error', function(error) {
+        console.error('❌ WebSocket connection error:', error);
+        updateConnectionStatus(false);
+        showNotification(`Connection error: ${error.message || error}`, 'error');
+    });
+
+    websocket.on('reconnect', function(attemptNumber) {
+        console.log(`🔄 WebSocket reconnected after ${attemptNumber} attempts`);
+        updateConnectionStatus(true);
+        showNotification('Real-time updates reconnected', 'success');
+    });
+
+    websocket.on('reconnect_attempt', function(attemptNumber) {
+        console.log(`🔄 WebSocket reconnection attempt ${attemptNumber}`);
+        showNotification(`Reconnecting... (attempt ${attemptNumber})`, 'info');
+    });
+
+    websocket.on('reconnect_error', function(error) {
+        console.error('❌ WebSocket reconnection error:', error);
+    });
+
+    websocket.on('reconnect_failed', function() {
+        console.error('❌ WebSocket reconnection failed after maximum attempts');
+        updateConnectionStatus(false);
+        showNotification('Failed to reconnect - real-time updates disabled', 'error');
+    });
 }
 
 /**

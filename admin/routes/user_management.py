@@ -15,7 +15,7 @@ from security.core.security_utils import sanitize_for_log
 from ..forms.user_forms import EditUserForm, DeleteUserForm, AddUserForm, ResetPasswordForm, UserStatusForm
 from ..services.user_service import UserService
 from ..security.admin_access_control import admin_required, admin_session_preservation, admin_user_management_access, ensure_admin_count
-from admin_user_management_notification_handler import AdminUserManagementNotificationHandler, UserOperationContext
+from unified_notification_manager import UnifiedNotificationManager
 
 def validate_form_submission(form):
     """
@@ -24,36 +24,42 @@ def validate_form_submission(form):
     """
     return request.method == 'POST' and form.validate()
 
-def get_notification_handler() -> AdminUserManagementNotificationHandler:
+def get_notification_manager():
     """
-    Get the admin user management notification handler from app config
+    Get unified notification manager instance
     
     Returns:
-        AdminUserManagementNotificationHandler instance
+        UnifiedNotificationManager instance
     """
-    return current_app.config.get('admin_user_management_notification_handler')
+    return current_app.unified_notification_manager
 
-def create_operation_context(target_user_id: int, target_username: str, operation_type: str) -> UserOperationContext:
+def create_user_notification(target_user_id: int, target_username: str, operation_type: str, message: str):
     """
-    Create operation context for notifications
+    Create user management notification using unified system
     
     Args:
-        target_user_id: ID of the user being operated on
-        target_username: Username of the user being operated on
-        operation_type: Type of operation being performed
-        
-    Returns:
-        UserOperationContext instance
+        target_user_id: ID of user being managed
+        target_username: Username of user being managed  
+        operation_type: Type of operation (create, update, delete, etc.)
+        message: Notification message
     """
-    return UserOperationContext(
-        operation_type=operation_type,
-        target_user_id=target_user_id,
-        target_username=target_username,
-        admin_user_id=current_user.id,
-        admin_username=current_user.username,
-        ip_address=request.remote_addr,
-        user_agent=request.headers.get('User-Agent')
-    )
+    try:
+        notification_manager = get_notification_manager()
+        notification_manager.send_admin_notification(
+            message=message,
+            notification_type='user_management',
+            metadata={
+                'target_user_id': target_user_id,
+                'target_username': target_username,
+                'operation_type': operation_type,
+                'admin_user_id': current_user.id,
+                'admin_username': current_user.username,
+                'ip_address': request.remote_addr,
+                'user_agent': request.headers.get('User-Agent')
+            }
+        )
+    except Exception as e:
+        current_app.logger.error(f"Failed to send user management notification: {e}")
 
 def register_routes(bp):
     """Register user management routes"""
@@ -154,7 +160,6 @@ def register_routes(bp):
             return jsonify({'success': False, 'error': 'Access denied'}), 403
             
         form = EditUserForm()
-        notification_handler = get_notification_handler()
         
         if validate_form_submission(form):
             db_manager = current_app.config['db_manager']
@@ -202,13 +207,13 @@ def register_routes(bp):
                         changes['password'] = 'updated'
                     
                     # Send real-time notification to admins
-                    if notification_handler and changes:
-                        context = create_operation_context(
-                            form.user_id.data, 
-                            form.username.data, 
-                            'user_updated'
+                    if changes:
+                        create_user_notification(
+                            target_user_id=form.user_id.data,
+                            target_username=form.username.data,
+                            operation_type='user_updated',
+                            message=f"User {form.username.data} updated by admin {current_user.username}. Changes: {', '.join(changes)}"
                         )
-                        notification_handler.notify_user_updated(context, changes)
                     
                     # Send success notification
                     from notification_helpers import send_success_notification
@@ -242,7 +247,7 @@ def register_routes(bp):
             return jsonify({'success': False, 'error': 'Access denied'}), 403
             
         form = DeleteUserForm()
-        notification_handler = get_notification_handler()
+        
         
         if validate_form_submission(form):
             if int(form.user_id.data) == current_user.id:
@@ -276,14 +281,13 @@ def register_routes(bp):
                 
                 if success:
                     # Send real-time notification to admins
-                    if notification_handler:
-                        context = create_operation_context(
-                            int(form.user_id.data), 
-                            target_username, 
-                            'user_deleted'
-                        )
-                        deletion_reason = request.form.get('reason', 'Admin deletion')
-                        notification_handler.notify_user_deleted(context, deletion_reason)
+                    deletion_reason = request.form.get('reason', 'Admin deletion')
+                    create_user_notification(
+                        target_user_id=form.user_id.data,
+                        target_username=target_username,
+                        operation_type='user_deleted',
+                        message=f"User {target_username} deleted by admin {current_user.username}. Reason: {deletion_reason}"
+                    )
                     
                     # Send success notification
                     from notification_helpers import send_success_notification
@@ -359,14 +363,14 @@ def register_routes(bp):
                             pass  # Keep default role if invalid
                     
                     # Send real-time notification to admins
-                    notification_handler = get_notification_handler()
-                    if notification_handler:
-                        context = create_operation_context(
-                            user_data['id'], 
-                            user_data['username'], 
-                            'user_created'
+                    
+                    # Notification sent via unified system
+                        create_user_notification(
+                            target_user_id=new_user.id,
+                            target_username=new_user.username,
+                            operation_type='user_created',
+                            message=f"User {new_user.username} created by admin {current_user.username}"
                         )
-                        notification_handler.notify_user_created(context, user_data)
                     
                     # Send notification email if requested
                     if send_notification and not email_verified:
@@ -491,7 +495,7 @@ def register_routes(bp):
         user_id = request.form.get('user_id')
         new_role = request.form.get('new_role')
         reason = request.form.get('reason', '')
-        notification_handler = get_notification_handler()
+        
         
         if not user_id or not new_role:
             # Send error notification
@@ -534,15 +538,12 @@ def register_routes(bp):
             
             if success:
                 # Send real-time notification to admins
-                if notification_handler:
-                    context = create_operation_context(
-                        int(user_id), 
-                        target_username, 
-                        'user_role_changed'
-                    )
-                    notification_handler.notify_user_role_changed(
-                        context, old_role, new_role_enum, reason
-                    )
+                create_user_notification(
+                    target_user_id=form.user_id.data,
+                    target_username=target_username,
+                    operation_type='user_role_changed',
+                    message=f"User {target_username} role changed from {old_role} to {new_role} by admin {current_user.username}"
+                )
                 
                 # Send success notification
                 from notification_helpers import send_success_notification
@@ -604,7 +605,7 @@ def register_routes(bp):
             
             # Handle additional status updates and track changes
             status_changes = {}
-            notification_handler = get_notification_handler()
+            
             target_username = None
             
             # Use db_manager directly since session management is now in Redis
@@ -658,13 +659,13 @@ def register_routes(bp):
             
             if success:
                 # Send real-time notification to admins
-                if notification_handler and status_changes and target_username:
-                    context = create_operation_context(
-                        int(user_id), 
-                        target_username, 
-                        'user_status_changed'
+                if status_changes and target_username:
+                    create_user_notification(
+                        target_user_id=form.user_id.data,
+                        target_username=target_username,
+                        operation_type='user_status_changed',
+                        message=f"User {target_username} status changed by admin {current_user.username}. Changes: {', '.join(status_changes)}"
                     )
-                    notification_handler.notify_user_status_changed(context, status_changes)
                 
                 # Send success notification
                 from notification_helpers import send_success_notification
@@ -697,7 +698,7 @@ def register_routes(bp):
         user_id = request.form.get('user_id')
         reset_method = request.form.get('reset_method', 'email')
         invalidate_sessions = request.form.get('invalidate_sessions') == 'on'
-        notification_handler = get_notification_handler()
+        
         
         if not user_id:
             # Send error notification
@@ -730,15 +731,13 @@ def register_routes(bp):
             
             if success:
                 # Send real-time notification to admins
-                if notification_handler:
-                    context = create_operation_context(
-                        int(user_id), 
-                        target_username, 
-                        'user_password_reset'
-                    )
-                    notification_handler.notify_user_password_reset(
-                        context, reset_method, bool(temp_password)
-                    )
+                # Notification sent via unified system
+                create_user_notification(
+                    target_user_id=form.user_id.data,
+                    target_username=target_username,
+                    operation_type='user_password_reset',
+                    message=f"Password reset for user {target_username} by admin {current_user.username}"
+                )
                 
                 if reset_method == 'generate' and temp_password:
                     # Send success notification with temporary password

@@ -428,8 +428,8 @@
     document.addEventListener('DOMContentLoaded', function() {
         initializeDashboard();
         
-        // Connect to WebSocket for real-time updates
-        connectWebSocket();
+        // WebSocket connection handled by unified system
+        console.log('Admin dashboard initialized - WebSocket managed by unified system');
         
         // Set up periodic refresh fallback
         setInterval(function() {

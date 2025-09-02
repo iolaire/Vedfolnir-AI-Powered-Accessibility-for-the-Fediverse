@@ -88,6 +88,7 @@ Organize by purpose: debug, examples, utilities, setup, maintenance, testing, my
 - **Debug Scripts**: `debug_*.py`
 - **Demo Scripts**: `demo_*.py`
 - **Validation**: `validate_*.py` or `verify_*.py`
+- **Documentation Files**: Non-spec markdown files should include date suffix `[YYYY-MM-DD]` (excludes .kiro/steering/ and .kiro/specs/ files)
 
 ### Git History
 Always use `git mv` to preserve history when moving files.

@@ -21,6 +21,16 @@
 - **HTTP Client**: httpx for async requests
 - **Security**: Enterprise-grade CSRF, input validation, rate limiting
 
+## Application Structure
+The application follows a modular architecture with organized code in the `app/` directory:
+
+### Core Application (`app/`)
+- **`app/core/`** - Core application components (app factory, extensions, middleware, blueprint registration)
+- **`app/blueprints/`** - Flask blueprints organized by functionality (auth, api, caption, platform, review)
+- **`app/services/`** - Service layer modules (caption_service, platform_service)
+- **`app/utils/`** - Utility functions (responses, error_handling, validation, decorators)
+- **`app/websocket/`** - WebSocket functionality (core, services, middleware, progress, production)
+
 ## Session Management Architecture
 
 **Primary**: Redis session storage with Flask cookies for session ID

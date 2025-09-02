@@ -65,38 +65,54 @@ function setupEventListeners() {
  */
 function initializeWebSocket() {
     try {
-        const protocol = window.location.protocol === 'https:' ? 'wss:' : 'ws:';
-        const wsUrl = `${protocol}//${window.location.host}/admin/ws/jobs`;
-        
-        adminJobManagement.websocket = new WebSocket(wsUrl);
-        
-        adminJobManagement.websocket.onopen = function(event) {
-            console.log('Admin WebSocket connected');
+        // Use unified WebSocket connection instead of creating new one
+        if (window.VedfolnirWS && window.VedfolnirWS.socket) {
+            adminJobManagement.websocket = window.VedfolnirWS.socket;
+            setupJobWebSocketHandlers();
+            console.log('Admin job management using unified WebSocket connection');
             updateConnectionStatus(true);
-        };
-        
-        adminJobManagement.websocket.onmessage = function(event) {
-            const data = JSON.parse(event.data);
-            handleWebSocketMessage(data);
-        };
-        
-        adminJobManagement.websocket.onclose = function(event) {
-            console.log('Admin WebSocket disconnected');
-            updateConnectionStatus(false);
-            
-            // Attempt to reconnect after 5 seconds
-            setTimeout(initializeWebSocket, 5000);
-        };
-        
-        adminJobManagement.websocket.onerror = function(error) {
-            console.error('Admin WebSocket error:', error);
-            updateConnectionStatus(false);
-        };
+        } else {
+            // Wait for unified WebSocket to be available
+            const checkForWebSocket = () => {
+                if (window.VedfolnirWS && window.VedfolnirWS.socket) {
+                    adminJobManagement.websocket = window.VedfolnirWS.socket;
+                    setupJobWebSocketHandlers();
+                    console.log('Admin job management connected to unified WebSocket');
+                    updateConnectionStatus(true);
+                } else {
+                    setTimeout(checkForWebSocket, 100);
+                }
+            };
+            checkForWebSocket();
+        }
         
     } catch (error) {
         console.error('Failed to initialize WebSocket:', error);
         updateConnectionStatus(false);
     }
+}
+
+function setupJobWebSocketHandlers() {
+    if (!adminJobManagement.websocket) return;
+    
+    adminJobManagement.websocket.on('connect', function() {
+        console.log('Admin job management WebSocket connected');
+        updateConnectionStatus(true);
+    });
+    
+    adminJobManagement.websocket.on('job_update', function(data) {
+        handleWebSocketMessage(data);
+    });
+    
+    adminJobManagement.websocket.on('disconnect', function() {
+        console.log('Admin job management WebSocket disconnected');
+        updateConnectionStatus(false);
+    });
+    
+    adminJobManagement.websocket.on('error', function(error) {
+        console.error('Admin job management WebSocket error:', error);
+        updateConnectionStatus(false);
+    });
 }
 
 /**

@@ -300,52 +300,40 @@ class PageNotificationIntegrator {
      * Initialize WebSocket connection
      */
     async initializeWebSocket() {
-        try {
-            console.log(`Initializing WebSocket connection for namespace: ${this.namespace}`);
-            
-            // Get WebSocket configuration
-            const wsConfig = this.config.websocket_config || {};
-            
-            // Initialize Socket.IO connection
-            this.socket = io(this.namespace, {
-                transports: ['websocket', 'polling'],
-                upgrade: true,
-                rememberUpgrade: true,
-                timeout: 20000,
-                reconnection: true,
-                reconnectionAttempts: this.maxReconnectAttempts,
-                reconnectionDelay: 1000,
-                reconnectionDelayMax: 5000,
-                auth: {
-                    page_id: this.pageId,
-                    page_type: this.pageType
-                }
-            });
-            
-            // Register connection event handlers
-            this.socket.on('connect', this.handleConnect);
-            this.socket.on('disconnect', this.handleDisconnect);
-            this.socket.on('connect_error', this.handleConnectError);
-            this.socket.on('reconnect', this.handleReconnect);
-            
-            // Register notification event handlers
-            this.socket.on('notification', this.handleNotification);
-            this.socket.on('system_notification', this.handleSystemNotification.bind(this));
-            this.socket.on('admin_notification', this.handleAdminNotification.bind(this));
-            
-            // Register page-specific event handlers
-            const pageEvents = wsConfig.events || [];
-            pageEvents.forEach(event => {
-                this.socket.on(event, (data) => this.handlePageEvent(event, data));
-            });
-            
-            console.log('WebSocket connection initialized');
-            
-        } catch (error) {
-            console.error('Failed to initialize WebSocket connection:', error);
-            this.stats.errorsEncountered++;
-            throw error;
+        // Use the global WebSocket from websocket-bundle.js instead of creating new connections
+        if (window.VedfolnirWS && window.VedfolnirWS.socket) {
+            this.socket = window.VedfolnirWS.socket;
+            this.setupWebSocketHandlers();
+            console.log('Using existing WebSocket connection for notifications');
+            return;
         }
+        
+        // If no global WebSocket exists, wait for it to be initialized
+        const checkForWebSocket = () => {
+            if (window.VedfolnirWS && window.VedfolnirWS.socket) {
+                this.socket = window.VedfolnirWS.socket;
+                this.setupWebSocketHandlers();
+                console.log('Connected to WebSocket for notifications');
+            } else {
+                setTimeout(checkForWebSocket, 100);
+            }
+        };
+        
+        checkForWebSocket();
+    }
+    
+    /**
+     * Setup WebSocket event handlers for notifications
+     */
+    setupWebSocketHandlers() {
+        if (!this.socket) return;
+        
+        // Register notification event handlers
+        this.socket.on('notification', this.handleNotification.bind(this));
+        this.socket.on('system_notification', this.handleSystemNotification.bind(this));
+        this.socket.on('admin_notification', this.handleAdminNotification.bind(this));
+        
+        console.log('WebSocket notification handlers registered');
     }
     
     /**

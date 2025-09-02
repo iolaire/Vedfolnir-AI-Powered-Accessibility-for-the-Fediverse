@@ -40,15 +40,26 @@ class PlatformManagementWebSocket {
                 return;
             }
             
-            // Create new WebSocket connection
-            this.socket = io('/', {
-                transports: ['websocket', 'polling'],
-                upgrade: true,
-                rememberUpgrade: true
-            });
-            
-            this.setupConnectionHandlers();
-            this.setupEventHandlers();
+            // Use unified WebSocket connection
+            if (window.VedfolnirWS && window.VedfolnirWS.socket) {
+                this.socket = window.VedfolnirWS.socket;
+                this.setupConnectionHandlers();
+                this.setupEventHandlers();
+                console.log('Platform management using unified WebSocket connection');
+            } else {
+                // Wait for unified WebSocket to be available
+                const checkForWebSocket = () => {
+                    if (window.VedfolnirWS && window.VedfolnirWS.socket) {
+                        this.socket = window.VedfolnirWS.socket;
+                        this.setupConnectionHandlers();
+                        this.setupEventHandlers();
+                        console.log('Platform management connected to unified WebSocket');
+                    } else {
+                        setTimeout(checkForWebSocket, 100);
+                    }
+                };
+                checkForWebSocket();
+            }
             
         } catch (error) {
             console.error('Failed to initialize WebSocket for platform management:', error);
