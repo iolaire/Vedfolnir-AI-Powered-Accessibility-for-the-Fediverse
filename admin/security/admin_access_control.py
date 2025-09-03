@@ -45,7 +45,7 @@ def admin_required(f):
             
             # Log security event
             try:
-                session_manager = current_app.request_session_manager
+                session_manager = getattr(current_app, "request_session_manager", None) or current_app.config.get("db_manager")
                 with session_manager.session_scope() as db_session:
                     UserAuditLog.log_action(
                         db_session,
@@ -66,7 +66,7 @@ def admin_required(f):
             # Skip Redis session context for now - causing import errors
             # Log admin action
             try:
-                session_manager = current_app.request_session_manager
+                session_manager = getattr(current_app, "request_session_manager", None) or current_app.config.get("db_manager")
                 with session_manager.session_scope() as db_session:
                     UserAuditLog.log_action(
                         db_session,
@@ -186,7 +186,7 @@ def admin_api_required(f):
             
             # Log security event
             try:
-                session_manager = current_app.request_session_manager
+                session_manager = getattr(current_app, "request_session_manager", None) or current_app.config.get("db_manager")
                 with session_manager.session_scope() as db_session:
                     UserAuditLog.log_action(
                         db_session,
@@ -204,7 +204,7 @@ def admin_api_required(f):
         
         # Log admin API access
         try:
-            session_manager = current_app.request_session_manager
+            session_manager = getattr(current_app, "request_session_manager", None) or current_app.config.get("db_manager")
             with session_manager.session_scope() as db_session:
                 UserAuditLog.log_action(
                     db_session,
@@ -238,7 +238,7 @@ def admin_user_management_access(f):
         
         if target_user_id:
             try:
-                session_manager = current_app.request_session_manager
+                session_manager = getattr(current_app, "request_session_manager", None) or current_app.config.get("db_manager")
                 with session_manager.session_scope() as db_session:
                     from models import User
                     target_user = db_session.query(User).filter_by(id=target_user_id).first()
@@ -276,7 +276,7 @@ def ensure_admin_count(f):
         
         if target_user_id:
             try:
-                session_manager = current_app.request_session_manager
+                session_manager = getattr(current_app, "request_session_manager", None) or current_app.config.get("db_manager")
                 with session_manager.session_scope() as db_session:
                     from models import User
                     
@@ -325,7 +325,7 @@ def admin_context_processor():
     """
     if current_user.is_authenticated and current_user.role == UserRole.ADMIN:
         try:
-            session_manager = current_app.request_session_manager
+            session_manager = getattr(current_app, "request_session_manager", None) or current_app.config.get("db_manager")
             with session_manager.session_scope() as db_session:
                 from models import User, PlatformConnection, Image
                 
@@ -388,7 +388,7 @@ def get_admin_accessible_users():
         return []
     
     try:
-        session_manager = current_app.request_session_manager
+        session_manager = getattr(current_app, "request_session_manager", None) or current_app.config.get("db_manager")
         with session_manager.session_scope() as db_session:
             from models import User
             users = db_session.query(User).all()
@@ -410,7 +410,7 @@ def get_admin_accessible_platforms():
         return []
     
     try:
-        session_manager = current_app.request_session_manager
+        session_manager = getattr(current_app, "request_session_manager", None) or current_app.config.get("db_manager")
         with session_manager.session_scope() as db_session:
             from models import PlatformConnection
             platforms = db_session.query(PlatformConnection).filter_by(is_active=True).all()
@@ -432,7 +432,7 @@ def get_admin_system_stats():
         return {}
     
     try:
-        session_manager = current_app.request_session_manager
+        session_manager = getattr(current_app, "request_session_manager", None) or current_app.config.get("db_manager")
         with session_manager.session_scope() as db_session:
             from models import User, PlatformConnection, Image, Post, ProcessingStatus
             from datetime import datetime, timedelta

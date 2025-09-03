@@ -71,6 +71,12 @@ class DatabaseSessionSync {
             });
             
             if (!response.ok) {
+                if (response.status === 302) {
+                    // Handle redirect (likely authentication required)
+                    console.log('[SessionSync] Authentication required, session may be expired');
+                    this.handleSessionExpiration();
+                    return;
+                }
                 throw new Error(`HTTP ${response.status}`);
             }
             
@@ -80,7 +86,7 @@ class DatabaseSessionSync {
                 this.handleSessionStateUpdate(data);
                 this.lastSyncTime = Date.now();
             } else {
-                console.error('[SessionSync] Session state API error:', data.error);
+                console.error('[SessionSync] Session state API error:', data.error || 'Unknown error');
             }
             
         } catch (error) {

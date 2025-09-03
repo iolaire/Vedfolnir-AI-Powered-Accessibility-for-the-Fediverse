@@ -106,6 +106,18 @@
         margin-bottom: 20px;
     }
 
+    .stat-card {
+        background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+        color: white;
+        border-radius: 10px;
+        transition: transform 0.2s ease, box-shadow 0.2s ease;
+    }
+
+    .stat-card:hover {
+        transform: translateY(-2px);
+        box-shadow: 0 4px 8px rgba(0,0,0,0.15);
+    }
+
     .job-stats {
         display: grid;
         grid-template-columns: repeat(auto-fit, minmax(150px, 1fr));
@@ -183,22 +195,46 @@
 </div>
 
 <!-- Job Statistics -->
-<div class="job-stats">
-    <div class="stat-card">
-        <div class="stat-value text-primary" id="totalActiveJobs">{{ job_stats.total_active or 0 }}</div>
-        <div class="stat-label">Total Active Jobs</div>
+<div class="row mb-4">
+    <div class="col-md-3">
+        <div class="card stat-card text-white">
+            <div class="card-body text-center">
+                <i class="bi bi-play-circle" style="font-size: 2rem;"></i>
+                <h3 class="mt-2" id="totalActiveJobs">{{ job_stats.total_active or 0 }}</h3>
+                <p class="mb-0">Total Active Jobs</p>
+                <small>Currently running</small>
+            </div>
+        </div>
     </div>
-    <div class="stat-card">
-        <div class="stat-value text-success" id="personalActiveJobs">{{ job_stats.personal_active or 0 }}</div>
-        <div class="stat-label">Your Active Jobs</div>
+    <div class="col-md-3">
+        <div class="card stat-card text-white">
+            <div class="card-body text-center">
+                <i class="bi bi-person-check" style="font-size: 2rem;"></i>
+                <h3 class="mt-2" id="personalActiveJobs">{{ job_stats.personal_active or 0 }}</h3>
+                <p class="mb-0">Your Active Jobs</p>
+                <small>Personal tasks</small>
+            </div>
+        </div>
     </div>
-    <div class="stat-card">
-        <div class="stat-value text-warning" id="adminManagedJobs">{{ job_stats.admin_managed or 0 }}</div>
-        <div class="stat-label">Admin Managed</div>
+    <div class="col-md-3">
+        <div class="card stat-card text-white">
+            <div class="card-body text-center">
+                <i class="bi bi-shield-check" style="font-size: 2rem;"></i>
+                <h3 class="mt-2" id="adminManagedJobs">{{ job_stats.admin_managed or 0 }}</h3>
+                <p class="mb-0">Admin Managed</p>
+                <small>System tasks</small>
+            </div>
+        </div>
     </div>
-    <div class="stat-card">
-        <div class="stat-value text-info" id="queuedJobs">{{ job_stats.queued or 0 }}</div>
-        <div class="stat-label">Queued Jobs</div>
+    <div class="col-md-3">
+        <div class="card stat-card text-white">
+            <div class="card-body text-center">
+                <i class="bi bi-clock-history" style="font-size: 2rem;"></i>
+                <h3 class="mt-2" id="queuedJobs">{{ job_stats.queued or 0 }}</h3>
+                <p class="mb-0">Queued Jobs</p>
+                <small>Waiting to run</small>
+            </div>
+        </div>
     </div>
 </div>
 

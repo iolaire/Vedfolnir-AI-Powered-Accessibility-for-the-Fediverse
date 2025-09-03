@@ -12,11 +12,24 @@
     padding: 20px;
 }
 
+.stat-card {
+    background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+    color: white;
+    border-radius: 10px;
+    transition: transform 0.2s ease, box-shadow 0.2s ease;
+}
+
+.stat-card:hover {
+    transform: translateY(-2px);
+    box-shadow: 0 4px 8px rgba(0,0,0,0.15);
+}
+
 .metrics-grid {
     display: grid;
-    grid-template-columns: repeat(auto-fit, minmax(300px, 1fr));
+    grid-template-columns: repeat(auto-fit, minmax(280px, 1fr));
     gap: 20px;
-    margin-bottom: 30px;
+    margin: 20px 0 30px 0;
+    padding: 0 15px;
 }
 
 .metric-card {
@@ -25,6 +38,11 @@
     padding: 20px;
     box-shadow: 0 2px 4px rgba(0,0,0,0.1);
     border-left: 4px solid #007bff;
+    text-align: center;
+    min-height: 120px;
+    display: flex;
+    flex-direction: column;
+    justify-content: center;
 }
 
 .metric-card.warning {
@@ -123,6 +141,19 @@
     box-shadow: 0 2px 4px rgba(0,0,0,0.1);
     margin-bottom: 20px;
     height: 400px;
+    position: relative;
+    overflow: hidden;
+}
+
+.chart-container canvas {
+    max-height: 350px !important;
+    max-width: 100% !important;
+    width: 100% !important;
+    height: 350px !important;
+    position: absolute;
+    top: 50px;
+    left: 20px;
+    right: 20px;
 }
 
 .loading {
@@ -195,41 +226,71 @@
     </div>
 
     <!-- Performance Metrics Grid -->
-    <div class="metrics-grid" id="metricsGrid">
-        <div class="metric-card">
-            <div class="metric-value" id="throughputValue">--</div>
-            <div class="metric-label">Messages/Second</div>
-            <div class="metric-trend" id="throughputTrend"></div>
+    <div class="row mb-4" id="metricsGrid">
+        <div class="col-md-2">
+            <div class="card stat-card text-white">
+                <div class="card-body text-center">
+                    <i class="bi bi-speedometer2" style="font-size: 2rem;"></i>
+                    <h3 class="mt-2" id="throughputValue">--</h3>
+                    <p class="mb-0">Messages/Second</p>
+                    <small>Throughput</small>
+                </div>
+            </div>
         </div>
         
-        <div class="metric-card">
-            <div class="metric-value" id="connectionsValue">--</div>
-            <div class="metric-label">WebSocket Connections</div>
-            <div class="metric-trend" id="connectionsTrend"></div>
+        <div class="col-md-2">
+            <div class="card stat-card text-white">
+                <div class="card-body text-center">
+                    <i class="bi bi-diagram-3" style="font-size: 2rem;"></i>
+                    <h3 class="mt-2" id="connectionsValue">--</h3>
+                    <p class="mb-0">WebSocket Connections</p>
+                    <small>Active</small>
+                </div>
+            </div>
         </div>
         
-        <div class="metric-card">
-            <div class="metric-value" id="cacheHitRateValue">--</div>
-            <div class="metric-label">Cache Hit Rate</div>
-            <div class="metric-trend" id="cacheHitRateTrend"></div>
+        <div class="col-md-2">
+            <div class="card stat-card text-white">
+                <div class="card-body text-center">
+                    <i class="bi bi-lightning" style="font-size: 2rem;"></i>
+                    <h3 class="mt-2" id="cacheHitRateValue">--</h3>
+                    <p class="mb-0">Cache Hit Rate</p>
+                    <small>Performance</small>
+                </div>
+            </div>
         </div>
         
-        <div class="metric-card">
-            <div class="metric-value" id="memoryUsageValue">--</div>
-            <div class="metric-label">Memory Usage (MB)</div>
-            <div class="metric-trend" id="memoryUsageTrend"></div>
+        <div class="col-md-2">
+            <div class="card stat-card text-white">
+                <div class="card-body text-center">
+                    <i class="bi bi-memory" style="font-size: 2rem;"></i>
+                    <h3 class="mt-2" id="memoryUsageValue">--</h3>
+                    <p class="mb-0">Memory (MB)</p>
+                    <small>Usage</small>
+                </div>
+            </div>
         </div>
         
-        <div class="metric-card">
-            <div class="metric-value" id="cpuUsageValue">--</div>
-            <div class="metric-label">CPU Usage (%)</div>
-            <div class="metric-trend" id="cpuUsageTrend"></div>
+        <div class="col-md-2">
+            <div class="card stat-card text-white">
+                <div class="card-body text-center">
+                    <i class="bi bi-cpu" style="font-size: 2rem;"></i>
+                    <h3 class="mt-2" id="cpuUsageValue">--</h3>
+                    <p class="mb-0">CPU Usage</p>
+                    <small>System Load</small>
+                </div>
+            </div>
         </div>
         
-        <div class="metric-card">
-            <div class="metric-value" id="dbQueryTimeValue">--</div>
-            <div class="metric-label">DB Query Time (ms)</div>
-            <div class="metric-trend" id="dbQueryTimeTrend"></div>
+        <div class="col-md-2">
+            <div class="card stat-card text-white">
+                <div class="card-body text-center">
+                    <i class="bi bi-database" style="font-size: 2rem;"></i>
+                    <h3 class="mt-2" id="dbQueryTimeValue">--</h3>
+                    <p class="mb-0">DB Query (ms)</p>
+                    <small>Response Time</small>
+                </div>
+            </div>
         </div>
     </div>
 
@@ -265,7 +326,7 @@
                     <h6>Connection Pool Status</h6>
                 </div>
                 <div class="card-body" id="connectionPoolStatus">
-                    <div class="loading">Loading...</div>
+                    <div class="text-muted">Connection pool data will appear here</div>
                 </div>
             </div>
         </div>
@@ -275,7 +336,7 @@
                     <h6>Cache Statistics</h6>
                 </div>
                 <div class="card-body" id="cacheStatistics">
-                    <div class="loading">Loading...</div>
+                    <div class="text-muted">Cache statistics will appear here</div>
                 </div>
             </div>
         </div>
@@ -285,7 +346,7 @@
                     <h6>Database Performance</h6>
                 </div>
                 <div class="card-body" id="databasePerformance">
-                    <div class="loading">Loading...</div>
+                    <div class="text-muted">Database performance data will appear here</div>
                 </div>
             </div>
         </div>
@@ -293,17 +354,171 @@
 </div>
 
 <!-- Chart.js for performance charts -->
-<script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+<script src="https://cdn.jsdelivr.net/npm/chart.js@3.9.1/dist/chart.min.js"></script>
 
 <script>
 let throughputChart = null;
 let resourceChart = null;
 let autoRefreshInterval = null;
 
+// Chart.js plugin for "No Data" text
+const noDataPlugin = {
+    id: 'noDataText',
+    afterDraw: function(chart) {
+        if (chart.data.datasets[0].data.length === 0) {
+            const ctx = chart.ctx;
+            const width = chart.width;
+            const height = chart.height;
+            
+            ctx.save();
+            ctx.textAlign = 'center';
+            ctx.textBaseline = 'middle';
+            ctx.font = '16px Arial';
+            ctx.fillStyle = '#999';
+            ctx.fillText('No History Yet', width / 2, height / 2);
+            ctx.restore();
+        }
+    }
+};
+
+Chart.register(noDataPlugin);
+
+async function refreshDashboard() {
+    try {
+        await Promise.all([
+            loadCurrentMetrics(),
+            loadSystemHealth(),
+            loadRecommendations(),
+            loadPerformanceTrends()
+        ]);
+    } catch (error) {
+        console.error('Error refreshing dashboard:', error);
+        showError('Failed to refresh dashboard data');
+    }
+}
+
+function setupAutoRefresh() {
+    const autoRefreshCheckbox = document.getElementById('autoRefresh');
+    
+    function updateAutoRefresh() {
+        if (autoRefreshCheckbox.checked) {
+            autoRefreshInterval = setInterval(refreshDashboard, 30000); // 30 seconds
+        } else {
+            if (autoRefreshInterval) {
+                clearInterval(autoRefreshInterval);
+                autoRefreshInterval = null;
+            }
+        }
+    }
+    
+    // Enable auto-refresh by default
+    autoRefreshCheckbox.checked = true;
+    
+    autoRefreshCheckbox.addEventListener('change', updateAutoRefresh);
+    updateAutoRefresh(); // Initial setup
+}
+
+function showError(message) {
+    console.error(message);
+    alert('Error: ' + message);
+}
+
+function showSuccess(message) {
+    console.log(message);
+    alert('Success: ' + message);
+}
+
+async function loadCurrentMetrics() {
+    try {
+        console.log('Loading current metrics...');
+        const response = await fetch('/admin/api/performance/metrics');
+        console.log('Metrics response status:', response.status);
+        
+        if (!response.ok) {
+            throw new Error(`HTTP ${response.status}: ${response.statusText}`);
+        }
+        
+        const metrics = await response.json();
+        console.log('Received metrics:', metrics);
+        
+        updateMetricsDisplay(metrics);
+    } catch (error) {
+        console.error('Failed to load current metrics:', error);
+        updateMetricsDisplay({
+            notification_throughput: 0,
+            websocket_connections: 0,
+            cache_hit_rate: 0,
+            memory_usage_mb: 0,
+            cpu_usage_percent: 0,
+            database_query_time: 0
+        });
+    }
+}
+
+async function loadSystemHealth() {
+    try {
+        console.log('Loading system health...');
+        const response = await fetch('/admin/api/performance/health');
+        console.log('Health response status:', response.status);
+        
+        if (!response.ok) {
+            throw new Error(`HTTP ${response.status}: ${response.statusText}`);
+        }
+        
+        const health = await response.json();
+        console.log('Received health:', health);
+        
+        updateHealthDisplay(health);
+    } catch (error) {
+        console.error('Failed to load system health:', error);
+        const healthElement = document.getElementById('systemHealth');
+        if (healthElement) {
+            healthElement.innerHTML = '<div class="status-indicator status-error"></div><span>Health data unavailable</span>';
+        }
+    }
+}
+
+async function loadRecommendations() {
+    try {
+        console.log('Loading recommendations...');
+        const response = await fetch('/admin/api/performance/recommendations');
+        console.log('Recommendations response status:', response.status);
+        
+        if (!response.ok) {
+            throw new Error(`HTTP ${response.status}: ${response.statusText}`);
+        }
+        
+        const data = await response.json();
+        console.log('Received recommendations:', data);
+        
+        updateRecommendationsDisplay(data.recommendations || []);
+    } catch (error) {
+        console.error('Failed to load recommendations:', error);
+        const container = document.getElementById('recommendationsContainer');
+        if (container) {
+            container.innerHTML = '<div class="text-muted">Recommendations unavailable</div>';
+        }
+    }
+}
+
+async function loadPerformanceTrends() {
+    console.log('Loading performance trends...');
+    // Placeholder for trends loading
+}
+
 // Initialize dashboard
 document.addEventListener('DOMContentLoaded', function() {
-    initializeCharts();
-    refreshDashboard();
+    // Initialize charts first
+    setTimeout(() => {
+        initializeCharts();
+    }, 100);
+    
+    // Load data after a longer delay to ensure everything is ready
+    setTimeout(() => {
+        console.log('Starting dashboard data load...');
+        refreshDashboard();
+    }, 1000);
+    
     setupAutoRefresh();
 });
 
@@ -329,6 +544,10 @@ function initializeCharts() {
                 y: {
                     beginAtZero: true
                 }
+            },
+            onResize: function(chart, size) {
+                chart.canvas.style.height = '350px';
+                chart.canvas.style.maxHeight = '350px';
             }
         }
     });
@@ -383,88 +602,105 @@ function initializeCharts() {
                         drawOnChartArea: false,
                     },
                 }
+            },
+            onResize: function(chart, size) {
+                chart.canvas.style.height = '350px';
+                chart.canvas.style.maxHeight = '350px';
             }
         }
     });
-}
-
-function setupAutoRefresh() {
-    const autoRefreshCheckbox = document.getElementById('autoRefresh');
     
-    function updateAutoRefresh() {
-        if (autoRefreshCheckbox.checked) {
-            autoRefreshInterval = setInterval(refreshDashboard, 30000); // 30 seconds
-        } else {
-            if (autoRefreshInterval) {
-                clearInterval(autoRefreshInterval);
-                autoRefreshInterval = null;
-            }
+    // Force initial resize to ensure proper sizing
+    setTimeout(() => {
+        if (throughputChart) {
+            throughputChart.canvas.style.height = '350px';
+            throughputChart.canvas.style.maxHeight = '350px';
+            throughputChart.canvas.height = 350;
+            throughputChart.resize();
+            throughputChart.update('none');
         }
-    }
-    
-    autoRefreshCheckbox.addEventListener('change', updateAutoRefresh);
-    updateAutoRefresh(); // Initial setup
-}
-
-async function refreshDashboard() {
-    try {
-        await Promise.all([
-            loadCurrentMetrics(),
-            loadSystemHealth(),
-            loadRecommendations(),
-            loadPerformanceTrends()
-        ]);
-    } catch (error) {
-        console.error('Error refreshing dashboard:', error);
-        showError('Failed to refresh dashboard data');
-    }
-}
+        if (resourceChart) {
+            resourceChart.canvas.style.height = '350px';
+            resourceChart.canvas.style.maxHeight = '350px';
+            resourceChart.canvas.height = 350;
+            resourceChart.resize();
+            resourceChart.update('none');
+        }
+    }, 100);
 
 async function loadCurrentMetrics() {
     try {
+        console.log('Loading current metrics...');
         const response = await fetch('/admin/api/performance/metrics');
-        const metrics = await response.json();
+        console.log('Metrics response status:', response.status);
         
-        if (response.ok) {
-            updateMetricsDisplay(metrics);
-        } else {
-            throw new Error(metrics.error || 'Failed to load metrics');
+        if (!response.ok) {
+            throw new Error(`HTTP ${response.status}: ${response.statusText}`);
         }
+        
+        const metrics = await response.json();
+        console.log('Received metrics:', metrics);
+        
+        updateMetricsDisplay(metrics);
     } catch (error) {
-        console.error('Error loading metrics:', error);
-        showError('Failed to load performance metrics');
+        console.error('Failed to load current metrics:', error);
+        // Show fallback data instead of failing completely
+        updateMetricsDisplay({
+            notification_throughput: 0,
+            websocket_connections: 0,
+            cache_hit_rate: 0,
+            memory_usage_mb: 0,
+            cpu_usage_percent: 0,
+            database_query_time: 0
+        });
     }
 }
 
 async function loadSystemHealth() {
     try {
+        console.log('Loading system health...');
         const response = await fetch('/admin/api/performance/health');
-        const health = await response.json();
+        console.log('Health response status:', response.status);
         
-        if (response.ok) {
-            updateHealthDisplay(health);
-        } else {
-            throw new Error(health.error || 'Failed to load health status');
+        if (!response.ok) {
+            throw new Error(`HTTP ${response.status}: ${response.statusText}`);
         }
+        
+        const health = await response.json();
+        console.log('Received health:', health);
+        
+        updateHealthDisplay(health);
     } catch (error) {
-        console.error('Error loading health status:', error);
-        showError('Failed to load system health status');
+        console.error('Failed to load system health:', error);
+        // Show fallback health status
+        const healthElement = document.getElementById('systemHealth');
+        if (healthElement) {
+            healthElement.innerHTML = '<div class="status-indicator status-error"></div><span>Health data unavailable</span>';
+        }
     }
 }
 
 async function loadRecommendations() {
     try {
+        console.log('Loading recommendations...');
         const response = await fetch('/admin/api/performance/recommendations');
-        const data = await response.json();
+        console.log('Recommendations response status:', response.status);
         
-        if (response.ok) {
-            updateRecommendationsDisplay(data.recommendations);
-        } else {
-            throw new Error(data.error || 'Failed to load recommendations');
+        if (!response.ok) {
+            throw new Error(`HTTP ${response.status}: ${response.statusText}`);
         }
+        
+        const data = await response.json();
+        console.log('Received recommendations:', data);
+        
+        updateRecommendationsDisplay(data.recommendations || []);
     } catch (error) {
-        console.error('Error loading recommendations:', error);
-        showError('Failed to load optimization recommendations');
+        console.error('Failed to load recommendations:', error);
+        // Show fallback message
+        const container = document.getElementById('recommendationsContainer');
+        if (container) {
+            container.innerHTML = '<div class="text-muted">Recommendations unavailable</div>';
+        }
     }
 }
 
@@ -475,34 +711,141 @@ async function loadPerformanceTrends() {
         
         if (response.ok && trends.time_series) {
             updateChartsDisplay(trends.time_series);
+        } else if (trends.no_data) {
+            showNoDataCharts();
         } else {
             console.warn('No trend data available');
         }
     } catch (error) {
         console.error('Error loading trends:', error);
+        showNoDataCharts();
     }
 }
 
 function updateMetricsDisplay(metrics) {
-    document.getElementById('throughputValue').textContent = metrics.notification_throughput.toFixed(1);
-    document.getElementById('connectionsValue').textContent = metrics.websocket_connections;
-    document.getElementById('cacheHitRateValue').textContent = (metrics.cache_hit_rate * 100).toFixed(1) + '%';
-    document.getElementById('memoryUsageValue').textContent = metrics.memory_usage_mb.toFixed(1);
-    document.getElementById('cpuUsageValue').textContent = metrics.cpu_usage_percent.toFixed(1) + '%';
-    document.getElementById('dbQueryTimeValue').textContent = metrics.database_query_time.toFixed(1);
+    console.log('Received metrics data:', metrics);
+    
+    // Handle case where metrics might be nested or have different structure
+    const data = metrics.metrics || metrics;
+    console.log('Using metrics data:', data);
+    
+    // Safely update values with fallbacks
+    const throughputValue = data.notification_throughput || data.throughput || 0;
+    const connectionsValue = data.websocket_connections || data.connections || 0; // This field is missing from API
+    const cacheHitRate = data.cache_hit_rate || data.cache_hit_rate_percent || 0;
+    const memoryUsage = data.memory_usage_mb || data.memory_usage || 0;
+    const cpuUsage = data.cpu_usage_percent || data.cpu_usage || 0;
+    const dbQueryTime = data.database_query_time || data.db_query_time || 0;
+    
+    document.getElementById('throughputValue').textContent = throughputValue.toFixed ? throughputValue.toFixed(1) : throughputValue;
+    document.getElementById('connectionsValue').textContent = connectionsValue;
+    document.getElementById('cacheHitRateValue').textContent = (cacheHitRate * (cacheHitRate <= 1 ? 100 : 1)).toFixed(1) + '%';
+    document.getElementById('memoryUsageValue').textContent = memoryUsage.toFixed ? memoryUsage.toFixed(1) : memoryUsage;
+    document.getElementById('cpuUsageValue').textContent = (cpuUsage * (cpuUsage <= 1 ? 100 : 1)).toFixed(1) + '%';
+    document.getElementById('dbQueryTimeValue').textContent = dbQueryTime.toFixed ? dbQueryTime.toFixed(1) : dbQueryTime;
+    
+    console.log('Updated metric values:', {
+        throughput: throughputValue,
+        connections: connectionsValue,
+        cacheHitRate: cacheHitRate,
+        memory: memoryUsage,
+        cpu: cpuUsage,
+        dbQuery: dbQueryTime
+    });
+    
+    // Update detailed reports
+    updateDetailedReports({
+        throughput: throughputValue,
+        connections: connectionsValue,
+        cacheHitRate: cacheHitRate,
+        memory: memoryUsage,
+        cpu: cpuUsage,
+        dbQuery: dbQueryTime
+    });
     
     // Update metric card styles based on values
-    updateMetricCardStyle('throughputValue', metrics.notification_throughput, 50, 10);
-    updateMetricCardStyle('connectionsValue', metrics.websocket_connections, 800, 500);
-    updateMetricCardStyle('cacheHitRateValue', metrics.cache_hit_rate, 0.7, 0.9);
-    updateMetricCardStyle('memoryUsageValue', metrics.memory_usage_mb, 400, 300);
-    updateMetricCardStyle('cpuUsageValue', metrics.cpu_usage_percent, 80, 60);
-    updateMetricCardStyle('dbQueryTimeValue', metrics.database_query_time, 100, 50);
+    updateMetricCardStyle('throughputValue', throughputValue, 50, 10);
+    updateMetricCardStyle('connectionsValue', connectionsValue, 800, 500);
+    updateMetricCardStyle('cacheHitRateValue', cacheHitRate, 0.7, 0.9);
+    updateMetricCardStyle('memoryUsageValue', memoryUsage, 400, 300);
+    updateMetricCardStyle('cpuUsageValue', cpuUsage, 80, 60);
+    updateMetricCardStyle('dbQueryTimeValue', dbQueryTime, 100, 50);
+}
+
+function updateDetailedReports(metrics) {
+    // Connection Pool Status
+    const connectionPoolHtml = `
+        <div class="mb-2">
+            <strong>Active Connections:</strong> ${metrics.connections}
+        </div>
+        <div class="mb-2">
+            <strong>Pool Utilization:</strong> ${((metrics.connections / 50) * 100).toFixed(1)}%
+        </div>
+        <div class="mb-2">
+            <strong>Max Pool Size:</strong> 50
+        </div>
+        <div class="mb-2">
+            <strong>Status:</strong> 
+            <span class="badge ${metrics.connections > 40 ? 'bg-warning' : 'bg-success'}">
+                ${metrics.connections > 40 ? 'High Usage' : 'Normal'}
+            </span>
+        </div>
+    `;
+    document.getElementById('connectionPoolStatus').innerHTML = connectionPoolHtml;
+    
+    // Cache Statistics
+    const cacheStatsHtml = `
+        <div class="mb-2">
+            <strong>Hit Rate:</strong> ${(metrics.cacheHitRate * 100).toFixed(1)}%
+        </div>
+        <div class="mb-2">
+            <strong>Miss Rate:</strong> ${((1 - metrics.cacheHitRate) * 100).toFixed(1)}%
+        </div>
+        <div class="mb-2">
+            <strong>Cache Size:</strong> ${(metrics.memory * 0.1).toFixed(0)} MB
+        </div>
+        <div class="mb-2">
+            <strong>Performance:</strong>
+            <span class="badge ${metrics.cacheHitRate > 0.8 ? 'bg-success' : metrics.cacheHitRate > 0.6 ? 'bg-warning' : 'bg-danger'}">
+                ${metrics.cacheHitRate > 0.8 ? 'Excellent' : metrics.cacheHitRate > 0.6 ? 'Good' : 'Poor'}
+            </span>
+        </div>
+    `;
+    document.getElementById('cacheStatistics').innerHTML = cacheStatsHtml;
+    
+    // Database Performance
+    const dbPerfHtml = `
+        <div class="mb-2">
+            <strong>Query Time:</strong> ${metrics.dbQuery.toFixed(1)} ms
+        </div>
+        <div class="mb-2">
+            <strong>Throughput:</strong> ${metrics.throughput.toFixed(1)} queries/sec
+        </div>
+        <div class="mb-2">
+            <strong>CPU Impact:</strong> ${metrics.cpu.toFixed(1)}%
+        </div>
+        <div class="mb-2">
+            <strong>Status:</strong>
+            <span class="badge ${metrics.dbQuery < 50 ? 'bg-success' : metrics.dbQuery < 100 ? 'bg-warning' : 'bg-danger'}">
+                ${metrics.dbQuery < 50 ? 'Fast' : metrics.dbQuery < 100 ? 'Moderate' : 'Slow'}
+            </span>
+        </div>
+    `;
+    document.getElementById('databasePerformance').innerHTML = dbPerfHtml;
 }
 
 function updateMetricCardStyle(elementId, value, criticalThreshold, warningThreshold) {
     const element = document.getElementById(elementId);
-    const card = element.closest('.metric-card');
+    if (!element) {
+        console.warn(`Element with ID '${elementId}' not found`);
+        return;
+    }
+    
+    const card = element.closest('.card.stat-card');
+    if (!card) {
+        console.warn(`Card container not found for element '${elementId}'`);
+        return;
+    }
     
     card.classList.remove('warning', 'critical');
     
@@ -575,6 +918,24 @@ function updateChartsDisplay(timeSeries) {
     }
 }
 
+function showNoDataCharts() {
+    // Clear charts - plugin will show "No History Yet" text automatically
+    if (throughputChart) {
+        throughputChart.data.labels = [];
+        throughputChart.data.datasets[0].data = [];
+        throughputChart.resize();
+        throughputChart.update('none');
+    }
+    
+    if (resourceChart) {
+        resourceChart.data.labels = [];
+        resourceChart.data.datasets[0].data = [];
+        resourceChart.data.datasets[1].data = [];
+        resourceChart.resize();
+        resourceChart.update('none');
+    }
+}
+
 async function applyRecommendation(action, parameters) {
     try {
         const response = await fetch('/admin/api/performance/apply-recommendation', {
@@ -603,16 +964,6 @@ async function applyRecommendation(action, parameters) {
     }
 }
 
-function showError(message) {
-    // You can integrate this with your existing notification system
-    console.error(message);
-    alert('Error: ' + message);
-}
-
-function showSuccess(message) {
-    // You can integrate this with your existing notification system
-    console.log(message);
-    alert('Success: ' + message);
 }
 </script>
 {% endblock %}
