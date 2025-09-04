@@ -46,7 +46,8 @@ def admin_required(f):
             # Log security event
             try:
                 session_manager = getattr(current_app, "request_session_manager", None) or current_app.config.get("db_manager")
-                with session_manager.session_scope() as db_session:
+                db_session = session_manager.get_session()
+        try:
                     UserAuditLog.log_action(
                         db_session,
                         action='ADMIN_ACCESS_DENIED',
@@ -56,6 +57,8 @@ def admin_required(f):
                         user_agent=request.headers.get('User-Agent')
                     )
                     db_session.commit()
+                finally:
+                    session_manager.close_session(db_session)
             except Exception as e:
                 logger.error(f"Failed to log admin access denied event: {e}")
             
@@ -67,7 +70,8 @@ def admin_required(f):
             # Log admin action
             try:
                 session_manager = getattr(current_app, "request_session_manager", None) or current_app.config.get("db_manager")
-                with session_manager.session_scope() as db_session:
+                db_session = session_manager.get_session()
+        try:
                     UserAuditLog.log_action(
                         db_session,
                         action='ADMIN_ACCESS',
@@ -77,6 +81,8 @@ def admin_required(f):
                         user_agent=request.headers.get('User-Agent')
                     )
                     db_session.commit()
+                finally:
+                    session_manager.close_session(db_session)
             except Exception as e:
                 logger.error(f"Failed to log admin access event: {e}")
             
@@ -135,7 +141,7 @@ def admin_session_preservation(f):
             
             # Restore admin session state after operation (if we have a backup)
             if admin_session_backup and unified_session_manager:
-                try:
+        try:
                     session_id = admin_session_backup['session_id']
                     # Restore the session data
                     unified_session_manager.update_session(
@@ -153,7 +159,7 @@ def admin_session_preservation(f):
             
             # Attempt to restore session on error
             if admin_session_backup and unified_session_manager:
-                try:
+        try:
                     session_id = admin_session_backup['session_id']
                     unified_session_manager.update_session(
                         session_id, 
@@ -187,7 +193,8 @@ def admin_api_required(f):
             # Log security event
             try:
                 session_manager = getattr(current_app, "request_session_manager", None) or current_app.config.get("db_manager")
-                with session_manager.session_scope() as db_session:
+                db_session = session_manager.get_session()
+        try:
                     UserAuditLog.log_action(
                         db_session,
                         action='ADMIN_API_ACCESS_DENIED',
@@ -197,6 +204,8 @@ def admin_api_required(f):
                         user_agent=request.headers.get('User-Agent')
                     )
                     db_session.commit()
+                finally:
+                    session_manager.close_session(db_session)
             except Exception as e:
                 logger.error(f"Failed to log admin API access denied event: {e}")
             
@@ -205,7 +214,8 @@ def admin_api_required(f):
         # Log admin API access
         try:
             session_manager = getattr(current_app, "request_session_manager", None) or current_app.config.get("db_manager")
-            with session_manager.session_scope() as db_session:
+            db_session = session_manager.get_session()
+            try:
                 UserAuditLog.log_action(
                     db_session,
                     action='ADMIN_API_ACCESS',
@@ -215,6 +225,8 @@ def admin_api_required(f):
                     user_agent=request.headers.get('User-Agent')
                 )
                 db_session.commit()
+            finally:
+                session_manager.close_session(db_session)
         except Exception as e:
             logger.error(f"Failed to log admin API access event: {e}")
         
@@ -239,7 +251,8 @@ def admin_user_management_access(f):
         if target_user_id:
             try:
                 session_manager = getattr(current_app, "request_session_manager", None) or current_app.config.get("db_manager")
-                with session_manager.session_scope() as db_session:
+                db_session = session_manager.get_session()
+        try:
                     from models import User
                     target_user = db_session.query(User).filter_by(id=target_user_id).first()
                     
@@ -255,6 +268,8 @@ def admin_user_management_access(f):
                             user_agent=request.headers.get('User-Agent')
                         )
                         db_session.commit()
+                finally:
+                    session_manager.close_session(db_session)
                         
             except Exception as e:
                 logger.error(f"Error logging user management access: {e}")
@@ -277,7 +292,8 @@ def ensure_admin_count(f):
         if target_user_id:
             try:
                 session_manager = getattr(current_app, "request_session_manager", None) or current_app.config.get("db_manager")
-                with session_manager.session_scope() as db_session:
+                db_session = session_manager.get_session()
+        try:
                     from models import User
                     
                     # Count current admin users
@@ -302,7 +318,8 @@ def ensure_admin_count(f):
                             from notification_helpers import send_error_notification
                             send_error_notification("Cannot delete or modify the last administrator account.", "Error")
                             return redirect(url_for('admin.user_management'))
-                    
+                finally:
+                    session_manager.close_session(db_session)
             except Exception as e:
                 logger.error(f"Error checking admin count: {e}")
                 if request.is_json:
@@ -326,7 +343,8 @@ def admin_context_processor():
     if current_user.is_authenticated and current_user.role == UserRole.ADMIN:
         try:
             session_manager = getattr(current_app, "request_session_manager", None) or current_app.config.get("db_manager")
-            with session_manager.session_scope() as db_session:
+            db_session = session_manager.get_session()
+            try:
                 from models import User, PlatformConnection, Image
                 
                 # Get admin-specific statistics - Fixed: Separate simpler queries
@@ -341,7 +359,7 @@ def admin_context_processor():
                 
                 # Get admin context from Redis session instead of Flask session
                 admin_session_context = None
-                try:
+        try:
                     unified_session_manager = getattr(current_app, 'unified_session_manager', None)
                     if unified_session_manager:
                         # from redis_session_middleware import get_current_session_id
@@ -364,6 +382,8 @@ def admin_context_processor():
                     'is_admin_interface': True,
                     'admin_session_context': admin_session_context
                 }
+            finally:
+                session_manager.close_session(db_session)
                 
         except Exception as e:
             logger.error(f"Error in admin context processor: {e}")
@@ -389,10 +409,13 @@ def get_admin_accessible_users():
     
     try:
         session_manager = getattr(current_app, "request_session_manager", None) or current_app.config.get("db_manager")
-        with session_manager.session_scope() as db_session:
+        db_session = session_manager.get_session()
+        try:
             from models import User
             users = db_session.query(User).all()
             return users
+        finally:
+            session_manager.close_session(db_session)
     except Exception as e:
         logger.error(f"Error getting admin accessible users: {e}")
         return []
@@ -411,10 +434,13 @@ def get_admin_accessible_platforms():
     
     try:
         session_manager = getattr(current_app, "request_session_manager", None) or current_app.config.get("db_manager")
-        with session_manager.session_scope() as db_session:
+        db_session = session_manager.get_session()
+        try:
             from models import PlatformConnection
             platforms = db_session.query(PlatformConnection).filter_by(is_active=True).all()
             return platforms
+        finally:
+            session_manager.close_session(db_session)
     except Exception as e:
         logger.error(f"Error getting admin accessible platforms: {e}")
         return []
@@ -433,7 +459,8 @@ def get_admin_system_stats():
     
     try:
         session_manager = getattr(current_app, "request_session_manager", None) or current_app.config.get("db_manager")
-        with session_manager.session_scope() as db_session:
+        db_session = session_manager.get_session()
+        try:
             from models import User, PlatformConnection, Image, Post, ProcessingStatus
             from datetime import datetime, timedelta
             
