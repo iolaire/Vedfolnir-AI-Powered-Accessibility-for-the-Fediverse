@@ -242,7 +242,7 @@
     // Initialize admin notification system
     document.addEventListener('DOMContentLoaded', function() {
         // Initialize admin notification renderer if not already initialized
-        if (!window.adminNotificationRenderer) {
+        if (!window.adminNotificationRenderer && typeof NotificationUIRenderer !== 'undefined') {
             window.adminNotificationRenderer = new NotificationUIRenderer('admin-unified-notification-container', {
                 position: 'top-center',
                 maxNotifications: 8,

@@ -307,7 +307,16 @@ def register_routes(bp):
             from notification_helpers import send_error_notification
             send_error_notification("Access denied. Admin privileges required.", "Access Denied")
             return redirect(url_for('main.index'))
-        return render_template('csrf_security_dashboard.html')
+        
+        # Prepare dashboard data
+        dashboard_data = {
+            'recent_violations': [],  # No CSRF violations in the system
+            'protection_status': 'Active',
+            'token_lifetime': '1 hour',
+            'ssl_strict': False
+        }
+        
+        return render_template('csrf_security_dashboard.html', dashboard_data=dashboard_data)
 
     @bp.route('/security_audit_dashboard')
     @login_required

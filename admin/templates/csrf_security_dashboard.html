@@ -22,7 +22,138 @@
                         </div>
                         <div class="col-md-6">
                             <h6>Recent Activity</h6>
-                            <p class="text-muted">CSRF monitoring data will be displayed here</p>
+                            {% if dashboard_data.recent_violations %}
+                                <div class="activity-feed">
+                                    {% for violation in dashboard_data.recent_violations[-5:] %}
+                                        <div class="activity-item small">
+                                            <div class="d-flex justify-content-between">
+                                                <span class="badge bg-warning">{{ violation.violation_type }}</span>
+                                                <small class="text-muted">{{ violation.timestamp[:19] }}</small>
+                                            </div>
+                                            <div class="mt-1">
+                                                <small class="text-muted">IP: {{ violation.source_ip }}</small><br>
+                                                <small class="text-muted">Endpoint: {{ violation.endpoint }}</small><br>
+                                                {% if violation.user_id %}
+                                                    <small class="text-muted">User: {{ violation.user_id }}</small>
+                                                {% endif %}
+                                            </div>
+                                        </div>
+                                    {% endfor %}
+                                </div>
+                                <div class="mt-2">
+                                    <a href="/admin/security/csrf/api/violations" class="btn btn-sm btn-outline-primary">View All Violations</a>
+                                </div>
+                            {% else %}
+                                <p class="text-muted">No CSRF violations detected recently</p>
+                            {% endif %}
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+    
+    <!-- Additional Dashboard Sections -->
+    <div class="row mt-4">
+        <!-- Compliance Metrics -->
+        <div class="col-md-4">
+            <div class="card">
+                <div class="card-header">
+                    <h6 class="mb-0">Compliance Metrics (24h)</h6>
+                </div>
+                <div class="card-body">
+                    {% if dashboard_data.compliance_metrics and dashboard_data.compliance_metrics['24h'] %}
+                        <div class="mb-2">
+                            <strong>Compliance Rate:</strong> 
+                            <span class="badge {% if dashboard_data.compliance_metrics['24h'].compliance_rate >= 0.9 %}bg-success{% elif dashboard_data.compliance_metrics['24h'].compliance_rate >= 0.7 %}bg-warning{% else %}bg-danger{% endif %}">
+                                {{ "%.1f%%"|format(dashboard_data.compliance_metrics['24h'].compliance_rate * 100) }}
+                            </span>
+                        </div>
+                        <div class="mb-2">
+                            <strong>Total Requests:</strong> {{ dashboard_data.compliance_metrics['24h'].total_requests }}
+                        </div>
+                        <div class="mb-2">
+                            <strong>Violations:</strong> {{ dashboard_data.compliance_metrics['24h'].violation_count }}
+                        </div>
+                        <div>
+                            <strong>Protection Level:</strong> 
+                            <span class="badge bg-info">{{ dashboard_data.compliance_metrics['24h'].compliance_level }}</span>
+                        </div>
+                    {% else %}
+                        <p class="text-muted">No compliance data available</p>
+                    {% endif %}
+                </div>
+            </div>
+        </div>
+        
+        <!-- Top Violation Sources -->
+        <div class="col-md-4">
+            <div class="card">
+                <div class="card-header">
+                    <h6 class="mb-0">Top Violation Sources</h6>
+                </div>
+                <div class="card-body">
+                    {% if dashboard_data.top_violation_ips %}
+                        {% for ip, count in dashboard_data.top_violation_ips[:5] %}
+                            <div class="d-flex justify-content-between mb-1">
+                                <small>{{ ip }}</small>
+                                <span class="badge bg-secondary">{{ count }}</span>
+                            </div>
+                        {% endfor %}
+                    {% else %}
+                        <p class="text-muted">No violation data available</p>
+                    {% endif %}
+                </div>
+            </div>
+        </div>
+        
+        <!-- Top Violation Types -->
+        <div class="col-md-4">
+            <div class="card">
+                <div class="card-header">
+                    <h6 class="mb-0">Violation Types</h6>
+                </div>
+                <div class="card-body">
+                    {% if dashboard_data.top_violation_types %}
+                        {% for violation_type, count in dashboard_data.top_violation_types[:5] %}
+                            <div class="d-flex justify-content-between mb-1">
+                                <small>{{ violation_type }}</small>
+                                <span class="badge bg-secondary">{{ count }}</span>
+                            </div>
+                        {% endfor %}
+                    {% else %}
+                        <p class="text-muted">No violation types data available</p>
+                    {% endif %}
+                </div>
+            </div>
+        </div>
+    </div>
+    
+    <!-- Real-time Updates Section -->
+    <div class="row mt-4">
+        <div class="col-12">
+            <div class="card">
+                <div class="card-header d-flex justify-content-between align-items-center">
+                    <h6 class="mb-0">Real-time Monitoring</h6>
+                    <small class="text-muted">Last updated: {{ dashboard_data.last_updated[:19] if dashboard_data.last_updated else 'Unknown' }}</small>
+                </div>
+                <div class="card-body">
+                    <div class="row">
+                        <div class="col-md-3 text-center">
+                            <h4 class="text-primary">{{ dashboard_data.recent_violations|length }}</h4>
+                            <small class="text-muted">Recent Violations</small>
+                        </div>
+                        <div class="col-md-3 text-center">
+                            <h4 class="text-success">{{ dashboard_data.top_violation_ips|length }}</h4>
+                            <small class="text-muted">Unique IPs</small>
+                        </div>
+                        <div class="col-md-3 text-center">
+                            <h4 class="text-warning">{{ dashboard_data.top_violation_endpoints|length }}</h4>
+                            <small class="text-muted">Affected Endpoints</small>
+                        </div>
+                        <div class="col-md-3 text-center">
+                            <h4 class="text-info">{{ dashboard_data.top_violation_types|length }}</h4>
+                            <small class="text-muted">Violation Types</small>
                         </div>
                     </div>
                 </div>

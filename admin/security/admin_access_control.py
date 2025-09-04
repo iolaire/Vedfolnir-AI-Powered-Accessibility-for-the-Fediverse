@@ -14,7 +14,7 @@ Requirements: 1.2, 1.3, 1.4, 1.5
 
 import logging
 from functools import wraps
-from flask import current_app, redirect, url_for, request, jsonify
+from flask import current_app, redirect, url_for, request, jsonify, g
 from flask_login import current_user
 from models import UserRole, UserAuditLog
 # from notification_flash_replacement import send_notification  # Removed - using unified notification system
@@ -47,7 +47,7 @@ def admin_required(f):
             try:
                 session_manager = getattr(current_app, "request_session_manager", None) or current_app.config.get("db_manager")
                 db_session = session_manager.get_session()
-        try:
+                try:
                     UserAuditLog.log_action(
                         db_session,
                         action='ADMIN_ACCESS_DENIED',
@@ -71,7 +71,7 @@ def admin_required(f):
             try:
                 session_manager = getattr(current_app, "request_session_manager", None) or current_app.config.get("db_manager")
                 db_session = session_manager.get_session()
-        try:
+                try:
                     UserAuditLog.log_action(
                         db_session,
                         action='ADMIN_ACCESS',
@@ -116,8 +116,8 @@ def admin_session_preservation(f):
         
         if unified_session_manager:
             try:
-                # from redis_session_middleware import get_current_session_id
-                # session_id = get_current_session_id()
+                # Get current session ID from request context
+                session_id = getattr(request, 'session_id', None) or getattr(g, 'session_id', None)
                 
                 if session_id:
                     # Backup current Redis session state
@@ -141,7 +141,7 @@ def admin_session_preservation(f):
             
             # Restore admin session state after operation (if we have a backup)
             if admin_session_backup and unified_session_manager:
-        try:
+                try:
                     session_id = admin_session_backup['session_id']
                     # Restore the session data
                     unified_session_manager.update_session(
@@ -159,7 +159,7 @@ def admin_session_preservation(f):
             
             # Attempt to restore session on error
             if admin_session_backup and unified_session_manager:
-        try:
+                try:
                     session_id = admin_session_backup['session_id']
                     unified_session_manager.update_session(
                         session_id, 
@@ -194,7 +194,7 @@ def admin_api_required(f):
             try:
                 session_manager = getattr(current_app, "request_session_manager", None) or current_app.config.get("db_manager")
                 db_session = session_manager.get_session()
-        try:
+                try:
                     UserAuditLog.log_action(
                         db_session,
                         action='ADMIN_API_ACCESS_DENIED',
@@ -252,7 +252,7 @@ def admin_user_management_access(f):
             try:
                 session_manager = getattr(current_app, "request_session_manager", None) or current_app.config.get("db_manager")
                 db_session = session_manager.get_session()
-        try:
+                try:
                     from models import User
                     target_user = db_session.query(User).filter_by(id=target_user_id).first()
                     
@@ -293,7 +293,7 @@ def ensure_admin_count(f):
             try:
                 session_manager = getattr(current_app, "request_session_manager", None) or current_app.config.get("db_manager")
                 db_session = session_manager.get_session()
-        try:
+                try:
                     from models import User
                     
                     # Count current admin users
@@ -359,11 +359,11 @@ def admin_context_processor():
                 
                 # Get admin context from Redis session instead of Flask session
                 admin_session_context = None
-        try:
+                try:
                     unified_session_manager = getattr(current_app, 'unified_session_manager', None)
                     if unified_session_manager:
-                        # from redis_session_middleware import get_current_session_id
-                        # session_id = get_current_session_id()
+                        # Get session ID from request context
+                        session_id = getattr(request, 'session_id', None) or getattr(g, 'session_id', None)
                         if session_id:
                             session_data = unified_session_manager.get_session_data(session_id)
                             admin_session_context = session_data.get('admin_context') if session_data else None
@@ -503,6 +503,8 @@ def get_admin_system_stats():
                 'new_users_24h': new_users_24h,
                 'processed_24h': processed_24h
             }
+        finally:
+            session_manager.close_session(db_session)
             
     except Exception as e:
         logger.error(f"Error getting admin system stats: {e}")

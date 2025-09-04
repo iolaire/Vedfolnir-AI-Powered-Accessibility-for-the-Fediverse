@@ -348,21 +348,33 @@ function updateComplianceStatus() {
                 const compliance = data.data;
                 
                 let html = '';
-                for (const [standard, info] of Object.entries(compliance)) {
-                    const statusClass = info.compliant ? 'text-success' : 'text-danger';
-                    const statusIcon = info.compliant ? '✓' : '✗';
+                // Use the standards data if available, otherwise fallback to main compliance data
+                const standardsData = compliance.standards || compliance;
+                for (const [standard, info] of Object.entries(standardsData)) {
+                    // Skip null/undefined entries
+                    if (!info) continue;
+                    
+                    const statusClass = info.status === 'excellent' || info.status === 'good' ? 'text-success' : 
+                                     info.status === 'fair' ? 'text-warning' : 'text-danger';
+                    const statusIcon = info.status === 'excellent' || info.status === 'good' ? '✓' : 
+                                     info.status === 'fair' ? '⚠' : '✗';
                     
                     html += `
                         <div class="d-flex justify-content-between align-items-center mb-2">
                             <div>
                                 <strong>${standard.replace('_', ' ').toUpperCase()}</strong>
-                                <br><small class="text-muted">${info.details || ''}</small>
+                                <br><small class="text-muted">Status: ${info.status || 'unknown'}</small>
                             </div>
                             <div class="${statusClass}">
                                 ${statusIcon} ${info.score || 0}%
                             </div>
                         </div>
                     `;
+                }
+                
+                // If no standards data found, show message
+                if (html === '') {
+                    html = '<div class="text-muted">No compliance data available</div>';
                 }
                 
                 container.innerHTML = html;

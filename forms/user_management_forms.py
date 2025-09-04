@@ -205,8 +205,8 @@ class LoginForm(Form):
         render_kw={"class": "btn btn-primary"}
     )
 
-class ProfileEditForm(Form):
-    """Form for profile management""" # Using regular WTForms (no Flask-WTF CSRF)
+class ProfileEditForm(FlaskForm):
+    """Form for profile management""" # Using Flask-WTF with CSRF protection
     
     first_name = StringField(
         'First Name',

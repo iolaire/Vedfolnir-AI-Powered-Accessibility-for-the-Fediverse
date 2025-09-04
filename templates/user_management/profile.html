@@ -17,9 +17,9 @@
                         <i class="fas fa-user"></i> User Profile
                     </h4>
                     <div class="btn-group" role="group">
-                        <a href="{{ url_for('user_management.profile') }}" class="btn btn-primary btn-sm">
+                        <button type="button" class="btn btn-primary btn-sm" onclick="toggleEditMode()">
                             <i class="fas fa-edit"></i> Edit Profile
-                        </a>
+                        </button>
                         <a href="{{ url_for('user_management.change_password') }}" class="btn btn-secondary btn-sm">
                             <i class="fas fa-key"></i> Change Password
                         </a>
@@ -27,48 +27,50 @@
                 </div>
                 <div class="card-body">
                     {% if profile_data %}
-                    <div class="row">
-                        <div class="col-md-6">
-                            <h5>Personal Information</h5>
-                            <table class="table table-borderless">
-                                <tr>
-                                    <td><strong>Username:</strong></td>
-                                    <td>{{ profile_data.username }}</td>
-                                </tr>
-                                <tr>
-                                    <td><strong>Full Name:</strong></td>
-                                    <td>{{ profile_data.full_name or 'Not provided' }}</td>
-                                </tr>
-                                <tr>
-                                    <td><strong>First Name:</strong></td>
-                                    <td>{{ profile_data.first_name or 'Not provided' }}</td>
-                                </tr>
-                                <tr>
-                                    <td><strong>Last Name:</strong></td>
-                                    <td>{{ profile_data.last_name or 'Not provided' }}</td>
-                                </tr>
-                                <tr>
-                                    <td><strong>Email:</strong></td>
-                                    <td>
-                                        {{ profile_data.email }}
-                                        {% if profile_data.email_verified %}
-                                            <span class="badge bg-success ms-2">
-                                                <i class="fas fa-check"></i> Verified
-                                            </span>
-                                        {% else %}
-                                            <span class="badge bg-warning ms-2">
-                                                <i class="fas fa-exclamation-triangle"></i> Unverified
-                                            </span>
-                                            <form method="POST" action="{{ url_for('user_management.resend_verification') }}" class="d-inline ms-2">
-                                                <button type="submit" class="btn btn-link btn-sm p-0">
-                                                    Resend verification email
-                                                </button>
-                                            </form>
-                                        {% endif %}
-                                    </td>
-                                </tr>
-                            </table>
-                        </div>
+                    <!-- View Mode -->
+                    <div id="view-mode">
+                        <div class="row">
+                            <div class="col-md-6">
+                                <h5>Personal Information</h5>
+                                <table class="table table-borderless">
+                                    <tr>
+                                        <td><strong>Username:</strong></td>
+                                        <td>{{ profile_data.username }}</td>
+                                    </tr>
+                                    <tr>
+                                        <td><strong>Full Name:</strong></td>
+                                        <td>{{ profile_data.full_name or 'Not provided' }}</td>
+                                    </tr>
+                                    <tr>
+                                        <td><strong>First Name:</strong></td>
+                                        <td>{{ profile_data.first_name or 'Not provided' }}</td>
+                                    </tr>
+                                    <tr>
+                                        <td><strong>Last Name:</strong></td>
+                                        <td>{{ profile_data.last_name or 'Not provided' }}</td>
+                                    </tr>
+                                    <tr>
+                                        <td><strong>Email:</strong></td>
+                                        <td>
+                                            {{ profile_data.email }}
+                                            {% if profile_data.email_verified %}
+                                                <span class="badge bg-success ms-2">
+                                                    <i class="fas fa-check"></i> Verified
+                                                </span>
+                                            {% else %}
+                                                <span class="badge bg-warning ms-2">
+                                                    <i class="fas fa-exclamation-triangle"></i> Unverified
+                                                </span>
+                                                <form method="POST" action="{{ url_for('user_management.resend_verification') }}" class="d-inline ms-2">
+                                                    <button type="submit" class="btn btn-link btn-sm p-0">
+                                                        Resend verification email
+                                                    </button>
+                                                </form>
+                                            {% endif %}
+                                        </td>
+                                    </tr>
+                                </table>
+                            </div>
                         <div class="col-md-6">
                             <h5>Account Information</h5>
                             <table class="table table-borderless">
@@ -102,6 +104,62 @@
                                 </tr>
                             </table>
                         </div>
+                    </div>
+                    </div>
+
+                    <!-- Edit Mode -->
+                    <div id="edit-mode" style="display: none;">
+                        <form method="POST" action="{{ url_for('main.profile') }}">
+                            {{ form.hidden_tag() }}
+                            <div class="row">
+                                <div class="col-md-6">
+                                    <h5>Personal Information</h5>
+                                    <div class="mb-3">
+                                        <label for="first_name" class="form-label">First Name</label>
+                                        {{ form.first_name(class="form-control") }}
+                                        {% if form.first_name.errors %}
+                                            <div class="text-danger">
+                                                {% for error in form.first_name.errors %}
+                                                    <small>{{ error }}</small>
+                                                {% endfor %}
+                                            </div>
+                                        {% endif %}
+                                    </div>
+                                    <div class="mb-3">
+                                        <label for="last_name" class="form-label">Last Name</label>
+                                        {{ form.last_name(class="form-control") }}
+                                        {% if form.last_name.errors %}
+                                            <div class="text-danger">
+                                                {% for error in form.last_name.errors %}
+                                                    <small>{{ error }}</small>
+                                                {% endfor %}
+                                            </div>
+                                        {% endif %}
+                                    </div>
+                                    <div class="mb-3">
+                                        <label for="email" class="form-label">Email</label>
+                                        {{ form.email(class="form-control") }}
+                                        {% if form.email.errors %}
+                                            <div class="text-danger">
+                                                {% for error in form.email.errors %}
+                                                    <small>{{ error }}</small>
+                                                {% endfor %}
+                                            </div>
+                                        {% endif %}
+                                    </div>
+                                </div>
+                            </div>
+                            <div class="row mt-3">
+                                <div class="col-12">
+                                    <button type="submit" class="btn btn-primary">
+                                        <i class="fas fa-save"></i> Save Changes
+                                    </button>
+                                    <button type="button" class="btn btn-secondary" onclick="toggleEditMode()">
+                                        <i class="fas fa-times"></i> Cancel
+                                    </button>
+                                </div>
+                            </div>
+                        </form>
                     </div>
 
                     {% if profile_data.data_processing_consent %}
@@ -143,4 +201,21 @@
         </div>
     </div>
 </div>
+
+<script>
+function toggleEditMode() {
+    const viewMode = document.getElementById('view-mode');
+    const editMode = document.getElementById('edit-mode');
+    
+    if (viewMode.style.display === 'none') {
+        // Switch to view mode
+        viewMode.style.display = 'block';
+        editMode.style.display = 'none';
+    } else {
+        // Switch to edit mode
+        viewMode.style.display = 'none';
+        editMode.style.display = 'block';
+    }
+}
+</script>
 {% endblock %}

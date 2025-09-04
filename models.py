@@ -2062,3 +2062,104 @@ class NotificationStorage(Base):
     
     def __repr__(self):
         return f"<NotificationStorage {self.id} - {self.type.value} for user {self.user_id}>"
+
+# Compliance Tracking Models
+class ComplianceStandard(Enum):
+    OWASP_ASVS = "owasp_asvs"
+    CWE_COVERAGE = "cwe_coverage"
+    ISO_27001 = "iso_27001"
+    SOC2 = "soc2"
+    GDPR = "gdpr"
+    HIPAA = "hipaa"
+    PCI_DSS = "pci_dss"
+    NIST_800_53 = "nist_800_53"
+
+class ComplianceStatus(Enum):
+    COMPLIANT = "compliant"
+    PARTIALLY_COMPLIANT = "partially_compliant"
+    NON_COMPLIANT = "non_compliant"
+    NOT_ASSESSED = "not_assessed"
+
+class ComplianceCategory(Enum):
+    ACCESS_CONTROL = "access_control"
+    APPLICATION_SECURITY = "application_security"
+    DATA_PROTECTION = "data_protection"
+    AUDIT_LOGGING = "audit_logging"
+    INCIDENT_RESPONSE = "incident_response"
+    NETWORK_SECURITY = "network_security"
+    PHYSICAL_SECURITY = "physical_security"
+
+class ComplianceAudit(Base):
+    __tablename__ = 'compliance_audits'
+    
+    id = Column(Integer, primary_key=True)
+    standard = Column(SQLEnum(ComplianceStandard), nullable=False)
+    auditor_id = Column(Integer, ForeignKey('users.id'), nullable=False)
+    audit_date = Column(DateTime, default=datetime.utcnow, nullable=False)
+    overall_score = Column(Float, nullable=False)
+    status = Column(SQLEnum(ComplianceStatus), nullable=False)
+    findings_count = Column(Integer, default=0)
+    critical_findings = Column(Integer, default=0)
+    high_findings = Column(Integer, default=0)
+    medium_findings = Column(Integer, default=0)
+    low_findings = Column(Integer, default=0)
+    scope = Column(Text)
+    methodology = Column(Text)
+    findings = Column(Text)  # JSON string
+    recommendations = Column(Text)  # JSON string
+    next_audit_date = Column(DateTime)
+    created_at = Column(DateTime, default=datetime.utcnow)
+    updated_at = Column(DateTime, default=datetime.utcnow, onupdate=datetime.utcnow)
+    
+    # Relationships
+    requirements = relationship("ComplianceRequirement", back_populates="audit")
+    auditor = relationship("User", backref="conducted_audits")
+    
+    __table_args__ = mysql_table_args
+
+class ComplianceRequirement(Base):
+    __tablename__ = 'compliance_requirements'
+    
+    id = Column(Integer, primary_key=True)
+    audit_id = Column(Integer, ForeignKey('compliance_audits.id'), nullable=False)
+    standard = Column(SQLEnum(ComplianceStandard), nullable=False)
+    category = Column(SQLEnum(ComplianceCategory), nullable=False)
+    requirement_id = Column(String(100), nullable=False)  # External ID like "OWASP-ASVS-1.1.1"
+    title = Column(String(200), nullable=False)
+    description = Column(Text)
+    status = Column(SQLEnum(ComplianceStatus), nullable=False)
+    score = Column(Float, default=0.0)
+    is_critical = Column(Boolean, default=False)
+    implementation_details = Column(Text)
+    test_methodology = Column(Text)
+    evidence = Column(Text)  # JSON string
+    notes = Column(Text)  # Additional notes
+    created_at = Column(DateTime, default=datetime.utcnow)
+    updated_at = Column(DateTime, default=datetime.utcnow, onupdate=datetime.utcnow)
+    
+    # Relationships
+    audit = relationship("ComplianceAudit", back_populates="requirements")
+    
+    __table_args__ = (
+        UniqueConstraint('audit_id', 'requirement_id', name='_uc_audit_requirement'),
+        mysql_table_args,
+    )
+
+class ComplianceMetric(Base):
+    __tablename__ = 'compliance_metrics'
+    
+    id = Column(Integer, primary_key=True)
+    standard = Column(SQLEnum(ComplianceStandard), nullable=False)
+    category = Column(SQLEnum(ComplianceCategory), nullable=False)
+    metric_name = Column(String(200), nullable=False)
+    metric_value = Column(Float, nullable=False)
+    target_value = Column(Float, default=100.0)
+    unit = Column(String(50), default='percentage')
+    calculation_date = Column(DateTime, default=datetime.utcnow)
+    data_source = Column(String(100))
+    is_automated = Column(Boolean, default=False)
+    confidence_score = Column(Float, default=1.0)
+    metric_metadata = Column(Text)  # JSON string for additional metadata
+    created_at = Column(DateTime, default=datetime.utcnow)
+    
+    __table_args__ = mysql_table_args
