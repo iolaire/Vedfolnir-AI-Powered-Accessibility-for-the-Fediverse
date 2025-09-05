@@ -1,6 +1,5 @@
 from flask import current_app
 from flask_login import current_user
-from database import DatabaseManager
 from models import PlatformConnection
 from session_middleware_v2 import update_session_platform
 from security.core.security_utils import sanitize_for_log
@@ -9,7 +8,7 @@ class PlatformService:
     """Service for platform management operations"""
     
     def __init__(self):
-        self.db_manager = DatabaseManager()
+        self.db_manager = current_app.config.get('db_manager')
     
     def get_user_platforms(self, include_stats=False):
         """Get platforms for current user"""
@@ -65,7 +64,7 @@ class PlatformService:
             from maintenance_response_helper import MaintenanceResponseHelper
             from configuration_service import ConfigurationService
             
-            config_service = ConfigurationService()
+            config_service = ConfigurationService(self.db_manager)
             maintenance_service = EnhancedMaintenanceModeService(config_service, self.db_manager)
             response_helper = MaintenanceResponseHelper()
             

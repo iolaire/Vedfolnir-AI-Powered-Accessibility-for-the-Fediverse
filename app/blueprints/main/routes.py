@@ -28,7 +28,9 @@ def index():
             
             # Get basic statistics
             stats = db_manager.get_processing_stats()
-            platform_dict = None
+            
+            # Platform context will be provided by the context processor
+            # No need to manually get it here
             
             if current_user.role == UserRole.ADMIN:
                 stats['admin_mode'] = True
@@ -55,23 +57,17 @@ def index():
                 'show_progress': False
             }
             
-            return render_template('index.html', stats=stats, current_platform=platform_dict,
-                                 notification_config=notification_config)
+            return render_template('index.html', stats=stats, notification_config=notification_config)
             
     except Exception as e:
         current_app.logger.error(f"Error loading dashboard: {str(e)}")
-        return render_template('index.html', stats={}, current_platform=None)
+        return render_template('index.html', stats={})
 
 @main_bp.route('/images/<path:filename>')
 def serve_image(filename):
     """Serve images - redirect to static blueprint"""
     return redirect(url_for('static.serve_image', filename=filename))
 
-@main_bp.route('/caption_generation')
-@login_required
-def caption_generation():
-    """Redirect to caption generation"""
-    return redirect(url_for('caption.generation'))
 
 @main_bp.route('/index')
 def index_redirect():

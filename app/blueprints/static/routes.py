@@ -175,11 +175,6 @@ def save_caption_settings():
     """Save caption settings"""
     return redirect(url_for('caption.settings'))
 
-@static_bp.route('/start_caption_generation', methods=['POST'])
-@login_required
-def start_caption_generation():
-    """Start caption generation"""
-    return redirect(url_for('caption.start_generation'))
 
 @static_bp.route('/review')
 @login_required

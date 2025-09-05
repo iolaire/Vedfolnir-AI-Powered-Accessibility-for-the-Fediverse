@@ -127,7 +127,7 @@ function handleAddPlatform(event) {
             }
             
             // If this was the first platform, redirect to dashboard instead of platform management
-            const redirectUrl = result.is_first_platform ? '/' : '/platform_management';
+            const redirectUrl = result.is_first_platform ? '/' : '/platform/management';
             const redirectMessage = result.is_first_platform ? 'Redirecting to dashboard...' : 'Redirecting to platform management...';
             
             if (result.is_first_platform) {

@@ -11,7 +11,7 @@ using a consistent 5-step approach across the application.
 
 from typing import Optional, Dict, List, Any, Tuple
 from dataclasses import dataclass
-from flask import current_app
+from flask import current_app, g
 from flask_login import current_user
 from models import PlatformConnection
 from security.middleware.platform_access_middleware import filter_platforms_for_user

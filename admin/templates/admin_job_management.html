@@ -345,7 +345,7 @@
             <span class="personal-action-badge">PERSONAL ACTIONS</span>
         </h3>
         <div class="btn-group btn-group-sm">
-            <a href="{{ url_for('main.caption_generation') }}" class="btn btn-outline-primary">
+            <a href="{{ url_for('caption.generation') }}" class="btn btn-outline-primary">
                 <i class="bi bi-plus-circle"></i> Start New Job
             </a>
             <a href="{{ url_for('admin.job_history', user_id=current_user.id) }}" class="btn btn-outline-secondary">
@@ -428,7 +428,7 @@
             <i class="bi bi-person-plus"></i>
             <h5>No Personal Jobs</h5>
             <p>You haven't started any caption generation jobs yet.</p>
-            <a href="{{ url_for('main.caption_generation') }}" class="btn btn-primary">
+            <a href="{{ url_for('caption.generation') }}" class="btn btn-primary">
                 <i class="bi bi-plus-circle"></i> Start Your First Job
             </a>
         </div>

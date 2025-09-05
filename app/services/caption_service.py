@@ -1,6 +1,5 @@
 from flask import current_app
 from flask_login import current_user
-from database import DatabaseManager
 from models import Image, CaptionGenerationUserSettings
 from session_middleware_v2 import get_current_session_context
 from security.core.security_utils import sanitize_for_log
@@ -9,7 +8,7 @@ class CaptionService:
     """Service for caption generation operations"""
     
     def __init__(self):
-        self.db_manager = DatabaseManager()
+        self.db_manager = current_app.config.get('db_manager')
     
     def get_caption_generation_data(self):
         """Get data needed for caption generation page"""

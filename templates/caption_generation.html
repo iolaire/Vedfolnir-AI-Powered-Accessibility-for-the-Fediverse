@@ -181,7 +181,7 @@
             <div class="d-flex justify-content-between align-items-center mb-4">
                 <h1><i class="bi bi-robot"></i> Generate Captions</h1>
                 <div>
-                    <a href="{{ url_for('caption_settings') }}" class="btn btn-outline-secondary">
+                    <a href="{{ url_for('caption.settings') }}" class="btn btn-outline-secondary">
                         <i class="bi bi-gear"></i> Settings
                     </a>
                 </div>
@@ -285,7 +285,7 @@
                         You already have an active caption generation task. Please wait for it to complete or cancel it before starting a new one.
                     </div>
                     {% else %}
-                    <form id="caption-generation-form" method="POST" action="{{ url_for('start_caption_generation') }}">
+                    <form id="caption-generation-form" method="POST" action="{{ url_for('caption.start_generation') }}">
                         <input type="hidden" name="csrf_token" value="{{ csrf_token }}">
                         
                         <div class="settings-form">

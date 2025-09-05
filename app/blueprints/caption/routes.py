@@ -13,19 +13,27 @@ def generation():
     """Caption generation page"""
     try:
         from web_caption_generation_service import WebCaptionGenerationService
-        from database import db_manager
+        
+        db_manager = current_app.config.get('db_manager')
+        if not db_manager:
+            current_app.logger.error("Database manager not found in app config")
+            return redirect(url_for('main.index'))
         
         caption_service = WebCaptionGenerationService(db_manager)
         active_task = caption_service.get_active_task_for_user(current_user.id)
         
         # Create form
-        from wtforms import Form, SelectField, IntegerField, FloatField, SubmitField
+        from wtforms import Form, SelectField, IntegerField, FloatField, BooleanField, SubmitField
         from wtforms.validators import DataRequired, NumberRange
         
         class CaptionGenerationForm(Form):
-            batch_size = IntegerField('Batch Size', default=10, validators=[DataRequired(), NumberRange(min=1, max=50)])
-            quality_threshold = FloatField('Quality Threshold', default=0.7, validators=[NumberRange(min=0.0, max=1.0)])
-            submit = SubmitField('Generate Captions')
+            max_posts_per_run = IntegerField('Max Posts Per Run', default=10, validators=[DataRequired(), NumberRange(min=1, max=100)])
+            processing_delay = FloatField('Processing Delay (seconds)', default=1.0, validators=[NumberRange(min=0.1, max=10.0)])
+            max_caption_length = IntegerField('Max Caption Length', default=500, validators=[DataRequired(), NumberRange(min=50, max=2000)])
+            optimal_min_length = IntegerField('Optimal Min Length', default=100, validators=[DataRequired(), NumberRange(min=20, max=500)])
+            optimal_max_length = IntegerField('Optimal Max Length', default=300, validators=[DataRequired(), NumberRange(min=50, max=1000)])
+            reprocess_existing = SelectField('Reprocess Existing', choices=[('false', 'No'), ('true', 'Yes')], default='false')
+            submit = SubmitField('Start Generation')
         
         form = CaptionGenerationForm()
         
@@ -44,7 +52,11 @@ def start_generation():
     """Start caption generation process"""
     try:
         from web_caption_generation_service import WebCaptionGenerationService
-        from database import db_manager
+        
+        db_manager = current_app.config.get('db_manager')
+        if not db_manager:
+            current_app.logger.error("Database manager not found in app config")
+            return redirect(url_for('main.index'))
         
         caption_service = WebCaptionGenerationService(db_manager)
         
@@ -75,7 +87,11 @@ def get_status(task_id):
     """Get caption generation task status"""
     try:
         from web_caption_generation_service import WebCaptionGenerationService
-        from database import db_manager
+        
+        db_manager = current_app.config.get('db_manager')
+        if not db_manager:
+            current_app.logger.error("Database manager not found in app config")
+            return redirect(url_for('main.index'))
         
         caption_service = WebCaptionGenerationService(db_manager)
         status = caption_service.get_task_status(task_id)
@@ -102,7 +118,11 @@ def cancel_generation(task_id):
     """Cancel caption generation task"""
     try:
         from web_caption_generation_service import WebCaptionGenerationService
-        from database import db_manager
+        
+        db_manager = current_app.config.get('db_manager')
+        if not db_manager:
+            current_app.logger.error("Database manager not found in app config")
+            return redirect(url_for('main.index'))
         
         caption_service = WebCaptionGenerationService(db_manager)
         success = caption_service.cancel_task(task_id)

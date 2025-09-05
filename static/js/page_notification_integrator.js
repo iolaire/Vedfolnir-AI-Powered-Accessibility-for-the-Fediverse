@@ -34,6 +34,7 @@ class PageNotificationIntegrator {
         // State management
         this.initialized = false;
         this.cleanedUp = false;
+        this.connectionChangeCallback = null;
         
         // Statistics
         this.stats = {
@@ -402,9 +403,15 @@ class PageNotificationIntegrator {
      */
     handleConnect() {
         console.log(`WebSocket connected to namespace: ${this.namespace}`);
+        const wasConnected = this.connected;
         this.connected = true;
         this.reconnectAttempts = 0;
         this.stats.connectionsEstablished++;
+        
+        // Call connection change callback if status changed
+        if (!wasConnected && this.connectionChangeCallback) {
+            this.connectionChangeCallback(true);
+        }
         
         // Show connection notification
         this.showNotification({
@@ -430,7 +437,13 @@ class PageNotificationIntegrator {
      */
     handleDisconnect(reason) {
         console.log(`WebSocket disconnected from namespace: ${this.namespace}, reason: ${reason}`);
+        const wasConnected = this.connected;
         this.connected = false;
+        
+        // Call connection change callback if status changed
+        if (wasConnected && this.connectionChangeCallback) {
+            this.connectionChangeCallback(false);
+        }
         
         // Show disconnection notification if not intentional
         if (reason !== 'io client disconnect' && !this.cleanedUp) {
@@ -813,6 +826,17 @@ class PageNotificationIntegrator {
      */
     leaveRoom(roomId) {
         this.sendMessage('leave_room', { room_id: roomId });
+    }
+    
+    /**
+     * Register connection change callback
+     */
+    onConnectionChange(callback) {
+        if (typeof callback === 'function') {
+            this.connectionChangeCallback = callback;
+            // Immediately call with current status
+            callback(this.connected);
+        }
     }
     
     /**

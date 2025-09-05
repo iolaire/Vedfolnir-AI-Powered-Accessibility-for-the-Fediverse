@@ -33,6 +33,24 @@ from session_manager import SessionManager
 unified_session_manager = SessionManager(db_manager)
 app.unified_session_manager = unified_session_manager
 
+# Initialize Redis platform manager
+try:
+    from redis_platform_manager import get_redis_platform_manager
+    if unified_session_manager._redis_backend and unified_session_manager._redis_backend.redis:
+        redis_platform_manager = get_redis_platform_manager(
+            unified_session_manager._redis_backend.redis,
+            db_manager,
+            app.config['SECRET_KEY']
+        )
+        app.config['redis_platform_manager'] = redis_platform_manager
+        print("✅ Redis platform manager initialized successfully")
+    else:
+        print("⚠️  Redis backend not available, platform manager will use database only")
+        app.config['redis_platform_manager'] = None
+except Exception as e:
+    print(f"⚠️  Failed to initialize Redis platform manager: {e}")
+    app.config['redis_platform_manager'] = None
+
 # Initialize Flask-Login
 login_manager = LoginManager()
 login_manager.init_app(app)
@@ -211,10 +229,78 @@ def inject_role_context():
     # Provide current_user_safe for templates
     current_user_safe = current_user if current_user.is_authenticated else None
     
+    # Add platform context for authenticated users
+    current_platform = None
+    user_platforms = []
+    user_platform_count = 0
+    pending_review_count = 0
+    
+    if current_user.is_authenticated:
+        try:
+            # Use the same platform identification logic as the platform management page
+            from platform_utils.platform_identification import identify_user_platform
+            
+            redis_platform_manager = app.config.get('redis_platform_manager')
+            db_manager = app.config.get('db_manager')
+            
+            if db_manager:
+                # Get platform data using the standardized identification function
+                platform_result = identify_user_platform(
+                    current_user.id,
+                    redis_platform_manager,
+                    db_manager,
+                    include_stats=False,
+                    update_session_context=True
+                )
+                
+                # Extract platform data
+                current_platform = None
+                if platform_result.current_platform:
+                    current_platform = {
+                        'id': platform_result.current_platform.id,
+                        'name': platform_result.current_platform.name,
+                        'platform_type': platform_result.current_platform.platform_type,
+                        'instance_url': platform_result.current_platform.instance_url,
+                        'username': platform_result.current_platform.username,
+                        'is_active': platform_result.current_platform.is_active,
+                        'is_default': platform_result.current_platform.is_default
+                    }
+                
+                # Get user platforms from the result
+                user_platforms = []
+                user_platform_count = 0
+                if platform_result.user_platforms:
+                    user_platforms = [{
+                        'id': p.id,
+                        'name': p.name,
+                        'platform_type': p.platform_type,
+                        'instance_url': p.instance_url,
+                        'username': p.username,
+                        'is_active': p.is_active,
+                        'is_default': p.is_default
+                    } for p in platform_result.user_platforms]
+                    user_platform_count = len(user_platforms)
+                
+                # Get pending review count
+                with db_manager.get_session() as db_session:
+                    from models import Image, Post
+                    pending_review_count = db_session.query(Image).join(Post).filter(
+                        Post.user_id == str(current_user.id),
+                        Image.status == 'pending'
+                    ).count()
+        
+        except Exception as e:
+            app.logger.warning(f"Error getting platform context: {e}")
+    
     return {
         'current_user': current_user,
         'current_user_safe': current_user_safe,
-        'csrf_token': csrf_token
+        'csrf_token': csrf_token,
+        'current_platform': current_platform,
+        'active_platform': current_platform,  # Add alias for template compatibility
+        'user_platforms': user_platforms,
+        'user_platform_count': user_platform_count,
+        'pending_review_count': pending_review_count
     }
 
 @app.route('/api/session/state', methods=['GET'])

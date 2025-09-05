@@ -614,6 +614,40 @@ class WebCaptionGenerationService:
         except Exception as e:
             logger.error(f"Error in immediate task processing: {sanitize_for_log(str(e))}")
     
+    def get_active_task_for_user(self, user_id: int) -> Optional[Dict[str, Any]]:
+        """
+        Get the active task for a user (if any)
+        
+        Args:
+            user_id: The user ID
+            
+        Returns:
+            Dict with active task information or None if no active task
+        """
+        try:
+            # Get active task from task queue manager
+            active_task = self.task_queue_manager.get_user_active_task(user_id)
+            
+            if not active_task:
+                return None
+            
+            # Convert to dictionary for template compatibility
+            task_info = {
+                'task_id': active_task.id,
+                'status': active_task.status.value,
+                'created_at': active_task.created_at.isoformat() if active_task.created_at else None,
+                'started_at': active_task.started_at.isoformat() if active_task.started_at else None,
+                'progress_percent': active_task.progress_percent or 0,
+                'current_step': active_task.current_step or 'Queued',
+                'error_message': active_task.error_message
+            }
+            
+            return task_info
+            
+        except Exception as e:
+            logger.error(f"Error getting active task for user {sanitize_for_log(str(user_id))}: {sanitize_for_log(str(e))}")
+            return None
+    
     async def get_user_task_history(self, user_id: int, limit: int = 10) -> list:
         """
         Get task history for a user

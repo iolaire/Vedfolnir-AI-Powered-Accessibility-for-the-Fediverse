@@ -48,7 +48,7 @@ class CaptionGenerationUI {
             });
             
             // Initialize WebSocket connection
-            this.notificationIntegrator.initializeNotifications();
+            this.notificationIntegrator.initialize();
             
             // Monitor connection status
             this.notificationIntegrator.onConnectionChange((connected) => {

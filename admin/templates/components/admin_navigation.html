@@ -82,7 +82,7 @@
                 </a>
             </li>
             <li class="nav-item">
-                <a href="{{ url_for('caption_generation') }}" class="nav-link {{ 'active' if request.endpoint == 'caption_generation' }}">
+                <a href="{{ url_for('caption.generation') }}" class="nav-link {{ 'active' if request.endpoint == 'caption.generation' }}">
                     <i class="icon-generate" aria-hidden="true"></i>
                     <span>Caption Generation</span>
                 </a>
@@ -103,7 +103,7 @@
                 </a>
             </li>
             <li class="nav-item">
-                <a href="{{ url_for('caption_settings') }}" class="nav-link {{ 'active' if request.endpoint == 'caption_settings' }}">
+                <a href="{{ url_for('caption.settings') }}" class="nav-link {{ 'active' if request.endpoint == 'caption.settings' }}">
                     <i class="icon-settings" aria-hidden="true"></i>
                     <span>Global Settings</span>
                 </a>
