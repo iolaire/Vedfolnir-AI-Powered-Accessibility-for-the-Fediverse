@@ -33,7 +33,7 @@ async def test_performance_dashboard():
             print(f"CSRF token: {csrf_token[:20]}..." if csrf_token else "No CSRF token found")
             
             await page.fill('input[name="username_or_email"]', 'admin')
-            await page.fill('input[name="password"]', 'BEw@e3pA*!Gv{(x9umOwIndQ')
+            await page.fill('input[name="password"]', ')z0p>14_S9>}samLqf0t?{!Y')
             
             # Wait for login to complete and redirect
             await page.click('text=Login')

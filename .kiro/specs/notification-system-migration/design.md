@@ -448,7 +448,7 @@ const PageNotificationConfig = {
    test('Admin notification delivery', async ({ page }) => {
        await page.goto('/admin/dashboard');
        await page.fill('[name="username"]', 'admin');
-       await page.fill('[name="password"]', 'BEw@e3pA*!Gv{(x9umOwIndQ');
+       await page.fill('[name="password"]', ')z0p>14_S9>}samLqf0t?{!Y');
        await page.click('button[type="submit"]');
        
        // Validate WebSocket connection

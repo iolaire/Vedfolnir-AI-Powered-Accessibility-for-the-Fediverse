@@ -25,7 +25,7 @@ async def test_performance_data_loading():
             await page.wait_for_load_state("networkidle")
             
             await page.fill('input[name="username_or_email"]', 'admin')
-            await page.fill('input[name="password"]', 'BEw@e3pA*!Gv{(x9umOwIndQ')
+            await page.fill('input[name="password"]', ')z0p>14_S9>}samLqf0t?{!Y')
             await page.click('input[type="submit"]')
             await page.wait_for_load_state("networkidle")
             

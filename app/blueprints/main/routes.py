@@ -1,4 +1,4 @@
-from flask import Blueprint, render_template, redirect, url_for, current_app, request
+from flask import Blueprint, render_template, redirect, url_for, current_app, request, jsonify
 from flask_login import login_required, current_user
 from models import UserRole, PlatformConnection, User
 
@@ -96,11 +96,25 @@ def profile():
     logger = logging.getLogger(__name__)
     form = ProfileEditForm()
     
-    # Pre-populate form with current user data for GET requests
+    # Pre-populate form with fresh user data from database for GET requests
     if request.method == 'GET':
-        form.first_name.data = current_user.first_name
-        form.last_name.data = current_user.last_name
-        form.email.data = current_user.email
+        # Get fresh user data from database to ensure we have latest changes
+        from database import DatabaseManager
+        from config import Config
+        
+        config = Config()
+        db_manager = DatabaseManager(config)
+        with db_manager.get_session() as db_session:
+            fresh_user = db_session.query(User).filter_by(id=current_user.id).first()
+            if fresh_user:
+                form.first_name.data = fresh_user.first_name or ''
+                form.last_name.data = fresh_user.last_name or ''
+                form.email.data = fresh_user.email
+            else:
+                # Fallback to current_user if database query fails
+                form.first_name.data = current_user.first_name or ''
+                form.last_name.data = current_user.last_name or ''
+                form.email.data = current_user.email
     
     # Handle form submission
     if request.method == 'POST':
@@ -108,11 +122,20 @@ def profile():
         logger.info(f"Form data: first_name={form.first_name.data}, last_name={form.last_name.data}, email={form.email.data}")
         logger.info(f"Form errors: {form.errors}")
         
+        # Check if this is an AJAX request
+        is_ajax = request.headers.get('X-Requested-With') == 'XMLHttpRequest'
+        
         if form.validate_on_submit():
             logger.info("Form validation successful, attempting to update profile")
             try:
-                with unified_session_manager.get_db_session() as db_session:
-                    # Update user profile
+                # Use a direct database session to ensure we get the latest user data
+                from database import DatabaseManager
+                from config import Config
+                
+                config = Config()
+                db_manager = DatabaseManager(config)
+                with db_manager.get_session() as db_session:
+                    # Get the user directly from the database
                     user = db_session.query(User).filter_by(id=current_user.id).first()
                     if user:
                         logger.info(f"Found user {user.username}, updating profile")
@@ -129,33 +152,69 @@ def profile():
                         db_session.commit()
                         logger.info("Database commit successful")
                         
+                        # Verify the update was persisted
+                        db_session.refresh(user)
+                        logger.info(f"Verified database update: {user.first_name} {user.last_name} ({user.email})")
+                        
                         # Send success notification
                         send_success_notification("Profile updated successfully!", "Profile Updated")
                         logger.info(f"Profile updated for user {user.username}")
+                        
+                        # Return JSON response for AJAX requests
+                        if is_ajax:
+                            return jsonify({'success': True, 'message': 'Profile updated successfully'})
                     else:
                         logger.error(f"User not found with id {current_user.id}")
                         send_error_notification("User not found.", "Update Failed")
+                        if is_ajax:
+                            return jsonify({'success': False, 'message': 'User not found'}), 404
             except Exception as e:
                 logger.error(f"Error updating profile: {e}")
                 send_error_notification("Profile update failed due to a system error.", "Update Error")
+                if is_ajax:
+                    return jsonify({'success': False, 'message': 'Profile update failed due to a system error'}), 500
         else:
             logger.warning("Form validation failed")
+            if is_ajax:
+                return jsonify({'success': False, 'message': 'Form validation failed', 'errors': form.errors}), 400
     
-    # Prepare profile data for display
-    profile_data = {
-        'username': current_user.username,
-        'full_name': f"{current_user.first_name} {current_user.last_name}".strip(),
-        'first_name': current_user.first_name,
-        'last_name': current_user.last_name,
-        'email': current_user.email,
-        'role': current_user.role.value if current_user.role else 'User',
-        'created_at': current_user.created_at,
-        'last_login': current_user.last_login,
-        'is_active': current_user.is_active,
-        'email_verified': current_user.email_verified,
-        'data_processing_consent': current_user.data_processing_consent,
-        'data_processing_consent_date': current_user.data_processing_consent_date,
-        'platform_count': 0  # Will be populated if needed
-    }
+    # Prepare profile data for display with fresh data from database
+    config = Config()
+    db_manager = DatabaseManager(config)
+    with db_manager.get_session() as db_session:
+        fresh_user = db_session.query(User).filter_by(id=current_user.id).first()
+        if fresh_user:
+            profile_data = {
+                'username': fresh_user.username,
+                'full_name': f"{fresh_user.first_name or ''} {fresh_user.last_name or ''}".strip(),
+                'first_name': fresh_user.first_name,
+                'last_name': fresh_user.last_name,
+                'email': fresh_user.email,
+                'role': fresh_user.role.value if fresh_user.role else 'User',
+                'created_at': fresh_user.created_at,
+                'last_login': fresh_user.last_login,
+                'is_active': fresh_user.is_active,
+                'email_verified': fresh_user.email_verified,
+                'data_processing_consent': fresh_user.data_processing_consent,
+                'data_processing_consent_date': fresh_user.data_processing_consent_date,
+                'platform_count': 0  # Will be populated if needed
+            }
+        else:
+            # Fallback to current_user if database query fails
+            profile_data = {
+                'username': current_user.username,
+                'full_name': f"{current_user.first_name} {current_user.last_name}".strip(),
+                'first_name': current_user.first_name,
+                'last_name': current_user.last_name,
+                'email': current_user.email,
+                'role': current_user.role.value if current_user.role else 'User',
+                'created_at': current_user.created_at,
+                'last_login': current_user.last_login,
+                'is_active': current_user.is_active,
+                'email_verified': current_user.email_verified,
+                'data_processing_consent': current_user.data_processing_consent,
+                'data_processing_consent_date': current_user.data_processing_consent_date,
+                'platform_count': 0  # Will be populated if needed
+            }
     
     return render_template('user_management/profile.html', form=form, profile_data=profile_data)

@@ -22,7 +22,7 @@ graph TD
     I[Web App] --> E
     I --> J[Review Interface]
     I --> K[API Endpoints]
-    K --> B
+    K --> Growth
     K --> D
 ```
 
