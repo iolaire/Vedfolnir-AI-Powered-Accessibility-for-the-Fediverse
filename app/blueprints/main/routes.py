@@ -121,6 +121,8 @@ def profile():
         logger.info(f"POST request received. Form validation: {form.validate_on_submit()}")
         logger.info(f"Form data: first_name={form.first_name.data}, last_name={form.last_name.data}, email={form.email.data}")
         logger.info(f"Form errors: {form.errors}")
+        logger.info(f"CSRF token present: {request.form.get('csrf_token') is not None}")
+        logger.info(f"Request form keys: {list(request.form.keys())}")
         
         # Check if this is an AJAX request
         is_ajax = request.headers.get('X-Requested-With') == 'XMLHttpRequest'

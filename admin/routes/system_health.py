@@ -301,22 +301,33 @@ def register_routes(bp):
     @bp.route('/csrf_security_dashboard')
     @login_required
     def csrf_security_dashboard():
-        """CSRF Security Dashboard"""
+        """CSRF Security Dashboard - uses live data directly"""
         if not current_user.role == UserRole.ADMIN:
             # Send error notification
             from notification_helpers import send_error_notification
             send_error_notification("Access denied. Admin privileges required.", "Access Denied")
             return redirect(url_for('main.index'))
         
-        # Prepare dashboard data
-        dashboard_data = {
-            'recent_violations': [],  # No CSRF violations in the system
-            'protection_status': 'Active',
-            'token_lifetime': '1 hour',
-            'ssl_strict': False
-        }
+        try:
+            # Import and use the live CSRF metrics
+            from security.monitoring.csrf_security_metrics import get_csrf_security_metrics
+            csrf_metrics = get_csrf_security_metrics()
+            dashboard_data = csrf_metrics.get_csrf_dashboard_data()
+            
+            return render_template('csrf_security_dashboard.html', dashboard_data=dashboard_data)
         
-        return render_template('csrf_security_dashboard.html', dashboard_data=dashboard_data)
+        except Exception as e:
+            current_app.logger.error(f"Error loading CSRF dashboard data: {e}")
+            # Fallback to basic data if live data fails
+            dashboard_data = {
+                'recent_violations': [],
+                'compliance_metrics': {'24h': {'compliance_rate': 1.0, 'total_requests': 0, 'violation_count': 0, 'compliance_level': 'HIGH'}},
+                'top_violation_ips': [],
+                'top_violation_types': [],
+                'top_violation_endpoints': [],
+                'last_updated': None
+            }
+            return render_template('csrf_security_dashboard.html', dashboard_data=dashboard_data)
 
     @bp.route('/security_audit_dashboard')
     @login_required

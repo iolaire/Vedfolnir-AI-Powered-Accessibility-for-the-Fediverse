@@ -218,31 +218,42 @@ function toggleEditMode() {
     }
 }
 
-// Handle form submission with better user feedback
-document.addEventListener('DOMContentLoaded', function() {
+// Handle form submission with AJAX
+function setupProfileForm() {
     const profileForm = document.querySelector('#edit-mode form');
-    if (profileForm) {
-        profileForm.addEventListener('submit', function(e) {
+    const submitButton = document.querySelector('#edit-mode button[type="submit"]');
+    
+    if (profileForm && submitButton) {
+        console.log('Setting up profile form AJAX handler');
+        submitButton.addEventListener('click', function(e) {
             e.preventDefault();
+            console.log('Submit button clicked');
             
-            const formData = new FormData(this);
-            const submitButton = this.querySelector('button[type="submit"]');
+            // Get form data
+            const formData = new FormData(profileForm);
             const originalText = submitButton.innerHTML;
             
             // Show loading state
             submitButton.innerHTML = '<i class="fas fa-spinner fa-spin"></i> Saving...';
             submitButton.disabled = true;
             
-            // Submit the form with AJAX headers
-            fetch(this.action, {
+            // Submit the form with AJAX
+            fetch(profileForm.action, {
                 method: 'POST',
                 body: formData,
                 headers: {
                     'X-Requested-With': 'XMLHttpRequest'
                 }
             })
-            .then(response => response.json())
+            .then(response => {
+                console.log('Response status:', response.status);
+                if (!response.ok) {
+                    throw new Error(`HTTP error! status: ${response.status}`);
+                }
+                return response.json();
+            })
             .then(data => {
+                console.log('Response data:', data);
                 if (data.success) {
                     // Success - refresh the page to show updated data
                     setTimeout(() => {
@@ -250,23 +261,31 @@ document.addEventListener('DOMContentLoaded', function() {
                     }, 500);
                 } else {
                     // Error - show message and reset button
-                    submitButton.innerHTML = '<i class="fas fa-exclamation-triangle"></i> Save Failed';
-                    setTimeout(() => {
-                        submitButton.innerHTML = originalText;
-                        submitButton.disabled = false;
-                    }, 2000);
+                    alert('Profile update failed: ' + (data.message || 'Unknown error'));
+                    submitButton.innerHTML = originalText;
+                    submitButton.disabled = false;
                 }
             })
             .catch(error => {
                 console.error('Form submission error:', error);
-                submitButton.innerHTML = '<i class="fas fa-exclamation-triangle"></i> Save Failed';
-                setTimeout(() => {
-                    submitButton.innerHTML = originalText;
-                    submitButton.disabled = false;
-                }, 2000);
+                alert('Profile update failed: ' + error.message);
+                submitButton.innerHTML = originalText;
+                submitButton.disabled = false;
             });
         });
     }
+}
+
+// Set up the form when DOM is loaded and when edit mode is toggled
+document.addEventListener('DOMContentLoaded', function() {
+    setupProfileForm();
 });
+
+// Also set up form when edit mode is toggled
+const originalToggleEditMode = window.toggleEditMode;
+window.toggleEditMode = function() {
+    originalToggleEditMode();
+    setTimeout(setupProfileForm, 100);
+};
 </script>
 {% endblock %}

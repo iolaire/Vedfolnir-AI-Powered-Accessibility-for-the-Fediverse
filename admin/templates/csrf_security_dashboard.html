@@ -2,11 +2,221 @@
 
 {% block title %}CSRF Security Dashboard{% endblock %}
 
+{% block head %}
+<script>
+// CSRF Dashboard JavaScript for live data
+let csrfDashboard = {
+    data: null,
+    updateInterval: null,
+    
+    init() {
+        this.loadDashboardData();
+        this.startAutoRefresh();
+    },
+    
+    loadDashboardData() {
+        // Use the data already loaded by the server
+        // This is more reliable than API calls that might have issues
+        console.log('Using server-loaded CSRF dashboard data');
+        this.useServerData();
+    },
+    
+    useServerData() {
+        // Use the data that was already loaded by the server
+        // This is available as a global variable from the template
+        if (window.dashboardData) {
+            this.data = window.dashboardData;
+            this.updateUI();
+        } else {
+            this.showError('No dashboard data available');
+        }
+    },
+    
+    updateUI() {
+        if (!this.data) return;
+        
+        // Update compliance metrics
+        this.updateComplianceMetrics();
+        
+        // Update recent violations
+        this.updateRecentViolations();
+        
+        // Update violation sources
+        this.updateViolationSources();
+        
+        // Update violation types
+        this.updateViolationTypes();
+        
+        // Update real-time counters
+        this.updateRealTimeCounters();
+        
+        // Update last updated timestamp
+        this.updateLastUpdated();
+    },
+    
+    updateComplianceMetrics() {
+        const compliance24h = this.data.compliance_metrics?.['24h'];
+        if (!compliance24h) return;
+        
+        // Update compliance rate badge
+        const complianceRateEl = document.getElementById('compliance-rate');
+        if (complianceRateEl) {
+            const rate = compliance24h.compliance_rate || 0;
+            complianceRateEl.textContent = `${(rate * 100).toFixed(1)}%`;
+            complianceRateEl.className = `badge ${rate >= 0.9 ? 'bg-success' : rate >= 0.7 ? 'bg-warning' : 'bg-danger'}`;
+        }
+        
+        // Update other metrics
+        this.updateTextContent('total-requests', compliance24h.total_requests || 0);
+        this.updateTextContent('violation-count', compliance24h.violation_count || 0);
+        this.updateTextContent('protection-level', compliance24h.compliance_level || 'Unknown');
+    },
+    
+    updateRecentViolations() {
+        const violations = this.data.recent_violations || [];
+        const container = document.getElementById('recent-violations-container');
+        
+        if (!container) return;
+        
+        if (violations.length === 0) {
+            container.innerHTML = '<p class="text-muted">No CSRF violations detected recently</p>';
+            return;
+        }
+        
+        const violationsHtml = violations.slice(-5).reverse().map(violation => `
+            <div class="activity-item small">
+                <div class="d-flex justify-content-between">
+                    <span class="badge bg-warning">${violation.violation_type}</span>
+                    <small class="text-muted">${new Date(violation.timestamp).toLocaleString()}</small>
+                </div>
+                <div class="mt-1">
+                    <small class="text-muted">IP: ${violation.source_ip}</small><br>
+                    <small class="text-muted">Endpoint: ${violation.endpoint}</small><br>
+                    ${violation.user_id ? `<small class="text-muted">User: ${violation.user_id}</small>` : ''}
+                </div>
+            </div>
+        `).join('');
+        
+        container.innerHTML = `
+            <div class="activity-feed">${violationsHtml}</div>
+            <div class="mt-2">
+                <a href="/admin/security/csrf/api/violations" class="btn btn-sm btn-outline-primary">View All Violations</a>
+            </div>
+        `;
+    },
+    
+    updateViolationSources() {
+        const sources = this.data.top_violation_ips || [];
+        const container = document.getElementById('violation-sources-container');
+        
+        if (!container) return;
+        
+        if (sources.length === 0) {
+            container.innerHTML = '<p class="text-muted">No violation data available</p>';
+            return;
+        }
+        
+        const sourcesHtml = sources.slice(0, 5).map(([ip, count]) => `
+            <div class="d-flex justify-content-between mb-1">
+                <small>${ip}</small>
+                <span class="badge bg-secondary">${count}</span>
+            </div>
+        `).join('');
+        
+        container.innerHTML = sourcesHtml;
+    },
+    
+    updateViolationTypes() {
+        const types = this.data.top_violation_types || [];
+        const container = document.getElementById('violation-types-container');
+        
+        if (!container) return;
+        
+        if (types.length === 0) {
+            container.innerHTML = '<p class="text-muted">No violation types data available</p>';
+            return;
+        }
+        
+        const typesHtml = types.slice(0, 5).map(([type, count]) => `
+            <div class="d-flex justify-content-between mb-1">
+                <small>${type}</small>
+                <span class="badge bg-secondary">${count}</span>
+            </div>
+        `).join('');
+        
+        container.innerHTML = typesHtml;
+    },
+    
+    updateRealTimeCounters() {
+        this.updateTextContent('recent-violations-count', this.data.recent_violations?.length || 0);
+        this.updateTextContent('unique-ips-count', this.data.top_violation_ips?.length || 0);
+        this.updateTextContent('affected-endpoints-count', this.data.top_violation_endpoints?.length || 0);
+        this.updateTextContent('violation-types-count', this.data.top_violation_types?.length || 0);
+    },
+    
+    updateLastUpdated() {
+        const timestamp = this.data.last_updated;
+        const el = document.getElementById('last-updated');
+        if (el && timestamp) {
+            el.textContent = new Date(timestamp).toLocaleString();
+        }
+    },
+    
+    updateTextContent(id, value) {
+        const el = document.getElementById(id);
+        if (el) {
+            el.textContent = value;
+        }
+    },
+    
+    showError(message) {
+        const alertEl = document.getElementById('dashboard-alert');
+        if (alertEl) {
+            alertEl.innerHTML = `
+                <div class="alert alert-danger alert-dismissible fade show" role="alert">
+                    ${message}
+                    <button type="button" class="btn-close" data-bs-dismiss="alert"></button>
+                </div>
+            `;
+        }
+    },
+    
+    startAutoRefresh() {
+        // Auto-refresh disabled - using server-loaded data
+        // Data will refresh when page is reloaded
+        console.log('Auto-refresh disabled - using server-loaded data');
+    },
+    
+    stopAutoRefresh() {
+        if (this.updateInterval) {
+            clearInterval(this.updateInterval);
+            this.updateInterval = null;
+        }
+    }
+};
+
+// Pass server-loaded data to JavaScript
+window.dashboardData = {{ dashboard_data|tojson|safe }};
+
+// Initialize dashboard when DOM is loaded
+document.addEventListener('DOMContentLoaded', function() {
+    csrfDashboard.init();
+});
+
+// Cleanup when page is unloaded
+window.addEventListener('beforeunload', function() {
+    csrfDashboard.stopAutoRefresh();
+});
+</script>
+{% endblock %}
+
 {% block content %}
 <div class="container-fluid">
     <div class="row">
         <div class="col-12">
             <h1 class="h3 mb-4">CSRF Security Dashboard</h1>
+            
+            <div id="dashboard-alert"></div>
             
             <div class="card">
                 <div class="card-header">
@@ -22,30 +232,9 @@
                         </div>
                         <div class="col-md-6">
                             <h6>Recent Activity</h6>
-                            {% if dashboard_data.recent_violations %}
-                                <div class="activity-feed">
-                                    {% for violation in dashboard_data.recent_violations[-5:] %}
-                                        <div class="activity-item small">
-                                            <div class="d-flex justify-content-between">
-                                                <span class="badge bg-warning">{{ violation.violation_type }}</span>
-                                                <small class="text-muted">{{ violation.timestamp[:19] }}</small>
-                                            </div>
-                                            <div class="mt-1">
-                                                <small class="text-muted">IP: {{ violation.source_ip }}</small><br>
-                                                <small class="text-muted">Endpoint: {{ violation.endpoint }}</small><br>
-                                                {% if violation.user_id %}
-                                                    <small class="text-muted">User: {{ violation.user_id }}</small>
-                                                {% endif %}
-                                            </div>
-                                        </div>
-                                    {% endfor %}
-                                </div>
-                                <div class="mt-2">
-                                    <a href="/admin/security/csrf/api/violations" class="btn btn-sm btn-outline-primary">View All Violations</a>
-                                </div>
-                            {% else %}
-                                <p class="text-muted">No CSRF violations detected recently</p>
-                            {% endif %}
+                            <div id="recent-violations-container">
+                                <p class="text-muted">Loading recent violations...</p>
+                            </div>
                         </div>
                     </div>
                 </div>
@@ -62,26 +251,20 @@
                     <h6 class="mb-0">Compliance Metrics (24h)</h6>
                 </div>
                 <div class="card-body">
-                    {% if dashboard_data.compliance_metrics and dashboard_data.compliance_metrics['24h'] %}
-                        <div class="mb-2">
-                            <strong>Compliance Rate:</strong> 
-                            <span class="badge {% if dashboard_data.compliance_metrics['24h'].compliance_rate >= 0.9 %}bg-success{% elif dashboard_data.compliance_metrics['24h'].compliance_rate >= 0.7 %}bg-warning{% else %}bg-danger{% endif %}">
-                                {{ "%.1f%%"|format(dashboard_data.compliance_metrics['24h'].compliance_rate * 100) }}
-                            </span>
-                        </div>
-                        <div class="mb-2">
-                            <strong>Total Requests:</strong> {{ dashboard_data.compliance_metrics['24h'].total_requests }}
-                        </div>
-                        <div class="mb-2">
-                            <strong>Violations:</strong> {{ dashboard_data.compliance_metrics['24h'].violation_count }}
-                        </div>
-                        <div>
-                            <strong>Protection Level:</strong> 
-                            <span class="badge bg-info">{{ dashboard_data.compliance_metrics['24h'].compliance_level }}</span>
-                        </div>
-                    {% else %}
-                        <p class="text-muted">No compliance data available</p>
-                    {% endif %}
+                    <div class="mb-2">
+                        <strong>Compliance Rate:</strong> 
+                        <span id="compliance-rate" class="badge bg-secondary">Loading...</span>
+                    </div>
+                    <div class="mb-2">
+                        <strong>Total Requests:</strong> <span id="total-requests">Loading...</span>
+                    </div>
+                    <div class="mb-2">
+                        <strong>Violations:</strong> <span id="violation-count">Loading...</span>
+                    </div>
+                    <div>
+                        <strong>Protection Level:</strong> 
+                        <span id="protection-level" class="badge bg-info">Loading...</span>
+                    </div>
                 </div>
             </div>
         </div>
@@ -93,16 +276,9 @@
                     <h6 class="mb-0">Top Violation Sources</h6>
                 </div>
                 <div class="card-body">
-                    {% if dashboard_data.top_violation_ips %}
-                        {% for ip, count in dashboard_data.top_violation_ips[:5] %}
-                            <div class="d-flex justify-content-between mb-1">
-                                <small>{{ ip }}</small>
-                                <span class="badge bg-secondary">{{ count }}</span>
-                            </div>
-                        {% endfor %}
-                    {% else %}
-                        <p class="text-muted">No violation data available</p>
-                    {% endif %}
+                    <div id="violation-sources-container">
+                        <p class="text-muted">Loading violation sources...</p>
+                    </div>
                 </div>
             </div>
         </div>
@@ -114,16 +290,9 @@
                     <h6 class="mb-0">Violation Types</h6>
                 </div>
                 <div class="card-body">
-                    {% if dashboard_data.top_violation_types %}
-                        {% for violation_type, count in dashboard_data.top_violation_types[:5] %}
-                            <div class="d-flex justify-content-between mb-1">
-                                <small>{{ violation_type }}</small>
-                                <span class="badge bg-secondary">{{ count }}</span>
-                            </div>
-                        {% endfor %}
-                    {% else %}
-                        <p class="text-muted">No violation types data available</p>
-                    {% endif %}
+                    <div id="violation-types-container">
+                        <p class="text-muted">Loading violation types...</p>
+                    </div>
                 </div>
             </div>
         </div>
@@ -135,24 +304,24 @@
             <div class="card">
                 <div class="card-header d-flex justify-content-between align-items-center">
                     <h6 class="mb-0">Real-time Monitoring</h6>
-                    <small class="text-muted">Last updated: {{ dashboard_data.last_updated[:19] if dashboard_data.last_updated else 'Unknown' }}</small>
+                    <small class="text-muted">Last updated: <span id="last-updated">Loading...</span></small>
                 </div>
                 <div class="card-body">
                     <div class="row">
                         <div class="col-md-3 text-center">
-                            <h4 class="text-primary">{{ dashboard_data.recent_violations|length }}</h4>
+                            <h4 class="text-primary" id="recent-violations-count">0</h4>
                             <small class="text-muted">Recent Violations</small>
                         </div>
                         <div class="col-md-3 text-center">
-                            <h4 class="text-success">{{ dashboard_data.top_violation_ips|length }}</h4>
+                            <h4 class="text-success" id="unique-ips-count">0</h4>
                             <small class="text-muted">Unique IPs</small>
                         </div>
                         <div class="col-md-3 text-center">
-                            <h4 class="text-warning">{{ dashboard_data.top_violation_endpoints|length }}</h4>
+                            <h4 class="text-warning" id="affected-endpoints-count">0</h4>
                             <small class="text-muted">Affected Endpoints</small>
                         </div>
                         <div class="col-md-3 text-center">
-                            <h4 class="text-info">{{ dashboard_data.top_violation_types|length }}</h4>
+                            <h4 class="text-info" id="violation-types-count">0</h4>
                             <small class="text-muted">Violation Types</small>
                         </div>
                     </div>

@@ -188,6 +188,16 @@ try:
 except Exception:
     pass
 
+# Register CSRF dashboard blueprint
+try:
+    from security.monitoring.csrf_dashboard import register_csrf_dashboard
+    register_csrf_dashboard(app)
+    print("✅ CSRF dashboard blueprint registered successfully")
+except Exception as e:
+    print(f"❌ Failed to register CSRF dashboard blueprint: {e}")
+    import traceback
+    traceback.print_exc()
+
 # Context processor for templates
 @app.context_processor
 def inject_role_context():
