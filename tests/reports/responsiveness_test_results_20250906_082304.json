@@ -1,0 +1,52 @@
+{
+  "unit_tests": {
+    "tests.unit.test_system_optimizer_responsiveness": {
+      "tests_run": 10,
+      "failures": 0,
+      "errors": 0,
+      "success": true,
+      "success_rate": 1.0
+    },
+    "tests.unit.test_enhanced_database_manager_responsiveness": {
+      "tests_run": 13,
+      "failures": 0,
+      "errors": 0,
+      "success": true,
+      "success_rate": 1.0
+    },
+    "tests.unit.test_enhanced_background_cleanup_manager_responsiveness": {
+      "tests_run": 14,
+      "failures": 0,
+      "errors": 0,
+      "success": true,
+      "success_rate": 1.0
+    },
+    "tests.unit.test_enhanced_session_monitoring_responsiveness": {
+      "tests_run": 12,
+      "failures": 3,
+      "errors": 10,
+      "success": false,
+      "success_rate": -0.08333333333333333
+    },
+    "tests.unit.test_health_check_responsiveness": {
+      "tests_run": 11,
+      "failures": 0,
+      "errors": 3,
+      "success": false,
+      "success_rate": 0.7272727272727273
+    }
+  },
+  "integration_tests": {},
+  "performance_tests": {},
+  "admin_dashboard_tests": {},
+  "summary": {
+    "total_execution_time": 4.3887927532196045,
+    "total_test_modules": 5,
+    "total_tests": 60,
+    "total_failures": 3,
+    "total_errors": 13,
+    "successful_modules": 3,
+    "overall_success_rate": 0.7333333333333333,
+    "timestamp": "2025-09-06T12:23:04.006680+00:00"
+  }
+}

@@ -6,20 +6,27 @@
 Session Error Handling System
 
 This module provides comprehensive error handling for database session management,
-including user-friendly error messages, automatic recovery, and proper redirects.
+including user-friendly error messages, automatic recovery, proper redirects,
+and memory cleanup recovery mechanisms.
 """
 
+import gc
+import asyncio
 from logging import getLogger
 from typing import Optional, Dict, Any, Callable
+from datetime import datetime, timezone
 from flask import request, redirect, url_for, make_response, jsonify, render_template
 from unified_session_manager import SessionValidationError, SessionExpiredError, SessionNotFoundError
 from session_cookie_manager import SessionCookieManager
+from responsiveness_error_recovery import ResponsivenessIssueType, with_responsiveness_recovery
+from notification_helpers import send_admin_notification
+from models import NotificationType, NotificationPriority
 # # from notification_flash_replacement import send_notification  # Removed - using unified notification system  # Removed - using unified notification system
 
 logger = getLogger(__name__)
 
 class SessionErrorHandler:
-    """Handles session-related errors with user-friendly responses"""
+    """Handles session-related errors with user-friendly responses and memory cleanup recovery"""
     
     def __init__(self, cookie_manager: SessionCookieManager):
         self.cookie_manager = cookie_manager
@@ -31,7 +38,8 @@ class SessionErrorHandler:
             'session_invalid': 'Your session is invalid. Please log in again.',
             'session_security_error': 'Security validation failed. Please log in again.',
             'session_database_error': 'A database error occurred. Please try again.',
-            'session_general_error': 'A session error occurred. Please try again.'
+            'session_general_error': 'A session error occurred. Please try again.',
+            'session_memory_error': 'Session memory issue detected. System cleanup initiated.'
         }
         
         # Flash message categories
@@ -41,7 +49,24 @@ class SessionErrorHandler:
             'session_invalid': 'warning',
             'session_security_error': 'error',
             'session_database_error': 'error',
-            'session_general_error': 'error'
+            'session_general_error': 'error',
+            'session_memory_error': 'warning'
+        }
+        
+        # Memory cleanup recovery configuration
+        self.memory_recovery_config = {
+            'cleanup_threshold_mb': 100,  # Trigger cleanup if session memory > 100MB
+            'max_cleanup_attempts': 3,
+            'cleanup_delay': 2.0  # seconds between cleanup attempts
+        }
+        
+        # Recovery statistics
+        self.recovery_stats = {
+            'memory_cleanups': 0,
+            'successful_cleanups': 0,
+            'failed_cleanups': 0,
+            'total_memory_freed_mb': 0.0,
+            'last_cleanup': None
         }
     
     def handle_session_expired(self, error: SessionExpiredError, endpoint: Optional[str] = None) -> Any:
@@ -153,7 +178,7 @@ class SessionErrorHandler:
     
     def handle_general_session_error(self, error: Exception, endpoint: Optional[str] = None) -> Any:
         """
-        Handle general session-related errors
+        Handle general session-related errors with memory cleanup recovery
         
         Args:
             error: Exception instance
@@ -163,6 +188,10 @@ class SessionErrorHandler:
             Flask response (redirect or JSON)
         """
         logger.error(f"General session error: {error}")
+        
+        # Check if this might be a memory-related session error
+        if self._is_memory_related_error(error):
+            asyncio.create_task(self._attempt_session_memory_cleanup(error))
         
         if self._is_api_request():
             response_data = {
@@ -280,6 +309,186 @@ class SessionErrorHandler:
             </body>
             </html>
             """
+    
+    def _is_memory_related_error(self, error: Exception) -> bool:
+        """Check if error is related to memory issues"""
+        error_message = str(error).lower()
+        memory_indicators = [
+            'memory',
+            'out of memory',
+            'memoryerror',
+            'allocation',
+            'cache',
+            'session size',
+            'too large',
+            'resource exhausted'
+        ]
+        
+        return any(indicator in error_message for indicator in memory_indicators)
+    
+    async def _attempt_session_memory_cleanup(self, error: Exception) -> Dict[str, Any]:
+        """Attempt to clean up session memory issues"""
+        cleanup_result = {
+            'success': False,
+            'actions_taken': [],
+            'memory_freed_mb': 0.0,
+            'cleanup_time': 0
+        }
+        
+        start_time = datetime.now(timezone.utc)
+        
+        try:
+            logger.info("Starting session memory cleanup recovery")
+            self.recovery_stats['memory_cleanups'] += 1
+            
+            # Step 1: Get initial memory usage
+            initial_memory = self._get_process_memory_mb()
+            
+            # Step 2: Force garbage collection
+            gc.collect()
+            post_gc_memory = self._get_process_memory_mb()
+            memory_freed_gc = initial_memory - post_gc_memory
+            
+            cleanup_result['actions_taken'].append({
+                'action': 'garbage_collection',
+                'memory_freed_mb': memory_freed_gc,
+                'timestamp': datetime.now(timezone.utc).isoformat()
+            })
+            
+            # Step 3: Clear session-related caches (if available)
+            cache_cleanup_result = await self._clear_session_caches()
+            cleanup_result['actions_taken'].append({
+                'action': 'session_cache_cleanup',
+                'result': cache_cleanup_result,
+                'timestamp': datetime.now(timezone.utc).isoformat()
+            })
+            
+            # Step 4: Check final memory usage
+            final_memory = self._get_process_memory_mb()
+            total_memory_freed = initial_memory - final_memory
+            cleanup_result['memory_freed_mb'] = total_memory_freed
+            
+            # Determine success
+            if total_memory_freed > 0:
+                cleanup_result['success'] = True
+                self.recovery_stats['successful_cleanups'] += 1
+                self.recovery_stats['total_memory_freed_mb'] += total_memory_freed
+                
+                logger.info(f"Session memory cleanup successful - freed {total_memory_freed:.1f}MB")
+                
+                # Send success notification to admins
+                await send_admin_notification(
+                    message=f"Session memory cleanup completed successfully - freed {total_memory_freed:.1f}MB",
+                    notification_type=NotificationType.SUCCESS,
+                    title="Session Memory Cleanup Success",
+                    priority=NotificationPriority.NORMAL,
+                    system_health_data={
+                        'cleanup_type': 'session_memory',
+                        'memory_freed_mb': total_memory_freed,
+                        'actions_taken': len(cleanup_result['actions_taken']),
+                        'original_error': str(error)
+                    }
+                )
+            else:
+                self.recovery_stats['failed_cleanups'] += 1
+                logger.warning("Session memory cleanup did not free significant memory")
+                
+                # Send warning notification
+                await send_admin_notification(
+                    message=f"Session memory cleanup completed but freed minimal memory ({total_memory_freed:.1f}MB)",
+                    notification_type=NotificationType.WARNING,
+                    title="Session Memory Cleanup Warning",
+                    priority=NotificationPriority.NORMAL,
+                    system_health_data={
+                        'cleanup_type': 'session_memory',
+                        'memory_freed_mb': total_memory_freed,
+                        'original_error': str(error)
+                    }
+                )
+        
+        except Exception as cleanup_error:
+            logger.error(f"Session memory cleanup failed: {cleanup_error}")
+            self.recovery_stats['failed_cleanups'] += 1
+            
+            cleanup_result['actions_taken'].append({
+                'action': 'cleanup_error',
+                'error': str(cleanup_error),
+                'timestamp': datetime.now(timezone.utc).isoformat()
+            })
+            
+            # Send error notification
+            await send_admin_notification(
+                message=f"Session memory cleanup failed: {str(cleanup_error)}",
+                notification_type=NotificationType.ERROR,
+                title="Session Memory Cleanup Failed",
+                priority=NotificationPriority.HIGH,
+                system_health_data={
+                    'cleanup_type': 'session_memory',
+                    'cleanup_error': str(cleanup_error),
+                    'original_error': str(error)
+                },
+                requires_admin_action=True
+            )
+        
+        finally:
+            cleanup_result['cleanup_time'] = (datetime.now(timezone.utc) - start_time).total_seconds()
+            self.recovery_stats['last_cleanup'] = datetime.now(timezone.utc)
+        
+        return cleanup_result
+    
+    async def _clear_session_caches(self) -> Dict[str, Any]:
+        """Clear session-related caches to free memory"""
+        cache_result = {
+            'caches_cleared': [],
+            'estimated_memory_freed': 0
+        }
+        
+        try:
+            # Clear Flask session cache if available
+            try:
+                from flask import session
+                if hasattr(session, 'clear'):
+                    session.clear()
+                    cache_result['caches_cleared'].append('flask_session')
+            except Exception:
+                pass
+            
+            # Clear any application-specific session caches
+            # This would be implemented based on the actual session management system
+            
+            # Estimate memory freed (rough estimate)
+            cache_result['estimated_memory_freed'] = len(cache_result['caches_cleared']) * 0.5  # 0.5MB per cache
+            
+        except Exception as e:
+            cache_result['error'] = str(e)
+        
+        return cache_result
+    
+    def _get_process_memory_mb(self) -> float:
+        """Get current process memory usage in MB"""
+        try:
+            import psutil
+            import os
+            process = psutil.Process(os.getpid())
+            return process.memory_info().rss / (1024 * 1024)
+        except ImportError:
+            return 0.0
+        except Exception:
+            return 0.0
+    
+    def get_session_recovery_stats(self) -> Dict[str, Any]:
+        """Get session error recovery statistics"""
+        return {
+            'memory_cleanups': self.recovery_stats['memory_cleanups'],
+            'successful_cleanups': self.recovery_stats['successful_cleanups'],
+            'failed_cleanups': self.recovery_stats['failed_cleanups'],
+            'cleanup_success_rate': (
+                self.recovery_stats['successful_cleanups'] / self.recovery_stats['memory_cleanups']
+                if self.recovery_stats['memory_cleanups'] > 0 else 0.0
+            ),
+            'total_memory_freed_mb': self.recovery_stats['total_memory_freed_mb'],
+            'last_cleanup': self.recovery_stats['last_cleanup'].isoformat() if self.recovery_stats['last_cleanup'] else None
+        }
 
 def create_session_error_handler(cookie_manager: SessionCookieManager) -> SessionErrorHandler:
     """

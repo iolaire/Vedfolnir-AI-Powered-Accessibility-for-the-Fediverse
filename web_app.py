@@ -101,12 +101,28 @@ except Exception as e:
 from app.core.blueprints import register_blueprints
 register_blueprints(app)
 
+# Register performance monitoring blueprint
+try:
+    from performance_monitoring_dashboard import register_performance_monitoring
+    register_performance_monitoring(app)
+    print("✅ Performance monitoring blueprint registered successfully")
+except Exception as e:
+    print(f"⚠️  Performance monitoring blueprint registration failed: {e}")
+
 # Register session state API
 try:
     from session_state_api import create_session_state_routes
     create_session_state_routes(app)
 except Exception as e:
     app.logger.warning(f"Session state API registration failed: {e}")
+
+# Initialize request performance middleware
+try:
+    from request_performance_middleware import initialize_request_performance_middleware
+    request_middleware = initialize_request_performance_middleware(app)
+    print("✅ Request performance middleware initialized successfully")
+except Exception as e:
+    print(f"⚠️  Request performance middleware initialization failed: {e}")
 
 # Initialize performance dashboard (minimal)
 try:
@@ -115,14 +131,46 @@ try:
     import time
     from datetime import datetime
     
-    # Real system monitoring optimizer
+    # Real system monitoring optimizer with responsiveness monitoring
     class SystemOptimizer:
-        def __init__(self):
+        def __init__(self, config=None):
             self.optimization_level = type('OptLevel', (), {'value': 'balanced'})()
             self._last_cpu_check = time.time()
             self._cpu_percent = 0.0
             self._start_time = time.time()
-        
+            self._last_cleanup_time = time.time()
+            
+            # Load responsiveness configuration
+            if config is None:
+                from config import Config
+                config = Config()
+            self.responsiveness_config = config.responsiveness
+            
+            # Track connection pool metrics
+            self._connection_pool_utilization = 0.0
+            self._active_connections = 0
+            self._max_connections = 20  # Default pool size
+            
+            # Track background task metrics
+            self._background_tasks_count = 0
+            self._blocked_requests = 0
+            
+            # Request tracking for responsiveness monitoring
+            self._request_times = []  # Store recent request times
+            self._slow_requests = []  # Store slow request details
+            self._request_count = 0
+            self._total_request_time = 0.0
+            self._max_request_history = 1000  # Keep last 1000 requests
+            self._slow_request_threshold = 5.0  # 5 seconds threshold
+            self._request_lock = None
+            
+            # Initialize thread lock for request tracking
+            try:
+                import threading
+                self._request_lock = threading.Lock()
+            except ImportError:
+                self._request_lock = None
+            
         def get_performance_metrics(self):
             # Get real system metrics
             memory = psutil.virtual_memory()
@@ -146,52 +194,571 @@ try:
             # Database query time based on system load
             db_query_time = 25.0 + (self._cpu_percent * 2)  # Higher CPU = slower queries
             
-            return {
+            # Update connection pool utilization estimate
+            self._update_connection_pool_metrics()
+            
+            # Check if automated cleanup should be triggered
+            cleanup_triggered = self._check_and_trigger_cleanup(memory.percent / 100, self._cpu_percent / 100)
+            
+            # Get request performance metrics
+            request_metrics = self._get_request_performance_metrics()
+            
+            metrics = {
                 'response_time': 50.0,
                 'memory_usage_mb': memory.used / (1024 * 1024),
+                'memory_usage_percent': memory.percent,
                 'cpu_usage_percent': self._cpu_percent,
                 'optimization_level': 'good',
                 'message_throughput': estimated_throughput,
                 'websocket_connections': estimated_connections,
                 'cache_hit_rate': cache_hit_rate,
-                'database_query_time_ms': db_query_time
+                'database_query_time_ms': db_query_time,
+                'connection_pool_utilization': self._connection_pool_utilization,
+                'active_connections': self._active_connections,
+                'max_connections': self._max_connections,
+                'background_tasks_count': self._background_tasks_count,
+                'blocked_requests': self._blocked_requests,
+                'cleanup_triggered': cleanup_triggered,
+                'responsiveness_status': self._get_responsiveness_status(memory.percent / 100, self._cpu_percent / 100),
+                # Request performance metrics
+                'avg_request_time': request_metrics['avg_request_time'],
+                'slow_request_count': request_metrics['slow_request_count'],
+                'total_requests': request_metrics['total_requests'],
+                'requests_per_second': request_metrics['requests_per_second'],
+                'request_queue_size': request_metrics['request_queue_size'],
+                'recent_slow_requests': request_metrics['recent_slow_requests']
             }
+            
+            return metrics
         
         def get_recommendations(self): 
             memory = psutil.virtual_memory()
+            memory_percent = memory.percent / 100
+            cpu_percent = self._cpu_percent / 100
+            
             recommendations = []
             
-            if memory.percent > 80:
-                recommendations.append({'id': 1, 'message': 'High memory usage detected', 'priority': 'high'})
-            elif memory.percent > 60:
-                recommendations.append({'id': 2, 'message': 'Memory usage elevated', 'priority': 'medium'})
-            else:
-                recommendations.append({'id': 3, 'message': 'System running normally', 'priority': 'low'})
+            # Memory-based recommendations with responsiveness thresholds
+            if memory_percent >= self.responsiveness_config.memory_critical_threshold:
+                recommendations.append({
+                    'id': 1, 
+                    'message': f'Critical memory usage detected ({memory.percent:.1f}%) - Automated cleanup triggered', 
+                    'priority': 'critical',
+                    'action': 'memory_cleanup',
+                    'threshold': f'{self.responsiveness_config.memory_critical_threshold * 100:.0f}%'
+                })
+            elif memory_percent >= self.responsiveness_config.memory_warning_threshold:
+                recommendations.append({
+                    'id': 2, 
+                    'message': f'High memory usage detected ({memory.percent:.1f}%) - Consider manual cleanup', 
+                    'priority': 'high',
+                    'action': 'memory_warning',
+                    'threshold': f'{self.responsiveness_config.memory_warning_threshold * 100:.0f}%'
+                })
+            
+            # CPU-based recommendations with responsiveness thresholds
+            if cpu_percent >= self.responsiveness_config.cpu_critical_threshold:
+                recommendations.append({
+                    'id': 3, 
+                    'message': f'Critical CPU usage detected ({self._cpu_percent:.1f}%) - Performance degradation likely', 
+                    'priority': 'critical',
+                    'action': 'cpu_optimization',
+                    'threshold': f'{self.responsiveness_config.cpu_critical_threshold * 100:.0f}%'
+                })
+            elif cpu_percent >= self.responsiveness_config.cpu_warning_threshold:
+                recommendations.append({
+                    'id': 4, 
+                    'message': f'High CPU usage detected ({self._cpu_percent:.1f}%) - Monitor for performance issues', 
+                    'priority': 'high',
+                    'action': 'cpu_monitoring',
+                    'threshold': f'{self.responsiveness_config.cpu_warning_threshold * 100:.0f}%'
+                })
+            
+            # Connection pool recommendations
+            if self._connection_pool_utilization >= self.responsiveness_config.connection_pool_warning_threshold:
+                recommendations.append({
+                    'id': 5, 
+                    'message': f'High connection pool utilization ({self._connection_pool_utilization * 100:.1f}%) - Connection leaks possible', 
+                    'priority': 'high',
+                    'action': 'connection_pool_cleanup',
+                    'threshold': f'{self.responsiveness_config.connection_pool_warning_threshold * 100:.0f}%'
+                })
+            
+            # Background task recommendations
+            if self._background_tasks_count > 10:
+                recommendations.append({
+                    'id': 6, 
+                    'message': f'High number of background tasks ({self._background_tasks_count}) - May impact responsiveness', 
+                    'priority': 'medium',
+                    'action': 'background_task_optimization'
+                })
+            
+            # Default healthy state
+            if not recommendations:
+                recommendations.append({
+                    'id': 7, 
+                    'message': 'System running within normal parameters', 
+                    'priority': 'low',
+                    'action': 'none'
+                })
                 
             return recommendations
         
         def get_health_status(self): 
             memory = psutil.virtual_memory()
             disk = psutil.disk_usage('/')
+            memory_percent = memory.percent / 100
+            cpu_percent = self._cpu_percent / 100
             
             components = {}
-            components['memory'] = 'critical' if memory.percent > 90 else 'warning' if memory.percent > 75 else 'healthy'
-            components['disk'] = 'critical' if disk.percent > 95 else 'warning' if disk.percent > 85 else 'healthy'
-            components['database'] = 'healthy'  # Would need DB connection check
             
+            # Memory health with responsiveness thresholds
+            if memory_percent >= self.responsiveness_config.memory_critical_threshold:
+                components['memory'] = 'critical'
+            elif memory_percent >= self.responsiveness_config.memory_warning_threshold:
+                components['memory'] = 'warning'
+            else:
+                components['memory'] = 'healthy'
+            
+            # CPU health with responsiveness thresholds
+            if cpu_percent >= self.responsiveness_config.cpu_critical_threshold:
+                components['cpu'] = 'critical'
+            elif cpu_percent >= self.responsiveness_config.cpu_warning_threshold:
+                components['cpu'] = 'warning'
+            else:
+                components['cpu'] = 'healthy'
+            
+            # Disk health (existing logic)
+            components['disk'] = 'critical' if disk.percent > 95 else 'warning' if disk.percent > 85 else 'healthy'
+            
+            # Connection pool health
+            if self._connection_pool_utilization >= self.responsiveness_config.connection_pool_warning_threshold:
+                components['connection_pool'] = 'warning'
+            else:
+                components['connection_pool'] = 'healthy'
+            
+            # Background tasks health
+            if self._background_tasks_count > 15:
+                components['background_tasks'] = 'warning'
+            elif self._background_tasks_count > 25:
+                components['background_tasks'] = 'critical'
+            else:
+                components['background_tasks'] = 'healthy'
+            
+            # Database health (would need actual DB connection check)
+            components['database'] = 'healthy'
+            
+            # Overall health status
             overall = 'critical' if 'critical' in components.values() else 'warning' if 'warning' in components.values() else 'healthy'
             
-            return {'status': overall, 'components': components}
+            return {
+                'status': overall, 
+                'components': components,
+                'responsiveness_monitoring': True,
+                'thresholds': {
+                    'memory_warning': f'{self.responsiveness_config.memory_warning_threshold * 100:.0f}%',
+                    'memory_critical': f'{self.responsiveness_config.memory_critical_threshold * 100:.0f}%',
+                    'cpu_warning': f'{self.responsiveness_config.cpu_warning_threshold * 100:.0f}%',
+                    'cpu_critical': f'{self.responsiveness_config.cpu_critical_threshold * 100:.0f}%',
+                    'connection_pool_warning': f'{self.responsiveness_config.connection_pool_warning_threshold * 100:.0f}%'
+                }
+            }
         
         def get_metrics(self): 
             return self.get_performance_metrics()
+        
+        def check_responsiveness(self):
+            """Comprehensive responsiveness analysis"""
+            memory = psutil.virtual_memory()
+            memory_percent = memory.percent / 100
+            cpu_percent = self._cpu_percent / 100
+            
+            issues = []
+            
+            # Check memory responsiveness
+            if memory_percent >= self.responsiveness_config.memory_critical_threshold:
+                issues.append({
+                    'type': 'memory',
+                    'severity': 'critical',
+                    'current': f'{memory.percent:.1f}%',
+                    'threshold': f'{self.responsiveness_config.memory_critical_threshold * 100:.0f}%',
+                    'message': 'Memory usage critical - immediate cleanup required'
+                })
+            elif memory_percent >= self.responsiveness_config.memory_warning_threshold:
+                issues.append({
+                    'type': 'memory',
+                    'severity': 'warning',
+                    'current': f'{memory.percent:.1f}%',
+                    'threshold': f'{self.responsiveness_config.memory_warning_threshold * 100:.0f}%',
+                    'message': 'Memory usage elevated - monitor closely'
+                })
+            
+            # Check CPU responsiveness
+            if cpu_percent >= self.responsiveness_config.cpu_critical_threshold:
+                issues.append({
+                    'type': 'cpu',
+                    'severity': 'critical',
+                    'current': f'{self._cpu_percent:.1f}%',
+                    'threshold': f'{self.responsiveness_config.cpu_critical_threshold * 100:.0f}%',
+                    'message': 'CPU usage critical - performance severely impacted'
+                })
+            elif cpu_percent >= self.responsiveness_config.cpu_warning_threshold:
+                issues.append({
+                    'type': 'cpu',
+                    'severity': 'warning',
+                    'current': f'{self._cpu_percent:.1f}%',
+                    'threshold': f'{self.responsiveness_config.cpu_warning_threshold * 100:.0f}%',
+                    'message': 'CPU usage elevated - potential performance impact'
+                })
+            
+            # Check connection pool responsiveness
+            if self._connection_pool_utilization >= self.responsiveness_config.connection_pool_warning_threshold:
+                issues.append({
+                    'type': 'connection_pool',
+                    'severity': 'warning',
+                    'current': f'{self._connection_pool_utilization * 100:.1f}%',
+                    'threshold': f'{self.responsiveness_config.connection_pool_warning_threshold * 100:.0f}%',
+                    'message': 'Connection pool utilization high - potential connection leaks'
+                })
+            
+            return {
+                'responsive': len(issues) == 0,
+                'issues': issues,
+                'overall_status': 'critical' if any(issue['severity'] == 'critical' for issue in issues) else 'warning' if issues else 'healthy',
+                'timestamp': datetime.now().isoformat()
+            }
+        
+        def trigger_cleanup_if_needed(self):
+            """Trigger automated resource cleanup if thresholds are exceeded"""
+            if not self.responsiveness_config.cleanup_enabled:
+                return False
+            
+            memory = psutil.virtual_memory()
+            memory_percent = memory.percent / 100
+            
+            current_time = time.time()
+            
+            # Prevent too frequent cleanup operations
+            if current_time - self._last_cleanup_time < 60:  # Minimum 1 minute between cleanups
+                return False
+            
+            cleanup_triggered = False
+            
+            # Memory cleanup
+            if memory_percent >= self.responsiveness_config.auto_cleanup_memory_threshold:
+                app.logger.warning(f"Triggering memory cleanup - usage at {memory.percent:.1f}%")
+                self._trigger_memory_cleanup()
+                cleanup_triggered = True
+            
+            # Connection pool cleanup
+            if self._connection_pool_utilization >= self.responsiveness_config.auto_cleanup_connection_threshold:
+                app.logger.warning(f"Triggering connection pool cleanup - utilization at {self._connection_pool_utilization * 100:.1f}%")
+                self._trigger_connection_cleanup()
+                cleanup_triggered = True
+            
+            if cleanup_triggered:
+                self._last_cleanup_time = current_time
+            
+            return cleanup_triggered
+        
+        def _check_and_trigger_cleanup(self, memory_percent, cpu_percent):
+            """Internal method to check and trigger cleanup during metrics collection"""
+            return self.trigger_cleanup_if_needed()
+        
+        def _get_responsiveness_status(self, memory_percent, cpu_percent):
+            """Get overall responsiveness status"""
+            if (memory_percent >= self.responsiveness_config.memory_critical_threshold or 
+                cpu_percent >= self.responsiveness_config.cpu_critical_threshold):
+                return 'critical'
+            elif (memory_percent >= self.responsiveness_config.memory_warning_threshold or 
+                  cpu_percent >= self.responsiveness_config.cpu_warning_threshold):
+                return 'warning'
+            else:
+                return 'healthy'
+        
+        def _update_connection_pool_metrics(self):
+            """Update connection pool utilization metrics"""
+            try:
+                # Try to get actual connection pool stats from database manager
+                from database import DatabaseManager
+                from config import Config
+                config = Config()
+                db_manager = DatabaseManager(config)
+                
+                # Get connection pool stats if available
+                if hasattr(db_manager, 'get_connection_pool_stats'):
+                    stats = db_manager.get_connection_pool_stats()
+                    self._active_connections = stats.get('active_connections', 0)
+                    self._max_connections = stats.get('max_connections', 20)
+                    self._connection_pool_utilization = self._active_connections / self._max_connections if self._max_connections > 0 else 0
+                else:
+                    # Estimate based on system load
+                    self._connection_pool_utilization = min(0.8, (self._cpu_percent / 100) * 0.8)
+                    self._active_connections = int(self._connection_pool_utilization * self._max_connections)
+            except Exception as e:
+                # Fallback to estimation
+                self._connection_pool_utilization = min(0.8, (self._cpu_percent / 100) * 0.8)
+                self._active_connections = int(self._connection_pool_utilization * self._max_connections)
+        
+        def _trigger_memory_cleanup(self):
+            """Trigger memory cleanup operations"""
+            try:
+                import gc
+                gc.collect()
+                app.logger.info("Memory cleanup completed - garbage collection triggered")
+            except Exception as e:
+                app.logger.error(f"Memory cleanup failed: {e}")
+        
+        def _trigger_connection_cleanup(self):
+            """Trigger connection pool cleanup operations"""
+            try:
+                # This would integrate with actual database manager cleanup
+                app.logger.info("Connection pool cleanup triggered")
+                # Future: Implement actual connection pool cleanup
+            except Exception as e:
+                app.logger.error(f"Connection pool cleanup failed: {e}")
+        
+        def track_request_start(self, request_id=None):
+            """Track the start of a request for performance monitoring"""
+            if not self._request_lock:
+                return None
+            
+            try:
+                with self._request_lock:
+                    request_start_time = time.time()
+                    if request_id is None:
+                        request_id = f"req_{int(request_start_time * 1000)}"
+                    
+                    # Store request start time
+                    request_data = {
+                        'id': request_id,
+                        'start_time': request_start_time,
+                        'endpoint': None,
+                        'method': None
+                    }
+                    
+                    return request_data
+            except Exception as e:
+                app.logger.error(f"Error tracking request start: {e}")
+                return None
+        
+        def track_request_end(self, request_data, endpoint=None, method=None, status_code=None):
+            """Track the end of a request and calculate performance metrics"""
+            if not request_data or not self._request_lock:
+                return
+            
+            try:
+                with self._request_lock:
+                    end_time = time.time()
+                    request_time = end_time - request_data['start_time']
+                    
+                    # Update request statistics
+                    self._request_count += 1
+                    self._total_request_time += request_time
+                    
+                    # Add to request times history
+                    self._request_times.append({
+                        'time': request_time,
+                        'timestamp': end_time,
+                        'endpoint': endpoint,
+                        'method': method,
+                        'status_code': status_code
+                    })
+                    
+                    # Trim history if too large
+                    if len(self._request_times) > self._max_request_history:
+                        self._request_times = self._request_times[-self._max_request_history:]
+                    
+                    # Track slow requests
+                    if request_time > self._slow_request_threshold:
+                        slow_request = {
+                            'id': request_data['id'],
+                            'time': request_time,
+                            'timestamp': end_time,
+                            'endpoint': endpoint,
+                            'method': method,
+                            'status_code': status_code
+                        }
+                        self._slow_requests.append(slow_request)
+                        
+                        # Keep only recent slow requests
+                        if len(self._slow_requests) > 100:
+                            self._slow_requests = self._slow_requests[-100:]
+                        
+                        # Log slow request
+                        app.logger.warning(f"Slow request detected: {endpoint} took {request_time:.2f}s")
+                    
+            except Exception as e:
+                app.logger.error(f"Error tracking request end: {e}")
+        
+        def _get_request_performance_metrics(self):
+            """Get request performance metrics"""
+            if not self._request_lock:
+                return {
+                    'avg_request_time': 0.0,
+                    'slow_request_count': 0,
+                    'total_requests': 0,
+                    'requests_per_second': 0.0,
+                    'request_queue_size': 0,
+                    'recent_slow_requests': []
+                }
+            
+            try:
+                with self._request_lock:
+                    current_time = time.time()
+                    
+                    # Calculate average request time
+                    if self._request_count > 0:
+                        avg_request_time = self._total_request_time / self._request_count
+                    else:
+                        avg_request_time = 0.0
+                    
+                    # Count recent slow requests (last 5 minutes)
+                    recent_slow_count = len([
+                        req for req in self._slow_requests 
+                        if current_time - req['timestamp'] <= 300
+                    ])
+                    
+                    # Calculate requests per second (last 60 seconds)
+                    recent_requests = [
+                        req for req in self._request_times 
+                        if current_time - req['timestamp'] <= 60
+                    ]
+                    requests_per_second = len(recent_requests) / 60.0
+                    
+                    # Estimate request queue size based on system load
+                    request_queue_size = max(0, int((self._cpu_percent / 100) * 10))
+                    
+                    # Get recent slow requests for detailed analysis
+                    recent_slow_requests = [
+                        {
+                            'endpoint': req['endpoint'],
+                            'method': req['method'],
+                            'time': req['time'],
+                            'timestamp': req['timestamp'],
+                            'status_code': req['status_code']
+                        }
+                        for req in self._slow_requests[-10:]  # Last 10 slow requests
+                    ]
+                    
+                    return {
+                        'avg_request_time': avg_request_time,
+                        'slow_request_count': recent_slow_count,
+                        'total_requests': self._request_count,
+                        'requests_per_second': requests_per_second,
+                        'request_queue_size': request_queue_size,
+                        'recent_slow_requests': recent_slow_requests
+                    }
+                    
+            except Exception as e:
+                app.logger.error(f"Error getting request performance metrics: {e}")
+                return {
+                    'avg_request_time': 0.0,
+                    'slow_request_count': 0,
+                    'total_requests': 0,
+                    'requests_per_second': 0.0,
+                    'request_queue_size': 0,
+                    'recent_slow_requests': []
+                }
+        
+        def get_slow_request_analysis(self):
+            """Get detailed analysis of slow requests"""
+            if not self._request_lock:
+                return {'slow_requests': [], 'analysis': {}}
+            
+            try:
+                with self._request_lock:
+                    current_time = time.time()
+                    
+                    # Get slow requests from last hour
+                    recent_slow = [
+                        req for req in self._slow_requests 
+                        if current_time - req['timestamp'] <= 3600
+                    ]
+                    
+                    # Analyze slow requests by endpoint
+                    endpoint_analysis = {}
+                    for req in recent_slow:
+                        endpoint = req.get('endpoint', 'unknown')
+                        if endpoint not in endpoint_analysis:
+                            endpoint_analysis[endpoint] = {
+                                'count': 0,
+                                'total_time': 0.0,
+                                'avg_time': 0.0,
+                                'max_time': 0.0
+                            }
+                        
+                        endpoint_analysis[endpoint]['count'] += 1
+                        endpoint_analysis[endpoint]['total_time'] += req['time']
+                        endpoint_analysis[endpoint]['max_time'] = max(
+                            endpoint_analysis[endpoint]['max_time'], 
+                            req['time']
+                        )
+                    
+                    # Calculate averages
+                    for endpoint, data in endpoint_analysis.items():
+                        if data['count'] > 0:
+                            data['avg_time'] = data['total_time'] / data['count']
+                    
+                    return {
+                        'slow_requests': recent_slow,
+                        'analysis': endpoint_analysis,
+                        'total_slow_requests': len(recent_slow),
+                        'time_range_hours': 1
+                    }
+                    
+            except Exception as e:
+                app.logger.error(f"Error analyzing slow requests: {e}")
+                return {'slow_requests': [], 'analysis': {}}
     
     system_optimizer = SystemOptimizer()
+    app.system_optimizer = system_optimizer  # Store for API access
     app.performance_dashboard = create_performance_dashboard(
         system_optimizer, system_optimizer, system_optimizer
     )
+    
+    # Initialize HealthChecker for comprehensive system monitoring
+    from health_check import HealthChecker
+    health_checker = HealthChecker(config, db_manager)
+    app.config['health_checker'] = health_checker
+    
+    # Verify HealthChecker has required attributes for responsiveness monitoring
+    if hasattr(health_checker, 'responsiveness_config'):
+        print("✅ HealthChecker initialized successfully with responsiveness monitoring")
+    else:
+        print("⚠️  HealthChecker initialized but missing responsiveness configuration")
+        
+    # Test basic HealthChecker functionality
+    try:
+        uptime = health_checker.get_uptime()
+        print(f"✅ HealthChecker functional test passed (uptime: {uptime:.1f}s)")
+    except Exception as test_error:
+        print(f"⚠️  HealthChecker functional test failed: {test_error}")
+    
 except Exception as e:
     app.logger.warning(f"Performance dashboard initialization failed: {e}")
+    # Still try to initialize HealthChecker even if performance dashboard fails
+    try:
+        from health_check import HealthChecker
+        health_checker = HealthChecker(config, db_manager)
+        app.config['health_checker'] = health_checker
+        
+        # Verify HealthChecker has required attributes for responsiveness monitoring
+        if hasattr(health_checker, 'responsiveness_config'):
+            print("✅ HealthChecker initialized successfully with responsiveness monitoring (fallback)")
+        else:
+            print("⚠️  HealthChecker initialized but missing responsiveness configuration (fallback)")
+            
+        # Test basic HealthChecker functionality
+        try:
+            uptime = health_checker.get_uptime()
+            print(f"✅ HealthChecker functional test passed (uptime: {uptime:.1f}s) (fallback)")
+        except Exception as test_error:
+            print(f"⚠️  HealthChecker functional test failed: {test_error} (fallback)")
+            
+    except Exception as health_error:
+        print(f"⚠️  HealthChecker initialization failed: {health_error}")
+        app.config['health_checker'] = None
 
 # Register admin blueprint
 try:

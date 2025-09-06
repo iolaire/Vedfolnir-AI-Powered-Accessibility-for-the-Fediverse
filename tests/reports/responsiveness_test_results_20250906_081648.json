@@ -1,0 +1,16 @@
+{
+  "unit_tests": {},
+  "integration_tests": {},
+  "performance_tests": {},
+  "admin_dashboard_tests": {},
+  "summary": {
+    "total_execution_time": 4.982948303222656e-05,
+    "total_test_modules": 0,
+    "total_tests": 0,
+    "total_failures": 0,
+    "total_errors": 0,
+    "successful_modules": 0,
+    "overall_success_rate": 0,
+    "timestamp": "2025-09-06T12:16:48.779619+00:00"
+  }
+}

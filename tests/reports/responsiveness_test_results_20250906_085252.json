@@ -1,0 +1,91 @@
+{
+  "unit_tests": {
+    "tests.unit.test_system_optimizer_responsiveness": {
+      "tests_run": 10,
+      "failures": 0,
+      "errors": 0,
+      "success": true,
+      "success_rate": 1.0
+    },
+    "tests.unit.test_enhanced_database_manager_responsiveness": {
+      "tests_run": 13,
+      "failures": 0,
+      "errors": 0,
+      "success": true,
+      "success_rate": 1.0
+    },
+    "tests.unit.test_enhanced_background_cleanup_manager_responsiveness": {
+      "tests_run": 14,
+      "failures": 0,
+      "errors": 0,
+      "success": true,
+      "success_rate": 1.0
+    },
+    "tests.unit.test_enhanced_session_monitoring_responsiveness": {
+      "tests_run": 12,
+      "failures": 4,
+      "errors": 0,
+      "success": false,
+      "success_rate": 0.6666666666666666
+    },
+    "tests.unit.test_health_check_responsiveness": {
+      "tests_run": 11,
+      "failures": 0,
+      "errors": 0,
+      "success": true,
+      "success_rate": 1.0
+    }
+  },
+  "integration_tests": {
+    "tests.integration.test_responsiveness_admin_dashboard_integration": {
+      "tests_run": 12,
+      "failures": 5,
+      "errors": 3,
+      "success": false,
+      "success_rate": 0.3333333333333333
+    },
+    "tests.integration.test_responsiveness_integration": {
+      "tests_run": 5,
+      "failures": 0,
+      "errors": 0,
+      "success": true,
+      "success_rate": 1.0
+    },
+    "tests.integration.test_responsiveness_error_recovery_integration": {
+      "tests_run": 0,
+      "failures": 0,
+      "errors": 1,
+      "success": false,
+      "error": "'await' outside async function (test_responsiveness_error_recovery_integration.py, line 88)"
+    }
+  },
+  "performance_tests": {
+    "tests.performance.test_responsiveness_performance_integration": {
+      "tests_run": 8,
+      "failures": 2,
+      "errors": 1,
+      "success": false,
+      "execution_time": 31.151986837387085,
+      "avg_test_time": 3.8939983546733856
+    }
+  },
+  "admin_dashboard_tests": {
+    "tests.admin.test_responsiveness_dashboard": {
+      "tests_run": 8,
+      "failures": 8,
+      "errors": 2,
+      "success": false,
+      "success_rate": -0.25
+    }
+  },
+  "summary": {
+    "total_execution_time": 40.302830934524536,
+    "total_test_modules": 10,
+    "total_tests": 93,
+    "total_failures": 19,
+    "total_errors": 7,
+    "successful_modules": 5,
+    "overall_success_rate": 0.7204301075268817,
+    "timestamp": "2025-09-06T12:52:52.258294+00:00"
+  }
+}

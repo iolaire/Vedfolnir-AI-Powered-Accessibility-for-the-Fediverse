@@ -42,6 +42,70 @@
         100% { opacity: 1; }
     }
     .disconnected { background-color: #dc3545; }
+    
+    /* Responsiveness Monitoring Styles */
+    .responsiveness-metric {
+        padding: 15px;
+        border-radius: 8px;
+        background: #f8f9fa;
+        border: 1px solid #e9ecef;
+    }
+    
+    .responsiveness-metric h6 {
+        margin-bottom: 10px;
+        color: #495057;
+        font-weight: 600;
+    }
+    
+    .progress {
+        height: 8px;
+        background-color: #e9ecef;
+    }
+    
+    .progress-bar.bg-success { background-color: #28a745 !important; }
+    .progress-bar.bg-warning { background-color: #ffc107 !important; }
+    .progress-bar.bg-danger { background-color: #dc3545 !important; }
+    
+    #responsivenessCard.bg-success { background-color: #28a745 !important; }
+    #responsivenessCard.bg-warning { background-color: #ffc107 !important; }
+    #responsivenessCard.bg-danger { background-color: #dc3545 !important; }
+    
+    #memoryCard.bg-success { background-color: #28a745 !important; }
+    #memoryCard.bg-warning { background-color: #ffc107 !important; }
+    #memoryCard.bg-danger { background-color: #dc3545 !important; }
+    
+    #requestPerformanceCard.bg-success { background-color: #28a745 !important; }
+    #requestPerformanceCard.bg-warning { background-color: #ffc107 !important; }
+    #requestPerformanceCard.bg-danger { background-color: #dc3545 !important; }
+    
+    #connectionPoolCard.bg-success { background-color: #28a745 !important; }
+    #connectionPoolCard.bg-warning { background-color: #ffc107 !important; }
+    #connectionPoolCard.bg-danger { background-color: #dc3545 !important; }
+    
+    .responsiveness-alert {
+        padding: 10px;
+        margin: 5px 0;
+        border-radius: 4px;
+        border-left: 4px solid;
+    }
+    
+    .responsiveness-alert.alert-warning {
+        background-color: #fff3cd;
+        border-left-color: #ffc107;
+        color: #856404;
+    }
+    
+    .responsiveness-alert.alert-danger {
+        background-color: #f8d7da;
+        border-left-color: #dc3545;
+        color: #721c24;
+    }
+    
+    .responsiveness-alert.alert-success {
+        background-color: #d4edda;
+        border-left-color: #28a745;
+        color: #155724;
+    }
 </style>
 {% endblock %}
 
@@ -63,9 +127,9 @@
     </div>
 </div>
 
-<!-- System Overview Cards -->
+<!-- System Overview Cards with Responsiveness Metrics -->
 <div class="row mb-4">
-    <div class="col-md-3">
+    <div class="col-md-2">
         <div class="card text-white bg-primary">
             <div class="card-header d-flex justify-content-between align-items-center">
                 <span>Active Jobs</span>
@@ -80,7 +144,7 @@
         </div>
     </div>
     
-    <div class="col-md-3">
+    <div class="col-md-2">
         <div class="card text-white bg-success">
             <div class="card-header d-flex justify-content-between align-items-center">
                 <span>Completed Today</span>
@@ -95,31 +159,62 @@
         </div>
     </div>
     
-    <div class="col-md-3">
-        <div class="card text-white bg-warning">
+    <!-- Responsiveness Monitoring Cards -->
+    <div class="col-md-2">
+        <div class="card text-white" id="responsivenessCard">
             <div class="card-header d-flex justify-content-between align-items-center">
-                <span>Failed Jobs</span>
-                <i class="bi bi-exclamation-triangle"></i>
+                <span>Responsiveness</span>
+                <i class="bi bi-speedometer2"></i>
             </div>
             <div class="card-body">
-                <h4 class="card-title system-metric" id="failedJobsCount">{{ system_metrics.failed_jobs or 0 }}</h4>
+                <h4 class="card-title system-metric" id="responsivenessStatus">Loading...</h4>
                 <p class="card-text">
-                    <small>{{ system_metrics.error_rate or 0 }}% error rate</small>
+                    <small id="responsivenessDetails">Checking system...</small>
                 </p>
             </div>
         </div>
     </div>
     
-    <div class="col-md-3">
-        <div class="card text-white bg-info">
+    <div class="col-md-2">
+        <div class="card text-white" id="memoryCard">
             <div class="card-header d-flex justify-content-between align-items-center">
-                <span>System Load</span>
-                <i class="bi bi-cpu"></i>
+                <span>Memory Usage</span>
+                <i class="bi bi-memory"></i>
             </div>
             <div class="card-body">
-                <h4 class="card-title system-metric" id="systemLoadValue">{{ system_metrics.system_load or 0 }}%</h4>
+                <h4 class="card-title system-metric" id="memoryUsage">--</h4>
                 <p class="card-text">
-                    <small>{{ system_metrics.avg_processing_time or 0 }}s avg time</small>
+                    <small id="memoryDetails">-- MB used</small>
+                </p>
+            </div>
+        </div>
+    </div>
+    
+    <div class="col-md-2">
+        <div class="card text-white" id="requestPerformanceCard">
+            <div class="card-header d-flex justify-content-between align-items-center">
+                <span>Request Time</span>
+                <i class="bi bi-clock"></i>
+            </div>
+            <div class="card-body">
+                <h4 class="card-title system-metric" id="avgRequestTime">--</h4>
+                <p class="card-text">
+                    <small id="requestTimeDetails">-- req/sec</small>
+                </p>
+            </div>
+        </div>
+    </div>
+    
+    <div class="col-md-2">
+        <div class="card text-white" id="connectionPoolCard">
+            <div class="card-header d-flex justify-content-between align-items-center">
+                <span>Connections</span>
+                <i class="bi bi-diagram-3"></i>
+            </div>
+            <div class="card-body">
+                <h4 class="card-title system-metric" id="connectionPoolUsage">--</h4>
+                <p class="card-text">
+                    <small id="connectionPoolDetails">-- active</small>
                 </p>
             </div>
         </div>
@@ -243,6 +338,88 @@
                             {% endfor %}
                         </tbody>
                     </table>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+
+<!-- Responsiveness Monitoring Section -->
+<div class="row mb-4">
+    <div class="col-12">
+        <div class="card">
+            <div class="card-header d-flex justify-content-between align-items-center">
+                <h5 class="mb-0">
+                    <i class="bi bi-speedometer2"></i> System Responsiveness Monitoring
+                </h5>
+                <div class="btn-group btn-group-sm">
+                    <button type="button" class="btn btn-outline-secondary" onclick="refreshResponsivenessData()">
+                        <i class="bi bi-arrow-clockwise"></i>
+                    </button>
+                    <button type="button" class="btn btn-outline-info" onclick="showResponsivenessDetails()">
+                        <i class="bi bi-info-circle"></i> Details
+                    </button>
+                </div>
+            </div>
+            <div class="card-body">
+                <div class="row">
+                    <div class="col-md-3">
+                        <div class="responsiveness-metric">
+                            <h6>Memory Leak Detection</h6>
+                            <div class="progress mb-2">
+                                <div class="progress-bar" id="memoryLeakProgress" role="progressbar" style="width: 0%"></div>
+                            </div>
+                            <small id="memoryLeakStatus" class="text-muted">Monitoring...</small>
+                        </div>
+                    </div>
+                    <div class="col-md-3">
+                        <div class="responsiveness-metric">
+                            <h6>Connection Pool Health</h6>
+                            <div class="progress mb-2">
+                                <div class="progress-bar" id="connectionHealthProgress" role="progressbar" style="width: 0%"></div>
+                            </div>
+                            <small id="connectionHealthStatus" class="text-muted">Monitoring...</small>
+                        </div>
+                    </div>
+                    <div class="col-md-3">
+                        <div class="responsiveness-metric">
+                            <h6>Background Task Load</h6>
+                            <div class="progress mb-2">
+                                <div class="progress-bar" id="backgroundTaskProgress" role="progressbar" style="width: 0%"></div>
+                            </div>
+                            <small id="backgroundTaskStatus" class="text-muted">Monitoring...</small>
+                        </div>
+                    </div>
+                    <div class="col-md-3">
+                        <div class="responsiveness-metric">
+                            <h6>Request Performance</h6>
+                            <div class="progress mb-2">
+                                <div class="progress-bar" id="requestPerformanceProgress" role="progressbar" style="width: 0%"></div>
+                            </div>
+                            <small id="requestPerformanceStatus" class="text-muted">Monitoring...</small>
+                        </div>
+                    </div>
+                </div>
+                
+                <!-- Responsiveness Alerts -->
+                <div class="mt-3" id="responsivenessAlerts" style="display: none;">
+                    <h6>Responsiveness Alerts</h6>
+                    <div id="responsivenessAlertsList"></div>
+                </div>
+                
+                <!-- Quick Actions -->
+                <div class="mt-3">
+                    <div class="btn-group btn-group-sm">
+                        <button type="button" class="btn btn-outline-warning" onclick="triggerMemoryCleanup()">
+                            <i class="bi bi-trash"></i> Memory Cleanup
+                        </button>
+                        <button type="button" class="btn btn-outline-info" onclick="optimizeConnections()">
+                            <i class="bi bi-diagram-3"></i> Optimize Connections
+                        </button>
+                        <button type="button" class="btn btn-outline-success" onclick="runResponsivenessCheck()">
+                            <i class="bi bi-check-circle"></i> Run Check
+                        </button>
+                    </div>
                 </div>
             </div>
         </div>
@@ -424,9 +601,384 @@
 <script src="{{ url_for('admin.static', filename='js/admin_dashboard.js') }}"></script>
 <script src="{{ url_for('admin.static', filename='js/user_limits_modal.js') }}"></script>
 <script>
+    // Responsiveness monitoring functions
+    function refreshResponsivenessData() {
+        console.log('Refreshing responsiveness data...');
+        
+        // Fetch responsiveness metrics from SystemOptimizer
+        fetch('/admin/api/responsiveness/metrics')
+            .then(response => response.json())
+            .then(data => {
+                if (data.success) {
+                    updateResponsivenessWidgets(data.data);
+                } else {
+                    console.error('Failed to fetch responsiveness data:', data.error);
+                }
+            })
+            .catch(error => {
+                console.error('Error fetching responsiveness data:', error);
+                // Show fallback data
+                updateResponsivenessWidgets({
+                    responsiveness_status: 'unknown',
+                    memory_usage_percent: 0,
+                    memory_usage_mb: 0,
+                    avg_request_time: 0,
+                    requests_per_second: 0,
+                    connection_pool_utilization: 0,
+                    active_connections: 0,
+                    background_tasks_count: 0,
+                    slow_request_count: 0
+                });
+            });
+    }
+    
+    function updateResponsivenessWidgets(data) {
+        // Update main responsiveness status card
+        const responsivenessCard = document.getElementById('responsivenessCard');
+        const responsivenessStatus = document.getElementById('responsivenessStatus');
+        const responsivenessDetails = document.getElementById('responsivenessDetails');
+        
+        if (responsivenessCard && responsivenessStatus && responsivenessDetails) {
+            const status = data.responsiveness_status || 'unknown';
+            responsivenessStatus.textContent = status.charAt(0).toUpperCase() + status.slice(1);
+            
+            // Update card color based on status
+            responsivenessCard.className = 'card text-white';
+            if (status === 'healthy') {
+                responsivenessCard.classList.add('bg-success');
+                responsivenessDetails.textContent = 'System responsive';
+            } else if (status === 'warning') {
+                responsivenessCard.classList.add('bg-warning');
+                responsivenessDetails.textContent = 'Performance issues detected';
+            } else if (status === 'critical') {
+                responsivenessCard.classList.add('bg-danger');
+                responsivenessDetails.textContent = 'Critical performance issues';
+            } else {
+                responsivenessCard.classList.add('bg-secondary');
+                responsivenessDetails.textContent = 'Status unknown';
+            }
+        }
+        
+        // Update memory usage card
+        const memoryCard = document.getElementById('memoryCard');
+        const memoryUsage = document.getElementById('memoryUsage');
+        const memoryDetails = document.getElementById('memoryDetails');
+        
+        if (memoryCard && memoryUsage && memoryDetails) {
+            const memoryPercent = data.memory_usage_percent || 0;
+            const memoryMB = data.memory_usage_mb || 0;
+            
+            memoryUsage.textContent = `${memoryPercent.toFixed(1)}%`;
+            memoryDetails.textContent = `${(memoryMB / 1024).toFixed(1)} GB used`;
+            
+            // Update card color based on memory usage
+            memoryCard.className = 'card text-white';
+            if (memoryPercent < 60) {
+                memoryCard.classList.add('bg-success');
+            } else if (memoryPercent < 80) {
+                memoryCard.classList.add('bg-warning');
+            } else {
+                memoryCard.classList.add('bg-danger');
+            }
+        }
+        
+        // Update request performance card
+        const requestCard = document.getElementById('requestPerformanceCard');
+        const avgRequestTime = document.getElementById('avgRequestTime');
+        const requestTimeDetails = document.getElementById('requestTimeDetails');
+        
+        if (requestCard && avgRequestTime && requestTimeDetails) {
+            const avgTime = data.avg_request_time || 0;
+            const reqPerSec = data.requests_per_second || 0;
+            
+            avgRequestTime.textContent = `${(avgTime * 1000).toFixed(0)}ms`;
+            requestTimeDetails.textContent = `${reqPerSec.toFixed(1)} req/sec`;
+            
+            // Update card color based on request time
+            requestCard.className = 'card text-white';
+            if (avgTime < 1.0) {
+                requestCard.classList.add('bg-success');
+            } else if (avgTime < 3.0) {
+                requestCard.classList.add('bg-warning');
+            } else {
+                requestCard.classList.add('bg-danger');
+            }
+        }
+        
+        // Update connection pool card
+        const connectionCard = document.getElementById('connectionPoolCard');
+        const connectionUsage = document.getElementById('connectionPoolUsage');
+        const connectionDetails = document.getElementById('connectionPoolDetails');
+        
+        if (connectionCard && connectionUsage && connectionDetails) {
+            const poolUtilization = data.connection_pool_utilization || 0;
+            const activeConnections = data.active_connections || 0;
+            
+            connectionUsage.textContent = `${(poolUtilization * 100).toFixed(1)}%`;
+            connectionDetails.textContent = `${activeConnections} active`;
+            
+            // Update card color based on pool utilization
+            connectionCard.className = 'card text-white';
+            if (poolUtilization < 0.7) {
+                connectionCard.classList.add('bg-success');
+            } else if (poolUtilization < 0.9) {
+                connectionCard.classList.add('bg-warning');
+            } else {
+                connectionCard.classList.add('bg-danger');
+            }
+        }
+        
+        // Update detailed responsiveness metrics
+        updateDetailedResponsivenessMetrics(data);
+    }
+    
+    function updateDetailedResponsivenessMetrics(data) {
+        // Memory leak detection progress
+        const memoryLeakProgress = document.getElementById('memoryLeakProgress');
+        const memoryLeakStatus = document.getElementById('memoryLeakStatus');
+        
+        if (memoryLeakProgress && memoryLeakStatus) {
+            const memoryPercent = data.memory_usage_percent || 0;
+            memoryLeakProgress.style.width = `${memoryPercent}%`;
+            
+            if (memoryPercent < 60) {
+                memoryLeakProgress.className = 'progress-bar bg-success';
+                memoryLeakStatus.textContent = 'Memory usage normal';
+                memoryLeakStatus.className = 'text-success';
+            } else if (memoryPercent < 80) {
+                memoryLeakProgress.className = 'progress-bar bg-warning';
+                memoryLeakStatus.textContent = 'Memory usage elevated';
+                memoryLeakStatus.className = 'text-warning';
+            } else {
+                memoryLeakProgress.className = 'progress-bar bg-danger';
+                memoryLeakStatus.textContent = 'Memory usage critical';
+                memoryLeakStatus.className = 'text-danger';
+            }
+        }
+        
+        // Connection health progress
+        const connectionHealthProgress = document.getElementById('connectionHealthProgress');
+        const connectionHealthStatus = document.getElementById('connectionHealthStatus');
+        
+        if (connectionHealthProgress && connectionHealthStatus) {
+            const poolUtilization = (data.connection_pool_utilization || 0) * 100;
+            connectionHealthProgress.style.width = `${poolUtilization}%`;
+            
+            if (poolUtilization < 70) {
+                connectionHealthProgress.className = 'progress-bar bg-success';
+                connectionHealthStatus.textContent = 'Connection pool healthy';
+                connectionHealthStatus.className = 'text-success';
+            } else if (poolUtilization < 90) {
+                connectionHealthProgress.className = 'progress-bar bg-warning';
+                connectionHealthStatus.textContent = 'Connection pool stressed';
+                connectionHealthStatus.className = 'text-warning';
+            } else {
+                connectionHealthProgress.className = 'progress-bar bg-danger';
+                connectionHealthStatus.textContent = 'Connection pool critical';
+                connectionHealthStatus.className = 'text-danger';
+            }
+        }
+        
+        // Background task load progress
+        const backgroundTaskProgress = document.getElementById('backgroundTaskProgress');
+        const backgroundTaskStatus = document.getElementById('backgroundTaskStatus');
+        
+        if (backgroundTaskProgress && backgroundTaskStatus) {
+            const taskCount = data.background_tasks_count || 0;
+            const taskPercent = Math.min(100, (taskCount / 20) * 100); // Max 20 tasks = 100%
+            backgroundTaskProgress.style.width = `${taskPercent}%`;
+            
+            if (taskCount < 10) {
+                backgroundTaskProgress.className = 'progress-bar bg-success';
+                backgroundTaskStatus.textContent = `${taskCount} background tasks`;
+                backgroundTaskStatus.className = 'text-success';
+            } else if (taskCount < 15) {
+                backgroundTaskProgress.className = 'progress-bar bg-warning';
+                backgroundTaskStatus.textContent = `${taskCount} background tasks (high)`;
+                backgroundTaskStatus.className = 'text-warning';
+            } else {
+                backgroundTaskProgress.className = 'progress-bar bg-danger';
+                backgroundTaskStatus.textContent = `${taskCount} background tasks (critical)`;
+                backgroundTaskStatus.className = 'text-danger';
+            }
+        }
+        
+        // Request performance progress
+        const requestPerformanceProgress = document.getElementById('requestPerformanceProgress');
+        const requestPerformanceStatus = document.getElementById('requestPerformanceStatus');
+        
+        if (requestPerformanceProgress && requestPerformanceStatus) {
+            const avgTime = data.avg_request_time || 0;
+            const slowRequests = data.slow_request_count || 0;
+            const performancePercent = Math.min(100, (avgTime / 5.0) * 100); // 5 seconds = 100%
+            requestPerformanceProgress.style.width = `${performancePercent}%`;
+            
+            if (avgTime < 1.0 && slowRequests === 0) {
+                requestPerformanceProgress.className = 'progress-bar bg-success';
+                requestPerformanceStatus.textContent = 'Request performance excellent';
+                requestPerformanceStatus.className = 'text-success';
+            } else if (avgTime < 3.0 && slowRequests < 5) {
+                requestPerformanceProgress.className = 'progress-bar bg-warning';
+                requestPerformanceStatus.textContent = `${slowRequests} slow requests detected`;
+                requestPerformanceStatus.className = 'text-warning';
+            } else {
+                requestPerformanceProgress.className = 'progress-bar bg-danger';
+                requestPerformanceStatus.textContent = `${slowRequests} slow requests (critical)`;
+                requestPerformanceStatus.className = 'text-danger';
+            }
+        }
+        
+        // Update responsiveness alerts
+        updateResponsivenessAlerts(data);
+    }
+    
+    function updateResponsivenessAlerts(data) {
+        const alertsContainer = document.getElementById('responsivenessAlerts');
+        const alertsList = document.getElementById('responsivenessAlertsList');
+        
+        if (!alertsContainer || !alertsList) return;
+        
+        const alerts = [];
+        
+        // Check for memory alerts
+        const memoryPercent = data.memory_usage_percent || 0;
+        if (memoryPercent >= 80) {
+            alerts.push({
+                type: 'danger',
+                message: `Critical memory usage: ${memoryPercent.toFixed(1)}% - Immediate cleanup recommended`
+            });
+        } else if (memoryPercent >= 60) {
+            alerts.push({
+                type: 'warning',
+                message: `Elevated memory usage: ${memoryPercent.toFixed(1)}% - Monitor closely`
+            });
+        }
+        
+        // Check for connection pool alerts
+        const poolUtilization = (data.connection_pool_utilization || 0) * 100;
+        if (poolUtilization >= 90) {
+            alerts.push({
+                type: 'danger',
+                message: `Critical connection pool usage: ${poolUtilization.toFixed(1)}% - Connection leaks possible`
+            });
+        } else if (poolUtilization >= 70) {
+            alerts.push({
+                type: 'warning',
+                message: `High connection pool usage: ${poolUtilization.toFixed(1)}% - Monitor for leaks`
+            });
+        }
+        
+        // Check for request performance alerts
+        const avgTime = data.avg_request_time || 0;
+        const slowRequests = data.slow_request_count || 0;
+        if (avgTime >= 3.0 || slowRequests >= 5) {
+            alerts.push({
+                type: 'danger',
+                message: `Poor request performance: ${(avgTime * 1000).toFixed(0)}ms average, ${slowRequests} slow requests`
+            });
+        } else if (avgTime >= 1.0 || slowRequests > 0) {
+            alerts.push({
+                type: 'warning',
+                message: `Degraded request performance: ${(avgTime * 1000).toFixed(0)}ms average, ${slowRequests} slow requests`
+            });
+        }
+        
+        // Check for background task alerts
+        const taskCount = data.background_tasks_count || 0;
+        if (taskCount >= 15) {
+            alerts.push({
+                type: 'danger',
+                message: `High background task load: ${taskCount} tasks - May impact responsiveness`
+            });
+        } else if (taskCount >= 10) {
+            alerts.push({
+                type: 'warning',
+                message: `Elevated background task load: ${taskCount} tasks`
+            });
+        }
+        
+        // Display alerts
+        if (alerts.length > 0) {
+            alertsContainer.style.display = 'block';
+            alertsList.innerHTML = alerts.map(alert => 
+                `<div class="responsiveness-alert alert-${alert.type}">${alert.message}</div>`
+            ).join('');
+        } else {
+            alertsContainer.style.display = 'none';
+        }
+    }
+    
+    function showResponsivenessDetails() {
+        // This would open a modal or navigate to detailed responsiveness page
+        window.open('/admin/performance', '_blank');
+    }
+    
+    function triggerMemoryCleanup() {
+        if (confirm('Trigger memory cleanup? This may cause a brief performance impact.')) {
+            fetch('/admin/api/responsiveness/cleanup/memory', { method: 'POST' })
+                .then(response => response.json())
+                .then(data => {
+                    if (data.success) {
+                        showAdminNotification('Memory cleanup triggered successfully', 'success');
+                        setTimeout(refreshResponsivenessData, 2000);
+                    } else {
+                        showAdminNotification('Memory cleanup failed: ' + data.error, 'error');
+                    }
+                })
+                .catch(error => {
+                    showAdminNotification('Memory cleanup request failed', 'error');
+                });
+        }
+    }
+    
+    function optimizeConnections() {
+        if (confirm('Optimize database connections? This may cause brief connection interruptions.')) {
+            fetch('/admin/api/responsiveness/optimize/connections', { method: 'POST' })
+                .then(response => response.json())
+                .then(data => {
+                    if (data.success) {
+                        showAdminNotification('Connection optimization completed', 'success');
+                        setTimeout(refreshResponsivenessData, 2000);
+                    } else {
+                        showAdminNotification('Connection optimization failed: ' + data.error, 'error');
+                    }
+                })
+                .catch(error => {
+                    showAdminNotification('Connection optimization request failed', 'error');
+                });
+        }
+    }
+    
+    function runResponsivenessCheck() {
+        showAdminNotification('Running comprehensive responsiveness check...', 'info');
+        
+        fetch('/admin/api/responsiveness/check')
+            .then(response => response.json())
+            .then(data => {
+                if (data.success) {
+                    const result = data.data;
+                    if (result.responsive) {
+                        showAdminNotification('System responsiveness check passed', 'success');
+                    } else {
+                        const issues = result.issues.length;
+                        showAdminNotification(`Responsiveness issues detected: ${issues} problems found`, 'warning');
+                    }
+                    refreshResponsivenessData();
+                } else {
+                    showAdminNotification('Responsiveness check failed: ' + data.error, 'error');
+                }
+            })
+            .catch(error => {
+                showAdminNotification('Responsiveness check request failed', 'error');
+            });
+    }
+
     // Initialize dashboard
     document.addEventListener('DOMContentLoaded', function() {
         initializeDashboard();
+        
+        // Initialize responsiveness monitoring
+        refreshResponsivenessData();
         
         // WebSocket connection handled by unified system
         console.log('Admin dashboard initialized - WebSocket managed by unified system');
@@ -435,8 +987,12 @@
         setInterval(function() {
             if (!isWebSocketConnected()) {
                 refreshDashboard();
+                refreshResponsivenessData();
             }
         }, 30000); // 30 seconds
+        
+        // Set up more frequent responsiveness monitoring
+        setInterval(refreshResponsivenessData, 15000); // 15 seconds
     });
 </script>
 {% endblock %}

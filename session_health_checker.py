@@ -10,6 +10,8 @@ database sessions, cross-tab synchronization, platform switching, and performanc
 """
 
 import time
+import psutil
+import gc
 from datetime import datetime, timezone, timedelta
 from typing import Dict, Any, List, Optional
 from dataclasses import dataclass
@@ -71,7 +73,11 @@ class SessionHealthChecker:
             'session_count_warning': 1000,
             'session_count_critical': 5000,
             'cleanup_lag_warning': 3600,    # 1 hour
-            'cleanup_lag_critical': 7200    # 2 hours
+            'cleanup_lag_critical': 7200,   # 2 hours
+            'memory_usage_warning': 500,    # 500MB
+            'memory_usage_critical': 1000,  # 1GB
+            'memory_growth_warning': 50,    # 50MB growth
+            'memory_growth_critical': 100   # 100MB growth
         }
     
     def check_database_session_health(self) -> SessionComponentHealth:
@@ -509,6 +515,279 @@ class SessionHealthChecker:
                 details={"error": str(e)}
             )
     
+    def check_memory_leak_detection_health(self) -> SessionComponentHealth:
+        """Check memory leak detection system health"""
+        start_time = time.time()
+        
+        try:
+            # Get memory metrics from session monitor
+            if not self.session_monitor:
+                return SessionComponentHealth(
+                    name="memory_leak_detection",
+                    status=SessionHealthStatus.DEGRADED,
+                    message="Session monitoring disabled - memory leak detection unavailable",
+                    response_time_ms=(time.time() - start_time) * 1000,
+                    last_check=datetime.now(timezone.utc),
+                    details={"monitoring_enabled": False}
+                )
+            
+            # Get memory leak report
+            memory_report = self.session_monitor.get_memory_leak_report()
+            
+            # Get current system memory info
+            memory_info = psutil.virtual_memory()
+            process = psutil.Process()
+            process_memory = process.memory_info()
+            
+            response_time = (time.time() - start_time) * 1000
+            
+            # Analyze memory health
+            issues = []
+            status = SessionHealthStatus.HEALTHY
+            
+            current_memory_mb = process_memory.rss / 1024 / 1024
+            
+            # Check memory usage levels
+            if current_memory_mb > self.thresholds['memory_usage_critical']:
+                status = SessionHealthStatus.UNHEALTHY
+                issues.append(f"Critical memory usage: {current_memory_mb:.1f}MB")
+            elif current_memory_mb > self.thresholds['memory_usage_warning']:
+                status = SessionHealthStatus.DEGRADED
+                issues.append(f"High memory usage: {current_memory_mb:.1f}MB")
+            
+            # Check for memory leak alerts
+            leak_detection = memory_report.get('leak_detection', {})
+            current_alerts = leak_detection.get('current_alerts', [])
+            
+            leak_alerts = [a for a in current_alerts if a['type'] == 'memory_leak_suspected']
+            if leak_alerts:
+                if status == SessionHealthStatus.HEALTHY:
+                    status = SessionHealthStatus.DEGRADED
+                issues.append(f"Memory leak suspected: {len(leak_alerts)} alerts")
+            
+            # Check memory growth
+            memory_stats = memory_report.get('memory_statistics', {})
+            growth_mb = memory_stats.get('growth_from_baseline_mb', 0)
+            
+            if growth_mb > self.thresholds['memory_growth_critical']:
+                status = SessionHealthStatus.UNHEALTHY
+                issues.append(f"Critical memory growth: {growth_mb:.1f}MB from baseline")
+            elif growth_mb > self.thresholds['memory_growth_warning']:
+                if status == SessionHealthStatus.HEALTHY:
+                    status = SessionHealthStatus.DEGRADED
+                issues.append(f"High memory growth: {growth_mb:.1f}MB from baseline")
+            
+            # Check system memory pressure
+            if memory_info.percent > 90:
+                status = SessionHealthStatus.UNHEALTHY
+                issues.append(f"System memory pressure: {memory_info.percent:.1f}% used")
+            elif memory_info.percent > 80:
+                if status == SessionHealthStatus.HEALTHY:
+                    status = SessionHealthStatus.DEGRADED
+                issues.append(f"High system memory usage: {memory_info.percent:.1f}%")
+            
+            # Check garbage collection efficiency
+            current_metrics = memory_report.get('current_metrics', {})
+            gc_collections = current_metrics.get('gc_collections', {})
+            
+            if 'gen_0' in gc_collections and gc_collections['gen_0'] > 10000:
+                if status == SessionHealthStatus.HEALTHY:
+                    status = SessionHealthStatus.DEGRADED
+                issues.append(f"High GC activity: {gc_collections['gen_0']} gen-0 collections")
+            
+            message = "Memory leak detection healthy" if not issues else "; ".join(issues)
+            
+            return SessionComponentHealth(
+                name="memory_leak_detection",
+                status=status,
+                message=message,
+                response_time_ms=response_time,
+                last_check=datetime.now(timezone.utc),
+                details={
+                    "memory_report": memory_report,
+                    "system_memory_percent": memory_info.percent,
+                    "process_memory_mb": current_memory_mb,
+                    "available_memory_mb": memory_info.available / 1024 / 1024,
+                    "memory_growth_mb": growth_mb,
+                    "leak_alerts_count": len(leak_alerts),
+                    "gc_collections": gc_collections
+                },
+                metrics={
+                    "response_time_ms": response_time,
+                    "memory_usage_mb": current_memory_mb,
+                    "memory_growth_mb": growth_mb,
+                    "leak_alerts": len(leak_alerts),
+                    "system_memory_percent": memory_info.percent
+                }
+            )
+            
+        except Exception as e:
+            response_time = (time.time() - start_time) * 1000
+            logger.error(f"Memory leak detection health check failed: {e}")
+            
+            return SessionComponentHealth(
+                name="memory_leak_detection",
+                status=SessionHealthStatus.UNHEALTHY,
+                message=f"Memory leak detection check failed: {str(e)}",
+                response_time_ms=response_time,
+                last_check=datetime.now(timezone.utc),
+                details={"error": str(e)}
+            )
+    
+    def check_system_responsiveness_health(self) -> SessionComponentHealth:
+        """Check system responsiveness from session management perspective"""
+        start_time = time.time()
+        
+        try:
+            # Get system metrics for responsiveness analysis
+            import psutil
+            memory = psutil.virtual_memory()
+            cpu_percent = psutil.cpu_percent(interval=0.1)
+            
+            # Check if SystemOptimizer is available for responsiveness monitoring
+            system_optimizer = None
+            try:
+                from web_app import SystemOptimizer
+                from config import Config
+                config = Config()
+                system_optimizer = SystemOptimizer(config)
+            except ImportError:
+                pass
+            
+            # Analyze responsiveness from session perspective
+            issues = []
+            status = SessionHealthStatus.HEALTHY
+            
+            # Memory responsiveness check
+            memory_percent = memory.percent / 100
+            if memory_percent >= self.thresholds['memory_usage_critical'] / 1000:  # Convert MB to percentage
+                status = SessionHealthStatus.UNHEALTHY
+                issues.append(f"Critical memory usage: {memory.percent:.1f}%")
+            elif memory_percent >= self.thresholds['memory_usage_warning'] / 1000:
+                if status == SessionHealthStatus.HEALTHY:
+                    status = SessionHealthStatus.DEGRADED
+                issues.append(f"High memory usage: {memory.percent:.1f}%")
+            
+            # CPU responsiveness check
+            cpu_percent_normalized = cpu_percent / 100
+            if cpu_percent_normalized >= 0.9:  # 90% CPU
+                status = SessionHealthStatus.UNHEALTHY
+                issues.append(f"Critical CPU usage: {cpu_percent:.1f}%")
+            elif cpu_percent_normalized >= 0.8:  # 80% CPU
+                if status == SessionHealthStatus.HEALTHY:
+                    status = SessionHealthStatus.DEGRADED
+                issues.append(f"High CPU usage: {cpu_percent:.1f}%")
+            
+            # Session-specific responsiveness checks
+            with self.db_manager.get_session() as db_session:
+                # Check for session processing delays
+                now = datetime.now(timezone.utc)
+                recent_cutoff = now - timedelta(minutes=5)
+                
+                # Count recent session operations
+                recent_sessions = db_session.query(UserSession).filter(
+                    UserSession.updated_at >= recent_cutoff
+                ).count()
+                
+                # Check for session processing bottlenecks
+                if recent_sessions > 100:  # High session activity
+                    if status == SessionHealthStatus.HEALTHY:
+                        status = SessionHealthStatus.DEGRADED
+                    issues.append(f"High session activity: {recent_sessions} recent operations")
+                
+                # Check for session cleanup lag
+                cleanup_cutoff = now - timedelta(hours=2)
+                overdue_sessions = db_session.query(UserSession).filter(
+                    UserSession.updated_at < cleanup_cutoff
+                ).count()
+                
+                if overdue_sessions > 50:
+                    status = SessionHealthStatus.UNHEALTHY
+                    issues.append(f"Session cleanup lag: {overdue_sessions} overdue sessions")
+                elif overdue_sessions > 20:
+                    if status == SessionHealthStatus.HEALTHY:
+                        status = SessionHealthStatus.DEGRADED
+                    issues.append(f"Some session cleanup lag: {overdue_sessions} overdue sessions")
+            
+            # Get SystemOptimizer responsiveness analysis if available
+            optimizer_analysis = None
+            if system_optimizer:
+                try:
+                    optimizer_analysis = system_optimizer.check_responsiveness()
+                    optimizer_issues = optimizer_analysis.get('issues', [])
+                    
+                    # Incorporate SystemOptimizer findings
+                    for issue in optimizer_issues:
+                        if issue.get('severity') == 'critical':
+                            status = SessionHealthStatus.UNHEALTHY
+                        elif issue.get('severity') == 'warning' and status == SessionHealthStatus.HEALTHY:
+                            status = SessionHealthStatus.DEGRADED
+                        issues.append(f"{issue.get('type', 'system')}: {issue.get('message', 'Unknown issue')}")
+                except Exception as e:
+                    logger.warning(f"Failed to get SystemOptimizer analysis: {e}")
+            
+            response_time = (time.time() - start_time) * 1000
+            
+            # Prepare message
+            if not issues:
+                message = "System responsiveness healthy from session perspective"
+            else:
+                message = f"Responsiveness issues detected: {'; '.join(issues[:3])}"  # Limit to first 3 issues
+                if len(issues) > 3:
+                    message += f" (and {len(issues) - 3} more)"
+            
+            # Prepare detailed metrics
+            details = {
+                "memory_percent": memory.percent,
+                "cpu_percent": cpu_percent,
+                "recent_session_operations": recent_sessions if 'recent_sessions' in locals() else 0,
+                "overdue_cleanup_sessions": overdue_sessions if 'overdue_sessions' in locals() else 0,
+                "issues": issues,
+                "system_optimizer_available": system_optimizer is not None,
+                "optimizer_analysis": optimizer_analysis,
+                "responsiveness_thresholds": {
+                    "memory_warning": f"{self.thresholds['memory_usage_warning']}MB",
+                    "memory_critical": f"{self.thresholds['memory_usage_critical']}MB",
+                    "cpu_warning": "80%",
+                    "cpu_critical": "90%",
+                    "session_activity_warning": "100 operations/5min",
+                    "cleanup_lag_warning": "20 overdue sessions",
+                    "cleanup_lag_critical": "50 overdue sessions"
+                }
+            }
+            
+            metrics = {
+                "response_time_ms": response_time,
+                "memory_percent": memory.percent,
+                "cpu_percent": cpu_percent,
+                "issues_count": len(issues),
+                "recent_session_operations": recent_sessions if 'recent_sessions' in locals() else 0,
+                "overdue_cleanup_sessions": overdue_sessions if 'overdue_sessions' in locals() else 0
+            }
+            
+            return SessionComponentHealth(
+                name="system_responsiveness",
+                status=status,
+                message=message,
+                response_time_ms=response_time,
+                last_check=datetime.now(timezone.utc),
+                details=details,
+                metrics=metrics
+            )
+            
+        except Exception as e:
+            response_time = (time.time() - start_time) * 1000
+            logger.error(f"System responsiveness health check failed: {e}")
+            
+            return SessionComponentHealth(
+                name="system_responsiveness",
+                status=SessionHealthStatus.UNHEALTHY,
+                message=f"System responsiveness check failed: {str(e)}",
+                response_time_ms=response_time,
+                last_check=datetime.now(timezone.utc),
+                details={"error": str(e)}
+            )
+    
     def check_comprehensive_session_health(self) -> SessionSystemHealth:
         """Perform comprehensive session system health check"""
         logger.info("Starting comprehensive session health check")
@@ -530,6 +809,12 @@ class SessionHealthChecker:
         
         # Session security
         components["session_security"] = self.check_session_security_health()
+        
+        # Memory leak detection
+        components["memory_leak_detection"] = self.check_memory_leak_detection_health()
+        
+        # System responsiveness
+        components["system_responsiveness"] = self.check_system_responsiveness_health()
         
         # Determine overall status
         overall_status = SessionHealthStatus.HEALTHY

@@ -1,0 +1,91 @@
+{
+  "unit_tests": {
+    "tests.unit.test_system_optimizer_responsiveness": {
+      "tests_run": 10,
+      "failures": 0,
+      "errors": 0,
+      "success": true,
+      "success_rate": 1.0
+    },
+    "tests.unit.test_enhanced_database_manager_responsiveness": {
+      "tests_run": 13,
+      "failures": 0,
+      "errors": 0,
+      "success": true,
+      "success_rate": 1.0
+    },
+    "tests.unit.test_enhanced_background_cleanup_manager_responsiveness": {
+      "tests_run": 14,
+      "failures": 0,
+      "errors": 0,
+      "success": true,
+      "success_rate": 1.0
+    },
+    "tests.unit.test_enhanced_session_monitoring_responsiveness": {
+      "tests_run": 12,
+      "failures": 9,
+      "errors": 4,
+      "success": false,
+      "success_rate": -0.08333333333333333
+    },
+    "tests.unit.test_health_check_responsiveness": {
+      "tests_run": 11,
+      "failures": 0,
+      "errors": 0,
+      "success": true,
+      "success_rate": 1.0
+    }
+  },
+  "integration_tests": {
+    "tests.integration.test_responsiveness_admin_dashboard_integration": {
+      "tests_run": 12,
+      "failures": 0,
+      "errors": 12,
+      "success": false,
+      "success_rate": 0.0
+    },
+    "tests.integration.test_responsiveness_integration": {
+      "tests_run": 5,
+      "failures": 0,
+      "errors": 0,
+      "success": true,
+      "success_rate": 1.0
+    },
+    "tests.integration.test_responsiveness_error_recovery_integration": {
+      "tests_run": 8,
+      "failures": 0,
+      "errors": 0,
+      "success": true,
+      "success_rate": 1.0
+    }
+  },
+  "performance_tests": {
+    "tests.performance.test_responsiveness_performance_integration": {
+      "tests_run": 1,
+      "failures": 0,
+      "errors": 1,
+      "success": false,
+      "execution_time": 9.489059448242188e-05,
+      "avg_test_time": 9.489059448242188e-05
+    }
+  },
+  "admin_dashboard_tests": {
+    "tests.admin.test_responsiveness_dashboard": {
+      "tests_run": 8,
+      "failures": 8,
+      "errors": 2,
+      "success": false,
+      "success_rate": -0.25
+    }
+  },
+  "summary": {
+    "total_execution_time": 8.52843427658081,
+    "total_test_modules": 10,
+    "total_tests": 94,
+    "total_failures": 17,
+    "total_errors": 19,
+    "successful_modules": 6,
+    "overall_success_rate": 0.6170212765957447,
+    "timestamp": "2025-09-06T12:47:54.907915+00:00"
+  }
+}

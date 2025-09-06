@@ -55,12 +55,31 @@ class SystemHealth:
     version: Optional[str] = None
 
 class HealthChecker:
-    """System health checker"""
+    """System health checker with responsiveness monitoring and recovery capabilities"""
     
     def __init__(self, config: Config, db_manager: DatabaseManager):
         self.config = config
         self.db_manager = db_manager
         self.start_time = time.time()
+        
+        # Initialize responsiveness monitoring
+        self.responsiveness_config = config.responsiveness
+        self._last_responsiveness_check = 0
+        self._responsiveness_metrics = {}
+        
+        # Initialize SystemOptimizer for responsiveness monitoring
+        try:
+            from web_app import SystemOptimizer
+            self.system_optimizer = SystemOptimizer(config)
+        except ImportError:
+            self.system_optimizer = None
+        
+        # Initialize responsiveness recovery manager
+        self._recovery_manager = None
+        
+        # Health check history for trend analysis
+        self.health_history = []
+        self.max_health_history = 50
         
     def get_uptime(self) -> float:
         """Get system uptime in seconds"""
@@ -648,38 +667,229 @@ class HealthChecker:
             
         except redis.ConnectionError as e:
             response_time = (time.time() - start_time) * 1000
-            logger.error(f"Redis connection failed: {e}")
-            
             return ComponentHealth(
                 name="sessions",
                 status=HealthStatus.UNHEALTHY,
                 message=f"Redis connection failed: {str(e)}",
                 response_time_ms=response_time,
                 last_check=datetime.now(timezone.utc),
-                details={"error": str(e), "redis_host": redis_host, "redis_port": redis_port}
+                details={"error": str(e)}
             )
-            
-        except redis.TimeoutError as e:
+        except Exception as e:
             response_time = (time.time() - start_time) * 1000
-            logger.error(f"Redis timeout: {e}")
-            
             return ComponentHealth(
                 name="sessions",
-                status=HealthStatus.DEGRADED,
-                message=f"Redis timeout: {str(e)}",
+                status=HealthStatus.UNHEALTHY,
+                message=f"Redis session check failed: {str(e)}",
                 response_time_ms=response_time,
                 last_check=datetime.now(timezone.utc),
-                details={"error": str(e), "redis_host": redis_host, "redis_port": redis_port}
+                details={"error": str(e)}
+            )
+    
+    def get_recovery_manager(self):
+        """Get or create responsiveness recovery manager"""
+        if self._recovery_manager is None:
+            from responsiveness_error_recovery import get_responsiveness_recovery_manager
+            self._recovery_manager = get_responsiveness_recovery_manager(
+                db_manager=self.db_manager,
+                system_optimizer=self.system_optimizer
+            )
+        return self._recovery_manager
+    
+    async def check_system_health_with_recovery(self) -> SystemHealth:
+        """Check system health with responsiveness recovery integration"""
+        try:
+            # Get base system health
+            system_health = await self.check_system_health()
+            
+            # Integrate with responsiveness recovery manager
+            recovery_manager = self.get_recovery_manager()
+            
+            # Extend health check with recovery status
+            enhanced_health_data = await recovery_manager.extend_health_check_error_handling(
+                asdict(system_health)
+            )
+            
+            # Update system health with recovery information
+            if 'responsiveness_recovery' in enhanced_health_data:
+                recovery_status = enhanced_health_data['responsiveness_recovery']
+                
+                # Add recovery component to system health
+                recovery_component = ComponentHealth(
+                    name="responsiveness_recovery",
+                    status=HealthStatus.HEALTHY if recovery_status['status'] == 'healthy' else 
+                           HealthStatus.DEGRADED if recovery_status['status'] == 'degraded' else 
+                           HealthStatus.UNHEALTHY,
+                    message=f"Recovery system {recovery_status['status']} - {len(recovery_status['issues'])} issues",
+                    last_check=datetime.now(timezone.utc),
+                    details=recovery_status['recovery_stats']
+                )
+                
+                system_health.components['responsiveness_recovery'] = recovery_component
+                
+                # Update overall status if recovery system has issues
+                if recovery_status['status'] == 'degraded' and system_health.status == HealthStatus.HEALTHY:
+                    system_health.status = HealthStatus.DEGRADED
+                elif recovery_status['status'] not in ['healthy', 'recovering']:
+                    system_health.status = HealthStatus.UNHEALTHY
+            
+            # Store health check in history
+            self.health_history.append({
+                'timestamp': system_health.timestamp.isoformat(),
+                'overall_status': system_health.status.value,
+                'component_count': len(system_health.components),
+                'recovery_active': 'responsiveness_recovery' in system_health.components
+            })
+            
+            # Trim history if needed
+            if len(self.health_history) > self.max_health_history:
+                self.health_history = self.health_history[-self.max_health_history:]
+            
+            return system_health
+            
+        except Exception as e:
+            logger.error(f"Error in enhanced health check: {e}")
+            # Fallback to basic health check
+            return await self.check_system_health()
+    
+    async def check_system_health(self) -> SystemHealth:
+        """Check overall system health"""
+        components = {}
+        
+        # Check all components
+        components["database"] = await self.check_database_health()
+        components["ollama"] = await self.check_ollama_health()
+        components["activitypub"] = await self.check_activitypub_health()
+        components["storage"] = await self.check_storage_health()
+        components["sessions"] = await self.check_session_health()
+        
+        # Determine overall status
+        statuses = [comp.status for comp in components.values()]
+        
+        if HealthStatus.UNHEALTHY in statuses:
+            overall_status = HealthStatus.UNHEALTHY
+        elif HealthStatus.DEGRADED in statuses:
+            overall_status = HealthStatus.DEGRADED
+        else:
+            overall_status = HealthStatus.HEALTHY
+        
+        return SystemHealth(
+            status=overall_status,
+            timestamp=datetime.now(timezone.utc),
+            components=components,
+            uptime_seconds=self.get_uptime(),
+            version=self.config.app.version if hasattr(self.config, 'app') else None
+        )
+    
+    async def check_responsiveness_health(self) -> ComponentHealth:
+        """Check system responsiveness monitoring capabilities"""
+        start_time = time.time()
+        
+        try:
+            # Check if SystemOptimizer is available for responsiveness monitoring
+            if not self.system_optimizer:
+                return ComponentHealth(
+                    name="responsiveness",
+                    status=HealthStatus.DEGRADED,
+                    message="SystemOptimizer not available - responsiveness monitoring limited",
+                    response_time_ms=(time.time() - start_time) * 1000,
+                    last_check=datetime.now(timezone.utc),
+                    details={"system_optimizer_available": False}
+                )
+            
+            # Get responsiveness analysis from SystemOptimizer
+            responsiveness_analysis = self.system_optimizer.check_responsiveness()
+            performance_metrics = self.system_optimizer.get_performance_metrics()
+            
+            # Get current system metrics for responsiveness assessment
+            import psutil
+            memory = psutil.virtual_memory()
+            cpu_percent = psutil.cpu_percent(interval=0.1)
+            
+            response_time = (time.time() - start_time) * 1000
+            
+            # Analyze responsiveness health
+            issues = responsiveness_analysis.get('issues', [])
+            overall_responsive = responsiveness_analysis.get('responsive', True)
+            
+            # Determine health status based on responsiveness analysis
+            if not overall_responsive:
+                critical_issues = [issue for issue in issues if issue.get('severity') == 'critical']
+                if critical_issues:
+                    status = HealthStatus.UNHEALTHY
+                    message = f"Critical responsiveness issues detected: {len(critical_issues)} critical, {len(issues)} total"
+                else:
+                    status = HealthStatus.DEGRADED
+                    message = f"Responsiveness issues detected: {len(issues)} issues"
+            else:
+                status = HealthStatus.HEALTHY
+                message = "System responsiveness healthy"
+            
+            # Check for automated cleanup triggers
+            cleanup_triggered = performance_metrics.get('cleanup_triggered', False)
+            if cleanup_triggered:
+                if status == HealthStatus.HEALTHY:
+                    status = HealthStatus.DEGRADED
+                message += " - Automated cleanup triggered"
+            
+            # Prepare detailed metrics
+            details = {
+                "responsive": overall_responsive,
+                "issues_count": len(issues),
+                "critical_issues": len([i for i in issues if i.get('severity') == 'critical']),
+                "warning_issues": len([i for i in issues if i.get('severity') == 'warning']),
+                "issues": issues,
+                "cleanup_triggered": cleanup_triggered,
+                "system_optimizer_available": self.system_optimizer is not None,
+                "thresholds": {
+                    "memory_warning": f"{self.responsiveness_config.memory_warning_threshold * 100:.0f}%",
+                    "memory_critical": f"{self.responsiveness_config.memory_critical_threshold * 100:.0f}%",
+                    "cpu_warning": f"{self.responsiveness_config.cpu_warning_threshold * 100:.0f}%",
+                    "cpu_critical": f"{self.responsiveness_config.cpu_critical_threshold * 100:.0f}%",
+                    "connection_pool_warning": f"{self.responsiveness_config.connection_pool_warning_threshold * 100:.0f}%"
+                },
+                "current_metrics": {
+                    "memory_percent": memory.percent,
+                    "cpu_percent": cpu_percent,
+                    "connection_pool_utilization": performance_metrics.get('connection_pool_utilization', 0),
+                    "background_tasks_count": performance_metrics.get('background_tasks_count', 0),
+                    "avg_request_time": performance_metrics.get('avg_request_time', 0),
+                    "slow_request_count": performance_metrics.get('slow_request_count', 0)
+                },
+                "monitoring_config": {
+                    "monitoring_interval": self.responsiveness_config.monitoring_interval,
+                    "cleanup_enabled": self.responsiveness_config.cleanup_enabled
+                }
+            }
+            
+            # Store metrics for trend analysis
+            self._responsiveness_metrics = {
+                "timestamp": datetime.now(timezone.utc).isoformat(),
+                "responsive": overall_responsive,
+                "issues_count": len(issues),
+                "memory_percent": memory.percent,
+                "cpu_percent": cpu_percent,
+                "response_time_ms": response_time
+            }
+            self._last_responsiveness_check = time.time()
+            
+            return ComponentHealth(
+                name="responsiveness",
+                status=status,
+                message=message,
+                response_time_ms=response_time,
+                last_check=datetime.now(timezone.utc),
+                details=details
             )
             
         except Exception as e:
             response_time = (time.time() - start_time) * 1000
-            logger.error(f"Session health check failed: {e}")
+            logger.error(f"Responsiveness health check failed: {e}")
             
             return ComponentHealth(
-                name="sessions",
+                name="responsiveness",
                 status=HealthStatus.UNHEALTHY,
-                message=f"Session health check failed: {str(e)}",
+                message=f"Responsiveness monitoring failed: {str(e)}",
                 response_time_ms=response_time,
                 last_check=datetime.now(timezone.utc),
                 details={"error": str(e)}
@@ -694,7 +904,8 @@ class HealthChecker:
             self.check_database_health(),
             self.check_ollama_health(),
             self.check_storage_health(),
-            self.check_session_health()
+            self.check_session_health(),
+            self.check_responsiveness_health()
         ]
         
         component_results = await asyncio.gather(*tasks, return_exceptions=True)
@@ -705,7 +916,7 @@ class HealthChecker:
         for i, result in enumerate(component_results):
             if isinstance(result, Exception):
                 # Handle unexpected errors in health checks
-                component_name = ["database", "ollama", "storage", "sessions"][i]
+                component_name = ["database", "ollama", "storage", "sessions", "responsiveness"][i]
                 components[component_name] = ComponentHealth(
                     name=component_name,
                     status=HealthStatus.UNHEALTHY,
@@ -752,3 +963,81 @@ class HealthChecker:
         result["timestamp"] = system_health.timestamp.isoformat()
         
         return result
+    
+    def send_responsiveness_alerts(self, responsiveness_health: ComponentHealth) -> bool:
+        """Send responsiveness alerts to admin notification system"""
+        try:
+            if responsiveness_health.status == HealthStatus.HEALTHY:
+                return True  # No alerts needed for healthy status
+            
+            # Import notification helpers
+            from notification_helpers import send_admin_notification
+            from models import NotificationType, NotificationPriority
+            
+            # Determine notification type and priority based on status
+            if responsiveness_health.status == HealthStatus.UNHEALTHY:
+                notification_type = NotificationType.ERROR
+                priority = NotificationPriority.HIGH
+                title = "Critical Responsiveness Issue"
+            else:  # DEGRADED
+                notification_type = NotificationType.WARNING
+                priority = NotificationPriority.NORMAL
+                title = "Responsiveness Warning"
+            
+            # Extract key issues from details
+            details = responsiveness_health.details or {}
+            issues = details.get('issues', [])
+            current_metrics = details.get('current_metrics', {})
+            
+            # Build alert message
+            message_parts = [responsiveness_health.message]
+            
+            # Add key metrics
+            if current_metrics:
+                metrics_info = []
+                if 'memory_percent' in current_metrics:
+                    metrics_info.append(f"Memory: {current_metrics['memory_percent']:.1f}%")
+                if 'cpu_percent' in current_metrics:
+                    metrics_info.append(f"CPU: {current_metrics['cpu_percent']:.1f}%")
+                if 'connection_pool_utilization' in current_metrics:
+                    metrics_info.append(f"Connection Pool: {current_metrics['connection_pool_utilization'] * 100:.1f}%")
+                
+                if metrics_info:
+                    message_parts.append(f"Current metrics: {', '.join(metrics_info)}")
+            
+            # Add cleanup status
+            if details.get('cleanup_triggered', False):
+                message_parts.append("Automated cleanup has been triggered.")
+            
+            # Add recommendations for critical issues
+            if responsiveness_health.status == HealthStatus.UNHEALTHY:
+                message_parts.append("Immediate attention required to prevent system unresponsiveness.")
+            
+            alert_message = " ".join(message_parts)
+            
+            # Send admin notification
+            success = send_admin_notification(
+                message=alert_message,
+                notification_type=notification_type,
+                title=title,
+                priority=priority,
+                data={
+                    'component': 'responsiveness',
+                    'status': responsiveness_health.status.value,
+                    'response_time_ms': responsiveness_health.response_time_ms,
+                    'issues_count': len(issues),
+                    'metrics': current_metrics,
+                    'timestamp': responsiveness_health.last_check.isoformat() if responsiveness_health.last_check else None
+                }
+            )
+            
+            if success:
+                logger.info(f"Responsiveness alert sent: {title} - {responsiveness_health.status.value}")
+            else:
+                logger.error(f"Failed to send responsiveness alert: {title}")
+            
+            return success
+            
+        except Exception as e:
+            logger.error(f"Error sending responsiveness alerts: {e}")
+            return False

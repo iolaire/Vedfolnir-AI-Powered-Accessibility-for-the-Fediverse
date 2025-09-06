@@ -62,6 +62,18 @@ from .platform_mock_helpers import (
     patch_activitypub_client
 )
 
+# Responsiveness Test Helpers
+from .responsiveness_test_helpers import (
+    ResponsivenessTestConfig,
+    ResponsivenessTestDataFactory,
+    ResponsivenessMockFactory,
+    ResponsivenessPerformanceTester,
+    ResponsivenessTestValidator,
+    create_responsiveness_test_suite,
+    patch_responsiveness_components,
+    run_responsiveness_performance_test
+)
+
 __all__ = [
     # Mock User Helper
     'MockUserHelper',
@@ -104,5 +116,15 @@ __all__ = [
     'create_mastodon_test_setup',
     'create_multi_platform_test_setup',
     'patch_platform_context_manager',
-    'patch_activitypub_client'
+    'patch_activitypub_client',
+    
+    # Responsiveness Test Helpers
+    'ResponsivenessTestConfig',
+    'ResponsivenessTestDataFactory',
+    'ResponsivenessMockFactory',
+    'ResponsivenessPerformanceTester',
+    'ResponsivenessTestValidator',
+    'create_responsiveness_test_suite',
+    'patch_responsiveness_components',
+    'run_responsiveness_performance_test'
 ]

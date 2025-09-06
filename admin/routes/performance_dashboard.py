@@ -443,7 +443,21 @@ def register_routes(bp):
                 return jsonify({'error': 'Performance dashboard not initialized'}), 500
             
             metrics = dashboard.get_current_metrics()
-            return jsonify(metrics.to_dict())
+            metrics_dict = metrics.to_dict()
+            
+            # Add request performance metrics if available
+            system_optimizer = getattr(current_app, 'system_optimizer', None)
+            if system_optimizer and hasattr(system_optimizer, '_get_request_performance_metrics'):
+                request_metrics = system_optimizer._get_request_performance_metrics()
+                metrics_dict.update({
+                    'avg_request_time': request_metrics['avg_request_time'],
+                    'slow_request_count': request_metrics['slow_request_count'],
+                    'total_requests': request_metrics['total_requests'],
+                    'requests_per_second': request_metrics['requests_per_second'],
+                    'request_queue_size': request_metrics['request_queue_size']
+                })
+            
+            return jsonify(metrics_dict)
         except Exception as e:
             logger.error(f"Failed to get current metrics: {e}")
             return jsonify({'error': str(e)}), 500
@@ -570,6 +584,56 @@ def register_routes(bp):
             return jsonify(comprehensive_report)
         except Exception as e:
             logger.error(f"Failed to get optimization report: {e}")
+            return jsonify({'error': str(e)}), 500
+
+    @bp.route('/api/performance/request-tracking')
+    @admin_api_required
+    @rate_limit(limit=30, window_seconds=60)
+    def api_request_tracking():
+        """API endpoint for request performance tracking data"""
+        if not current_user.role == UserRole.ADMIN:
+            return jsonify({'error': 'Admin access required'}), 403
+        
+        try:
+            system_optimizer = getattr(current_app, 'system_optimizer', None)
+            if not system_optimizer:
+                return jsonify({'error': 'System optimizer not initialized'}), 500
+            
+            # Get request performance metrics
+            request_metrics = system_optimizer._get_request_performance_metrics()
+            
+            return jsonify({
+                'success': True,
+                'data': request_metrics,
+                'timestamp': datetime.now(timezone.utc).isoformat()
+            })
+        except Exception as e:
+            logger.error(f"Failed to get request tracking data: {e}")
+            return jsonify({'error': str(e)}), 500
+
+    @bp.route('/api/performance/slow-requests')
+    @admin_api_required
+    @rate_limit(limit=20, window_seconds=60)
+    def api_slow_requests_analysis():
+        """API endpoint for slow request analysis"""
+        if not current_user.role == UserRole.ADMIN:
+            return jsonify({'error': 'Admin access required'}), 403
+        
+        try:
+            system_optimizer = getattr(current_app, 'system_optimizer', None)
+            if not system_optimizer:
+                return jsonify({'error': 'System optimizer not initialized'}), 500
+            
+            # Get slow request analysis
+            slow_request_analysis = system_optimizer.get_slow_request_analysis()
+            
+            return jsonify({
+                'success': True,
+                'data': slow_request_analysis,
+                'timestamp': datetime.now(timezone.utc).isoformat()
+            })
+        except Exception as e:
+            logger.error(f"Failed to get slow request analysis: {e}")
             return jsonify({'error': str(e)}), 500
 
 

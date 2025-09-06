@@ -21,6 +21,7 @@ def register_all_routes(bp):
     from . import maintenance_mode
     from . import storage_management
     from . import performance_dashboard
+    from . import responsiveness_api
     
     # Register route modules
     dashboard.register_routes(bp)
@@ -37,6 +38,7 @@ def register_all_routes(bp):
     maintenance_mode.register_routes(bp)
     storage_management.register_routes(bp)
     performance_dashboard.register_routes(bp)
+    responsiveness_api.register_routes(bp)
     
     # Register configuration management routes as a sub-blueprint
     from .configuration_routes import configuration_bp

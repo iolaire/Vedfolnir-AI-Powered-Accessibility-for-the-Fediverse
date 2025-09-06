@@ -318,6 +318,88 @@
         </div>
     </div>
 
+    <!-- Responsiveness Monitoring Section -->
+    <div class="row mb-4">
+        <div class="col-12">
+            <div class="card">
+                <div class="card-header">
+                    <h5>System Responsiveness Monitoring</h5>
+                </div>
+                <div class="card-body">
+                    <div class="row">
+                        <div class="col-md-3">
+                            <div class="metric-card" id="responsivenessStatusCard">
+                                <div class="metric-value" id="responsivenessStatusValue">Loading...</div>
+                                <div class="metric-label">Overall Status</div>
+                                <div class="metric-trend" id="responsivenessStatusTrend">Checking...</div>
+                            </div>
+                        </div>
+                        <div class="col-md-3">
+                            <div class="metric-card" id="memoryLeakCard">
+                                <div class="metric-value" id="memoryLeakValue">--</div>
+                                <div class="metric-label">Memory Usage</div>
+                                <div class="metric-trend" id="memoryLeakTrend">--</div>
+                            </div>
+                        </div>
+                        <div class="col-md-3">
+                            <div class="metric-card" id="connectionLeakCard">
+                                <div class="metric-value" id="connectionLeakValue">--</div>
+                                <div class="metric-label">Connection Pool</div>
+                                <div class="metric-trend" id="connectionLeakTrend">--</div>
+                            </div>
+                        </div>
+                        <div class="col-md-3">
+                            <div class="metric-card" id="backgroundTaskCard">
+                                <div class="metric-value" id="backgroundTaskValue">--</div>
+                                <div class="metric-label">Background Tasks</div>
+                                <div class="metric-trend" id="backgroundTaskTrend">--</div>
+                            </div>
+                        </div>
+                    </div>
+                    
+                    <!-- Responsiveness Actions -->
+                    <div class="mt-3">
+                        <div class="btn-group">
+                            <button class="btn btn-outline-primary btn-sm" onclick="runResponsivenessCheck()">
+                                <i class="bi bi-check-circle"></i> Run Check
+                            </button>
+                            <button class="btn btn-outline-warning btn-sm" onclick="triggerMemoryCleanup()">
+                                <i class="bi bi-trash"></i> Memory Cleanup
+                            </button>
+                            <button class="btn btn-outline-info btn-sm" onclick="optimizeConnections()">
+                                <i class="bi bi-diagram-3"></i> Optimize Connections
+                            </button>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Request Performance Tracking -->
+    <div class="row mb-4">
+        <div class="col-md-6">
+            <div class="card">
+                <div class="card-header">
+                    <h6>Request Performance Metrics</h6>
+                </div>
+                <div class="card-body" id="requestPerformanceMetrics">
+                    <div class="text-muted">Request performance data will appear here</div>
+                </div>
+            </div>
+        </div>
+        <div class="col-md-6">
+            <div class="card">
+                <div class="card-header">
+                    <h6>Slow Request Analysis</h6>
+                </div>
+                <div class="card-body" id="slowRequestAnalysis">
+                    <div class="text-muted">Slow request analysis will appear here</div>
+                </div>
+            </div>
+        </div>
+    </div>
+
     <!-- Detailed Reports -->
     <div class="row">
         <div class="col-md-4">
@@ -389,7 +471,9 @@ async function refreshDashboard() {
             loadCurrentMetrics(),
             loadSystemHealth(),
             loadRecommendations(),
-            loadPerformanceTrends()
+            loadPerformanceTrends(),
+            loadRequestPerformanceData(),
+            loadSlowRequestAnalysis()
         ]);
     } catch (error) {
         console.error('Error refreshing dashboard:', error);
@@ -515,6 +599,11 @@ function updateMetricsDisplay(metrics) {
     const memoryUsage = metrics.memory_usage_mb || 0;
     const cpuUsage = metrics.cpu_usage_percent || 0;
     const dbQueryTime = metrics.database_query_time || 0;
+    
+    // Request performance metrics
+    const avgRequestTime = metrics.avg_request_time || 0;
+    const slowRequestCount = metrics.slow_request_count || 0;
+    const requestsPerSecond = metrics.requests_per_second || 0;
 
     // Update metric values
     document.getElementById('throughputValue').textContent = throughputValue.toFixed(1);
@@ -736,6 +825,174 @@ async function applyRecommendation(action, parameters) {
     }
 }
 
+// Responsiveness monitoring functions
+async function loadResponsivenessData() {
+    try {
+        const response = await fetch('/admin/api/responsiveness/metrics');
+        if (response.ok) {
+            const data = await response.json();
+            if (data.success) {
+                updateResponsivenessDisplay(data.data);
+            }
+        }
+    } catch (error) {
+        console.error('Failed to load responsiveness data:', error);
+    }
+}
+
+function updateResponsivenessDisplay(data) {
+    // Update responsiveness status card
+    const statusCard = document.getElementById('responsivenessStatusCard');
+    const statusValue = document.getElementById('responsivenessStatusValue');
+    const statusTrend = document.getElementById('responsivenessStatusTrend');
+    
+    if (statusCard && statusValue && statusTrend) {
+        const status = data.responsiveness_status || 'unknown';
+        statusValue.textContent = status.charAt(0).toUpperCase() + status.slice(1);
+        
+        statusCard.className = 'metric-card';
+        if (status === 'healthy') {
+            statusCard.classList.add('border-success');
+            statusTrend.innerHTML = '<span class="text-success">System responsive</span>';
+        } else if (status === 'warning') {
+            statusCard.classList.add('border-warning');
+            statusTrend.innerHTML = '<span class="text-warning">Performance issues detected</span>';
+        } else if (status === 'critical') {
+            statusCard.classList.add('border-danger');
+            statusTrend.innerHTML = '<span class="text-danger">Critical performance issues</span>';
+        } else {
+            statusCard.classList.add('border-secondary');
+            statusTrend.innerHTML = '<span class="text-muted">Status unknown</span>';
+        }
+    }
+    
+    // Update memory leak detection card
+    const memoryCard = document.getElementById('memoryLeakCard');
+    const memoryValue = document.getElementById('memoryLeakValue');
+    const memoryTrend = document.getElementById('memoryLeakTrend');
+    
+    if (memoryCard && memoryValue && memoryTrend) {
+        const memoryPercent = data.memory_usage_percent || 0;
+        memoryValue.textContent = `${memoryPercent.toFixed(1)}%`;
+        
+        memoryCard.className = 'metric-card';
+        if (memoryPercent < 60) {
+            memoryCard.classList.add('border-success');
+            memoryTrend.innerHTML = '<span class="text-success">Normal usage</span>';
+        } else if (memoryPercent < 80) {
+            memoryCard.classList.add('border-warning');
+            memoryTrend.innerHTML = '<span class="text-warning">Elevated usage</span>';
+        } else {
+            memoryCard.classList.add('border-danger');
+            memoryTrend.innerHTML = '<span class="text-danger">Critical usage</span>';
+        }
+    }
+    
+    // Update connection leak detection card
+    const connectionCard = document.getElementById('connectionLeakCard');
+    const connectionValue = document.getElementById('connectionLeakValue');
+    const connectionTrend = document.getElementById('connectionLeakTrend');
+    
+    if (connectionCard && connectionValue && connectionTrend) {
+        const poolUtilization = (data.connection_pool_utilization || 0) * 100;
+        connectionValue.textContent = `${poolUtilization.toFixed(1)}%`;
+        
+        connectionCard.className = 'metric-card';
+        if (poolUtilization < 70) {
+            connectionCard.classList.add('border-success');
+            connectionTrend.innerHTML = '<span class="text-success">Pool healthy</span>';
+        } else if (poolUtilization < 90) {
+            connectionCard.classList.add('border-warning');
+            connectionTrend.innerHTML = '<span class="text-warning">Pool stressed</span>';
+        } else {
+            connectionCard.classList.add('border-danger');
+            connectionTrend.innerHTML = '<span class="text-danger">Pool critical</span>';
+        }
+    }
+    
+    // Update background task card
+    const taskCard = document.getElementById('backgroundTaskCard');
+    const taskValue = document.getElementById('backgroundTaskValue');
+    const taskTrend = document.getElementById('backgroundTaskTrend');
+    
+    if (taskCard && taskValue && taskTrend) {
+        const taskCount = data.background_tasks_count || 0;
+        taskValue.textContent = taskCount;
+        
+        taskCard.className = 'metric-card';
+        if (taskCount < 10) {
+            taskCard.classList.add('border-success');
+            taskTrend.innerHTML = '<span class="text-success">Normal load</span>';
+        } else if (taskCount < 15) {
+            taskCard.classList.add('border-warning');
+            taskTrend.innerHTML = '<span class="text-warning">High load</span>';
+        } else {
+            taskCard.classList.add('border-danger');
+            taskTrend.innerHTML = '<span class="text-danger">Critical load</span>';
+        }
+    }
+}
+
+function runResponsivenessCheck() {
+    showSuccess('Running comprehensive responsiveness check...');
+    
+    fetch('/admin/api/responsiveness/check')
+        .then(response => response.json())
+        .then(data => {
+            if (data.success) {
+                const result = data.data;
+                if (result.responsive) {
+                    showSuccess('System responsiveness check passed');
+                } else {
+                    const issues = result.issues.length;
+                    showError(`Responsiveness issues detected: ${issues} problems found`);
+                }
+                loadResponsivenessData();
+            } else {
+                showError('Responsiveness check failed: ' + data.error);
+            }
+        })
+        .catch(error => {
+            showError('Responsiveness check request failed');
+        });
+}
+
+function triggerMemoryCleanup() {
+    if (confirm('Trigger memory cleanup? This may cause a brief performance impact.')) {
+        fetch('/admin/api/responsiveness/cleanup/memory', { method: 'POST' })
+            .then(response => response.json())
+            .then(data => {
+                if (data.success) {
+                    showSuccess('Memory cleanup triggered successfully');
+                    setTimeout(loadResponsivenessData, 2000);
+                } else {
+                    showError('Memory cleanup failed: ' + data.error);
+                }
+            })
+            .catch(error => {
+                showError('Memory cleanup request failed');
+            });
+    }
+}
+
+function optimizeConnections() {
+    if (confirm('Optimize database connections? This may cause brief connection interruptions.')) {
+        fetch('/admin/api/responsiveness/optimize/connections', { method: 'POST' })
+            .then(response => response.json())
+            .then(data => {
+                if (data.success) {
+                    showSuccess('Connection optimization completed');
+                    setTimeout(loadResponsivenessData, 2000);
+                } else {
+                    showError('Connection optimization failed: ' + data.error);
+                }
+            })
+            .catch(error => {
+                showError('Connection optimization request failed');
+            });
+    }
+}
+
 // Initialize dashboard
 document.addEventListener('DOMContentLoaded', function() {
     // Initialize charts first
@@ -747,9 +1004,13 @@ document.addEventListener('DOMContentLoaded', function() {
     setTimeout(() => {
         console.log('Starting dashboard data load...');
         refreshDashboard();
+        loadResponsivenessData(); // Load responsiveness data
     }, 1000);
     
     setupAutoRefresh();
+    
+    // Set up responsiveness monitoring refresh
+    setInterval(loadResponsivenessData, 30000); // 30 seconds
 });
 
 function initializeCharts() {
@@ -941,7 +1202,154 @@ async function loadPerformanceTrends() {
         
         if (response.ok && trends.time_series) {
             updateChartsDisplay(trends.time_series);
-        } else if (trends.no_data) {
+        }
+    } catch (error) {
+        console.error('Failed to load performance trends:', error);
+    }
+}
+
+async function loadRequestPerformanceData() {
+    try {
+        console.log('Loading request performance data...');
+        const response = await fetch('/admin/api/performance/request-tracking');
+        console.log('Request performance response status:', response.status);
+        
+        if (!response.ok) {
+            throw new Error(`HTTP ${response.status}: ${response.statusText}`);
+        }
+        
+        const data = await response.json();
+        console.log('Received request performance data:', data);
+        
+        updateRequestPerformanceDisplay(data.data || {});
+    } catch (error) {
+        console.error('Failed to load request performance data:', error);
+        const container = document.getElementById('requestPerformanceMetrics');
+        if (container) {
+            container.innerHTML = '<div class="text-muted">Request performance data unavailable</div>';
+        }
+    }
+}
+
+async function loadSlowRequestAnalysis() {
+    try {
+        console.log('Loading slow request analysis...');
+        const response = await fetch('/admin/api/performance/slow-requests');
+        console.log('Slow request analysis response status:', response.status);
+        
+        if (!response.ok) {
+            throw new Error(`HTTP ${response.status}: ${response.statusText}`);
+        }
+        
+        const data = await response.json();
+        console.log('Received slow request analysis:', data);
+        
+        updateSlowRequestAnalysisDisplay(data.data || {});
+    } catch (error) {
+        console.error('Failed to load slow request analysis:', error);
+        const container = document.getElementById('slowRequestAnalysis');
+        if (container) {
+            container.innerHTML = '<div class="text-muted">Slow request analysis unavailable</div>';
+        }
+    }
+}
+
+function updateRequestPerformanceDisplay(requestData) {
+    const container = document.getElementById('requestPerformanceMetrics');
+    if (!container) return;
+    
+    const avgRequestTime = requestData.avg_request_time || 0;
+    const slowRequestCount = requestData.slow_request_count || 0;
+    const totalRequests = requestData.total_requests || 0;
+    const requestsPerSecond = requestData.requests_per_second || 0;
+    const requestQueueSize = requestData.request_queue_size || 0;
+    
+    const html = `
+        <div class="row">
+            <div class="col-md-6">
+                <div class="mb-2">
+                    <strong>Average Request Time:</strong> 
+                    <span class="badge ${avgRequestTime > 2 ? 'bg-danger' : avgRequestTime > 1 ? 'bg-warning' : 'bg-success'}">
+                        ${avgRequestTime.toFixed(3)}s
+                    </span>
+                </div>
+                <div class="mb-2">
+                    <strong>Requests/Second:</strong> ${requestsPerSecond.toFixed(1)}
+                </div>
+                <div class="mb-2">
+                    <strong>Total Requests:</strong> ${totalRequests.toLocaleString()}
+                </div>
+            </div>
+            <div class="col-md-6">
+                <div class="mb-2">
+                    <strong>Slow Requests (5min):</strong> 
+                    <span class="badge ${slowRequestCount > 10 ? 'bg-danger' : slowRequestCount > 5 ? 'bg-warning' : 'bg-success'}">
+                        ${slowRequestCount}
+                    </span>
+                </div>
+                <div class="mb-2">
+                    <strong>Request Queue Size:</strong> 
+                    <span class="badge ${requestQueueSize > 5 ? 'bg-warning' : 'bg-success'}">
+                        ${requestQueueSize}
+                    </span>
+                </div>
+                <div class="mb-2">
+                    <strong>Performance Status:</strong>
+                    <span class="badge ${avgRequestTime > 2 ? 'bg-danger' : avgRequestTime > 1 ? 'bg-warning' : 'bg-success'}">
+                        ${avgRequestTime > 2 ? 'Poor' : avgRequestTime > 1 ? 'Fair' : 'Good'}
+                    </span>
+                </div>
+            </div>
+        </div>
+    `;
+    
+    container.innerHTML = html;
+}
+
+function updateSlowRequestAnalysisDisplay(analysisData) {
+    const container = document.getElementById('slowRequestAnalysis');
+    if (!container) return;
+    
+    const slowRequests = analysisData.slow_requests || [];
+    const analysis = analysisData.analysis || {};
+    const totalSlowRequests = analysisData.total_slow_requests || 0;
+    
+    let html = `
+        <div class="mb-3">
+            <strong>Slow Requests (Last Hour):</strong> 
+            <span class="badge ${totalSlowRequests > 20 ? 'bg-danger' : totalSlowRequests > 10 ? 'bg-warning' : 'bg-success'}">
+                ${totalSlowRequests}
+            </span>
+        </div>
+    `;
+    
+    if (Object.keys(analysis).length > 0) {
+        html += '<div class="mb-2"><strong>By Endpoint:</strong></div>';
+        html += '<div style="max-height: 200px; overflow-y: auto;">';
+        
+        // Sort endpoints by count
+        const sortedEndpoints = Object.entries(analysis)
+            .sort(([,a], [,b]) => b.count - a.count)
+            .slice(0, 5); // Show top 5
+        
+        for (const [endpoint, data] of sortedEndpoints) {
+            html += `
+                <div class="small mb-1">
+                    <strong>${endpoint || 'Unknown'}:</strong> 
+                    ${data.count} requests, 
+                    avg: ${data.avg_time.toFixed(2)}s, 
+                    max: ${data.max_time.toFixed(2)}s
+                </div>
+            `;
+        }
+        
+        html += '</div>';
+    } else {
+        html += '<div class="text-muted small">No slow requests detected in the last hour</div>';
+    }
+    
+    container.innerHTML = html;
+}se if (trends.no_data) {
             showNoDataCharts();
         } else {
             console.warn('No trend data available');

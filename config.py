@@ -444,6 +444,34 @@ class BatchUpdateConfig:
         )
 
 @dataclass
+class ResponsivenessConfig:
+    """Configuration for responsiveness monitoring and automated cleanup"""
+    memory_warning_threshold: float = 0.8  # 80%
+    memory_critical_threshold: float = 0.9  # 90%
+    cpu_warning_threshold: float = 0.8     # 80%
+    cpu_critical_threshold: float = 0.9    # 90%
+    connection_pool_warning_threshold: float = 0.9  # 90%
+    monitoring_interval: int = 30          # seconds
+    cleanup_enabled: bool = True
+    auto_cleanup_memory_threshold: float = 0.85  # 85%
+    auto_cleanup_connection_threshold: float = 0.95  # 95%
+    
+    @classmethod
+    def from_env(cls):
+        """Create a ResponsivenessConfig from environment variables"""
+        return cls(
+            memory_warning_threshold=float(os.getenv("RESPONSIVENESS_MEMORY_WARNING_THRESHOLD", "0.8")),
+            memory_critical_threshold=float(os.getenv("RESPONSIVENESS_MEMORY_CRITICAL_THRESHOLD", "0.9")),
+            cpu_warning_threshold=float(os.getenv("RESPONSIVENESS_CPU_WARNING_THRESHOLD", "0.8")),
+            cpu_critical_threshold=float(os.getenv("RESPONSIVENESS_CPU_CRITICAL_THRESHOLD", "0.9")),
+            connection_pool_warning_threshold=float(os.getenv("RESPONSIVENESS_CONNECTION_POOL_WARNING_THRESHOLD", "0.9")),
+            monitoring_interval=int(os.getenv("RESPONSIVENESS_MONITORING_INTERVAL", "30")),
+            cleanup_enabled=os.getenv("RESPONSIVENESS_CLEANUP_ENABLED", "true").lower() == "true",
+            auto_cleanup_memory_threshold=float(os.getenv("RESPONSIVENESS_AUTO_CLEANUP_MEMORY_THRESHOLD", "0.85")),
+            auto_cleanup_connection_threshold=float(os.getenv("RESPONSIVENESS_AUTO_CLEANUP_CONNECTION_THRESHOLD", "0.95")),
+        )
+
+@dataclass
 class WebAppConfig:
     """Configuration for Flask web app"""
     host: str = "127.0.0.1"
@@ -495,6 +523,7 @@ class Config:
         self.auth = AuthConfig.from_env()
         self.redis = RedisConfig.from_env()
         self.batch_update = BatchUpdateConfig.from_env()
+        self.responsiveness = ResponsivenessConfig.from_env()
         
         # Initialize session configuration (lazy loading to avoid circular imports)
         self._session_config = None
@@ -606,6 +635,7 @@ class Config:
         self.webapp = WebAppConfig.from_env()
         self.auth = AuthConfig.from_env()
         self.batch_update = BatchUpdateConfig.from_env()
+        self.responsiveness = ResponsivenessConfig.from_env()
         
         # Update derived configuration
         self.use_batch_updates = self.batch_update.enabled

@@ -9,6 +9,9 @@ Provides comprehensive monitoring, metrics collection, and diagnostic capabiliti
 
 import json
 import time
+import psutil
+import gc
+import sys
 from datetime import datetime, timezone, timedelta
 from typing import Dict, Any, List, Optional
 from logging import getLogger
@@ -43,6 +46,18 @@ class SessionEvent:
     details: Dict[str, Any]
     severity: str = 'info'
 
+@dataclass
+class MemoryMetric:
+    """Data class for memory metrics"""
+    timestamp: datetime
+    memory_usage_mb: float
+    memory_percent: float
+    available_memory_mb: float
+    session_count: int
+    gc_collections: Dict[str, int]
+    object_counts: Dict[str, int]
+    memory_growth_rate: float = 0.0
+
 class SessionMonitor:
     """Comprehensive session monitoring and metrics collection for unified database sessions"""
     
@@ -71,6 +86,19 @@ class SessionMonitor:
         self.session_performance = defaultdict(list)
         self.error_counts = defaultdict(int)
         self.last_cleanup_time = datetime.now(timezone.utc)
+        
+        # Memory leak detection
+        self.memory_metrics = deque(maxlen=1000)  # Keep last 1000 memory snapshots
+        self.memory_lock = Lock()
+        self.last_memory_check = datetime.now(timezone.utc)
+        self.memory_baseline = None
+        self.memory_growth_threshold = 50.0  # MB growth threshold
+        self.memory_leak_alerts = deque(maxlen=100)
+        
+        # Memory pattern tracking
+        self.session_memory_usage = defaultdict(float)  # Track memory per session
+        self.object_growth_patterns = defaultdict(list)
+        self.gc_stats_history = deque(maxlen=100)
         
         # Database session specific metrics
         self.db_session_metrics = {
@@ -386,6 +414,9 @@ class SessionMonitor:
             self.log_event(startup_event)
             logger.info(f"Session monitoring initialized - {active_sessions} active database sessions")
             
+            # Initialize memory monitoring
+            self._initialize_memory_monitoring()
+            
         except Exception as e:
             logger.error(f"Error logging system startup: {e}")
     
@@ -429,6 +460,362 @@ class SessionMonitor:
         
         self.last_cleanup_time = datetime.now(timezone.utc)
         logger.info(f"Cleaned up old session metrics and events (older than {max_age_hours} hours)")
+    
+    def _initialize_memory_monitoring(self):
+        """Initialize memory leak detection monitoring"""
+        try:
+            # Take initial memory baseline
+            memory_info = psutil.virtual_memory()
+            process = psutil.Process()
+            process_memory = process.memory_info()
+            
+            self.memory_baseline = {
+                'system_memory_mb': memory_info.used / 1024 / 1024,
+                'process_memory_mb': process_memory.rss / 1024 / 1024,
+                'timestamp': datetime.now(timezone.utc)
+            }
+            
+            logger.info(f"Memory monitoring initialized - baseline: {self.memory_baseline['process_memory_mb']:.1f}MB")
+            
+        except Exception as e:
+            logger.error(f"Error initializing memory monitoring: {e}")
+    
+    def collect_memory_metrics(self) -> MemoryMetric:
+        """Collect current memory usage metrics"""
+        try:
+            # System memory info
+            memory_info = psutil.virtual_memory()
+            
+            # Process memory info
+            process = psutil.Process()
+            process_memory = process.memory_info()
+            
+            # Garbage collection stats
+            gc_stats = {}
+            for i in range(3):  # GC generations 0, 1, 2
+                gc_stats[f'gen_{i}'] = gc.get_count()[i]
+            
+            # Object counts for leak detection
+            object_counts = {}
+            try:
+                # Count common object types that might leak
+                object_counts['dict'] = len([obj for obj in gc.get_objects() if isinstance(obj, dict)])
+                object_counts['list'] = len([obj for obj in gc.get_objects() if isinstance(obj, list)])
+                object_counts['tuple'] = len([obj for obj in gc.get_objects() if isinstance(obj, tuple)])
+                object_counts['function'] = len([obj for obj in gc.get_objects() if callable(obj)])
+            except Exception as e:
+                logger.debug(f"Error counting objects: {e}")
+                object_counts = {'error': str(e)}
+            
+            # Get current session count
+            with self.db_manager.get_session() as db_session:
+                session_count = db_session.query(UserSession).filter_by(is_active=True).count()
+            
+            # Calculate memory growth rate
+            memory_growth_rate = 0.0
+            if self.memory_baseline:
+                current_memory = process_memory.rss / 1024 / 1024
+                baseline_memory = self.memory_baseline['process_memory_mb']
+                memory_growth_rate = current_memory - baseline_memory
+            
+            metric = MemoryMetric(
+                timestamp=datetime.now(timezone.utc),
+                memory_usage_mb=process_memory.rss / 1024 / 1024,
+                memory_percent=memory_info.percent,
+                available_memory_mb=memory_info.available / 1024 / 1024,
+                session_count=session_count,
+                gc_collections=gc_stats,
+                object_counts=object_counts,
+                memory_growth_rate=memory_growth_rate
+            )
+            
+            with self.memory_lock:
+                self.memory_metrics.append(metric)
+            
+            return metric
+            
+        except Exception as e:
+            logger.error(f"Error collecting memory metrics: {e}")
+            return MemoryMetric(
+                timestamp=datetime.now(timezone.utc),
+                memory_usage_mb=0.0,
+                memory_percent=0.0,
+                available_memory_mb=0.0,
+                session_count=0,
+                gc_collections={},
+                object_counts={'error': str(e)}
+            )
+    
+    def detect_memory_leaks(self) -> List[Dict[str, Any]]:
+        """Detect potential memory leaks based on memory patterns"""
+        alerts = []
+        
+        try:
+            with self.memory_lock:
+                if len(self.memory_metrics) < 10:  # Need at least 10 data points
+                    return alerts
+                
+                recent_metrics = list(self.memory_metrics)[-10:]  # Last 10 measurements
+                
+                # Check for continuous memory growth
+                memory_values = [m.memory_usage_mb for m in recent_metrics]
+                if len(memory_values) >= 5:
+                    # Calculate trend
+                    x = list(range(len(memory_values)))
+                    n = len(x)
+                    sum_x = sum(x)
+                    sum_y = sum(memory_values)
+                    sum_xy = sum(x[i] * memory_values[i] for i in range(n))
+                    sum_x2 = sum(x[i] ** 2 for i in range(n))
+                    
+                    # Linear regression slope
+                    slope = (n * sum_xy - sum_x * sum_y) / (n * sum_x2 - sum_x ** 2)
+                    
+                    # Check for significant upward trend
+                    if slope > 5.0:  # More than 5MB growth per measurement
+                        alerts.append({
+                            'type': 'memory_leak_suspected',
+                            'severity': 'warning',
+                            'message': f'Continuous memory growth detected: {slope:.1f}MB per measurement',
+                            'details': {
+                                'growth_rate_mb': slope,
+                                'current_memory_mb': memory_values[-1],
+                                'baseline_memory_mb': memory_values[0],
+                                'measurements': len(memory_values)
+                            },
+                            'timestamp': datetime.now(timezone.utc)
+                        })
+                
+                # Check for memory growth without session growth
+                latest_metric = recent_metrics[-1]
+                if len(recent_metrics) >= 5:
+                    oldest_metric = recent_metrics[0]
+                    memory_growth = latest_metric.memory_usage_mb - oldest_metric.memory_usage_mb
+                    session_growth = latest_metric.session_count - oldest_metric.session_count
+                    
+                    # Alert if memory grew significantly but sessions didn't
+                    if memory_growth > self.memory_growth_threshold and session_growth <= 0:
+                        alerts.append({
+                            'type': 'memory_growth_without_sessions',
+                            'severity': 'warning',
+                            'message': f'Memory grew {memory_growth:.1f}MB without session increase',
+                            'details': {
+                                'memory_growth_mb': memory_growth,
+                                'session_growth': session_growth,
+                                'current_memory_mb': latest_metric.memory_usage_mb,
+                                'current_sessions': latest_metric.session_count
+                            },
+                            'timestamp': datetime.now(timezone.utc)
+                        })
+                
+                # Check for excessive object growth
+                if len(recent_metrics) >= 3:
+                    latest_objects = latest_metric.object_counts
+                    oldest_objects = recent_metrics[0].object_counts
+                    
+                    for obj_type in ['dict', 'list', 'tuple']:
+                        if obj_type in latest_objects and obj_type in oldest_objects:
+                            growth = latest_objects[obj_type] - oldest_objects[obj_type]
+                            if growth > 10000:  # More than 10k new objects
+                                alerts.append({
+                                    'type': 'object_growth_detected',
+                                    'severity': 'info',
+                                    'message': f'High {obj_type} object growth: {growth} new objects',
+                                    'details': {
+                                        'object_type': obj_type,
+                                        'growth_count': growth,
+                                        'current_count': latest_objects[obj_type],
+                                        'previous_count': oldest_objects[obj_type]
+                                    },
+                                    'timestamp': datetime.now(timezone.utc)
+                                })
+                
+                # Store alerts for history
+                for alert in alerts:
+                    self.memory_leak_alerts.append(alert)
+                    
+                    # Log alerts
+                    severity = alert['severity']
+                    message = alert['message']
+                    if severity == 'warning':
+                        logger.warning(f"Memory leak detection: {message}")
+                    else:
+                        logger.info(f"Memory monitoring: {message}")
+            
+        except Exception as e:
+            logger.error(f"Error in memory leak detection: {e}")
+            alerts.append({
+                'type': 'memory_detection_error',
+                'severity': 'error',
+                'message': f'Memory leak detection failed: {str(e)}',
+                'timestamp': datetime.now(timezone.utc)
+            })
+        
+        return alerts
+    
+    def trigger_memory_cleanup(self) -> Dict[str, Any]:
+        """Trigger automated memory cleanup procedures"""
+        cleanup_results = {
+            'timestamp': datetime.now(timezone.utc),
+            'actions_taken': [],
+            'memory_before_mb': 0.0,
+            'memory_after_mb': 0.0,
+            'cleanup_successful': False
+        }
+        
+        try:
+            # Get memory before cleanup
+            process = psutil.Process()
+            memory_before = process.memory_info().rss / 1024 / 1024
+            cleanup_results['memory_before_mb'] = memory_before
+            
+            # Force garbage collection
+            collected_objects = []
+            for generation in range(3):
+                collected = gc.collect(generation)
+                collected_objects.append(collected)
+                cleanup_results['actions_taken'].append(f'GC generation {generation}: {collected} objects')
+            
+            # Clean up expired sessions
+            with self.db_manager.get_session() as db_session:
+                cutoff_time = datetime.now(timezone.utc) - timedelta(hours=24)
+                expired_sessions = db_session.query(UserSession).filter(
+                    UserSession.updated_at < cutoff_time,
+                    UserSession.is_active == False
+                ).count()
+                
+                if expired_sessions > 0:
+                    db_session.query(UserSession).filter(
+                        UserSession.updated_at < cutoff_time,
+                        UserSession.is_active == False
+                    ).delete()
+                    db_session.commit()
+                    cleanup_results['actions_taken'].append(f'Cleaned {expired_sessions} expired sessions')
+            
+            # Clear old metrics to free memory
+            with self.memory_lock:
+                old_count = len(self.memory_metrics)
+                # Keep only last 500 metrics
+                if old_count > 500:
+                    self.memory_metrics = deque(list(self.memory_metrics)[-500:], maxlen=1000)
+                    cleanup_results['actions_taken'].append(f'Cleared {old_count - 500} old memory metrics')
+            
+            # Clear old events
+            with self.events_lock:
+                old_count = len(self.events)
+                if old_count > 2500:
+                    self.events = deque(list(self.events)[-2500:], maxlen=5000)
+                    cleanup_results['actions_taken'].append(f'Cleared {old_count - 2500} old events')
+            
+            # Get memory after cleanup
+            memory_after = process.memory_info().rss / 1024 / 1024
+            cleanup_results['memory_after_mb'] = memory_after
+            cleanup_results['memory_freed_mb'] = memory_before - memory_after
+            cleanup_results['cleanup_successful'] = True
+            
+            logger.info(f"Memory cleanup completed: freed {cleanup_results['memory_freed_mb']:.1f}MB")
+            
+        except Exception as e:
+            logger.error(f"Error in memory cleanup: {e}")
+            cleanup_results['error'] = str(e)
+            cleanup_results['cleanup_successful'] = False
+        
+        return cleanup_results
+    
+    def get_memory_leak_report(self) -> Dict[str, Any]:
+        """Generate comprehensive memory leak detection report"""
+        try:
+            # Collect current metrics
+            current_metric = self.collect_memory_metrics()
+            
+            # Detect leaks
+            leak_alerts = self.detect_memory_leaks()
+            
+            # Calculate memory statistics
+            with self.memory_lock:
+                if self.memory_metrics:
+                    memory_values = [m.memory_usage_mb for m in self.memory_metrics]
+                    memory_stats = {
+                        'current_mb': current_metric.memory_usage_mb,
+                        'min_mb': min(memory_values),
+                        'max_mb': max(memory_values),
+                        'avg_mb': sum(memory_values) / len(memory_values),
+                        'growth_from_baseline_mb': current_metric.memory_growth_rate,
+                        'measurements_count': len(memory_values)
+                    }
+                else:
+                    memory_stats = {'error': 'No memory metrics available'}
+            
+            # Get recent alerts
+            recent_alerts = list(self.memory_leak_alerts)[-20:]  # Last 20 alerts
+            
+            report = {
+                'timestamp': datetime.now(timezone.utc).isoformat(),
+                'memory_statistics': memory_stats,
+                'current_metrics': {
+                    'memory_usage_mb': current_metric.memory_usage_mb,
+                    'memory_percent': current_metric.memory_percent,
+                    'available_memory_mb': current_metric.available_memory_mb,
+                    'session_count': current_metric.session_count,
+                    'gc_collections': current_metric.gc_collections,
+                    'object_counts': current_metric.object_counts
+                },
+                'leak_detection': {
+                    'current_alerts': leak_alerts,
+                    'recent_alerts': recent_alerts,
+                    'total_alerts': len(self.memory_leak_alerts)
+                },
+                'recommendations': self._generate_memory_recommendations(current_metric, leak_alerts)
+            }
+            
+            return report
+            
+        except Exception as e:
+            logger.error(f"Error generating memory leak report: {e}")
+            return {
+                'timestamp': datetime.now(timezone.utc).isoformat(),
+                'error': str(e),
+                'recommendations': ['Fix memory monitoring system']
+            }
+    
+    def _generate_memory_recommendations(self, current_metric: MemoryMetric, alerts: List[Dict[str, Any]]) -> List[str]:
+        """Generate memory optimization recommendations"""
+        recommendations = []
+        
+        try:
+            # Check memory usage level
+            if current_metric.memory_usage_mb > 1000:  # More than 1GB
+                recommendations.append("High memory usage detected - consider implementing memory limits")
+            
+            # Check for leak alerts
+            leak_alerts = [a for a in alerts if a['type'] == 'memory_leak_suspected']
+            if leak_alerts:
+                recommendations.append("Memory leak suspected - review session cleanup and object lifecycle")
+            
+            # Check session to memory ratio
+            if current_metric.session_count > 0:
+                memory_per_session = current_metric.memory_usage_mb / current_metric.session_count
+                if memory_per_session > 10:  # More than 10MB per session
+                    recommendations.append(f"High memory per session ({memory_per_session:.1f}MB) - optimize session data storage")
+            
+            # Check object growth
+            object_growth_alerts = [a for a in alerts if a['type'] == 'object_growth_detected']
+            if object_growth_alerts:
+                recommendations.append("High object growth detected - review object creation and cleanup")
+            
+            # Check GC efficiency
+            if 'gen_0' in current_metric.gc_collections and current_metric.gc_collections['gen_0'] > 1000:
+                recommendations.append("High GC activity - consider optimizing object creation patterns")
+            
+            # Default recommendation if no issues
+            if not recommendations:
+                recommendations.append("Memory usage appears normal - continue monitoring")
+                
+        except Exception as e:
+            logger.error(f"Error generating memory recommendations: {e}")
+            recommendations.append("Error generating recommendations - review memory monitoring system")
+        
+        return recommendations
     
     def get_monitoring_health(self) -> Dict[str, Any]:
         """Get monitoring system health status"""

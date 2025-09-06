@@ -199,7 +199,13 @@ def register_routes(bp):
         try:
             health_checker = current_app.config.get('health_checker')
             if not health_checker:
-                return jsonify({'error': 'Health checker not available'}), 503
+                # Enhanced error handling - provide more helpful information
+                return jsonify({
+                    'error': 'Health checker not available',
+                    'details': 'HealthChecker was not properly initialized during application startup',
+                    'suggestion': 'Check application logs for HealthChecker initialization errors',
+                    'fallback': 'Use /admin/health endpoint for basic health information'
+                }), 503
             
             # Use existing event loop if available, create only if necessary
             try:
@@ -367,6 +373,8 @@ def register_routes(bp):
             send_error_notification("Access denied. Admin privileges required.", "Access Denied")
             return redirect(url_for('main.index'))
         return render_template('session_monitoring_dashboard.html')
+
+
 
 def get_system_metrics(admin_user_id):
     """Get system metrics for multi-tenant caption management"""

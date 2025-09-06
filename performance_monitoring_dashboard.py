@@ -21,7 +21,7 @@ from database_query_optimizer import DatabaseQueryOptimizer
 from background_cleanup_manager import BackgroundCleanupManager
 from enhanced_admin_management_service import EnhancedAdminManagementService
 from security.core.security_utils import sanitize_for_log
-from admin.security.decorators import require_admin
+from security.core.role_based_access import require_admin
 
 logger = logging.getLogger(__name__)
 
@@ -200,6 +200,62 @@ def api_system_metrics():
         
     except Exception as e:
         logger.error(f"Error getting system metrics API: {sanitize_for_log(str(e))}")
+        return jsonify({
+            'success': False,
+            'error': str(e),
+            'timestamp': datetime.now(timezone.utc).isoformat()
+        }), 500
+
+@performance_bp.route('/api/request-performance')
+@login_required
+@require_admin
+def api_request_performance():
+    """API endpoint for request performance metrics"""
+    try:
+        # Get SystemOptimizer from current app
+        system_optimizer = getattr(current_app, 'system_optimizer', None)
+        if not system_optimizer:
+            return jsonify({'error': 'System optimizer not available'}), 503
+        
+        # Get request performance metrics
+        request_metrics = system_optimizer._get_request_performance_metrics()
+        
+        return jsonify({
+            'success': True,
+            'data': request_metrics,
+            'timestamp': datetime.now(timezone.utc).isoformat()
+        })
+        
+    except Exception as e:
+        logger.error(f"Error getting request performance metrics: {sanitize_for_log(str(e))}")
+        return jsonify({
+            'success': False,
+            'error': str(e),
+            'timestamp': datetime.now(timezone.utc).isoformat()
+        }), 500
+
+@performance_bp.route('/api/slow-requests')
+@login_required
+@require_admin
+def api_slow_requests():
+    """API endpoint for slow request analysis"""
+    try:
+        # Get SystemOptimizer from current app
+        system_optimizer = getattr(current_app, 'system_optimizer', None)
+        if not system_optimizer:
+            return jsonify({'error': 'System optimizer not available'}), 503
+        
+        # Get slow request analysis
+        slow_request_analysis = system_optimizer.get_slow_request_analysis()
+        
+        return jsonify({
+            'success': True,
+            'data': slow_request_analysis,
+            'timestamp': datetime.now(timezone.utc).isoformat()
+        })
+        
+    except Exception as e:
+        logger.error(f"Error getting slow request analysis: {sanitize_for_log(str(e))}")
         return jsonify({
             'success': False,
             'error': str(e),

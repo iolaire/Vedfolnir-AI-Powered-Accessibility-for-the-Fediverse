@@ -5,6 +5,8 @@
 import time
 import logging
 import threading
+import psutil
+import gc
 from collections import defaultdict, deque
 from contextlib import contextmanager
 from typing import Dict, Any, Optional, List, Tuple
@@ -39,6 +41,12 @@ class SessionMetrics:
     pool_checked_out: int = 0
     pool_overflow: int = 0
     pool_checked_in: int = 0
+    
+    # Memory metrics
+    memory_usage_mb: float = 0.0
+    memory_percent: float = 0.0
+    memory_growth_mb: float = 0.0
+    gc_collections: Dict[str, int] = field(default_factory=dict)
 
 @dataclass
 class RequestMetrics:
@@ -86,7 +94,12 @@ class SessionPerformanceMonitor:
         self.metrics_history: deque = deque(maxlen=1000)
         self.last_metrics_snapshot = time.time()
         
+        # Memory monitoring
+        self.memory_baseline = None
+        self.last_memory_check = time.time()
+        
         self.logger.info("SessionPerformanceMonitor initialized")
+        self._initialize_memory_baseline()
     
     def start_request_monitoring(self, endpoint: str = None) -> str:
         """
@@ -251,6 +264,149 @@ class SessionPerformanceMonitor:
         
         self._add_request_operation(f"session_reattachment_{object_type}")
         self.logger.debug(f"Session reattachment for {object_type}")
+    
+    def _initialize_memory_baseline(self):
+        """Initialize memory usage baseline for leak detection"""
+        try:
+            process = psutil.Process()
+            memory_info = process.memory_info()
+            
+            self.memory_baseline = {
+                'rss_mb': memory_info.rss / 1024 / 1024,
+                'vms_mb': memory_info.vms / 1024 / 1024,
+                'timestamp': time.time()
+            }
+            
+            self.logger.debug(f"Memory baseline initialized: {self.memory_baseline['rss_mb']:.1f}MB RSS")
+            
+        except Exception as e:
+            self.logger.error(f"Error initializing memory baseline: {e}")
+            self.memory_baseline = None
+    
+    def update_memory_metrics(self):
+        """Update memory usage metrics"""
+        try:
+            # System memory
+            system_memory = psutil.virtual_memory()
+            
+            # Process memory
+            process = psutil.Process()
+            process_memory = process.memory_info()
+            
+            # Calculate memory growth
+            memory_growth = 0.0
+            if self.memory_baseline:
+                current_rss = process_memory.rss / 1024 / 1024
+                baseline_rss = self.memory_baseline['rss_mb']
+                memory_growth = current_rss - baseline_rss
+            
+            # Get GC stats
+            gc_stats = {}
+            try:
+                gc_counts = gc.get_count()
+                for i, count in enumerate(gc_counts):
+                    gc_stats[f'gen_{i}'] = count
+            except Exception as e:
+                self.logger.debug(f"Error getting GC stats: {e}")
+                gc_stats = {'error': str(e)}
+            
+            # Update metrics
+            with self.lock:
+                self.metrics.memory_usage_mb = process_memory.rss / 1024 / 1024
+                self.metrics.memory_percent = system_memory.percent
+                self.metrics.memory_growth_mb = memory_growth
+                self.metrics.gc_collections = gc_stats
+            
+            # Check for memory issues
+            if memory_growth > 100:  # More than 100MB growth
+                self.logger.warning(f"Significant memory growth detected: {memory_growth:.1f}MB from baseline")
+            
+            if system_memory.percent > 90:
+                self.logger.warning(f"High system memory usage: {system_memory.percent:.1f}%")
+            
+        except Exception as e:
+            self.logger.error(f"Error updating memory metrics: {e}")
+    
+    def record_memory_cleanup(self, cleanup_type: str, freed_mb: float = None):
+        """Record memory cleanup operation"""
+        try:
+            # Update memory metrics after cleanup
+            self.update_memory_metrics()
+            
+            # Log cleanup
+            if freed_mb is not None:
+                self.logger.info(f"Memory cleanup ({cleanup_type}): {freed_mb:.1f}MB freed")
+            else:
+                self.logger.info(f"Memory cleanup performed: {cleanup_type}")
+            
+            # Record as metric
+            self.record_metric('memory_cleanup', 'system', 0, freed_mb or 0.0, {
+                'cleanup_type': cleanup_type,
+                'timestamp': time.time()
+            })
+            
+        except Exception as e:
+            self.logger.error(f"Error recording memory cleanup: {e}")
+    
+    def detect_memory_patterns(self) -> Dict[str, Any]:
+        """Detect memory usage patterns and potential leaks"""
+        patterns = {
+            'timestamp': datetime.now().isoformat(),
+            'memory_trend': 'stable',
+            'leak_indicators': [],
+            'recommendations': []
+        }
+        
+        try:
+            with self.lock:
+                # Analyze memory history
+                if len(self.metrics_history) >= 5:
+                    recent_metrics = list(self.metrics_history)[-5:]
+                    memory_values = []
+                    
+                    for metric_data in recent_metrics:
+                        metrics = metric_data.get('metrics', {})
+                        memory_mb = metrics.get('session_metrics', {}).get('memory_usage_mb', 0)
+                        if memory_mb > 0:
+                            memory_values.append(memory_mb)
+                    
+                    if len(memory_values) >= 3:
+                        # Check for upward trend (strictly increasing)
+                        if all(memory_values[i] < memory_values[i+1] for i in range(len(memory_values)-1)):
+                            patterns['memory_trend'] = 'increasing'
+                            patterns['leak_indicators'].append('Continuous memory growth detected')
+                        
+                        # Check for significant growth
+                        growth = memory_values[-1] - memory_values[0]
+                        if growth > 50:  # More than 50MB growth
+                            patterns['leak_indicators'].append(f'Significant memory growth: {growth:.1f}MB')
+                
+                # Check current memory state
+                current_memory = self.metrics.memory_usage_mb
+                if current_memory > 500:  # More than 500MB
+                    patterns['leak_indicators'].append(f'High memory usage: {current_memory:.1f}MB')
+                
+                # Check GC activity
+                gc_collections = self.metrics.gc_collections
+                if 'gen_0' in gc_collections and gc_collections['gen_0'] > 1000:
+                    patterns['leak_indicators'].append(f'High GC activity: {gc_collections["gen_0"]} collections')
+                
+                # Generate recommendations
+                if patterns['leak_indicators']:
+                    patterns['recommendations'].extend([
+                        'Monitor session cleanup frequency',
+                        'Review object lifecycle management',
+                        'Consider implementing memory limits',
+                        'Enable detailed memory profiling'
+                    ])
+                else:
+                    patterns['recommendations'].append('Memory usage appears normal')
+            
+        except Exception as e:
+            self.logger.error(f"Error detecting memory patterns: {e}")
+            patterns['error'] = str(e)
+        
+        return patterns
     
     def record_session_error(self, error_type: str, error_message: str):
         """
@@ -441,6 +597,12 @@ class SessionPerformanceMonitor:
                     'overflow': self.metrics.pool_overflow,
                     'checked_in': self.metrics.pool_checked_in
                 },
+                'memory_metrics': {
+                    'usage_mb': self.metrics.memory_usage_mb,
+                    'percent': self.metrics.memory_percent,
+                    'growth_mb': self.metrics.memory_growth_mb,
+                    'gc_collections': self.metrics.gc_collections
+                },
                 'active_requests': len(self.request_metrics)
             }
     
@@ -479,6 +641,13 @@ Pool Size: {metrics['pool_metrics']['pool_size']}
 Checked Out: {metrics['pool_metrics']['checked_out']}
 Overflow: {metrics['pool_metrics']['overflow']}
 Checked In: {metrics['pool_metrics']['checked_in']}
+
+Memory Usage:
+============
+Current Usage: {metrics['memory_metrics']['usage_mb']:.1f}MB
+System Usage: {metrics['memory_metrics']['percent']:.1f}%
+Growth from Baseline: {metrics['memory_metrics']['growth_mb']:.1f}MB
+GC Collections: {metrics['memory_metrics']['gc_collections']}
 
 Active Requests: {metrics['active_requests']}
         """.strip()
@@ -628,6 +797,7 @@ def initialize_performance_monitoring(app, session_manager, engine):
         try:
             _global_monitor.start_request_monitoring()
             _global_monitor.update_pool_metrics(engine)
+            _global_monitor.update_memory_metrics()
         except Exception as e:
             # Don't let performance monitoring errors break request processing
             app.logger.debug(f"Error in performance monitoring startup: {e}")

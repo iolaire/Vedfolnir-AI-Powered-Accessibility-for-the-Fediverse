@@ -37,6 +37,16 @@ class DatabaseManager:
         self.config = config
         db_config = config.storage.db_config
         
+        # Session lifecycle tracking for connection monitoring
+        self._session_tracking = {
+            'active_sessions': {},
+            'session_count': 0,
+            'total_created': 0,
+            'total_closed': 0,
+            'leaked_sessions': 0,
+            'max_concurrent': 0
+        }
+        
         # Comprehensive MySQL connection validation
         self._validate_mysql_connection_params(config.storage.database_url)
         
@@ -218,16 +228,200 @@ class DatabaseManager:
                 connection.close()
     
     def get_session(self):
-        """Get database session - caller is responsible for closing"""
-        return self.SessionFactory()
+        """Get database session with lifecycle tracking - caller is responsible for closing"""
+        session = self.SessionFactory()
+        session_id = id(session)
+        
+        # Track session lifecycle
+        self._session_tracking['active_sessions'][session_id] = {
+            'created_at': datetime.now(timezone.utc),
+            'session_object': session
+        }
+        self._session_tracking['session_count'] += 1
+        self._session_tracking['total_created'] += 1
+        
+        # Update max concurrent sessions
+        if self._session_tracking['session_count'] > self._session_tracking['max_concurrent']:
+            self._session_tracking['max_concurrent'] = self._session_tracking['session_count']
+        
+        logger.debug(f"Created session {session_id}, active sessions: {self._session_tracking['session_count']}")
+        return session
     
     def close_session(self, session):
-        """Close database session"""
+        """Close database session with lifecycle tracking and leak detection"""
         if session:
+            session_id = id(session)
             try:
                 session.close()
+                
+                # Update tracking
+                if session_id in self._session_tracking['active_sessions']:
+                    session_info = self._session_tracking['active_sessions'][session_id]
+                    duration = datetime.now(timezone.utc) - session_info['created_at']
+                    
+                    # Log long-lived sessions (potential leaks)
+                    if duration.total_seconds() > 3600:  # 1 hour
+                        logger.warning(f"Long-lived session {session_id} closed after {duration.total_seconds():.2f} seconds")
+                    
+                    del self._session_tracking['active_sessions'][session_id]
+                    self._session_tracking['session_count'] -= 1
+                    self._session_tracking['total_closed'] += 1
+                    
+                    logger.debug(f"Closed session {session_id}, active sessions: {self._session_tracking['session_count']}")
+                else:
+                    # Session not tracked - potential leak
+                    self._session_tracking['leaked_sessions'] += 1
+                    logger.warning(f"Closed untracked session {session_id} - potential leak")
+                    
             except Exception as e:
-                logger.error(f"Error closing session: {e}")
+                logger.error(f"Error closing session {session_id}: {e}")
+                # Still update tracking even if close failed
+                if session_id in self._session_tracking['active_sessions']:
+                    del self._session_tracking['active_sessions'][session_id]
+                    self._session_tracking['session_count'] -= 1
+    
+    def get_session_lifecycle_stats(self) -> Dict[str, Any]:
+        """Get session lifecycle statistics for connection monitoring"""
+        current_time = datetime.now(timezone.utc)
+        long_lived_sessions = []
+        
+        # Check for long-lived sessions
+        for session_id, session_info in self._session_tracking['active_sessions'].items():
+            duration = current_time - session_info['created_at']
+            if duration.total_seconds() > 1800:  # 30 minutes
+                long_lived_sessions.append({
+                    'session_id': session_id,
+                    'duration_seconds': duration.total_seconds(),
+                    'created_at': session_info['created_at'].isoformat()
+                })
+        
+        stats = {
+            'active_sessions': self._session_tracking['session_count'],
+            'total_created': self._session_tracking['total_created'],
+            'total_closed': self._session_tracking['total_closed'],
+            'leaked_sessions': self._session_tracking['leaked_sessions'],
+            'max_concurrent': self._session_tracking['max_concurrent'],
+            'long_lived_sessions': len(long_lived_sessions),
+            'long_lived_details': long_lived_sessions,
+            'timestamp': current_time.isoformat()
+        }
+        
+        # Add alerts for potential issues
+        if len(long_lived_sessions) > 0:
+            stats['alert'] = 'WARNING'
+            stats['alert_message'] = f'{len(long_lived_sessions)} long-lived sessions detected'
+        elif self._session_tracking['leaked_sessions'] > 0:
+            stats['alert'] = 'WARNING'
+            stats['alert_message'] = f'{self._session_tracking["leaked_sessions"]} leaked sessions detected'
+        else:
+            stats['alert'] = 'OK'
+        
+        return stats
+    
+    def detect_and_cleanup_connection_leaks(self) -> Dict[str, Any]:
+        """Detect and cleanup potential connection leaks"""
+        current_time = datetime.now(timezone.utc)
+        cleanup_results = {
+            'cleaned_sessions': 0,
+            'long_lived_sessions_found': 0,
+            'leaked_sessions_found': 0,
+            'cleanup_actions': [],
+            'timestamp': current_time.isoformat()
+        }
+        
+        # Find and cleanup long-lived sessions (>1 hour)
+        sessions_to_cleanup = []
+        for session_id, session_info in list(self._session_tracking['active_sessions'].items()):
+            duration = current_time - session_info['created_at']
+            if duration.total_seconds() > 3600:  # 1 hour
+                sessions_to_cleanup.append((session_id, session_info, duration))
+        
+        cleanup_results['long_lived_sessions_found'] = len(sessions_to_cleanup)
+        
+        # Attempt to cleanup long-lived sessions
+        for session_id, session_info, duration in sessions_to_cleanup:
+            try:
+                session_obj = session_info['session_object']
+                if session_obj:
+                    session_obj.close()
+                    cleanup_results['cleanup_actions'].append(
+                        f"Closed long-lived session {session_id} (duration: {duration.total_seconds():.0f}s)"
+                    )
+                    cleanup_results['cleaned_sessions'] += 1
+                
+                # Remove from tracking
+                if session_id in self._session_tracking['active_sessions']:
+                    del self._session_tracking['active_sessions'][session_id]
+                    self._session_tracking['session_count'] -= 1
+                    
+            except Exception as e:
+                cleanup_results['cleanup_actions'].append(
+                    f"Failed to cleanup session {session_id}: {e}"
+                )
+                logger.warning(f"Failed to cleanup leaked session {session_id}: {e}")
+        
+        # Log cleanup results
+        if cleanup_results['cleaned_sessions'] > 0:
+            logger.warning(f"Connection leak cleanup: cleaned {cleanup_results['cleaned_sessions']} sessions")
+        
+        return cleanup_results
+    
+    def monitor_connection_health(self) -> Dict[str, Any]:
+        """Comprehensive connection health monitoring"""
+        health_report = {
+            'timestamp': datetime.now(timezone.utc).isoformat(),
+            'overall_health': 'HEALTHY',
+            'issues': [],
+            'recommendations': []
+        }
+        
+        # Get performance stats
+        perf_stats = self.get_mysql_performance_stats()
+        session_stats = self.get_session_lifecycle_stats()
+        
+        # Check connection pool health
+        if 'connection_pool' in perf_stats:
+            pool_info = perf_stats['connection_pool']
+            utilization = pool_info.get('total_utilization_percent', 0)
+            
+            if utilization >= 90:
+                health_report['overall_health'] = 'CRITICAL'
+                health_report['issues'].append(f"Connection pool at {utilization}% capacity")
+                health_report['recommendations'].append("Increase connection pool size or reduce concurrent operations")
+            elif utilization >= 80:
+                health_report['overall_health'] = 'WARNING'
+                health_report['issues'].append(f"Connection pool at {utilization}% capacity")
+                health_report['recommendations'].append("Monitor connection usage patterns")
+        
+        # Check session health
+        if session_stats['leaked_sessions'] > 0:
+            if health_report['overall_health'] == 'HEALTHY':
+                health_report['overall_health'] = 'WARNING'
+            health_report['issues'].append(f"{session_stats['leaked_sessions']} leaked sessions detected")
+            health_report['recommendations'].append("Review code for unclosed database sessions")
+        
+        if session_stats['long_lived_sessions'] > 0:
+            if health_report['overall_health'] == 'HEALTHY':
+                health_report['overall_health'] = 'WARNING'
+            health_report['issues'].append(f"{session_stats['long_lived_sessions']} long-lived sessions")
+            health_report['recommendations'].append("Check for long-running transactions")
+        
+        # Check connection abort rate
+        if perf_stats.get('connection_abort_rate', 0) > 5:
+            if health_report['overall_health'] == 'HEALTHY':
+                health_report['overall_health'] = 'WARNING'
+            health_report['issues'].append(f"High connection abort rate: {perf_stats['connection_abort_rate']}%")
+            health_report['recommendations'].append("Check network stability and connection timeouts")
+        
+        # Add performance metrics to report
+        health_report['metrics'] = {
+            'connection_pool': perf_stats.get('connection_pool', {}),
+            'session_stats': session_stats,
+            'connection_abort_rate': perf_stats.get('connection_abort_rate', 0),
+            'current_connections': perf_stats.get('current_connections', 0)
+        }
+        
+        return health_report
     
     def get_context_manager(self) -> PlatformContextManager:
         """Get or create platform context manager"""
@@ -381,10 +575,33 @@ class DatabaseManager:
             logger.error(diagnostic_message)
             return diagnostic_message
         else:
-            # Generic MySQL error handling
+            # Generic MySQL error handling with connection leak detection
             diagnostic_message = f"MySQL database error: {error_message}"
             
-            # Add general troubleshooting tips
+            # Check for potential connection leaks
+            session_stats = self.get_session_lifecycle_stats()
+            perf_stats = self.get_mysql_performance_stats()
+            
+            leak_indicators = []
+            
+            # Check session tracking for leaks
+            if session_stats['leaked_sessions'] > 0:
+                leak_indicators.append(f"Detected {session_stats['leaked_sessions']} leaked sessions")
+            
+            if session_stats['long_lived_sessions'] > 0:
+                leak_indicators.append(f"Found {session_stats['long_lived_sessions']} long-lived sessions (>30min)")
+            
+            # Check connection pool utilization
+            if 'connection_pool' in perf_stats:
+                pool_info = perf_stats['connection_pool']
+                if pool_info.get('total_utilization_percent', 0) > 90:
+                    leak_indicators.append(f"Connection pool at {pool_info['total_utilization_percent']}% capacity")
+            
+            # Check MySQL connection abort rate
+            if perf_stats.get('connection_abort_rate', 0) > 10:
+                leak_indicators.append(f"High connection abort rate: {perf_stats['connection_abort_rate']}%")
+            
+            # Add connection leak information if detected
             troubleshooting_tips = [
                 "General MySQL troubleshooting steps:",
                 "1. Check MySQL server status: sudo systemctl status mysql",
@@ -394,12 +611,23 @@ class DatabaseManager:
                 "5. Check network connectivity and firewall settings"
             ]
             
+            if leak_indicators:
+                troubleshooting_tips.insert(1, "⚠️  CONNECTION LEAK INDICATORS DETECTED:")
+                for indicator in leak_indicators:
+                    troubleshooting_tips.insert(2, f"   - {indicator}")
+                troubleshooting_tips.insert(2 + len(leak_indicators), "")
+                troubleshooting_tips.insert(3 + len(leak_indicators), "Connection leak troubleshooting:")
+                troubleshooting_tips.insert(4 + len(leak_indicators), "6. Review code for unclosed database sessions")
+                troubleshooting_tips.insert(5 + len(leak_indicators), "7. Check for long-running transactions")
+                troubleshooting_tips.insert(6 + len(leak_indicators), "8. Monitor connection pool usage patterns")
+                troubleshooting_tips.insert(7 + len(leak_indicators), "9. Consider reducing connection pool size if overutilized")
+            
             full_message = diagnostic_message + "\n" + "\n".join(troubleshooting_tips)
             logger.error(full_message)
             return full_message
     
     def test_mysql_connection(self) -> Tuple[bool, str]:
-        """Test MySQL connection and return status with diagnostic information"""
+        """Test MySQL connection and return status with comprehensive health monitoring"""
         try:
             with self.engine.connect() as connection:
                 # Test basic connectivity
@@ -410,16 +638,83 @@ class DatabaseManager:
                 result = connection.execute(text("SELECT DATABASE()"))
                 database_name = result.fetchone()[0]
                 
-                # Test connection pool
-                pool_status = self.engine.pool.status()
+                # Enhanced connection pool health monitoring
+                pool = self.engine.pool
+                pool_stats = {
+                    'size': pool.size(),
+                    'checked_in': pool.checkedin(),
+                    'checked_out': pool.checkedout(),
+                    'overflow': pool.overflow(),
+                }
                 
-                success_message = (
-                    f"MySQL connection successful. "
-                    f"Version: {mysql_version}, "
-                    f"Database: {database_name}, "
-                    f"Pool status: {pool_status}"
-                )
-                logger.info(success_message)
+                # Calculate pool utilization
+                pool_utilization = (pool_stats['checked_out'] / pool_stats['size']) if pool_stats['size'] > 0 else 0
+                total_capacity = pool_stats['size'] + self.config.storage.db_config.max_overflow
+                total_utilization = (pool_stats['checked_out'] + pool_stats['overflow']) / total_capacity if total_capacity > 0 else 0
+                
+                # Connection pool health assessment
+                pool_health = "HEALTHY"
+                pool_warnings = []
+                
+                if total_utilization >= 0.9:
+                    pool_health = "CRITICAL"
+                    pool_warnings.append(f"Pool at {total_utilization*100:.1f}% capacity")
+                elif total_utilization >= 0.8:
+                    pool_health = "WARNING"
+                    pool_warnings.append(f"Pool at {total_utilization*100:.1f}% capacity")
+                
+                # Test connection responsiveness
+                start_time = time.time()
+                result = connection.execute(text("SELECT 1"))
+                response_time = (time.time() - start_time) * 1000  # Convert to milliseconds
+                
+                # Check for slow response
+                if response_time > 1000:  # 1 second
+                    pool_warnings.append(f"Slow response time: {response_time:.2f}ms")
+                
+                # Get session lifecycle stats
+                session_stats = self.get_session_lifecycle_stats()
+                
+                # Check for session issues
+                if session_stats['leaked_sessions'] > 0:
+                    pool_warnings.append(f"{session_stats['leaked_sessions']} leaked sessions detected")
+                
+                if session_stats['long_lived_sessions'] > 0:
+                    pool_warnings.append(f"{session_stats['long_lived_sessions']} long-lived sessions")
+                
+                # Get MySQL performance stats for additional health info
+                perf_stats = self.get_mysql_performance_stats()
+                
+                # Check connection abort rate
+                if 'connection_abort_rate' in perf_stats and perf_stats['connection_abort_rate'] > 5:
+                    pool_warnings.append(f"High connection abort rate: {perf_stats['connection_abort_rate']}%")
+                
+                # Build comprehensive status message
+                status_parts = [
+                    f"MySQL connection successful",
+                    f"Version: {mysql_version}",
+                    f"Database: {database_name}",
+                    f"Pool health: {pool_health}",
+                    f"Pool utilization: {total_utilization*100:.1f}%",
+                    f"Response time: {response_time:.2f}ms",
+                    f"Active sessions: {session_stats['active_sessions']}",
+                    f"Total created: {session_stats['total_created']}",
+                    f"Total closed: {session_stats['total_closed']}"
+                ]
+                
+                if pool_warnings:
+                    status_parts.append(f"Warnings: {'; '.join(pool_warnings)}")
+                
+                success_message = " | ".join(status_parts)
+                
+                # Log appropriate level based on health
+                if pool_health == "CRITICAL":
+                    logger.error(success_message)
+                elif pool_health == "WARNING":
+                    logger.warning(success_message)
+                else:
+                    logger.info(success_message)
+                
                 return True, success_message
                 
         except Exception as e:
@@ -576,18 +871,31 @@ class DatabaseManager:
         return "\n".join(guide_sections)
     
     def get_mysql_performance_stats(self) -> Dict[str, Any]:
-        """Get MySQL-specific performance statistics"""
+        """Get MySQL-specific performance statistics with responsiveness metrics"""
         try:
             with self.engine.connect() as connection:
                 stats = {}
                 
-                # Connection pool statistics
+                # Connection pool statistics with responsiveness metrics
                 pool = self.engine.pool
+                pool_size = pool.size()
+                checked_out = pool.checkedout()
+                overflow = pool.overflow()
+                
+                # Calculate responsiveness metrics
+                pool_utilization = (checked_out / pool_size) if pool_size > 0 else 0
+                total_capacity = pool_size + self.config.storage.db_config.max_overflow
+                total_utilization = (checked_out + overflow) / total_capacity if total_capacity > 0 else 0
+                
                 stats['connection_pool'] = {
-                    'size': pool.size(),
+                    'size': pool_size,
                     'checked_in': pool.checkedin(),
-                    'checked_out': pool.checkedout(),
-                    'overflow': pool.overflow(),
+                    'checked_out': checked_out,
+                    'overflow': overflow,
+                    'utilization_percent': round(pool_utilization * 100, 2),
+                    'total_utilization_percent': round(total_utilization * 100, 2),
+                    'max_overflow': self.config.storage.db_config.max_overflow,
+                    'pool_timeout': self.config.storage.db_config.pool_timeout,
                 }
                 
                 # Add invalid count if available (not all pool types support this)
@@ -596,22 +904,75 @@ class DatabaseManager:
                 except AttributeError:
                     stats['connection_pool']['invalid'] = 'N/A'
                 
-                # MySQL server status
+                # Responsiveness alerts based on utilization
+                if total_utilization >= 0.9:  # 90% threshold
+                    stats['connection_pool']['alert'] = 'CRITICAL'
+                    stats['connection_pool']['alert_message'] = f'Connection pool at {stats["connection_pool"]["total_utilization_percent"]}% capacity'
+                elif total_utilization >= 0.8:  # 80% threshold
+                    stats['connection_pool']['alert'] = 'WARNING'
+                    stats['connection_pool']['alert_message'] = f'Connection pool at {stats["connection_pool"]["total_utilization_percent"]}% capacity'
+                else:
+                    stats['connection_pool']['alert'] = 'OK'
+                
+                # MySQL server status with responsiveness focus
                 result = connection.execute(text("SHOW STATUS LIKE 'Threads_%'"))
                 mysql_threads = {row[0]: row[1] for row in result}
                 stats['mysql_threads'] = mysql_threads
                 
-                # MySQL connection statistics
+                # Connection statistics for leak detection
                 result = connection.execute(text("SHOW STATUS LIKE 'Connections'"))
                 connections_row = result.fetchone()
                 if connections_row:
-                    stats['total_connections'] = connections_row[1]
+                    stats['total_connections'] = int(connections_row[1])
+                
+                # Aborted connections (potential leak indicator)
+                result = connection.execute(text("SHOW STATUS LIKE 'Aborted_connects'"))
+                aborted_row = result.fetchone()
+                if aborted_row:
+                    stats['aborted_connections'] = int(aborted_row[1])
+                
+                # Max used connections
+                result = connection.execute(text("SHOW STATUS LIKE 'Max_used_connections'"))
+                max_used_row = result.fetchone()
+                if max_used_row:
+                    stats['max_used_connections'] = int(max_used_row[1])
+                
+                # Current connections
+                result = connection.execute(text("SHOW STATUS LIKE 'Threads_connected'"))
+                current_row = result.fetchone()
+                if current_row:
+                    stats['current_connections'] = int(current_row[1])
+                
+                # Connection responsiveness metrics
+                if 'total_connections' in stats and 'aborted_connections' in stats:
+                    if stats['total_connections'] > 0:
+                        abort_rate = (stats['aborted_connections'] / stats['total_connections']) * 100
+                        stats['connection_abort_rate'] = round(abort_rate, 2)
+                        
+                        if abort_rate > 5:  # More than 5% abort rate
+                            stats['connection_health'] = 'POOR'
+                        elif abort_rate > 2:  # More than 2% abort rate
+                            stats['connection_health'] = 'FAIR'
+                        else:
+                            stats['connection_health'] = 'GOOD'
+                    else:
+                        stats['connection_abort_rate'] = 0
+                        stats['connection_health'] = 'GOOD'
+                
+                # Query performance metrics
+                result = connection.execute(text("SHOW STATUS LIKE 'Slow_queries'"))
+                slow_queries_row = result.fetchone()
+                if slow_queries_row:
+                    stats['slow_queries'] = int(slow_queries_row[1])
+                
+                # Add timestamp for tracking
+                stats['timestamp'] = datetime.now(timezone.utc).isoformat()
                 
                 return stats
                 
         except Exception as e:
             logger.error(f"Failed to get MySQL performance stats: {e}")
-            return {'error': str(e)}
+            return {'error': str(e), 'timestamp': datetime.now(timezone.utc).isoformat()}
     
     def require_platform_context(self):
         """Require platform context for operations"""
