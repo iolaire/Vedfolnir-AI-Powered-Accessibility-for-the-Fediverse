@@ -508,6 +508,71 @@ class ConfigurationValidator:
                     validator=float_range_validator(0.0, 1.0),
                     error_message="alert_error_rate_threshold must be between 0.0 and 1.0"
                 )
+            ],
+            # Responsiveness monitoring validation rules
+            'responsiveness_memory_warning_threshold': [
+                ValidationRule(
+                    rule_type="float_range",
+                    description="Must be between 0.1 and 1.0",
+                    validator=float_range_validator(0.1, 1.0),
+                    error_message="responsiveness_memory_warning_threshold must be between 0.1 and 1.0"
+                )
+            ],
+            'responsiveness_memory_critical_threshold': [
+                ValidationRule(
+                    rule_type="float_range",
+                    description="Must be between 0.1 and 1.0",
+                    validator=float_range_validator(0.1, 1.0),
+                    error_message="responsiveness_memory_critical_threshold must be between 0.1 and 1.0"
+                )
+            ],
+            'responsiveness_cpu_warning_threshold': [
+                ValidationRule(
+                    rule_type="float_range",
+                    description="Must be between 0.1 and 1.0",
+                    validator=float_range_validator(0.1, 1.0),
+                    error_message="responsiveness_cpu_warning_threshold must be between 0.1 and 1.0"
+                )
+            ],
+            'responsiveness_cpu_critical_threshold': [
+                ValidationRule(
+                    rule_type="float_range",
+                    description="Must be between 0.1 and 1.0",
+                    validator=float_range_validator(0.1, 1.0),
+                    error_message="responsiveness_cpu_critical_threshold must be between 0.1 and 1.0"
+                )
+            ],
+            'responsiveness_connection_pool_warning_threshold': [
+                ValidationRule(
+                    rule_type="float_range",
+                    description="Must be between 0.1 and 1.0",
+                    validator=float_range_validator(0.1, 1.0),
+                    error_message="responsiveness_connection_pool_warning_threshold must be between 0.1 and 1.0"
+                )
+            ],
+            'responsiveness_monitoring_interval': [
+                ValidationRule(
+                    rule_type="integer_range",
+                    description="Must be between 5 and 300 seconds",
+                    validator=integer_range_validator(5, 300),
+                    error_message="responsiveness_monitoring_interval must be between 5 and 300 seconds"
+                )
+            ],
+            'responsiveness_auto_cleanup_memory_threshold': [
+                ValidationRule(
+                    rule_type="float_range",
+                    description="Must be between 0.1 and 1.0",
+                    validator=float_range_validator(0.1, 1.0),
+                    error_message="responsiveness_auto_cleanup_memory_threshold must be between 0.1 and 1.0"
+                )
+            ],
+            'responsiveness_auto_cleanup_connection_threshold': [
+                ValidationRule(
+                    rule_type="float_range",
+                    description="Must be between 0.1 and 1.0",
+                    validator=float_range_validator(0.1, 1.0),
+                    error_message="responsiveness_auto_cleanup_connection_threshold must be between 0.1 and 1.0"
+                )
             ]
         }
         
@@ -567,6 +632,70 @@ class ConfigurationValidator:
         
         self.add_conflict_rule(max_jobs_vs_queue_limit)
         self.add_conflict_rule(memory_vs_job_limits)
+        
+        # Responsiveness threshold conflict detection
+        def responsiveness_threshold_conflicts(configs: Dict[str, Any]) -> List[ConflictDetection]:
+            conflicts = []
+            
+            # Memory threshold conflicts
+            memory_warning = configs.get('responsiveness_memory_warning_threshold')
+            memory_critical = configs.get('responsiveness_memory_critical_threshold')
+            memory_cleanup = configs.get('responsiveness_auto_cleanup_memory_threshold')
+            
+            if memory_warning is not None and memory_critical is not None:
+                try:
+                    if float(memory_warning) >= float(memory_critical):
+                        conflicts.append(ConflictDetection(
+                            conflict_type=ConflictType.LOGICAL_CONFLICT,
+                            keys=['responsiveness_memory_warning_threshold', 'responsiveness_memory_critical_threshold'],
+                            description="Memory warning threshold must be less than critical threshold",
+                            severity=ValidationSeverity.ERROR,
+                            resolution_suggestions=[
+                                "Decrease memory warning threshold",
+                                "Increase memory critical threshold"
+                            ]
+                        ))
+                except (ValueError, TypeError):
+                    pass
+            
+            if memory_warning is not None and memory_cleanup is not None:
+                try:
+                    if float(memory_cleanup) <= float(memory_warning):
+                        conflicts.append(ConflictDetection(
+                            conflict_type=ConflictType.LOGICAL_CONFLICT,
+                            keys=['responsiveness_memory_warning_threshold', 'responsiveness_auto_cleanup_memory_threshold'],
+                            description="Auto cleanup threshold should be between warning and critical thresholds",
+                            severity=ValidationSeverity.WARNING,
+                            resolution_suggestions=[
+                                "Set cleanup threshold between warning and critical values"
+                            ]
+                        ))
+                except (ValueError, TypeError):
+                    pass
+            
+            # CPU threshold conflicts
+            cpu_warning = configs.get('responsiveness_cpu_warning_threshold')
+            cpu_critical = configs.get('responsiveness_cpu_critical_threshold')
+            
+            if cpu_warning is not None and cpu_critical is not None:
+                try:
+                    if float(cpu_warning) >= float(cpu_critical):
+                        conflicts.append(ConflictDetection(
+                            conflict_type=ConflictType.LOGICAL_CONFLICT,
+                            keys=['responsiveness_cpu_warning_threshold', 'responsiveness_cpu_critical_threshold'],
+                            description="CPU warning threshold must be less than critical threshold",
+                            severity=ValidationSeverity.ERROR,
+                            resolution_suggestions=[
+                                "Decrease CPU warning threshold",
+                                "Increase CPU critical threshold"
+                            ]
+                        ))
+                except (ValueError, TypeError):
+                    pass
+            
+            return conflicts
+        
+        self.add_conflict_rule(responsiveness_threshold_conflicts)
     
     def _initialize_builtin_impacts(self):
         """Initialize built-in impact assessment rules"""
@@ -627,6 +756,128 @@ class ConfigurationValidator:
         
         self.add_impact_rule('max_concurrent_jobs', assess_max_concurrent_jobs)
         self.add_impact_rule('session_timeout_minutes', assess_session_timeout)
+        
+        # Responsiveness monitoring impact assessments
+        def assess_responsiveness_threshold(key: str, old_value: Any, new_value: Any) -> ImpactAssessment:
+            try:
+                old_val = float(old_value) if old_value is not None else 0.8
+                new_val = float(new_value)
+                
+                # Determine impact based on threshold change
+                if abs(new_val - old_val) > 0.2:
+                    impact_level = ImpactLevel.HIGH
+                    risk_factors = ["Significant change in monitoring sensitivity", "May affect system behavior"]
+                elif abs(new_val - old_val) > 0.1:
+                    impact_level = ImpactLevel.MEDIUM
+                    risk_factors = ["Moderate change in monitoring sensitivity"]
+                else:
+                    impact_level = ImpactLevel.LOW
+                    risk_factors = []
+                
+                # Determine affected components based on threshold type
+                if "memory" in key:
+                    affected_components = ["memory_monitor", "cleanup_manager", "system_optimizer"]
+                elif "cpu" in key:
+                    affected_components = ["cpu_monitor", "performance_tracker", "system_optimizer"]
+                elif "connection" in key:
+                    affected_components = ["database_manager", "connection_pool", "system_optimizer"]
+                else:
+                    affected_components = ["system_optimizer"]
+                
+                return ImpactAssessment(
+                    key=key,
+                    old_value=old_value,
+                    new_value=new_value,
+                    impact_level=impact_level,
+                    affected_components=affected_components,
+                    requires_restart=False,
+                    risk_factors=risk_factors,
+                    mitigation_steps=[
+                        "Monitor system behavior after change",
+                        "Verify threshold effectiveness",
+                        "Adjust gradually if needed"
+                    ]
+                )
+            except (ValueError, TypeError):
+                return self._default_impact_assessment(key, old_value, new_value)
+        
+        def assess_monitoring_interval(key: str, old_value: Any, new_value: Any) -> ImpactAssessment:
+            try:
+                old_val = int(old_value) if old_value is not None else 30
+                new_val = int(new_value)
+                
+                if new_val < old_val:
+                    impact_level = ImpactLevel.MEDIUM
+                    risk_factors = ["Increased monitoring frequency", "Higher CPU usage for monitoring"]
+                elif new_val > old_val * 2:
+                    impact_level = ImpactLevel.MEDIUM
+                    risk_factors = ["Reduced monitoring frequency", "May miss short-term issues"]
+                else:
+                    impact_level = ImpactLevel.LOW
+                    risk_factors = []
+                
+                return ImpactAssessment(
+                    key=key,
+                    old_value=old_value,
+                    new_value=new_value,
+                    impact_level=impact_level,
+                    affected_components=["system_optimizer", "monitoring_service"],
+                    requires_restart=True,
+                    risk_factors=risk_factors,
+                    mitigation_steps=[
+                        "Restart application to apply new interval",
+                        "Monitor system performance",
+                        "Verify monitoring effectiveness"
+                    ]
+                )
+            except (ValueError, TypeError):
+                return self._default_impact_assessment(key, old_value, new_value)
+        
+        def assess_cleanup_enabled(key: str, old_value: Any, new_value: Any) -> ImpactAssessment:
+            old_val = bool(old_value) if old_value is not None else True
+            new_val = bool(new_value)
+            
+            if old_val and not new_val:
+                impact_level = ImpactLevel.HIGH
+                risk_factors = ["Automatic cleanup disabled", "System may become unresponsive under load"]
+            elif not old_val and new_val:
+                impact_level = ImpactLevel.MEDIUM
+                risk_factors = ["Automatic cleanup enabled", "System behavior may change"]
+            else:
+                impact_level = ImpactLevel.LOW
+                risk_factors = []
+            
+            return ImpactAssessment(
+                key=key,
+                old_value=old_value,
+                new_value=new_value,
+                impact_level=impact_level,
+                affected_components=["cleanup_manager", "system_optimizer"],
+                requires_restart=False,
+                risk_factors=risk_factors,
+                mitigation_steps=[
+                    "Monitor system responsiveness",
+                    "Verify cleanup behavior",
+                    "Have manual cleanup procedures ready"
+                ]
+            )
+        
+        # Register responsiveness impact rules
+        responsiveness_threshold_keys = [
+            'responsiveness_memory_warning_threshold',
+            'responsiveness_memory_critical_threshold',
+            'responsiveness_cpu_warning_threshold',
+            'responsiveness_cpu_critical_threshold',
+            'responsiveness_connection_pool_warning_threshold',
+            'responsiveness_auto_cleanup_memory_threshold',
+            'responsiveness_auto_cleanup_connection_threshold'
+        ]
+        
+        for threshold_key in responsiveness_threshold_keys:
+            self.add_impact_rule(threshold_key, assess_responsiveness_threshold)
+        
+        self.add_impact_rule('responsiveness_monitoring_interval', assess_monitoring_interval)
+        self.add_impact_rule('responsiveness_cleanup_enabled', assess_cleanup_enabled)
     
     def _default_impact_assessment(self, key: str, old_value: Any, new_value: Any) -> ImpactAssessment:
         """Default impact assessment for unknown configuration keys"""
@@ -654,7 +905,17 @@ class ConfigurationValidator:
             'enable_batch_processing': ['max_concurrent_jobs', 'queue_size_limit'],
             'enable_advanced_monitoring': ['alert_queue_backup_threshold', 'alert_error_rate_threshold'],
             'max_memory_usage_mb': ['max_concurrent_jobs', 'processing_priority_weights'],
-            'processing_priority_weights': ['max_memory_usage_mb', 'max_concurrent_jobs']
+            'processing_priority_weights': ['max_memory_usage_mb', 'max_concurrent_jobs'],
+            # Responsiveness configuration relationships
+            'responsiveness_memory_warning_threshold': ['responsiveness_memory_critical_threshold', 'responsiveness_auto_cleanup_memory_threshold'],
+            'responsiveness_memory_critical_threshold': ['responsiveness_memory_warning_threshold', 'responsiveness_auto_cleanup_memory_threshold'],
+            'responsiveness_cpu_warning_threshold': ['responsiveness_cpu_critical_threshold'],
+            'responsiveness_cpu_critical_threshold': ['responsiveness_cpu_warning_threshold'],
+            'responsiveness_connection_pool_warning_threshold': ['responsiveness_auto_cleanup_connection_threshold'],
+            'responsiveness_monitoring_interval': ['responsiveness_cleanup_enabled'],
+            'responsiveness_cleanup_enabled': ['responsiveness_auto_cleanup_memory_threshold', 'responsiveness_auto_cleanup_connection_threshold'],
+            'responsiveness_auto_cleanup_memory_threshold': ['responsiveness_memory_warning_threshold', 'responsiveness_memory_critical_threshold'],
+            'responsiveness_auto_cleanup_connection_threshold': ['responsiveness_connection_pool_warning_threshold']
         }
         
         return relationships.get(key, [])
@@ -745,10 +1006,9 @@ class ConfigurationValidator:
                 if key in self._validation_rules:
                     for rule in self._validation_rules[key]:
                         try:
-                            rule_result = rule.validate(value)
-                            if not rule_result.is_valid:
-                                errors.extend(rule_result.errors)
-                                warnings.extend(rule_result.warnings)
+                            is_valid = rule.validator(value)
+                            if not is_valid:
+                                errors.append(rule.error_message)
                         except Exception as e:
                             errors.append(f"Validation rule error: {str(e)}")
             
@@ -777,6 +1037,16 @@ class ConfigurationValidator:
 
     def assess_impact(self, key: str, old_value: Any, new_value: Any) -> ImpactAssessment:
         """Assess the impact of a configuration change"""
+        
+        # Check for custom impact rules first
+        with self._impact_lock:
+            impact_assessor = self._impact_rules.get(key)
+        
+        if impact_assessor:
+            try:
+                return impact_assessor(key, old_value, new_value)
+            except Exception as e:
+                logger.error(f"Error in impact assessment for key {key}: {str(e)}")
         
         # Determine impact level based on configuration key and value change
         impact_level = ImpactLevel.LOW

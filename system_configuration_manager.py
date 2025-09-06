@@ -253,6 +253,99 @@ class SystemConfigurationManager:
             )
         })
         
+        # Responsiveness monitoring settings
+        schema.update({
+            "responsiveness_memory_warning_threshold": ConfigurationSchema(
+                key="responsiveness_memory_warning_threshold",
+                data_type=ConfigurationDataType.FLOAT,
+                category=ConfigurationCategory.PERFORMANCE,
+                description="Memory usage warning threshold as percentage (0.0-1.0)",
+                default_value=0.8,
+                validation_rules={"min": 0.1, "max": 1.0},
+                environment_override=True,
+                requires_restart=False
+            ),
+            "responsiveness_memory_critical_threshold": ConfigurationSchema(
+                key="responsiveness_memory_critical_threshold",
+                data_type=ConfigurationDataType.FLOAT,
+                category=ConfigurationCategory.PERFORMANCE,
+                description="Memory usage critical threshold as percentage (0.0-1.0)",
+                default_value=0.9,
+                validation_rules={"min": 0.1, "max": 1.0},
+                environment_override=True,
+                requires_restart=False
+            ),
+            "responsiveness_cpu_warning_threshold": ConfigurationSchema(
+                key="responsiveness_cpu_warning_threshold",
+                data_type=ConfigurationDataType.FLOAT,
+                category=ConfigurationCategory.PERFORMANCE,
+                description="CPU usage warning threshold as percentage (0.0-1.0)",
+                default_value=0.8,
+                validation_rules={"min": 0.1, "max": 1.0},
+                environment_override=True,
+                requires_restart=False
+            ),
+            "responsiveness_cpu_critical_threshold": ConfigurationSchema(
+                key="responsiveness_cpu_critical_threshold",
+                data_type=ConfigurationDataType.FLOAT,
+                category=ConfigurationCategory.PERFORMANCE,
+                description="CPU usage critical threshold as percentage (0.0-1.0)",
+                default_value=0.9,
+                validation_rules={"min": 0.1, "max": 1.0},
+                environment_override=True,
+                requires_restart=False
+            ),
+            "responsiveness_connection_pool_warning_threshold": ConfigurationSchema(
+                key="responsiveness_connection_pool_warning_threshold",
+                data_type=ConfigurationDataType.FLOAT,
+                category=ConfigurationCategory.PERFORMANCE,
+                description="Database connection pool warning threshold as percentage (0.0-1.0)",
+                default_value=0.9,
+                validation_rules={"min": 0.1, "max": 1.0},
+                environment_override=True,
+                requires_restart=False
+            ),
+            "responsiveness_monitoring_interval": ConfigurationSchema(
+                key="responsiveness_monitoring_interval",
+                data_type=ConfigurationDataType.INTEGER,
+                category=ConfigurationCategory.PERFORMANCE,
+                description="Responsiveness monitoring interval in seconds",
+                default_value=30,
+                validation_rules={"min": 5, "max": 300},
+                environment_override=True,
+                requires_restart=True
+            ),
+            "responsiveness_cleanup_enabled": ConfigurationSchema(
+                key="responsiveness_cleanup_enabled",
+                data_type=ConfigurationDataType.BOOLEAN,
+                category=ConfigurationCategory.PERFORMANCE,
+                description="Enable automatic cleanup when responsiveness thresholds are exceeded",
+                default_value=True,
+                environment_override=True,
+                requires_restart=False
+            ),
+            "responsiveness_auto_cleanup_memory_threshold": ConfigurationSchema(
+                key="responsiveness_auto_cleanup_memory_threshold",
+                data_type=ConfigurationDataType.FLOAT,
+                category=ConfigurationCategory.PERFORMANCE,
+                description="Memory threshold for automatic cleanup as percentage (0.0-1.0)",
+                default_value=0.85,
+                validation_rules={"min": 0.1, "max": 1.0},
+                environment_override=True,
+                requires_restart=False
+            ),
+            "responsiveness_auto_cleanup_connection_threshold": ConfigurationSchema(
+                key="responsiveness_auto_cleanup_connection_threshold",
+                data_type=ConfigurationDataType.FLOAT,
+                category=ConfigurationCategory.PERFORMANCE,
+                description="Connection pool threshold for automatic cleanup as percentage (0.0-1.0)",
+                default_value=0.95,
+                validation_rules={"min": 0.1, "max": 1.0},
+                environment_override=True,
+                requires_restart=False
+            )
+        })
+        
         # Storage management settings
         schema.update({
             "CAPTION_MAX_STORAGE_GB": ConfigurationSchema(
