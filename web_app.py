@@ -140,10 +140,11 @@ try:
             self._start_time = time.time()
             self._last_cleanup_time = time.time()
             
-            # Load responsiveness configuration
+            # Store config instance to avoid duplicate instantiation
             if config is None:
                 from config import Config
                 config = Config()
+            self.config = config
             self.responsiveness_config = config.responsiveness
             
             # Track connection pool metrics
@@ -481,9 +482,7 @@ try:
             try:
                 # Try to get actual connection pool stats from database manager
                 from database import DatabaseManager
-                from config import Config
-                config = Config()
-                db_manager = DatabaseManager(config)
+                db_manager = DatabaseManager(self.config)
                 
                 # Get connection pool stats if available
                 if hasattr(db_manager, 'get_connection_pool_stats'):
@@ -711,7 +710,7 @@ try:
                 app.logger.error(f"Error analyzing slow requests: {e}")
                 return {'slow_requests': [], 'analysis': {}}
     
-    system_optimizer = SystemOptimizer()
+    system_optimizer = SystemOptimizer(config)
     app.system_optimizer = system_optimizer  # Store for API access
     app.performance_dashboard = create_performance_dashboard(
         system_optimizer, system_optimizer, system_optimizer
@@ -914,7 +913,17 @@ except ImportError:
     print("SocketIO not available - real-time features disabled")
 
 if __name__ == '__main__':
+    # Configure auto-reloader to be more selective
+    # Disable auto-reloader to prevent unnecessary restarts during development
+    # Use manual restart when needed instead
+    
+    import os
+    
+    # Check if we should enable reloader (only for explicit development)
+    enable_reloader = os.environ.get('FLASK_AUTO_RELOAD', 'false').lower() == 'true'
+    
     if socketio:
-        socketio.run(app, host='0.0.0.0', port=5000, debug=True, allow_unsafe_werkzeug=True)
+        socketio.run(app, host='0.0.0.0', port=5000, debug=True, 
+                     use_reloader=enable_reloader, allow_unsafe_werkzeug=True)
     else:
-        app.run(debug=True, host='0.0.0.0', port=5000)
+        app.run(debug=True, use_reloader=enable_reloader, host='0.0.0.0', port=5000)

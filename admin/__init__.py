@@ -13,6 +13,10 @@ from flask import Blueprint
 
 def create_admin_blueprint(app):
     """Create and configure the admin blueprint"""
+    # Check if already registered to prevent duplicate registration
+    if hasattr(app, '_admin_blueprint_registered'):
+        return None
+    
     import os
     admin_bp = Blueprint('admin', __name__, 
                         url_prefix='/admin',
@@ -23,4 +27,5 @@ def create_admin_blueprint(app):
     from .routes import register_all_routes
     register_all_routes(admin_bp)
     
+    app._admin_blueprint_registered = True
     return admin_bp

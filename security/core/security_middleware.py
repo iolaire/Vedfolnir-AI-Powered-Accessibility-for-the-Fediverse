@@ -41,6 +41,10 @@ class SecurityMiddleware:
     
     def init_app(self, app):
         """Initialize security middleware with Flask app"""
+        # Check if already initialized to prevent duplicate initialization
+        if hasattr(app, '_security_middleware_initialized'):
+            return
+        
         app.before_request(self.before_request)
         app.after_request(self.after_request)
         
@@ -48,6 +52,9 @@ class SecurityMiddleware:
         @app.before_request
         def generate_csp_nonce():
             g.csp_nonce = secrets.token_urlsafe(16)
+        
+        # Mark as initialized
+        app._security_middleware_initialized = True
     
     def before_request(self):
         """Security checks before each request"""

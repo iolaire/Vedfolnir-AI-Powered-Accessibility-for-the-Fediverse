@@ -14,9 +14,9 @@ from dotenv import load_dotenv
 # Load environment variables from .env file
 load_dotenv(override=True)
 
-# Log the value of DB_POOL_SIZE immediately after loading .env
-db_pool_size_from_env = os.getenv("DB_POOL_SIZE")
-logging.info(f"DB_POOL_SIZE from environment after load_dotenv: {db_pool_size_from_env}")
+# Debug logging removed to prevent duplicate entries during module imports
+# db_pool_size_from_env = os.getenv("DB_POOL_SIZE")
+# logging.info(f"DB_POOL_SIZE from environment after load_dotenv: {db_pool_size_from_env}")
 
 @dataclass
 class RetryConfig:

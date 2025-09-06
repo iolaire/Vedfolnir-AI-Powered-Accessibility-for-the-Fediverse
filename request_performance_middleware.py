@@ -156,7 +156,6 @@ def initialize_request_performance_middleware(app):
     """Initialize request performance middleware with Flask app"""
     try:
         middleware = RequestPerformanceMiddleware(app)
-        logger.info("Request performance middleware initialized successfully")
         return middleware
     except Exception as e:
         logger.error(f"Failed to initialize request performance middleware: {e}")

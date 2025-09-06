@@ -429,6 +429,10 @@ def initialize_csrf_token_manager(app) -> CSRFTokenManager:
     """
     global _csrf_token_manager
     
+    # Check if already initialized to prevent duplicate initialization
+    if _csrf_token_manager is not None:
+        return _csrf_token_manager
+    
     # Get configuration from app
     token_lifetime = app.config.get('CSRF_TOKEN_LIFETIME', 3600)
     

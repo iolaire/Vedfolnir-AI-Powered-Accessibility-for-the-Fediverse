@@ -179,5 +179,10 @@ def register_csrf_dashboard(app):
     Args:
         app: Flask application instance
     """
+    # Check if already registered to prevent duplicate registration
+    if hasattr(app, '_csrf_dashboard_registered'):
+        return
+    
     app.register_blueprint(csrf_dashboard_bp)
+    app._csrf_dashboard_registered = True
     logger.info("CSRF security dashboard registered")

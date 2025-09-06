@@ -14,6 +14,9 @@ import logging
 from typing import Optional
 from dataclasses import dataclass
 
+# Global instance to prevent duplicate initialization
+_storage_config_service = None
+
 logger = logging.getLogger(__name__)
 
 
@@ -27,6 +30,14 @@ class StorageLimitConfig:
     def get_warning_threshold_gb(self) -> float:
         """Calculate warning threshold in GB"""
         return self.max_storage_gb * (self.warning_threshold_percentage / 100.0)
+
+
+def get_storage_configuration_service():
+    """Get the global storage configuration service instance"""
+    global _storage_config_service
+    if _storage_config_service is None:
+        _storage_config_service = StorageConfigurationService()
+    return _storage_config_service
 
 
 class StorageConfigurationService:

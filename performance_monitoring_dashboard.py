@@ -466,7 +466,12 @@ def cleanup_management():
 
 def register_performance_monitoring(app):
     """Register performance monitoring with Flask app"""
+    # Check if already registered to prevent duplicate registration
+    if hasattr(app, '_performance_monitoring_registered'):
+        return
+    
     app.register_blueprint(performance_bp)
+    app._performance_monitoring_registered = True
     
     # Add template globals for performance monitoring
     @app.template_global()

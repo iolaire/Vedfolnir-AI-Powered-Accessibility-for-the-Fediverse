@@ -14,6 +14,9 @@ from datetime import datetime, timezone, timedelta
 from typing import Dict, Any, List, Optional
 from dataclasses import dataclass
 
+# Global instance to prevent duplicate initialization
+_performance_dashboard = None
+
 from flask import render_template, jsonify, request, current_app, redirect, url_for
 from flask_login import login_required, current_user
 from admin.routes.admin_api import admin_api_required
@@ -639,8 +642,11 @@ def register_routes(bp):
 
 def create_performance_dashboard(performance_optimizer, connection_optimizer, database_optimizer):
     """Factory function to create performance dashboard"""
-    return NotificationPerformanceDashboard(
-        performance_optimizer,
-        connection_optimizer,
-        database_optimizer
-    )
+    global _performance_dashboard
+    if _performance_dashboard is None:
+        _performance_dashboard = NotificationPerformanceDashboard(
+            performance_optimizer,
+            connection_optimizer,
+            database_optimizer
+        )
+    return _performance_dashboard
