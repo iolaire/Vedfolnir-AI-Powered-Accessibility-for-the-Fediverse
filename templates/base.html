@@ -8,11 +8,43 @@
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <meta name="csrf-token" content="{{ csrf_token }}">
+    
+    <!-- Security Headers -->
+    <meta http-equiv="X-Content-Type-Options" content="nosniff">
+    <meta http-equiv="X-Frame-Options" content="DENY">
+    <meta http-equiv="X-XSS-Protection" content="1; mode=block">
+    <meta http-equiv="Referrer-Policy" content="strict-origin-when-cross-origin">
+    <meta http-equiv="Permissions-Policy" content="geolocation=(), microphone=(), camera=()">
     <title>{% block title %}Vedfolnir{% endblock %}</title>
     
-    <!-- Preconnect to external resources -->
-    <link rel="preconnect" href="https://fonts.googleapis.com">
-    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <!-- Performance Optimizations -->
+    {% if performance and performance.flags.enable_resource_hints %}
+        <!-- DNS Prefetch -->
+        {% for domain in performance.resource_hints.dns_prefetch %}
+        <link rel="dns-prefetch" href="//{{ domain }}">
+        {% endfor %}
+        
+        <!-- Preconnect -->
+        {% for domain in performance.resource_hints.preconnect %}
+        <link rel="preconnect" href="{{ domain }}"{% if 'gstatic' in domain %} crossorigin{% endif %}>
+        {% endfor %}
+        
+        <!-- Preload Critical Resources -->
+        {% for asset in performance.resource_hints.preload %}
+        <link rel="preload" href="{{ asset.href }}" as="{{ asset.as }}"{% if asset.type %} type="{{ asset.type }}"{% endif %}{% if asset.as == 'style' %} onload="this.onload=null;this.rel='stylesheet'"{% endif %}>
+        {% endfor %}
+    {% else %}
+        <!-- Fallback Preconnect -->
+        <link rel="preconnect" href="https://fonts.googleapis.com">
+        <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    {% endif %}
+    
+    <!-- Critical CSS for Above-the-Fold Content -->
+    {% if performance and performance.flags.enable_critical_css and performance.critical_css %}
+    <style>
+        {{ performance.critical_css|safe }}
+    </style>
+    {% endif %}
     
     <!-- Modern font -->
     <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&display=swap" rel="stylesheet">
@@ -73,16 +105,18 @@
 </head>
 <body data-authenticated="{% if current_user_safe %}true{% else %}false{% endif %}">
     <!-- Skip to content link for accessibility -->
-    <a href="#main-content" class="skip-to-content">Skip to main content</a>
+    <a href="#page-content" class="skip-to-content">Skip to main content</a>
     
     <nav class="navbar navbar-expand-lg navbar-dark bg-dark">
         <div class="container">
             <a class="navbar-brand d-flex align-items-center" href="{{ url_for('main.index') }}" aria-label="Vedfolnir - Go to dashboard">
                 <img src="{{ url_for('static', filename='images/Logo.png') }}" 
-                     alt="Vedfolnir Logo" 
+                     alt="Vedfolnir Logo - AI-Powered Accessibility for the Fediverse" 
                      class="navbar-logo me-2"
                      height="32"
-                     onerror="this.style.display='none'">
+                     width="32"
+                     onerror="this.style.display='none'"
+                     role="img">
                 <span class="navbar-brand-text">Vedfolnir</span>
             </a>
             <button class="navbar-toggler" type="button" data-bs-toggle="collapse" data-bs-target="#navbarNav" aria-controls="navbarNav" aria-expanded="false" aria-label="Toggle navigation">
@@ -90,10 +124,10 @@
             </button>
             <div class="collapse navbar-collapse" id="navbarNav">
                 <ul class="navbar-nav me-auto">
-                    <li class="nav-item">
-                        <a class="nav-link" href="{{ url_for('main.index') }}">Dashboard</a>
-                    </li>
                     {% if current_user_safe %}
+                        <li class="nav-item">
+                            <a class="nav-link" href="{{ url_for('main.index') }}">Dashboard</a>
+                        </li>
                         <li class="nav-item dropdown">
                             <a class="nav-link dropdown-toggle" href="#" id="reviewDropdown" role="button" data-bs-toggle="dropdown" aria-expanded="false">
                                 Review
@@ -167,7 +201,9 @@
                             </a>
                         </li>
                         {% endif %}
-
+                    {% else %}
+                        <!-- Anonymous user navigation - minimal navigation items -->
+                        <!-- No navigation items for anonymous users on landing page -->
                     {% endif %}
                 </ul>
                 <ul class="navbar-nav">
@@ -223,8 +259,11 @@
                             </ul>
                         </li>
                     {% else %}
+                        <!-- Anonymous user navigation - Login link in top-right corner -->
                         <li class="nav-item">
-                            <a class="nav-link" href="{{ url_for('user_management.login') }}">Login</a>
+                            <a class="nav-link" href="{{ url_for('user_management.login') }}">
+                                <i class="bi bi-box-arrow-in-right me-1"></i>Login
+                            </a>
                         </li>
                     {% endif %}
                 </ul>
@@ -232,7 +271,7 @@
         </div>
     </nav>
 
-    <div class="container mt-4" id="main-content">
+    <div class="container mt-4" id="page-content">
         <!-- Unified Notification Container -->
         <div id="unified-notification-container" class="notification-container notification-position-top notification-position-right notification-stack-down" role="region" aria-label="Notifications" aria-live="polite"></div>
         

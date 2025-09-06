@@ -72,3 +72,48 @@ def internal_error(message: str = "Internal server error", details: Optional[str
         details,
         500
     )
+
+def handle_security_error(message: str, status_code: int = 403):
+    """
+    Handle security-related errors with appropriate logging and response.
+    
+    Args:
+        message: Security error message
+        status_code: HTTP status code (default: 403 Forbidden)
+        
+    Returns:
+        Flask response tuple
+    """
+    from flask import current_app, request
+    import logging
+    
+    logger = logging.getLogger(__name__)
+    
+    # Log security incident
+    client_ip = request.remote_addr if request else 'unknown'
+    user_agent = request.headers.get('User-Agent', 'unknown') if request else 'unknown'
+    
+    logger.warning(f"Security error: {message} | IP: {client_ip} | User-Agent: {user_agent}")
+    
+    # Return appropriate error response
+    if status_code == 403:
+        return create_error_response(
+            ErrorCodes.AUTHORIZATION_ERROR,
+            "Access denied",
+            None,
+            403
+        )
+    elif status_code == 401:
+        return create_error_response(
+            ErrorCodes.AUTHENTICATION_ERROR,
+            "Authentication required",
+            None,
+            401
+        )
+    else:
+        return create_error_response(
+            ErrorCodes.INTERNAL_ERROR,
+            "Security violation detected",
+            None,
+            status_code
+        )

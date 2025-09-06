@@ -85,12 +85,17 @@ def load_user(user_id):
         current_app.logger.error(f"Unexpected error loading user {user_id}: {e}")
         return None
 
-# Initialize security (simplified)
+# Initialize security systems
 try:
-    from security.core.csrf_token_manager import csrf_token_manager
-    csrf_token_manager.init_app(app)
-except Exception:
-    pass
+    from security.core.csrf_token_manager import initialize_csrf_token_manager
+    csrf_token_manager = initialize_csrf_token_manager(app)
+    
+    from security.core.security_middleware import SecurityMiddleware
+    security_middleware = SecurityMiddleware(app)
+    
+    print("✅ Security middleware initialized successfully")
+except Exception as e:
+    print(f"⚠️  Security middleware initialization failed: {e}")
 
 # Register all blueprints
 from app.core.blueprints import register_blueprints

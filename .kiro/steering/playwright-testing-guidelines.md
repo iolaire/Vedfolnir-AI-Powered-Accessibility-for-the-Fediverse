@@ -72,6 +72,30 @@ timeout 120 npx playwright test --config=0830_17_52_playwright.config.js --debug
 timeout 120 npx playwright test tests/0830_17_52_test_admin.js --timeout=120
 ```
 
+## Landing Page Tests (NEW)
+
+### Running Landing Page Tests
+```bash
+# Navigate to correct directory first
+cd tests/playwright
+
+# Start web application first
+python web_app.py & sleep 10
+
+# Run accessibility tests (REQUIRED timeout prefix)
+timeout 120 npx playwright test tests/0905_14_50_test_landing_page_accessibility.js --config=0830_17_52_playwright.config.js
+
+# Run UI tests
+timeout 120 npx playwright test tests/0905_14_50_test_landing_page_ui.js --config=0830_17_52_playwright.config.js
+
+# Debug mode
+timeout 120 npx playwright test tests/0905_14_50_test_landing_page_accessibility.js --config=0830_17_52_playwright.config.js --debug
+
+# Use convenience script
+./0905_14_50_run_landing_page_tests.sh --accessibility
+./0905_14_50_run_landing_page_tests.sh --ui
+```
+
 ## Critical Security Issues
 
 ### Page.evaluate() Security Error
@@ -114,6 +138,47 @@ await page.goto('/login', {
 - No console errors (WebSocket, CORS, notifications)
 - Proper cleanup after each test
 - Clear, descriptive test names
+
+## Generic Test Running Instructions (For Any Playwright Test)
+
+### Standard Test Execution Pattern
+```bash
+# 1. ALWAYS navigate to correct directory first
+cd tests/playwright
+
+# 2. Start web application if needed (most tests require this)
+python web_app.py & sleep 10
+
+# 3. Verify app is running
+curl -s http://127.0.0.1:5000 | head -5
+
+# 4. Run test with MANDATORY timeout prefix and working config
+timeout 120 npx playwright test tests/[TIMESTAMP]_test_[NAME].js --config=0830_17_52_playwright.config.js
+
+# 5. For debugging, add --debug flag
+timeout 120 npx playwright test tests/[TIMESTAMP]_test_[NAME].js --config=0830_17_52_playwright.config.js --debug
+```
+
+### Test File Pattern Recognition
+- All test files follow: `tests/MMdd_HH_mm_test_[description].js`
+- Always use existing working config: `0830_17_52_playwright.config.js`
+- Always use timeout prefix: `timeout 120`
+- Always run from `tests/playwright/` directory
+
+### Universal Prerequisites Checklist
+1. ✅ Navigate to `tests/playwright/` directory
+2. ✅ Start web application: `python web_app.py & sleep 10`
+3. ✅ Verify app responds: `curl http://127.0.0.1:5000`
+4. ✅ Use timeout prefix: `timeout 120`
+5. ✅ Use working config: `--config=0830_17_52_playwright.config.js`
+6. ✅ For debugging: add `--debug` flag
+
+### Common Error Prevention
+- **"No tests found"**: Check file path and use correct config
+- **Timeout errors**: Ensure web app is running first
+- **Navigation errors**: Use `domcontentloaded` not `networkidle`
+- **Security errors**: Avoid `page.evaluate()` for storage operations
+- **Browser errors**: Ensure browsers installed: `npx playwright install`
 
 ## Troubleshooting
 1. Verify web app running on `http://127.0.0.1:5000`

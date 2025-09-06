@@ -62,7 +62,7 @@ class SecurityConfig:
         if self.CSP_DIRECTIVES is None:
             self.CSP_DIRECTIVES = {
                 'default-src': "'self'",
-                'script-src': "'self' 'unsafe-inline' https://cdn.jsdelivr.net https://cdn.socket.io https://cdnjs.cloudflare.com",  # Allow inline scripts, Bootstrap JS, and Socket.IO
+                'script-src': "'self' 'unsafe-inline' https://cdn.jsdelivr.net https://cdn.socket.io https://cdnjs.cloudflare.com https://unpkg.com",  # Allow inline scripts, Bootstrap JS, Socket.IO, and unpkg for axe-core
                 'style-src': "'self' 'unsafe-inline' https://fonts.googleapis.com https://cdn.jsdelivr.net",   # Allow inline styles, Google Fonts, and Bootstrap CSS
                 'img-src': "'self' data: https:",        # Allow images from self, data URLs, and HTTPS
                 'font-src': "'self' https://fonts.gstatic.com",  # Allow Google Fonts

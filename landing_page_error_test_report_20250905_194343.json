@@ -1,0 +1,37 @@
+{
+  "timestamp": "2025-09-05T19:43:43.305714",
+  "fallback_tests": {
+    "timestamp": "2025-09-05T23:43:24.282297+00:00",
+    "tests": {
+      "fallback_html_generation": {
+        "status": "pass",
+        "html_length": 7403,
+        "contains_title": true,
+        "contains_cta": true
+      },
+      "authentication_error_logging": {
+        "status": "pass",
+        "message": "Authentication error logging completed without exceptions"
+      },
+      "session_detection_error_handling": {
+        "status": "pass",
+        "fallback_result": false,
+        "expected_false": true
+      },
+      "template_rendering_error_handling": {
+        "status": "pass",
+        "response_type": "Response",
+        "has_fallback_header": true
+      }
+    },
+    "summary": {
+      "total_tests": 4,
+      "passed_tests": 4,
+      "failed_tests": 0,
+      "success_rate": 100.0
+    }
+  },
+  "web_app_tests": {
+    "skipped": true
+  }
+}

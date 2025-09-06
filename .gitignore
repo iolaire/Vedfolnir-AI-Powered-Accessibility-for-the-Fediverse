@@ -166,6 +166,8 @@ GEMINI.md
 
 # Claude code/z.ai
 CLAUDE.md
+claude/
+.claude/
 
 # Claude code/z.ai /export
 *claude.txt

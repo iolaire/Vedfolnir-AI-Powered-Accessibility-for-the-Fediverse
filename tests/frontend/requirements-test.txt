@@ -1,0 +1,24 @@
+# Frontend Testing Requirements for Landing Page Tests
+# Install with: pip install -r tests/frontend/requirements-test.txt
+
+# Playwright for modern browser automation
+playwright>=1.40.0
+
+# HTTP requests for application health checks
+requests>=2.31.0
+
+# Additional testing utilities
+pytest>=7.4.0  # Alternative test runner (optional)
+pytest-html>=3.2.0  # HTML test reports (optional)
+pytest-cov>=4.1.0  # Coverage reporting (optional)
+pytest-playwright>=0.4.3  # Playwright pytest integration (optional)
+
+# After installing playwright, run:
+# playwright install
+
+# This will download browser binaries for:
+# - Chromium
+# - Firefox  
+# - WebKit (Safari engine)
+
+# No separate driver downloads needed - Playwright manages browsers automatically

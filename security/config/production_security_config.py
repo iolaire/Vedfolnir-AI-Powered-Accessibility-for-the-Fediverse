@@ -36,7 +36,7 @@ class ProductionSecurityConfig:
             'X-XSS-Protection': '1; mode=block',
             'Content-Security-Policy': (
                 "default-src 'self'; "
-                "script-src 'self' 'unsafe-inline' https://cdn.jsdelivr.net https://cdn.socket.io https://cdnjs.cloudflare.com; "
+                "script-src 'self' 'unsafe-inline' https://cdn.jsdelivr.net https://cdn.socket.io https://cdnjs.cloudflare.com https://unpkg.com; "
                 "style-src 'self' 'unsafe-inline' https://cdn.jsdelivr.net; "
                 "img-src 'self' data: https:; "
                 "connect-src 'self' ws: wss:"
