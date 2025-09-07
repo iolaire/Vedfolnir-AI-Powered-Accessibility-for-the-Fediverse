@@ -19,6 +19,13 @@ class DatabaseSessionSync {
         this.isOnline = navigator.onLine;
         this.currentSessionState = null;
         
+        // Enhanced error handling
+        this.retryCount = 0;
+        this.maxRetries = 3;
+        this.retryDelay = 5000; // 5 seconds
+        this.consecutiveFailures = 0;
+        this.maxConsecutiveFailures = 5;
+        
         // Bind methods
         this.handleStorageEvent = this.handleStorageEvent.bind(this);
         this.handleOnlineStatusChange = this.handleOnlineStatusChange.bind(this);
@@ -85,8 +92,11 @@ class DatabaseSessionSync {
             if (data.success) {
                 this.handleSessionStateUpdate(data);
                 this.lastSyncTime = Date.now();
+                this.consecutiveFailures = 0;
+                this.retryCount = 0;
             } else {
                 console.error('[SessionSync] Session state API error:', data.error || 'Unknown error');
+                this.handleSyncError(new Error(data.error || 'API error'));
             }
             
         } catch (error) {
@@ -94,8 +104,49 @@ class DatabaseSessionSync {
             
             if (error.message.includes('401') || error.message.includes('403')) {
                 this.handleSessionExpiration();
+            } else {
+                this.handleSyncError(error);
             }
         }
+    }
+    
+    handleSyncError(error) {
+        this.consecutiveFailures++;
+        
+        console.warn(`[SessionSync] Sync failure #${this.consecutiveFailures}: ${error.message}`);
+        
+        if (this.consecutiveFailures >= this.maxConsecutiveFailures) {
+            console.error('[SessionSync] Too many consecutive failures, reducing sync frequency');
+            this.reduceSyncFrequency();
+            return;
+        }
+        
+        // Implement exponential backoff retry
+        if (this.retryCount < this.maxRetries) {
+            this.retryCount++;
+            const delay = this.retryDelay * Math.pow(2, this.retryCount - 1);
+            
+            console.log(`[SessionSync] Retrying sync in ${delay}ms (attempt ${this.retryCount}/${this.maxRetries})`);
+            
+            setTimeout(() => {
+                this.syncSessionState();
+            }, delay);
+        }
+    }
+    
+    reduceSyncFrequency() {
+        // Reduce sync frequency when experiencing persistent issues
+        const originalInterval = this.syncInterval;
+        this.syncInterval = Math.min(this.syncInterval * 2, 300000); // Max 5 minutes
+        
+        console.log(`[SessionSync] Reduced sync frequency from ${originalInterval}ms to ${this.syncInterval}ms`);
+        
+        // Reset after successful sync
+        this.recoveryTimer = setTimeout(() => {
+            this.syncInterval = originalInterval;
+            this.consecutiveFailures = 0;
+            console.log('[SessionSync] Sync frequency restored to normal');
+        }, 300000); // 5 minutes
     }
     
     handleSessionStateUpdate(sessionData) {
@@ -431,6 +482,12 @@ class DatabaseSessionSync {
         window.removeEventListener('online', this.handleOnlineStatusChange);
         window.removeEventListener('offline', this.handleOnlineStatusChange);
         window.removeEventListener('beforeunload', this.handleBeforeUnload);
+        
+        // Clean up recovery timer if exists
+        if (this.recoveryTimer) {
+            clearTimeout(this.recoveryTimer);
+            this.recoveryTimer = null;
+        }
         
         console.log(`[SessionSync] Destroyed for tab ${this.tabId}`);
     }

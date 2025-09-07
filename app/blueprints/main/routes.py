@@ -294,6 +294,12 @@ def logout_redirect():
     """Redirect to user management logout"""
     return redirect(url_for('user_management.logout', _external=False))
 
+@main_bp.route('/dashboard')
+@conditional_rate_limit(requests_per_minute=60)
+def dashboard_redirect():
+    """Redirect /dashboard to main index"""
+    return redirect(url_for('main.index', _external=False))
+
 @main_bp.route('/cache-stats')
 @conditional_rate_limit(requests_per_minute=30)
 def cache_stats():

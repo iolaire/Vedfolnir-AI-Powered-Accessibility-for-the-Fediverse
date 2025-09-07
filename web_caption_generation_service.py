@@ -963,17 +963,20 @@ class WebCaptionGenerationService:
             # Get task completion metrics for the last 24 hours
             cutoff_time = datetime.now(timezone.utc) - timedelta(hours=24)
             
+            # Use string comparison for datetime to avoid timezone issues
             completed_tasks_24h = session.query(CaptionGenerationTask).filter(
                 and_(
                     CaptionGenerationTask.status == TaskStatus.COMPLETED,
-                    CaptionGenerationTask.completed_at >= cutoff_time
+                    CaptionGenerationTask.completed_at.isnot(None),
+                    CaptionGenerationTask.completed_at >= cutoff_time.replace(tzinfo=None)
                 )
             ).count()
             
             failed_tasks_24h = session.query(CaptionGenerationTask).filter(
                 and_(
                     CaptionGenerationTask.status == TaskStatus.FAILED,
-                    CaptionGenerationTask.completed_at >= cutoff_time
+                    CaptionGenerationTask.completed_at.isnot(None),
+                    CaptionGenerationTask.completed_at >= cutoff_time.replace(tzinfo=None)
                 )
             ).count()
             
@@ -985,7 +988,8 @@ class WebCaptionGenerationService:
             completed_tasks = session.query(CaptionGenerationTask).filter(
                 and_(
                     CaptionGenerationTask.status == TaskStatus.COMPLETED,
-                    CaptionGenerationTask.completed_at >= cutoff_time,
+                    CaptionGenerationTask.completed_at.isnot(None),
+                    CaptionGenerationTask.completed_at >= cutoff_time.replace(tzinfo=None),
                     CaptionGenerationTask.started_at.isnot(None)
                 )
             ).all()
@@ -993,7 +997,17 @@ class WebCaptionGenerationService:
             completion_times = []
             for task in completed_tasks:
                 if task.started_at and task.completed_at:
-                    duration = (task.completed_at - task.started_at).total_seconds()
+                    # Ensure both datetimes are timezone-aware for consistent comparison
+                    started_at = task.started_at
+                    completed_at = task.completed_at
+                    
+                    # Convert naive datetimes to timezone-aware
+                    if started_at.tzinfo is None:
+                        started_at = started_at.replace(tzinfo=timezone.utc)
+                    if completed_at.tzinfo is None:
+                        completed_at = completed_at.replace(tzinfo=timezone.utc)
+                    
+                    duration = (completed_at - started_at).total_seconds()
                     completion_times.append(duration)
             
             avg_completion_time = sum(completion_times) / len(completion_times) if completion_times else 0

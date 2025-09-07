@@ -73,7 +73,7 @@
     <link href="{{ url_for('static', filename='css/legacy-notification-fallback.css') }}" rel="stylesheet">
     
     <!-- Session Management Styles -->
-    <style>
+    <style nonce="{{ g.csp_nonce if g.csp_nonce else '' }}">
         .session-status-indicator {
             display: inline-block;
             margin-left: 0.5rem;
@@ -311,7 +311,7 @@
     <script src="{{ url_for('static', filename='js/platform_context_refresh.js') }}"></script>
     
     <!-- Session Management JavaScript -->
-    <script>
+    <script nonce="{{ g.csp_nonce if g.csp_nonce else '' }}">
         // Handle logout with session sync
         function handleLogout(event) {
             if (window.sessionSync) {
@@ -475,7 +475,7 @@
     </script>
     
     <!-- Unified Notification System Initialization -->
-    <script>
+    <script nonce="{{ g.csp_nonce if g.csp_nonce else '' }}">
     // Initialize unified notification system
     document.addEventListener('DOMContentLoaded', function() {
         // Initialize main notification renderer if not already initialized

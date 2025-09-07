@@ -334,7 +334,7 @@ class SecurityMiddleware:
         csp_policy = (
             f"default-src 'self'; "
             f"script-src 'self' 'nonce-{csp_nonce}' https://cdn.jsdelivr.net https://cdn.socket.io https://cdnjs.cloudflare.com https://unpkg.com; "
-            f"style-src 'self' https://fonts.googleapis.com https://cdn.jsdelivr.net; "  # NO unsafe-inline
+            f"style-src 'self' 'nonce-{csp_nonce}' https://fonts.googleapis.com https://cdn.jsdelivr.net; "
             f"img-src 'self' data: https:; "
             f"font-src 'self' https://fonts.gstatic.com https://cdn.jsdelivr.net; "
             f"connect-src 'self' wss: ws:; "

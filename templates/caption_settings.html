@@ -7,7 +7,7 @@
 {% block title %}Caption Settings - Vedfolnir{% endblock %}
 
 {% block head %}
-<style>
+<style nonce="{{ g.csp_nonce if g.csp_nonce else '' }}">
     .settings-form {
         background-color: #f8f9fa;
         padding: 25px;
@@ -247,7 +247,7 @@
     </div>
 </div>
 
-<script>
+<script nonce="{{ g.csp_nonce if g.csp_nonce else '' }}">
 // Real-time validation and preview updates
 document.addEventListener('DOMContentLoaded', function() {
     const form = document.getElementById('settings-form');

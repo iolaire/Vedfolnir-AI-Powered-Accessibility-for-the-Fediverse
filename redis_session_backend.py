@@ -191,6 +191,22 @@ class RedisSessionBackend:
             logger.error(f"Redis error setting session {session_id}: {e}")
             return False
     
+    def set_session(self, session_id: str, data: Dict[str, Any], ttl: int = 7200) -> bool:
+        """
+        Set session data with TTL (alias for set method)
+        
+        This method provides compatibility with session manager expectations.
+        
+        Args:
+            session_id: Session ID
+            data: Session data dictionary
+            ttl: Time to live in seconds
+            
+        Returns:
+            True if successful, False otherwise
+        """
+        return self.set(session_id, data, ttl)
+    
     def delete(self, session_id: str) -> bool:
         """
         Delete session by session ID

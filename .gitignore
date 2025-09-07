@@ -150,10 +150,10 @@ tests/scripts/.last_created_user.txt
 scripts/setup/generate_env_secrets_ILM.py
 
 #promptz.dev kiro specs for Amazon Q Developer
-.amazonq
+.amazonq/
 
 #Amazon Q Developer prompt logs
-.q
+.q/
 .q/chat_history
 
 #playwright tests
@@ -171,3 +171,6 @@ claude/
 
 # Claude code/z.ai /export
 *claude.txt
+
+#copilot
+.github/

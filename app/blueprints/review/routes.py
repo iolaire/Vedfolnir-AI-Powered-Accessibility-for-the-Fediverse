@@ -22,7 +22,7 @@ def review_list():
     try:
         unified_session_manager = getattr(current_app, 'unified_session_manager', None)
         if not unified_session_manager:
-            return render_template('review.html', images=[], page=1, total_pages=1)
+            return render_template('review.html', images=[], page=1, total_pages=1, total=0, per_page=12)
         
         with unified_session_manager.get_db_session() as session:
             # Get images pending review
@@ -44,11 +44,13 @@ def review_list():
             return render_template('review.html', 
                                  images=images,
                                  page=page,
-                                 total_pages=total_pages)
+                                 total_pages=total_pages,
+                                 total=total,
+                                 per_page=per_page)
                                  
     except Exception as e:
         current_app.logger.error(f"Error loading review list: {str(e)}")
-        return render_template('review.html', images=[], page=1, total_pages=1)
+        return render_template('review.html', images=[], page=1, total_pages=1, total=0, per_page=12)
 
 @review_bp.route('/<int:image_id>', methods=['GET', 'POST'])
 @login_required

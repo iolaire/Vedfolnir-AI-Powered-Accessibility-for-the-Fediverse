@@ -4,6 +4,8 @@ from models import ProcessingStatus, PlatformConnection
 from utils.error_responses import validation_error, configuration_error, internal_error
 from datetime import datetime
 import os
+import json
+import logging
 
 api_bp = Blueprint('api', __name__, url_prefix='/api')
 
@@ -418,3 +420,54 @@ def websocket_client_config():
     except Exception as e:
         current_app.logger.error(f"Error getting WebSocket config: {str(e)}")
         return jsonify({'error': 'Failed to get WebSocket configuration'}), 500
+
+@api_bp.route('/csp-report', methods=['POST'])
+def csp_report():
+    """
+    Handle Content Security Policy violation reports
+    
+    CSP reports are sent automatically by browsers when CSP violations occur.
+    This endpoint logs the violations for security monitoring and debugging.
+    """
+    try:
+        # CSP reports are sent as JSON with Content-Type: application/csp-report
+        csp_data = request.get_json()
+        
+        if not csp_data:
+            current_app.logger.warning("CSP report received with no data")
+            return '', 204  # No Content
+        
+        # Extract useful information from the CSP report
+        csp_report = csp_data.get('csp-report', {})
+        
+        # Log the CSP violation with structured data
+        violation_info = {
+            'timestamp': datetime.utcnow().isoformat(),
+            'document_uri': csp_report.get('document-uri', 'unknown'),
+            'referrer': csp_report.get('referrer', 'unknown'),
+            'violated_directive': csp_report.get('violated-directive', 'unknown'),
+            'effective_directive': csp_report.get('effective-directive', 'unknown'),
+            'original_policy': csp_report.get('original-policy', 'unknown'),
+            'disposition': csp_report.get('disposition', 'report'),
+            'blocked_uri': csp_report.get('blocked-uri', 'unknown'),
+            'line_number': csp_report.get('line-number', 'unknown'),
+            'column_number': csp_report.get('column-number', 'unknown'),
+            'source_file': csp_report.get('source-file', 'unknown'),
+            'status_code': csp_report.get('status-code', 'unknown'),
+            'script_sample': csp_report.get('script-sample', 'unknown')[:200],  # Truncate for log readability
+            'user_agent': request.headers.get('User-Agent', 'unknown'),
+            'remote_addr': request.remote_addr
+        }
+        
+        # Log the CSP violation
+        current_app.logger.warning(f"CSP violation detected: {json.dumps(violation_info, indent=2)}")
+        
+        # For development, you might want to store these in the database for analysis
+        # For now, we'll just log them
+        
+        return '', 204  # No Content - browsers don't care about the response
+        
+    except Exception as e:
+        # Don't return errors for CSP reports to avoid endless loops
+        current_app.logger.error(f"Error processing CSP report: {str(e)}")
+        return '', 204  # Always return 204 to prevent retry loops

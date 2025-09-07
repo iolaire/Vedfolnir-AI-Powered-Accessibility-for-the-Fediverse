@@ -17,7 +17,7 @@
     <link href="{{ url_for('static', filename='css/security-extracted.css') }}" rel="stylesheet">
     <link href="{{ url_for('static', filename='css/components.css') }}" rel="stylesheet">
     
-    <style>
+    <style nonce="{{ g.csp_nonce if g.csp_nonce else '' }}">
         body { font-family: Arial, sans-serif; margin: 20px; }
         .status { padding: 10px; margin: 10px 0; border-radius: 5px; }
         .success { background-color: #d4edda; color: #155724; border: 1px solid #c3e6cb; }
@@ -39,7 +39,7 @@
     <script src="{{ url_for('static', filename='js/websocket-transport-optimizer.js') }}"></script>
     <script src="{{ url_for('static', filename='js/websocket-bundle.js') }}"></script>
 
-    <script>
+    <script nonce="{{ g.csp_nonce if g.csp_nonce else '' }}">
         const statusDiv = document.getElementById('status');
         const resultDiv = document.getElementById('result');
         
