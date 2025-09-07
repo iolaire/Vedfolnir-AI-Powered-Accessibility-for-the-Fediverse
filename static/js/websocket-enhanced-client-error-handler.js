@@ -932,7 +932,7 @@ class WebSocketEnhancedClientErrorHandler {
                             <div id="enhanced-error-description" class="mb-3"></div>
                             <div id="enhanced-error-guidance" class="mb-3"></div>
                             <div id="enhanced-error-actions" class="mb-3"></div>
-                            <div id="enhanced-error-debug" class="mt-3" style="display: none;">
+                            <div id="enhanced-error-debug" class="mt-3 hidden">
                                 <h6>Debug Information:</h6>
                                 <pre class="bg-light p-2 rounded small"></pre>
                             </div>
@@ -1240,7 +1240,7 @@ class WebSocketEnhancedClientErrorHandler {
     
     _createRecoveryProgressIndicator() {
         const indicatorHTML = `
-            <div id="recovery-progress-indicator" class="recovery-progress-indicator" style="display: none;">
+            <div id="recovery-progress-indicator" class="recovery-progress-indicator hidden">
                 <div class="spinner-border text-primary" role="status">
                     <span class="visually-hidden">Loading...</span>
                 </div>

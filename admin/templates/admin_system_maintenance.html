@@ -100,7 +100,7 @@
                         <span>{{ system_metrics.cpu_usage }}</span>
                     </div>
                     <div class="progress">
-                        <div class="progress-bar" role="progressbar" style="width: {{ system_metrics.cpu_usage }}" aria-valuenow="{{ system_metrics.cpu_usage.rstrip('%') }}" aria-valuemin="0" aria-valuemax="100"></div>
+                        <div class="progress-bar" role="progressbar" style="--progress-width: {{ system_metrics.cpu_usage }}; width: var(--progress-width);" aria-valuenow="{{ system_metrics.cpu_usage.rstrip('%') }}" aria-valuemin="0" aria-valuemax="100"></div>
                     </div>
                 </div>
                 <div class="mb-3">
@@ -109,7 +109,7 @@
                         <span>{{ system_metrics.memory_usage }}</span>
                     </div>
                     <div class="progress">
-                        <div class="progress-bar bg-info" role="progressbar" style="width: {{ system_metrics.memory_usage }}" aria-valuenow="{{ system_metrics.memory_usage.rstrip('%') }}" aria-valuemin="0" aria-valuemax="100"></div>
+                        <div class="progress-bar bg-info" role="progressbar" style="--progress-width: {{ system_metrics.memory_usage }}; width: var(--progress-width);" aria-valuenow="{{ system_metrics.memory_usage.rstrip('%') }}" aria-valuemin="0" aria-valuemax="100"></div>
                     </div>
                 </div>
                 <div>
@@ -224,7 +224,7 @@
                 </h6>
             </div>
             <div class="card-body">
-                <div id="maintenanceLog" style="max-height: 300px; overflow-y: auto;">
+                <div id="maintenanceLog" class="admin-scrollable-container max-height-300px">
                     <div class="text-center py-3">
                         <div class="spinner-border spinner-border-sm text-muted" role="status">
                             <span class="visually-hidden">Loading...</span>
@@ -261,7 +261,7 @@
 {% endblock %}
 
 {% block extra_js %}
-<script>
+<script nonce="{{ g.csp_nonce }}">
 console.log('=== SYSTEM MAINTENANCE JAVASCRIPT LOADING ===');
 
 document.addEventListener('DOMContentLoaded', function() {

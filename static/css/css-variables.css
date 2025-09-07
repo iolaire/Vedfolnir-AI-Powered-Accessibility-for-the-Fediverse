@@ -1,0 +1,277 @@
+/* Copyright (C) 2025 iolaire mcfadden. */
+/* This program is free software: you can redistribute it and/or modify it under the terms of the GNU Affero General Public License as published by the Free Software Foundation, either version 3 of the License, or (at your option) any later version. */
+/* THE SOFTWARE IS PROVIDED "AS IS", WITHOUT WARRANTY OF ANY KIND, EXPRESS OR IMPLIED, INCLUDING BUT NOT LIMITED TO THE WARRANTIES OF MERCHANTABILITY, FITNESS FOR A PARTICULAR PURPOSE AND NONINFRINGEMENT. IN NO EVENT SHALL THE AUTHORS OR COPYRIGHT HOLDERS BE LIABLE FOR ANY CLAIM, DAMAGES OR OTHER LIABILITY, WHETHER IN AN ACTION OF CONTRACT, TORT OR OTHERWISE, ARISING FROM, OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE SOFTWARE. */
+
+/**
+ * CSS Variables - Consolidated Design System
+ * 
+ * This file contains all CSS custom properties used throughout the application.
+ * Consolidates variables from multiple files to ensure consistency and maintainability.
+ */
+
+:root {
+    /* ==========================================================================
+       Color System
+       ========================================================================== */
+    
+    /* Primary Colors */
+    --primary-color: #2563eb;
+    --primary-dark: #1d4ed8;
+    --primary-light: #3b82f6;
+    
+    /* Secondary Colors */
+    --secondary-color: #64748b;
+    --secondary-dark: #475569;
+    --secondary-light: #94a3b8;
+    
+    /* Semantic Colors */
+    --success-color: #059669;
+    --success-dark: #047857;
+    --success-light: #10b981;
+    
+    --warning-color: #d97706;
+    --warning-dark: #b45309;
+    --warning-light: #f59e0b;
+    
+    --danger-color: #dc2626;
+    --danger-dark: #b91c1c;
+    --danger-light: #ef4444;
+    
+    --info-color: #0891b2;
+    --info-dark: #0e7490;
+    --info-light: #06b6d4;
+    
+    /* Background Colors */
+    --bg-primary: #ffffff;
+    --bg-secondary: #f8fafc;
+    --bg-tertiary: #f1f5f9;
+    --bg-quaternary: #e2e8f0;
+    
+    /* Text Colors */
+    --text-primary: #1e293b;
+    --text-secondary: #64748b;
+    --text-muted: #94a3b8;
+    --text-light: #cbd5e1;
+    
+    /* Border Colors */
+    --border-color: #e2e8f0;
+    --border-color-light: #f1f5f9;
+    --border-color-dark: #cbd5e1;
+    
+    /* ==========================================================================
+       Spacing System
+       ========================================================================== */
+    
+    /* Base Spacing */
+    --spacing-xs: 0.125rem;    /* 2px */
+    --spacing-sm: 0.25rem;     /* 4px */
+    --spacing-md: 0.5rem;      /* 8px */
+    --spacing-lg: 1rem;        /* 16px */
+    --spacing-xl: 1.5rem;      /* 24px */
+    --spacing-2xl: 2rem;       /* 32px */
+    --spacing-3xl: 3rem;       /* 48px */
+    
+    /* Admin-specific spacing */
+    --admin-spacing-sm: 0.5rem;
+    --admin-spacing-md: 1rem;
+    --admin-spacing-lg: 1.5rem;
+    
+    /* ==========================================================================
+       Typography System
+       ========================================================================== */
+    
+    /* Font Sizes */
+    --font-size-xs: 0.75rem;   /* 12px */
+    --font-size-sm: 0.875rem;  /* 14px */
+    --font-size-md: 1rem;      /* 16px */
+    --font-size-lg: 1.125rem;  /* 18px */
+    --font-size-xl: 1.25rem;   /* 20px */
+    --font-size-2xl: 1.5rem;   /* 24px */
+    --font-size-3xl: 1.875rem; /* 30px */
+    --font-size-4xl: 2.25rem;  /* 36px */
+    
+    /* Line Heights */
+    --line-height-tight: 1.25;
+    --line-height-normal: 1.5;
+    --line-height-relaxed: 1.75;
+    
+    /* Font Weights */
+    --font-weight-light: 300;
+    --font-weight-normal: 400;
+    --font-weight-medium: 500;
+    --font-weight-semibold: 600;
+    --font-weight-bold: 700;
+    
+    /* ==========================================================================
+       Layout System
+       ========================================================================== */
+    
+    /* Border Radius */
+    --border-radius-sm: 0.25rem;
+    --border-radius: 0.5rem;
+    --border-radius-lg: 0.75rem;
+    --border-radius-xl: 1rem;
+    --border-radius-full: 9999px;
+    
+    /* Shadows */
+    --shadow-sm: 0 1px 2px 0 rgb(0 0 0 / 0.05);
+    --shadow-md: 0 4px 6px -1px rgb(0 0 0 / 0.1), 0 2px 4px -2px rgb(0 0 0 / 0.1);
+    --shadow-lg: 0 10px 15px -3px rgb(0 0 0 / 0.1), 0 4px 6px -4px rgb(0 0 0 / 0.1);
+    --shadow-xl: 0 20px 25px -5px rgb(0 0 0 / 0.1), 0 8px 10px -6px rgb(0 0 0 / 0.1);
+    
+    /* Z-Index Scale */
+    --z-index-dropdown: 1000;
+    --z-index-sticky: 1020;
+    --z-index-fixed: 1030;
+    --z-index-modal-backdrop: 1040;
+    --z-index-modal: 1050;
+    --z-index-popover: 1060;
+    --z-index-tooltip: 1070;
+    --z-index-toast: 1080;
+    
+    /* ==========================================================================
+       Animation System
+       ========================================================================== */
+    
+    /* Transitions */
+    --transition-fast: 0.15s ease-in-out;
+    --transition-normal: 0.3s ease-in-out;
+    --transition-slow: 0.5s ease-in-out;
+    
+    /* Easing Functions */
+    --ease-in: cubic-bezier(0.4, 0, 1, 1);
+    --ease-out: cubic-bezier(0, 0, 0.2, 1);
+    --ease-in-out: cubic-bezier(0.4, 0, 0.2, 1);
+    
+    /* ==========================================================================
+       Component-Specific Variables
+       ========================================================================== */
+    
+    /* Progress Bars */
+    --progress-width: 0%;
+    --progress-height-xs: 4px;
+    --progress-height-sm: 8px;
+    --progress-height-md: 12px;
+    --progress-height-lg: 20px;
+    --progress-height-xl: 28px;
+    
+    /* Icons */
+    --icon-size-xs: 0.5rem;    /* 8px */
+    --icon-size-sm: 1rem;      /* 16px */
+    --icon-size-md: 1.5rem;    /* 24px */
+    --icon-size-lg: 2rem;      /* 32px */
+    --icon-size-xl: 2.5rem;    /* 40px */
+    --icon-size-2xl: 3rem;     /* 48px */
+    --icon-size-3xl: 4rem;     /* 64px */
+    --icon-size-4xl: 5rem;     /* 80px */
+    
+    /* Form Elements */
+    --form-border-color: #dee2e6;
+    --form-border-radius: 4px;
+    --form-padding: 8px;
+    --form-margin-bottom: 1rem;
+    --form-bg-color: #f8f9fa;
+    --form-focus-color: #007bff;
+    --form-valid-color: #28a745;
+    --form-invalid-color: #dc3545;
+    --form-warning-color: #ffc107;
+    --form-text-muted: #6c757d;
+    
+    /* Form Field Heights */
+    --form-field-height-sm: 32px;
+    --form-field-height-md: 38px;
+    --form-field-height-lg: 46px;
+    --form-field-height-xl: 54px;
+    
+    /* Container Dimensions */
+    --container-min-height-sm: 60px;
+    --container-min-height-md: 80px;
+    --container-min-height-lg: 120px;
+    --container-min-height-xl: 160px;
+    
+    --container-max-height-sm: 80px;
+    --container-max-height-md: 120px;
+    --container-max-height-lg: 200px;
+    --container-max-height-xl: 300px;
+    
+    /* Positioning */
+    --bulk-select-top: 10px;
+    --bulk-select-left: 10px;
+    --bulk-select-z-index: 10;
+    
+    /* ==========================================================================
+       Admin-Specific Variables
+       ========================================================================== */
+    
+    /* Admin Colors */
+    --admin-primary: #2563eb;
+    --admin-success: #059669;
+    --admin-warning: #d97706;
+    --admin-danger: #dc2626;
+    --admin-info: #0891b2;
+    
+    /* Admin Progress Bars */
+    --admin-progress-height-sm: 8px;
+    --admin-progress-height-md: 12px;
+    --admin-progress-height-lg: 20px;
+    
+    /* Admin Alert Colors */
+    --admin-alert-success-bg: #ecfdf5;
+    --admin-alert-success-text: #065f46;
+    --admin-alert-danger-bg: #fef2f2;
+    --admin-alert-danger-text: #991b1b;
+    --admin-alert-warning-bg: #fffbeb;
+    --admin-alert-warning-text: #92400e;
+    --admin-alert-info-bg: #f0f9ff;
+    --admin-alert-info-text: #1e40af;
+    
+    /* ==========================================================================
+       Responsive Breakpoints
+       ========================================================================== */
+    
+    /* Breakpoint Variables (for use in media queries) */
+    --breakpoint-sm: 576px;
+    --breakpoint-md: 768px;
+    --breakpoint-lg: 992px;
+    --breakpoint-xl: 1200px;
+    --breakpoint-2xl: 1400px;
+    
+    /* ==========================================================================
+       Dark Mode Support (Future Enhancement)
+       ========================================================================== */
+    
+    /* Dark mode variables (commented out for future use) */
+    /*
+    --dark-bg-primary: #1a202c;
+    --dark-bg-secondary: #2d3748;
+    --dark-text-primary: #f7fafc;
+    --dark-text-secondary: #e2e8f0;
+    --dark-border-color: #4a5568;
+    */
+}
+
+/* ==========================================================================
+   Reduced Motion Support
+   ========================================================================== */
+
+@media (prefers-reduced-motion: reduce) {
+    :root {
+        --transition-fast: 0s;
+        --transition-normal: 0s;
+        --transition-slow: 0s;
+    }
+}
+
+/* ==========================================================================
+   High Contrast Support
+   ========================================================================== */
+
+@media (prefers-contrast: high) {
+    :root {
+        --border-color: #000000;
+        --text-secondary: #000000;
+        --shadow-sm: 0 1px 2px 0 rgb(0 0 0 / 0.3);
+        --shadow-md: 0 4px 6px -1px rgb(0 0 0 / 0.3), 0 2px 4px -2px rgb(0 0 0 / 0.3);
+        --shadow-lg: 0 10px 15px -3px rgb(0 0 0 / 0.3), 0 4px 6px -4px rgb(0 0 0 / 0.3);
+    }
+}

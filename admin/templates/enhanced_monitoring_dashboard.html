@@ -6,395 +6,6 @@
 {% block title %}Enhanced Monitoring Dashboard - Vedfolnir{% endblock %}
 
 {% block head %}
-<style>
-    .dashboard-grid {
-        display: grid;
-        grid-template-columns: repeat(12, 1fr);
-        gap: 15px;
-        min-height: 100vh;
-    }
-    
-    .widget {
-        background: white;
-        border-radius: 8px;
-        box-shadow: 0 2px 4px rgba(0,0,0,0.1);
-        padding: 20px;
-        transition: transform 0.2s, box-shadow 0.2s;
-        position: relative;
-        overflow: hidden;
-    }
-    
-    .widget:hover {
-        transform: translateY(-2px);
-        box-shadow: 0 4px 8px rgba(0,0,0,0.15);
-    }
-    
-    .widget-header {
-        display: flex;
-        justify-content: between;
-        align-items: center;
-        margin-bottom: 15px;
-        border-bottom: 1px solid #eee;
-        padding-bottom: 10px;
-    }
-    
-    .widget-title {
-        font-size: 1.1rem;
-        font-weight: 600;
-        color: #333;
-        margin: 0;
-    }
-    
-    .widget-controls {
-        display: flex;
-        gap: 5px;
-    }
-    
-    .widget-control {
-        background: none;
-        border: none;
-        color: #666;
-        cursor: pointer;
-        padding: 2px 6px;
-        border-radius: 3px;
-        font-size: 0.8rem;
-    }
-    
-    .widget-control:hover {
-        background: #f0f0f0;
-        color: #333;
-    }
-    
-    .metric-card {
-        text-align: center;
-    }
-    
-    .metric-value {
-        font-size: 2.5rem;
-        font-weight: bold;
-        margin: 10px 0;
-        line-height: 1;
-    }
-    
-    .metric-label {
-        color: #666;
-        font-size: 0.9rem;
-        text-transform: uppercase;
-        letter-spacing: 0.5px;
-    }
-    
-    .metric-change {
-        font-size: 0.8rem;
-        margin-top: 5px;
-    }
-    
-    .metric-change.positive {
-        color: #28a745;
-    }
-    
-    .metric-change.negative {
-        color: #dc3545;
-    }
-    
-    .resource-bar {
-        height: 8px;
-        background: #e9ecef;
-        border-radius: 4px;
-        overflow: hidden;
-        margin: 8px 0;
-    }
-    
-    .resource-fill {
-        height: 100%;
-        transition: width 0.3s ease;
-        border-radius: 4px;
-    }
-    
-    .resource-fill.healthy {
-        background: linear-gradient(90deg, #28a745, #20c997);
-    }
-    
-    .resource-fill.warning {
-        background: linear-gradient(90deg, #ffc107, #fd7e14);
-    }
-    
-    .resource-fill.critical {
-        background: linear-gradient(90deg, #dc3545, #e83e8c);
-    }
-    
-    .alert-item {
-        display: flex;
-        align-items: center;
-        padding: 10px;
-        margin: 5px 0;
-        border-radius: 6px;
-        border-left: 4px solid;
-        background: #f8f9fa;
-    }
-    
-    .alert-item.critical {
-        border-left-color: #dc3545;
-        background: #f8d7da;
-    }
-    
-    .alert-item.warning {
-        border-left-color: #ffc107;
-        background: #fff3cd;
-    }
-    
-    .alert-item.info {
-        border-left-color: #17a2b8;
-        background: #d1ecf1;
-    }
-    
-    .alert-icon {
-        margin-right: 10px;
-        font-size: 1.2rem;
-    }
-    
-    .alert-content {
-        flex: 1;
-    }
-    
-    .alert-message {
-        font-weight: 500;
-        margin: 0 0 2px 0;
-    }
-    
-    .alert-time {
-        font-size: 0.8rem;
-        color: #666;
-        margin: 0;
-    }
-    
-    .alert-actions {
-        display: flex;
-        gap: 5px;
-    }
-    
-    .chart-container {
-        position: relative;
-        height: 200px;
-        margin: 10px 0;
-    }
-    
-    .gauge-container {
-        display: flex;
-        justify-content: center;
-        align-items: center;
-        height: 150px;
-    }
-    
-    .gauge {
-        position: relative;
-        width: 120px;
-        height: 120px;
-    }
-    
-    .gauge-circle {
-        width: 100%;
-        height: 100%;
-        border-radius: 50%;
-        background: conic-gradient(
-            from 0deg,
-            #28a745 0deg 70deg,
-            #ffc107 70deg 90deg,
-            #dc3545 90deg 100deg,
-            #e9ecef 100deg 360deg
-        );
-        display: flex;
-        align-items: center;
-        justify-content: center;
-    }
-    
-    .gauge-inner {
-        width: 80%;
-        height: 80%;
-        background: white;
-        border-radius: 50%;
-        display: flex;
-        flex-direction: column;
-        align-items: center;
-        justify-content: center;
-    }
-    
-    .gauge-value {
-        font-size: 1.5rem;
-        font-weight: bold;
-        color: #333;
-    }
-    
-    .gauge-label {
-        font-size: 0.7rem;
-        color: #666;
-        text-transform: uppercase;
-    }
-    
-    .table-container {
-        max-height: 300px;
-        overflow-y: auto;
-    }
-    
-    .widget-table {
-        width: 100%;
-        font-size: 0.9rem;
-    }
-    
-    .widget-table th {
-        background: #f8f9fa;
-        font-weight: 600;
-        padding: 8px;
-        border-bottom: 2px solid #dee2e6;
-        position: sticky;
-        top: 0;
-    }
-    
-    .widget-table td {
-        padding: 8px;
-        border-bottom: 1px solid #dee2e6;
-    }
-    
-    .status-badge {
-        padding: 2px 8px;
-        border-radius: 12px;
-        font-size: 0.75rem;
-        font-weight: 500;
-        text-transform: uppercase;
-    }
-    
-    .status-running {
-        background: #d4edda;
-        color: #155724;
-    }
-    
-    .status-queued {
-        background: #d1ecf1;
-        color: #0c5460;
-    }
-    
-    .status-completed {
-        background: #d4edda;
-        color: #155724;
-    }
-    
-    .status-failed {
-        background: #f8d7da;
-        color: #721c24;
-    }
-    
-    .progress-mini {
-        width: 60px;
-        height: 4px;
-        background: #e9ecef;
-        border-radius: 2px;
-        overflow: hidden;
-    }
-    
-    .progress-mini-fill {
-        height: 100%;
-        background: #007bff;
-        transition: width 0.3s ease;
-    }
-    
-    .dashboard-controls {
-        position: fixed;
-        top: 80px;
-        right: 20px;
-        z-index: 1000;
-        display: flex;
-        flex-direction: column;
-        gap: 10px;
-    }
-    
-    .control-panel {
-        background: white;
-        border-radius: 8px;
-        box-shadow: 0 2px 8px rgba(0,0,0,0.1);
-        padding: 15px;
-        min-width: 200px;
-    }
-    
-    .auto-refresh-indicator {
-        display: inline-block;
-        width: 8px;
-        height: 8px;
-        background: #28a745;
-        border-radius: 50%;
-        margin-left: 5px;
-        animation: pulse 2s infinite;
-    }
-    
-    @keyframes pulse {
-        0% { opacity: 1; }
-        50% { opacity: 0.5; }
-        100% { opacity: 1; }
-    }
-    
-    .loading-overlay {
-        position: absolute;
-        top: 0;
-        left: 0;
-        right: 0;
-        bottom: 0;
-        background: rgba(255, 255, 255, 0.8);
-        display: flex;
-        align-items: center;
-        justify-content: center;
-        border-radius: 8px;
-        z-index: 10;
-    }
-    
-    .spinner {
-        width: 24px;
-        height: 24px;
-        border: 2px solid #f3f3f3;
-        border-top: 2px solid #007bff;
-        border-radius: 50%;
-        animation: spin 1s linear infinite;
-    }
-    
-    @keyframes spin {
-        0% { transform: rotate(0deg); }
-        100% { transform: rotate(360deg); }
-    }
-    
-    .error-state {
-        text-align: center;
-        color: #dc3545;
-        padding: 20px;
-    }
-    
-    .error-state i {
-        font-size: 2rem;
-        margin-bottom: 10px;
-        display: block;
-    }
-    
-    /* Responsive grid adjustments */
-    @media (max-width: 1200px) {
-        .dashboard-grid {
-            grid-template-columns: repeat(8, 1fr);
-        }
-    }
-    
-    @media (max-width: 768px) {
-        .dashboard-grid {
-            grid-template-columns: repeat(4, 1fr);
-            gap: 10px;
-        }
-        
-        .widget {
-            padding: 15px;
-        }
-        
-        .dashboard-controls {
-            position: relative;
-            top: auto;
-            right: auto;
-            margin-bottom: 20px;
-        }
-    }
-</style>
 {% endblock %}
 
 {% block content %}
@@ -405,7 +16,7 @@
             <input class="form-check-input" type="checkbox" id="autoRefresh" checked>
             <label class="form-check-label" for="autoRefresh">
                 Auto Refresh
-                <span class="auto-refresh-indicator" id="refreshIndicator"></span>
+                <span class="admin-enhanced-auto-refresh-indicator" id="refreshIndicator"></span>
             </label>
         </div>
         <button class="btn btn-outline-primary" id="refreshBtn">
@@ -418,13 +29,13 @@
 </div>
 
 <!-- Dashboard Grid -->
-<div class="dashboard-grid" id="dashboardGrid">
+<div class="admin-dashboard-grid" id="dashboardGrid">
     <!-- Widgets will be dynamically generated here -->
 </div>
 
 <!-- Dashboard Controls -->
-<div class="dashboard-controls">
-    <div class="control-panel">
+<div class="admin-enhanced-dashboard-controls">
+    <div class="admin-enhanced-control-panel">
         <h6><i class="bi bi-sliders"></i> Quick Controls</h6>
         <div class="d-grid gap-2">
             <button class="btn btn-sm btn-outline-info" onclick="openReports()">
@@ -440,7 +51,7 @@
     </div>
     
     <!-- Alert Summary -->
-    <div class="control-panel" id="alertSummary">
+    <div class="admin-enhanced-control-panel" id="alertSummary">
         <h6><i class="bi bi-exclamation-triangle"></i> Alerts</h6>
         <div id="alertCounts">
             <div class="d-flex justify-content-between">
@@ -480,7 +91,7 @@
 </div>
 
 <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
-<script>
+<script nonce="{{ g.csp_nonce }}">
 class EnhancedDashboard {
     constructor() {
         this.config = {{ dashboard_config | tojsonfilter | safe }};
@@ -516,7 +127,7 @@ class EnhancedDashboard {
     
     createWidget(widget) {
         const element = document.createElement('div');
-        element.className = 'widget';
+        element.className = 'admin-widget';
         element.style.gridColumn = `span ${widget.position.width}`;
         element.style.gridRow = `span ${widget.position.height}`;
         element.id = `widget-${widget.id}`;
@@ -524,13 +135,13 @@ class EnhancedDashboard {
         const data = this.widgetData[widget.id] || {};
         
         element.innerHTML = `
-            <div class="widget-header">
-                <h5 class="widget-title">${widget.title}</h5>
-                <div class="widget-controls">
-                    <button class="widget-control" onclick="dashboard.refreshWidget('${widget.id}')" title="Refresh">
+            <div class="admin-widget-header">
+                <h5 class="admin-widget-title">${widget.title}</h5>
+                <div class="admin-widget-controls">
+                    <button class="admin-widget-control" onclick="dashboard.refreshWidget('${widget.id}')" title="Refresh">
                         <i class="bi bi-arrow-clockwise"></i>
                     </button>
-                    <button class="widget-control" onclick="dashboard.configureWidget('${widget.id}')" title="Configure">
+                    <button class="admin-widget-control" onclick="dashboard.configureWidget('${widget.id}')" title="Configure">
                         <i class="bi bi-gear"></i>
                     </button>
                 </div>
@@ -570,9 +181,9 @@ class EnhancedDashboard {
             const label = key.replace('_', ' ').replace(/\b\w/g, l => l.toUpperCase());
             html += `
                 <div class="col-md-${12 / Object.keys(metrics).length}">
-                    <div class="metric-card">
-                        <div class="metric-value text-primary">${value}</div>
-                        <div class="metric-label">${label}</div>
+                    <div class="admin-enhanced-metric-card">
+                        <div class="admin-enhanced-metric-value text-primary">${value}</div>
+                        <div class="admin-enhanced-metric-label">${label}</div>
                     </div>
                 </div>
             `;
@@ -585,14 +196,14 @@ class EnhancedDashboard {
     renderChart(widget, data) {
         const chartId = `chart-${widget.id}`;
         setTimeout(() => this.initChart(chartId, widget, data), 100);
-        return `<div class="chart-container"><canvas id="${chartId}"></canvas></div>`;
+        return `<div class="admin-enhanced-chart-container"><canvas id="${chartId}"></canvas></div>`;
     }
     
     renderTable(widget, data) {
         const columns = data.columns || [];
         const rows = data.rows || [];
         
-        let html = '<div class="table-container"><table class="widget-table table table-sm">';
+        let html = '<div class="admin-enhanced-table-container"><table class="admin-enhanced-widget-table table table-sm">';
         
         // Header
         html += '<thead><tr>';
@@ -611,11 +222,11 @@ class EnhancedDashboard {
                 
                 // Special formatting for certain columns
                 if (col === 'status') {
-                    value = `<span class="status-badge status-${value}">${value}</span>`;
+                    value = `<span class="admin-enhanced-status-badge admin-enhanced-status-${value}">${value}</span>`;
                 } else if (col === 'progress_percent') {
                     value = `
-                        <div class="progress-mini">
-                            <div class="progress-mini-fill" style="width: ${value}%"></div>
+                        <div class="admin-enhanced-progress-mini">
+                            <div class="admin-enhanced-progress-mini-fill" style="--progress-width: ${value}%; width: var(--progress-width);"></div>
                         </div>
                         ${value}%
                     `;
@@ -646,12 +257,12 @@ class EnhancedDashboard {
         else if (percentage > 70) status = 'warning';
         
         return `
-            <div class="gauge-container">
-                <div class="gauge">
-                    <div class="gauge-circle">
-                        <div class="gauge-inner">
-                            <div class="gauge-value">${value}%</div>
-                            <div class="gauge-label">Success Rate</div>
+            <div class="admin-enhanced-gauge-container">
+                <div class="admin-enhanced-gauge">
+                    <div class="admin-enhanced-gauge-circle">
+                        <div class="admin-enhanced-gauge-inner">
+                            <div class="admin-enhanced-gauge-value">${value}%</div>
+                            <div class="admin-enhanced-gauge-label">Success Rate</div>
                         </div>
                     </div>
                 </div>
@@ -670,15 +281,15 @@ class EnhancedDashboard {
         alerts.forEach(alert => {
             const timeAgo = this.timeAgo(new Date(alert.timestamp));
             html += `
-                <div class="alert-item ${alert.severity}">
-                    <div class="alert-icon">
+                <div class="admin-enhanced-alert-item ${alert.severity}">
+                    <div class="admin-enhanced-alert-icon">
                         <i class="bi bi-${this.getAlertIcon(alert.severity)}"></i>
                     </div>
-                    <div class="alert-content">
-                        <div class="alert-message">${alert.message}</div>
-                        <div class="alert-time">${timeAgo}</div>
+                    <div class="admin-enhanced-alert-content">
+                        <div class="admin-enhanced-alert-message">${alert.message}</div>
+                        <div class="admin-enhanced-alert-time">${timeAgo}</div>
                     </div>
-                    <div class="alert-actions">
+                    <div class="admin-enhanced-alert-actions">
                         <button class="btn btn-sm btn-outline-primary" onclick="dashboard.acknowledgeAlert('${alert.id}', '${alert.message}', '${alert.timestamp}')">
                             <i class="bi bi-check"></i>
                         </button>
@@ -708,8 +319,8 @@ class EnhancedDashboard {
                 <div class="col-md-4 mb-3">
                     <div class="text-center">
                         <div class="h6 mb-1">${label}</div>
-                        <div class="resource-bar">
-                            <div class="resource-fill ${statusClass}" style="width: ${value}%"></div>
+                        <div class="admin-enhanced-resource-bar">
+                            <div class="admin-enhanced-resource-fill ${statusClass}" style="--progress-width: ${value}%; width: var(--progress-width);"></div>
                         </div>
                         <small class="text-muted">${value}%</small>
                     </div>
@@ -916,8 +527,8 @@ class EnhancedDashboard {
         
         // Show loading state
         const loadingOverlay = document.createElement('div');
-        loadingOverlay.className = 'loading-overlay';
-        loadingOverlay.innerHTML = '<div class="spinner"></div>';
+        loadingOverlay.className = 'admin-enhanced-loading-overlay';
+        loadingOverlay.innerHTML = '<div class="admin-enhanced-spinner"></div>';
         widget.appendChild(loadingOverlay);
         
         try {
@@ -933,10 +544,10 @@ class EnhancedDashboard {
                     setTimeout(() => this.initChart(`chart-${widgetId}`, widgetConfig, result.data), 100);
                 }
             } else {
-                content.innerHTML = `<div class="error-state"><i class="bi bi-exclamation-triangle"></i>Error: ${result.error}</div>`;
+                content.innerHTML = `<div class="admin-enhanced-error-state"><i class="bi bi-exclamation-triangle"></i>Error: ${result.error}</div>`;
             }
         } catch (error) {
-            content.innerHTML = `<div class="error-state"><i class="bi bi-exclamation-triangle"></i>Network error</div>`;
+            content.innerHTML = `<div class="admin-enhanced-error-state"><i class="bi bi-exclamation-triangle"></i>Network error</div>`;
         } finally {
             widget.removeChild(loadingOverlay);
         }

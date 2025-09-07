@@ -71,7 +71,7 @@
             <!-- Platform indicator badge -->
             <div class="position-relative">
                 <img src="{{ url_for('serve_image', filename=image.local_path.split('/')[-1]) }}" 
-                     class="card-img-top" style="height: 200px; object-fit: cover;" 
+                     class="card-img-top image-preview" 
                      alt="Image {{ image.id }}">
                 <div class="position-absolute top-0 end-0 m-2">
                     {% if image.platform_connection %}

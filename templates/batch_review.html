@@ -94,7 +94,7 @@
 </div>
 
 <!-- Filter panel -->
-<div id="filter-panel" class="filter-panel mb-3" style="display: none;">
+<div id="filter-panel" class="filter-panel mb-3 hidden">
     <form id="filter-form" method="GET" action="{{ url_for('review.batch_review') }}">
         <div class="row g-3">
             <div class="col-md-3">
@@ -222,8 +222,8 @@
     {% for image in images %}
     <div class="batch-item mb-4 p-3 border rounded position-relative" data-image-id="{{ image.id }}">
         <!-- Bulk selection checkbox -->
-        <div class="position-absolute" style="top: 10px; left: 10px; z-index: 10;">
-            <input type="checkbox" class="form-check-input bulk-select-checkbox" style="transform: scale(1.5);">
+        <div class="bulk-select-position">
+            <input type="checkbox" class="form-check-input bulk-select-checkbox">
         </div>
         <div class="row">
             <div class="col-md-3">
@@ -239,7 +239,7 @@
                             <i class="bi bi-arrows-fullscreen"></i>
                         </button>
                     </div>
-                    <div class="image-zoom-wrapper overflow-hidden" style="cursor: move;">
+                    <div class="image-zoom-wrapper overflow-hidden">
                         <img src="{{ url_for('serve_image', filename=image.local_path.split('/')[-1]) }}" 
                              class="image-zoomable" alt="Image {{ image.id }}">
                     </div>
@@ -435,6 +435,26 @@ document.addEventListener('DOMContentLoaded', function() {
     new bootstrap.Tooltip(document.body, {
         selector: '[data-bs-toggle="tooltip"]'
     });
+    
+    // Filter panel toggle functionality
+    const filterToggleBtn = document.getElementById('filter-toggle');
+    const filterPanel = document.getElementById('filter-panel');
+    
+    if (filterToggleBtn && filterPanel) {
+        filterToggleBtn.addEventListener('click', function() {
+            filterPanel.classList.toggle('hidden');
+            
+            // Update button text and icon based on panel visibility
+            const icon = this.querySelector('i');
+            if (filterPanel.classList.contains('hidden')) {
+                icon.className = 'bi bi-funnel';
+                this.innerHTML = '<i class="bi bi-funnel"></i> Filters';
+            } else {
+                icon.className = 'bi bi-funnel-fill';
+                this.innerHTML = '<i class="bi bi-funnel-fill"></i> Hide Filters';
+            }
+        });
+    }
 });
 </script>
 {% endblock %}

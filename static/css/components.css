@@ -1,0 +1,1213 @@
+/* Copyright (C) 2025 iolaire mcfadden. */
+/* This program is free software: you can redistribute it and/or modify it under the terms of the GNU Affero General Public License as published by the Free Software Foundation, either version 3 of the License, or (at your option) any later version. */
+/* THE SOFTWARE IS PROVIDED "AS IS", WITHOUT WARRANTY OF ANY KIND, EXPRESS OR IMPLIED, INCLUDING BUT NOT LIMITED TO THE WARRANTIES OF MERCHANTABILITY, FITNESS FOR A PARTICULAR PURPOSE AND NONINFRINGEMENT. IN NO EVENT SHALL THE AUTHORS OR COPYRIGHT HOLDERS BE LIABLE FOR ANY CLAIM, DAMAGES OR OTHER LIABILITY, WHETHER IN AN ACTION OF CONTRACT, TORT OR OTHERWISE, ARISING FROM, OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE SOFTWARE. */
+
+/**
+ * Component-Specific CSS
+ * 
+ * This file contains CSS styles for specific UI components that were
+ * previously defined as inline styles. Organized by component type.
+ * 
+ * Components included:
+ * - Batch review components
+ * - Image viewer components
+ * - Form components
+ * - Modal components
+ * - Navigation components
+ */
+
+/* ==========================================================================
+   Batch Review Components
+   ========================================================================== */
+
+/* Filter panel states */
+.filter-panel {
+    transition: all 0.3s ease;
+}
+
+.filter-panel.hidden {
+    display: none;
+}
+
+.filter-panel.visible {
+    display: block;
+}
+
+/* Bulk selection components */
+.bulk-select-wrapper {
+    position: relative;
+}
+
+/* Absolute positioning for bulk select checkboxes */
+/* Replaces: style="top: 10px; left: 10px; z-index: 10;" */
+.bulk-select-position {
+    position: absolute;
+    top: 10px;
+    left: 10px;
+    z-index: 10;
+}
+
+.bulk-select-overlay {
+    position: absolute;
+    top: 10px;
+    left: 10px;
+    z-index: 10;
+    background: rgba(255, 255, 255, 0.9);
+    border-radius: 4px;
+    padding: 4px;
+}
+
+/* Transform scale classes for checkbox sizing */
+/* Replaces: style="transform: scale(1.5);" */
+.bulk-select-checkbox {
+    transform: scale(1.5);
+    margin: 0;
+}
+
+.checkbox-scale-sm {
+    transform: scale(1.2);
+}
+
+.checkbox-scale-md {
+    transform: scale(1.5);
+}
+
+.checkbox-scale-lg {
+    transform: scale(1.8);
+}
+
+/* ==========================================================================
+   Image Viewer Components
+   ========================================================================== */
+
+/* Image zoom functionality */
+.image-zoom-container {
+    position: relative;
+    overflow: hidden;
+}
+
+/* Cursor and overflow classes for image zoom functionality */
+.image-zoom-wrapper {
+    cursor: move;
+    transition: transform 0.2s ease;
+}
+
+.image-zoom-wrapper:hover {
+    cursor: grab;
+}
+
+.image-zoom-wrapper:active {
+    cursor: grabbing;
+}
+
+/* Additional cursor utility classes */
+/* Replaces: style="cursor: move;" */
+.cursor-move {
+    cursor: move;
+}
+
+.cursor-grab {
+    cursor: grab;
+}
+
+.cursor-grabbing {
+    cursor: grabbing;
+}
+
+.cursor-pointer {
+    cursor: pointer;
+}
+
+.cursor-default {
+    cursor: default;
+}
+
+/* Overflow utility classes */
+.overflow-hidden {
+    overflow: hidden;
+}
+
+.overflow-auto {
+    overflow: auto;
+}
+
+.overflow-scroll {
+    overflow: scroll;
+}
+
+.overflow-visible {
+    overflow: visible;
+}
+
+/* Quality score visualization */
+.quality-score-container {
+    position: relative;
+}
+
+.quality-score-bar {
+    height: 10px;
+    background-color: #e9ecef;
+    border-radius: 4px;
+    overflow: hidden;
+}
+
+.quality-score-fill {
+    height: 100%;
+    background: linear-gradient(90deg, #dc3545 0%, #ffc107 50%, #28a745 100%);
+    transition: width 0.3s ease;
+}
+
+/* ==========================================================================
+   Form Components
+   ========================================================================== */
+
+/* Caption editing components */
+.caption-editor {
+    position: relative;
+}
+
+.caption-textarea {
+    min-height: 80px;
+    resize: vertical;
+    font-family: inherit;
+}
+
+.caption-container {
+    min-height: 80px;
+    max-height: 120px;
+    overflow-y: auto;
+    border: 1px solid #dee2e6;
+    border-radius: 4px;
+    padding: 8px;
+    background-color: #f8f9fa;
+}
+
+/* Form field states */
+.form-field-container {
+    position: relative;
+    margin-bottom: 1rem;
+}
+
+.form-field-hidden {
+    display: none;
+}
+
+.form-field-visible {
+    display: block;
+}
+
+/* Form field styling utilities */
+.form-field-bordered {
+    border: 1px solid #dee2e6;
+    border-radius: 4px;
+    padding: 8px;
+}
+
+.form-field-rounded {
+    border-radius: 8px;
+}
+
+.form-field-shadow {
+    box-shadow: 0 2px 4px rgba(0, 0, 0, 0.1);
+}
+
+.form-field-focus {
+    border-color: #007bff;
+    box-shadow: 0 0 0 0.2rem rgba(0, 123, 255, 0.25);
+}
+
+/* Content area styling */
+.content-area {
+    padding: 1rem;
+    background-color: #ffffff;
+    border-radius: 4px;
+}
+
+.content-area-bordered {
+    border: 1px solid #dee2e6;
+}
+
+.content-area-shadow {
+    box-shadow: 0 2px 4px rgba(0, 0, 0, 0.1);
+}
+
+/* Scrollable content areas */
+.scrollable-content {
+    overflow-y: auto;
+    max-height: 300px;
+}
+
+.scrollable-content-sm {
+    max-height: 150px;
+}
+
+.scrollable-content-lg {
+    max-height: 500px;
+}
+
+/* Form group styling */
+.form-group-compact {
+    margin-bottom: 0.5rem;
+}
+
+.form-group-spaced {
+    margin-bottom: 1.5rem;
+}
+
+.form-group-inline {
+    display: flex;
+    align-items: center;
+    gap: 0.5rem;
+}
+
+/* Label styling */
+.form-label-required::after {
+    content: " *";
+    color: #dc3545;
+}
+
+.form-label-optional::after {
+    content: " (optional)";
+    color: #6c757d;
+    font-size: 0.875rem;
+}
+
+/* Input validation states */
+.form-field-valid {
+    border-color: #28a745;
+}
+
+.form-field-invalid {
+    border-color: #dc3545;
+}
+
+.form-field-warning {
+    border-color: #ffc107;
+}
+
+/* Help text styling */
+.form-help-text {
+    font-size: 0.875rem;
+    color: #6c757d;
+    margin-top: 0.25rem;
+}
+
+.form-error-text {
+    font-size: 0.875rem;
+    color: #dc3545;
+    margin-top: 0.25rem;
+}
+
+.form-success-text {
+    font-size: 0.875rem;
+    color: #28a745;
+    margin-top: 0.25rem;
+}
+
+/* ==========================================================================
+   Modal Components
+   ========================================================================== */
+
+/* Platform switcher modal */
+.platform-switcher-modal {
+    display: none;
+    position: fixed;
+    top: 0;
+    left: 0;
+    width: 100%;
+    height: 100%;
+    background: rgba(0, 0, 0, 0.5);
+    z-index: 1050;
+}
+
+.platform-switcher-modal.show {
+    display: flex;
+    align-items: center;
+    justify-content: center;
+}
+
+/* Modal display states */
+.modal-hidden {
+    display: none;
+}
+
+.modal-visible {
+    display: flex;
+    align-items: center;
+    justify-content: center;
+}
+
+/* Generic modal wrapper */
+.modal-wrapper {
+    display: none;
+    position: fixed;
+    top: 0;
+    left: 0;
+    width: 100%;
+    height: 100%;
+    background: rgba(0, 0, 0, 0.5);
+    z-index: 1050;
+    align-items: center;
+    justify-content: center;
+}
+
+.modal-wrapper.show {
+    display: flex;
+}
+
+/* Modal content styling */
+.modal-content {
+    background: white;
+    border-radius: 8px;
+    box-shadow: 0 4px 6px rgba(0, 0, 0, 0.1);
+    max-width: 90%;
+    max-height: 90%;
+    overflow: auto;
+    position: relative;
+}
+
+/* Action options modal */
+.action-options-container {
+    position: relative;
+}
+
+.action-option {
+    display: none;
+    padding: 0.5rem;
+    border: 1px solid #dee2e6;
+    border-radius: 4px;
+    margin-bottom: 0.5rem;
+    background-color: #f8f9fa;
+    transition: all 0.3s ease;
+}
+
+.action-option.active {
+    display: block;
+}
+
+.action-option.selected {
+    background-color: #e3f2fd;
+    border-color: #2196f3;
+}
+
+/* Bulk admin actions modal specific styles */
+.bulk-actions-modal {
+    display: none;
+}
+
+.bulk-actions-modal.show {
+    display: block;
+}
+
+/* Admin notes modal */
+.admin-notes-modal {
+    display: none;
+}
+
+.admin-notes-modal.show {
+    display: block;
+}
+
+/* Current notes section */
+.current-notes-section {
+    display: none;
+}
+
+.current-notes-section.show {
+    display: block;
+}
+
+/* Notes history section */
+.notes-history-section {
+    display: none;
+}
+
+.notes-history-section.show {
+    display: block;
+}
+
+/* System maintenance modal */
+.system-maintenance-modal {
+    display: none;
+}
+
+.system-maintenance-modal.show {
+    display: block;
+}
+
+/* Resume system button */
+.resume-system-btn {
+    display: none;
+}
+
+.resume-system-btn.show {
+    display: inline-block;
+}
+
+/* Job details modal */
+.job-details-modal {
+    display: none;
+}
+
+.job-details-modal.show {
+    display: block;
+}
+
+/* Configuration management modal */
+.config-management-modal {
+    display: none;
+}
+
+.config-management-modal.show {
+    display: block;
+}
+
+/* Proceed button for config changes */
+.proceed-config-btn {
+    display: none;
+}
+
+.proceed-config-btn.show {
+    display: inline-block;
+}
+
+/* ==========================================================================
+   Navigation Components
+   ========================================================================== */
+
+/* Edit mode toggles */
+.edit-mode-container {
+    position: relative;
+}
+
+.view-mode {
+    display: block;
+}
+
+.edit-mode {
+    display: none;
+}
+
+.edit-mode.active {
+    display: block;
+}
+
+.view-mode.hidden {
+    display: none;
+}
+
+/* Profile editing states */
+.profile-section {
+    transition: all 0.3s ease;
+}
+
+.profile-section.editing .view-mode {
+    display: none;
+}
+
+.profile-section.editing .edit-mode {
+    display: block;
+}
+
+/* ==========================================================================
+   Visibility Toggle Components
+   ========================================================================== */
+
+/* Generic visibility toggles */
+.toggle-hidden {
+    display: none;
+}
+
+.toggle-visible {
+    display: block;
+}
+
+.toggle-inline {
+    display: inline;
+}
+
+.toggle-inline-block {
+    display: inline-block;
+}
+
+.toggle-flex {
+    display: flex;
+}
+
+/* Conditional visibility based on state */
+.show-on-hover {
+    opacity: 0;
+    transition: opacity 0.3s ease;
+}
+
+.show-on-hover:hover {
+    opacity: 1;
+}
+
+/* Form field conditional visibility */
+.conditional-field {
+    display: none;
+    transition: all 0.3s ease;
+}
+
+.conditional-field.show {
+    display: block;
+}
+
+/* Instructions and help text visibility */
+.instructions-panel {
+    display: none;
+}
+
+.instructions-panel.show {
+    display: block;
+}
+
+/* Error and success message visibility */
+.message-panel {
+    display: none;
+}
+
+.message-panel.show {
+    display: block;
+}
+
+/* Loading and progress indicators */
+.loading-indicator {
+    display: none;
+}
+
+.loading-indicator.show {
+    display: block;
+}
+
+/* Dropdown and collapsible content */
+.collapsible-content {
+    display: none;
+    transition: all 0.3s ease;
+}
+
+.collapsible-content.expanded {
+    display: block;
+}
+
+/* Tab content visibility */
+.tab-content-panel {
+    display: none;
+}
+
+.tab-content-panel.active {
+    display: block;
+}
+
+/* ==========================================================================
+   Progress and Status Components
+   ========================================================================== */
+
+/* Progress indicators */
+.progress-indicator {
+    position: relative;
+    height: 20px;
+    background-color: #e9ecef;
+    border-radius: 10px;
+    overflow: hidden;
+}
+
+.progress-bar {
+    height: 100%;
+    background: linear-gradient(90deg, #007bff 0%, #28a745 100%);
+    transition: width 0.5s ease;
+    border-radius: 10px;
+}
+
+/* Status badges */
+.status-badge {
+    display: inline-block;
+    padding: 0.25rem 0.5rem;
+    font-size: 0.75rem;
+    font-weight: 600;
+    border-radius: 0.25rem;
+    text-transform: uppercase;
+}
+
+.status-badge.processing {
+    background-color: #fff3cd;
+    color: #856404;
+}
+
+.status-badge.completed {
+    background-color: #d4edda;
+    color: #155724;
+}
+
+.status-badge.error {
+    background-color: #f8d7da;
+    color: #721c24;
+}
+
+/* ==========================================================================
+   JavaScript Integration Notes
+   ========================================================================== */
+
+/*
+ * JavaScript functions to use with these CSS classes:
+ * 
+ * // Show/hide elements
+ * function showElement(elementId) {
+ *     document.getElementById(elementId).classList.remove('hidden', 'd-none');
+ *     document.getElementById(elementId).classList.add('d-block');
+ * }
+ * 
+ * function hideElement(elementId) {
+ *     document.getElementById(elementId).classList.add('hidden');
+ * }
+ * 
+ * // Toggle visibility
+ * function toggleElement(elementId) {
+ *     const element = document.getElementById(elementId);
+ *     element.classList.toggle('hidden');
+ * }
+ * 
+ * // Show modal
+ * function showModal(modalId) {
+ *     document.getElementById(modalId).classList.add('show');
+ * }
+ * 
+ * // Hide modal
+ * function hideModal(modalId) {
+ *     document.getElementById(modalId).classList.remove('show');
+ * }
+ * 
+ * // Toggle edit mode
+ * function toggleEditMode(containerId) {
+ *     const container = document.getElementById(containerId);
+ *     container.classList.toggle('editing');
+ * }
+ * 
+ * // Show conditional field
+ * function showConditionalField(fieldId) {
+ *     document.getElementById(fieldId).classList.add('show');
+ * }
+ * 
+ * // Hide conditional field
+ * function hideConditionalField(fieldId) {
+ *     document.getElementById(fieldId).classList.remove('show');
+ * }
+ */
+
+/* ==========================================================================
+   Positioning Utility Classes
+   ========================================================================== */
+
+/* Absolute positioning utilities */
+.position-absolute {
+    position: absolute;
+}
+
+.position-relative {
+    position: relative;
+}
+
+.position-fixed {
+    position: fixed;
+}
+
+.position-static {
+    position: static;
+}
+
+.position-sticky {
+    position: sticky;
+}
+
+/* Top positioning utilities */
+.top-0 {
+    top: 0;
+}
+
+.top-5 {
+    top: 5px;
+}
+
+.top-10 {
+    top: 10px;
+}
+
+.top-15 {
+    top: 15px;
+}
+
+.top-20 {
+    top: 20px;
+}
+
+/* Left positioning utilities */
+.left-0 {
+    left: 0;
+}
+
+.left-5 {
+    left: 5px;
+}
+
+.left-10 {
+    left: 10px;
+}
+
+.left-15 {
+    left: 15px;
+}
+
+.left-20 {
+    left: 20px;
+}
+
+/* Right positioning utilities */
+.right-0 {
+    right: 0;
+}
+
+.right-5 {
+    right: 5px;
+}
+
+.right-10 {
+    right: 10px;
+}
+
+.right-15 {
+    right: 15px;
+}
+
+.right-20 {
+    right: 20px;
+}
+
+/* Bottom positioning utilities */
+.bottom-0 {
+    bottom: 0;
+}
+
+.bottom-5 {
+    bottom: 5px;
+}
+
+.bottom-10 {
+    bottom: 10px;
+}
+
+.bottom-15 {
+    bottom: 15px;
+}
+
+.bottom-20 {
+    bottom: 20px;
+}
+
+/* Z-index utilities */
+.z-index-1 {
+    z-index: 1;
+}
+
+.z-index-5 {
+    z-index: 5;
+}
+
+.z-index-10 {
+    z-index: 10;
+}
+
+.z-index-50 {
+    z-index: 50;
+}
+
+.z-index-100 {
+    z-index: 100;
+}
+
+.z-index-1000 {
+    z-index: 1000;
+}
+
+.z-index-1050 {
+    z-index: 1050;
+}
+
+/* Transform utilities */
+.transform-scale-sm {
+    transform: scale(1.2);
+}
+
+.transform-scale-md {
+    transform: scale(1.5);
+}
+
+.transform-scale-lg {
+    transform: scale(1.8);
+}
+
+.transform-scale-xl {
+    transform: scale(2.0);
+}
+
+.transform-none {
+    transform: none;
+}
+
+/* ==========================================================================
+   Responsive Utilities
+   ========================================================================== */
+
+/* Mobile-specific component adjustments */
+@media (max-width: 768px) {
+    .bulk-select-overlay {
+        top: 5px;
+        left: 5px;
+    }
+    
+    .bulk-select-checkbox {
+        transform: scale(1.2);
+    }
+    
+    .caption-container {
+        max-height: 100px;
+    }
+    
+    .image-zoom-wrapper {
+        cursor: default;
+    }
+}
+
+/* Tablet adjustments */
+@media (min-width: 769px) and (max-width: 1024px) {
+    .caption-container {
+        max-height: 110px;
+    }
+}
+
+/* Desktop optimizations */
+@media (min-width: 1025px) {
+    .image-zoom-wrapper:hover {
+        transform: scale(1.02);
+    }
+}/
+* ==========================================================================
+   Review Template Components
+   ========================================================================== */
+
+/* Review image preview components */
+.image-preview {
+    max-width: 100%;
+    height: auto;
+    border-radius: 4px;
+    transition: transform 0.2s ease;
+}
+
+.image-preview:hover {
+    transform: scale(1.02);
+}
+
+/* Review card components */
+.review-card-container {
+    position: relative;
+    overflow: hidden;
+}
+
+.review-card-overlay {
+    position: absolute;
+    top: 0;
+    left: 0;
+    right: 0;
+    bottom: 0;
+    background: rgba(0, 0, 0, 0.5);
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    opacity: 0;
+    transition: opacity 0.3s ease;
+}
+
+.review-card-container:hover .review-card-overlay {
+    opacity: 1;
+}
+
+/* Platform badge positioning */
+.platform-badge {
+    position: absolute;
+    top: 10px;
+    right: 10px;
+    z-index: 5;
+    font-size: 0.75rem;
+    padding: 0.25rem 0.5rem;
+}
+
+/* Review status indicators */
+.review-status-indicator {
+    display: inline-block;
+    width: 8px;
+    height: 8px;
+    border-radius: 50%;
+    margin-right: 0.5rem;
+}
+
+.review-status-indicator.pending {
+    background-color: #ffc107;
+}
+
+.review-status-indicator.approved {
+    background-color: #28a745;
+}
+
+.review-status-indicator.rejected {
+    background-color: #dc3545;
+}
+
+/* Review pagination components */
+.review-pagination-info {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    margin-bottom: 1rem;
+    padding: 0.5rem 0;
+    border-bottom: 1px solid #dee2e6;
+}
+
+.review-pagination-stats {
+    font-size: 0.875rem;
+    color: #6c757d;
+}
+
+/* Review filter components */
+.review-filter-group {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 1rem;
+    align-items: end;
+}
+
+.review-filter-item {
+    flex: 1;
+    min-width: 150px;
+}
+
+/* Review batch components */
+.review-batch-header {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    margin-bottom: 1.5rem;
+    padding-bottom: 1rem;
+    border-bottom: 2px solid #dee2e6;
+}
+
+.review-batch-title {
+    font-size: 1.5rem;
+    font-weight: 600;
+    color: #495057;
+    margin: 0;
+}
+
+.review-batch-actions {
+    display: flex;
+    gap: 0.5rem;
+}
+
+/* Review progress components */
+.review-progress-container {
+    position: relative;
+    margin-bottom: 1rem;
+}
+
+.review-progress-label {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    margin-bottom: 0.5rem;
+    font-size: 0.875rem;
+    color: #6c757d;
+}
+
+.review-progress-percentage {
+    font-weight: 600;
+    color: #495057;
+}
+
+/* Review empty state components */
+.review-empty-container {
+    text-align: center;
+    padding: 4rem 2rem;
+    background: #f8f9fa;
+    border-radius: 8px;
+    border: 2px dashed #dee2e6;
+}
+
+.review-empty-title {
+    font-size: 1.5rem;
+    font-weight: 600;
+    color: #6c757d;
+    margin-bottom: 0.5rem;
+}
+
+.review-empty-description {
+    color: #6c757d;
+    margin-bottom: 1.5rem;
+    line-height: 1.6;
+}
+
+/* Review responsive components */
+@media (max-width: 768px) {
+    .review-filter-group {
+        flex-direction: column;
+        gap: 0.75rem;
+    }
+    
+    .review-filter-item {
+        min-width: auto;
+    }
+    
+    .review-batch-header {
+        flex-direction: column;
+        align-items: flex-start;
+        gap: 1rem;
+    }
+    
+    .review-batch-actions {
+        width: 100%;
+        justify-content: stretch;
+    }
+    
+    .review-batch-actions .btn {
+        flex: 1;
+    }
+    
+    .platform-badge {
+        top: 5px;
+        right: 5px;
+        font-size: 0.7rem;
+        padding: 0.2rem 0.4rem;
+    }
+}
+
+/* Review accessibility improvements */
+.review-card-container:focus-within {
+    outline: 2px solid #007bff;
+    outline-offset: 2px;
+}
+
+.review-progress-container[aria-label] {
+    position: relative;
+}
+
+.review-progress-container[aria-label]::before {
+    content: attr(aria-label);
+    position: absolute;
+    top: -1.5rem;
+    left: 0;
+    font-size: 0.75rem;
+    color: #6c757d;
+    font-weight: 500;
+}
+
+/* Review interaction states */
+.review-card-selectable {
+    cursor: pointer;
+    transition: all 0.2s ease;
+}
+
+.review-card-selectable:hover {
+    border-color: #007bff;
+    box-shadow: 0 2px 8px rgba(0, 123, 255, 0.15);
+}
+
+.review-card-selected {
+    border-color: #007bff;
+    background-color: #f8f9ff;
+    box-shadow: 0 2px 8px rgba(0, 123, 255, 0.15);
+}
+
+/* Review loading states */
+.review-loading-overlay {
+    position: absolute;
+    top: 0;
+    left: 0;
+    right: 0;
+    bottom: 0;
+    background: rgba(255, 255, 255, 0.8);
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    z-index: 10;
+}
+
+.review-loading-spinner {
+    width: 2rem;
+    height: 2rem;
+    border: 2px solid #dee2e6;
+    border-top: 2px solid #007bff;
+    border-radius: 50%;
+    animation: spin 1s linear infinite;
+}
+
+@keyframes spin {
+    0% { transform: rotate(0deg); }
+    100% { transform: rotate(360deg); }
+}
+
+/* ==========================================================================
+   Layout CSS Classes (Task 13.2)
+   ========================================================================== */
+
+/* NOTE: Scrollable container utilities have been moved to utilities.css */
+
+/* Image preview classes for consistent image sizing */
+.img-preview-thumbnail {
+    width: 120px;
+    height: 120px;
+    object-fit: cover;
+    border-radius: 4px;
+    border: 1px solid #dee2e6;
+}
+
+.img-preview-small {
+    width: 200px;
+    height: 150px;
+    object-fit: cover;
+    border-radius: 4px;
+    border: 1px solid #dee2e6;
+}
+
+.img-preview-medium {
+    width: 300px;
+    height: 200px;
+    object-fit: cover;
+    border-radius: 4px;
+    border: 1px solid #dee2e6;
+}
+
+.img-preview-large {
+    width: 400px;
+    height: 300px;
+    object-fit: cover;
+    border-radius: 4px;
+    border: 1px solid #dee2e6;
+}
+
+.img-preview-card {
+    width: 100%;
+    max-width: 350px;
+    height: 200px;
+    object-fit: cover;
+    border-radius: 8px;
+    border: 1px solid #dee2e6;
+}
+
+.img-preview-hero {
+    width: 100%;
+    height: 400px;
+    object-fit: cover;
+    border-radius: 8px;
+}
+
+/* NOTE: Progress bar utilities have been moved to utilities.css */
+
+/* NOTE: Margin and padding utilities have been moved to utilities.css */

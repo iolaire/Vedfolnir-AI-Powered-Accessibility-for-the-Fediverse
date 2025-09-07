@@ -1,0 +1,264 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Progress Bar JavaScript Test</title>
+    <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.1.3/dist/css/bootstrap.min.css" rel="stylesheet">
+    <link rel="stylesheet" href="http://127.0.0.1:5000/static/css/security-extracted.css">
+    <style>
+        .test-container {
+            max-width: 800px;
+            margin: 2rem auto;
+            padding: 2rem;
+        }
+        .test-section {
+            margin-bottom: 2rem;
+            padding: 1rem;
+            border: 1px solid #dee2e6;
+            border-radius: 0.375rem;
+        }
+        .controls {
+            margin-bottom: 1rem;
+        }
+        .controls button {
+            margin-right: 0.5rem;
+            margin-bottom: 0.5rem;
+        }
+    </style>
+</head>
+<body>
+    <div class="test-container">
+        <h1>Progress Bar JavaScript Test</h1>
+        <p>This page tests the new progress bar utility functions that use CSS custom properties instead of inline styles.</p>
+        
+        <div class="test-section">
+            <h3>Test 1: Basic Progress Bar Update</h3>
+            <div class="controls">
+                <button class="btn btn-primary" onclick="updateProgressBar1(25)">25%</button>
+                <button class="btn btn-primary" onclick="updateProgressBar1(50)">50%</button>
+                <button class="btn btn-primary" onclick="updateProgressBar1(75)">75%</button>
+                <button class="btn btn-success" onclick="completeProgressBar1()">Complete</button>
+                <button class="btn btn-secondary" onclick="resetProgressBar1()">Reset</button>
+            </div>
+            <div class="progress progress-md">
+                <div class="progress-bar progress-bar-dynamic" id="test-progress-1" role="progressbar"
+                     data-progress-width="0%" aria-valuenow="0" aria-valuemin="0" aria-valuemax="100"
+                     style="--progress-width: 0%;">
+                    <span class="progress-text">0%</span>
+                </div>
+            </div>
+        </div>
+        
+        <div class="test-section">
+            <h3>Test 2: Animated Progress Bar</h3>
+            <div class="controls">
+                <button class="btn btn-info" onclick="animateProgressBar2()">Animate to 80%</button>
+                <button class="btn btn-warning" onclick="setErrorProgressBar2()">Set Error State</button>
+                <button class="btn btn-secondary" onclick="resetProgressBar2()">Reset</button>
+            </div>
+            <div class="progress progress-lg">
+                <div class="progress-bar progress-bar-dynamic" id="test-progress-2" role="progressbar"
+                     data-progress-width="0%" aria-valuenow="0" aria-valuemin="0" aria-valuemax="100"
+                     style="--progress-width: 0%;">
+                    <span class="progress-text">0%</span>
+                </div>
+            </div>
+        </div>
+        
+        <div class="test-section">
+            <h3>Test 3: Multiple Progress Bars</h3>
+            <div class="controls">
+                <button class="btn btn-primary" onclick="updateAllProgressBars(30)">Set All to 30%</button>
+                <button class="btn btn-primary" onclick="updateAllProgressBars(60)">Set All to 60%</button>
+                <button class="btn btn-success" onclick="completeAllProgressBars()">Complete All</button>
+                <button class="btn btn-secondary" onclick="resetAllProgressBars()">Reset All</button>
+            </div>
+            <div class="row">
+                <div class="col-md-4">
+                    <label>Progress A:</label>
+                    <div class="progress progress-sm">
+                        <div class="progress-bar progress-bar-dynamic multi-progress" role="progressbar"
+                             data-progress-width="0%" aria-valuenow="0" aria-valuemin="0" aria-valuemax="100"
+                             style="--progress-width: 0%;">
+                            <span class="progress-text">0%</span>
+                        </div>
+                    </div>
+                </div>
+                <div class="col-md-4">
+                    <label>Progress B:</label>
+                    <div class="progress progress-sm">
+                        <div class="progress-bar progress-bar-dynamic multi-progress" role="progressbar"
+                             data-progress-width="0%" aria-valuenow="0" aria-valuemin="0" aria-valuemax="100"
+                             style="--progress-width: 0%;">
+                            <span class="progress-text">0%</span>
+                        </div>
+                    </div>
+                </div>
+                <div class="col-md-4">
+                    <label>Progress C:</label>
+                    <div class="progress progress-sm">
+                        <div class="progress-bar progress-bar-dynamic multi-progress" role="progressbar"
+                             data-progress-width="0%" aria-valuenow="0" aria-valuemin="0" aria-valuemax="100"
+                             style="--progress-width: 0%;">
+                            <span class="progress-text">0%</span>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+        
+        <div class="test-section">
+            <h3>Test 4: Dynamic Progress Bar Creation</h3>
+            <div class="controls">
+                <button class="btn btn-success" onclick="createNewProgressBar()">Create New Progress Bar</button>
+                <button class="btn btn-danger" onclick="clearCreatedProgressBars()">Clear Created Bars</button>
+            </div>
+            <div id="dynamic-progress-container"></div>
+        </div>
+        
+        <div class="test-section">
+            <h3>Console Output</h3>
+            <div id="console-output" style="background: #f8f9fa; padding: 1rem; border-radius: 0.375rem; font-family: monospace; white-space: pre-wrap; max-height: 200px; overflow-y: auto;"></div>
+        </div>
+    </div>
+
+    <!-- Load the progress bar utility -->
+    <script src="http://127.0.0.1:5000/static/js/progress-bar-utils.js"></script>
+    
+    <script>
+        // Override console.log to also display in the page
+        const originalConsoleLog = console.log;
+        const consoleOutput = document.getElementById('console-output');
+        
+        console.log = function(...args) {
+            originalConsoleLog.apply(console, args);
+            consoleOutput.textContent += args.join(' ') + '\n';
+            consoleOutput.scrollTop = consoleOutput.scrollHeight;
+        };
+        
+        // Test functions
+        function updateProgressBar1(percentage) {
+            console.log(`Updating progress bar 1 to ${percentage}%`);
+            if (window.progressBarUtils) {
+                window.progressBarUtils.updateProgressBarById('test-progress-1', percentage);
+            } else {
+                console.error('progressBarUtils not available');
+            }
+        }
+        
+        function completeProgressBar1() {
+            console.log('Completing progress bar 1');
+            if (window.progressBarUtils) {
+                window.progressBarUtils.completeProgressBar(document.getElementById('test-progress-1'));
+            }
+        }
+        
+        function resetProgressBar1() {
+            console.log('Resetting progress bar 1');
+            if (window.progressBarUtils) {
+                window.progressBarUtils.resetProgressBar(document.getElementById('test-progress-1'));
+            }
+        }
+        
+        function animateProgressBar2() {
+            console.log('Animating progress bar 2 to 80%');
+            if (window.progressBarUtils) {
+                window.progressBarUtils.animateProgressBar(
+                    document.getElementById('test-progress-2'), 
+                    80, 
+                    { duration: 2000, easing: 'ease-out' }
+                );
+            }
+        }
+        
+        function setErrorProgressBar2() {
+            console.log('Setting progress bar 2 to error state');
+            if (window.progressBarUtils) {
+                window.progressBarUtils.setProgressBarError(
+                    document.getElementById('test-progress-2'), 
+                    45, 
+                    { errorText: 'Error!' }
+                );
+            }
+        }
+        
+        function resetProgressBar2() {
+            console.log('Resetting progress bar 2');
+            const progressBar = document.getElementById('test-progress-2');
+            if (progressBar && window.progressBarUtils) {
+                progressBar.className = 'progress-bar progress-bar-dynamic';
+                window.progressBarUtils.resetProgressBar(progressBar);
+            }
+        }
+        
+        function updateAllProgressBars(percentage) {
+            console.log(`Updating all multi-progress bars to ${percentage}%`);
+            if (window.progressBarUtils) {
+                window.progressBarUtils.updateProgressBarsBySelector('.multi-progress', percentage);
+            }
+        }
+        
+        function completeAllProgressBars() {
+            console.log('Completing all multi-progress bars');
+            if (window.progressBarUtils) {
+                document.querySelectorAll('.multi-progress').forEach(bar => {
+                    window.progressBarUtils.completeProgressBar(bar);
+                });
+            }
+        }
+        
+        function resetAllProgressBars() {
+            console.log('Resetting all multi-progress bars');
+            if (window.progressBarUtils) {
+                document.querySelectorAll('.multi-progress').forEach(bar => {
+                    bar.className = 'progress-bar progress-bar-dynamic multi-progress';
+                    window.progressBarUtils.resetProgressBar(bar);
+                });
+            }
+        }
+        
+        let createdProgressCount = 0;
+        function createNewProgressBar() {
+            createdProgressCount++;
+            console.log(`Creating new progress bar #${createdProgressCount}`);
+            
+            if (window.progressBarUtils) {
+                const container = document.getElementById('dynamic-progress-container');
+                const wrapper = document.createElement('div');
+                wrapper.className = 'mb-2';
+                wrapper.innerHTML = `<label>Dynamic Progress ${createdProgressCount}:</label>`;
+                
+                const progressBar = window.progressBarUtils.createProgressBar({
+                    id: `dynamic-progress-${createdProgressCount}`,
+                    percentage: Math.floor(Math.random() * 100),
+                    height: 'md',
+                    showText: true,
+                    animated: true
+                });
+                
+                wrapper.appendChild(progressBar);
+                container.appendChild(wrapper);
+            }
+        }
+        
+        function clearCreatedProgressBars() {
+            console.log('Clearing all created progress bars');
+            document.getElementById('dynamic-progress-container').innerHTML = '';
+            createdProgressCount = 0;
+        }
+        
+        // Initialize
+        document.addEventListener('DOMContentLoaded', function() {
+            console.log('Page loaded, testing progress bar utilities...');
+            
+            if (window.progressBarUtils) {
+                console.log('✅ progressBarUtils is available');
+                console.log('Available methods:', Object.getOwnPropertyNames(window.progressBarUtils.__proto__));
+            } else {
+                console.error('❌ progressBarUtils is not available');
+            }
+        });
+    </script>
+</body>
+</html>

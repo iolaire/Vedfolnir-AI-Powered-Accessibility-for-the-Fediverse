@@ -242,11 +242,21 @@ def _update_session_context_with_platform(platform_connection_id: int, platform_
     try:
         from flask import session, g
         
+        # Handle both dictionary and object cases for platform data
+        if isinstance(platform_obj, dict):
+            platform_name = platform_obj.get('name')
+            platform_type = platform_obj.get('platform_type')
+            platform_instance_url = platform_obj.get('instance_url', '')
+        else:
+            platform_name = getattr(platform_obj, 'name', None)
+            platform_type = getattr(platform_obj, 'platform_type', None)
+            platform_instance_url = getattr(platform_obj, 'instance_url', '')
+        
         # Update Flask session with platform data (critical for persistence)
         session['platform_connection_id'] = platform_connection_id
-        session['platform_name'] = platform_obj.name
-        session['platform_type'] = platform_obj.platform_type
-        session['platform_instance_url'] = getattr(platform_obj, 'instance_url', '')
+        session['platform_name'] = platform_name
+        session['platform_type'] = platform_type
+        session['platform_instance_url'] = platform_instance_url
         
         # CRITICAL: Mark Flask session as modified to ensure it gets saved
         # This was the key fix from the previous platform session issue
@@ -258,12 +268,12 @@ def _update_session_context_with_platform(platform_connection_id: int, platform_
         
         g.session_context.update({
             'platform_connection_id': platform_connection_id,
-            'platform_name': platform_obj.name,
-            'platform_type': platform_obj.platform_type,
-            'platform_instance_url': getattr(platform_obj, 'instance_url', '')
+            'platform_name': platform_name,
+            'platform_type': platform_type,
+            'platform_instance_url': platform_instance_url
         })
         
-        logger.debug(f"Updated session context with platform {platform_connection_id} ({platform_obj.name})")
+        logger.debug(f"Updated session context with platform {platform_connection_id} ({platform_name})")
         
     except Exception as e:
         logger.error(f"Failed to update session context with platform data: {e}")

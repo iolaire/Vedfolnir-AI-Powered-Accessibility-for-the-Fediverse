@@ -326,7 +326,7 @@
     <div class="col-md-6">
         <div class="widget-grid" id="dashboardGrid">
             <div class="grid-overlay"></div>
-            <div class="drop-zone" id="dropZone" style="display: none;">
+            <div class="drop-zone" id="dropZone" class="hidden">
                 <i class="bi bi-plus-circle me-2"></i>
                 Drop widget here
             </div>
@@ -341,7 +341,7 @@
             <h5><i class="bi bi-sliders"></i> Properties</h5>
             <div id="propertiesContent">
                 <p class="text-muted text-center py-4">
-                    <i class="bi bi-cursor" style="font-size: 2rem;"></i><br>
+                    <i class="bi bi-cursor icon-md"></i><br>
                     Select a widget to edit its properties
                 </p>
             </div>
@@ -431,7 +431,7 @@
             </div>
             <div class="modal-footer">
                 <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Cancel</button>
-                <button type="button" class="btn btn-danger" id="deleteWidget" style="display: none;">Delete Widget</button>
+                <button type="button" class="btn btn-danger" id="deleteWidget" class="hidden">Delete Widget</button>
                 <button type="button" class="btn btn-primary" onclick="saveWidgetConfig()">Save Widget</button>
             </div>
         </div>
@@ -549,7 +549,7 @@ class WidgetCustomizer {
                 </div>
             </div>
             <div class="widget-content">
-                <i class="bi bi-${this.getWidgetIcon(widget.type)}" style="font-size: 1.5rem; color: #007bff;"></i>
+                <i class="bi bi-${this.getWidgetIcon(widget.type)} icon-sm text-blue"></i>
                 <div class="mt-2">
                     <small><strong>${widget.type.replace('_', ' ').replace(/\b\w/g, l => l.toUpperCase())}</strong></small>
                     <div class="mt-1">${rolesBadges}</div>
@@ -822,7 +822,7 @@ class WidgetCustomizer {
                 this.selectedWidget = null;
                 document.getElementById('propertiesContent').innerHTML = `
                     <p class="text-muted text-center py-4">
-                        <i class="bi bi-cursor" style="font-size: 2rem;"></i><br>
+                        <i class="bi bi-cursor" class="icon-md"></i><br>
                         Select a widget to edit its properties
                     </p>
                 `;
@@ -847,7 +847,7 @@ class WidgetCustomizer {
                 
                 document.getElementById('propertiesContent').innerHTML = `
                     <p class="text-muted text-center py-4">
-                        <i class="bi bi-cursor" style="font-size: 2rem;"></i><br>
+                        <i class="bi bi-cursor" class="icon-md"></i><br>
                         Select a widget to edit its properties
                     </p>
                 `;

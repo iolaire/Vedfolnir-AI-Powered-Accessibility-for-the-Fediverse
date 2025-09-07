@@ -80,8 +80,8 @@
                         <small class="text-muted">{{ "%.0f"|format(progress_percent) }}%</small>
                     </div>
                     <div class="progress">
-                        <div class="progress-bar" role="progressbar" 
-                             style="width: {{ progress_percent }}%" 
+                        <div class="progress-bar review-progress-bar" role="progressbar" 
+                             data-progress="{{ progress_percent }}"
                              aria-valuenow="{{ progress_percent }}" 
                              aria-valuemin="0" 
                              aria-valuemax="100">
@@ -179,6 +179,12 @@
 
 <script>
 document.addEventListener('DOMContentLoaded', function() {
+    // Initialize progress bars with CSS custom properties
+    document.querySelectorAll('.review-progress-bar').forEach(progressBar => {
+        const progressPercent = progressBar.getAttribute('data-progress') || 0;
+        progressBar.style.setProperty('--progress-width', progressPercent + '%');
+    });
+    
     const modalElement = document.getElementById('bulkActionModal');
     if (!modalElement) return;
     

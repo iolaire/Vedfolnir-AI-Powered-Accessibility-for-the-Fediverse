@@ -97,7 +97,7 @@
                 </div>
                 
                 <!-- Personal Jobs History -->
-                <div id="personalHistorySection" class="history-section" style="display: none;">
+                <div id="personalHistorySection" class="history-section">
                     <div class="personal-alert alert d-flex align-items-center mb-3">
                         <i class="bi bi-person-check alert-icon"></i>
                         <div>
@@ -127,7 +127,7 @@
                 </div>
                 
                 <!-- All History -->
-                <div id="allHistorySection" class="history-section" style="display: none;">
+                <div id="allHistorySection" class="history-section">
                     <div class="alert alert-secondary d-flex align-items-center mb-3">
                         <i class="bi bi-list-check alert-icon"></i>
                         <div>
@@ -157,14 +157,14 @@
                 </div>
                 
                 <!-- Empty State -->
-                <div id="historyEmptyState" class="text-center py-5" style="display: none;">
-                    <i class="bi bi-inbox" style="font-size: 3rem; color: #6c757d; opacity: 0.5;"></i>
+                <div id="historyEmptyState" class="text-center py-5 history-empty-state">
+                    <i class="bi bi-inbox admin-inbox-icon"></i>
                     <h5 class="mt-3 text-muted">No History Found</h5>
                     <p class="text-muted">No jobs or actions match your current filters.</p>
                 </div>
                 
                 <!-- Loading State -->
-                <div id="historyLoadingState" class="text-center py-5" style="display: none;">
+                <div id="historyLoadingState" class="text-center py-5 history-loading-state">
                     <div class="spinner-border text-primary" role="status">
                         <span class="visually-hidden">Loading...</span>
                     </div>
@@ -311,27 +311,27 @@ function showAdminJobHistoryModal() {
 function showAdminHistory() {
     currentHistoryType = 'admin';
     updateHistoryButtons();
-    document.getElementById('adminHistorySection').style.display = 'block';
-    document.getElementById('personalHistorySection').style.display = 'none';
-    document.getElementById('allHistorySection').style.display = 'none';
+    document.getElementById('adminHistorySection').classList.add('show');
+    document.getElementById('personalHistorySection').classList.remove('show');
+    document.getElementById('allHistorySection').classList.remove('show');
     populateAdminHistory();
 }
 
 function showPersonalHistory() {
     currentHistoryType = 'personal';
     updateHistoryButtons();
-    document.getElementById('adminHistorySection').style.display = 'none';
-    document.getElementById('personalHistorySection').style.display = 'block';
-    document.getElementById('allHistorySection').style.display = 'none';
+    document.getElementById('adminHistorySection').classList.remove('show');
+    document.getElementById('personalHistorySection').classList.add('show');
+    document.getElementById('allHistorySection').classList.remove('show');
     populatePersonalHistory();
 }
 
 function showAllHistory() {
     currentHistoryType = 'all';
     updateHistoryButtons();
-    document.getElementById('adminHistorySection').style.display = 'none';
-    document.getElementById('personalHistorySection').style.display = 'none';
-    document.getElementById('allHistorySection').style.display = 'block';
+    document.getElementById('adminHistorySection').classList.remove('show');
+    document.getElementById('personalHistorySection').classList.remove('show');
+    document.getElementById('allHistorySection').classList.add('show');
     populateAllHistory();
 }
 
@@ -435,7 +435,7 @@ function populateAdminHistory() {
                 <small>${action.platform_name}</small>
             </td>
             <td>
-                <div class="text-wrap" style="max-width: 200px;">
+                <div class="text-wrap admin-text-wrap">
                     ${action.reason || action.notes || '-'}
                 </div>
             </td>
@@ -552,7 +552,7 @@ function populateAllHistory() {
                 }
             </td>
             <td>
-                <div class="text-wrap" style="max-width: 200px;">
+                <div class="text-wrap admin-text-wrap">
                     ${item.type === 'admin_action' ? 
                         (item.reason || item.notes || '-') :
                         (item.results ? `${item.results.captions_generated || 0} captions, ${item.results.images_processed || 0} images` : '-')
@@ -575,24 +575,24 @@ function exportHistory() {
 }
 
 function showLoadingState() {
-    document.getElementById('historyLoadingState').style.display = 'block';
-    document.getElementById('historyEmptyState').style.display = 'none';
+    document.getElementById('historyLoadingState').classList.add('show');
+    document.getElementById('historyEmptyState').classList.remove('show');
     document.querySelectorAll('.history-section').forEach(section => {
-        section.style.display = 'none';
+        section.classList.remove('show');
     });
 }
 
 function hideLoadingState() {
-    document.getElementById('historyLoadingState').style.display = 'none';
+    document.getElementById('historyLoadingState').classList.remove('show');
 }
 
 function showEmptyState() {
-    document.getElementById('historyEmptyState').style.display = 'block';
+    document.getElementById('historyEmptyState').classList.add('show');
     hideLoadingState();
 }
 
 function hideEmptyState() {
-    document.getElementById('historyEmptyState').style.display = 'none';
+    document.getElementById('historyEmptyState').classList.remove('show');
 }
 
 // Utility functions

@@ -1,0 +1,1780 @@
+/* Copyright (C) 2025 iolaire mcfadden. */
+/* This program is free software: you can redistribute it and/or modify it under the terms of the GNU Affero General Public License as published by the Free Software Foundation, either version 3 of the License, or (at your option) any later version. */
+/* THE SOFTWARE IS PROVIDED "AS IS", WITHOUT WARRANTY OF ANY KIND, EXPRESS OR IMPLIED, INCLUDING BUT NOT LIMITED TO THE WARRANTIES OF MERCHANTABILITY, FITNESS FOR A PARTICULAR PURPOSE AND NONINFRINGEMENT. IN NO EVENT SHALL THE AUTHORS OR COPYRIGHT HOLDERS BE LIABLE FOR ANY CLAIM, DAMAGES OR OTHER LIABILITY, WHETHER IN AN ACTION OF CONTRACT, TORT OR OTHERWISE, ARISING FROM, OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE SOFTWARE. */
+
+/**
+ * Admin Extracted CSS
+ * 
+ * This file contains CSS styles extracted from inline styles in admin HTML templates
+ * to improve Content Security Policy (CSP) compliance and security posture.
+ * 
+ * Admin-specific components:
+ * - Admin progress bars
+ * - Bulk action modals
+ * - Storage limit notifications
+ * - Job management interfaces
+ * - System maintenance components
+ */
+
+/* ==========================================================================
+   NOTE: Admin CSS Variables have been moved to css-variables.css
+   This section is kept for reference and will be removed in future cleanup
+   ========================================================================== */
+
+/* ==========================================================================
+   Admin Progress Bar Components
+   ========================================================================== */
+
+/* Bulk admin actions progress bars */
+.admin-progress-container {
+    position: relative;
+    margin: var(--admin-spacing-md) 0;
+}
+
+.admin-progress-bar {
+    width: var(--progress-width, 0%);
+    height: var(--admin-progress-height-md);
+    background: linear-gradient(90deg, var(--admin-primary) 0%, var(--admin-success) 100%);
+    border-radius: 6px;
+    transition: width 0.4s ease;
+}
+
+.admin-progress-bar.sm {
+    height: var(--admin-progress-height-sm);
+}
+
+.admin-progress-bar.lg {
+    height: var(--admin-progress-height-lg);
+}
+
+/* Storage limit progress indicators */
+.storage-progress-bar {
+    width: var(--progress-width, 0%);
+    height: var(--admin-progress-height-md);
+    border-radius: 4px;
+    transition: width 0.3s ease;
+}
+
+.storage-progress-bar.warning {
+    background: linear-gradient(90deg, var(--admin-success) 0%, var(--admin-warning) 100%);
+}
+
+.storage-progress-bar.danger {
+    background: linear-gradient(90deg, var(--admin-warning) 0%, var(--admin-danger) 100%);
+}
+
+.storage-progress-bar.critical {
+    background-color: var(--admin-danger);
+}
+
+/* Job management progress bars */
+.job-progress-container {
+    position: relative;
+    background-color: #f8f9fa;
+    border-radius: 4px;
+    overflow: hidden;
+    height: var(--admin-progress-height-lg);
+}
+
+.job-progress-bar {
+    width: var(--progress-width, 0%);
+    height: 100%;
+    background: linear-gradient(90deg, var(--admin-info) 0%, var(--admin-success) 100%);
+    transition: width 0.5s ease;
+}
+
+.job-progress-text {
+    position: absolute;
+    top: 50%;
+    left: 50%;
+    transform: translate(-50%, -50%);
+    font-size: 0.75rem;
+    font-weight: 600;
+    color: #495057;
+    z-index: 1;
+}
+
+/* ==========================================================================
+   Admin Modal Components
+   ========================================================================== */
+
+/* Generic admin modal wrapper */
+.admin-modal {
+    display: none;
+    position: fixed;
+    top: 0;
+    left: 0;
+    width: 100%;
+    height: 100%;
+    background: rgba(0, 0, 0, 0.6);
+    z-index: 1060;
+    align-items: center;
+    justify-content: center;
+}
+
+.admin-modal.show {
+    display: flex;
+}
+
+/* Bulk admin actions modal */
+.bulk-actions-modal {
+    display: none;
+    position: fixed;
+    top: 0;
+    left: 0;
+    width: 100%;
+    height: 100%;
+    background: rgba(0, 0, 0, 0.6);
+    z-index: 1060;
+}
+
+.bulk-actions-modal.show {
+    display: flex;
+    align-items: center;
+    justify-content: center;
+}
+
+/* Action option containers */
+.admin-action-option {
+    display: none;
+    padding: var(--admin-spacing-md);
+    border: 2px solid #dee2e6;
+    border-radius: 8px;
+    margin-bottom: var(--admin-spacing-md);
+    background-color: #ffffff;
+    transition: all 0.3s ease;
+}
+
+.admin-action-option.active {
+    display: block;
+    border-color: var(--admin-primary);
+    box-shadow: 0 0 0 0.2rem rgba(0, 123, 255, 0.25);
+}
+
+.admin-action-option:hover {
+    border-color: var(--admin-primary);
+    background-color: #f8f9fa;
+}
+
+/* Job details modal */
+.job-details-modal {
+    display: none;
+    position: fixed;
+    top: 0;
+    left: 0;
+    width: 100%;
+    height: 100%;
+    background: rgba(0, 0, 0, 0.5);
+    z-index: 1055;
+}
+
+.job-details-modal.show {
+    display: flex;
+    align-items: center;
+    justify-content: center;
+}
+
+/* Job error section visibility */
+.job-error-section {
+    display: none;
+    padding: var(--admin-spacing-md);
+    background-color: #f8d7da;
+    border: 1px solid #f5c6cb;
+    border-radius: 6px;
+    margin-top: var(--admin-spacing-md);
+}
+
+.job-error-section.show {
+    display: block;
+}
+
+/* Configuration management modal */
+.config-modal {
+    display: none;
+    position: fixed;
+    top: 0;
+    left: 0;
+    width: 100%;
+    height: 100%;
+    background: rgba(0, 0, 0, 0.5);
+    z-index: 1050;
+}
+
+.config-modal.show {
+    display: flex;
+    align-items: center;
+    justify-content: center;
+}
+
+/* Restart notification visibility */
+.restart-notification {
+    display: none;
+    margin-bottom: var(--admin-spacing-md);
+}
+
+.restart-notification.show {
+    display: block;
+}
+
+/* Configuration sections */
+.config-section {
+    display: none;
+    transition: all 0.3s ease;
+}
+
+.config-section.show {
+    display: block;
+}
+
+/* Risk factors section */
+.risk-factors-section {
+    display: none;
+    margin-top: var(--admin-spacing-sm);
+}
+
+.risk-factors-section.show {
+    display: block;
+}
+
+/* Mitigation steps section */
+.mitigation-steps-section {
+    display: none;
+    margin-top: var(--admin-spacing-sm);
+}
+
+.mitigation-steps-section.show {
+    display: block;
+}
+
+/* Related configs section */
+.related-configs-section {
+    display: none;
+    margin-top: var(--admin-spacing-sm);
+}
+
+.related-configs-section.show {
+    display: block;
+}
+
+/* Estimated downtime section */
+.estimated-downtime-section {
+    display: none;
+    margin-top: var(--admin-spacing-sm);
+}
+
+.estimated-downtime-section.show {
+    display: block;
+}
+
+/* Proceed button visibility */
+.proceed-btn {
+    display: none;
+}
+
+.proceed-btn.show {
+    display: inline-block;
+}
+
+/* System maintenance buttons */
+.resume-system-btn {
+    display: none;
+}
+
+.resume-system-btn.show {
+    display: inline-block;
+}
+
+/* Report results visibility */
+.report-results {
+    display: none;
+    margin-top: var(--admin-spacing-lg);
+}
+
+.report-results.show {
+    display: block;
+}
+
+/* Cron expression field */
+.cron-expression-field {
+    display: none;
+    margin-bottom: var(--admin-spacing-md);
+}
+
+.cron-expression-field.show {
+    display: block;
+}
+
+/* Admin notes sections */
+.current-notes-section {
+    display: none;
+    margin-top: var(--admin-spacing-md);
+}
+
+.current-notes-section.show {
+    display: block;
+}
+
+.notes-history-section {
+    display: none;
+    margin-top: var(--admin-spacing-md);
+}
+
+.notes-history-section.show {
+    display: block;
+}
+
+/* ==========================================================================
+   Admin Form Components
+   ========================================================================== */
+
+/* Caption form disabled states */
+.caption-form-disabled {
+    opacity: 0.6;
+    pointer-events: none;
+    position: relative;
+}
+
+.caption-form-disabled::after {
+    content: '';
+    position: absolute;
+    top: 0;
+    left: 0;
+    width: 100%;
+    height: 100%;
+    background: rgba(248, 249, 250, 0.8);
+    z-index: 1;
+}
+
+.caption-form-progress {
+    position: absolute;
+    top: 50%;
+    left: 50%;
+    transform: translate(-50%, -50%);
+    z-index: 2;
+}
+
+.caption-form-progress .progress-bar {
+    width: var(--progress-width, 0%);
+    height: 6px;
+    background-color: var(--admin-primary);
+    border-radius: 3px;
+    transition: width 0.3s ease;
+}
+
+/* ==========================================================================
+   Admin Notification Components
+   ========================================================================== */
+
+/* Storage limit notifications */
+.storage-notification {
+    position: relative;
+    padding: var(--admin-spacing-md);
+    border-radius: 6px;
+    margin-bottom: var(--admin-spacing-md);
+}
+
+.storage-notification.warning {
+    background-color: #fff3cd;
+    border: 1px solid #ffeaa7;
+    color: #856404;
+}
+
+.storage-notification.danger {
+    background-color: #f8d7da;
+    border: 1px solid #f5c6cb;
+    color: #721c24;
+}
+
+.storage-notification.critical {
+    background-color: #f8d7da;
+    border: 2px solid #dc3545;
+    color: #721c24;
+    animation: pulse 2s infinite;
+}
+
+@keyframes pulse {
+    0% { opacity: 1; }
+    50% { opacity: 0.8; }
+    100% { opacity: 1; }
+}
+
+/* Storage progress within notifications */
+.storage-notification .progress-container {
+    margin-top: var(--admin-spacing-sm);
+    background-color: rgba(255, 255, 255, 0.3);
+    border-radius: 4px;
+    height: 8px;
+    overflow: hidden;
+}
+
+.storage-notification .progress-bar {
+    width: var(--progress-width, 0%);
+    height: 100%;
+    border-radius: 4px;
+    transition: width 0.4s ease;
+}
+
+/* ==========================================================================
+   Admin System Status Components
+   ========================================================================== */
+
+/* System maintenance indicators */
+.maintenance-status {
+    position: relative;
+    padding: var(--admin-spacing-lg);
+    text-align: center;
+    border-radius: 8px;
+}
+
+.maintenance-status.active {
+    background-color: #fff3cd;
+    border: 2px solid #ffc107;
+}
+
+.maintenance-status.paused {
+    background-color: #f8d7da;
+    border: 2px solid #dc3545;
+}
+
+.maintenance-icon {
+    font-size: 4rem;
+    margin-bottom: var(--admin-spacing-md);
+}
+
+.maintenance-icon.warning {
+    color: var(--admin-warning);
+}
+
+.maintenance-icon.danger {
+    color: var(--admin-danger);
+}
+
+/* ==========================================================================
+   Admin Dashboard Components
+   ========================================================================== */
+
+/* Admin dashboard icon sizing */
+.admin-icon-lg {
+    font-size: 2rem;
+}
+
+.admin-icon-xl {
+    font-size: 3rem;
+}
+
+.admin-icon-xxl {
+    font-size: 4rem;
+}
+
+/* Admin dashboard containers */
+.admin-log-viewer {
+    height: 600px;
+    overflow-y: auto;
+    background-color: #1e1e1e;
+    color: #d4d4d4;
+    font-family: 'Courier New', monospace;
+    font-size: 12px;
+    padding: 15px;
+}
+
+.admin-event-log {
+    height: 400px;
+    overflow-y: auto;
+    background-color: #f8f9fa;
+    padding: 15px;
+    border-radius: 5px;
+    font-family: monospace;
+    font-size: 12px;
+}
+
+/* Admin dashboard scrollable containers */
+.admin-scrollable-container {
+    max-height: 200px;
+    overflow-y: auto;
+}
+
+/* Admin job section visibility */
+.admin-job-section {
+    display: none;
+}
+
+.admin-job-section.show {
+    display: block;
+}
+
+/* ==========================================================================
+   Admin Component Specific Classes
+   ========================================================================== */
+
+/* Admin Context Switcher */
+.admin-context-icon {
+    display: none;
+}
+
+.admin-context-icon.show {
+    display: block;
+}
+
+/* User Limits Modal */
+.user-search-results {
+    display: none;
+    max-height: 200px;
+    overflow-y: auto;
+}
+
+.user-search-results.show {
+    display: block;
+}
+
+.users-list-container {
+    max-height: 300px;
+    overflow-y: auto;
+}
+
+.user-limits-form {
+    display: none;
+}
+
+.user-limits-form.show {
+    display: block;
+}
+
+.user-limits-buttons {
+    display: none;
+}
+
+.user-limits-buttons.show {
+    display: inline-block;
+}
+
+/* Admin Job History Modal */
+.history-section {
+    display: none;
+    min-height: 400px;
+}
+
+.history-section.show {
+    display: block;
+}
+
+.history-empty-state {
+    display: none;
+}
+
+.history-empty-state.show {
+    display: block;
+}
+
+.history-loading-state {
+    display: none;
+}
+
+.history-loading-state.show {
+    display: block;
+}
+
+/* Job Details Modal */
+.job-log-container {
+    max-height: 200px;
+    overflow-y: auto;
+    background-color: #f8f9fa;
+    padding: 1rem;
+    border-radius: 0.375rem;
+}
+
+.job-error-section {
+    display: none;
+}
+
+.job-error-section.show {
+    display: block;
+}
+
+/* System Maintenance Modal */
+.maintenance-log-container {
+    max-height: 200px;
+    overflow-y: auto;
+    background-color: #f8f9fa;
+    padding: 1rem;
+    border-radius: 0.375rem;
+}
+
+.resume-system-btn {
+    display: none;
+}
+
+.resume-system-btn.show {
+    display: inline-block;
+}
+
+/* Additional Admin Component Styles */
+.admin-inbox-icon {
+    font-size: 3rem;
+    color: #6c757d;
+    opacity: 0.5;
+}
+
+.admin-text-wrap {
+    max-width: 200px;
+}
+
+.bulk-action-form {
+    display: none;
+}
+
+.bulk-action-form.show {
+    display: block;
+}
+
+.user-item-clickable {
+    cursor: pointer;
+}
+
+/* ==========================================================================
+   Admin Utility Classes
+   ========================================================================== */
+
+/* Admin-specific visibility states */
+.admin-hidden {
+    display: none !important;
+}
+
+.admin-visible {
+    display: block !important;
+}
+
+/* Admin positioning utilities */
+.admin-absolute {
+    position: absolute;
+}
+
+.admin-relative {
+    position: relative;
+}
+
+.admin-fixed {
+    position: fixed;
+}
+
+/* Admin spacing utilities */
+.admin-m-sm { margin: var(--admin-spacing-sm); }
+.admin-m-md { margin: var(--admin-spacing-md); }
+.admin-m-lg { margin: var(--admin-spacing-lg); }
+
+.admin-p-sm { padding: var(--admin-spacing-sm); }
+.admin-p-md { padding: var(--admin-spacing-md); }
+.admin-p-lg { padding: var(--admin-spacing-lg); }
+
+/* ==========================================================================
+   Admin Monitoring Dashboard Components
+   ========================================================================== */
+
+/* Admin monitoring metric cards */
+.admin-metric-card {
+    transition: transform 0.2s;
+}
+
+.admin-metric-card:hover {
+    transform: translateY(-2px);
+}
+
+/* Admin monitoring resource bars */
+.admin-resource-bar {
+    height: 8px;
+    border-radius: 4px;
+}
+
+/* Admin monitoring task status badges */
+.admin-task-status-badge {
+    font-size: 0.75em;
+}
+
+/* Admin monitoring auto-refresh animation */
+.admin-auto-refresh {
+    animation: spin 1s linear infinite;
+}
+
+@keyframes spin {
+    0% { transform: rotate(0deg); }
+    100% { transform: rotate(360deg); }
+}
+
+/* Enhanced monitoring dashboard grid */
+.admin-dashboard-grid {
+    display: grid;
+    grid-template-columns: repeat(12, 1fr);
+    gap: 15px;
+    min-height: 100vh;
+}
+
+/* Enhanced monitoring widgets */
+.admin-widget {
+    background: white;
+    border-radius: 8px;
+    box-shadow: 0 2px 4px rgba(0,0,0,0.1);
+    padding: 20px;
+    transition: transform 0.2s, box-shadow 0.2s;
+    position: relative;
+    overflow: hidden;
+}
+
+.admin-widget:hover {
+    transform: translateY(-2px);
+    box-shadow: 0 4px 8px rgba(0,0,0,0.15);
+}
+
+.admin-widget-header {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    margin-bottom: 15px;
+    border-bottom: 1px solid #eee;
+    padding-bottom: 10px;
+}
+
+.admin-widget-title {
+    font-size: 1.1rem;
+    font-weight: 600;
+    color: #333;
+    margin: 0;
+}
+
+.admin-widget-controls {
+    display: flex;
+    gap: 5px;
+}
+
+.admin-widget-control {
+    background: none;
+    border: none;
+    color: #666;
+    cursor: pointer;
+    padding: 2px 6px;
+    border-radius: 3px;
+    font-size: 0.8rem;
+}
+
+.admin-widget-control:hover {
+    background: #f0f0f0;
+    color: #333;
+}
+
+/* Enhanced monitoring metric cards */
+.admin-enhanced-metric-card {
+    text-align: center;
+}
+
+.admin-enhanced-metric-value {
+    font-size: 2.5rem;
+    font-weight: bold;
+    margin: 10px 0;
+    line-height: 1;
+}
+
+.admin-enhanced-metric-label {
+    color: #666;
+    font-size: 0.9rem;
+    text-transform: uppercase;
+    letter-spacing: 0.5px;
+}
+
+.admin-enhanced-metric-change {
+    font-size: 0.8rem;
+    margin-top: 5px;
+}
+
+.admin-enhanced-metric-change.positive {
+    color: #28a745;
+}
+
+.admin-enhanced-metric-change.negative {
+    color: #dc3545;
+}
+
+/* Enhanced monitoring resource bars */
+.admin-enhanced-resource-bar {
+    height: 8px;
+    background: #e9ecef;
+    border-radius: 4px;
+    overflow: hidden;
+    margin: 8px 0;
+}
+
+.admin-enhanced-resource-fill {
+    height: 100%;
+    transition: width 0.3s ease;
+    border-radius: 4px;
+}
+
+.admin-enhanced-resource-fill.healthy {
+    background: linear-gradient(90deg, #28a745, #20c997);
+}
+
+.admin-enhanced-resource-fill.warning {
+    background: linear-gradient(90deg, #ffc107, #fd7e14);
+}
+
+.admin-enhanced-resource-fill.critical {
+    background: linear-gradient(90deg, #dc3545, #e83e8c);
+}
+
+/* Enhanced monitoring alert items */
+.admin-enhanced-alert-item {
+    display: flex;
+    align-items: center;
+    padding: 10px;
+    margin: 5px 0;
+    border-radius: 6px;
+    border-left: 4px solid;
+    background: #f8f9fa;
+}
+
+.admin-enhanced-alert-item.critical {
+    border-left-color: #dc3545;
+    background: #f8d7da;
+}
+
+.admin-enhanced-alert-item.warning {
+    border-left-color: #ffc107;
+    background: #fff3cd;
+}
+
+.admin-enhanced-alert-item.info {
+    border-left-color: #17a2b8;
+    background: #d1ecf1;
+}
+
+.admin-enhanced-alert-icon {
+    margin-right: 10px;
+    font-size: 1.2rem;
+}
+
+.admin-enhanced-alert-content {
+    flex: 1;
+}
+
+.admin-enhanced-alert-message {
+    font-weight: 500;
+    margin: 0 0 2px 0;
+}
+
+.admin-enhanced-alert-time {
+    font-size: 0.8rem;
+    color: #666;
+    margin: 0;
+}
+
+.admin-enhanced-alert-actions {
+    display: flex;
+    gap: 5px;
+}
+
+/* Enhanced monitoring chart containers */
+.admin-enhanced-chart-container {
+    position: relative;
+    height: 200px;
+    margin: 10px 0;
+}
+
+/* Enhanced monitoring gauge containers */
+.admin-enhanced-gauge-container {
+    display: flex;
+    justify-content: center;
+    align-items: center;
+    height: 150px;
+}
+
+.admin-enhanced-gauge {
+    position: relative;
+    width: 120px;
+    height: 120px;
+}
+
+.admin-enhanced-gauge-circle {
+    width: 100%;
+    height: 100%;
+    border-radius: 50%;
+    background: conic-gradient(
+        from 0deg,
+        #28a745 0deg 70deg,
+        #ffc107 70deg 90deg,
+        #dc3545 90deg 100deg,
+        #e9ecef 100deg 360deg
+    );
+    display: flex;
+    align-items: center;
+    justify-content: center;
+}
+
+.admin-enhanced-gauge-inner {
+    width: 80%;
+    height: 80%;
+    background: white;
+    border-radius: 50%;
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    justify-content: center;
+}
+
+.admin-enhanced-gauge-value {
+    font-size: 1.5rem;
+    font-weight: bold;
+    color: #333;
+}
+
+.admin-enhanced-gauge-label {
+    font-size: 0.7rem;
+    color: #666;
+    text-transform: uppercase;
+}
+
+/* Enhanced monitoring table containers */
+.admin-enhanced-table-container {
+    max-height: 300px;
+    overflow-y: auto;
+}
+
+.admin-enhanced-widget-table {
+    width: 100%;
+    font-size: 0.9rem;
+}
+
+.admin-enhanced-widget-table th {
+    background: #f8f9fa;
+    font-weight: 600;
+    padding: 8px;
+    border-bottom: 2px solid #dee2e6;
+    position: sticky;
+    top: 0;
+}
+
+.admin-enhanced-widget-table td {
+    padding: 8px;
+    border-bottom: 1px solid #dee2e6;
+}
+
+/* Enhanced monitoring status badges */
+.admin-enhanced-status-badge {
+    padding: 2px 8px;
+    border-radius: 12px;
+    font-size: 0.75rem;
+    font-weight: 500;
+    text-transform: uppercase;
+}
+
+.admin-enhanced-status-running {
+    background: #d4edda;
+    color: #155724;
+}
+
+.admin-enhanced-status-queued {
+    background: #d1ecf1;
+    color: #0c5460;
+}
+
+.admin-enhanced-status-completed {
+    background: #d4edda;
+    color: #155724;
+}
+
+.admin-enhanced-status-failed {
+    background: #f8d7da;
+    color: #721c24;
+}
+
+/* Enhanced monitoring progress mini */
+.admin-enhanced-progress-mini {
+    width: 60px;
+    height: 4px;
+    background: #e9ecef;
+    border-radius: 2px;
+    overflow: hidden;
+}
+
+.admin-enhanced-progress-mini-fill {
+    height: 100%;
+    background: #007bff;
+    transition: width 0.3s ease;
+}
+
+/* Enhanced monitoring dashboard controls */
+.admin-enhanced-dashboard-controls {
+    position: fixed;
+    top: 80px;
+    right: 20px;
+    z-index: 1000;
+    display: flex;
+    flex-direction: column;
+    gap: 10px;
+}
+
+.admin-enhanced-control-panel {
+    background: white;
+    border-radius: 8px;
+    box-shadow: 0 2px 8px rgba(0,0,0,0.1);
+    padding: 15px;
+    min-width: 200px;
+}
+
+/* Enhanced monitoring auto-refresh indicator */
+.admin-enhanced-auto-refresh-indicator {
+    display: inline-block;
+    width: 8px;
+    height: 8px;
+    background: #28a745;
+    border-radius: 50%;
+    margin-left: 5px;
+    animation: pulse 2s infinite;
+}
+
+@keyframes pulse {
+    0% { opacity: 1; }
+    50% { opacity: 0.5; }
+    100% { opacity: 1; }
+}
+
+/* Enhanced monitoring loading overlay */
+.admin-enhanced-loading-overlay {
+    position: absolute;
+    top: 0;
+    left: 0;
+    right: 0;
+    bottom: 0;
+    background: rgba(255, 255, 255, 0.8);
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    border-radius: 8px;
+    z-index: 10;
+}
+
+.admin-enhanced-spinner {
+    width: 24px;
+    height: 24px;
+    border: 2px solid #f3f3f3;
+    border-top: 2px solid #007bff;
+    border-radius: 50%;
+    animation: spin 1s linear infinite;
+}
+
+/* Enhanced monitoring error state */
+.admin-enhanced-error-state {
+    text-align: center;
+    color: #dc3545;
+    padding: 20px;
+}
+
+.admin-enhanced-error-state i {
+    font-size: 2rem;
+    margin-bottom: 10px;
+    display: block;
+}
+
+/* Maintenance monitoring dashboard styles */
+.admin-maintenance-metric-card {
+    transition: all 0.3s ease;
+    border-left: 4px solid transparent;
+}
+
+.admin-maintenance-metric-card:hover {
+    transform: translateY(-2px);
+    box-shadow: 0 4px 8px rgba(0,0,0,0.1);
+}
+
+.admin-maintenance-metric-card.critical { 
+    border-left-color: #dc3545; 
+}
+
+.admin-maintenance-metric-card.warning { 
+    border-left-color: #ffc107; 
+}
+
+.admin-maintenance-metric-card.success { 
+    border-left-color: #28a745; 
+}
+
+.admin-maintenance-metric-card.info { 
+    border-left-color: #17a2b8; 
+}
+
+.admin-maintenance-metric-value {
+    font-size: 2rem;
+    font-weight: bold;
+    line-height: 1;
+}
+
+.admin-maintenance-metric-trend {
+    font-size: 0.875rem;
+    margin-top: 0.25rem;
+}
+
+.admin-maintenance-trend-up { 
+    color: #28a745; 
+}
+
+.admin-maintenance-trend-down { 
+    color: #dc3545; 
+}
+
+.admin-maintenance-trend-stable { 
+    color: #6c757d; 
+}
+
+/* Maintenance monitoring real-time indicator */
+.admin-maintenance-real-time-indicator {
+    display: inline-block;
+    width: 8px;
+    height: 8px;
+    background-color: #28a745;
+    border-radius: 50%;
+    animation: pulse 2s infinite;
+    margin-right: 0.5rem;
+}
+
+.admin-maintenance-real-time-indicator.disconnected { 
+    background-color: #dc3545; 
+}
+
+/* Maintenance monitoring session items */
+.admin-maintenance-session-item {
+    border-left: 3px solid #dee2e6;
+    padding: 0.75rem;
+    margin-bottom: 0.5rem;
+    border-radius: 0.25rem;
+    background: #f8f9fa;
+}
+
+.admin-maintenance-session-item.admin { 
+    border-left-color: #28a745; 
+}
+
+.admin-maintenance-session-item.user { 
+    border-left-color: #17a2b8; 
+}
+
+.admin-maintenance-session-item.invalidated { 
+    border-left-color: #dc3545; 
+    background: #fff5f5; 
+}
+
+/* Maintenance monitoring chart container */
+.admin-maintenance-chart-container {
+    position: relative;
+    height: 300px;
+    margin: 1rem 0;
+}
+
+/* Maintenance monitoring timeline */
+.admin-maintenance-timeline {
+    position: relative;
+    padding-left: 2rem;
+}
+
+.admin-maintenance-timeline::before {
+    content: '';
+    position: absolute;
+    left: 0.5rem;
+    top: 0;
+    bottom: 0;
+    width: 2px;
+    background: #dee2e6;
+}
+
+.admin-maintenance-timeline-item {
+    position: relative;
+    margin-bottom: 1.5rem;
+    padding-left: 1.5rem;
+}
+
+.admin-maintenance-timeline-item::before {
+    content: '';
+    position: absolute;
+    left: -0.5rem;
+    top: 0.25rem;
+    width: 12px;
+    height: 12px;
+    border-radius: 50%;
+    background: #fff;
+    border: 2px solid #dee2e6;
+}
+
+.admin-maintenance-timeline-item.enabled::before { 
+    border-color: #dc3545; 
+    background: #dc3545; 
+}
+
+.admin-maintenance-timeline-item.disabled::before { 
+    border-color: #28a745; 
+    background: #28a745; 
+}
+
+.admin-maintenance-timeline-item.emergency::before { 
+    border-color: #fd7e14; 
+    background: #fd7e14; 
+}
+
+/* Maintenance monitoring impact gauge */
+.admin-maintenance-impact-gauge {
+    position: relative;
+    width: 120px;
+    height: 120px;
+    margin: 0 auto;
+}
+
+.admin-maintenance-impact-gauge svg {
+    transform: rotate(-90deg);
+}
+
+.admin-maintenance-impact-gauge-text {
+    position: absolute;
+    top: 50%;
+    left: 50%;
+    transform: translate(-50%, -50%);
+    text-align: center;
+}
+
+/* Maintenance mode dashboard styles */
+.admin-maintenance-mode-status-card {
+    border-left: 4px solid;
+}
+
+.admin-maintenance-mode-active { 
+    border-left-color: #dc3545; 
+}
+
+.admin-maintenance-mode-inactive { 
+    border-left-color: #28a745; 
+}
+
+.admin-maintenance-mode-test { 
+    border-left-color: #ffc107; 
+}
+
+.admin-maintenance-mode-emergency { 
+    border-left-color: #fd7e14; 
+}
+
+.admin-maintenance-mode-operation-badge {
+    font-size: 0.75rem;
+    margin: 0.125rem;
+}
+
+.admin-maintenance-mode-form {
+    background: #f8f9fa;
+    border-radius: 0.375rem;
+    padding: 1.5rem;
+}
+
+/* Maintenance mode status indicators */
+.admin-maintenance-mode-status-indicator {
+    display: inline-block;
+    width: 12px;
+    height: 12px;
+    border-radius: 50%;
+    margin-right: 0.5rem;
+}
+
+.admin-maintenance-mode-status-active { 
+    background-color: #dc3545; 
+}
+
+.admin-maintenance-mode-status-inactive { 
+    background-color: #28a745; 
+}
+
+.admin-maintenance-mode-status-test { 
+    background-color: #ffc107; 
+}
+
+.admin-maintenance-mode-status-emergency { 
+    background-color: #fd7e14; 
+}
+
+.admin-maintenance-mode-real-time-indicator {
+    display: inline-block;
+    width: 8px;
+    height: 8px;
+    background-color: #28a745;
+    border-radius: 50%;
+    animation: pulse 2s infinite;
+}
+
+.admin-maintenance-mode-real-time-indicator.disconnected { 
+    background-color: #dc3545; 
+}
+
+/* Maintenance mode validation feedback */
+.admin-maintenance-mode-validation-feedback {
+    display: none;
+    margin-top: 0.5rem;
+}
+
+.admin-maintenance-mode-validation-feedback.show {
+    display: block;
+}
+
+/* Maintenance mode history items */
+.admin-maintenance-mode-history-item {
+    border-left: 3px solid #dee2e6;
+    padding-left: 1rem;
+    margin-bottom: 1rem;
+}
+
+.admin-maintenance-mode-history-item.enabled { 
+    border-left-color: #dc3545; 
+}
+
+.admin-maintenance-mode-history-item.disabled { 
+    border-left-color: #28a745; 
+}
+
+.admin-maintenance-mode-history-item.emergency { 
+    border-left-color: #fd7e14; 
+}
+
+/* ==========================================================================
+   Admin Responsive Design
+   ========================================================================== */
+
+/* Mobile admin interface adjustments */
+@media (max-width: 768px) {
+    .admin-action-option {
+        padding: var(--admin-spacing-sm);
+        margin-bottom: var(--admin-spacing-sm);
+    }
+    
+    .maintenance-icon {
+        font-size: 3rem;
+    }
+    
+    .job-progress-text {
+        font-size: 0.65rem;
+    }
+    
+    /* Enhanced monitoring responsive adjustments */
+    .admin-dashboard-grid {
+        grid-template-columns: repeat(4, 1fr);
+        gap: 10px;
+    }
+    
+    .admin-widget {
+        padding: 15px;
+    }
+    
+    .admin-enhanced-dashboard-controls {
+        position: relative;
+        top: auto;
+        right: auto;
+        margin-bottom: 20px;
+    }
+}
+
+/* Tablet admin interface */
+@media (min-width: 769px) and (max-width: 1024px) {
+    .bulk-actions-modal .modal-dialog {
+        max-width: 90%;
+    }
+    
+    /* Enhanced monitoring tablet adjustments */
+    .admin-dashboard-grid {
+        grid-template-columns: repeat(8, 1fr);
+    }
+}
+
+/* Desktop admin interface optimizations */
+@media (min-width: 1025px) {
+    .admin-action-option:hover {
+        transform: translateY(-2px);
+        box-shadow: 0 4px 8px rgba(0, 0, 0, 0.1);
+    }
+}
+
+/* Enhanced monitoring desktop optimizations */
+@media (min-width: 1200px) {
+    .admin-dashboard-grid {
+        grid-template-columns: repeat(12, 1fr);
+    }
+}/* ===
+=======================================================================
+   Admin Color and Background Utility Classes (Task 13.3)
+   ========================================================================== */
+
+/* Admin-specific color variables extending the main theme */
+:root {
+    /* Admin color palette - consistent with main theme */
+    --admin-color-primary: #2563eb;
+    --admin-color-primary-dark: #1d4ed8;
+    --admin-color-primary-light: #3b82f6;
+    --admin-color-secondary: #64748b;
+    --admin-color-success: #059669;
+    --admin-color-warning: #d97706;
+    --admin-color-danger: #dc2626;
+    --admin-color-info: #0891b2;
+    
+    /* Admin-specific alert colors */
+    --admin-alert-success-bg: #ecfdf5;
+    --admin-alert-success-text: #065f46;
+    --admin-alert-danger-bg: #fef2f2;
+    --admin-alert-danger-text: #991b1b;
+    --admin-alert-warning-bg: #fffbeb;
+    --admin-alert-warning-text: #92400e;
+    --admin-alert-info-bg: #f0f9ff;
+    --admin-alert-info-text: #0c4a6e;
+    
+    /* Admin gradient colors */
+    --admin-gradient-primary: linear-gradient(135deg, var(--admin-color-primary) 0%, var(--admin-color-primary-dark) 100%);
+    --admin-gradient-success: linear-gradient(135deg, var(--admin-color-success) 0%, #047857 100%);
+    --admin-gradient-warning: linear-gradient(135deg, var(--admin-color-warning) 0%, #b45309 100%);
+    --admin-gradient-danger: linear-gradient(135deg, var(--admin-color-danger) 0%, #b91c1c 100%);
+    --admin-gradient-info: linear-gradient(135deg, var(--admin-color-info) 0%, #0e7490 100%);
+}
+
+/* Admin text color utility classes */
+.admin-text-primary {
+    color: var(--admin-color-primary) !important;
+}
+
+.admin-text-secondary {
+    color: var(--admin-color-secondary) !important;
+}
+
+.admin-text-success {
+    color: var(--admin-color-success) !important;
+}
+
+.admin-text-warning {
+    color: var(--admin-color-warning) !important;
+}
+
+.admin-text-danger {
+    color: var(--admin-color-danger) !important;
+}
+
+.admin-text-info {
+    color: var(--admin-color-info) !important;
+}
+
+/* Admin background utility classes */
+.admin-bg-primary {
+    background-color: var(--admin-color-primary) !important;
+    color: white !important;
+}
+
+.admin-bg-secondary {
+    background-color: var(--admin-color-secondary) !important;
+    color: white !important;
+}
+
+.admin-bg-success {
+    background-color: var(--admin-color-success) !important;
+    color: white !important;
+}
+
+.admin-bg-warning {
+    background-color: var(--admin-color-warning) !important;
+    color: white !important;
+}
+
+.admin-bg-danger {
+    background-color: var(--admin-color-danger) !important;
+    color: white !important;
+}
+
+.admin-bg-info {
+    background-color: var(--admin-color-info) !important;
+    color: white !important;
+}
+
+/* Admin alert background classes */
+.admin-bg-alert-success {
+    background-color: var(--admin-alert-success-bg) !important;
+    color: var(--admin-alert-success-text) !important;
+    border-left: 4px solid var(--admin-color-success) !important;
+}
+
+.admin-bg-alert-danger {
+    background-color: var(--admin-alert-danger-bg) !important;
+    color: var(--admin-alert-danger-text) !important;
+    border-left: 4px solid var(--admin-color-danger) !important;
+}
+
+.admin-bg-alert-warning {
+    background-color: var(--admin-alert-warning-bg) !important;
+    color: var(--admin-alert-warning-text) !important;
+    border-left: 4px solid var(--admin-color-warning) !important;
+}
+
+.admin-bg-alert-info {
+    background-color: var(--admin-alert-info-bg) !important;
+    color: var(--admin-alert-info-text) !important;
+    border-left: 4px solid var(--admin-color-info) !important;
+}
+
+/* Admin gradient classes */
+.admin-bg-gradient-primary {
+    background: var(--admin-gradient-primary) !important;
+    color: white !important;
+}
+
+.admin-bg-gradient-success {
+    background: var(--admin-gradient-success) !important;
+    color: white !important;
+}
+
+.admin-bg-gradient-warning {
+    background: var(--admin-gradient-warning) !important;
+    color: white !important;
+}
+
+.admin-bg-gradient-danger {
+    background: var(--admin-gradient-danger) !important;
+    color: white !important;
+}
+
+.admin-bg-gradient-info {
+    background: var(--admin-gradient-info) !important;
+    color: white !important;
+}
+
+/* Admin border color classes */
+.admin-border-primary {
+    border-color: var(--admin-color-primary) !important;
+}
+
+.admin-border-secondary {
+    border-color: var(--admin-color-secondary) !important;
+}
+
+.admin-border-success {
+    border-color: var(--admin-color-success) !important;
+}
+
+.admin-border-warning {
+    border-color: var(--admin-color-warning) !important;
+}
+
+.admin-border-danger {
+    border-color: var(--admin-color-danger) !important;
+}
+
+.admin-border-info {
+    border-color: var(--admin-color-info) !important;
+}
+
+/* Admin status indicator classes */
+.admin-status-active {
+    background-color: var(--admin-color-success) !important;
+    color: white !important;
+    padding: 0.25rem 0.5rem;
+    border-radius: 0.25rem;
+    font-size: 0.75rem;
+    font-weight: 600;
+    text-transform: uppercase;
+}
+
+.admin-status-inactive {
+    background-color: var(--admin-color-secondary) !important;
+    color: white !important;
+    padding: 0.25rem 0.5rem;
+    border-radius: 0.25rem;
+    font-size: 0.75rem;
+    font-weight: 600;
+    text-transform: uppercase;
+}
+
+.admin-status-pending {
+    background-color: var(--admin-color-warning) !important;
+    color: white !important;
+    padding: 0.25rem 0.5rem;
+    border-radius: 0.25rem;
+    font-size: 0.75rem;
+    font-weight: 600;
+    text-transform: uppercase;
+}
+
+.admin-status-error {
+    background-color: var(--admin-color-danger) !important;
+    color: white !important;
+    padding: 0.25rem 0.5rem;
+    border-radius: 0.25rem;
+    font-size: 0.75rem;
+    font-weight: 600;
+    text-transform: uppercase;
+}
+
+.admin-status-processing {
+    background-color: var(--admin-color-info) !important;
+    color: white !important;
+    padding: 0.25rem 0.5rem;
+    border-radius: 0.25rem;
+    font-size: 0.75rem;
+    font-weight: 600;
+    text-transform: uppercase;
+}
+
+/* Admin button gradient classes */
+.admin-btn-gradient-primary {
+    background: var(--admin-gradient-primary) !important;
+    border: none !important;
+    color: white !important;
+}
+
+.admin-btn-gradient-primary:hover {
+    background: linear-gradient(135deg, var(--admin-color-primary-dark) 0%, var(--admin-color-primary) 100%) !important;
+    color: white !important;
+}
+
+.admin-btn-gradient-success {
+    background: var(--admin-gradient-success) !important;
+    border: none !important;
+    color: white !important;
+}
+
+.admin-btn-gradient-warning {
+    background: var(--admin-gradient-warning) !important;
+    border: none !important;
+    color: white !important;
+}
+
+.admin-btn-gradient-danger {
+    background: var(--admin-gradient-danger) !important;
+    border: none !important;
+    color: white !important;
+}
+
+.admin-btn-gradient-info {
+    background: var(--admin-gradient-info) !important;
+    border: none !important;
+    color: white !important;
+}
+
+/* Admin card color classes */
+.admin-card-primary {
+    border-color: var(--admin-color-primary) !important;
+}
+
+.admin-card-primary .card-header {
+    background-color: var(--admin-color-primary) !important;
+    color: white !important;
+}
+
+.admin-card-success {
+    border-color: var(--admin-color-success) !important;
+}
+
+.admin-card-success .card-header {
+    background-color: var(--admin-color-success) !important;
+    color: white !important;
+}
+
+.admin-card-warning {
+    border-color: var(--admin-color-warning) !important;
+}
+
+.admin-card-warning .card-header {
+    background-color: var(--admin-color-warning) !important;
+    color: white !important;
+}
+
+.admin-card-danger {
+    border-color: var(--admin-color-danger) !important;
+}
+
+.admin-card-danger .card-header {
+    background-color: var(--admin-color-danger) !important;
+    color: white !important;
+}
+
+.admin-card-info {
+    border-color: var(--admin-color-info) !important;
+}
+
+.admin-card-info .card-header {
+    background-color: var(--admin-color-info) !important;
+    color: white !important;
+}
+
+/* Admin notification classes */
+.admin-notification-success {
+    background-color: var(--admin-alert-success-bg) !important;
+    color: var(--admin-alert-success-text) !important;
+    border: 1px solid var(--admin-color-success) !important;
+    border-radius: 0.375rem;
+    padding: 1rem;
+    margin-bottom: 1rem;
+}
+
+.admin-notification-danger {
+    background-color: var(--admin-alert-danger-bg) !important;
+    color: var(--admin-alert-danger-text) !important;
+    border: 1px solid var(--admin-color-danger) !important;
+    border-radius: 0.375rem;
+    padding: 1rem;
+    margin-bottom: 1rem;
+}
+
+.admin-notification-warning {
+    background-color: var(--admin-alert-warning-bg) !important;
+    color: var(--admin-alert-warning-text) !important;
+    border: 1px solid var(--admin-color-warning) !important;
+    border-radius: 0.375rem;
+    padding: 1rem;
+    margin-bottom: 1rem;
+}
+
+.admin-notification-info {
+    background-color: var(--admin-alert-info-bg) !important;
+    color: var(--admin-alert-info-text) !important;
+    border: 1px solid var(--admin-color-info) !important;
+    border-radius: 0.375rem;
+    padding: 1rem;
+    margin-bottom: 1rem;
+}
+
+/* Admin hover state classes */
+.admin-hover-bg-primary:hover {
+    background-color: var(--admin-color-primary) !important;
+    color: white !important;
+}
+
+.admin-hover-bg-success:hover {
+    background-color: var(--admin-color-success) !important;
+    color: white !important;
+}
+
+.admin-hover-bg-warning:hover {
+    background-color: var(--admin-color-warning) !important;
+    color: white !important;
+}
+
+.admin-hover-bg-danger:hover {
+    background-color: var(--admin-color-danger) !important;
+    color: white !important;
+}
+
+.admin-hover-bg-info:hover {
+    background-color: var(--admin-color-info) !important;
+    color: white !important;
+}
+
+/* Admin shadow color classes */
+.admin-shadow-primary {
+    box-shadow: 0 4px 6px -1px rgba(37, 99, 235, 0.1), 0 2px 4px -2px rgba(37, 99, 235, 0.1) !important;
+}
+
+.admin-shadow-success {
+    box-shadow: 0 4px 6px -1px rgba(5, 150, 105, 0.1), 0 2px 4px -2px rgba(5, 150, 105, 0.1) !important;
+}
+
+.admin-shadow-warning {
+    box-shadow: 0 4px 6px -1px rgba(217, 119, 6, 0.1), 0 2px 4px -2px rgba(217, 119, 6, 0.1) !important;
+}
+
+.admin-shadow-danger {
+    box-shadow: 0 4px 6px -1px rgba(220, 38, 38, 0.1), 0 2px 4px -2px rgba(220, 38, 38, 0.1) !important;
+}
+
+.admin-shadow-info {
+    box-shadow: 0 4px 6px -1px rgba(8, 145, 178, 0.1), 0 2px 4px -2px rgba(8, 145, 178, 0.1) !important;
+}

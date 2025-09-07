@@ -1,0 +1,505 @@
+/* Copyright (C) 2025 iolaire mcfadden. */
+/* This program is free software: you can redistribute it and/or modify it under the terms of the GNU Affero General Public License as published by the Free Software Foundation, either version 3 of the License, or (at your option) any later version. */
+/* THE SOFTWARE IS PROVIDED "AS IS", WITHOUT WARRANTY OF ANY KIND, EXPRESS OR IMPLIED, INCLUDING BUT NOT LIMITED TO THE WARRANTIES OF MERCHANTABILITY, FITNESS FOR A PARTICULAR PURPOSE AND NONINFRINGEMENT. IN NO EVENT SHALL THE AUTHORS OR COPYRIGHT HOLDERS BE LIABLE FOR ANY CLAIM, DAMAGES OR OTHER LIABILITY, WHETHER IN AN ACTION OF CONTRACT, TORT OR OTHERWISE, ARISING FROM, OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE SOFTWARE. */
+
+/**
+ * Utility CSS Classes - Consolidated
+ * 
+ * This file contains all utility classes used throughout the application.
+ * Consolidated from multiple files to reduce duplication and improve maintainability.
+ * 
+ * Categories:
+ * - Display utilities
+ * - Spacing utilities
+ * - Width/Height utilities
+ * - Color utilities
+ * - Typography utilities
+ * - Layout utilities
+ * - Interaction utilities
+ * - Icon utilities
+ * - Progress utilities
+ * - Transform utilities
+ */
+
+/* ==========================================================================
+   Display Utilities
+   ========================================================================== */
+
+.hidden {
+    display: none !important;
+}
+
+.visible {
+    display: block !important;
+}
+
+.invisible {
+    visibility: hidden !important;
+}
+
+.d-none {
+    display: none !important;
+}
+
+.d-block {
+    display: block !important;
+}
+
+.d-inline {
+    display: inline !important;
+}
+
+.d-inline-block {
+    display: inline-block !important;
+}
+
+.d-flex {
+    display: flex !important;
+}
+
+.d-inline-flex {
+    display: inline-flex !important;
+}
+
+.d-grid {
+    display: grid !important;
+}
+
+/* ==========================================================================
+   Spacing Utilities
+   ========================================================================== */
+
+/* Margin utilities */
+.m-0 { margin: 0 !important; }
+.m-1 { margin: 0.25rem !important; }
+.m-2 { margin: 0.5rem !important; }
+.m-3 { margin: 1rem !important; }
+.m-4 { margin: 1.5rem !important; }
+.m-5 { margin: 3rem !important; }
+
+.mt-0 { margin-top: 0 !important; }
+.mt-1 { margin-top: 0.25rem !important; }
+.mt-2 { margin-top: 0.5rem !important; }
+.mt-3 { margin-top: 1rem !important; }
+.mt-4 { margin-top: 1.5rem !important; }
+.mt-5 { margin-top: 3rem !important; }
+
+.mb-0 { margin-bottom: 0 !important; }
+.mb-1 { margin-bottom: 0.25rem !important; }
+.mb-2 { margin-bottom: 0.5rem !important; }
+.mb-3 { margin-bottom: 1rem !important; }
+.mb-4 { margin-bottom: 1.5rem !important; }
+.mb-5 { margin-bottom: 3rem !important; }
+
+.ml-0, .ms-0 { margin-left: 0 !important; }
+.ml-1, .ms-1 { margin-left: 0.25rem !important; }
+.ml-2, .ms-2 { margin-left: 0.5rem !important; }
+.ml-3, .ms-3 { margin-left: 1rem !important; }
+.ml-4, .ms-4 { margin-left: 1.5rem !important; }
+.ml-5, .ms-5 { margin-left: 3rem !important; }
+
+.mr-0, .me-0 { margin-right: 0 !important; }
+.mr-1, .me-1 { margin-right: 0.25rem !important; }
+.mr-2, .me-2 { margin-right: 0.5rem !important; }
+.mr-3, .me-3 { margin-right: 1rem !important; }
+.mr-4, .me-4 { margin-right: 1.5rem !important; }
+.mr-5, .me-5 { margin-right: 3rem !important; }
+
+/* Padding utilities */
+.p-0 { padding: 0 !important; }
+.p-1 { padding: 0.25rem !important; }
+.p-2 { padding: 0.5rem !important; }
+.p-3 { padding: 1rem !important; }
+.p-4 { padding: 1.5rem !important; }
+.p-5 { padding: 3rem !important; }
+
+.pt-0 { padding-top: 0 !important; }
+.pt-1 { padding-top: 0.25rem !important; }
+.pt-2 { padding-top: 0.5rem !important; }
+.pt-3 { padding-top: 1rem !important; }
+.pt-4 { padding-top: 1.5rem !important; }
+.pt-5 { padding-top: 3rem !important; }
+
+.pb-0 { padding-bottom: 0 !important; }
+.pb-1 { padding-bottom: 0.25rem !important; }
+.pb-2 { padding-bottom: 0.5rem !important; }
+.pb-3 { padding-bottom: 1rem !important; }
+.pb-4 { padding-bottom: 1.5rem !important; }
+.pb-5 { padding-bottom: 3rem !important; }
+
+.pl-0, .ps-0 { padding-left: 0 !important; }
+.pl-1, .ps-1 { padding-left: 0.25rem !important; }
+.pl-2, .ps-2 { padding-left: 0.5rem !important; }
+.pl-3, .ps-3 { padding-left: 1rem !important; }
+.pl-4, .ps-4 { padding-left: 1.5rem !important; }
+.pl-5, .ps-5 { padding-left: 3rem !important; }
+
+.pr-0, .pe-0 { padding-right: 0 !important; }
+.pr-1, .pe-1 { padding-right: 0.25rem !important; }
+.pr-2, .pe-2 { padding-right: 0.5rem !important; }
+.pr-3, .pe-3 { padding-right: 1rem !important; }
+.pr-4, .pe-4 { padding-right: 1.5rem !important; }
+.pr-5, .pe-5 { padding-right: 3rem !important; }
+
+/* ==========================================================================
+   Width and Height Utilities
+   ========================================================================== */
+
+/* Width utilities */
+.w-0 { width: 0% !important; }
+.w-25 { width: 25% !important; }
+.w-50 { width: 50% !important; }
+.w-60 { width: 60% !important; }
+.w-75 { width: 75% !important; }
+.w-85 { width: 85% !important; }
+.w-90 { width: 90% !important; }
+.w-100 { width: 100% !important; }
+.w-auto { width: auto !important; }
+
+/* Fixed width utilities */
+.w-100px { width: 100px !important; }
+
+/* Height utilities */
+.h-25 { height: 25% !important; }
+.h-50 { height: 50% !important; }
+.h-75 { height: 75% !important; }
+.h-100 { height: 100% !important; }
+.h-auto { height: auto !important; }
+
+/* Fixed height utilities */
+.h-8px { height: 8px !important; }
+.h-20px { height: 20px !important; }
+.h-80px { height: 80px !important; }
+
+/* Min/Max width utilities */
+.mw-100 { max-width: 100% !important; }
+.mh-100 { max-height: 100% !important; }
+
+/* Min/Max height utilities */
+.min-height-sm { min-height: var(--container-min-height-sm) !important; }
+.min-height-md { min-height: var(--container-min-height-md) !important; }
+.min-height-lg { min-height: var(--container-min-height-lg) !important; }
+.min-height-xl { min-height: var(--container-min-height-xl) !important; }
+
+.max-height-sm { max-height: var(--container-max-height-sm) !important; overflow-y: auto; }
+.max-height-md { max-height: var(--container-max-height-md) !important; overflow-y: auto; }
+.max-height-lg { max-height: var(--container-max-height-lg) !important; overflow-y: auto; }
+.max-height-xl { max-height: var(--container-max-height-xl) !important; overflow-y: auto; }
+
+/* Fixed max-height utilities */
+.max-height-200px { max-height: 200px !important; overflow-y: auto; }
+.max-height-300px { max-height: 300px !important; overflow-y: auto; }
+.max-height-400px { max-height: 400px !important; overflow-y: auto; }
+
+/* ==========================================================================
+   Text Utilities
+   ========================================================================== */
+
+.text-left { text-align: left !important; }
+.text-center { text-align: center !important; }
+.text-right { text-align: right !important; }
+.text-justify { text-align: justify !important; }
+
+.text-lowercase { text-transform: lowercase !important; }
+.text-uppercase { text-transform: uppercase !important; }
+.text-capitalize { text-transform: capitalize !important; }
+
+.font-weight-light { font-weight: 300 !important; }
+.font-weight-normal { font-weight: 400 !important; }
+.font-weight-bold { font-weight: 700 !important; }
+
+.font-italic { font-style: italic !important; }
+
+.text-decoration-none { text-decoration: none !important; }
+.text-decoration-underline { text-decoration: underline !important; }
+
+/* ==========================================================================
+   Color Utilities
+   ========================================================================== */
+
+.text-primary { color: #007bff !important; }
+.text-secondary { color: #6c757d !important; }
+.text-success { color: #28a745 !important; }
+.text-danger { color: #dc3545 !important; }
+.text-warning { color: #ffc107 !important; }
+.text-info { color: #17a2b8 !important; }
+.text-light { color: #f8f9fa !important; }
+.text-dark { color: #343a40 !important; }
+.text-muted { color: #6c757d !important; }
+.text-white { color: #fff !important; }
+
+/* Additional color utilities */
+.text-gray { color: #999 !important; }
+.text-blue { color: #007bff !important; }
+
+.bg-primary { background-color: #007bff !important; }
+.bg-secondary { background-color: #6c757d !important; }
+.bg-success { background-color: #28a745 !important; }
+.bg-danger { background-color: #dc3545 !important; }
+.bg-warning { background-color: #ffc107 !important; }
+.bg-info { background-color: #17a2b8 !important; }
+.bg-light { background-color: #f8f9fa !important; }
+.bg-dark { background-color: #343a40 !important; }
+.bg-white { background-color: #fff !important; }
+.bg-transparent { background-color: transparent !important; }
+
+/* ==========================================================================
+   Border Utilities
+   ========================================================================== */
+
+.border { border: 1px solid #dee2e6 !important; }
+.border-top { border-top: 1px solid #dee2e6 !important; }
+.border-right { border-right: 1px solid #dee2e6 !important; }
+.border-bottom { border-bottom: 1px solid #dee2e6 !important; }
+.border-left { border-left: 1px solid #dee2e6 !important; }
+
+.border-0 { border: 0 !important; }
+.border-top-0 { border-top: 0 !important; }
+.border-right-0 { border-right: 0 !important; }
+.border-bottom-0 { border-bottom: 0 !important; }
+.border-left-0 { border-left: 0 !important; }
+
+.rounded { border-radius: 0.25rem !important; }
+.rounded-top { border-top-left-radius: 0.25rem !important; border-top-right-radius: 0.25rem !important; }
+.rounded-right { border-top-right-radius: 0.25rem !important; border-bottom-right-radius: 0.25rem !important; }
+.rounded-bottom { border-bottom-right-radius: 0.25rem !important; border-bottom-left-radius: 0.25rem !important; }
+.rounded-left { border-top-left-radius: 0.25rem !important; border-bottom-left-radius: 0.25rem !important; }
+.rounded-circle { border-radius: 50% !important; }
+.rounded-0 { border-radius: 0 !important; }
+
+/* ==========================================================================
+   Position Utilities
+   ========================================================================== */
+
+.position-static { position: static !important; }
+.position-relative { position: relative !important; }
+.position-absolute { position: absolute !important; }
+.position-fixed { position: fixed !important; }
+.position-sticky { position: sticky !important; }
+
+/* ==========================================================================
+   Flex Utilities
+   ========================================================================== */
+
+.flex-row { flex-direction: row !important; }
+.flex-column { flex-direction: column !important; }
+.flex-row-reverse { flex-direction: row-reverse !important; }
+.flex-column-reverse { flex-direction: column-reverse !important; }
+
+.flex-wrap { flex-wrap: wrap !important; }
+.flex-nowrap { flex-wrap: nowrap !important; }
+.flex-wrap-reverse { flex-wrap: wrap-reverse !important; }
+
+.justify-content-start { justify-content: flex-start !important; }
+.justify-content-end { justify-content: flex-end !important; }
+.justify-content-center { justify-content: center !important; }
+.justify-content-between { justify-content: space-between !important; }
+.justify-content-around { justify-content: space-around !important; }
+
+.align-items-start { align-items: flex-start !important; }
+.align-items-end { align-items: flex-end !important; }
+.align-items-center { align-items: center !important; }
+.align-items-baseline { align-items: baseline !important; }
+.align-items-stretch { align-items: stretch !important; }
+
+.align-self-start { align-self: flex-start !important; }
+.align-self-end { align-self: flex-end !important; }
+.align-self-center { align-self: center !important; }
+.align-self-baseline { align-self: baseline !important; }
+.align-self-stretch { align-self: stretch !important; }
+
+/* ==========================================================================
+   Overflow Utilities
+   ========================================================================== */
+
+.overflow-auto { overflow: auto !important; }
+.overflow-hidden { overflow: hidden !important; }
+.overflow-visible { overflow: visible !important; }
+.overflow-scroll { overflow: scroll !important; }
+
+/* ==========================================================================
+   Shadow Utilities
+   ========================================================================== */
+
+.shadow-none { box-shadow: none !important; }
+.shadow-sm { box-shadow: 0 0.125rem 0.25rem rgba(0, 0, 0, 0.075) !important; }
+.shadow { box-shadow: 0 0.5rem 1rem rgba(0, 0, 0, 0.15) !important; }
+.shadow-lg { box-shadow: 0 1rem 3rem rgba(0, 0, 0, 0.175) !important; }
+
+/* ==========================================================================
+   Cursor Utilities
+   ========================================================================== */
+
+.cursor-pointer { cursor: pointer !important; }
+.cursor-default { cursor: default !important; }
+.cursor-move { cursor: move !important; }
+.cursor-grab { cursor: grab !important; }
+.cursor-grabbing { cursor: grabbing !important; }
+.cursor-not-allowed { cursor: not-allowed !important; }
+
+/* ==========================================================================
+   User Select Utilities
+   ========================================================================== */
+
+.user-select-all { user-select: all !important; }
+.user-select-auto { user-select: auto !important; }
+.user-select-none { user-select: none !important; }
+
+/* ==========================================================================
+   Responsive Utilities
+   ========================================================================== */
+
+/* Small devices (landscape phones, 576px and up) */
+@media (min-width: 576px) {
+    .d-sm-none { display: none !important; }
+    .d-sm-inline { display: inline !important; }
+    .d-sm-inline-block { display: inline-block !important; }
+    .d-sm-block { display: block !important; }
+    .d-sm-flex { display: flex !important; }
+    .d-sm-inline-flex { display: inline-flex !important; }
+}
+
+/* Medium devices (tablets, 768px and up) */
+@media (min-width: 768px) {
+    .d-md-none { display: none !important; }
+    .d-md-inline { display: inline !important; }
+    .d-md-inline-block { display: inline-block !important; }
+    .d-md-block { display: block !important; }
+    .d-md-flex { display: flex !important; }
+    .d-md-inline-flex { display: inline-flex !important; }
+}
+
+/* Large devices (desktops, 992px and up) */
+@media (min-width: 992px) {
+    .d-lg-none { display: none !important; }
+    .d-lg-inline { display: inline !important; }
+    .d-lg-inline-block { display: inline-block !important; }
+    .d-lg-block { display: block !important; }
+    .d-lg-flex { display: flex !important; }
+    .d-lg-inline-flex { display: inline-flex !important; }
+}
+
+/* Extra large devices (large desktops, 1200px and up) */
+@media (min-width: 1200px) {
+    .d-xl-none { display: none !important; }
+    .d-xl-inline { display: inline !important; }
+    .d-xl-inline-block { display: inline-block !important; }
+    .d-xl-block { display: block !important; }
+    .d-xl-flex { display: flex !important; }
+    .d-xl-inline-flex { display: inline-flex !important; }
+}
+
+/* ==========================================================================
+   Icon Utilities
+   ========================================================================== */
+
+.icon-xs { font-size: var(--icon-size-xs) !important; }
+.icon-sm { font-size: var(--icon-size-sm) !important; }
+.icon-md { font-size: var(--icon-size-md) !important; }
+.icon-lg { font-size: var(--icon-size-lg) !important; }
+.icon-xl { font-size: var(--icon-size-xl) !important; }
+.icon-2xl { font-size: var(--icon-size-2xl) !important; }
+.icon-3xl { font-size: var(--icon-size-3xl) !important; }
+.icon-4xl { font-size: var(--icon-size-4xl) !important; }
+
+/* Specific icon classes for common use cases */
+.icon-button { font-size: 1.25rem !important; }
+.icon-nav { font-size: 1.5rem !important; }
+.icon-header { font-size: 2rem !important; }
+.icon-hero { font-size: 3rem !important; }
+.icon-display { font-size: 4rem !important; }
+
+/* Legacy icon classes for backward compatibility */
+.login-icon { font-size: var(--icon-size-2xl) !important; }
+.maintenance-icon { font-size: var(--icon-size-3xl) !important; }
+
+/* ==========================================================================
+   Progress Bar Utilities
+   ========================================================================== */
+
+/* Progress bar containers */
+.progress-xs { height: var(--progress-height-xs) !important; }
+.progress-sm { height: var(--progress-height-sm) !important; }
+.progress-md { height: var(--progress-height-md) !important; }
+.progress-lg { height: var(--progress-height-lg) !important; }
+.progress-xl { height: var(--progress-height-xl) !important; }
+
+/* Dynamic width progress bars */
+.progress-bar-dynamic {
+    width: var(--progress-width) !important;
+    transition: width var(--transition-normal) !important;
+}
+
+/* ==========================================================================
+   Transform Utilities
+   ========================================================================== */
+
+.scale-150 { transform: scale(1.5) !important; }
+.scale-120 { transform: scale(1.2) !important; }
+.scale-180 { transform: scale(1.8) !important; }
+.scale-200 { transform: scale(2.0) !important; }
+
+/* ==========================================================================
+   Layout Utilities
+   ========================================================================== */
+
+/* Display with margin utilities */
+.display-width-auto {
+    width: auto !important;
+    display: inline-block !important;
+    margin-left: 10px !important;
+}
+
+/* Position utilities */
+.position-absolute-left {
+    position: absolute !important;
+    left: 0 !important;
+}
+
+/* ==========================================================================
+   Container Utilities
+   ========================================================================== */
+
+/* Scrollable containers */
+.scrollable-sm {
+    max-height: 150px !important;
+    overflow-y: auto !important;
+    overflow-x: hidden !important;
+}
+
+.scrollable-md {
+    max-height: 300px !important;
+    overflow-y: auto !important;
+    overflow-x: hidden !important;
+}
+
+.scrollable-lg {
+    max-height: 500px !important;
+    overflow-y: auto !important;
+    overflow-x: hidden !important;
+}
+
+/* Combined min/max height containers */
+.container-sm {
+    min-height: var(--container-min-height-sm) !important;
+    max-height: var(--container-max-height-sm) !important;
+    overflow-y: auto !important;
+}
+
+.container-md {
+    min-height: var(--container-min-height-md) !important;
+    max-height: var(--container-max-height-md) !important;
+    overflow-y: auto !important;
+}
+
+.container-lg {
+    min-height: var(--container-min-height-lg) !important;
+    max-height: var(--container-max-height-lg) !important;
+    overflow-y: auto !important;
+}
+
+.container-xl {
+    min-height: var(--container-min-height-xl) !important;
+    max-height: var(--container-max-height-xl) !important;
+    overflow-y: auto !important;
+}

@@ -63,7 +63,7 @@
     </div>
 
     <!-- Restart Required Notification -->
-    <div class="row mb-3" id="restartNotificationRow" style="display: none;">
+    <div class="row mb-3" id="restartNotificationRow" class="hidden">
         <div class="col-12">
             <div class="alert alert-warning alert-dismissible fade show" role="alert">
                 <div class="d-flex align-items-center">
@@ -177,22 +177,22 @@
                                     <div id="affectedComponents" class="mt-1"></div>
                                 </div>
 
-                                <div class="mt-2" id="riskFactorsSection" style="display: none;">
+                                <div class="mt-2" id="riskFactorsSection" class="hidden">
                                     <strong>Risk Factors:</strong>
                                     <ul id="riskFactors" class="mt-1 mb-0"></ul>
                                 </div>
 
-                                <div class="mt-2" id="mitigationStepsSection" style="display: none;">
+                                <div class="mt-2" id="mitigationStepsSection" class="hidden">
                                     <strong>Mitigation Steps:</strong>
                                     <ul id="mitigationSteps" class="mt-1 mb-0"></ul>
                                 </div>
 
-                                <div class="mt-2" id="relatedConfigsSection" style="display: none;">
+                                <div class="mt-2" id="relatedConfigsSection" class="hidden">
                                     <strong>Related Configurations:</strong>
                                     <div id="relatedConfigs" class="mt-1"></div>
                                 </div>
 
-                                <div class="mt-2" id="estimatedDowntimeSection" style="display: none;">
+                                <div class="mt-2" id="estimatedDowntimeSection" class="hidden">
                                     <strong>Estimated Downtime:</strong>
                                     <span id="estimatedDowntime" class="text-warning"></span>
                                 </div>
@@ -390,7 +390,7 @@
             <div class="modal-footer">
                 <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Close</button>
                 <button type="button" class="btn btn-success" id="proceedWithChange"
-                    onclick="proceedWithConfigurationChange()" style="display: none;">
+                    onclick="proceedWithConfigurationChange()" class="hidden">
                     <i class="bi bi-check-circle me-1"></i>Proceed with Change
                 </button>
             </div>

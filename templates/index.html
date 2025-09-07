@@ -117,7 +117,7 @@
         </div>
     </div>
     <div class="col-lg-3 col-md-6">
-        <div class="card stats-card h-100" style="background: linear-gradient(135deg, #059669 0%, #047857 100%);">
+        <div class="card stats-card stats-card-green h-100">
             <div class="card-body text-center">
                 <div class="d-flex align-items-center justify-content-center mb-3">
                     <i class="bi bi-image fs-1 opacity-75"></i>
@@ -133,7 +133,7 @@
         </div>
     </div>
     <div class="col-lg-3 col-md-6">
-        <div class="card stats-card h-100" style="background: linear-gradient(135deg, #d97706 0%, #b45309 100%);">
+        <div class="card stats-card stats-card-orange h-100">
             <div class="card-body text-center">
                 <div class="d-flex align-items-center justify-content-center mb-3">
                     <i class="bi bi-clock-history fs-1 opacity-75"></i>
@@ -144,7 +144,7 @@
         </div>
     </div>
     <div class="col-lg-3 col-md-6">
-        <div class="card stats-card h-100" style="background: linear-gradient(135deg, #0891b2 0%, #0e7490 100%);">
+        <div class="card stats-card stats-card-blue h-100">
             <div class="card-body text-center">
                 <div class="d-flex align-items-center justify-content-center mb-3">
                     <i class="bi bi-check-circle fs-1 opacity-75"></i>
@@ -209,28 +209,28 @@
                 <div class="d-flex flex-column gap-3">
                     <div class="d-flex justify-content-between align-items-center">
                         <div class="d-flex align-items-center">
-                            <div class="bg-warning rounded-circle me-3" style="width: 12px; height: 12px;"></div>
+                            <div class="status-indicator status-indicator-warning me-3"></div>
                             <span>Pending Review</span>
                         </div>
                         <span class="badge bg-warning">{{ stats.pending_review or 0 }}</span>
                     </div>
                     <div class="d-flex justify-content-between align-items-center">
                         <div class="d-flex align-items-center">
-                            <div class="bg-success rounded-circle me-3" style="width: 12px; height: 12px;"></div>
+                            <div class="status-indicator status-indicator-success me-3"></div>
                             <span>Approved</span>
                         </div>
                         <span class="badge bg-success">{{ stats.approved or 0 }}</span>
                     </div>
                     <div class="d-flex justify-content-between align-items-center">
                         <div class="d-flex align-items-center">
-                            <div class="bg-info rounded-circle me-3" style="width: 12px; height: 12px;"></div>
+                            <div class="status-indicator status-indicator-info me-3"></div>
                             <span>Posted</span>
                         </div>
                         <span class="badge bg-info">{{ stats.posted or 0 }}</span>
                     </div>
                     <div class="d-flex justify-content-between align-items-center">
                         <div class="d-flex align-items-center">
-                            <div class="bg-danger rounded-circle me-3" style="width: 12px; height: 12px;"></div>
+                            <div class="status-indicator status-indicator-danger me-3"></div>
                             <span>Rejected</span>
                         </div>
                         <span class="badge bg-danger">{{ stats.rejected or 0 }}</span>
@@ -242,12 +242,13 @@
                     <div class="small text-muted mb-2">Processing Progress</div>
                     {% set processed = (stats.approved or 0) + (stats.posted or 0) + (stats.rejected or 0) %}
                     {% set progress_percent = ((processed / stats.total_images) * 100) | round(1) %}
-                    <div class="progress" style="height: 8px;">
-                        <div class="progress-bar bg-success" role="progressbar" 
-                             style="width: {{ progress_percent }}%" 
+                    <div class="progress progress-sm">
+                        <div class="progress-bar progress-bar-processing progress-bar-dynamic" role="progressbar" 
+                             data-progress="{{ progress_percent }}"
                              aria-valuenow="{{ progress_percent }}" 
                              aria-valuemin="0" 
-                             aria-valuemax="100">
+                             aria-valuemax="100"
+                             style="--progress-width: {{ progress_percent }}%">
                         </div>
                     </div>
                     <div class="small text-muted mt-1">{{ progress_percent }}% processed</div>

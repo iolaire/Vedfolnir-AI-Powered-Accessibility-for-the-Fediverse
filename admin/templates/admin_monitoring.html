@@ -6,28 +6,6 @@
 {% block title %}Admin Monitoring - Vedfolnir{% endblock %}
 
 {% block head %}
-<style>
-    .metric-card {
-        transition: transform 0.2s;
-    }
-    .metric-card:hover {
-        transform: translateY(-2px);
-    }
-    .resource-bar {
-        height: 8px;
-        border-radius: 4px;
-    }
-    .task-status-badge {
-        font-size: 0.75em;
-    }
-    .auto-refresh {
-        animation: spin 1s linear infinite;
-    }
-    @keyframes spin {
-        0% { transform: rotate(0deg); }
-        100% { transform: rotate(360deg); }
-    }
-</style>
 {% endblock %}
 
 {% block content %}
@@ -47,7 +25,7 @@
 <!-- System Overview -->
 <div class="row mb-4">
     <div class="col-md-3">
-        <div class="card metric-card h-100">
+        <div class="card admin-metric-card h-100">
             <div class="card-body text-center">
                 <div class="h2 mb-0 text-primary" id="activeTasks">{{ system_overview.active_tasks or 0 }}</div>
                 <small class="text-muted">Active Tasks</small>
@@ -55,7 +33,7 @@
         </div>
     </div>
     <div class="col-md-3">
-        <div class="card metric-card h-100">
+        <div class="card admin-metric-card h-100">
             <div class="card-body text-center">
                 <div class="h2 mb-0 text-info" id="recentTasks">{{ system_overview.recent_tasks or 0 }}</div>
                 <small class="text-muted">Tasks (24h)</small>
@@ -63,7 +41,7 @@
         </div>
     </div>
     <div class="col-md-3">
-        <div class="card metric-card h-100">
+        <div class="card admin-metric-card h-100">
             <div class="card-body text-center">
                 <div class="h2 mb-0 text-success" id="activeUsers">{{ system_overview.active_users or 0 }}</div>
                 <small class="text-muted">Active Users</small>
@@ -71,7 +49,7 @@
         </div>
     </div>
     <div class="col-md-3">
-        <div class="card metric-card h-100">
+        <div class="card admin-metric-card h-100">
             <div class="card-body text-center">
                 <div class="h2 mb-0 text-warning" id="queueLength">
                     {{ system_overview.queue_stats.queue_stats.queued_tasks if system_overview.queue_stats and system_overview.queue_stats.queue_stats else 0 }}
@@ -96,8 +74,8 @@
                         <small>CPU Usage</small>
                         <small id="cpuPercent">{{ system_overview.system_resources.cpu_percent or 0 }}%</small>
                     </div>
-                    <div class="progress resource-bar">
-                        <div class="progress-bar" id="cpuBar" style="width: {{ system_overview.system_resources.cpu_percent or 0 }}%"></div>
+                    <div class="progress admin-resource-bar">
+                        <div class="progress-bar" id="cpuBar" style="--progress-width: {{ system_overview.system_resources.cpu_percent or 0 }}%; width: var(--progress-width);"></div>
                     </div>
                 </div>
             </div>
@@ -107,8 +85,8 @@
                         <small>Memory Usage</small>
                         <small id="memoryPercent">{{ system_overview.system_resources.memory_percent or 0 }}%</small>
                     </div>
-                    <div class="progress resource-bar">
-                        <div class="progress-bar bg-info" id="memoryBar" style="width: {{ system_overview.system_resources.memory_percent or 0 }}%"></div>
+                    <div class="progress admin-resource-bar">
+                        <div class="progress-bar bg-info" id="memoryBar" style="--progress-width: {{ system_overview.system_resources.memory_percent or 0 }}%; width: var(--progress-width);"></div>
                     </div>
                 </div>
             </div>
@@ -118,8 +96,8 @@
                         <small>Disk Usage</small>
                         <small id="diskPercent">{{ system_overview.system_resources.disk_percent or 0 }}%</small>
                     </div>
-                    <div class="progress resource-bar">
-                        <div class="progress-bar bg-warning" id="diskBar" style="width: {{ system_overview.system_resources.disk_percent or 0 }}%"></div>
+                    <div class="progress admin-resource-bar">
+                        <div class="progress-bar bg-warning" id="diskBar" style="--progress-width: {{ system_overview.system_resources.disk_percent or 0 }}%; width: var(--progress-width);"></div>
                     </div>
                 </div>
             </div>
@@ -191,7 +169,7 @@
         <div class="card">
             <div class="card-header d-flex justify-content-between align-items-center">
                 <h5><i class="bi bi-clock-history"></i> Active Tasks</h5>
-                <button class="btn btn-outline-danger btn-sm" id="cancelAllBtn" style="display: none;">
+                <button class="btn btn-outline-danger btn-sm admin-hidden" id="cancelAllBtn">
                     <i class="bi bi-x-circle"></i> Cancel All
                 </button>
             </div>
@@ -202,7 +180,7 @@
                     <div class="d-flex justify-content-between align-items-center border-bottom py-2 task-item" data-task-id="{{ task.id }}">
                         <div>
                             <strong>{{ task.id[:8] }}...</strong>
-                            <span class="badge task-status-badge bg-{{ 'primary' if task.status == 'running' else 'secondary' }}">
+                            <span class="badge admin-task-status-badge bg-{{ 'primary' if task.status == 'running' else 'secondary' }}">
                                 {{ task.status|title }}
                             </span>
                             <br>
@@ -211,8 +189,8 @@
                             </small>
                         </div>
                         <div class="text-end">
-                            <div class="progress mb-1" style="width: 100px; height: 6px;">
-                                <div class="progress-bar" style="width: {{ task.progress_percent }}%"></div>
+                            <div class="progress mb-1 admin-enhanced-progress-mini w-100px">
+                                <div class="progress-bar admin-enhanced-progress-mini-fill" style="--progress-width: {{ task.progress_percent }}%; width: var(--progress-width);"></div>
                             </div>
                             <small class="text-muted">{{ task.progress_percent }}%</small>
                             <button class="btn btn-outline-danger btn-sm ms-2 cancel-task-btn" data-task-id="{{ task.id }}">
@@ -308,7 +286,7 @@
     </div>
 </div>
 
-<script>
+<script nonce="{{ g.csp_nonce }}">
 let autoRefreshInterval = null;
 let currentTaskToCancel = null;
 
@@ -367,7 +345,7 @@ document.addEventListener('DOMContentLoaded', function() {
 
 async function refreshData() {
     const refreshIcon = document.getElementById('refreshIcon');
-    refreshIcon.classList.add('auto-refresh');
+    refreshIcon.classList.add('admin-auto-refresh');
     
     try {
         // Refresh system overview
@@ -390,7 +368,7 @@ async function refreshData() {
         console.error('Error refreshing data:', error);
         showToast('Error refreshing data', 'error');
     } finally {
-        refreshIcon.classList.remove('auto-refresh');
+        refreshIcon.classList.remove('admin-auto-refresh');
     }
 }
 
@@ -408,13 +386,19 @@ function updateSystemOverview(overview) {
         const resources = overview.system_resources;
         
         document.getElementById('cpuPercent').textContent = resources.cpu_percent + '%';
-        document.getElementById('cpuBar').style.width = resources.cpu_percent + '%';
+        const cpuBar = document.getElementById('cpuBar');
+        cpuBar.style.setProperty('--progress-width', resources.cpu_percent + '%');
+        cpuBar.style.width = 'var(--progress-width)';
         
         document.getElementById('memoryPercent').textContent = resources.memory_percent + '%';
-        document.getElementById('memoryBar').style.width = resources.memory_percent + '%';
+        const memoryBar = document.getElementById('memoryBar');
+        memoryBar.style.setProperty('--progress-width', resources.memory_percent + '%');
+        memoryBar.style.width = 'var(--progress-width)';
         
         document.getElementById('diskPercent').textContent = resources.disk_percent + '%';
-        document.getElementById('diskBar').style.width = resources.disk_percent + '%';
+        const diskBar = document.getElementById('diskBar');
+        diskBar.style.setProperty('--progress-width', resources.disk_percent + '%');
+        diskBar.style.width = 'var(--progress-width)';
         
         if (resources.load_1min !== null) {
             document.getElementById('loadAvg').textContent = resources.load_1min.toFixed(2);
@@ -427,17 +411,17 @@ function updateActiveTasks(tasks) {
     
     if (tasks.length === 0) {
         container.innerHTML = '<p class="text-muted text-center py-3">No active tasks</p>';
-        document.getElementById('cancelAllBtn').style.display = 'none';
+        document.getElementById('cancelAllBtn').classList.add('admin-hidden');
         return;
     }
     
-    document.getElementById('cancelAllBtn').style.display = 'block';
+    document.getElementById('cancelAllBtn').classList.remove('admin-hidden');
     
     container.innerHTML = tasks.map(task => `
         <div class="d-flex justify-content-between align-items-center border-bottom py-2 task-item" data-task-id="${task.id}">
             <div>
                 <strong>${task.id.substring(0, 8)}...</strong>
-                <span class="badge task-status-badge bg-${task.status === 'running' ? 'primary' : 'secondary'}">
+                <span class="badge admin-task-status-badge bg-${task.status === 'running' ? 'primary' : 'secondary'}">
                     ${task.status.charAt(0).toUpperCase() + task.status.slice(1)}
                 </span>
                 <br>
@@ -446,8 +430,8 @@ function updateActiveTasks(tasks) {
                 </small>
             </div>
             <div class="text-end">
-                <div class="progress mb-1" style="width: 100px; height: 6px;">
-                    <div class="progress-bar" style="width: ${task.progress_percent}%"></div>
+                <div class="progress mb-1 admin-enhanced-progress-mini w-100px">
+                    <div class="progress-bar admin-enhanced-progress-mini-fill" style="--progress-width: ${task.progress_percent}%; width: var(--progress-width);"></div>
                 </div>
                 <small class="text-muted">${task.progress_percent}%</small>
                 <button class="btn btn-outline-danger btn-sm ms-2 cancel-task-btn" data-task-id="${task.id}">

@@ -1,0 +1,162 @@
+/* Copyright (C) 2025 iolaire mcfadden. */
+/* This program is free software: you can redistribute it and/or modify it under the terms of the GNU Affero General Public License as published by the Free Software Foundation, either version 3 of the License, or (at your option) any later version. */
+
+/* Caption Generation Page Styles */
+
+.progress-container {
+    display: none;
+    margin-top: 20px;
+}
+
+.task-status {
+    padding: 15px;
+    border-radius: 8px;
+    margin-bottom: 20px;
+}
+
+.task-status.queued {
+    background-color: #fff3cd;
+    border: 1px solid #ffeaa7;
+    color: #856404;
+}
+
+.task-status.running {
+    background-color: #d1ecf1;
+    border: 1px solid #bee5eb;
+    color: #0c5460;
+}
+
+.task-status.completed {
+    background-color: #d4edda;
+    border: 1px solid #c3e6cb;
+    color: #155724;
+}
+
+.task-status.failed {
+    background-color: #f8d7da;
+    border: 1px solid #f5c6cb;
+    color: #721c24;
+}
+
+.task-status.cancelled {
+    background-color: #e2e3e5;
+    border: 1px solid #d6d8db;
+    color: #383d41;
+}
+
+.settings-form {
+    background-color: #f8f9fa;
+    padding: 20px;
+    border-radius: 8px;
+    margin-bottom: 20px;
+}
+
+.task-history {
+    max-height: 400px;
+    overflow-y: auto;
+}
+
+.task-item {
+    padding: 10px;
+    border: 1px solid #dee2e6;
+    border-radius: 5px;
+    margin-bottom: 10px;
+    background-color: white;
+    transition: all 0.3s ease;
+}
+
+.task-item:last-child {
+    margin-bottom: 0;
+}
+
+.task-item:hover {
+    box-shadow: 0 2px 8px rgba(0,0,0,0.1);
+    transform: translateY(-1px);
+}
+
+.progress-details {
+    font-size: 0.9em;
+    color: #6c757d;
+    margin-top: 5px;
+}
+
+.progress-details .row {
+    font-size: 0.85em;
+}
+
+.progress-details strong {
+    font-weight: 600;
+}
+
+.character-count {
+    font-size: 0.8em;
+    color: #6c757d;
+    float: right;
+}
+
+.form-row {
+    display: flex;
+    gap: 15px;
+    margin-bottom: 15px;
+}
+
+.form-row .form-group {
+    flex: 1;
+}
+
+@media (max-width: 768px) {
+    .form-row {
+        flex-direction: column;
+        gap: 0;
+    }
+}
+
+/* Enhanced UI styles */
+.error-display {
+    position: relative;
+}
+
+.error-display .btn-link {
+    text-decoration: none;
+    color: #dc3545;
+}
+
+.error-display .btn-link:hover {
+    color: #b02a37;
+}
+
+.btn-group .btn.active {
+    background-color: #0d6efd;
+    border-color: #0d6efd;
+    color: white;
+}
+
+.modal-body .alert {
+    border-left: 4px solid;
+}
+
+.modal-body .alert-danger {
+    border-left-color: #dc3545;
+}
+
+.modal-body .alert-info {
+    border-left-color: #0dcaf0;
+}
+
+.modal-body .alert-success {
+    border-left-color: #198754;
+}
+
+.modal-body .alert-warning {
+    border-left-color: #ffc107;
+}
+
+/* Progress bar specific styles */
+.progress-bar-custom-height {
+    height: 20px;
+}
+
+/* Utility classes */
+.hidden-task-id {
+    display: none;
+}

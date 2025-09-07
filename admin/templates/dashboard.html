@@ -284,9 +284,9 @@
                                     </span>
                                 </td>
                                 <td>
-                                    <div class="progress" style="height: 20px;">
+                                    <div class="progress h-20px">
                                         <div class="progress-bar" role="progressbar" 
-                                             style="width: {{ job.progress_percentage or 0 }}%"
+                                             class="progress-bar-dynamic" style="--progress-width: {{ job.progress_percentage or 0 }}%"
                                              aria-valuenow="{{ job.progress_percentage or 0 }}" 
                                              aria-valuemin="0" aria-valuemax="100">
                                             {{ job.progress_percentage or 0 }}%
@@ -367,7 +367,7 @@
                         <div class="responsiveness-metric">
                             <h6>Memory Leak Detection</h6>
                             <div class="progress mb-2">
-                                <div class="progress-bar" id="memoryLeakProgress" role="progressbar" style="width: 0%"></div>
+                                <div class="progress-bar progress-bar-dynamic" id="memoryLeakProgress" role="progressbar" style="--progress-width: 0%"></div>
                             </div>
                             <small id="memoryLeakStatus" class="text-muted">Monitoring...</small>
                         </div>
@@ -376,7 +376,7 @@
                         <div class="responsiveness-metric">
                             <h6>Connection Pool Health</h6>
                             <div class="progress mb-2">
-                                <div class="progress-bar" id="connectionHealthProgress" role="progressbar" style="width: 0%"></div>
+                                <div class="progress-bar progress-bar-dynamic" id="connectionHealthProgress" role="progressbar" style="--progress-width: 0%"></div>
                             </div>
                             <small id="connectionHealthStatus" class="text-muted">Monitoring...</small>
                         </div>
@@ -385,7 +385,7 @@
                         <div class="responsiveness-metric">
                             <h6>Background Task Load</h6>
                             <div class="progress mb-2">
-                                <div class="progress-bar" id="backgroundTaskProgress" role="progressbar" style="width: 0%"></div>
+                                <div class="progress-bar progress-bar-dynamic" id="backgroundTaskProgress" role="progressbar" style="--progress-width: 0%"></div>
                             </div>
                             <small id="backgroundTaskStatus" class="text-muted">Monitoring...</small>
                         </div>
@@ -394,7 +394,7 @@
                         <div class="responsiveness-metric">
                             <h6>Request Performance</h6>
                             <div class="progress mb-2">
-                                <div class="progress-bar" id="requestPerformanceProgress" role="progressbar" style="width: 0%"></div>
+                                <div class="progress-bar progress-bar-dynamic" id="requestPerformanceProgress" role="progressbar" style="--progress-width: 0%"></div>
                             </div>
                             <small id="requestPerformanceStatus" class="text-muted">Monitoring...</small>
                         </div>
@@ -402,7 +402,7 @@
                 </div>
                 
                 <!-- Responsiveness Alerts -->
-                <div class="mt-3" id="responsivenessAlerts" style="display: none;">
+                <div class="mt-3" id="responsivenessAlerts" class="hidden">
                     <h6>Responsiveness Alerts</h6>
                     <div id="responsivenessAlertsList"></div>
                 </div>
@@ -439,7 +439,7 @@
                     <i class="bi bi-arrow-clockwise"></i>
                 </button>
             </div>
-            <div class="card-body" style="max-height: 300px; overflow-y: auto;">
+            <div class="card-body max-height-300px">
                 <div id="alertsList">
                     {% for alert in system_alerts %}
                     <div class="alert-item alert-{{ alert.severity }}" data-alert-id="{{ alert.id }}">

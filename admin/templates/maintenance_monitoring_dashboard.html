@@ -7,124 +7,13 @@
 {% block title %}Maintenance Monitoring - Admin - Vedfolnir{% endblock %}
 
 {% block extra_head %}
-<style>
-    .metric-card {
-        transition: all 0.3s ease;
-        border-left: 4px solid transparent;
-    }
-    .metric-card:hover {
-        transform: translateY(-2px);
-        box-shadow: 0 4px 8px rgba(0,0,0,0.1);
-    }
-    .metric-card.critical { border-left-color: #dc3545; }
-    .metric-card.warning { border-left-color: #ffc107; }
-    .metric-card.success { border-left-color: #28a745; }
-    .metric-card.info { border-left-color: #17a2b8; }
-    
-    .metric-value {
-        font-size: 2rem;
-        font-weight: bold;
-        line-height: 1;
-    }
-    
-    .metric-trend {
-        font-size: 0.875rem;
-        margin-top: 0.25rem;
-    }
-    .trend-up { color: #28a745; }
-    .trend-down { color: #dc3545; }
-    .trend-stable { color: #6c757d; }
-    
-    .real-time-indicator {
-        display: inline-block;
-        width: 8px;
-        height: 8px;
-        background-color: #28a745;
-        border-radius: 50%;
-        animation: pulse 2s infinite;
-        margin-right: 0.5rem;
-    }
-    @keyframes pulse {
-        0% { opacity: 1; }
-        50% { opacity: 0.5; }
-        100% { opacity: 1; }
-    }
-    .disconnected { background-color: #dc3545; }
-    
-    .session-item {
-        border-left: 3px solid #dee2e6;
-        padding: 0.75rem;
-        margin-bottom: 0.5rem;
-        border-radius: 0.25rem;
-        background: #f8f9fa;
-    }
-    .session-item.admin { border-left-color: #28a745; }
-    .session-item.user { border-left-color: #17a2b8; }
-    .session-item.invalidated { border-left-color: #dc3545; background: #fff5f5; }
-    
-    .chart-container {
-        position: relative;
-        height: 300px;
-        margin: 1rem 0;
-    }
-    
-    .maintenance-timeline {
-        position: relative;
-        padding-left: 2rem;
-    }
-    .maintenance-timeline::before {
-        content: '';
-        position: absolute;
-        left: 0.5rem;
-        top: 0;
-        bottom: 0;
-        width: 2px;
-        background: #dee2e6;
-    }
-    .timeline-item {
-        position: relative;
-        margin-bottom: 1.5rem;
-        padding-left: 1.5rem;
-    }
-    .timeline-item::before {
-        content: '';
-        position: absolute;
-        left: -0.5rem;
-        top: 0.25rem;
-        width: 12px;
-        height: 12px;
-        border-radius: 50%;
-        background: #fff;
-        border: 2px solid #dee2e6;
-    }
-    .timeline-item.enabled::before { border-color: #dc3545; background: #dc3545; }
-    .timeline-item.disabled::before { border-color: #28a745; background: #28a745; }
-    .timeline-item.emergency::before { border-color: #fd7e14; background: #fd7e14; }
-    
-    .impact-gauge {
-        position: relative;
-        width: 120px;
-        height: 120px;
-        margin: 0 auto;
-    }
-    .impact-gauge svg {
-        transform: rotate(-90deg);
-    }
-    .impact-gauge-text {
-        position: absolute;
-        top: 50%;
-        left: 50%;
-        transform: translate(-50%, -50%);
-        text-align: center;
-    }
-</style>
 {% endblock %}
 
 {% block content %}
 <div class="d-flex justify-content-between flex-wrap flex-md-nowrap align-items-center pt-3 pb-2 mb-3 border-bottom">
     <h1 class="h2">
         <i class="bi bi-graph-up"></i> Maintenance Monitoring Dashboard
-        <span class="real-time-indicator" id="connectionStatus" title="Real-time updates active"></span>
+        <span class="admin-maintenance-real-time-indicator" id="connectionStatus" title="Real-time updates active"></span>
     </h1>
     <div class="btn-toolbar mb-2 mb-md-0">
         <div class="btn-group me-2">
@@ -144,13 +33,13 @@
 <!-- Key Metrics Overview -->
 <div class="row mb-4">
     <div class="col-md-3">
-        <div class="card metric-card {% if monitoring_data.current_status.is_active %}critical{% else %}success{% endif %}" id="statusMetricCard">
+        <div class="card admin-maintenance-metric-card {% if monitoring_data.current_status.is_active %}critical{% else %}success{% endif %}" id="statusMetricCard">
             <div class="card-body text-center">
-                <div class="metric-value text-{% if monitoring_data.current_status.is_active %}danger{% else %}success{% endif %}" id="statusMetricValue">
+                <div class="admin-maintenance-metric-value text-{% if monitoring_data.current_status.is_active %}danger{% else %}success{% endif %}" id="statusMetricValue">
                     {% if monitoring_data.current_status.is_active %}ACTIVE{% else %}NORMAL{% endif %}
                 </div>
                 <div class="text-muted">System Status</div>
-                <div class="metric-trend" id="statusMetricTrend">
+                <div class="admin-maintenance-metric-trend" id="statusMetricTrend">
                     {% if monitoring_data.current_status.is_active %}
                     <i class="bi bi-exclamation-triangle text-warning"></i> Maintenance Mode
                     {% else %}
@@ -162,11 +51,11 @@
     </div>
     
     <div class="col-md-3">
-        <div class="card metric-card info">
+        <div class="card admin-maintenance-metric-card info">
             <div class="card-body text-center">
-                <div class="metric-value text-primary" id="blockedOpsMetric">{{ monitoring_data.blocked_operations_count }}</div>
+                <div class="admin-maintenance-metric-value text-primary" id="blockedOpsMetric">{{ monitoring_data.blocked_operations_count }}</div>
                 <div class="text-muted">Blocked Operations</div>
-                <div class="metric-trend trend-stable" id="blockedOpsTrend">
+                <div class="admin-maintenance-metric-trend admin-maintenance-trend-stable" id="blockedOpsTrend">
                     <i class="bi bi-dash-circle"></i> Current count
                 </div>
             </div>
@@ -174,11 +63,11 @@
     </div>
     
     <div class="col-md-3">
-        <div class="card metric-card warning">
+        <div class="card admin-maintenance-metric-card warning">
             <div class="card-body text-center">
-                <div class="metric-value text-warning" id="activeJobsMetric">{{ monitoring_data.active_jobs_count }}</div>
+                <div class="admin-maintenance-metric-value text-warning" id="activeJobsMetric">{{ monitoring_data.active_jobs_count }}</div>
                 <div class="text-muted">Active Jobs</div>
-                <div class="metric-trend trend-stable" id="activeJobsTrend">
+                <div class="admin-maintenance-metric-trend admin-maintenance-trend-stable" id="activeJobsTrend">
                     <i class="bi bi-clock"></i> In progress
                 </div>
             </div>
@@ -186,11 +75,11 @@
     </div>
     
     <div class="col-md-3">
-        <div class="card metric-card {% if monitoring_data.invalidated_sessions_count > 0 %}critical{% else %}success{% endif %}">
+        <div class="card admin-maintenance-metric-card {% if monitoring_data.invalidated_sessions_count > 0 %}critical{% else %}success{% endif %}">
             <div class="card-body text-center">
-                <div class="metric-value text-{% if monitoring_data.invalidated_sessions_count > 0 %}danger{% else %}success{% endif %}" id="invalidatedSessionsMetric">{{ monitoring_data.invalidated_sessions_count }}</div>
+                <div class="admin-maintenance-metric-value text-{% if monitoring_data.invalidated_sessions_count > 0 %}danger{% else %}success{% endif %}" id="invalidatedSessionsMetric">{{ monitoring_data.invalidated_sessions_count }}</div>
                 <div class="text-muted">Invalidated Sessions</div>
-                <div class="metric-trend trend-stable" id="invalidatedSessionsTrend">
+                <div class="admin-maintenance-metric-trend admin-maintenance-trend-stable" id="invalidatedSessionsTrend">
                     <i class="bi bi-people"></i> User impact
                 </div>
             </div>
@@ -282,13 +171,13 @@
                 </h6>
             </div>
             <div class="card-body text-center">
-                <div class="impact-gauge" id="impactGauge">
+                <div class="admin-maintenance-impact-gauge" id="impactGauge">
                     <svg width="120" height="120">
                         <circle cx="60" cy="60" r="50" fill="none" stroke="#e9ecef" stroke-width="8"/>
                         <circle cx="60" cy="60" r="50" fill="none" stroke="#dc3545" stroke-width="8" 
                                 stroke-dasharray="314" stroke-dashoffset="314" id="impactCircle"/>
                     </svg>
-                    <div class="impact-gauge-text">
+                    <div class="admin-maintenance-impact-gauge-text">
                         <div class="h4 mb-0" id="impactPercentage">{{ monitoring_data.impact_percentage }}%</div>
                         <small class="text-muted">Impact</small>
                     </div>
@@ -322,11 +211,11 @@
                 </h5>
                 <span class="badge bg-primary" id="totalSessionsCount">{{ monitoring_data.active_sessions|length }}</span>
             </div>
-            <div class="card-body" style="max-height: 400px; overflow-y: auto;">
+            <div class="card-body admin-scrollable-container" class="max-height-400px">
                 <div id="activeSessionsList">
                     {% if monitoring_data.active_sessions %}
                     {% for session in monitoring_data.active_sessions %}
-                    <div class="session-item {% if session.is_admin %}admin{% elif session.is_invalidated %}invalidated{% else %}user{% endif %}">
+                    <div class="admin-maintenance-session-item {% if session.is_admin %}admin{% elif session.is_invalidated %}invalidated{% else %}user{% endif %}">
                         <div class="d-flex justify-content-between align-items-start">
                             <div>
                                 <div class="fw-bold">
@@ -368,11 +257,11 @@
                     <i class="bi bi-clock-history"></i> Maintenance History
                 </h5>
             </div>
-            <div class="card-body" style="max-height: 400px; overflow-y: auto;">
-                <div class="maintenance-timeline" id="maintenanceTimeline">
+            <div class="card-body admin-scrollable-container" class="max-height-400px">
+                <div class="admin-maintenance-timeline" id="maintenanceTimeline">
                     {% if monitoring_data.maintenance_history %}
                     {% for event in monitoring_data.maintenance_history %}
-                    <div class="timeline-item {{ event.event_type }}">
+                    <div class="admin-maintenance-timeline-item {{ event.event_type }}">
                         <div class="d-flex justify-content-between align-items-start">
                             <div>
                                 <h6 class="mb-1">{{ event.event_type|replace('_', ' ')|title }}</h6>

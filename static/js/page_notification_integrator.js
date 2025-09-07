@@ -224,6 +224,7 @@ class PageNotificationIntegrator {
                 .notification-progress-bar {
                     height: 100%;
                     background: #007bff;
+                    width: var(--progress-width, 0%);
                     transition: width 0.3s ease;
                 }
                 
@@ -688,7 +689,7 @@ class PageNotificationIntegrator {
             
             const progressBar = document.createElement('div');
             progressBar.className = 'notification-progress-bar';
-            progressBar.style.width = `${notification.progress || 0}%`;
+            progressBar.style.setProperty('--progress-width', `${notification.progress || 0}%`);
             
             progressContainer.appendChild(progressBar);
             element.appendChild(progressContainer);

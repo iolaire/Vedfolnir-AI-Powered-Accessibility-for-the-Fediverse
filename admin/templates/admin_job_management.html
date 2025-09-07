@@ -199,7 +199,7 @@
     <div class="col-md-3">
         <div class="card stat-card text-white">
             <div class="card-body text-center">
-                <i class="bi bi-play-circle" style="font-size: 2rem;"></i>
+                <i class="bi bi-play-circle admin-icon-lg"></i>
                 <h3 class="mt-2" id="totalActiveJobs">{{ job_stats.total_active or 0 }}</h3>
                 <p class="mb-0">Total Active Jobs</p>
                 <small>Currently running</small>
@@ -209,7 +209,7 @@
     <div class="col-md-3">
         <div class="card stat-card text-white">
             <div class="card-body text-center">
-                <i class="bi bi-person-check" style="font-size: 2rem;"></i>
+                <i class="bi bi-person-check admin-icon-lg"></i>
                 <h3 class="mt-2" id="personalActiveJobs">{{ job_stats.personal_active or 0 }}</h3>
                 <p class="mb-0">Your Active Jobs</p>
                 <small>Personal tasks</small>
@@ -219,7 +219,7 @@
     <div class="col-md-3">
         <div class="card stat-card text-white">
             <div class="card-body text-center">
-                <i class="bi bi-shield-check" style="font-size: 2rem;"></i>
+                <i class="bi bi-shield-check admin-icon-lg"></i>
                 <h3 class="mt-2" id="adminManagedJobs">{{ job_stats.admin_managed or 0 }}</h3>
                 <p class="mb-0">Admin Managed</p>
                 <small>System tasks</small>
@@ -229,7 +229,7 @@
     <div class="col-md-3">
         <div class="card stat-card text-white">
             <div class="card-body text-center">
-                <i class="bi bi-clock-history" style="font-size: 2rem;"></i>
+                <i class="bi bi-clock-history admin-icon-lg"></i>
                 <h3 class="mt-2" id="queuedJobs">{{ job_stats.queued or 0 }}</h3>
                 <p class="mb-0">Queued Jobs</p>
                 <small>Waiting to run</small>
@@ -239,7 +239,7 @@
 </div>
 
 <!-- Admin Job Management Section -->
-<div class="admin-job-section" id="adminJobSection" style="display: 'block' if admin_mode else 'none' ">
+<div class="admin-job-section" id="adminJobSection">
     <div class="job-section-header">
         <h3 class="job-section-title">
             <i class="bi bi-shield-check text-warning"></i>
@@ -477,10 +477,10 @@
                 const contextWarningText = document.getElementById('contextWarningText');
 
                 if (adminMode) {
-                    adminSection.style.display = 'block';
+                    adminSection.classList.add('show');
                     contextWarningText.innerHTML = 'You are currently in <strong>Administrator</strong> mode. Administrative actions will affect all users and be logged as admin interventions.';
                 } else {
-                    adminSection.style.display = 'none';
+                    adminSection.classList.remove('show');
                     contextWarningText.innerHTML = 'You are currently in <strong>Personal</strong> mode. You can only manage your own jobs in this mode.';
                 }
             }

@@ -108,7 +108,7 @@
                     </div>
 
                     <!-- Edit Mode -->
-                    <div id="edit-mode" style="display: none;">
+                    <div id="edit-mode" class="profile-edit-mode">
                         <form method="POST" action="{{ url_for('main.profile') }}">
                             {{ form.hidden_tag() }}
                             <div class="row">
@@ -207,14 +207,14 @@ function toggleEditMode() {
     const viewMode = document.getElementById('view-mode');
     const editMode = document.getElementById('edit-mode');
     
-    if (viewMode.style.display === 'none') {
+    if (editMode.classList.contains('active')) {
         // Switch to view mode
-        viewMode.style.display = 'block';
-        editMode.style.display = 'none';
+        viewMode.classList.remove('hidden');
+        editMode.classList.remove('active');
     } else {
         // Switch to edit mode
-        viewMode.style.display = 'none';
-        editMode.style.display = 'block';
+        viewMode.classList.add('hidden');
+        editMode.classList.add('active');
     }
 }
 

@@ -41,10 +41,10 @@
                                 <strong>{{ "%.1f"|format(storage_notification.storage_gb) }}GB</strong>
                                 <small class="text-muted">/ {{ "%.1f"|format(storage_notification.limit_gb) }}GB</small>
                             </div>
-                            <div class="progress mb-2" style="height: 10px;">
-                                <div class="progress-bar bg-danger" 
+                            <div class="progress mb-2 progress-md">
+                                <div class="progress-bar storage-progress-bar critical progress-bar-dynamic bg-danger" 
                                      role="progressbar" 
-                                     style="width: {{ storage_notification.usage_percentage }}%"
+                                     data-progress-width="{{ storage_notification.usage_percentage }}%"
                                      aria-valuenow="{{ storage_notification.usage_percentage }}" 
                                      aria-valuemin="0" 
                                      aria-valuemax="100">

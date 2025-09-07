@@ -159,14 +159,14 @@
                         <small class="text-muted">Storage Usage</small>
                         <small class="text-muted">{{ storage_data.percentage }}</small>
                     </div>
-                    <div class="progress" style="height: 8px;">
+                    <div class="progress h-8px">
                         <!-- Warning threshold background -->
                         <div class="progress-bar bg-warning opacity-25" 
-                             style="width: {{ storage_gauge.warning_percentage }}%"></div>
+                             class="progress-bar-dynamic" style="--progress-width: {{ storage_gauge.warning_percentage }}%"></div>
                         
                         <!-- Current usage -->
                         <div class="progress-bar {% if storage_gauge.status_color == 'green' %}bg-success{% elif storage_gauge.status_color == 'yellow' %}bg-warning{% else %}bg-danger{% endif %}" 
-                             style="width: {{ storage_gauge.current_percentage }}%; position: absolute; left: 0;"></div>
+                             class="progress-bar-dynamic position-absolute-left" style="--progress-width: {{ storage_gauge.current_percentage }}%"></div>
                     </div>
                     <div class="d-flex justify-content-between mt-1">
                         <small class="text-muted">0 GB</small>

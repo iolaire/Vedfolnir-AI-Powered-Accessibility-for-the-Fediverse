@@ -108,7 +108,7 @@ class WebSocketConnectionStatus {
                 <div class="status-main">
                     <i class="status-icon bi bi-hourglass-split"></i>
                     <span class="status-text">Initializing...</span>
-                    <div class="quality-indicator" style="display: ${this.options.showQualityIndicator ? 'block' : 'none'}">
+                    <div class="quality-indicator ${this.options.showQualityIndicator ? '' : 'hidden'}">
                         <div class="quality-bars">
                             <div class="quality-bar"></div>
                             <div class="quality-bar"></div>
@@ -119,7 +119,7 @@ class WebSocketConnectionStatus {
                 </div>
                 <div class="status-actions">
                     <button type="button" class="retry-button btn btn-sm btn-outline-secondary" 
-                            style="display: ${this.options.showRetryButton ? 'none' : 'none'}" 
+                            class="hidden" 
                             title="Retry connection">
                         <i class="bi bi-arrow-clockwise"></i>
                         <span class="retry-text">Retry</span>
@@ -130,7 +130,7 @@ class WebSocketConnectionStatus {
                     </button>
                 </div>
             </div>
-            <div class="details-panel" style="display: none;">
+            <div class="details-panel hidden">
                 <div class="detail-row">
                     <span class="detail-label">Status:</span>
                     <span class="detail-value status-detail">Initializing</span>

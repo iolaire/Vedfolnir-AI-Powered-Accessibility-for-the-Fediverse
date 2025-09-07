@@ -72,7 +72,7 @@
                             </div>
                         </div>
 
-                        <div class="mb-3" id="urgency-reason-field" style="display: none;">
+                        <div class="mb-3 urgency-field" id="urgency-reason-field">
                             {{ form.urgency_reason.label(class="form-label") }}
                             {{ form.urgency_reason(class="form-control", rows="3") }}
                             <div class="form-text">{{ form.urgency_reason.description }}</div>
@@ -214,9 +214,11 @@ document.addEventListener('DOMContentLoaded', function() {
     
     function toggleUrgencyReason() {
         if (urgencySelect.value === 'urgent' || urgencySelect.value === 'legal') {
-            urgencyReasonField.style.display = 'block';
+            urgencyReasonField.classList.remove('hidden');
+            urgencyReasonField.classList.add('show');
         } else {
-            urgencyReasonField.style.display = 'none';
+            urgencyReasonField.classList.add('hidden');
+            urgencyReasonField.classList.remove('show');
         }
     }
     

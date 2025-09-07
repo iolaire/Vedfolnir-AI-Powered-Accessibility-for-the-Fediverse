@@ -27,12 +27,12 @@
                     <i class="fas fa-times"></i>
                     Close
                 </button>
-                <div class="btn-group" id="jobActionButtons" style="display: none;">
+                <div class="btn-group admin-hidden" id="jobActionButtons">
                     <button type="button" class="btn btn-warning" id="pauseJobBtn">
                         <i class="fas fa-pause"></i>
                         Pause Job
                     </button>
-                    <button type="button" class="btn btn-success" id="resumeJobBtn" style="display: none;">
+                    <button type="button" class="btn btn-success admin-hidden" id="resumeJobBtn">
                         <i class="fas fa-play"></i>
                         Resume Job
                     </button>
@@ -237,9 +237,9 @@ function renderJobDetails(job) {
                             
                             <dt class="col-sm-4">Progress:</dt>
                             <dd class="col-sm-8">
-                                <div class="progress" style="height: 20px;">
-                                    <div class="progress-bar" role="progressbar" 
-                                         style="width: ${job.progress_percentage}%"
+                                <div class="progress job-progress-container progress-lg">
+                                    <div class="progress-bar job-progress-bar progress-bar-dynamic" role="progressbar" 
+                                         data-progress-width="${job.progress_percentage}%"
                                          aria-valuenow="${job.progress_percentage}" 
                                          aria-valuemin="0" aria-valuemax="100">
                                         ${job.progress_percentage}%

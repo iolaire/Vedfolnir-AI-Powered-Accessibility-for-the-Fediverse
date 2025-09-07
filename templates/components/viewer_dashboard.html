@@ -172,7 +172,7 @@
 
     <!-- Platform Switcher Modal -->
     {% if user_platform_count > 1 %}
-    <div id="platformSwitcherModal" class="modal" style="display: none;">
+    <div id="platformSwitcherModal" class="modal hidden">
         <div class="modal-content">
             <div class="modal-header">
                 <h3>Switch Platform</h3>
@@ -538,11 +538,13 @@
 
 <script>
 function showPlatformSwitcher() {
-    document.getElementById('platformSwitcherModal').style.display = 'flex';
+    document.getElementById('platformSwitcherModal').classList.remove('hidden');
+    document.getElementById('platformSwitcherModal').classList.add('modal-visible');
 }
 
 function hidePlatformSwitcher() {
-    document.getElementById('platformSwitcherModal').style.display = 'none';
+    document.getElementById('platformSwitcherModal').classList.add('hidden');
+    document.getElementById('platformSwitcherModal').classList.remove('modal-visible');
 }
 
 function switchToPlatform(platformId) {

@@ -230,7 +230,7 @@
         <div class="col-md-2">
             <div class="card stat-card text-white">
                 <div class="card-body text-center">
-                    <i class="bi bi-speedometer2" style="font-size: 2rem;"></i>
+                    <i class="bi bi-speedometer2 admin-icon-lg"></i>
                     <h3 class="mt-2" id="throughputValue">--</h3>
                     <p class="mb-0">Messages/Second</p>
                     <small>Throughput</small>
@@ -241,7 +241,7 @@
         <div class="col-md-2">
             <div class="card stat-card text-white">
                 <div class="card-body text-center">
-                    <i class="bi bi-diagram-3" style="font-size: 2rem;"></i>
+                    <i class="bi bi-diagram-3 admin-icon-lg"></i>
                     <h3 class="mt-2" id="connectionsValue">--</h3>
                     <p class="mb-0">WebSocket Connections</p>
                     <small>Active</small>
@@ -252,7 +252,7 @@
         <div class="col-md-2">
             <div class="card stat-card text-white">
                 <div class="card-body text-center">
-                    <i class="bi bi-lightning" style="font-size: 2rem;"></i>
+                    <i class="bi bi-lightning admin-icon-lg"></i>
                     <h3 class="mt-2" id="cacheHitRateValue">--</h3>
                     <p class="mb-0">Cache Hit Rate</p>
                     <small>Performance</small>
@@ -263,7 +263,7 @@
         <div class="col-md-2">
             <div class="card stat-card text-white">
                 <div class="card-body text-center">
-                    <i class="bi bi-memory" style="font-size: 2rem;"></i>
+                    <i class="bi bi-memory admin-icon-lg"></i>
                     <h3 class="mt-2" id="memoryUsageValue">--</h3>
                     <p class="mb-0">Memory (MB)</p>
                     <small>Usage</small>
@@ -274,7 +274,7 @@
         <div class="col-md-2">
             <div class="card stat-card text-white">
                 <div class="card-body text-center">
-                    <i class="bi bi-cpu" style="font-size: 2rem;"></i>
+                    <i class="bi bi-cpu admin-icon-lg"></i>
                     <h3 class="mt-2" id="cpuUsageValue">--</h3>
                     <p class="mb-0">CPU Usage</p>
                     <small>System Load</small>
@@ -285,7 +285,7 @@
         <div class="col-md-2">
             <div class="card stat-card text-white">
                 <div class="card-body text-center">
-                    <i class="bi bi-database" style="font-size: 2rem;"></i>
+                    <i class="bi bi-database admin-icon-lg"></i>
                     <h3 class="mt-2" id="dbQueryTimeValue">--</h3>
                     <p class="mb-0">DB Query (ms)</p>
                     <small>Response Time</small>
@@ -1325,7 +1325,7 @@ function updateSlowRequestAnalysisDisplay(analysisData) {
     
     if (Object.keys(analysis).length > 0) {
         html += '<div class="mb-2"><strong>By Endpoint:</strong></div>';
-        html += '<div style="max-height: 200px; overflow-y: auto;">';
+        html += '<div class="admin-scrollable-container">';
         
         // Sort endpoints by count
         const sortedEndpoints = Object.entries(analysis)

@@ -46,7 +46,7 @@
                         <i class="bi bi-arrows-fullscreen"></i>
                     </button>
                 </div>
-                <div class="image-zoom-wrapper overflow-hidden" style="cursor: move;">
+                <div class="image-zoom-wrapper overflow-hidden">
                     <img src="{{ url_for('serve_image', filename=image.local_path.split('/')[-1]) }}" 
                          class="card-img-top image-zoomable" alt="Image {{ image.id }}">
                 </div>
@@ -64,7 +64,8 @@
                     <h6>Caption Quality Assessment</h6>
                     <div class="progress mb-2">
                         {% set quality_class = 'bg-danger' if image.caption_quality_score < 40 else 'bg-warning' if image.caption_quality_score < 70 else 'bg-success' %}
-                        <div class="progress-bar {{ quality_class }}" role="progressbar" style="width: {{ image.caption_quality_score }}%" 
+                        <div class="progress-bar progress-bar-dynamic {{ quality_class }}" role="progressbar" 
+                             data-progress-width="{{ image.caption_quality_score }}%"
                              aria-valuenow="{{ image.caption_quality_score }}" aria-valuemin="0" aria-valuemax="100">
                             {{ image.caption_quality_score }}%
                         </div>
@@ -159,7 +160,7 @@
                         <div class="row mb-2">
                             <div class="col-md-6">
                                 <div class="form-text mb-1"><strong>Generated Caption:</strong></div>
-                                <div class="border rounded p-2 bg-light mb-2" style="min-height: 80px; max-height: 120px; overflow-y: auto;">
+                                <div class="border rounded p-2 bg-light mb-2 caption-container">
                                     {{ image.generated_caption or 'No caption generated' }}
                                 </div>
                                 <button type="button" id="use-generated" class="btn btn-sm btn-outline-secondary">
@@ -168,7 +169,7 @@
                             </div>
                             <div class="col-md-6">
                                 <div class="form-text mb-1"><strong>Your Edited Caption:</strong></div>
-                                {{ form.caption(class="form-control", id="caption-field", style="min-height: 80px;") }}
+                                {{ form.caption(class="form-control caption-field", id="caption-field") }}
                                 <div class="form-text d-flex justify-content-between">
                                     <span><span id="char-count">0</span>/{{ caption_max_length }} characters</span>
                                     <span id="regenerate-status" class="text-muted"></span>
@@ -215,6 +216,12 @@ document.addEventListener('DOMContentLoaded', function() {
     const submitBtn = document.querySelector('button[type="submit"]');
     const approvePostBtn = document.getElementById('approve-and-post');
     const form = document.querySelector('form');
+    
+    // Initialize progress bar from data attribute
+    const progressBar = document.querySelector('.progress-bar-dynamic');
+    if (progressBar && progressBar.dataset.progressWidth) {
+        progressBar.style.setProperty('--progress-width', progressBar.dataset.progressWidth);
+    }
     
     // Initialize tooltips
     const tooltipTriggerList = [].slice.call(document.querySelectorAll('[title]'));

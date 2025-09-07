@@ -7,8 +7,8 @@
     <div class="context-indicator">
         <div class="d-flex align-items-center">
             <div class="context-icon me-2">
-                <i class="bi bi-shield-check text-warning" id="adminModeIcon" style="display: {{ 'block' if admin_mode else 'none' }}"></i>
-                <i class="bi bi-person-circle text-primary" id="userModeIcon" style="display: {{ 'none' if admin_mode else 'block' }}"></i>
+                <i class="bi bi-shield-check text-warning admin-context-icon {{ 'show' if admin_mode else '' }}" id="adminModeIcon"></i>
+                <i class="bi bi-person-circle text-primary admin-context-icon {{ 'show' if not admin_mode else '' }}" id="userModeIcon"></i>
             </div>
             <div class="context-info">
                 <div class="context-mode fw-bold" id="contextMode">
@@ -164,8 +164,8 @@ function updateContextMode(adminMode) {
     if (adminMode) {
         // Switch to admin mode
         switcher.className = 'admin-context-switcher admin-mode';
-        adminIcon.style.display = 'block';
-        userIcon.style.display = 'none';
+        adminIcon.classList.add('show');
+        userIcon.classList.remove('show');
         contextMode.textContent = 'Administrator Mode';
         contextDescription.textContent = 'Managing system and user jobs';
         
@@ -176,8 +176,8 @@ function updateContextMode(adminMode) {
     } else {
         // Switch to personal mode
         switcher.className = 'admin-context-switcher personal-mode';
-        adminIcon.style.display = 'none';
-        userIcon.style.display = 'block';
+        adminIcon.classList.remove('show');
+        userIcon.classList.add('show');
         contextMode.textContent = 'Personal Mode';
         contextDescription.textContent = 'Managing your personal jobs';
         

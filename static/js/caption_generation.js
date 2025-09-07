@@ -26,10 +26,26 @@ class CaptionGenerationUI {
             this.currentTaskId = taskIdElement.dataset.currentTaskId;
         }
         
+        // Initialize progress bar from data attribute
+        this.initializeProgressBar();
+        
         this.setupEventListeners();
         this.initializeNotificationSystem();
         this.initializeProgressMonitoring();
         this.initializeTaskFilters();
+    }
+    
+    initializeProgressBar() {
+        const progressBar = document.getElementById('progress-bar');
+        if (progressBar && progressBar.dataset.progressWidth) {
+            // Use the new progress bar utility for initialization
+            if (window.progressBarUtils) {
+                window.progressBarUtils.initializeProgressBar(progressBar);
+            } else {
+                // Fallback to direct CSS custom property setting
+                progressBar.style.setProperty('--progress-width', progressBar.dataset.progressWidth);
+            }
+        }
     }
     
     initializeNotificationSystem() {
@@ -662,16 +678,24 @@ class CaptionGenerationUI {
         if (data.task_id && data.task_id !== this.currentTaskId) return;
         
         const progressBar = document.getElementById('progress-bar');
-        const progressText = document.getElementById('progress-text');
         const currentStep = document.getElementById('current-step');
         
-        if (progressBar) {
-            progressBar.style.width = data.progress_percent + '%';
+        // Use the new progress bar utility for updates
+        if (progressBar && window.progressBarUtils) {
+            window.progressBarUtils.updateProgressBar(progressBar, data.progress_percent, {
+                updateText: true,
+                updateAriaValue: true,
+                animate: true
+            });
+        } else if (progressBar) {
+            // Fallback to direct CSS custom property setting
+            progressBar.style.setProperty('--progress-width', data.progress_percent + '%');
             progressBar.setAttribute('aria-valuenow', data.progress_percent);
-        }
-        
-        if (progressText) {
-            progressText.textContent = data.progress_percent + '%';
+            
+            const progressText = document.getElementById('progress-text');
+            if (progressText) {
+                progressText.textContent = data.progress_percent + '%';
+            }
         }
         
         if (currentStep) {
@@ -738,14 +762,20 @@ class CaptionGenerationUI {
             }
             
             const progressBar = document.getElementById('progress-bar');
-            if (progressBar) {
-                progressBar.style.width = '100%';
-                progressBar.className = 'progress-bar bg-success';
-            }
-            
-            const progressText = document.getElementById('progress-text');
-            if (progressText) {
-                progressText.textContent = '100%';
+            if (progressBar && window.progressBarUtils) {
+                // Use the utility function for completion
+                window.progressBarUtils.completeProgressBar(progressBar, {
+                    customClass: 'bg-success'
+                });
+            } else if (progressBar) {
+                // Fallback to direct CSS custom property setting
+                progressBar.style.setProperty('--progress-width', '100%');
+                progressBar.className = 'progress-bar progress-bar-dynamic bg-success';
+                
+                const progressText = document.getElementById('progress-text');
+                if (progressText) {
+                    progressText.textContent = '100%';
+                }
             }
             
             // Add review button to the status div

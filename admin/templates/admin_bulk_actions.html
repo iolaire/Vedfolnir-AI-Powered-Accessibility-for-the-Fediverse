@@ -98,7 +98,7 @@
                     <i class="bi bi-info-circle"></i> Select jobs to see available actions
                 </div>
                 
-                <div id="bulkActionsContainer" style="display: none;">
+                <div id="bulkActionsContainer" class="hidden">
                     {% for action in bulk_actions %}
                     <div class="d-grid gap-2 mb-2">
                         <button type="button" class="btn {{ action.class }}" onclick="executeBulkAction('{{ action.id }}', {{ action.requires_reason|lower }})">
@@ -110,7 +110,7 @@
                 </div>
                 
                 <!-- Reason input for actions that require it -->
-                <div id="reasonContainer" style="display: none;" class="mt-3">
+                <div id="reasonContainer" class="hidden mt-3">
                     <label for="actionReason" class="form-label">Reason (required):</label>
                     <textarea class="form-control" id="actionReason" rows="3" placeholder="Please provide a reason for this action..."></textarea>
                 </div>

@@ -130,10 +130,10 @@
                                         {% endif %}
                                     </td>
                                     <td>
-                                        <div class="progress" style="height: 20px;">
+                                        <div class="progress h-20px">
                                             <div class="progress-bar bg-{{ 'success' if job.progress_percentage == 100 else 'primary' }}" 
                                                  role="progressbar" 
-                                                 style="width: {{ job.progress_percentage or 0 }}%" 
+                                                 class="progress-bar-dynamic" style="--progress-width: {{ job.progress_percentage or 0 }}%" 
                                                  aria-valuenow="{{ job.progress_percentage or 0 }}" 
                                                  aria-valuemin="0" 
                                                  aria-valuemax="100">

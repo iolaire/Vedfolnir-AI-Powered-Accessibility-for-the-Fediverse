@@ -25,12 +25,11 @@
                                         their limits</label>
                                     <input type="text" class="form-control" id="userSearch"
                                         placeholder="Type username or email to search..." autocomplete="off">
-                                    <div id="userSearchResults" class="dropdown-menu w-100"
-                                        style="display: none; max-height: 200px; overflow-y: auto;">
+                                    <div id="userSearchResults" class="dropdown-menu w-100 user-search-results">
                                         <!-- Search results will appear here -->
                                     </div>
                                 </div>
-                                <div id="usersList" style="max-height: 300px; overflow-y: auto;">
+                                <div id="usersList" class="users-list-container">
                                     <div class="text-center text-muted py-3">
                                         <i class="bi bi-search"></i>
                                         <p class="mb-0">Start typing to search for users</p>
@@ -45,7 +44,7 @@
                                 <h6 class="mb-0">User Limits Configuration</h6>
                             </div>
                             <div class="card-body">
-                                <div id="userLimitsForm" style="display: none;">
+                                <div id="userLimitsForm" class="user-limits-form">
                                     <form id="limitsConfigForm">
                                         <input type="hidden" id="selectedUserId">
 
@@ -171,12 +170,10 @@
             </div>
             <div class="modal-footer">
                 <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Cancel</button>
-                <button type="button" class="btn btn-outline-warning" id="resetUserLimits" onclick="resetUserLimits()"
-                    style="display: none;">
+                <button type="button" class="btn btn-outline-warning user-limits-buttons" id="resetUserLimits" onclick="resetUserLimits()">
                     <i class="bi bi-arrow-clockwise"></i> Reset to Defaults
                 </button>
-                <button type="button" class="btn btn-primary" id="saveUserLimits" onclick="saveUserLimits()"
-                    style="display: none;">
+                <button type="button" class="btn btn-primary user-limits-buttons" id="saveUserLimits" onclick="saveUserLimits()">
                     <i class="bi bi-save"></i> Save Limits
                 </button>
             </div>
@@ -186,7 +183,7 @@
 
 <!-- User List Item Template -->
 <template id="userListItemTemplate">
-    <div class="user-item p-2 border-bottom" style="cursor: pointer;" onclick="selectUser(this)">
+    <div class="user-item p-2 border-bottom user-item-clickable" onclick="selectUser(this)">
         <div class="d-flex justify-content-between align-items-center">
             <div>
                 <strong class="user-name"></strong>

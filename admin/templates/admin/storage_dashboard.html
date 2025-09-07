@@ -161,15 +161,15 @@
                 <!-- Usage breakdown -->
                 <div class="row text-center">
                     <div class="col-4">
-                        <div class="metric-value text-primary" style="font-size: 1.5rem;">{{ dashboard_data.formatted_usage }}</div>
+                        <div class="metric-value text-primary icon-sm">{{ dashboard_data.formatted_usage }}</div>
                         <div class="metric-label">Current</div>
                     </div>
                     <div class="col-4">
-                        <div class="metric-value text-secondary" style="font-size: 1.5rem;">{{ dashboard_data.formatted_limit }}</div>
+                        <div class="metric-value text-secondary icon-sm">{{ dashboard_data.formatted_limit }}</div>
                         <div class="metric-label">Limit</div>
                     </div>
                     <div class="col-4">
-                        <div class="metric-value text-success" style="font-size: 1.5rem;">{{ dashboard_data.formatted_available }}</div>
+                        <div class="metric-value text-success icon-sm">{{ dashboard_data.formatted_available }}</div>
                         <div class="metric-label">Available</div>
                     </div>
                 </div>
@@ -189,7 +189,7 @@
                                 <h6 class="card-title text-muted mb-1">Current Usage</h6>
                                 <div class="metric-value text-primary">{{ dashboard_data.current_usage_gb | round(2) }} GB</div>
                             </div>
-                            <div class="text-primary" style="font-size: 3rem;">
+                            <div class="text-primary icon-lg">
                                 <i class="bi bi-hdd"></i>
                             </div>
                         </div>
@@ -206,7 +206,7 @@
                                 <h6 class="card-title text-muted mb-1">Storage Limit</h6>
                                 <div class="metric-value text-secondary">{{ dashboard_data.limit_gb | round(2) }} GB</div>
                             </div>
-                            <div class="text-secondary" style="font-size: 3rem;">
+                            <div class="text-secondary icon-lg">
                                 <i class="bi bi-hdd-stack"></i>
                             </div>
                         </div>
@@ -223,7 +223,7 @@
                                 <h6 class="card-title text-muted mb-1">Available Space</h6>
                                 <div class="metric-value text-success">{{ dashboard_data.available_space_gb | round(2) }} GB</div>
                             </div>
-                            <div class="text-success" style="font-size: 3rem;">
+                            <div class="text-success icon-lg">
                                 <i class="bi bi-hdd-fill"></i>
                             </div>
                         </div>
@@ -393,8 +393,8 @@
                         <div class="col-md-4">
                             <a href="{% if action.url.startswith('http') %}{{ action.url }}{% else %}{{ url_for(action.url) if action.url != '#' else '#' }}{% endif %}" 
                                class="btn {{ action.class }} w-100 d-flex flex-column justify-content-center p-3"
-                               style="height: 80px;">
-                                <i class="{{ action.icon }} mb-2" style="font-size: 1.5rem;"></i>
+                               class="h-80px">
+                                <i class="{{ action.icon }} mb-2 icon-sm"></i>
                                 <span class="fw-bold">{{ action.title }}</span>
                                 <small class="text-muted">{{ action.description }}</small>
                             </a>

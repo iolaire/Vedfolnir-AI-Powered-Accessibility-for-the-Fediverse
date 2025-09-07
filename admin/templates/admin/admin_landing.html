@@ -134,7 +134,7 @@
                         </small>
                     </div>
                     <div class="col-md-4 text-end">
-                        <i class="bi bi-person-circle" style="font-size: 3rem; color: #6c757d;"></i>
+                        <i class="bi bi-person-circle icon-lg text-gray"></i>
                     </div>
                 </div>
             </div>
@@ -147,7 +147,7 @@
     <div class="col-md-3">
         <div class="card stat-card text-white">
             <div class="card-body text-center">
-                <i class="bi bi-people" style="font-size: 2rem;"></i>
+                <i class="bi bi-people" class="icon-md"></i>
                 <h3 class="mt-2">{{ stats.total_users }}</h3>
                 <p class="mb-0">Total Users</p>
                 <small>{{ stats.active_users }} active</small>
@@ -158,7 +158,7 @@
     <div class="col-md-3">
         <div class="card stat-card text-white">
             <div class="card-body text-center">
-                <i class="bi bi-diagram-3" style="font-size: 2rem;"></i>
+                <i class="bi bi-diagram-3" class="icon-md"></i>
                 <h3 class="mt-2">{{ stats.total_platforms }}</h3>
                 <p class="mb-0">Platform Connections</p>
                 <small>Multi-platform support</small>
@@ -169,7 +169,7 @@
     <div class="col-md-3">
         <div class="card stat-card text-white">
             <div class="card-body text-center">
-                <i class="bi bi-images" style="font-size: 2rem;"></i>
+                <i class="bi bi-images" class="icon-md"></i>
                 <h3 class="mt-2">{{ stats.total_images }}</h3>
                 <p class="mb-0">Images Processed</p>
                 <small>Caption generation</small>
@@ -180,7 +180,7 @@
     <div class="col-md-3">
         <div class="card stat-card text-white">
             <div class="card-body text-center">
-                <i class="bi bi-hdd-stack" style="font-size: 2rem;"></i>
+                <i class="bi bi-hdd-stack" class="icon-md"></i>
                 <h3 class="mt-2">{{ storage_data.percentage if storage_data else '0.0%' }}</h3>
                 <p class="mb-0">Storage Usage</p>
                 <small class="text-{% if storage_data.status_color == 'green' %}success{% elif storage_data.status_color == 'yellow' %}warning{% else %}danger{% endif %}">
@@ -278,7 +278,7 @@
                         <div class="responsiveness-metric">
                             <h6>Memory Leak Detection</h6>
                             <div class="progress mb-2">
-                                <div class="progress-bar bg-success" role="progressbar" style="width: 85%" id="memoryLeakProgress"></div>
+                                <div class="progress-bar bg-success progress-bar-dynamic" role="progressbar" style="--progress-width: 85%" id="memoryLeakProgress"></div>
                             </div>
                             <small class="text-muted" id="memoryLeakStatus">No leaks detected</small>
                         </div>
@@ -287,7 +287,7 @@
                         <div class="responsiveness-metric">
                             <h6>Connection Pool Health</h6>
                             <div class="progress mb-2">
-                                <div class="progress-bar bg-success" role="progressbar" style="width: 75%" id="connectionPoolProgress"></div>
+                                <div class="progress-bar bg-success progress-bar-dynamic" role="progressbar" style="--progress-width: 75%" id="connectionPoolProgress"></div>
                             </div>
                             <small class="text-muted" id="connectionPoolHealthStatus">Pool healthy</small>
                         </div>
@@ -296,7 +296,7 @@
                         <div class="responsiveness-metric">
                             <h6>Background Task Load</h6>
                             <div class="progress mb-2">
-                                <div class="progress-bar bg-warning" role="progressbar" style="width: 60%" id="backgroundTaskProgress"></div>
+                                <div class="progress-bar bg-warning progress-bar-dynamic" role="progressbar" style="--progress-width: 60%" id="backgroundTaskProgress"></div>
                             </div>
                             <small class="text-muted" id="backgroundTaskStatus">Moderate load</small>
                         </div>
@@ -305,7 +305,7 @@
                         <div class="responsiveness-metric">
                             <h6>Request Performance</h6>
                             <div class="progress mb-2">
-                                <div class="progress-bar bg-success" role="progressbar" style="width: 90%" id="requestPerformanceProgress"></div>
+                                <div class="progress-bar bg-success progress-bar-dynamic" role="progressbar" style="--progress-width: 90%" id="requestPerformanceProgress"></div>
                             </div>
                             <small class="text-muted" id="requestPerformanceStatus">Excellent</small>
                         </div>
@@ -313,7 +313,7 @@
                 </div>
                 
                 <!-- Responsiveness Alerts -->
-                <div class="mt-3" id="responsivenessAlerts" style="display: none;">
+                <div class="mt-3" id="responsivenessAlerts" class="hidden">
                     <h6>Responsiveness Alerts</h6>
                     <div id="responsivenessAlertsList"></div>
                 </div>
@@ -353,7 +353,7 @@
                 <div class="row g-3">
                     <div class="col-md-4">
                         <a href="{{ url_for('admin.health_dashboard') }}" class="btn btn-outline-primary w-100 quick-action-btn d-flex flex-column justify-content-center">
-                            <i class="bi bi-activity mb-1" style="font-size: 1.5rem;"></i>
+                            <i class="bi bi-activity mb-1" class="icon-sm"></i>
                             <span>System Health & Jobs</span>
                             <small class="text-muted">Multi-tenant management</small>
                         </a>
@@ -361,7 +361,7 @@
                     
                     <div class="col-md-4">
                         <a href="{{ url_for('admin.user_management') }}" class="btn btn-outline-success w-100 quick-action-btn d-flex flex-column justify-content-center">
-                            <i class="bi bi-people mb-1" style="font-size: 1.5rem;"></i>
+                            <i class="bi bi-people mb-1" class="icon-sm"></i>
                             <span>User Management</span>
                             <small class="text-muted">Manage user accounts</small>
                         </a>
@@ -369,7 +369,7 @@
                     
                     <div class="col-md-4">
                         <a href="{{ url_for('admin.monitoring_dashboard') }}" class="btn btn-outline-info w-100 quick-action-btn d-flex flex-column justify-content-center">
-                            <i class="bi bi-graph-up mb-1" style="font-size: 1.5rem;"></i>
+                            <i class="bi bi-graph-up mb-1" class="icon-sm"></i>
                             <span>Performance Metrics</span>
                             <small class="text-muted">System monitoring</small>
                         </a>
@@ -381,7 +381,7 @@
                 <div class="row g-3">
                     <div class="col-md-4">
                         <a href="{{ url_for('admin.security_audit_dashboard') }}" class="btn btn-outline-danger w-100 quick-action-btn d-flex flex-column justify-content-center">
-                            <i class="bi bi-shield-exclamation mb-1" style="font-size: 1.5rem;"></i>
+                            <i class="bi bi-shield-exclamation mb-1" class="icon-sm"></i>
                             <span>Security Audit</span>
                             <small class="text-muted">Security monitoring</small>
                         </a>
@@ -389,7 +389,7 @@
                     
                     <div class="col-md-4">
                         <a href="{{ url_for('admin.cleanup') }}" class="btn btn-outline-warning w-100 quick-action-btn d-flex flex-column justify-content-center">
-                            <i class="bi bi-trash mb-1" style="font-size: 1.5rem;"></i>
+                            <i class="bi bi-trash mb-1" class="icon-sm"></i>
                             <span>Data Cleanup</span>
                             <small class="text-muted">Maintenance tools</small>
                         </a>
@@ -397,7 +397,7 @@
                     
                     <div class="col-md-4">
                         <a href="{{ url_for('admin.configuration_management') }}" class="btn btn-outline-secondary w-100 quick-action-btn d-flex flex-column justify-content-center">
-                            <i class="bi bi-gear mb-1" style="font-size: 1.5rem;"></i>
+                            <i class="bi bi-gear mb-1" class="icon-sm"></i>
                             <span>Configuration</span>
                             <small class="text-muted">System settings</small>
                         </a>

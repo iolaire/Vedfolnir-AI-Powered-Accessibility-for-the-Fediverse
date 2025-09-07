@@ -22,6 +22,15 @@ def generation():
         caption_service = WebCaptionGenerationService(db_manager)
         active_task = caption_service.get_active_task_for_user(current_user.id)
         
+        # Handle both dictionary and object cases for active_task data
+        if active_task and isinstance(active_task, dict):
+            # Convert dictionary to object for template compatibility
+            class TaskObj:
+                def __init__(self, data):
+                    for key, value in data.items():
+                        setattr(self, key, value)
+            active_task = TaskObj(active_task)
+        
         # Create form
         from wtforms import Form, SelectField, IntegerField, FloatField, BooleanField, SubmitField
         from wtforms.validators import DataRequired, NumberRange
@@ -37,9 +46,75 @@ def generation():
         
         form = CaptionGenerationForm()
         
+        # Get current platform context using the same method as platform management
+        from app.services.platform_service import PlatformService
+        platform_service = PlatformService()
+        platform_data = platform_service.get_user_platforms(include_stats=False)
+        current_platform = platform_data['current_platform']
+        
+        # Ensure session context is updated with platform data
+        if current_platform:
+            # Handle both object and dictionary cases for platform data
+            if isinstance(current_platform, dict):
+                platform_id = current_platform.get('id')
+                platform_name = current_platform.get('name')
+                platform_type = current_platform.get('platform_type')
+                platform_instance_url = current_platform.get('instance_url', '')
+            else:
+                platform_id = getattr(current_platform, 'id', None)
+                platform_name = getattr(current_platform, 'name', None)
+                platform_type = getattr(current_platform, 'platform_type', None)
+                platform_instance_url = getattr(current_platform, 'instance_url', '')
+            
+            # Initialize g.session_context if it doesn't exist
+            if not hasattr(g, 'session_context'):
+                g.session_context = {}
+            
+            # Update g.session_context
+            g.session_context.update({
+                'platform_connection_id': platform_id,
+                'platform_name': platform_name,
+                'platform_type': platform_type,
+                'platform_instance_url': platform_instance_url
+            })
+            
+            # Also update Flask session for persistence
+            from flask import session
+            session['platform_connection_id'] = platform_id
+            session['platform_name'] = platform_name
+            session['platform_type'] = platform_type
+            session['platform_instance_url'] = getattr(current_platform, 'instance_url', '')
+            session.modified = True
+            
+            # Also update Redis session manager if available
+            session_manager = getattr(current_app, 'session_manager', None)
+            if session_manager and hasattr(session_manager, 'switch_platform'):
+                try:
+                    session_id = getattr(session, 'sid', None)
+                    if session_id and platform_id:
+                        session_manager.switch_platform(session_id, platform_id)
+                except Exception as e:
+                    current_app.logger.debug(f"Could not update Redis session: {e}")
+        
+        # Create a normalized platform object for the template
+        template_platform = None
+        if current_platform:
+            if isinstance(current_platform, dict):
+                template_platform = current_platform
+            else:
+                # Convert SQLAlchemy object to dict for template consistency
+                template_platform = {
+                    'id': getattr(current_platform, 'id', None),
+                    'name': getattr(current_platform, 'name', None),
+                    'platform_type': getattr(current_platform, 'platform_type', None),
+                    'instance_url': getattr(current_platform, 'instance_url', ''),
+                    'username': getattr(current_platform, 'username', '')
+                }
+        
         return render_template('caption_generation.html',
                              form=form,
-                             active_task=active_task)
+                             active_task=active_task,
+                             active_platform=template_platform)
                              
     except Exception as e:
         current_app.logger.error(f"Error loading caption generation: {str(e)}")
@@ -61,12 +136,23 @@ def start_generation():
         caption_service = WebCaptionGenerationService(db_manager)
         
         # Platform context is now available in g.platform_connection_id
+        from models import CaptionGenerationSettings
+        
+        # Create settings object from form data
+        settings = CaptionGenerationSettings(
+            max_posts_per_run=get_form_int('max_posts_per_run', 10),
+            processing_delay=get_form_float('processing_delay', 1.0),
+            max_caption_length=get_form_int('max_caption_length', 500),
+            optimal_min_length=get_form_int('optimal_min_length', 100),
+            optimal_max_length=get_form_int('optimal_max_length', 300),
+            reprocess_existing=get_form_int('reprocess_existing', 0) == 1
+        )
+        
         task_id = asyncio.run(
             caption_service.start_caption_generation(
                 current_user.id,
                 g.platform_connection_id,
-                batch_size=get_form_int('batch_size', 10),
-                quality_threshold=get_form_float('quality_threshold', 0.7)
+                settings=settings
             )
         )
         

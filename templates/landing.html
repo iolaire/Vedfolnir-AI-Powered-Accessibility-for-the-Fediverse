@@ -8,8 +8,10 @@
 
 {% block head %}
 <!-- Enhanced SEO Meta Tags -->
-<meta name="description" content="AI-powered alt text generation for Mastodon, Pixelfed & ActivityPub platforms. Make social media accessible with automated image descriptions. Free tool.">
-<meta name="keywords" content="accessibility, alt text, image descriptions, ActivityPub, Mastodon, Pixelfed, AI, machine learning, digital inclusion, screen reader, visually impaired, social media accessibility, automated captions, human review, WCAG compliance, inclusive design">
+<meta name="description"
+    content="AI-powered alt text generation for Mastodon, Pixelfed & ActivityPub platforms. Make social media accessible with automated image descriptions. Free tool.">
+<meta name="keywords"
+    content="accessibility, alt text, image descriptions, ActivityPub, Mastodon, Pixelfed, AI, machine learning, digital inclusion, screen reader, visually impaired, social media accessibility, automated captions, human review, WCAG compliance, inclusive design">
 <meta name="author" content="Vedfolnir">
 <meta name="robots" content="index, follow">
 <meta name="language" content="en">
@@ -28,7 +30,8 @@
 
 <!-- Enhanced Open Graph Tags for Social Media Sharing -->
 <meta property="og:title" content="Vedfolnir - AI-Powered Accessibility for the Fediverse">
-<meta property="og:description" content="Make your social media content accessible to everyone with automated alt text generation and human review workflows. Free tool for ActivityPub platforms like Mastodon and Pixelfed.">
+<meta property="og:description"
+    content="Make your social media content accessible to everyone with automated alt text generation and human review workflows. Free tool for ActivityPub platforms like Mastodon and Pixelfed.">
 <meta property="og:type" content="website">
 <meta property="og:url" content="{{ request.url }}">
 <meta property="og:site_name" content="Vedfolnir">
@@ -42,7 +45,8 @@
 <meta property="og:image:width" content="512">
 <meta property="og:image:height" content="512">
 <meta property="og:image:type" content="image/png">
-<meta property="og:image:secure_url" content="{{ request.url_root }}{{ url_for('static', filename='images/Logo.png') }}">
+<meta property="og:image:secure_url"
+    content="{{ request.url_root }}{{ url_for('static', filename='images/Logo.png') }}">
 {% endif %}
 <meta property="og:updated_time" content="2025-01-09T00:00:00Z">
 <meta property="og:see_also" content="{{ request.url_root }}">
@@ -65,7 +69,8 @@
 <meta name="twitter:site" content="@vedfolnir">
 <meta name="twitter:creator" content="@vedfolnir">
 <meta name="twitter:title" content="Vedfolnir - AI-Powered Accessibility for the Fediverse">
-<meta name="twitter:description" content="Make your social media content accessible with automated alt text generation for ActivityPub platforms. Free accessibility tool with AI and human review.">
+<meta name="twitter:description"
+    content="Make your social media content accessible with automated alt text generation for ActivityPub platforms. Free accessibility tool with AI and human review.">
 {% if request.url_root %}
 <meta name="twitter:image" content="{{ request.url_root }}{{ url_for('static', filename='images/Logo.png') }}">
 <meta name="twitter:image:alt" content="Vedfolnir Logo - AI-Powered Accessibility for the Fediverse">
@@ -359,917 +364,7 @@
 }
 </script>
 
-<!-- Landing Page Specific Styles -->
-<style>
-/* Landing Page Styles */
-.landing-hero {
-    background: linear-gradient(135deg, var(--primary-color) 0%, var(--primary-dark) 100%);
-    color: white;
-    padding: 4rem 0;
-    margin-top: -1.5rem;
-    margin-left: -15px;
-    margin-right: -15px;
-    text-align: center;
-    position: relative;
-    overflow: hidden;
-}
-
-.landing-hero::before {
-    content: '';
-    position: absolute;
-    top: 0;
-    left: 0;
-    right: 0;
-    bottom: 0;
-    background: url('data:image/svg+xml,<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 100 100"><defs><pattern id="grain" width="100" height="100" patternUnits="userSpaceOnUse"><circle cx="25" cy="25" r="1" fill="rgba(255,255,255,0.1)"/><circle cx="75" cy="75" r="1" fill="rgba(255,255,255,0.1)"/><circle cx="50" cy="10" r="0.5" fill="rgba(255,255,255,0.05)"/><circle cx="10" cy="60" r="0.5" fill="rgba(255,255,255,0.05)"/><circle cx="90" cy="40" r="0.5" fill="rgba(255,255,255,0.05)"/></pattern></defs><rect width="100" height="100" fill="url(%23grain)"/></svg>');
-    opacity: 0.3;
-    pointer-events: none;
-}
-
-.landing-hero .container {
-    position: relative;
-    z-index: 1;
-}
-
-.landing-hero h1 {
-    font-size: 3.5rem;
-    font-weight: 700;
-    margin-bottom: 1.5rem;
-    line-height: 1.2;
-    text-shadow: 0 2px 4px rgba(0, 0, 0, 0.1);
-}
-
-.landing-hero .lead {
-    font-size: 1.25rem;
-    margin-bottom: 2.5rem;
-    opacity: 0.95;
-    max-width: 650px;
-    margin-left: auto;
-    margin-right: auto;
-    line-height: 1.6;
-    text-shadow: 0 1px 2px rgba(0, 0, 0, 0.1);
-}
-
-.cta-button {
-    background-color: white;
-    color: var(--primary-color);
-    border: none;
-    padding: 1.25rem 2.5rem;
-    font-size: 1.1rem;
-    font-weight: 600;
-    border-radius: var(--border-radius-lg);
-    text-decoration: none;
-    display: inline-flex;
-    align-items: center;
-    justify-content: center;
-    transition: var(--transition-normal);
-    box-shadow: 0 4px 15px rgba(0, 0, 0, 0.2);
-    position: relative;
-    overflow: hidden;
-    min-height: 48px !important;
-    min-width: 120px !important;
-    box-sizing: border-box !important;
-}
-
-/* Mobile touch compliant buttons - HIGHEST PRIORITY */
-.mobile-touch-compliant {
-    height: 48px !important;
-    min-height: 48px !important;
-    max-height: 48px !important;
-    padding: 0 24px !important;
-    box-sizing: border-box !important;
-    display: inline-flex !important;
-    align-items: center !important;
-    justify-content: center !important;
-    line-height: 1 !important;
-    font-size: 1rem !important;
-    border: none !important;
-    text-decoration: none !important;
-    background-color: white !important;
-    color: var(--primary-color) !important;
-    border-radius: var(--border-radius-lg) !important;
-    font-weight: 600 !important;
-    transition: var(--transition-normal) !important;
-    box-shadow: 0 4px 15px rgba(0, 0, 0, 0.2) !important;
-    position: relative !important;
-    overflow: hidden !important;
-    min-width: 120px !important;
-    margin: 0 !important;
-    vertical-align: baseline !important;
-}
-
-.cta-button::before {
-    content: '';
-    position: absolute;
-    top: 0;
-    left: -100%;
-    width: 100%;
-    height: 100%;
-    background: linear-gradient(90deg, transparent, rgba(255, 255, 255, 0.2), transparent);
-    transition: left 0.5s;
-}
-
-.cta-button:hover::before {
-    left: 100%;
-}
-
-.cta-button:hover {
-    background-color: #f8fafc;
-    color: var(--primary-dark);
-    transform: translateY(-3px);
-    box-shadow: 0 8px 25px rgba(0, 0, 0, 0.25);
-    text-decoration: none;
-}
-
-.cta-button:focus {
-    outline: 3px solid rgba(255, 255, 255, 0.5);
-    outline-offset: 2px;
-}
-
-.features-section {
-    padding: 5rem 0;
-    background-color: var(--bg-secondary);
-    position: relative;
-}
-
-.feature-card {
-    text-align: center;
-    padding: 2.5rem 2rem;
-    background: white;
-    border-radius: var(--border-radius-lg);
-    box-shadow: var(--shadow-sm);
-    height: 100%;
-    transition: var(--transition-normal);
-    border: 1px solid var(--border-color);
-    position: relative;
-    overflow: hidden;
-}
-
-.feature-card::before {
-    content: '';
-    position: absolute;
-    top: 0;
-    left: 0;
-    right: 0;
-    height: 4px;
-    background: linear-gradient(90deg, var(--primary-color), var(--primary-light));
-    transform: scaleX(0);
-    transition: transform var(--transition-normal);
-}
-
-.feature-card:hover::before {
-    transform: scaleX(1);
-}
-
-.feature-card:hover {
-    box-shadow: var(--shadow-lg);
-    transform: translateY(-8px);
-    border-color: var(--primary-color);
-}
-
-.feature-icon {
-    font-size: 3.5rem;
-    color: var(--primary-color);
-    margin-bottom: 1.5rem;
-    transition: var(--transition-normal);
-}
-
-.feature-card:hover .feature-icon {
-    transform: scale(1.1);
-    color: var(--primary-dark);
-}
-
-.feature-card h3 {
-    font-size: 1.5rem;
-    font-weight: 600;
-    margin-bottom: 1rem;
-    color: var(--text-primary);
-}
-
-.feature-card p {
-    color: var(--text-secondary);
-    line-height: 1.7;
-    font-size: 1rem;
-}
-
-.audience-section {
-    padding: 5rem 0;
-    background-color: white;
-    position: relative;
-}
-
-.audience-grid {
-    display: grid;
-    grid-template-columns: repeat(auto-fit, minmax(280px, 1fr));
-    gap: 2.5rem;
-    margin-top: 3rem;
-}
-
-.audience-item {
-    text-align: center;
-    padding: 2rem 1.5rem;
-    border-radius: var(--border-radius-lg);
-    transition: var(--transition-normal);
-    position: relative;
-}
-
-.audience-item:hover {
-    background-color: var(--bg-secondary);
-    transform: translateY(-4px);
-}
-
-.audience-icon {
-    font-size: 3rem;
-    color: var(--primary-color);
-    margin-bottom: 1.5rem;
-    transition: var(--transition-normal);
-}
-
-.audience-item:hover .audience-icon {
-    transform: scale(1.1);
-    color: var(--primary-dark);
-}
-
-.audience-item h4 {
-    font-size: 1.25rem;
-    font-weight: 600;
-    margin-bottom: 0.75rem;
-    color: var(--text-primary);
-}
-
-.audience-item p {
-    color: var(--text-secondary);
-    font-size: 0.95rem;
-    line-height: 1.6;
-}
-
-.final-cta-section {
-    background: linear-gradient(135deg, var(--primary-color) 0%, var(--primary-dark) 100%);
-    color: white;
-    padding: 5rem 0;
-    text-align: center;
-    margin-left: -15px;
-    margin-right: -15px;
-    position: relative;
-    overflow: hidden;
-}
-
-.final-cta-section::before {
-    content: '';
-    position: absolute;
-    top: 0;
-    left: 0;
-    right: 0;
-    bottom: 0;
-    background: url('data:image/svg+xml,<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 100 100"><defs><pattern id="dots" width="20" height="20" patternUnits="userSpaceOnUse"><circle cx="10" cy="10" r="1" fill="rgba(255,255,255,0.1)"/></pattern></defs><rect width="100" height="100" fill="url(%23dots)"/></svg>');
-    opacity: 0.3;
-    pointer-events: none;
-}
-
-.final-cta-section .container {
-    position: relative;
-    z-index: 1;
-}
-
-.final-cta-section h2 {
-    font-size: 2.75rem;
-    font-weight: 700;
-    margin-bottom: 1.5rem;
-    text-shadow: 0 2px 4px rgba(0, 0, 0, 0.1);
-}
-
-.final-cta-section p {
-    font-size: 1.2rem;
-    margin-bottom: 2.5rem;
-    opacity: 0.95;
-    max-width: 550px;
-    margin-left: auto;
-    margin-right: auto;
-    line-height: 1.6;
-    text-shadow: 0 1px 2px rgba(0, 0, 0, 0.1);
-}
-
-.section-title {
-    font-size: 2.75rem;
-    font-weight: 700;
-    text-align: center;
-    margin-bottom: 1.5rem;
-    color: var(--text-primary);
-    position: relative;
-}
-
-.section-title::after {
-    content: '';
-    position: absolute;
-    bottom: -10px;
-    left: 50%;
-    transform: translateX(-50%);
-    width: 60px;
-    height: 4px;
-    background: linear-gradient(90deg, var(--primary-color), var(--primary-light));
-    border-radius: 2px;
-}
-
-.section-subtitle {
-    font-size: 1.2rem;
-    text-align: center;
-    color: var(--text-secondary);
-    max-width: 650px;
-    margin: 0 auto 3.5rem;
-    line-height: 1.7;
-}
-
-/* Enhanced Responsive Design */
-/* General Desktop (768px and up) - Better width utilization */
-@media (min-width: 768px) {
-    .container {
-        max-width: none !important;
-        width: 90% !important;
-        margin: 0 auto !important;
-    }
-}
-
-/* Large Desktop (1200px and up) */
-@media (min-width: 1200px) {
-    .landing-hero h1 {
-        font-size: 4rem;
-    }
-    
-    .landing-hero .lead {
-        font-size: 1.4rem;
-    }
-    
-    .section-title {
-        font-size: 3rem;
-    }
-    
-    .final-cta-section h2 {
-        font-size: 3rem;
-    }
-    
-    .audience-grid {
-        grid-template-columns: repeat(5, 1fr);
-        gap: 3rem;
-    }
-    
-    /* Wider container for better desktop utilization */
-    .container {
-        max-width: none !important;
-        width: 95% !important;
-        margin: 0 auto;
-    }
-}
-
-/* Desktop (992px to 1199px) */
-@media (min-width: 992px) and (max-width: 1199px) {
-    .audience-grid {
-        grid-template-columns: repeat(3, 1fr);
-        gap: 2.5rem;
-    }
-    
-    .feature-card {
-        padding: 2.25rem 1.75rem;
-    }
-    
-    /* Wider container for better desktop utilization */
-    .container {
-        max-width: none !important;
-        width: 90% !important;
-        margin: 0 auto;
-    }
-}
-
-/* Tablet (768px to 991px) */
-@media (min-width: 768px) and (max-width: 991px) {
-    .landing-hero h1 {
-        font-size: 3rem;
-    }
-    
-    .landing-hero .lead {
-        font-size: 1.2rem;
-    }
-    
-    .section-title {
-        font-size: 2.5rem;
-    }
-    
-    .final-cta-section h2 {
-        font-size: 2.5rem;
-    }
-    
-    .audience-grid {
-        grid-template-columns: repeat(2, 1fr);
-        gap: 2rem;
-    }
-    
-    .feature-card {
-        padding: 2rem 1.5rem;
-    }
-    
-    .cta-button {
-        padding: 1rem 2rem;
-        font-size: 1.05rem;
-    }
-}
-
-/* Mobile Large (576px to 767px) */
-@media (min-width: 576px) and (max-width: 767px) {
-    .landing-hero {
-        padding: 3.5rem 0;
-        margin-left: -15px;
-        margin-right: -15px;
-    }
-    
-    .landing-hero h1 {
-        font-size: 2.5rem;
-        margin-bottom: 1.25rem;
-    }
-    
-    .landing-hero .lead {
-        font-size: 1.1rem;
-        margin-bottom: 2rem;
-    }
-    
-    .cta-button {
-        padding: 1rem 1.75rem;
-        font-size: 1rem;
-        min-height: 48px;
-    }
-    
-    .section-title {
-        font-size: 2.25rem;
-    }
-    
-    .final-cta-section h2 {
-        font-size: 2.25rem;
-    }
-    
-    .features-section,
-    .audience-section {
-        padding: 4rem 0;
-    }
-    
-    .final-cta-section {
-        padding: 4rem 0;
-        margin-left: -15px;
-        margin-right: -15px;
-    }
-    
-    .audience-grid {
-        grid-template-columns: 1fr;
-        gap: 2rem;
-    }
-    
-    .feature-card {
-        padding: 2rem 1.5rem;
-    }
-    
-    .audience-item {
-        padding: 1.75rem 1.25rem;
-    }
-}
-
-/* Mobile Small (up to 575px) */
-@media (max-width: 575px) {
-    .landing-hero {
-        padding: 3rem 0;
-        margin-left: -15px;
-        margin-right: -15px;
-    }
-    
-    .landing-hero h1 {
-        font-size: 2rem;
-        margin-bottom: 1rem;
-        line-height: 1.3;
-    }
-    
-    .landing-hero .lead {
-        font-size: 1rem;
-        margin-bottom: 1.75rem;
-        padding: 0 1rem;
-    }
-    
-    .cta-button {
-        padding: 1rem 1.5rem;
-        font-size: 0.95rem;
-        min-height: 48px !important;
-        min-width: 140px;
-    }
-    
-    .section-title {
-        font-size: 1.875rem;
-        margin-bottom: 1rem;
-    }
-    
-    .section-subtitle {
-        font-size: 1rem;
-        margin-bottom: 2.5rem;
-        padding: 0 1rem;
-    }
-    
-    .final-cta-section {
-        padding: 3rem 0;
-        margin-left: -15px;
-        margin-right: -15px;
-    }
-    
-    .final-cta-section h2 {
-        font-size: 1.875rem;
-        margin-bottom: 1rem;
-    }
-    
-    .final-cta-section p {
-        font-size: 1rem;
-        margin-bottom: 2rem;
-        padding: 0 1rem;
-    }
-    
-    .features-section,
-    .audience-section {
-        padding: 3rem 0;
-    }
-    
-    .audience-grid {
-        grid-template-columns: 1fr;
-        gap: 1.5rem;
-        margin-top: 2.5rem;
-    }
-    
-    .feature-card {
-        padding: 1.75rem 1.25rem;
-        margin-bottom: 1rem;
-    }
-    
-    .feature-icon {
-        font-size: 2.75rem;
-        margin-bottom: 1.25rem;
-    }
-    
-    .feature-card h3 {
-        font-size: 1.25rem;
-        margin-bottom: 0.75rem;
-    }
-    
-    .feature-card p {
-        font-size: 0.95rem;
-    }
-    
-    .audience-item {
-        padding: 1.5rem 1rem;
-    }
-    
-    .audience-icon {
-        font-size: 2.5rem;
-        margin-bottom: 1.25rem;
-    }
-    
-    .audience-item h4 {
-        font-size: 1.125rem;
-        margin-bottom: 0.5rem;
-    }
-    
-    .audience-item p {
-        font-size: 0.9rem;
-    }
-}
-
-/* Touch Target Improvements for Mobile */
-@media (max-width: 767px) {
-    .cta-button {
-        min-height: 48px !important;
-        min-width: 120px !important;
-        touch-action: manipulation;
-        box-sizing: border-box !important;
-        display: inline-flex !important;
-        align-items: center !important;
-        justify-content: center !important;
-    }
-    
-    .feature-card {
-        touch-action: manipulation;
-    }
-    
-    .audience-item {
-        touch-action: manipulation;
-    }
-}
-
-/* High DPI Display Support */
-@media (-webkit-min-device-pixel-ratio: 2), (min-resolution: 192dpi) {
-    .landing-hero h1,
-    .section-title,
-    .final-cta-section h2 {
-        text-rendering: optimizeLegibility;
-        -webkit-font-smoothing: antialiased;
-        -moz-osx-font-smoothing: grayscale;
-    }
-}
-
-/* Reduced Motion Support */
-@media (prefers-reduced-motion: reduce) {
-    .feature-card,
-    .audience-item,
-    .cta-button,
-    .feature-icon,
-    .audience-icon {
-        transition: none;
-    }
-    
-    .feature-card:hover,
-    .audience-item:hover,
-    .cta-button:hover {
-        transform: none;
-    }
-    
-    .cta-button::before {
-        display: none;
-    }
-    
-    .feature-card::before {
-        transition: none;
-    }
-}
-
-/* Print Styles */
-@media print {
-    .landing-hero,
-    .final-cta-section {
-        background: white !important;
-        color: black !important;
-        margin: 0 !important;
-    }
-    
-    .cta-button {
-        background: white !important;
-        color: black !important;
-        border: 2px solid black !important;
-    }
-    
-    .feature-card,
-    .audience-item {
-        break-inside: avoid;
-        page-break-inside: avoid;
-    }
-    
-    .section-title::after {
-        display: none;
-    }
-}
-
-/* Focus Management for Accessibility */
-.cta-button:focus-visible {
-    outline: 3px solid rgba(255, 255, 255, 0.8);
-    outline-offset: 2px;
-}
-
-.feature-card:focus-within {
-    outline: 2px solid var(--primary-color);
-    outline-offset: 2px;
-}
-
-.audience-item:focus-within {
-    outline: 2px solid var(--primary-color);
-    outline-offset: 2px;
-}
-
-/* Accessibility Features */
-
-/* Skip to content link styling */
-.visually-hidden-focusable {
-    position: absolute !important;
-    width: 1px !important;
-    height: 1px !important;
-    padding: 0 !important;
-    margin: -1px !important;
-    overflow: hidden !important;
-    clip: rect(0, 0, 0, 0) !important;
-    white-space: nowrap !important;
-    border: 0 !important;
-}
-
-.visually-hidden-focusable:focus {
-    position: absolute !important;
-    top: 10px !important;
-    left: 10px !important;
-    z-index: 9999 !important;
-    width: auto !important;
-    height: auto !important;
-    padding: 0.75rem 1.25rem !important;
-    margin: 0 !important;
-    overflow: visible !important;
-    clip: auto !important;
-    white-space: normal !important;
-    background: var(--primary-color) !important;
-    color: white !important;
-    text-decoration: none !important;
-    border-radius: var(--border-radius) !important;
-    font-weight: 600 !important;
-    font-size: 1rem !important;
-    line-height: 1.5 !important;
-    box-shadow: 0 4px 12px rgba(0, 0, 0, 0.3) !important;
-    border: 2px solid white !important;
-}
-
-.visually-hidden-focusable:focus:hover {
-    background: var(--primary-dark) !important;
-}
-
-/* Screen reader only content */
-.sr-only {
-    position: absolute !important;
-    width: 1px !important;
-    height: 1px !important;
-    padding: 0 !important;
-    margin: -1px !important;
-    overflow: hidden !important;
-    clip: rect(0, 0, 0, 0) !important;
-    white-space: nowrap !important;
-    border: 0 !important;
-}
-
-/* Enhanced focus indicators for better keyboard navigation */
-.cta-button:focus-visible,
-.cta-button:focus {
-    outline: 3px solid rgba(255, 255, 255, 0.8) !important;
-    outline-offset: 3px !important;
-    box-shadow: 0 0 0 2px var(--primary-color), 0 0 0 5px rgba(255, 255, 255, 0.8) !important;
-}
-
-.feature-card:focus-within,
-.audience-item:focus-within {
-    outline: 3px solid var(--primary-color) !important;
-    outline-offset: 2px !important;
-    box-shadow: 0 0 0 2px white, 0 0 0 5px var(--primary-color) !important;
-}
-
-/* High contrast mode support */
-@media (prefers-contrast: high) {
-    .landing-hero,
-    .final-cta-section {
-        background: #000000 !important;
-        color: #ffffff !important;
-    }
-    
-    .cta-button {
-        background: #ffffff !important;
-        color: #000000 !important;
-        border: 2px solid #000000 !important;
-    }
-    
-    .feature-card,
-    .audience-item {
-        border: 2px solid #000000 !important;
-        background: #ffffff !important;
-    }
-    
-    .section-title,
-    .feature-card h3,
-    .audience-item h4 {
-        color: #000000 !important;
-    }
-}
-
-/* Improved color contrast ratios */
-.text-muted {
-    color: #6b7280 !important; /* Improved contrast ratio */
-}
-
-.section-subtitle {
-    color: #4b5563 !important; /* Better contrast than default secondary text */
-}
-
-/* Enhanced keyboard navigation */
-.feature-card,
-.audience-item {
-    position: relative;
-}
-
-.feature-card:focus-within::before,
-.audience-item:focus-within::before {
-    content: '';
-    position: absolute;
-    top: -3px;
-    left: -3px;
-    right: -3px;
-    bottom: -3px;
-    border: 3px solid var(--primary-color);
-    border-radius: calc(var(--border-radius-lg) + 3px);
-    pointer-events: none;
-}
-
-/* ARIA live region for dynamic content */
-.live-region {
-    position: absolute;
-    left: -10000px;
-    width: 1px;
-    height: 1px;
-    overflow: hidden;
-}
-
-/* Touch target improvements for mobile accessibility - HIGHEST SPECIFICITY */
-@media (max-width: 767px) {
-    .landing-hero .cta-button,
-    .final-cta-section .cta-button,
-    a.cta-button,
-    .cta-button {
-        height: 48px !important;
-        min-height: 48px !important;
-        max-height: none !important;
-        min-width: 120px !important;
-        padding: 0 24px !important; /* Ensure adequate padding for touch targets */
-        touch-action: manipulation;
-        -webkit-tap-highlight-color: rgba(0, 0, 0, 0.1);
-        box-sizing: border-box !important;
-        display: inline-flex !important;
-        align-items: center !important;
-        justify-content: center !important;
-        line-height: 1 !important;
-        font-size: 1rem !important;
-        border: none !important;
-        margin: 0 !important;
-        vertical-align: baseline !important;
-    }
-    
-    .feature-card,
-    .audience-item {
-        touch-action: manipulation;
-        -webkit-tap-highlight-color: rgba(0, 0, 0, 0.05);
-    }
-    
-    /* Ensure all interactive elements meet minimum touch target size */
-    a, button, [role="button"], [tabindex] {
-        min-height: 44px;
-        min-width: 44px;
-    }
-    
-    /* FINAL OVERRIDE - Force CTA button compliance */
-    .mobile-touch-compliant,
-    .landing-hero .mobile-touch-compliant,
-    .final-cta-section .mobile-touch-compliant,
-    a.mobile-touch-compliant.cta-button {
-        height: 48px !important;
-        min-height: 48px !important;
-        max-height: 48px !important;
-        padding: 0 24px !important;
-        box-sizing: border-box !important;
-        display: inline-flex !important;
-        align-items: center !important;
-        justify-content: center !important;
-        line-height: 1 !important;
-        font-size: 1rem !important;
-        border: none !important;
-        text-decoration: none !important;
-        background-color: white !important;
-        color: var(--primary-color) !important;
-        border-radius: var(--border-radius-lg) !important;
-        font-weight: 600 !important;
-        transition: var(--transition-normal) !important;
-        box-shadow: 0 4px 15px rgba(0, 0, 0, 0.2) !important;
-        position: relative !important;
-        overflow: hidden !important;
-        min-width: 120px !important;
-        margin: 0 !important;
-        vertical-align: baseline !important;
-    }
-}
-</style>
-
-<!-- EMERGENCY INLINE STYLES FOR ACCESSIBILITY COMPLIANCE -->
-<style>
-/* Mobile touch target fix - FINAL OVERRIDE */
-@media (max-width: 767px) {
-    .mobile-touch-compliant {
-        height: 48px !important;
-        min-height: 48px !important;
-        padding: 0 24px !important;
-        box-sizing: border-box !important;
-        display: inline-flex !important;
-        align-items: center !important;
-        justify-content: center !important;
-        line-height: 1 !important;
-        min-width: 120px !important;
-        visibility: visible !important;
-        opacity: 1 !important;
-    }
-}
-
-/* Desktop width utilization fix - FINAL OVERRIDE */
-@media (min-width: 768px) {
-    .container {
-        max-width: none !important;
-        width: 95% !important;
-        margin: 0 auto !important;
-    }
-}
-
-@media (min-width: 1200px) {
-    .container {
-        max-width: none !important;
-        width: 98% !important;
-        margin: 0 auto !important;
-    }
-}
-</style>
+<!-- Landing page styles are now in external CSS file: static/css/security-extracted.css -->
 {% endblock %}
 
 {% block content %}
@@ -1284,26 +379,27 @@
     <section class="landing-hero" aria-labelledby="hero-title">
         <div class="container">
             <h1 id="hero-title">Vedfolnir – AI-Powered Accessibility for the Fediverse</h1>
-            <p class="lead">Make your social media content accessible to everyone with automated alt text generation and human review workflows for ActivityPub platforms like Mastodon and Pixelfed.</p>
-            <a href="{{ url_for('user_management.register') }}" 
-               class="cta-button mobile-touch-compliant" 
-               role="button" 
-               aria-describedby="cta-description"
-               aria-label="Get Started Free - Create your account to begin making content accessible"
-                Get Started Free
-            </a>
-            <p id="cta-description" class="sr-only">Create your free account to start making your content accessible with AI-powered image descriptions for ActivityPub platforms like Mastodon and Pixelfed</p>
+            <p class="lead">Make your social media content accessible to everyone with automated alt text generation and
+                human review workflows for ActivityPub platforms like Mastodon and Pixelfed.</p>
+            <a href="{{ url_for('user_management.register') }}" class="cta-button mobile-touch-compliant" role="button"
+                aria-describedby="cta-description"
+                aria-label="Get Started Free - Create your account to begin making content accessible">Get Started Free</a>
+                <p id="cta-description" class="sr-only">Create your free account to start making your content accessible
+                    with AI-powered image descriptions for ActivityPub platforms like Mastodon and Pixelfed</p>
         </div>
     </section>
 
     <!-- Features Section -->
     <section class="features-section" aria-labelledby="features-title">
         <div class="container">
-            <h2 id="features-title" class="section-title">Powerful Features for Digital Accessibility and Inclusive Design</h2>
+            <h2 id="features-title" class="section-title">Powerful Features for Digital Accessibility and Inclusive
+                Design</h2>
             <p class="section-subtitle">
-                Vedfolnir combines cutting-edge AI technology with human expertise to ensure your visual content is accessible to everyone, including users with visual impairments who rely on screen readers and assistive technology. Our automated alt text generation meets WCAG accessibility guidelines for digital inclusion.
+                Vedfolnir combines cutting-edge AI technology with human expertise to ensure your visual content is
+                accessible to everyone, including users with visual impairments who rely on screen readers and assistive
+                technology. Our automated alt text generation meets WCAG accessibility guidelines for digital inclusion.
             </p>
-            
+
             <div class="row g-4" role="list" aria-label="Key features of Vedfolnir">
                 <div class="col-lg-4 col-md-6" role="listitem">
                     <article class="feature-card" tabindex="0" role="article" aria-labelledby="feature-1-title">
@@ -1312,12 +408,14 @@
                         </div>
                         <h3 id="feature-1-title">AI-Powered Image Descriptions and Alt Text Generation</h3>
                         <p>
-                            Advanced machine learning algorithms and computer vision technology automatically generate detailed, contextual alt text for your images, 
-                            saving you time while ensuring quality descriptions that meet WCAG accessibility guidelines and promote digital inclusion across social media platforms.
+                            Advanced machine learning algorithms and computer vision technology automatically generate
+                            detailed, contextual alt text for your images,
+                            saving you time while ensuring quality descriptions that meet WCAG accessibility guidelines
+                            and promote digital inclusion across social media platforms.
                         </p>
                     </article>
                 </div>
-                
+
                 <div class="col-lg-4 col-md-6" role="listitem">
                     <article class="feature-card" tabindex="0" role="article" aria-labelledby="feature-2-title">
                         <div class="feature-icon" role="img" aria-label="People icon representing human review process">
@@ -1325,21 +423,25 @@
                         </div>
                         <h3 id="feature-2-title">Human Review Interface for Quality Assurance</h3>
                         <p>
-                            Comprehensive review system allows human oversight and editing of AI-generated 
-                            descriptions to ensure accuracy, context, and compliance with accessibility standards and WCAG guidelines for inclusive design.
+                            Comprehensive review system allows human oversight and editing of AI-generated
+                            descriptions to ensure accuracy, context, and compliance with accessibility standards and
+                            WCAG guidelines for inclusive design.
                         </p>
                     </article>
                 </div>
-                
+
                 <div class="col-lg-4 col-md-6" role="listitem">
                     <article class="feature-card" tabindex="0" role="article" aria-labelledby="feature-3-title">
-                        <div class="feature-icon" role="img" aria-label="Refresh arrows icon representing automatic integration">
+                        <div class="feature-icon" role="img"
+                            aria-label="Refresh arrows icon representing automatic integration">
                             <i class="bi bi-arrow-repeat" aria-hidden="true"></i>
                         </div>
                         <h3 id="feature-3-title">Automatic ActivityPub Platform Integration</h3>
                         <p>
-                            Seamlessly integrates with ActivityPub platforms like Mastodon and Pixelfed to automatically update your 
-                            posts with approved alt text descriptions, ensuring digital inclusion and accessibility compliance across the decentralized Fediverse ecosystem.
+                            Seamlessly integrates with ActivityPub platforms like Mastodon and Pixelfed to automatically
+                            update your
+                            posts with approved alt text descriptions, ensuring digital inclusion and accessibility
+                            compliance across the decentralized Fediverse ecosystem.
                         </p>
                     </article>
                 </div>
@@ -1352,55 +454,62 @@
         <div class="container">
             <h2 id="audience-title" class="section-title">Built for Content Creators and Accessibility Advocates</h2>
             <p class="section-subtitle">
-                Whether you're managing a single account or an entire community, Vedfolnir scales to meet your digital accessibility needs and promote inclusive design across social media platforms.
+                Whether you're managing a single account or an entire community, Vedfolnir scales to meet your digital
+                accessibility needs and promote inclusive design across social media platforms.
             </p>
-            
+
             <div class="audience-grid" role="list" aria-label="Target audiences for Vedfolnir">
                 <article class="audience-item" tabindex="0" role="listitem" aria-labelledby="audience-1-title">
                     <div class="audience-icon" role="img" aria-label="Camera icon representing photographers">
                         <i class="bi bi-camera" aria-hidden="true"></i>
                     </div>
                     <h3 id="audience-1-title">Photographers and Visual Artists</h3>
-                    <p>Make your visual art accessible to visually impaired audiences with detailed, artistic descriptions that convey the essence and emotion of your photography.</p>
+                    <p>Make your visual art accessible to visually impaired audiences with detailed, artistic
+                        descriptions that convey the essence and emotion of your photography.</p>
                 </article>
-                
+
                 <article class="audience-item" tabindex="0" role="listitem" aria-labelledby="audience-2-title">
                     <div class="audience-icon" role="img" aria-label="Megaphone icon representing community management">
                         <i class="bi bi-megaphone" aria-hidden="true"></i>
                     </div>
                     <h3 id="audience-2-title">Community Managers and Social Media Administrators</h3>
-                    <p>Ensure all community content meets WCAG accessibility standards and promotes digital inclusion across multiple ActivityPub platforms.</p>
+                    <p>Ensure all community content meets WCAG accessibility standards and promotes digital inclusion
+                        across multiple ActivityPub platforms.</p>
                 </article>
-                
+
                 <article class="audience-item" tabindex="0" role="listitem" aria-labelledby="audience-3-title">
                     <div class="audience-icon" role="img" aria-label="Heart icon representing advocacy and care">
                         <i class="bi bi-heart" aria-hidden="true"></i>
                     </div>
                     <h3 id="audience-3-title">Accessibility Advocates and Disability Rights Organizations</h3>
-                    <p>Promote digital inclusion and equal access with tools designed specifically for accessibility compliance and barrier-free communication.</p>
+                    <p>Promote digital inclusion and equal access with tools designed specifically for accessibility
+                        compliance and barrier-free communication.</p>
                 </article>
-                
+
                 <article class="audience-item" tabindex="0" role="listitem" aria-labelledby="audience-4-title">
                     <div class="audience-icon" role="img" aria-label="Newspaper icon representing journalism">
                         <i class="bi bi-newspaper" aria-hidden="true"></i>
                     </div>
                     <h3 id="audience-4-title">Journalists and Media Organizations</h3>
-                    <p>Make news and media content accessible to all readers with professional alt text that ensures equal access to information for people with visual impairments.</p>
+                    <p>Make news and media content accessible to all readers with professional alt text that ensures
+                        equal access to information for people with visual impairments.</p>
                 </article>
-                
+
                 <article class="audience-item" tabindex="0" role="listitem" aria-labelledby="audience-5-title">
                     <div class="audience-icon" role="img" aria-label="Brush icon representing content creation">
                         <i class="bi bi-brush" aria-hidden="true"></i>
                     </div>
                     <h3 id="audience-5-title">Content Creators and Influencers</h3>
-                    <p>Expand your audience reach by making visual content accessible across all platforms, demonstrating your commitment to inclusive design and digital accessibility.</p>
+                    <p>Expand your audience reach by making visual content accessible across all platforms,
+                        demonstrating your commitment to inclusive design and digital accessibility.</p>
                 </article>
             </div>
-            
+
             <div class="mt-5 text-center">
                 <h4 class="mb-3">Compatible with ActivityPub Platforms and Fediverse Networks</h4>
                 <p class="text-muted">
-                    Works seamlessly with Pixelfed, Mastodon, and other ActivityPub-compatible social media platforms across the decentralized Fediverse ecosystem.
+                    Works seamlessly with Pixelfed, Mastodon, and other ActivityPub-compatible social media platforms
+                    across the decentralized Fediverse ecosystem.
                 </p>
             </div>
         </div>
@@ -1411,14 +520,11 @@
         <div class="container">
             <h2 id="final-cta-title">Ready to Make Your Content Accessible and Inclusive?</h2>
             <p>
-                Join the movement toward digital inclusion and barrier-free communication. Start generating accessible content with AI-powered alt text today and make the Fediverse more inclusive for everyone.
+                Join the movement toward digital inclusion and barrier-free communication. Start generating accessible
+                content with AI-powered alt text today and make the Fediverse more inclusive for everyone.
             </p>
-            <a href="{{ url_for('user_management.register') }}" 
-               class="cta-button mobile-touch-compliant" 
-               role="button"
-               aria-label="Create Your Free Account - Start making your content accessible today"
-                Create Your Free Account
-            </a>
+            <a href="{{ url_for('user_management.register') }}" class="cta-button mobile-touch-compliant" role="button"
+                aria-label="Create Your Free Account - Start making your content accessible today">Create Your Free Account</a>
         </div>
     </section>
 </main>
@@ -1426,135 +532,135 @@
 
 {% block scripts %}
 <script>
-// Landing page specific JavaScript with accessibility enhancements
-document.addEventListener('DOMContentLoaded', function() {
-    // Add smooth scrolling for any anchor links with accessibility considerations
-    document.querySelectorAll('a[href^="#"]').forEach(anchor => {
-        anchor.addEventListener('click', function (e) {
-            e.preventDefault();
-            const target = document.querySelector(this.getAttribute('href'));
-            if (target) {
-                // Announce navigation to screen readers
-                announceToScreenReader('Navigating to ' + (target.getAttribute('aria-label') || target.textContent || 'section'));
-                
-                target.scrollIntoView({
-                    behavior: 'smooth',
-                    block: 'start'
-                });
-                
-                // Set focus to target for keyboard users
-                target.focus();
-            }
-        });
-    });
-    
-    // Enhanced keyboard navigation for feature cards and audience items
-    const interactiveCards = document.querySelectorAll('.feature-card, .audience-item');
-    interactiveCards.forEach(card => {
-        // Mouse events
-        card.addEventListener('mouseenter', function() {
-            if (!window.matchMedia('(prefers-reduced-motion: reduce)').matches) {
-                this.style.transform = 'translateY(-4px)';
-            }
-        });
-        
-        card.addEventListener('mouseleave', function() {
-            if (!window.matchMedia('(prefers-reduced-motion: reduce)').matches) {
-                this.style.transform = 'translateY(0)';
-            }
-        });
-        
-        // Keyboard events for accessibility
-        card.addEventListener('keydown', function(e) {
-            // Enter or Space key activates the card
-            if (e.key === 'Enter' || e.key === ' ') {
+    // Landing page specific JavaScript with accessibility enhancements
+    document.addEventListener('DOMContentLoaded', function () {
+        // Add smooth scrolling for any anchor links with accessibility considerations
+        document.querySelectorAll('a[href^="#"]').forEach(anchor => {
+            anchor.addEventListener('click', function (e) {
                 e.preventDefault();
-                // Announce card content to screen readers
-                const title = this.querySelector('h3, h4');
-                const description = this.querySelector('p');
-                if (title && description) {
-                    announceToScreenReader(title.textContent + '. ' + description.textContent);
+                const target = document.querySelector(this.getAttribute('href'));
+                if (target) {
+                    // Announce navigation to screen readers
+                    announceToScreenReader('Navigating to ' + (target.getAttribute('aria-label') || target.textContent || 'section'));
+
+                    target.scrollIntoView({
+                        behavior: 'smooth',
+                        block: 'start'
+                    });
+
+                    // Set focus to target for keyboard users
+                    target.focus();
+                }
+            });
+        });
+
+        // Enhanced keyboard navigation for feature cards and audience items
+        const interactiveCards = document.querySelectorAll('.feature-card, .audience-item');
+        interactiveCards.forEach(card => {
+            // Mouse events
+            card.addEventListener('mouseenter', function () {
+                if (!window.matchMedia('(prefers-reduced-motion: reduce)').matches) {
+                    this.style.transform = 'translateY(-4px)';
+                }
+            });
+
+            card.addEventListener('mouseleave', function () {
+                if (!window.matchMedia('(prefers-reduced-motion: reduce)').matches) {
+                    this.style.transform = 'translateY(0)';
+                }
+            });
+
+            // Keyboard events for accessibility
+            card.addEventListener('keydown', function (e) {
+                // Enter or Space key activates the card
+                if (e.key === 'Enter' || e.key === ' ') {
+                    e.preventDefault();
+                    // Announce card content to screen readers
+                    const title = this.querySelector('h3, h4');
+                    const description = this.querySelector('p');
+                    if (title && description) {
+                        announceToScreenReader(title.textContent + '. ' + description.textContent);
+                    }
+                }
+            });
+
+            // Focus events
+            card.addEventListener('focus', function () {
+                if (!window.matchMedia('(prefers-reduced-motion: reduce)').matches) {
+                    this.style.transform = 'translateY(-2px)';
+                }
+            });
+
+            card.addEventListener('blur', function () {
+                if (!window.matchMedia('(prefers-reduced-motion: reduce)').matches) {
+                    this.style.transform = 'translateY(0)';
+                }
+            });
+        });
+
+        // Enhanced CTA button accessibility
+        const ctaButtons = document.querySelectorAll('.cta-button');
+        ctaButtons.forEach(button => {
+            button.addEventListener('click', function () {
+                // Analytics tracking could be added here
+                console.log('CTA button clicked:', this.textContent.trim());
+
+                // Announce action to screen readers
+                announceToScreenReader('Navigating to registration page');
+            });
+
+            // Keyboard enhancement
+            button.addEventListener('keydown', function (e) {
+                if (e.key === 'Enter' || e.key === ' ') {
+                    e.preventDefault();
+                    this.click();
+                }
+            });
+        });
+
+        // Skip link functionality
+        const skipLink = document.querySelector('.visually-hidden-focusable');
+        if (skipLink) {
+            skipLink.addEventListener('click', function (e) {
+                e.preventDefault();
+                const target = document.querySelector(this.getAttribute('href'));
+                if (target) {
+                    target.focus();
+                    target.scrollIntoView({ behavior: 'smooth', block: 'start' });
+                    announceToScreenReader('Skipped to main content');
+                }
+            });
+        }
+
+        // Function to announce messages to screen readers
+        function announceToScreenReader(message) {
+            const liveRegion = document.getElementById('live-region');
+            if (liveRegion) {
+                liveRegion.textContent = message;
+                // Clear the message after a short delay to allow for re-announcements
+                setTimeout(() => {
+                    liveRegion.textContent = '';
+                }, 1000);
+            }
+        }
+
+        // Keyboard navigation improvements
+        document.addEventListener('keydown', function (e) {
+            // Escape key to return focus to skip link
+            if (e.key === 'Escape') {
+                const skipLink = document.querySelector('.visually-hidden-focusable');
+                if (skipLink && document.activeElement !== skipLink) {
+                    skipLink.focus();
+                    announceToScreenReader('Focus returned to skip navigation link');
                 }
             }
         });
-        
-        // Focus events
-        card.addEventListener('focus', function() {
-            if (!window.matchMedia('(prefers-reduced-motion: reduce)').matches) {
-                this.style.transform = 'translateY(-2px)';
-            }
-        });
-        
-        card.addEventListener('blur', function() {
-            if (!window.matchMedia('(prefers-reduced-motion: reduce)').matches) {
-                this.style.transform = 'translateY(0)';
-            }
-        });
-    });
-    
-    // Enhanced CTA button accessibility
-    const ctaButtons = document.querySelectorAll('.cta-button');
-    ctaButtons.forEach(button => {
-        button.addEventListener('click', function() {
-            // Analytics tracking could be added here
-            console.log('CTA button clicked:', this.textContent.trim());
-            
-            // Announce action to screen readers
-            announceToScreenReader('Navigating to registration page');
-        });
-        
-        // Keyboard enhancement
-        button.addEventListener('keydown', function(e) {
-            if (e.key === 'Enter' || e.key === ' ') {
-                e.preventDefault();
-                this.click();
-            }
-        });
-    });
-    
-    // Skip link functionality
-    const skipLink = document.querySelector('.visually-hidden-focusable');
-    if (skipLink) {
-        skipLink.addEventListener('click', function(e) {
-            e.preventDefault();
-            const target = document.querySelector(this.getAttribute('href'));
-            if (target) {
-                target.focus();
-                target.scrollIntoView({ behavior: 'smooth', block: 'start' });
-                announceToScreenReader('Skipped to main content');
-            }
-        });
-    }
-    
-    // Function to announce messages to screen readers
-    function announceToScreenReader(message) {
-        const liveRegion = document.getElementById('live-region');
-        if (liveRegion) {
-            liveRegion.textContent = message;
-            // Clear the message after a short delay to allow for re-announcements
-            setTimeout(() => {
-                liveRegion.textContent = '';
-            }, 1000);
-        }
-    }
-    
-    // Keyboard navigation improvements
-    document.addEventListener('keydown', function(e) {
-        // Escape key to return focus to skip link
-        if (e.key === 'Escape') {
-            const skipLink = document.querySelector('.visually-hidden-focusable');
-            if (skipLink && document.activeElement !== skipLink) {
-                skipLink.focus();
-                announceToScreenReader('Focus returned to skip navigation link');
-            }
-        }
-    });
-    
-    // Check for reduced motion preference and disable animations if needed
-    if (window.matchMedia('(prefers-reduced-motion: reduce)').matches) {
-        // Disable all transitions and animations
-        const style = document.createElement('style');
-        style.textContent = `
+
+        // Check for reduced motion preference and disable animations if needed
+        if (window.matchMedia('(prefers-reduced-motion: reduce)').matches) {
+            // Disable all transitions and animations
+            const style = document.createElement('style');
+            style.textContent = `
             *, *::before, *::after {
                 animation-duration: 0.01ms !important;
                 animation-iteration-count: 1 !important;
@@ -1562,36 +668,36 @@ document.addEventListener('DOMContentLoaded', function() {
                 scroll-behavior: auto !important;
             }
         `;
-        document.head.appendChild(style);
-    }
-    
-    // High contrast mode detection and adjustments
-    if (window.matchMedia('(prefers-contrast: high)').matches) {
-        document.body.classList.add('high-contrast-mode');
-    }
-    
-    // Focus management for better keyboard navigation
-    let focusableElements = 'a[href], area[href], input:not([disabled]), select:not([disabled]), textarea:not([disabled]), button:not([disabled]), iframe, object, embed, [tabindex="0"], [contenteditable]';
-    let firstFocusableElement = document.querySelector(focusableElements);
-    let focusableContent = document.querySelectorAll(focusableElements);
-    let lastFocusableElement = focusableContent[focusableContent.length - 1];
-    
-    // Trap focus within main content when using Tab navigation
-    document.addEventListener('keydown', function(e) {
-        if (e.key === 'Tab') {
-            if (e.shiftKey) { // Shift + Tab
-                if (document.activeElement === firstFocusableElement) {
-                    lastFocusableElement.focus();
-                    e.preventDefault();
-                }
-            } else { // Tab
-                if (document.activeElement === lastFocusableElement) {
-                    firstFocusableElement.focus();
-                    e.preventDefault();
+            document.head.appendChild(style);
+        }
+
+        // High contrast mode detection and adjustments
+        if (window.matchMedia('(prefers-contrast: high)').matches) {
+            document.body.classList.add('high-contrast-mode');
+        }
+
+        // Focus management for better keyboard navigation
+        let focusableElements = 'a[href], area[href], input:not([disabled]), select:not([disabled]), textarea:not([disabled]), button:not([disabled]), iframe, object, embed, [tabindex="0"], [contenteditable]';
+        let firstFocusableElement = document.querySelector(focusableElements);
+        let focusableContent = document.querySelectorAll(focusableElements);
+        let lastFocusableElement = focusableContent[focusableContent.length - 1];
+
+        // Trap focus within main content when using Tab navigation
+        document.addEventListener('keydown', function (e) {
+            if (e.key === 'Tab') {
+                if (e.shiftKey) { // Shift + Tab
+                    if (document.activeElement === firstFocusableElement) {
+                        lastFocusableElement.focus();
+                        e.preventDefault();
+                    }
+                } else { // Tab
+                    if (document.activeElement === lastFocusableElement) {
+                        firstFocusableElement.focus();
+                        e.preventDefault();
+                    }
                 }
             }
-        }
+        });
     });
-});
 </script>
 {% endblock %}

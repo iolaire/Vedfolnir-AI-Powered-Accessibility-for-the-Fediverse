@@ -418,7 +418,7 @@ class NotificationUIRenderer {
         return `
             <div class="notification-progress">
                 <div class="notification-progress-bar">
-                    <div class="notification-progress-fill" style="width: ${percentage}%"></div>
+                    <div class="notification-progress-fill progress-bar-dynamic" style="--progress-width: ${percentage}%"></div>
                 </div>
                 <div class="notification-progress-label">${this.escapeHTML(label)}</div>
             </div>

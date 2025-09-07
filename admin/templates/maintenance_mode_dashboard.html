@@ -7,77 +7,13 @@
 {% block title %}Maintenance Mode - Admin - Vedfolnir{% endblock %}
 
 {% block extra_head %}
-<style>
-    .maintenance-status-card {
-        border-left: 4px solid;
-    }
-    .maintenance-active { border-left-color: #dc3545; }
-    .maintenance-inactive { border-left-color: #28a745; }
-    .maintenance-test { border-left-color: #ffc107; }
-    .maintenance-emergency { border-left-color: #fd7e14; }
-    
-    .operation-badge {
-        font-size: 0.75rem;
-        margin: 0.125rem;
-    }
-    
-    .maintenance-form {
-        background: #f8f9fa;
-        border-radius: 0.375rem;
-        padding: 1.5rem;
-    }
-    
-    .status-indicator {
-        display: inline-block;
-        width: 12px;
-        height: 12px;
-        border-radius: 50%;
-        margin-right: 0.5rem;
-    }
-    .status-active { background-color: #dc3545; }
-    .status-inactive { background-color: #28a745; }
-    .status-test { background-color: #ffc107; }
-    .status-emergency { background-color: #fd7e14; }
-    
-    .real-time-indicator {
-        display: inline-block;
-        width: 8px;
-        height: 8px;
-        background-color: #28a745;
-        border-radius: 50%;
-        animation: pulse 2s infinite;
-    }
-    @keyframes pulse {
-        0% { opacity: 1; }
-        50% { opacity: 0.5; }
-        100% { opacity: 1; }
-    }
-    .disconnected { background-color: #dc3545; }
-    
-    .validation-feedback {
-        display: none;
-        margin-top: 0.5rem;
-    }
-    .validation-feedback.show {
-        display: block;
-    }
-    
-    .maintenance-history-item {
-        border-left: 3px solid #dee2e6;
-        padding-left: 1rem;
-        margin-bottom: 1rem;
-    }
-    .maintenance-history-item.enabled { border-left-color: #dc3545; }
-    .maintenance-history-item.disabled { border-left-color: #28a745; }
-    .maintenance-history-item.emergency { border-left-color: #fd7e14; }
-</style>
 {% endblock %}
 
 {% block content %}
 <div class="d-flex justify-content-between flex-wrap flex-md-nowrap align-items-center pt-3 pb-2 mb-3 border-bottom">
     <h1 class="h2">
         <i class="bi bi-tools"></i> Maintenance Mode Control
-        <span class="real-time-indicator" id="connectionStatus" title="Real-time updates active"></span>
+        <span class="admin-maintenance-mode-real-time-indicator" id="connectionStatus" title="Real-time updates active"></span>
     </h1>
     <div class="btn-toolbar mb-2 mb-md-0">
         <div class="btn-group me-2">
@@ -94,10 +30,10 @@
 <!-- Current Status Overview -->
 <div class="row mb-4">
     <div class="col-12">
-        <div class="card maintenance-status-card {% if status.is_active %}{% if status.mode.value == 'emergency' %}maintenance-emergency{% elif status.test_mode %}maintenance-test{% else %}maintenance-active{% endif %}{% else %}maintenance-inactive{% endif %}" id="statusCard">
+        <div class="card admin-maintenance-mode-status-card {% if status.is_active %}{% if status.mode.value == 'emergency' %}admin-maintenance-mode-emergency{% elif status.test_mode %}admin-maintenance-mode-test{% else %}admin-maintenance-mode-active{% endif %}{% else %}admin-maintenance-mode-inactive{% endif %}" id="statusCard">
             <div class="card-header d-flex justify-content-between align-items-center">
                 <h5 class="mb-0">
-                    <span class="status-indicator {% if status.is_active %}{% if status.mode.value == 'emergency' %}status-emergency{% elif status.test_mode %}status-test{% else %}status-active{% endif %}{% else %}status-inactive{% endif %}" id="statusIndicator"></span>
+                    <span class="admin-maintenance-mode-status-indicator {% if status.is_active %}{% if status.mode.value == 'emergency' %}admin-maintenance-mode-status-emergency{% elif status.test_mode %}admin-maintenance-mode-status-test{% else %}admin-maintenance-mode-status-active{% endif %}{% else %}admin-maintenance-mode-status-inactive{% endif %}" id="statusIndicator"></span>
                     Current Status: <span id="statusText">{% if status.is_active %}{{ status.mode.value|title }} Maintenance Active{% else %}System Operational{% endif %}</span>
                 </h5>
                 <div class="btn-group btn-group-sm">
@@ -166,7 +102,7 @@
 </div>
 
 <!-- Maintenance Control Forms -->
-<div class="row mb-4" id="maintenanceFormsRow" style="display: none;">
+<div class="row mb-4 admin-hidden" id="maintenanceFormsRow">
     <div class="col-md-8">
         <div class="card">
             <div class="card-header">
@@ -175,7 +111,7 @@
                 </h5>
             </div>
             <div class="card-body">
-                <form id="maintenanceForm" class="maintenance-form">
+                <form id="maintenanceForm" class="admin-maintenance-mode-form">
                     <div class="row">
                         <div class="col-md-6">
                             <div class="mb-3">
@@ -204,12 +140,12 @@
                     </div>
                     
                     <!-- Validation Feedback -->
-                    <div class="validation-feedback" id="validationFeedback">
-                        <div class="alert alert-danger" id="validationErrors" style="display: none;">
+                    <div class="admin-maintenance-mode-validation-feedback" id="validationFeedback">
+                        <div class="alert alert-danger admin-hidden" id="validationErrors">
                             <h6>Configuration Errors:</h6>
                             <ul id="errorsList"></ul>
                         </div>
-                        <div class="alert alert-warning" id="validationWarnings" style="display: none;">
+                        <div class="alert alert-warning admin-hidden" id="validationWarnings">
                             <h6>Configuration Warnings:</h6>
                             <ul id="warningsList"></ul>
                         </div>
@@ -278,7 +214,7 @@
                 <div id="blockedOperationsList">
                     {% if blocked_operations %}
                     {% for operation in blocked_operations %}
-                    <span class="badge bg-danger operation-badge">{{ operation|replace('_', ' ')|title }}</span>
+                    <span class="badge bg-danger admin-maintenance-mode-operation-badge">{{ operation|replace('_', ' ')|title }}</span>
                     {% endfor %}
                     {% else %}
                     <div class="text-muted text-center py-3">
@@ -347,10 +283,10 @@
                 </button>
             </div>
             <div class="card-body">
-                <div id="maintenanceHistory" style="max-height: 400px; overflow-y: auto;">
+                <div id="maintenanceHistory" class="admin-scrollable-container max-height-400px">
                     {% if maintenance_history %}
                     {% for event in maintenance_history %}
-                    <div class="maintenance-history-item {{ event.event_type }}">
+                    <div class="admin-maintenance-mode-history-item {{ event.event_type }}">
                         <div class="d-flex justify-content-between align-items-start">
                             <div>
                                 <h6 class="mb-1">{{ event.event_type|replace('_', ' ')|title }}</h6>
@@ -532,7 +468,7 @@ function updateConnectionStatus(connected) {
 }
 
 function showMaintenanceForm() {
-    document.getElementById('maintenanceFormsRow').style.display = 'block';
+    document.getElementById('maintenanceFormsRow').classList.remove('admin-hidden');
     isFormVisible = true;
     
     // Scroll to form
@@ -540,7 +476,7 @@ function showMaintenanceForm() {
 }
 
 function hideMaintenanceForm() {
-    document.getElementById('maintenanceFormsRow').style.display = 'none';
+    document.getElementById('maintenanceFormsRow').classList.add('admin-hidden');
     isFormVisible = false;
     
     // Clear form
@@ -632,8 +568,7 @@ function setupClientSideValidation() {
 
 function createValidationFeedback(field) {
     const feedback = document.createElement('div');
-    feedback.className = 'client-validation-feedback mt-1';
-    feedback.style.display = 'none';
+    feedback.className = 'client-validation-feedback mt-1 admin-hidden';
     field.parentNode.appendChild(feedback);
     return feedback;
 }
@@ -644,11 +579,11 @@ function showClientValidation(feedback, type, message) {
     
     feedback.className = `client-validation-feedback mt-1 alert ${alertClass} py-1 px-2`;
     feedback.innerHTML = `<small>${message}</small>`;
-    feedback.style.display = 'block';
+    feedback.classList.remove('admin-hidden');
 }
 
 function hideClientValidation(feedback) {
-    feedback.style.display = 'none';
+    feedback.classList.add('admin-hidden');
 }
 
 function validateConfiguration() {
@@ -728,7 +663,7 @@ function showValidationFeedback(errors, warnings, info) {
         infoContainer = document.createElement('div');
         infoContainer.id = 'validationInfo';
         infoContainer.className = 'alert alert-info';
-        infoContainer.style.display = 'none';
+        infoContainer.classList.add('admin-hidden');
         infoContainer.innerHTML = `
             <h6>Configuration Information:</h6>
             <ul id="infoList"></ul>
@@ -741,9 +676,9 @@ function showValidationFeedback(errors, warnings, info) {
     errorsList.innerHTML = '';
     warningsList.innerHTML = '';
     if (infoList) infoList.innerHTML = '';
-    errorsContainer.style.display = 'none';
-    warningsContainer.style.display = 'none';
-    if (infoContainer) infoContainer.style.display = 'none';
+    errorsContainer.classList.add('admin-hidden');
+    warningsContainer.classList.add('admin-hidden');
+    if (infoContainer) infoContainer.classList.add('admin-hidden');
     
     // Show errors
     if (errors && errors.length > 0) {
@@ -752,7 +687,7 @@ function showValidationFeedback(errors, warnings, info) {
             li.textContent = error;
             errorsList.appendChild(li);
         });
-        errorsContainer.style.display = 'block';
+        errorsContainer.classList.remove('admin-hidden');
     }
     
     // Show warnings
@@ -762,7 +697,7 @@ function showValidationFeedback(errors, warnings, info) {
             li.textContent = warning;
             warningsList.appendChild(li);
         });
-        warningsContainer.style.display = 'block';
+        warningsContainer.classList.remove('admin-hidden');
     }
     
     // Show info messages
@@ -772,7 +707,7 @@ function showValidationFeedback(errors, warnings, info) {
             li.textContent = infoMsg;
             infoList.appendChild(li);
         });
-        infoContainer.style.display = 'block';
+        infoContainer.classList.remove('admin-hidden');
     }
     
     // Show feedback container if there are any messages

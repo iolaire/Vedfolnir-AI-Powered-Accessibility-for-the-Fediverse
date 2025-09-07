@@ -381,14 +381,14 @@ class WebSocketEnhancedErrorHandler {
                             <div id="error-modal-message" class="mb-3"></div>
                             <div id="error-modal-details" class="text-muted mb-3"></div>
                             <div id="error-modal-actions" class="list-group list-group-flush"></div>
-                            <div id="error-modal-debug" class="mt-3" style="display: none;">
+                            <div id="error-modal-debug" class="mt-3 hidden">
                                 <h6>Debug Information:</h6>
                                 <pre class="bg-light p-2 rounded small"></pre>
                             </div>
                         </div>
                         <div class="modal-footer">
                             <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Close</button>
-                            <button type="button" id="error-modal-action-btn" class="btn btn-primary" style="display: none;">
+                            <button type="button" id="error-modal-action-btn" class="btn btn-primary hidden">
                                 Action
                             </button>
                             <button type="button" id="error-modal-retry-btn" class="btn btn-success">

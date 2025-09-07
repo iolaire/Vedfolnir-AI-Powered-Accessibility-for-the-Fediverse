@@ -54,10 +54,10 @@
                 </small>
             </div>
             <div class="col-md-4 text-end">
-                <div class="progress" style="height: 8px;">
-                    <div class="progress-bar bg-warning" 
+                <div class="progress progress-sm">
+                    <div class="progress-bar storage-progress-bar warning progress-bar-dynamic bg-warning" 
                          role="progressbar" 
-                         style="width: {{ storage_notification.usage_percentage }}%"
+                         data-progress-width="{{ storage_notification.usage_percentage }}%"
                          aria-valuenow="{{ storage_notification.usage_percentage }}" 
                          aria-valuemin="0" 
                          aria-valuemax="100">

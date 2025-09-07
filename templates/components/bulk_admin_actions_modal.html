@@ -18,7 +18,7 @@
                 <div class="alert alert-info">
                     <i class="fas fa-info-circle"></i>
                     <strong>Selected Jobs:</strong> <span id="selectedJobsCount">0</span> job(s) selected
-                    <div id="selectedJobsList" class="mt-2 small" style="display: none;">
+                    <div id="selectedJobsList" class="mt-2 small hidden">
                         <!-- Selected jobs will be listed here -->
                     </div>
                 </div>
@@ -55,9 +55,9 @@
                 </div>
                 
                 <!-- Action-Specific Options -->
-                <div id="actionOptions" style="display: none;">
+                <div id="actionOptions" class="hidden">
                     <!-- Cancel Jobs Options -->
-                    <div id="cancelOptions" class="action-option" style="display: none;">
+                    <div id="cancelOptions" class="action-option admin-action-option">
                         <div class="card border-warning">
                             <div class="card-header bg-warning text-dark">
                                 <h6 class="card-title mb-0">
@@ -85,7 +85,7 @@
                     </div>
                     
                     <!-- Add Notes Options -->
-                    <div id="notesOptions" class="action-option" style="display: none;">
+                    <div id="notesOptions" class="action-option admin-action-option">
                         <div class="card border-info">
                             <div class="card-header bg-info text-white">
                                 <h6 class="card-title mb-0">
@@ -139,7 +139,7 @@
                     </div>
                     
                     <!-- Assign Admin Options -->
-                    <div id="assignOptions" class="action-option" style="display: none;">
+                    <div id="assignOptions" class="action-option admin-action-option">
                         <div class="card border-primary">
                             <div class="card-header bg-primary text-white">
                                 <h6 class="card-title mb-0">
@@ -176,7 +176,7 @@
                     </div>
                     
                     <!-- Export Options -->
-                    <div id="exportOptions" class="action-option" style="display: none;">
+                    <div id="exportOptions" class="action-option admin-action-option">
                         <div class="card border-success">
                             <div class="card-header bg-success text-white">
                                 <h6 class="card-title mb-0">
@@ -243,7 +243,7 @@
                 </div>
                 
                 <!-- Progress Indicator -->
-                <div id="bulkActionProgress" style="display: none;">
+                <div id="bulkActionProgress" class="hidden">
                     <div class="card border-info">
                         <div class="card-body">
                             <div class="d-flex align-items-center">
@@ -255,9 +255,9 @@
                                     <div class="small text-muted" id="progressMessage">Initializing...</div>
                                 </div>
                             </div>
-                            <div class="progress mt-3" style="height: 20px;">
-                                <div class="progress-bar" role="progressbar" id="progressBar" 
-                                     style="width: 0%" aria-valuenow="0" aria-valuemin="0" aria-valuemax="100">
+                            <div class="progress mt-3 progress-lg">
+                                <div class="progress-bar admin-progress-bar progress-bar-dynamic" role="progressbar" id="progressBar" 
+                                     data-progress-width="0%" aria-valuenow="0" aria-valuemin="0" aria-valuemax="100">
                                     0%
                                 </div>
                             </div>
@@ -266,7 +266,7 @@
                 </div>
                 
                 <!-- Results Summary -->
-                <div id="bulkActionResults" style="display: none;">
+                <div id="bulkActionResults" class="hidden">
                     <div class="card">
                         <div class="card-header">
                             <h6 class="card-title mb-0">
@@ -322,9 +322,9 @@ function showBulkActionsModal(preSelectedJobs = []) {
     
     // Reset modal state
     document.getElementById('bulkActionSelect').value = '';
-    document.getElementById('actionOptions').style.display = 'none';
-    document.getElementById('bulkActionProgress').style.display = 'none';
-    document.getElementById('bulkActionResults').style.display = 'none';
+    document.getElementById('actionOptions').classList.add('hidden');
+    document.getElementById('bulkActionProgress').classList.add('hidden');
+    document.getElementById('bulkActionResults').classList.add('hidden');
     document.getElementById('executeBulkActionBtn').disabled = true;
     
     // Load admin users for assignment
@@ -342,12 +342,12 @@ function updateSelectedJobsDisplay() {
     countElement.textContent = selectedJobIds.length;
     
     if (selectedJobIds.length > 0) {
-        listElement.style.display = 'block';
+        listElement.classList.remove('hidden');
         listElement.innerHTML = selectedJobIds.map(id => 
             `<span class="badge bg-secondary me-1">${id.substring(0, 8)}...</span>`
         ).join('');
     } else {
-        listElement.style.display = 'none';
+        listElement.classList.add('hidden');
     }
     
     // Enable/disable execute button
@@ -363,31 +363,31 @@ function handleBulkActionChange() {
     
     // Hide all action options
     document.querySelectorAll('.action-option').forEach(option => {
-        option.style.display = 'none';
+        option.classList.remove('active');
     });
     
     if (actionSelect.value) {
-        actionOptions.style.display = 'block';
+        actionOptions.classList.remove('hidden');
         
         // Show specific options based on action
         switch (actionSelect.value) {
             case 'cancel':
-                document.getElementById('cancelOptions').style.display = 'block';
+                document.getElementById('cancelOptions').classList.add('active');
                 break;
             case 'add_notes':
-                document.getElementById('notesOptions').style.display = 'block';
+                document.getElementById('notesOptions').classList.add('active');
                 break;
             case 'assign_admin':
-                document.getElementById('assignOptions').style.display = 'block';
+                document.getElementById('assignOptions').classList.add('active');
                 break;
             case 'export_data':
-                document.getElementById('exportOptions').style.display = 'block';
+                document.getElementById('exportOptions').classList.add('active');
                 break;
         }
         
         executeBtn.disabled = selectedJobIds.length === 0;
     } else {
-        actionOptions.style.display = 'none';
+        actionOptions.classList.add('hidden');
         executeBtn.disabled = true;
     }
 }
@@ -540,9 +540,9 @@ function showBulkActionProgress() {
     bulkActionInProgress = true;
     
     // Hide action options and show progress
-    document.getElementById('actionOptions').style.display = 'none';
-    document.getElementById('bulkActionProgress').style.display = 'block';
-    document.getElementById('bulkActionResults').style.display = 'none';
+    document.getElementById('actionOptions').classList.add('hidden');
+    document.getElementById('bulkActionProgress').classList.remove('hidden');
+    document.getElementById('bulkActionResults').classList.add('hidden');
     
     // Disable buttons
     document.getElementById('executeBulkActionBtn').disabled = true;
@@ -556,7 +556,8 @@ function updateBulkActionProgress(percentage, message) {
     const progressBar = document.getElementById('progressBar');
     const progressMessage = document.getElementById('progressMessage');
     
-    progressBar.style.width = percentage + '%';
+    // Use CSS custom property instead of inline style
+    progressBar.style.setProperty('--progress-width', percentage + '%');
     progressBar.setAttribute('aria-valuenow', percentage);
     progressBar.textContent = percentage + '%';
     progressMessage.textContent = message;
@@ -591,8 +592,8 @@ function performBulkAction(action, actionData) {
 
 function showBulkActionResults(data) {
     // Hide progress and show results
-    document.getElementById('bulkActionProgress').style.display = 'none';
-    document.getElementById('bulkActionResults').style.display = 'block';
+    document.getElementById('bulkActionProgress').classList.add('hidden');
+    document.getElementById('bulkActionResults').classList.remove('hidden');
     
     const resultsContent = document.getElementById('resultsContent');
     
@@ -661,8 +662,8 @@ function showBulkActionResults(data) {
 
 function showBulkActionError(message) {
     // Hide progress and show error
-    document.getElementById('bulkActionProgress').style.display = 'none';
-    document.getElementById('bulkActionResults').style.display = 'block';
+    document.getElementById('bulkActionProgress').classList.add('hidden');
+    document.getElementById('bulkActionResults').classList.remove('hidden');
     
     const resultsContent = document.getElementById('resultsContent');
     resultsContent.innerHTML = `

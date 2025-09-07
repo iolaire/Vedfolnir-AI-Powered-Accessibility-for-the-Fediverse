@@ -334,7 +334,7 @@ class SecurityMiddleware:
         csp_policy = (
             f"default-src 'self'; "
             f"script-src 'self' 'nonce-{csp_nonce}' https://cdn.jsdelivr.net https://cdn.socket.io https://cdnjs.cloudflare.com https://unpkg.com; "
-            f"style-src 'self' 'nonce-{csp_nonce}' https://fonts.googleapis.com https://cdn.jsdelivr.net; "
+            f"style-src 'self' https://fonts.googleapis.com https://cdn.jsdelivr.net; "  # NO unsafe-inline
             f"img-src 'self' data: https:; "
             f"font-src 'self' https://fonts.gstatic.com https://cdn.jsdelivr.net; "
             f"connect-src 'self' wss: ws:; "
@@ -342,9 +342,10 @@ class SecurityMiddleware:
             f"base-uri 'self'; "
             f"form-action 'self'; "
             f"object-src 'none'; "
-            f"media-src 'self'"
+            f"media-src 'self'; "
+            f"report-uri /api/csp-report"
         )
-        response.headers['Content-Security-Policy'] = csp_policy
+        response.headers['Content-Security-Policy-Report-Only'] = csp_policy
         
         # Security headers
         response.headers['X-Content-Type-Options'] = 'nosniff'

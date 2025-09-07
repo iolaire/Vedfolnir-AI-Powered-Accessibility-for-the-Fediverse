@@ -31,9 +31,8 @@
                         <div class="col-md-8">
                             <div class="d-flex align-items-center">
                                 <div class="me-3">
-                                    <div class="bg-primary text-white rounded-circle d-flex align-items-center justify-content-center"
-                                        style="width: 60px; height: 60px;">
-                                        <i class="bi bi-person-fill" style="font-size: 1.5rem;"></i>
+                                    <div class="bg-primary text-white rounded-circle d-flex align-items-center justify-content-center profile-avatar">
+                                        <i class="bi bi-person-fill icon-sm"></i>
                                     </div>
                                 </div>
                                 <div>
@@ -74,8 +73,7 @@
                         <div class="col-md-8">
                             <div class="d-flex align-items-center">
                                 <div class="me-3">
-                                    <i class="bi bi-{{ 'camera' if active_platform.platform_type == 'pixelfed' else 'chat-dots' }} text-primary"
-                                        style="font-size: 2rem;"></i>
+                                    <i class="bi bi-{{ 'camera' if active_platform.platform_type == 'pixelfed' else 'chat-dots' }} text-primary icon-2xl"></i>
                                 </div>
                                 <div>
                                     <h5 class="mb-1">{{ active_platform.name }}</h5>
@@ -128,7 +126,7 @@
                     {% endif %}
                     {% else %}
                     <div class="text-center py-4">
-                        <i class="bi bi-exclamation-triangle text-warning" style="font-size: 3rem;"></i>
+                        <i class="bi bi-exclamation-triangle text-warning icon-3xl"></i>
                         <h5 class="mt-3">No Active Platform</h5>
                         <p class="text-muted">You don't have an active platform connection.</p>
                         <a href="{{ url_for('platform.management') }}" class="btn btn-primary">
@@ -167,7 +165,7 @@
                     </form>
                     {% else %}
                     <div class="text-center py-3">
-                        <i class="bi bi-exclamation-triangle text-warning" style="font-size: 2rem;"></i>
+                        <i class="bi bi-exclamation-triangle text-warning icon-2xl"></i>
                         <p class="text-muted mt-2 mb-0">No active platform to configure</p>
                     </div>
                     {% endif %}
@@ -193,10 +191,10 @@
                                 <div class="flex-grow-1">
                                     <div class="d-flex align-items-center">
                                         {% if session.is_current %}
-                                        <i class="bi bi-circle-fill text-success me-2" style="font-size: 0.5rem;"></i>
+                                        <i class="bi bi-circle-fill text-success me-2 icon-xs"></i>
                                         <strong>Current Session</strong>
                                         {% else %}
-                                        <i class="bi bi-circle text-muted me-2" style="font-size: 0.5rem;"></i>
+                                        <i class="bi bi-circle text-muted me-2 icon-xs"></i>
                                         <span>Other Device</span>
                                         {% endif %}
                                     </div>
@@ -226,7 +224,7 @@
                     </div>
                     {% else %}
                     <div class="text-center py-3">
-                        <i class="bi bi-device-hdd text-muted" style="font-size: 2rem;"></i>
+                        <i class="bi bi-device-hdd text-muted icon-2xl"></i>
                         <p class="text-muted mt-2 mb-0">No active sessions</p>
                     </div>
                     {% endif %}
@@ -323,7 +321,7 @@
                     </div>
                     {% else %}
                     <div class="text-center py-5">
-                        <i class="bi bi-cloud-plus text-muted" style="font-size: 4rem;"></i>
+                        <i class="bi bi-cloud-plus text-muted icon-4xl"></i>
                         <h5 class="mt-3">No Platform Connections</h5>
                         <p class="text-muted">Add your first platform connection to get started.</p>
                         <a href="{{ url_for('platform.management') }}" class="btn btn-primary">

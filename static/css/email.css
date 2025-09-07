@@ -1,0 +1,324 @@
+/* Copyright (C) 2025 iolaire mcfadden. */
+/* This program is free software: you can redistribute it and/or modify it under the terms of the GNU Affero General Public License as published by the Free Software Foundation, either version 3 of the License, or (at your option) any later version. */
+/* THE SOFTWARE IS PROVIDED "AS IS", WITHOUT WARRANTY OF ANY KIND, EXPRESS OR IMPLIED, INCLUDING BUT NOT LIMITED TO THE WARRANTIES OF MERCHANTABILITY, FITNESS FOR A PARTICULAR PURPOSE AND NONINFRINGEMENT. IN NO EVENT SHALL THE AUTHORS OR COPYRIGHT HOLDERS BE LIABLE FOR ANY CLAIM, DAMAGES OR OTHER LIABILITY, WHETHER IN AN ACTION OF CONTRACT, TORT OR OTHERWISE, ARISING FROM, OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE SOFTWARE. */
+
+/**
+ * Email Template CSS
+ * 
+ * This file contains CSS styles specifically for email templates.
+ * 
+ * IMPORTANT NOTE: Email templates intentionally retain inline CSS styles
+ * for maximum compatibility across email clients. This file provides
+ * fallback styles and common email patterns that can be used in addition
+ * to inline styles.
+ * 
+ * Email clients have varying CSS support, so inline styles are the most
+ * reliable way to ensure consistent rendering across different email
+ * platforms (Gmail, Outlook, Apple Mail, etc.).
+ * 
+ * This file should only be included in email templates that specifically
+ * need additional styling beyond inline styles.
+ */
+
+/* ==========================================================================
+   Email Base Styles
+   ========================================================================== */
+
+/* Email-safe font stack */
+.email-font {
+    font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, Oxygen, Ubuntu, Cantarell, 'Helvetica Neue', Arial, sans-serif;
+}
+
+/* Email container styles */
+.email-container {
+    max-width: 600px;
+    margin: 0 auto;
+    background-color: #ffffff;
+}
+
+.email-content {
+    padding: 20px;
+    line-height: 1.6;
+    color: #333333;
+}
+
+/* ==========================================================================
+   Email Typography
+   ========================================================================== */
+
+.email-title {
+    font-size: 28px;
+    font-weight: bold;
+    color: #2c3e50;
+    margin-bottom: 20px;
+    text-align: center;
+}
+
+.email-subtitle {
+    font-size: 18px;
+    font-weight: 600;
+    color: #34495e;
+    margin-bottom: 15px;
+}
+
+.email-text {
+    font-size: 16px;
+    line-height: 1.6;
+    color: #333333;
+    margin-bottom: 15px;
+}
+
+.email-small-text {
+    font-size: 14px;
+    line-height: 1.5;
+    color: #666666;
+}
+
+/* ==========================================================================
+   Email Layout Components
+   ========================================================================== */
+
+.email-header {
+    text-align: center;
+    padding: 30px 20px;
+    background-color: #f8f9fa;
+    border-bottom: 1px solid #dee2e6;
+}
+
+.email-logo {
+    font-size: 24px;
+    font-weight: bold;
+    color: #2c3e50;
+    margin-bottom: 10px;
+}
+
+.email-body {
+    padding: 40px 20px;
+    background-color: #ffffff;
+}
+
+.email-footer {
+    padding: 20px;
+    background-color: #f8f9fa;
+    border-top: 1px solid #dee2e6;
+    text-align: center;
+    font-size: 14px;
+    color: #666666;
+}
+
+/* ==========================================================================
+   Email Buttons
+   ========================================================================== */
+
+.email-button {
+    display: inline-block;
+    padding: 12px 30px;
+    background-color: #007bff;
+    color: #ffffff;
+    text-decoration: none;
+    border-radius: 5px;
+    font-weight: bold;
+    text-align: center;
+    margin: 20px 0;
+}
+
+.email-button-primary {
+    background-color: #007bff;
+    color: #ffffff;
+}
+
+.email-button-success {
+    background-color: #28a745;
+    color: #ffffff;
+}
+
+.email-button-warning {
+    background-color: #ffc107;
+    color: #212529;
+}
+
+.email-button-danger {
+    background-color: #dc3545;
+    color: #ffffff;
+}
+
+.email-button-center {
+    text-align: center;
+    margin: 20px 0;
+}
+
+/* ==========================================================================
+   Email Message Types
+   ========================================================================== */
+
+.email-message-box {
+    padding: 20px;
+    margin: 20px 0;
+    border-radius: 5px;
+    border-left: 4px solid #007bff;
+}
+
+.email-message-info {
+    background-color: #e3f2fd;
+    border-left-color: #2196f3;
+}
+
+.email-message-success {
+    background-color: #e8f5e8;
+    border-left-color: #4caf50;
+}
+
+.email-message-warning {
+    background-color: #fff3cd;
+    border-left-color: #ff9800;
+}
+
+.email-message-error {
+    background-color: #f8d7da;
+    border-left-color: #f44336;
+}
+
+/* ==========================================================================
+   Email Tables (for better email client support)
+   ========================================================================== */
+
+.email-table {
+    width: 100%;
+    border-collapse: collapse;
+    margin: 20px 0;
+}
+
+.email-table td {
+    padding: 10px;
+    border-bottom: 1px solid #dee2e6;
+    vertical-align: top;
+}
+
+.email-table th {
+    padding: 12px 10px;
+    background-color: #f8f9fa;
+    border-bottom: 2px solid #dee2e6;
+    font-weight: bold;
+    text-align: left;
+}
+
+/* ==========================================================================
+   Email Responsive Styles
+   ========================================================================== */
+
+/* Mobile email styles */
+@media only screen and (max-width: 600px) {
+    .email-container {
+        width: 100% !important;
+        max-width: 100% !important;
+    }
+    
+    .email-content {
+        padding: 15px !important;
+    }
+    
+    .email-title {
+        font-size: 24px !important;
+    }
+    
+    .email-subtitle {
+        font-size: 16px !important;
+    }
+    
+    .email-text {
+        font-size: 14px !important;
+    }
+    
+    .email-button {
+        display: block !important;
+        width: 100% !important;
+        box-sizing: border-box !important;
+    }
+    
+    .email-table {
+        font-size: 14px !important;
+    }
+    
+    .email-table td,
+    .email-table th {
+        padding: 8px !important;
+    }
+}
+
+/* ==========================================================================
+   Email Client Specific Fixes
+   ========================================================================== */
+
+/* Outlook specific fixes */
+/*[if mso]>
+<style type="text/css">
+    .email-container {
+        width: 600px !important;
+    }
+    .email-button {
+        mso-style-priority: 100 !important;
+    }
+</style>
+<![endif]*/
+
+/* Gmail specific fixes */
+.gmail-fix {
+    display: none;
+    display: none !important;
+}
+
+/* Apple Mail specific fixes */
+@media only screen and (min-device-width: 375px) and (max-device-width: 413px) {
+    .email-container {
+        min-width: 375px !important;
+    }
+}
+
+/* ==========================================================================
+   Email Accessibility
+   ========================================================================== */
+
+.email-sr-only {
+    position: absolute !important;
+    width: 1px !important;
+    height: 1px !important;
+    padding: 0 !important;
+    margin: -1px !important;
+    overflow: hidden !important;
+    clip: rect(0, 0, 0, 0) !important;
+    white-space: nowrap !important;
+    border: 0 !important;
+}
+
+/* High contrast mode support */
+@media (prefers-contrast: high) {
+    .email-button {
+        border: 2px solid currentColor;
+    }
+    
+    .email-message-box {
+        border: 2px solid currentColor;
+    }
+}
+
+/* Dark mode support (limited email client support) */
+@media (prefers-color-scheme: dark) {
+    .email-container {
+        background-color: #1a1a1a !important;
+        color: #ffffff !important;
+    }
+    
+    .email-content {
+        background-color: #1a1a1a !important;
+        color: #ffffff !important;
+    }
+    
+    .email-text {
+        color: #ffffff !important;
+    }
+    
+    .email-footer {
+        background-color: #2a2a2a !important;
+        color: #cccccc !important;
+    }
+}
