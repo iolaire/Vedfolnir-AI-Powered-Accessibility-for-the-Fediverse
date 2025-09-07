@@ -68,7 +68,7 @@
                     <div>
                         <h5>
                             <i class="bi bi-clock-history"></i>
-                            Active Task: {{ active_task.id[:8] }}...
+                            Active Task: {{ active_task.task_id[:8] }}...
                         </h5>
                         <p class="mb-1">
                             <strong>Status:</strong>
@@ -112,7 +112,7 @@
                     <div>
                         {% if active_task.status.value in ['queued', 'running'] %}
                         <button type="button" class="btn btn-danger btn-sm"
-                            onclick="cancelTask('{{ active_task.id }}')">
+                            onclick="cancelTask('{{ active_task.task_id }}')">
                             <i class="bi bi-x-circle"></i> Cancel
                         </button>
                         {% endif %}
@@ -293,6 +293,6 @@
 
 <!-- Task ID for JavaScript -->
 {% if active_task %}
-<div data-current-task-id="{{ active_task.id }}" class="hidden-task-id"></div>
+<div data-current-task-id="{{ active_task.task_id }}" class="hidden-task-id"></div>
 {% endif %}
 {% endblock %}
