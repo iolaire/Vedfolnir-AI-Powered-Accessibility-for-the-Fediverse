@@ -307,7 +307,7 @@
 {% endif %}
 
 <!-- Unified Notification System Integration -->
-<script>
+<script nonce="{{ g.csp_nonce if g.csp_nonce else '' }}">
 // Initialize unified notification system for user dashboard
 document.addEventListener('DOMContentLoaded', function() {
     // Initialize page notification integrator

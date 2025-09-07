@@ -177,7 +177,7 @@
 </div>
 {% endif %}
 
-<script>
+<script nonce="{{ g.csp_nonce if g.csp_nonce else '' }}">
 document.addEventListener('DOMContentLoaded', function() {
     // Initialize progress bars with CSS custom properties
     document.querySelectorAll('.review-progress-bar').forEach(progressBar => {

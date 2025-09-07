@@ -150,7 +150,7 @@ body {
 }
 </style>
 
-<script>
+<script nonce="{{ g.csp_nonce if g.csp_nonce else '' }}">
 document.addEventListener('DOMContentLoaded', function() {
     // Password visibility toggle
     const togglePassword = document.getElementById('togglePassword');

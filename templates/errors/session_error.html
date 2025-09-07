@@ -91,7 +91,7 @@
     </div>
 </div>
 
-<script>
+<script nonce="{{ g.csp_nonce if g.csp_nonce else '' }}">
 // Auto-redirect to login after 10 seconds if user doesn't take action
 setTimeout(function() {
     if (confirm('Would you like to be redirected to the login page automatically?')) {

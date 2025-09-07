@@ -206,7 +206,7 @@
     </div>
 </div>
 
-<script>
+<script nonce="{{ g.csp_nonce if g.csp_nonce else '' }}">
 // Global variables for admin notes modal
 let currentNotesJobId = null;
 let originalNotes = '';

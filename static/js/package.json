@@ -1,0 +1,24 @@
+{
+  "name": "vedfolnir-js-bundler",
+  "version": "1.0.0",
+  "description": "JavaScript bundling and optimization for Vedfolnir",
+  "main": "bundle.js",
+  "scripts": {
+    "build": "node bundle.js",
+    "build:prod": "NODE_ENV=production node bundle.js",
+    "watch": "node bundle.js --watch",
+    "analyze": "node bundle.js --analyze"
+  },
+  "keywords": ["javascript", "bundling", "optimization"],
+  "author": "iolaire mcfadden",
+  "license": "AGPL-3.0",
+  "dependencies": {
+    "terser": "^5.24.0",
+    "fs-extra": "^11.1.1"
+  },
+  "devDependencies": {
+    "@rollup/plugin-commonjs": "^25.0.7",
+    "@rollup/plugin-node-resolve": "^15.2.3",
+    "rollup": "^4.9.0"
+  }
+}

@@ -8,6 +8,7 @@ Implements comprehensive security headers, input validation, and protection mech
 """
 
 import re
+import os
 import logging
 from functools import wraps
 from flask import request, abort, g, current_app
@@ -329,23 +330,53 @@ class SecurityMiddleware:
     
     def _add_security_headers(self, response):
         """Add comprehensive security headers"""
-        # Enhanced Content Security Policy
+        # Enhanced Content Security Policy - Fixed for WebSocket and inline scripts
         csp_nonce = getattr(g, 'csp_nonce', 'default-nonce')
-        csp_policy = (
-            f"default-src 'self'; "
-            f"script-src 'self' 'nonce-{csp_nonce}' https://cdn.jsdelivr.net https://cdn.socket.io https://cdnjs.cloudflare.com https://unpkg.com; "
-            f"style-src 'self' 'nonce-{csp_nonce}' https://fonts.googleapis.com https://cdn.jsdelivr.net; "
-            f"img-src 'self' data: https:; "
-            f"font-src 'self' https://fonts.gstatic.com https://cdn.jsdelivr.net; "
-            f"connect-src 'self' wss: ws:; "
-            f"frame-ancestors 'none'; "
-            f"base-uri 'self'; "
-            f"form-action 'self'; "
-            f"object-src 'none'; "
-            f"media-src 'self'; "
-            f"report-uri /api/csp-report"
-        )
-        response.headers['Content-Security-Policy-Report-Only'] = csp_policy
+        
+        # Check if we're in development mode
+        is_development = os.environ.get('FLASK_ENV') == 'development' or os.environ.get('FLASK_DEBUG') == '1'
+        
+        # Build CSP policy based on environment
+        if is_development:
+            # Development CSP - more permissive for local development
+            csp_policy = (
+                f"default-src 'self'; "
+                f"script-src 'self' 'nonce-{csp_nonce}' 'unsafe-inline' 'unsafe-eval' https://cdn.jsdelivr.net https://cdn.socket.io https://cdnjs.cloudflare.com https://unpkg.com http://localhost:5000; "
+                f"style-src 'self' 'nonce-{csp_nonce}' 'unsafe-inline' https://fonts.googleapis.com https://cdn.jsdelivr.net; "
+                f"img-src 'self' data: https: blob: http:; "
+                f"font-src 'self' https://fonts.gstatic.com https://cdn.jsdelivr.net data:; "
+                f"connect-src 'self' wss: ws: https://cdn.jsdelivr.net https://cdn.socket.io https://cdnjs.cloudflare.com http://localhost:5000; "
+                f"frame-ancestors 'self'; "
+                f"base-uri 'self'; "
+                f"form-action 'self'; "
+                f"object-src 'none'; "
+                f"media-src 'self' data: blob: https: http:; "
+                f"worker-src 'self' blob:; "
+                f"child-src 'self'; "
+                f"frame-src 'self'; "
+                f"report-uri /api/csp-report"
+            )
+        else:
+            # Production CSP - stricter with HTTPS upgrade
+            csp_policy = (
+                f"default-src 'self'; "
+                f"script-src 'self' 'nonce-{csp_nonce}' 'unsafe-inline' 'unsafe-eval' https://cdn.jsdelivr.net https://cdn.socket.io https://cdnjs.cloudflare.com https://unpkg.com; "
+                f"style-src 'self' 'nonce-{csp_nonce}' 'unsafe-inline' https://fonts.googleapis.com https://cdn.jsdelivr.net; "
+                f"img-src 'self' data: https: blob:; "
+                f"font-src 'self' https://fonts.gstatic.com https://cdn.jsdelivr.net data:; "
+                f"connect-src 'self' wss: ws: https://cdn.jsdelivr.net https://cdn.socket.io https://cdnjs.cloudflare.com; "
+                f"frame-ancestors 'self'; "
+                f"base-uri 'self'; "
+                f"form-action 'self'; "
+                f"object-src 'none'; "
+                f"media-src 'self' data: blob: https:; "
+                f"worker-src 'self' blob:; "
+                f"child-src 'self'; "
+                f"frame-src 'self'; "
+                f"report-uri /api/csp-report; "
+                f"upgrade-insecure-requests"
+            )
+        response.headers['Content-Security-Policy'] = csp_policy
         
         # Security headers
         response.headers['X-Content-Type-Options'] = 'nosniff'

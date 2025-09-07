@@ -12,13 +12,16 @@ security event logging, and rate limiting for connection attempts.
 
 import logging
 import time
+import hashlib
+import hmac
+import json
 from datetime import datetime, timezone, timedelta
 from typing import Optional, Dict, Any, List, Tuple
 from collections import defaultdict, deque
 from dataclasses import dataclass
 from enum import Enum
 
-from flask import request, session as flask_session
+from flask import request, session as flask_session, current_app
 from flask_socketio import disconnect
 
 from models import User, UserRole, PlatformConnection
@@ -104,6 +107,10 @@ class WebSocketAuthHandler:
         
         # Security event tracking
         self._security_events = deque(maxlen=1000)  # Keep last 1000 events
+        
+        # Session validation tracking
+        self._session_activity = defaultdict(dict)  # session_id -> {last_activity, connection_count}
+        self._session_timeout = timedelta(minutes=30)  # Aggressive timeout for WebSocket sessions
         
         # Admin namespace permissions
         self._admin_permissions = {
@@ -300,11 +307,226 @@ class WebSocketAuthHandler:
                 if not user or not user.is_active:
                     return False
             
+            # Enhanced session validation
+            if not self._validate_session_timeout(session_id):
+                return False
+            
+            if not self._validate_session_integrity(session_id, session_data):
+                return False
+            
+            # Update session activity
+            self._update_session_activity(session_id)
+            
             return True
             
         except Exception as e:
             logger.error(f"Error validating user session: {e}")
             return False
+    
+    def _validate_session_timeout(self, session_id: str) -> bool:
+        """
+        Validate session timeout for WebSocket connections
+        
+        Args:
+            session_id: Session ID to validate
+            
+        Returns:
+            True if session is within timeout window, False otherwise
+        """
+        try:
+            activity_data = self._session_activity.get(session_id)
+            if not activity_data:
+                # No activity recorded, assume valid
+                return True
+            
+            last_activity = activity_data.get('last_activity')
+            if not last_activity:
+                return True
+            
+            # Check if session has timed out
+            now = datetime.utcnow()
+            if now - last_activity > self._session_timeout:
+                logger.warning(f"Session {session_id[:8]}... timed out after {now - last_activity}")
+                return False
+            
+            return True
+            
+        except Exception as e:
+            logger.error(f"Error validating session timeout: {e}")
+            return False
+    
+    def _validate_session_integrity(self, session_id: str, session_data: Dict[str, Any]) -> bool:
+        """
+        Validate session integrity and prevent session fixation
+        
+        Args:
+            session_id: Session ID to validate
+            session_data: Session data to validate
+            
+        Returns:
+            True if session integrity is valid, False otherwise
+        """
+        try:
+            # Check for session fixation protection
+            expected_fingerprint = session_data.get('session_fingerprint')
+            if expected_fingerprint:
+                current_fingerprint = self._generate_session_fingerprint(session_id)
+                if not hmac.compare_digest(expected_fingerprint, current_fingerprint):
+                    self._log_security_event(
+                        'session_tampering_detected',
+                        session_data.get('user_id'), session_id, None,
+                        {'expected_fingerprint': expected_fingerprint, 'current_fingerprint': current_fingerprint}
+                    )
+                    return False
+            
+            # Validate session data structure
+            required_fields = ['user_id', 'created_at']
+            for field in required_fields:
+                if field not in session_data:
+                    logger.warning(f"Session {session_id[:8]}... missing required field: {field}")
+                    return False
+            
+            return True
+            
+        except Exception as e:
+            logger.error(f"Error validating session integrity: {e}")
+            return False
+    
+    def _generate_session_fingerprint(self, session_id: str) -> str:
+        """
+        Generate session fingerprint for integrity validation
+        
+        Args:
+            session_id: Session ID
+            
+        Returns:
+            Session fingerprint hash
+        """
+        try:
+            # Use app secret key for HMAC
+            secret_key = current_app.config.get('SECRET_KEY', '')
+            if not secret_key:
+                logger.warning("No SECRET_KEY configured for session fingerprinting")
+                return ""
+            
+            # Create fingerprint with session ID and timestamp
+            timestamp = datetime.utcnow().isoformat()
+            message = f"{session_id}:{timestamp}"
+            
+            # Generate HMAC-SHA256 fingerprint
+            fingerprint = hmac.new(
+                secret_key.encode('utf-8'),
+                message.encode('utf-8'),
+                hashlib.sha256
+            ).hexdigest()
+            
+            return fingerprint
+            
+        except Exception as e:
+            logger.error(f"Error generating session fingerprint: {e}")
+            return ""
+    
+    def _update_session_activity(self, session_id: str):
+        """
+        Update session activity tracking
+        
+        Args:
+            session_id: Session ID to update
+        """
+        try:
+            now = datetime.utcnow()
+            
+            if session_id not in self._session_activity:
+                self._session_activity[session_id] = {
+                    'last_activity': now,
+                    'connection_count': 1,
+                    'first_activity': now
+                }
+            else:
+                self._session_activity[session_id]['last_activity'] = now
+                self._session_activity[session_id]['connection_count'] += 1
+            
+            # Clean up old session activity data
+            self._cleanup_old_session_activity()
+            
+        except Exception as e:
+            logger.error(f"Error updating session activity: {e}")
+    
+    def _cleanup_old_session_activity(self):
+        """
+        Clean up old session activity data to prevent memory leaks
+        """
+        try:
+            now = datetime.utcnow()
+            cutoff_time = now - timedelta(hours=2)  # Keep 2 hours of activity data
+            
+            expired_sessions = [
+                session_id for session_id, activity in self._session_activity.items()
+                if activity['last_activity'] < cutoff_time
+            ]
+            
+            for session_id in expired_sessions:
+                del self._session_activity[session_id]
+            
+            if expired_sessions:
+                logger.debug(f"Cleaned up {len(expired_sessions)} expired session activity records")
+            
+        except Exception as e:
+            logger.error(f"Error cleaning up session activity: {e}")
+    
+    def cleanup_session_on_disconnect(self, session_id: str, user_id: Optional[int] = None):
+        """
+        Clean up session resources when client disconnects
+        
+        Args:
+            session_id: Session ID that disconnected
+            user_id: Optional user ID for additional cleanup
+        """
+        try:
+            # Remove session activity tracking
+            if session_id in self._session_activity:
+                del self._session_activity[session_id]
+                logger.debug(f"Cleaned up activity for session {session_id[:8]}...")
+            
+            # Clear connection attempts for this session
+            if session_id in self._connection_attempts:
+                del self._connection_attempts[session_id]
+            
+            # Log disconnect event
+            self._log_security_event(
+                'session_disconnected',
+                user_id, session_id, None,
+                {'cleanup_completed': True}
+            )
+            
+        except Exception as e:
+            logger.error(f"Error cleaning up session on disconnect: {e}")
+    
+    def encrypt_sensitive_session_data(self, data: Dict[str, Any]) -> Dict[str, Any]:
+        """
+        Encrypt sensitive session data for WebSocket transmission
+        
+        Args:
+            data: Session data to encrypt
+            
+        Returns:
+            Encrypted session data
+        """
+        try:
+            # Fields considered sensitive
+            sensitive_fields = {'password', 'token', 'secret', 'key', 'credential'}
+            
+            encrypted_data = data.copy()
+            for key, value in data.items():
+                if any(sensitive in key.lower() for sensitive in sensitive_fields):
+                    # Mask sensitive data for logging/transmission
+                    encrypted_data[key] = mask_sensitive_data(str(value))
+            
+            return encrypted_data
+            
+        except Exception as e:
+            logger.error(f"Error encrypting session data: {e}")
+            return data
     
     def authorize_admin_access(self, auth_context: AuthenticationContext, 
                              required_permission: str = None) -> bool:

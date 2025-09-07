@@ -207,7 +207,7 @@
 {% endblock %}
 
 {% block scripts %}
-<script>
+<script nonce="{{ g.csp_nonce if g.csp_nonce else '' }}">
 document.addEventListener('DOMContentLoaded', function() {
     const urgencySelect = document.getElementById('urgency');
     const urgencyReasonField = document.getElementById('urgency-reason-field');

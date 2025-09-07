@@ -41,7 +41,7 @@
     <script src="{{ url_for('static', filename='js/websocket-transport-optimizer.js') }}"></script>
     <script src="{{ url_for('static', filename='js/websocket-bundle.js') }}"></script>
 
-    <script>
+    <script nonce="{{ g.csp_nonce if g.csp_nonce else '' }}">
         const statusDiv = document.getElementById('status');
         const logsDiv = document.getElementById('logs');
         

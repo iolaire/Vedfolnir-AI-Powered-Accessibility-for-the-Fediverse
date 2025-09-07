@@ -260,9 +260,12 @@ class WebSocketClientFactory {
         
         // Browser-specific adaptations
         if (this.environmentConfig.browser.name === 'safari') {
-            // Safari has some WebSocket quirks
-            adapted.transports = ['polling', 'websocket']; // Prefer polling first for Safari
+            // Safari has some WebSocket quirks but can handle WebSocket with proper configuration
+            adapted.transports = ['polling', 'websocket']; // Start with polling, allow WebSocket upgrade
+            adapted.upgrade = true; // Allow upgrade to WebSocket after stable connection
+            adapted.upgradeTimeout = 15000; // Give Safari more time for upgrade
             adapted.rememberUpgrade = false; // Don't remember upgrades in Safari
+            adapted.timeout = Math.max(adapted.timeout, 25000); // Ensure adequate timeout for Safari
         }
         
         // WebSocket support adaptations

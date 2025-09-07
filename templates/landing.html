@@ -449,6 +449,42 @@
         </div>
     </section>
 
+    <!-- See Vedfolnir in Action -->
+    <section class="action-section" aria-labelledby="action-title">
+        <div class="container">
+            <h2 id="action-title" class="section-title">See Vedfolnir in Action</h2>
+            <p class="section-subtitle">
+                Vedfolnir helps content creators make their posts accessible and inclusive. Here are a couple of examples of how our AI-powered tool can generate helpful descriptions for your visual content.
+            </p>
+            <div class="row g-4 justify-content-center">
+                <div class="col-lg-6 col-md-12">
+                    <div class="example-card card h-100">
+                        <img src="/static/images/Duck_StreetArt.jpg" class="card-img-top" alt="Street art of a rubber duck on a white wall, descriptive ATL text hovers over the image describing the image.">
+                        <div class="card-body">
+                            <h3 class="card-title">Rubber Duck Graffiti in Strasbourg</h3>
+                            <p class="card-text">
+                                The image shows a playful scene where a rubber duck has been creatively incorporated into graffiti on a white wall.
+                            </p>
+                            <p class="text-muted small">This image's caption was approved directly from the AI description text.</p>
+                        </div>
+                    </div>
+                </div>
+                <div class="col-lg-6 col-md-12">
+                    <div class="example-card card h-100">
+                        <img src="/static/images/Butterfly.jpg" class="card-img-top" alt="Two butterflies on purple thistle flowers, descriptive ATL text hovers over the image describing the image.">
+                        <div class="card-body">
+                            <h3 class="card-title">Butterflies at a National Wildlife Refuge</h3>
+                            <p class="card-text">
+                                The image is a color photograph showcasing two butterflies in flight over tall, thistle wildflowers with purple petals on large green thistle balls. In the center is a Great Spangled Fritillary, primarily orange with white dots and some brown or blank. To the top right are two butterflies on the same thistle flower. The lower butterfly appear to be and Eastern Tiger Swallowtail (Papilio glaucus) based on its large, dark eyespots, broad wings, and the pattern of their wing scales. The upper butterfly is a Black Swallowtail, which is darker than the Eastern Tiger Swallowtail which has yellow wings. The background features a clear sky with trees lining the edge of the image, indicating that the scene is set in an outdoor garden or natural habitat.
+                            </p>
+                            <p class="text-muted small">This image's caption was edited significantly on the caption review step to include more details on the three butterflies.  The AI description text was a good start, but more details helped improve the caption.</p>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </section>
+
     <!-- Target Audience Section -->
     <section class="audience-section" aria-labelledby="audience-title">
         <div class="container">
@@ -531,7 +567,7 @@
 {% endblock %}
 
 {% block scripts %}
-<script>
+<script nonce="{{ g.csp_nonce if g.csp_nonce else '' }}">
     // Landing page specific JavaScript with accessibility enhancements
     document.addEventListener('DOMContentLoaded', function () {
         // Add smooth scrolling for any anchor links with accessibility considerations

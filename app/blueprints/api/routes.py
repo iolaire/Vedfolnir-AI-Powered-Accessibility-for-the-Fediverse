@@ -10,17 +10,22 @@ import logging
 api_bp = Blueprint('api', __name__, url_prefix='/api')
 
 @api_bp.route('/session/state', methods=['GET'])
-@login_required
 def get_session_state():
     """Get current session state"""
     try:
-        return jsonify({
-            'authenticated': True,
-            'user_id': current_user.id,
-            'username': current_user.username,
-            'role': current_user.role.value if current_user.role else 'user',
-            'timestamp': datetime.utcnow().isoformat()
-        })
+        if current_user.is_authenticated:
+            return jsonify({
+                'authenticated': True,
+                'user_id': current_user.id,
+                'username': current_user.username,
+                'role': current_user.role.value if current_user.role else 'user',
+                'timestamp': datetime.utcnow().isoformat()
+            })
+        else:
+            return jsonify({
+                'authenticated': False,
+                'error': 'Not authenticated'
+            }), 401
     except Exception as e:
         return jsonify({'error': str(e)}), 500
 
@@ -431,7 +436,19 @@ def csp_report():
     """
     try:
         # CSP reports are sent as JSON with Content-Type: application/csp-report
-        csp_data = request.get_json()
+        # Handle different content types that browsers might send
+        content_type = request.headers.get('Content-Type', '')
+        
+        if 'application/csp-report' in content_type or 'application/json' in content_type:
+            # Try to get JSON data
+            csp_data = request.get_json()
+        else:
+            # Fallback: try to parse raw data as JSON
+            try:
+                raw_data = request.get_data(as_text=True)
+                csp_data = json.loads(raw_data) if raw_data else {}
+            except (json.JSONDecodeError, UnicodeDecodeError):
+                csp_data = {}
         
         if not csp_data:
             current_app.logger.warning("CSP report received with no data")

@@ -209,6 +209,12 @@ class WebCaptionGenerationService:
             logger.error(f"Error getting task status: {sanitize_for_log(str(e))}")
             return None
     
+    def get_task_status(self, task_id: str, user_id: int = None, admin_access: bool = False) -> Optional[Dict[str, Any]]:
+        """
+        Wrapper method for get_generation_status to maintain API compatibility
+        """
+        return self.get_generation_status(task_id, user_id, admin_access)
+    
     def cancel_generation(self, task_id: str, user_id: int) -> bool:
         """
         Cancel a caption generation task

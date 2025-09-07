@@ -4,7 +4,7 @@
 from datetime import datetime
 from enum import Enum
 from sqlalchemy import Column, Integer, String, Text, DateTime, Boolean, ForeignKey, Enum as SQLEnum, UniqueConstraint, Float, Index
-from sqlalchemy.ext.declarative import declarative_base
+from sqlalchemy.orm import declarative_base
 from sqlalchemy.orm import relationship, backref
 from sqlalchemy.ext.hybrid import hybrid_property
 from sqlalchemy.sql import func
@@ -90,6 +90,7 @@ class NotificationPriority(Enum):
 
 class NotificationCategory(Enum):
     """Notification categories for organization"""
+    # Existing categories
     SYSTEM = "system"
     CAPTION = "caption"
     PLATFORM = "platform"
@@ -97,6 +98,13 @@ class NotificationCategory(Enum):
     SECURITY = "security"
     USER = "user"
     ADMIN = "admin"
+    
+    # New consolidated categories
+    STORAGE = "storage"           # From StorageUserNotificationSystem
+    DASHBOARD = "dashboard"       # From DashboardNotificationHandlers
+    MONITORING = "monitoring"     # From NotificationSystemMonitor
+    PERFORMANCE = "performance"   # From various performance alerts
+    HEALTH = "health"            # From health check systems
 
 class Post(Base):
     __tablename__ = 'posts'

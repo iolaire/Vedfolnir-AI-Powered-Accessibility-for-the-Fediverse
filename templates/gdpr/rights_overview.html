@@ -325,7 +325,7 @@
 {% endblock %}
 
 {% block scripts %}
-<script>
+<script nonce="{{ g.csp_nonce if g.csp_nonce else '' }}">
 document.addEventListener('DOMContentLoaded', function() {
     // Add hover effects to cards
     const cards = document.querySelectorAll('.card.h-100');

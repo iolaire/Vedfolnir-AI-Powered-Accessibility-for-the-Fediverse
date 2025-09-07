@@ -536,7 +536,7 @@
 }
 </style>
 
-<script>
+<script nonce="{{ g.csp_nonce if g.csp_nonce else '' }}">
 function showPlatformSwitcher() {
     document.getElementById('platformSwitcherModal').classList.remove('hidden');
     document.getElementById('platformSwitcherModal').classList.add('modal-visible');

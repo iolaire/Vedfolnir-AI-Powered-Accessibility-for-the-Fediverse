@@ -337,7 +337,7 @@
 {% endblock %}
 
 {% block scripts %}
-<script>
+<script nonce="{{ g.csp_nonce if g.csp_nonce else '' }}">
     function switchPlatform(platformId) {
         window.csrfHandler.secureFetch(`/api/switch_platform/${platformId}`, {
             method: 'POST',

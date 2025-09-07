@@ -80,6 +80,11 @@
                             Don't have an account? 
                             <a href="{{ url_for('user_management.register') }}" class="text-decoration-none">Sign up here</a>
                         </p>
+                        <p class="text-muted">
+                            <a href="{{ url_for('main.landing') }}" class="text-decoration-none">
+                                <i class="fas fa-info-circle me-1"></i>Learn more about Vedfolnir
+                            </a>
+                        </p>
                     </div>
 
                     <!-- Email Verification Notice -->
@@ -93,7 +98,7 @@
 </div>
 
 <!-- Password Toggle Script -->
-<script>
+<script nonce="{{ g.csp_nonce if g.csp_nonce else '' }}">
 document.addEventListener('DOMContentLoaded', function() {
     const toggle = document.getElementById('togglePassword');
     const password = document.getElementById('password');

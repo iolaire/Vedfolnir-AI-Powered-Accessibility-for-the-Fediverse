@@ -120,7 +120,7 @@
     </div>
 </div>
 
-<script>
+<script nonce="{{ g.csp_nonce if g.csp_nonce else '' }}">
 document.addEventListener('DOMContentLoaded', function() {
     const confirmationInput = document.getElementById('confirmation');
     const passwordInput = document.getElementById('password');

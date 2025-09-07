@@ -637,7 +637,7 @@ def get_personal_jobs(admin_user_id):
                     'status': job.status.value if hasattr(job.status, 'value') else str(job.status),
                     'progress_percentage': job.progress_percent or 0,
                     'current_step': job.current_step or 'Initializing',
-                    'created_at': job.created_at,
+                    'created_at': job.created_at.isoformat() if job.created_at else None,
                     'max_posts': getattr(job, 'max_posts_per_run', None),
                     'processing_delay': getattr(job, 'processing_delay', None),
                     'results': {

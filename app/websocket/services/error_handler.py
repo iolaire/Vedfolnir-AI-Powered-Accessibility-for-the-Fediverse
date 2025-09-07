@@ -77,6 +77,10 @@ class ConsolidatedWebSocketErrorHandler:
         # Client error tracking
         self._client_errors = defaultdict(list)
         
+        # Session error tracking
+        self._session_errors = defaultdict(list)
+        self._session_error_threshold = 5  # Max errors per session before disconnect
+        
         # Setup default error handlers
         self._setup_default_handlers()
     
@@ -115,6 +119,10 @@ class ConsolidatedWebSocketErrorHandler:
             # Record error
             self._record_error(error_event)
             
+            # Track session-specific errors
+            if session_id:
+                self._track_session_error(session_id, error_event)
+            
             # Log error
             self._log_error(error_event)
             
@@ -125,6 +133,11 @@ class ConsolidatedWebSocketErrorHandler:
             # Check if client should be disconnected
             if client_id and self._should_disconnect_client(client_id):
                 self._disconnect_client(client_id, "Too many errors")
+                return False
+            
+            # Check if session should be invalidated
+            if session_id and self._should_invalidate_session(session_id):
+                self._invalidate_session(session_id, "Too many session errors")
                 return False
             
             return recovery_successful
@@ -420,7 +433,87 @@ class ConsolidatedWebSocketErrorHandler:
                 if not self._client_errors[client_id]:
                     del self._client_errors[client_id]
             
+            # Clean session errors
+            for session_id in list(self._session_errors.keys()):
+                self._session_errors[session_id] = [
+                    ts for ts in self._session_errors[session_id] if ts > cutoff
+                ]
+                if not self._session_errors[session_id]:
+                    del self._session_errors[session_id]
+            
             self.logger.debug("Cleaned up old error data")
             
         except Exception as e:
             self.logger.error(f"Error cleaning up old errors: {e}")
+    
+    def _track_session_error(self, session_id: str, error_event: ErrorEvent):
+        """Track session-specific errors"""
+        try:
+            self._session_errors[session_id].append(error_event.timestamp)
+            
+            # Keep only recent errors (last hour)
+            cutoff = datetime.utcnow() - timedelta(hours=1)
+            self._session_errors[session_id] = [
+                ts for ts in self._session_errors[session_id] if ts > cutoff
+            ]
+            
+            self.logger.debug(f"Session {session_id[:8]}... has {len(self._session_errors[session_id])} recent errors")
+            
+        except Exception as e:
+            self.logger.error(f"Error tracking session error: {e}")
+    
+    def _should_invalidate_session(self, session_id: str) -> bool:
+        """Check if session should be invalidated due to errors"""
+        try:
+            session_error_count = len(self._session_errors.get(session_id, []))
+            return session_error_count >= self._session_error_threshold
+        except Exception:
+            return False
+    
+    def _invalidate_session(self, session_id: str, reason: str):
+        """Invalidate session and disconnect client"""
+        try:
+            # Log session invalidation
+            self.logger.warning(f"Invalidating session {session_id[:8]}...: {reason}")
+            
+            # Clear session error tracking
+            if session_id in self._session_errors:
+                del self._session_errors[session_id]
+            
+            # Additional session cleanup could be added here
+            # For example, notifying the session manager to invalidate the session
+            
+        except Exception as e:
+            self.logger.error(f"Error invalidating session {session_id[:8]}...: {e}")
+    
+    def handle_session_disconnect(self, session_id: str, client_id: Optional[str] = None):
+        """Handle session disconnect and cleanup"""
+        try:
+            # Clean up session error tracking
+            if session_id in self._session_errors:
+                del self._session_errors[session_id]
+                self.logger.debug(f"Cleaned up error tracking for session {session_id[:8]}...")
+            
+            # Clean up client error tracking if client_id provided
+            if client_id and client_id in self._client_errors:
+                del self._client_errors[client_id]
+                self.logger.debug(f"Cleaned up error tracking for client {client_id}")
+            
+        except Exception as e:
+            self.logger.error(f"Error handling session disconnect: {e}")
+    
+    def get_session_error_stats(self, session_id: str) -> Dict[str, Any]:
+        """Get error statistics for a specific session"""
+        try:
+            session_error_events = self._session_errors.get(session_id, [])
+            
+            return {
+                'session_id': session_id,
+                'total_session_errors': len(session_error_events),
+                'error_threshold': self._session_error_threshold,
+                'errors_until_disconnect': max(0, self._session_error_threshold - len(session_error_events)),
+                'last_error': session_error_events[-1].isoformat() if session_error_events else None
+            }
+        except Exception as e:
+            self.logger.error(f"Error getting session error stats: {e}")
+            return {'error': str(e)}

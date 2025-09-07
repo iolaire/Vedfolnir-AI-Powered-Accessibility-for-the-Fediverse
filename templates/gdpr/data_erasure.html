@@ -155,7 +155,7 @@
 {% endblock %}
 
 {% block scripts %}
-<script>
+<script nonce="{{ g.csp_nonce if g.csp_nonce else '' }}">
 document.addEventListener('DOMContentLoaded', function() {
     const form = document.getElementById('erasureForm');
     const deleteButton = document.getElementById('deleteButton');

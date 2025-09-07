@@ -450,14 +450,14 @@ def logout():
         logout_user()
         
         send_profile_notification('account_status', True, 'You have been logged out successfully.', status_change='logout')
-        return redirect(url_for('user_management.login'))
+        return redirect('/login')
         
     except Exception as e:
         logger.error(f"Error during logout: {e}")
         # Still log out even if session cleanup fails
         logout_user()
         send_profile_notification('profile_update', False, 'Operation failed due to a system error. Please try again.')
-        return redirect(url_for('user_management.login'))
+        return redirect('/login')
 
 @user_management_bp.route('/delete_profile', methods=['GET', 'POST'])
 @login_required

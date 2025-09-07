@@ -105,7 +105,7 @@
     </div>
 </div>
 
-<script>
+<script nonce="{{ g.csp_nonce if g.csp_nonce else '' }}">
 // Auto-refresh for certain error types
 {% if error and error.error_code == 'RATE_LIMIT_ERROR' %}
     // Auto-refresh after rate limit period

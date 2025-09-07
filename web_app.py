@@ -14,6 +14,15 @@ from sqlalchemy.exc import SQLAlchemyError
 app = Flask(__name__)
 app.config['SECRET_KEY'] = os.getenv('FLASK_SECRET_KEY', 'dev-key-change-in-production')
 
+# Configure static file caching and delivery
+is_development = os.environ.get('FLASK_ENV') == 'development' or os.environ.get('FLASK_DEBUG') == '1'
+if is_development:
+    # Development: No caching for easier debugging
+    app.config['SEND_FILE_MAX_AGE_DEFAULT'] = 0
+else:
+    # Production: Aggressive caching for better performance
+    app.config['SEND_FILE_MAX_AGE_DEFAULT'] = 31536000  # 1 year in seconds
+
 # Initialize CORS
 CORS(app, origins=["http://localhost:5000"], supports_credentials=True)
 
@@ -84,6 +93,23 @@ def load_user(user_id):
     except Exception as e:
         current_app.logger.error(f"Unexpected error loading user {user_id}: {e}")
         return None
+
+# Initialize static asset caching
+try:
+    from utils.static_cache_middleware import StaticAssetCacheMiddleware
+    static_cache_middleware = StaticAssetCacheMiddleware(app)
+    print("✅ Static asset cache middleware initialized successfully")
+except Exception as e:
+    print(f"⚠️  Failed to initialize static cache middleware: {e}")
+    static_cache_middleware = None
+
+# Register static asset template filters
+try:
+    from utils.static_asset_helpers import register_template_filters
+    register_template_filters(app)
+    print("✅ Static asset template filters registered successfully")
+except Exception as e:
+    print(f"⚠️  Failed to register static asset filters: {e}")
 
 # Initialize security systems
 try:
@@ -892,13 +918,23 @@ def get_session_state():
 # Initialize SocketIO for real-time features
 try:
     from flask_socketio import SocketIO
+    # Use eventlet for better WebSocket performance
+    try:
+        import eventlet
+        eventlet.monkey_patch()
+        async_mode = 'eventlet'
+    except ImportError:
+        async_mode = 'threading'
+    
     socketio = SocketIO(app, 
-                       cors_allowed_origins="*", 
-                       async_mode='threading',
-                       logger=False,
-                       engineio_logger=False,
+                       cors_allowed_origins=["http://localhost:5000", "http://127.0.0.1:5000"], 
+                       async_mode=async_mode,
+                       logger=True,
+                       engineio_logger=True,
                        allow_upgrades=True,
-                       transports=['polling', 'websocket'])
+                       transports=['polling', 'websocket'],
+                       ping_timeout=60,
+                       ping_interval=25)
     
     @socketio.on('connect')
     def handle_connect():

@@ -280,7 +280,7 @@
                             <small><strong>Platform:</strong> {{ job.platform_name }} ({{ job.platform_type }})</small>
                         </div>
                         <div class="col-sm-6">
-                            <small><strong>Started:</strong> {{ job.created_at.strftime('%Y-%m-%d %H:%M:%S') if
+                            <small><strong>Started:</strong> {{ job.created_at[:19].replace('T', ' ') if
                                 job.created_at else 'Unknown' }}</small><br>
                             <small><strong>Progress:</strong> {{ job.progress_percentage or 0 }}% - {{ job.current_step
                                 or 'Initializing' }}</small>
@@ -378,7 +378,7 @@
                                 job.processing_delay or 'Default' }}s delay</small>
                         </div>
                         <div class="col-sm-6">
-                            <small><strong>Started:</strong> {{ job.created_at.strftime('%Y-%m-%d %H:%M:%S') if
+                            <small><strong>Started:</strong> {{ job.created_at[:19].replace('T', ' ') if
                                 job.created_at else 'Unknown' }}</small><br>
                             <small><strong>Progress:</strong> {{ job.progress_percentage or 0 }}% - {{ job.current_step
                                 or 'Initializing' }}</small>

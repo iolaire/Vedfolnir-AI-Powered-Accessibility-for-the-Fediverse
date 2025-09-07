@@ -372,7 +372,7 @@ class CaptionGenerationUI {
             }
             
             try {
-                const response = await fetch(`/api/caption_generation/status/${this.currentTaskId}`);
+                const response = await fetch(`/caption/api/status/${this.currentTaskId}`);
                 const data = await response.json();
                 
                 if (data.success && data.status) {
@@ -421,7 +421,7 @@ class CaptionGenerationUI {
             }
             
             try {
-                const response = await fetch(`/api/caption_generation/status/${this.currentTaskId}`);
+                const response = await fetch(`/caption/api/status/${this.currentTaskId}`);
                 const data = await response.json();
                 
                 if (data.success && data.status) {

@@ -312,7 +312,7 @@
 </div>
 {% endif %}
 
-<script>
+<script nonce="{{ g.csp_nonce if g.csp_nonce else '' }}">
 document.addEventListener('DOMContentLoaded', function() {
     const batchId = '{{ batch_data.batch_info.batch_id }}';
     

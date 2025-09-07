@@ -202,7 +202,7 @@
     </div>
 </div>
 
-<script>
+<script nonce="{{ g.csp_nonce if g.csp_nonce else '' }}">
 // Make current platform available to JavaScript
 window.current_platform = {{ active_platform | tojson if active_platform else 'null' }};
 

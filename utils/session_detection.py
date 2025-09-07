@@ -192,10 +192,8 @@ def _check_flask_session_data() -> Optional[Dict[str, Any]]:
         if platform_connection_id:
             session_data['platform_connection_id'] = platform_connection_id
         
-        # Check for CSRF token (indicates active session)
-        csrf_token = session.get('csrf_token')
-        if csrf_token:
-            session_data['has_csrf_token'] = True
+        # Note: CSRF tokens are NOT indicators of previous sessions
+        # They are created for new users and should not trigger redirects
         
         return session_data if session_data else None
         
@@ -294,19 +292,17 @@ def _check_session_id_indicators() -> Optional[Dict[str, Any]]:
     try:
         session_id_data = {}
         
-        # Check Flask session for session ID
-        if hasattr(session, 'sid') and session.sid:
-            session_id_data['flask_session_id'] = session.sid
-        
-        # Check for session ID in session data
-        session_id_from_data = session.get('session_id')
-        if session_id_from_data:
-            session_id_data['session_data_id'] = session_id_from_data
+        # Only check for session ID if there are actual authentication indicators
+        # Flask session IDs are created for all users, including new ones
+        # We should only consider them as "previous session" indicators if
+        # they're associated with authentication data
         
         # Check if session is marked as permanent (indicates remember me)
         if hasattr(session, 'permanent') and session.permanent:
             session_id_data['is_permanent'] = True
         
+        # Only return session ID data if there are meaningful authentication indicators
+        # Don't count basic Flask session IDs as previous session indicators
         return session_id_data if session_id_data else None
         
     except Exception as e:

@@ -249,7 +249,7 @@
 
 {% block scripts %}
 
-<script>
+<script nonce="{{ g.csp_nonce if g.csp_nonce else '' }}">
 document.addEventListener('DOMContentLoaded', function() {
     const platformOptions = document.querySelectorAll('.platform-option');
     const setupInstructions = document.getElementById('setup-instructions');

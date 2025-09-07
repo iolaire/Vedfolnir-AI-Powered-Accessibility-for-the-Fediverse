@@ -13,7 +13,7 @@
         <div class="col-12">
             {{ maintenance_status.banner_html|safe }}
             {% if maintenance_status.mode != 'test' %}
-            <script>
+            <script nonce="{{ g.csp_nonce if g.csp_nonce else '' }}">
             document.addEventListener('DOMContentLoaded', function() {
                 if (window.unifiedNotificationRenderer) {
                     window.unifiedNotificationRenderer.renderNotification({
@@ -400,7 +400,7 @@
 <script src="{{ url_for('static', filename='js/platform_management.js') }}"></script>
 
 <!-- Initialize page notifications -->
-<script>
+<script nonce="{{ g.csp_nonce if g.csp_nonce else '' }}">
 document.addEventListener('DOMContentLoaded', function() {
     // Initialize page notification system for platform management
     if (window.PageNotificationIntegrator) {

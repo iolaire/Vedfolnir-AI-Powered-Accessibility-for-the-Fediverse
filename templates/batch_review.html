@@ -394,7 +394,7 @@
 {% endif %}
 
 <script src="{{ url_for('static', filename='js/review.js') }}"></script>
-<script>
+<script nonce="{{ g.csp_nonce if g.csp_nonce else '' }}">
 document.addEventListener('DOMContentLoaded', function() {
     // Initialize keyboard shortcuts help tooltips
     const tooltipTriggerList = [].slice.call(document.querySelectorAll('[data-bs-toggle="tooltip"]'));

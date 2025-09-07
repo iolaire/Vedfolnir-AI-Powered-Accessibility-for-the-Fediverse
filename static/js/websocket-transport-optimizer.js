@@ -109,13 +109,14 @@ class WebSocketTransportOptimizer {
         // Browser-specific optimizations
         switch (this.browserInfo.name) {
             case 'safari':
-                // Safari has stricter WebSocket validation - use polling only to avoid upgrade errors
-                config.transports = ['polling']; // Start with polling only
-                config.upgrade = false; // Disable upgrade to prevent errors
-                config.timeout = 30000; // Longer timeout for Safari
-                config.reconnectionDelay = 2000; // Slower reconnection
-                config.rememberUpgrade = false; // Never remember upgrades in Safari
-                console.log('🍎 Safari detected - using polling-only configuration to avoid upgrade errors');
+                // Safari has stricter WebSocket validation - try WebSocket with polling fallback
+                config.transports = ['polling', 'websocket']; // Start with polling, allow WebSocket upgrade
+                config.upgrade = true; // Allow upgrade to WebSocket after stable polling
+                config.upgradeTimeout = 15000; // Give Safari more time for upgrade
+                config.timeout = 25000; // Longer timeout for Safari
+                config.reconnectionDelay = 1500; // Moderate reconnection
+                config.rememberUpgrade = false; // Don't remember upgrades in Safari
+                console.log('🍎 Safari detected - using polling with WebSocket upgrade capability');
                 break;
                 
             case 'chrome':

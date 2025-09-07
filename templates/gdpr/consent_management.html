@@ -214,7 +214,7 @@
 {% endblock %}
 
 {% block scripts %}
-<script>
+<script nonce="{{ g.csp_nonce if g.csp_nonce else '' }}">
 document.addEventListener('DOMContentLoaded', function() {
     const dataProcessingSwitch = document.getElementById('data_processing_consent');
     const thirdPartySwitch = document.getElementById('third_party_sharing');

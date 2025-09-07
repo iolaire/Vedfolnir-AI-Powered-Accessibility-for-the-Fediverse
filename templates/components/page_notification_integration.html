@@ -22,7 +22,7 @@ Variables:
      data-page-id="{{ page_id }}"
      data-page-type="{{ page_type }}"></div>
 
-<script>
+<script nonce="{{ g.csp_nonce if g.csp_nonce else '' }}">
 document.addEventListener('DOMContentLoaded', function() {
     // Page-specific notification configuration
     const pageNotificationConfig = {

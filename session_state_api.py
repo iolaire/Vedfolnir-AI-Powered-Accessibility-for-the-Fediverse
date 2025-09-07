@@ -49,9 +49,12 @@ def create_session_state_routes(app):
         try:
             # Get current session information using direct session access
             from flask import session
-            session_id = get_session_id()
+            try:
+                session_id = get_session_id()
+            except Exception:
+                session_id = None
             
-            if not session or not validate_session():
+            if not session or not session_id or not validate_session():
                 response = jsonify({
                     'success': True,
                     'authenticated': False,
@@ -64,6 +67,7 @@ def create_session_state_routes(app):
                 return response
             
             # Return session state for cross-tab sync using direct session access
+            # Use safe get methods to avoid KeyError
             response_data = {
                 'success': True,
                 'authenticated': True,

@@ -148,13 +148,37 @@ def start_generation():
             reprocess_existing=get_form_int('reprocess_existing', 0) == 1
         )
         
-        task_id = asyncio.run(
-            caption_service.start_caption_generation(
+        try:
+            # Try to run async task in a more compatible way
+            import threading
+            import concurrent.futures
+            
+            def run_async_task():
+                loop = asyncio.new_event_loop()
+                asyncio.set_event_loop(loop)
+                try:
+                    return loop.run_until_complete(
+                        caption_service.start_caption_generation(
+                            current_user.id,
+                            g.platform_connection_id,
+                            settings=settings
+                        )
+                    )
+                finally:
+                    loop.close()
+            
+            # Use thread pool for async execution
+            with concurrent.futures.ThreadPoolExecutor() as executor:
+                future = executor.submit(run_async_task)
+                task_id = future.result(timeout=30)  # 30 second timeout
+        except Exception as async_error:
+            current_app.logger.error(f"Async execution error: {str(async_error)}")
+            # Fallback to synchronous execution
+            task_id = caption_service.start_caption_generation_sync(
                 current_user.id,
                 g.platform_connection_id,
                 settings=settings
             )
-        )
         
         if task_id:
             return success_response({
@@ -180,16 +204,15 @@ def get_status(task_id):
             return redirect(url_for('main.index'))
         
         caption_service = WebCaptionGenerationService(db_manager)
-        status = caption_service.get_task_status(task_id)
+        status = caption_service.get_task_status(task_id, current_user.id)
         
         if status:
             return jsonify({
                 'success': True,
-                'status': status.status,
-                'progress': status.progress,
-                'total_images': status.total_images,
-                'processed_images': status.processed_images,
-                'message': status.message
+                'status': status.get('status'),
+                'progress': status.get('progress_percent', 0),
+                'current_step': status.get('current_step'),
+                'message': status.get('error_message') or 'Processing...'
             })
         else:
             return error_response('Task not found', 404)

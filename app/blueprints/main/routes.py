@@ -27,6 +27,32 @@ import traceback
 
 main_bp = Blueprint('main', __name__)
 
+@main_bp.route('/landing')
+@conditional_rate_limit(requests_per_minute=60)
+@conditional_enhanced_input_validation
+@monitor_performance
+def landing():
+    """
+    Direct landing page route that bypasses session detection.
+    Always shows the landing page regardless of session state.
+    """
+    logger = logging.getLogger(__name__)
+    
+    try:
+        logger.info("Direct landing page access")
+        return cached_render_template('landing.html')
+        
+    except Exception as e:
+        logger.error(f"Error rendering landing page: {e}")
+        return handle_template_rendering_error(
+            TemplateRenderingError(
+                template_name='landing.html',
+                message=str(e),
+                template_context={},
+                original_exception=e
+            )
+        )
+
 @main_bp.route('/')
 @conditional_rate_limit(requests_per_minute=60)  # Allow 60 requests per minute for landing page
 @conditional_enhanced_input_validation
@@ -288,11 +314,6 @@ def index_redirect():
     """Redirect /index to main dashboard"""
     return redirect(url_for('main.index', _external=False))
 
-@main_bp.route('/logout')
-@conditional_rate_limit(requests_per_minute=30)
-def logout_redirect():
-    """Redirect to user management logout"""
-    return redirect(url_for('user_management.logout', _external=False))
 
 @main_bp.route('/dashboard')
 @conditional_rate_limit(requests_per_minute=60)

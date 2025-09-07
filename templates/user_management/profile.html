@@ -202,7 +202,7 @@
     </div>
 </div>
 
-<script>
+<script nonce="{{ g.csp_nonce if g.csp_nonce else '' }}">
 function toggleEditMode() {
     const viewMode = document.getElementById('view-mode');
     const editMode = document.getElementById('edit-mode');

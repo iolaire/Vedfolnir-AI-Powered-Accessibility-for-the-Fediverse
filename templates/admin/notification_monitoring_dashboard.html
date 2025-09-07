@@ -323,7 +323,7 @@
 
 {% block extra_js %}
 <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
-<script>
+<script nonce="{{ g.csp_nonce if g.csp_nonce else '' }}">
 class NotificationMonitoringDashboard {
     constructor() {
         this.charts = {};

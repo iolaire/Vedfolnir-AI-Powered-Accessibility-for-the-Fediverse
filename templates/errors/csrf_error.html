@@ -116,7 +116,7 @@
     </div>
 </div>
 
-<script>
+<script nonce="{{ g.csp_nonce if g.csp_nonce else '' }}">
 document.addEventListener('DOMContentLoaded', function() {
     // Auto-refresh after 30 seconds if user doesn't take action
     let autoRefreshTimer = setTimeout(function() {
