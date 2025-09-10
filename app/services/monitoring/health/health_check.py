@@ -25,7 +25,7 @@ from config import Config
 from app.core.database.core.database_manager import DatabaseManager
 from models import ProcessingRun, Image, Post
 from app.services.activitypub.components.activitypub_client import ActivityPubClient
-from ollama_caption_generator import OllamaCaptionGenerator
+from app.utils.processing.ollama_caption_generator import OllamaCaptionGenerator
 
 logger = logging.getLogger(__name__)
 

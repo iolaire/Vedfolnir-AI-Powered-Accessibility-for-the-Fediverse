@@ -7,7 +7,7 @@
 from flask import render_template, jsonify, redirect, url_for, current_app
 from flask_login import login_required, current_user
 from models import UserRole
-from utils.response_helpers import success_response, error_response
+from app.utils.responses import success_response, error_response
 # from notification_flash_replacement import send_notification  # Removed - using unified notification system
 from app.core.session.error_handling.session_error_handlers import with_session_error_handling
 from app.core.security.core.security_middleware import rate_limit
@@ -26,7 +26,7 @@ def register_routes(bp):
             return redirect(url_for('main.index'))
             
         try:
-            from ..services.monitoring_service import AdminMonitoringService
+            from app.services.admin.components.monitoring_service import AdminMonitoringService
             monitoring_service = AdminMonitoringService(current_app.config['db_manager'])
             
             system_overview = monitoring_service.get_system_overview()
@@ -54,7 +54,7 @@ def register_routes(bp):
             return jsonify({'error': 'Access denied'}), 403
             
         try:
-            from ..services.monitoring_service import AdminMonitoringService
+            from app.services.admin.components.monitoring_service import AdminMonitoringService
             monitoring_service = AdminMonitoringService(current_app.config['db_manager'])
             overview = monitoring_service.get_system_overview()
             return success_response({'overview': overview})

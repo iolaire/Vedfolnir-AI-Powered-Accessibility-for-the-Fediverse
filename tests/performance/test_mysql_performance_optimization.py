@@ -19,9 +19,9 @@ from typing import Dict, Any, List
 sys.path.insert(0, os.path.dirname(os.path.dirname(os.path.abspath(__file__))))
 
 try:
-    from scripts.mysql_performance_optimizer import MySQLPerformanceOptimizer
-    from scripts.mysql_performance_monitor import MySQLPerformanceMonitor
-    from mysql_connection_validator import MySQLConnectionValidator
+    from scripts.database.mysql_performance_optimizer import MySQLPerformanceOptimizer
+    from app.core.database.mysql.mysql_performance_optimizer import MySQLPerformanceOptimizer as CoreMySQLPerformanceOptimizer
+    from app.core.database.mysql.mysql_connection_validator import MySQLConnectionValidator
     from config import Config
 except ImportError as e:
     print(f"Import error: {e}")

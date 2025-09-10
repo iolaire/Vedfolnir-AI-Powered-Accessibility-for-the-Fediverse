@@ -760,7 +760,7 @@ def cleanup_old_data(reason, admin_user_id):
         db_manager = current_app.config['db_manager']
         
         # Use the existing cleanup service
-        from admin.services.cleanup_service import CleanupService
+        from app.services.admin.components.cleanup_service import CleanupService
         cleanup_service = CleanupService(db_manager, current_app.config.get('config'))
         
         # Cleanup old processing runs (older than 30 days)

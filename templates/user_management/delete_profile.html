@@ -53,7 +53,7 @@
                         <p class="mb-0">
                             This deletion process is fully compliant with GDPR regulations. All your personal data 
                             will be permanently removed from our systems within 30 days. You have the right to 
-                            <a href="{{ url_for('user_management.export_profile_data') }}" class="alert-link">export your data</a> 
+                            <a href="{{ url_for('auth.user_management.export_profile_data') }}" class="alert-link">export your data</a> 
                             before deletion if needed.
                         </p>
                     </div>
@@ -92,10 +92,10 @@
                         </div>
 
                         <div class="d-grid gap-2 d-md-flex justify-content-md-end">
-                            <a href="{{ url_for('user_management.profile') }}" class="btn btn-secondary me-md-2">
+                            <a href="{{ url_for('auth.user_management.profile') }}" class="btn btn-secondary me-md-2">
                                 <i class="fas fa-arrow-left"></i> Cancel
                             </a>
-                            <a href="{{ url_for('user_management.export_profile_data') }}" class="btn btn-info me-md-2">
+                            <a href="{{ url_for('auth.user_management.export_profile_data') }}" class="btn btn-info me-md-2">
                                 <i class="fas fa-download"></i> Export Data First
                             </a>
                             {{ form.submit(class="btn btn-danger", id="deleteButton", disabled=true) }}

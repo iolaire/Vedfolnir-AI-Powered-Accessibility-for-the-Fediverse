@@ -52,7 +52,9 @@ def register_all_routes():
 # Auto-register routes when module is imported
 try:
     register_all_routes()
-    print("✅ Admin routes registered successfully")
+    print("✅ Admin routes registration completed successfully")
 except Exception as e:
     print(f"⚠️  Admin routes registration failed: {e}")
+    import traceback
+    traceback.print_exc()
     # Continue without admin routes for now

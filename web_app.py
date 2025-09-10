@@ -125,7 +125,7 @@ register_blueprints(app)
 
 # Register performance monitoring blueprint
 try:
-    from app.services.monitoring.performance.monitors.performance_monitoring_dashboard import register_performance_monitoring
+    from app.services.performance.components.performance_monitoring_dashboard import register_performance_monitoring
     register_performance_monitoring(app)
     print("✅ Performance monitoring blueprint registered successfully")
 except Exception as e:
@@ -739,7 +739,7 @@ try:
     )
     
     # Initialize HealthChecker for comprehensive system monitoring
-    from health_check import HealthChecker
+    from app.services.monitoring.health.health_check import HealthChecker
     health_checker = HealthChecker(config, db_manager)
     app.config['health_checker'] = health_checker
     
@@ -760,7 +760,7 @@ except Exception as e:
     app.logger.warning(f"Performance dashboard initialization failed: {e}")
     # Still try to initialize HealthChecker even if performance dashboard fails
     try:
-        from health_check import HealthChecker
+        from app.services.monitoring.health.health_check import HealthChecker
         health_checker = HealthChecker(config, db_manager)
         app.config['health_checker'] = health_checker
         

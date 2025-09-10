@@ -17,7 +17,7 @@ from flask_login import login_required, current_user
 from models import UserRole, ProcessingStatus
 # from notification_flash_replacement import send_notification  # Removed - using unified notification system
 from app.core.session.error_handling.session_error_handlers import with_session_error_handling
-from ..services.cleanup_service import CleanupService
+from app.services.admin.components.cleanup_service import CleanupService
 
 logger = logging.getLogger(__name__)
 

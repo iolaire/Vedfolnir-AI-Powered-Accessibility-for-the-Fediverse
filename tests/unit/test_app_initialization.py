@@ -15,7 +15,7 @@ import os
 # Add parent directory to path for imports
 sys.path.insert(0, os.path.dirname(os.path.dirname(os.path.abspath(__file__))))
 
-from app_initialization import (
+from app.utils.initialization.app_initialization import (
     SessionManagedFlaskApp,
     create_session_managed_app,
     validate_session_management_setup,

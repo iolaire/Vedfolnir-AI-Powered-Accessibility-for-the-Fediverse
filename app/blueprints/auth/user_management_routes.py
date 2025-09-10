@@ -199,7 +199,6 @@ def login():
     if current_user.is_authenticated:
         return redirect(url_for('main.index'))
     
-    from forms.user_management_forms import LoginForm
     form = LoginForm(request.form)
     
     if validate_form_submission(form):
@@ -268,7 +267,6 @@ def forgot_password():
     if current_user.is_authenticated:
         return redirect(url_for('main.index'))
     
-    from forms.user_management_forms import PasswordResetRequestForm
     form = PasswordResetRequestForm()
     
     if validate_form_submission(form):
@@ -552,7 +550,6 @@ def logout():
 @login_required
 def delete_profile():
     """Delete user profile"""
-    from forms.user_management_forms import DeleteProfileForm
     form = DeleteProfileForm()
     
     if validate_form_submission(form):
@@ -608,7 +605,6 @@ def delete_profile():
 @login_required
 def profile():
     """User profile management"""
-    from forms.user_management_forms import ProfileEditForm
     form = ProfileEditForm()
     
     # Pre-populate form with current user data

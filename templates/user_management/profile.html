@@ -20,7 +20,7 @@
                         <button type="button" class="btn btn-primary btn-sm" onclick="toggleEditMode()">
                             <i class="fas fa-edit"></i> Edit Profile
                         </button>
-                        <a href="{{ url_for('user_management.change_password') }}" class="btn btn-secondary btn-sm">
+                        <a href="{{ url_for('auth.user_management.change_password') }}" class="btn btn-secondary btn-sm">
                             <i class="fas fa-key"></i> Change Password
                         </a>
                     </div>
@@ -61,7 +61,7 @@
                                                 <span class="badge bg-warning ms-2">
                                                     <i class="fas fa-exclamation-triangle"></i> Unverified
                                                 </span>
-                                                <form method="POST" action="{{ url_for('user_management.resend_verification') }}" class="d-inline ms-2">
+                                                <form method="POST" action="{{ url_for('auth.user_management.resend_verification') }}" class="d-inline ms-2">
                                                     <button type="submit" class="btn btn-link btn-sm p-0">
                                                         Resend verification email
                                                     </button>
@@ -178,10 +178,10 @@
                         <div class="col-12">
                             <h5>Data Management</h5>
                             <div class="btn-group" role="group">
-                                <a href="{{ url_for('user_management.export_profile_data') }}" class="btn btn-outline-primary">
+                                <a href="{{ url_for('auth.user_management.export_profile_data') }}" class="btn btn-outline-primary">
                                     <i class="fas fa-download"></i> Export My Data
                                 </a>
-                                <a href="{{ url_for('user_management.delete_profile') }}" class="btn btn-outline-danger">
+                                <a href="{{ url_for('auth.user_management.delete_profile') }}" class="btn btn-outline-danger">
                                     <i class="fas fa-trash"></i> Delete My Profile
                                 </a>
                             </div>

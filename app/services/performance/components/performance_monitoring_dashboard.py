@@ -16,8 +16,8 @@ from flask import Blueprint, render_template, jsonify, request, current_app
 from flask_login import login_required, current_user
 
 from models import UserRole
-from performance_cache_manager import PerformanceCacheManager
-from database_query_optimizer import DatabaseQueryOptimizer
+from app.services.performance.components.performance_cache_manager import PerformanceCacheManager
+from app.core.database.optimization.database_query_optimizer import DatabaseQueryOptimizer
 from app.services.task.core.background_cleanup_manager import BackgroundCleanupManager
 from app.services.admin.enhanced.enhanced_admin_management_service import EnhancedAdminManagementService
 from app.core.security.core.security_utils import sanitize_for_log

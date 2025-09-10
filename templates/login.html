@@ -22,7 +22,7 @@
                         </div>
 
                         <!-- Login Form -->
-                        <form method="POST" action="{{ url_for('user_management.login') }}">
+                        <form method="POST" action="{{ url_for('auth.user_management.login') }}">
                             <!-- Custom CSRF token (Redis-aware) -->
                             <input type="hidden" name="csrf_token" value="{{ csrf_token }}">
                             
