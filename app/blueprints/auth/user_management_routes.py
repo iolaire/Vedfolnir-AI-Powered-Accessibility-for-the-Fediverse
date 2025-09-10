@@ -31,13 +31,13 @@ def validate_form_submission(form):
     """
     return request.method == 'POST' and form.validate()
 
-from forms.user_management_forms import (
+from app.utils.forms.user_management_forms import (
     UserRegistrationForm, LoginForm, ProfileEditForm, PasswordChangeForm,
     PasswordResetRequestForm, PasswordResetForm, ProfileDeleteForm,
     EmailVerificationResendForm
 )
-from services.user_management_service import UserRegistrationService, UserAuthenticationService
-from services.email_service import email_service
+from app.services.user.components.user_management_service import UserRegistrationService, UserAuthenticationService
+from app.services.email.components.email_service import email_service
 from models import User, UserRole, UserAuditLog
 from app.core.security.core.decorators import conditional_rate_limit, conditional_validate_input_length
 from app.core.security.core.security_utils import sanitize_for_log

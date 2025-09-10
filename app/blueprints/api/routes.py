@@ -1,7 +1,7 @@
 from flask import Blueprint, request, jsonify, current_app
 from flask_login import login_required, current_user
 from models import ProcessingStatus, PlatformConnection
-from utils.error_responses import validation_error, configuration_error, internal_error
+from app.utils.web.error_responses import validation_error, configuration_error, internal_error
 from datetime import datetime
 import os
 import json

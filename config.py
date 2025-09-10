@@ -364,7 +364,7 @@ class StorageConfig:
         
         # Initialize storage limit management service
         try:
-            from app.services.storage.core.storage_configuration_service import StorageConfigurationService
+            from app.services.storage.components.storage_configuration_service import StorageConfigurationService
             self.limit_service = StorageConfigurationService()
         except ImportError as e:
             logging.warning(f"Could not import StorageConfigurationService: {e}")

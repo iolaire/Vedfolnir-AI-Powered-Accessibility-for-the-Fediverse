@@ -20,7 +20,7 @@ from sqlalchemy.exc import IntegrityError
 from werkzeug.security import generate_password_hash
 
 from models import User, UserRole, UserAuditLog
-from services.email_service import email_service
+from app.services.email.components.email_service import email_service
 
 logger = logging.getLogger(__name__)
 
@@ -778,7 +778,7 @@ class PasswordManagementService:
                 return False, token_message, None
             
             # Validate new password
-            from services.user_management_service import UserRegistrationService
+            from app.services.user.components.user_management_service import UserRegistrationService
             registration_service = UserRegistrationService(self.db_session)
             password_valid, password_message = registration_service.validate_password(new_password)
             
@@ -838,7 +838,7 @@ class PasswordManagementService:
                 return False, "Current password is incorrect"
             
             # Validate new password
-            from services.user_management_service import UserRegistrationService
+            from app.services.user.components.user_management_service import UserRegistrationService
             registration_service = UserRegistrationService(self.db_session)
             password_valid, password_message = registration_service.validate_password(new_password)
             
@@ -970,7 +970,7 @@ class UserProfileService:
                 new_email = profile_data['email']
                 if new_email != user.email:
                     # Validate email
-                    from services.user_management_service import UserRegistrationService
+                    from app.services.user.components.user_management_service import UserRegistrationService
                     registration_service = UserRegistrationService(self.db_session)
                     email_valid, email_result = registration_service.validate_email_address(new_email)
                     
@@ -1053,7 +1053,7 @@ class UserProfileService:
                 return False, "User not found", False
             
             # Validate email
-            from services.user_management_service import UserRegistrationService
+            from app.services.user.components.user_management_service import UserRegistrationService
             registration_service = UserRegistrationService(self.db_session, self.base_url)
             email_valid, email_result = registration_service.validate_email_address(new_email)
             
@@ -1175,7 +1175,7 @@ class UserProfileService:
             if not email or not email.strip():
                 errors.append("Email address is required")
             else:
-                from services.user_management_service import UserRegistrationService
+                from app.services.user.components.user_management_service import UserRegistrationService
                 registration_service = UserRegistrationService(self.db_session)
                 email_valid, email_message = registration_service.validate_email_address(email)
                 if not email_valid:

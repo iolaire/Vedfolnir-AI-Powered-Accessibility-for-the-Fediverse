@@ -19,7 +19,7 @@ from sqlalchemy.orm import Session
 from sqlalchemy.exc import IntegrityError
 
 from models import User, UserRole, UserAuditLog, GDPRAuditLog, PlatformConnection, Post, Image, ProcessingRun
-from services.email_service import email_service
+from app.services.email.components.email_service import email_service
 
 logger = logging.getLogger(__name__)
 
@@ -233,7 +233,7 @@ class GDPRDataSubjectService:
                 new_email = rectification_data['email']
                 if new_email != user.email:
                     # Validate email
-                    from services.user_management_service import UserRegistrationService
+                    from app.services.user.components.user_management_service import UserRegistrationService
                     registration_service = UserRegistrationService(self.db_session)
                     email_valid, email_result = registration_service.validate_email_address(new_email)
                     

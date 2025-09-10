@@ -44,7 +44,7 @@ app.unified_session_manager = unified_session_manager
 
 # Initialize Redis platform manager
 try:
-    from redis_platform_manager import get_redis_platform_manager
+    from app.services.monitoring.platform.redis_platform_manager import get_redis_platform_manager
     if unified_session_manager._redis_backend and unified_session_manager._redis_backend.redis:
         redis_platform_manager = get_redis_platform_manager(
             unified_session_manager._redis_backend.redis,

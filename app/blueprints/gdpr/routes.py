@@ -15,7 +15,7 @@ from flask import Blueprint, render_template, request, redirect, url_for, jsonif
 from flask_login import login_required, current_user
 # from notification_flash_replacement import send_notification  # Removed - using unified notification system
 
-from forms.gdpr_forms import (
+from app.utils.forms.gdpr_forms import (
     DataExportRequestForm, DataRectificationForm, DataErasureRequestForm,
     ConsentManagementForm, PrivacyRequestForm, GDPRComplianceReportForm,
     DataPortabilityForm
@@ -27,8 +27,8 @@ def validate_form_submission(form):
     Since we're using regular WTForms instead of Flask-WTF
     """
     return request.method == 'POST' and form.validate()
-from services.gdpr_service import GDPRDataSubjectService, GDPRPrivacyService
-from services.user_management_service import UserProfileService
+from app.services.gdpr.components.gdpr_service import GDPRDataSubjectService, GDPRPrivacyService
+from app.services.user.components.user_management_service import UserProfileService
 from app.core.session.core.session_manager import SessionManager
 from models import UserAuditLog
 
