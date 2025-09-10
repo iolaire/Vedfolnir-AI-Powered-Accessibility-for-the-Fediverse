@@ -288,7 +288,7 @@ def enhanced_csrf_protect(
             if request.method in ['POST', 'PUT', 'DELETE', 'PATCH']:
                 try:
                     # Get database session
-                    from database import get_db_session
+                    from app.core.database.core.database_manager import DatabaseManager
                     db_session = get_db_session()
                     
                     csrf_protection = EnhancedCSRFProtection(db_session=db_session)
@@ -358,7 +358,7 @@ def csrf_protect_sensitive_operation(operation: str):
 def generate_csrf_token_for_template(operation: Optional[str] = None) -> str:
     """Generate CSRF token for use in templates"""
     try:
-        from database import get_db_session
+        from app.core.database.core.database_manager import DatabaseManager
         db_session = get_db_session()
         
         csrf_protection = EnhancedCSRFProtection(db_session=db_session)

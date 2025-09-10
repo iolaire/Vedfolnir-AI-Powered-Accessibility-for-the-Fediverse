@@ -32,7 +32,7 @@ from models import (
 # Import all the multi-tenant services
 from app.services.admin.components.admin_management_service import AdminManagementService, SystemOverview, JobDetails, ErrorDiagnostics
 from app.services.batch.components.multi_tenant_control_service import MultiTenantControlService, UserJobLimits, RateLimits
-from web_caption_generation_service import WebCaptionGenerationService
+from app.utils.processing.web_caption_generation_service import WebCaptionGenerationService
 from app.services.task.core.task_queue_manager import TaskQueueManager
 from app.services.monitoring.system.system_monitor import SystemMonitor, ResourceUsage
 from app.services.alerts.components.alert_manager import AlertManager, Alert, AlertType, AlertSeverity

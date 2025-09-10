@@ -14,7 +14,7 @@ def require_platform_context(func):
     def wrapper(*args, **kwargs):
         try:
             # Get current session context
-            from session_middleware_v2 import get_current_session_context
+            from app.core.session.middleware.session_middleware_v2 import get_current_session_context
             context = get_current_session_context()
             
             # If session context doesn't have platform, try to get it from Redis using PlatformService
@@ -66,7 +66,7 @@ def get_platform_context_or_redirect():
     Returns: (platform_connection_id, context) or None if redirect needed
     """
     try:
-        from session_middleware_v2 import get_current_session_context
+        from app.core.session.middleware.session_middleware_v2 import get_current_session_context
         context = get_current_session_context()
         
         if not context or not context.get('platform_connection_id'):

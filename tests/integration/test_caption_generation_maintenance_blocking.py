@@ -24,7 +24,7 @@ sys.path.insert(0, os.path.join(os.path.dirname(__file__), '..', '..'))
 from flask import Flask
 from app.services.maintenance.enhanced.enhanced_maintenance_mode_service import EnhancedMaintenanceModeService, MaintenanceMode
 from app.services.maintenance.components.maintenance_mode_middleware import MaintenanceModeMiddleware
-from web_caption_generation_service import WebCaptionGenerationService
+from app.utils.processing.web_caption_generation_service import WebCaptionGenerationService
 from models import User, UserRole, PlatformConnection
 from config import Config
 from app.core.database.core.database_manager import DatabaseManager

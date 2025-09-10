@@ -12,6 +12,7 @@ from datetime import datetime, timezone
 from config import Config
 from app.core.database.core.database_manager import DatabaseManager
 from app.services.activitypub.components.activitypub_client import ActivityPubClient
+from app.services.platform.core.platform_context import PlatformContextManager
 from app.utils.processing.image_processor import ImageProcessor
 from app.utils.processing.ollama_caption_generator import OllamaCaptionGenerator
 from models import ProcessingRun, ProcessingStatus, Image
@@ -56,10 +57,11 @@ class Vedfolnir:
         batch_id = f"batch_{datetime.now(timezone.utc).strftime('%Y%m%d%H%M%S')}"
         logger.info(f"Created batch ID: {batch_id}")
         
-        # Initialize components once for all users
+        # Initialize database manager and shared components
+        db_manager = DatabaseManager(self.config)
+        
         try:
-            async with ActivityPubClient(self.config.activitypub) as ap_client, \
-                       ImageProcessor(self.config) as image_processor:
+            async with ImageProcessor(self.config) as image_processor:
                 
                 caption_generator = None
                 if not skip_ollama:
@@ -84,7 +86,33 @@ class Vedfolnir:
                             logger.info(f"Waiting {self.config.user_processing_delay} seconds before processing next user")
                             await asyncio.sleep(self.config.user_processing_delay)
                         
-                        await self._process_user(user_id, ap_client, image_processor, caption_generator, batch_id)
+                        # Get user from database
+                        with db_manager.get_session() as session:
+                            from models import User
+                            user = session.query(User).filter_by(username=user_id).first()
+                            if not user:
+                                logger.error(f"User '{user_id}' not found in database")
+                                continue
+                            
+                            # Get user's platform connections
+                            platform_connections = db_manager.get_user_platform_connections(user.id, active_only=True)
+                            if not platform_connections:
+                                logger.warning(f"No active platform connections found for user '{user_id}'")
+                                continue
+                            
+                            logger.info(f"Found {len(platform_connections)} platform connection(s) for user '{user_id}'")
+                        
+                        # Process each platform connection for this user
+                        for platform_conn in platform_connections:
+                            logger.info(f"Processing platform '{platform_conn.name}' ({platform_conn.platform_type}) for user '{user_id}'")
+                            
+                            try:
+                                # Create ActivityPub client for this specific platform connection
+                                async with ActivityPubClient(None, platform_connection=platform_conn) as ap_client:
+                                    await self._process_user(user_id, ap_client, image_processor, caption_generator, batch_id, platform_conn)
+                            except Exception as e:
+                                logger.error(f"Failed to process platform '{platform_conn.name}' for user '{user_id}': {e}")
+                                continue
                 finally:
                     # Clean up model resources
                     if caption_generator:
@@ -122,7 +150,7 @@ class Vedfolnir:
     
     async def _process_user(self, user_id: str, ap_client: ActivityPubClient, 
                           image_processor: ImageProcessor, caption_generator,
-                          batch_id: str = None):
+                          batch_id: str = None, platform_connection=None):
         """Process a single user's posts
         
         Args:
@@ -131,8 +159,20 @@ class Vedfolnir:
             image_processor: Image processor instance
             caption_generator: Caption generator instance (can be None if --no-ollama is set)
             batch_id: Optional batch ID to group runs that are part of the same batch
+            platform_connection: Platform connection for setting context
         """
         logger.info(f"Processing user: {user_id}")
+        
+        # Set platform context for database operations
+        if platform_connection:
+            # Get user from database to get user ID
+            with self.db.get_session() as session:
+                from models import User
+                user = session.query(User).filter_by(username=user_id).first()
+                if user:
+                    # Set platform context on the database manager
+                    self.db.set_platform_context(user.id, platform_connection.id)
+                    logger.info(f"Set platform context for user {user_id} on platform {platform_connection.name}")
         
         # Create processing run record for this user
         self.current_run = self._create_processing_run(user_id, batch_id)
@@ -432,16 +472,27 @@ async def main():
     # Reset error collector at the start of a new run
     reset_error_collector()
     
-    # Validate configuration
-    if not config.activitypub.instance_url:
-        log_error(logger, "Configuration", "ACTIVITYPUB_INSTANCE_URL environment variable is required", 
-                 "Config", details={"missing_var": "ACTIVITYPUB_INSTANCE_URL"})
-        sys.exit(1)
+    # Validate configuration - check if we have either environment variables or database platform connections
+    has_env_config = config.activitypub.instance_url and config.activitypub.access_token
     
-    if not config.activitypub.access_token:
-        log_error(logger, "Configuration", "ACTIVITYPUB_ACCESS_TOKEN environment variable is required", 
-                 "Config", details={"missing_var": "ACTIVITYPUB_ACCESS_TOKEN"})
-        sys.exit(1)
+    if not has_env_config:
+        # Check if we have platform connections in the database
+        from app.core.database.core.database_manager import DatabaseManager
+        from models import PlatformConnection
+        
+        db_manager = DatabaseManager(config)
+        with db_manager.get_session() as session:
+            platform_count = session.query(PlatformConnection).count()
+            
+        if platform_count == 0:
+            log_error(logger, "Configuration", 
+                     "No platform connections found. Either set ACTIVITYPUB_INSTANCE_URL/ACTIVITYPUB_ACCESS_TOKEN environment variables or configure platforms through the web interface", 
+                     "Config", details={"env_config": False, "db_platforms": platform_count})
+            sys.exit(1)
+        else:
+            logger.info(f"Using database platform connections ({platform_count} configured)")
+    else:
+        logger.info("Using environment variable platform configuration")
     
     # Get user IDs from arguments, file, or prompt
     user_ids = []

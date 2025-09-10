@@ -65,12 +65,12 @@ from app.core.security.middleware.platform_access_middleware import PlatformAcce
 from app.core.security.core.security_config import security_config
 from app.core.security.features.caption_security import CaptionSecurityManager, caption_generation_auth_required, validate_task_access, caption_generation_rate_limit, validate_caption_settings_input, log_caption_security_event
 from error_recovery_manager import error_recovery_manager
-from web_caption_generation_service import WebCaptionGenerationService
-from caption_review_integration import CaptionReviewIntegration
+from app.utils.processing.web_caption_generation_service import WebCaptionGenerationService
+from app.utils.processing.caption_review_integration import CaptionReviewIntegration
 
 from app.core.security.logging.secure_error_handlers import register_secure_error_handlers
 # Removed WebSocketProgressHandler import - using SSE instead
-from progress_tracker import ProgressTracker
+from app.services.monitoring.progress.progress_tracker import ProgressTracker
 from app.services.task.core.task_queue_manager import TaskQueueManager
 
 app = Flask(__name__)

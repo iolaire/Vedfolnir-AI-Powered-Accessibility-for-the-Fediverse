@@ -1,7 +1,7 @@
 from flask import current_app
 from flask_login import current_user
 from models import Image, CaptionGenerationUserSettings
-from session_middleware_v2 import get_current_session_context
+from app.core.session.middleware.session_middleware_v2 import get_current_session_context
 from app.core.security.core.security_utils import sanitize_for_log
 
 class CaptionService:
@@ -13,7 +13,7 @@ class CaptionService:
     def get_caption_generation_data(self):
         """Get data needed for caption generation page"""
         try:
-            from web_caption_generation_service import WebCaptionGenerationService
+            from app.utils.processing.web_caption_generation_service import WebCaptionGenerationService
             
             # Get platform context
             context = get_current_session_context()

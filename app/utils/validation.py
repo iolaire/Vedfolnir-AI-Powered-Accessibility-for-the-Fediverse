@@ -1,6 +1,6 @@
 from flask import current_app
 from flask_login import current_user
-from session_middleware_v2 import get_current_session_context
+from app.core.session.middleware.session_middleware_v2 import get_current_session_context
 
 class ValidationUtils:
     """Common validation patterns"""

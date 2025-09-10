@@ -22,7 +22,7 @@ from models import (
     CaptionGenerationTask, TaskStatus, User, PlatformConnection, 
     Image, ProcessingStatus, ProcessingRun
 )
-from web_caption_generation_service import WebCaptionGenerationService
+from app.utils.processing.web_caption_generation_service import WebCaptionGenerationService
 from app.core.security.core.security_utils import sanitize_for_log
 
 logger = logging.getLogger(__name__)

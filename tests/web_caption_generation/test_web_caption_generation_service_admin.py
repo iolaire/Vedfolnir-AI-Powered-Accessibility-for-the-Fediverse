@@ -22,7 +22,7 @@ from models import (
     JobPriority, JobAuditLog
 )
 from sqlalchemy import or_
-from web_caption_generation_service import WebCaptionGenerationService
+from app.utils.processing.web_caption_generation_service import WebCaptionGenerationService
 from tests.test_helpers import create_test_user_with_platforms, cleanup_test_user
 
 

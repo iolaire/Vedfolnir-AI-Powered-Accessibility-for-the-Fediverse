@@ -597,7 +597,7 @@ def register_api_routes(bp):
     def get_system_metrics():
         """Get system metrics for multi-tenant caption management dashboard"""
         try:
-            from web_caption_generation_service import WebCaptionGenerationService
+            from app.utils.processing.web_caption_generation_service import WebCaptionGenerationService
             from app.services.monitoring.system.system_monitor import SystemMonitor
             from flask import current_app
             
@@ -665,7 +665,7 @@ def register_api_routes(bp):
     def get_active_jobs():
         """Get active caption generation jobs for admin dashboard"""
         try:
-            from web_caption_generation_service import WebCaptionGenerationService
+            from app.utils.processing.web_caption_generation_service import WebCaptionGenerationService
             from flask import current_app
             
             db_manager = current_app.config['db_manager']
@@ -790,7 +790,7 @@ def register_api_routes(bp):
     def get_all_jobs():
         """Get all caption generation jobs for admin management"""
         try:
-            from web_caption_generation_service import WebCaptionGenerationService
+            from app.utils.processing.web_caption_generation_service import WebCaptionGenerationService
             from flask import current_app
             
             db_manager = current_app.config['db_manager']
@@ -898,7 +898,7 @@ def register_api_routes(bp):
     def get_system_metrics_detailed():
         """Get detailed system metrics for multi-tenant caption management dashboard"""
         try:
-            from web_caption_generation_service import WebCaptionGenerationService
+            from app.utils.processing.web_caption_generation_service import WebCaptionGenerationService
             from app.services.monitoring.system.system_monitor import SystemMonitor
             from flask import current_app
             

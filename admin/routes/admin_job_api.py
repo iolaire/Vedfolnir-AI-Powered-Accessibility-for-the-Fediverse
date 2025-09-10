@@ -201,7 +201,7 @@ def register_api_routes(bp):
         """Get system maintenance information"""
         
         try:
-            from web_caption_generation_service import WebCaptionGenerationService
+            from app.utils.processing.web_caption_generation_service import WebCaptionGenerationService
             
             db_manager = current_app.config['db_manager']
             service = WebCaptionGenerationService(db_manager)

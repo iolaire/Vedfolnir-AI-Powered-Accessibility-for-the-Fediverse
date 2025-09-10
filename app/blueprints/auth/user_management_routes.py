@@ -489,7 +489,7 @@ def change_password():
                         session_manager = getattr(current_app, 'unified_session_manager', None)
                         if session_manager:
                             # Get current session ID from Redis session
-                            from session_middleware_v2 import get_current_session_id
+                            from app.core.session.middleware.session_middleware_v2 import get_current_session_id
                             current_session_id = get_current_session_id()
                             session_manager.cleanup_user_sessions(current_user.id, keep_current=current_session_id)
                             logger.info(f"Invalidated other sessions for user {sanitize_for_log(current_user.username)} after password change")
@@ -519,7 +519,7 @@ def logout():
     """User logout with Redis session cleanup"""
     try:
         # Use new session middleware for logout
-        from session_middleware_v2 import destroy_current_session
+        from app.core.session.middleware.session_middleware_v2 import destroy_current_session
         
         # Destroy current session (handles both Redis and Flask session)
         session_destroyed = destroy_current_session()

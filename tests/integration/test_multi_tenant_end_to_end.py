@@ -20,11 +20,11 @@ from app.core.database.core.database_manager import DatabaseManager
 from models import User, UserRole, CaptionGenerationTask, TaskStatus, JobPriority, PlatformConnection
 from app.services.admin.components.admin_management_service import AdminManagementService, SystemOverview
 from app.services.batch.components.multi_tenant_control_service import MultiTenantControlService, UserJobLimits, RateLimits
-from web_caption_generation_service import WebCaptionGenerationService
+from app.utils.processing.web_caption_generation_service import WebCaptionGenerationService
 from app.services.task.core.task_queue_manager import TaskQueueManager
 from app.services.monitoring.system.system_monitor import SystemMonitor
 from app.services.alerts.components.alert_manager import AlertManager
-from audit_logger import AuditLogger
+from app.core.security.audit.audit_logger import AuditLogger
 
 # Import test helpers
 from tests.test_helpers.mock_user_helper import MockUserHelper, create_test_user_with_platforms, cleanup_test_user

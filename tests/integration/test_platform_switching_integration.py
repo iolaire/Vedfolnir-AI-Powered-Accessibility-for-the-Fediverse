@@ -10,7 +10,7 @@ from unittest.mock import Mock, patch, AsyncMock
 import uuid
 from datetime import datetime, timezone
 
-from web_caption_generation_service import WebCaptionGenerationService
+from app.utils.processing.web_caption_generation_service import WebCaptionGenerationService
 from models import (
     CaptionGenerationTask, TaskStatus, PlatformConnection, User, UserRole,
     CaptionGenerationSettings

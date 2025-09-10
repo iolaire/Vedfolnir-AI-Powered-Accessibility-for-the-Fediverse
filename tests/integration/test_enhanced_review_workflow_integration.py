@@ -25,7 +25,7 @@ from models import (
     User, UserRole, PlatformConnection, CaptionGenerationTask, TaskStatus,
     Image, ProcessingStatus, GenerationResults
 )
-from web_caption_generation_service import WebCaptionGenerationService
+from app.utils.processing.web_caption_generation_service import WebCaptionGenerationService
 from caption_review_integration import CaptionReviewIntegration
 from tests.test_helpers import create_test_user_with_platforms, cleanup_test_user
 

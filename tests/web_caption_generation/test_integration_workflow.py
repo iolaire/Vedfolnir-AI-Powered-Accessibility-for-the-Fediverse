@@ -11,7 +11,7 @@ import uuid
 import asyncio
 from datetime import datetime, timezone
 
-from web_caption_generation_service import WebCaptionGenerationService
+from app.utils.processing.web_caption_generation_service import WebCaptionGenerationService
 from app.services.task.core.task_queue_manager import TaskQueueManager
 from progress_tracker import ProgressTracker
 from models import (

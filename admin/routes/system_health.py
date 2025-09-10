@@ -380,7 +380,7 @@ def get_system_metrics(admin_user_id):
     """Get system metrics for multi-tenant caption management"""
     try:
         # Import services
-        from web_caption_generation_service import WebCaptionGenerationService
+        from app.utils.processing.web_caption_generation_service import WebCaptionGenerationService
         from app.services.monitoring.system.system_monitor import SystemMonitor
         
         # Get web caption generation service
@@ -425,7 +425,7 @@ def get_system_metrics(admin_user_id):
 def get_active_jobs_for_admin(admin_user_id):
     """Get active jobs for admin dashboard"""
     try:
-        from web_caption_generation_service import WebCaptionGenerationService
+        from app.utils.processing.web_caption_generation_service import WebCaptionGenerationService
         
         db_manager = current_app.config['db_manager']
         service = WebCaptionGenerationService(db_manager)

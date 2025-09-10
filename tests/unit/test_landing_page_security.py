@@ -79,7 +79,7 @@ class TestLandingPageSecurity(unittest.TestCase):
         """Test that main routes have security decorators applied"""
         # Test that security decorators are available and can be imported
         try:
-            from security_decorators import conditional_rate_limit, conditional_enhanced_input_validation
+            from app.core.security.core.decorators import conditional_rate_limit, conditional_enhanced_input_validation
             
             # Test that decorators are callable
             self.assertTrue(callable(conditional_rate_limit))
@@ -122,7 +122,7 @@ class TestLandingPageSecurity(unittest.TestCase):
     def test_security_decorators_available(self):
         """Test that security decorators are available"""
         try:
-            from security_decorators import (
+            from app.core.security.core.decorators import (
                 conditional_rate_limit,
                 conditional_enhanced_input_validation,
                 conditional_validate_csrf_token

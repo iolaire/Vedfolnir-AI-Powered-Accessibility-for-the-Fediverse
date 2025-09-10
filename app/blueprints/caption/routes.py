@@ -12,7 +12,7 @@ caption_bp = Blueprint('caption', __name__, url_prefix='/caption')
 def generation():
     """Caption generation page"""
     try:
-        from web_caption_generation_service import WebCaptionGenerationService
+        from app.utils.processing.web_caption_generation_service import WebCaptionGenerationService
         
         db_manager = current_app.config.get('db_manager')
         if not db_manager:
@@ -126,7 +126,7 @@ def generation():
 def start_generation():
     """Start caption generation process"""
     try:
-        from web_caption_generation_service import WebCaptionGenerationService
+        from app.utils.processing.web_caption_generation_service import WebCaptionGenerationService
         
         db_manager = current_app.config.get('db_manager')
         if not db_manager:
@@ -196,7 +196,7 @@ def start_generation():
 def get_status(task_id):
     """Get caption generation task status"""
     try:
-        from web_caption_generation_service import WebCaptionGenerationService
+        from app.utils.processing.web_caption_generation_service import WebCaptionGenerationService
         
         db_manager = current_app.config.get('db_manager')
         if not db_manager:
@@ -226,7 +226,7 @@ def get_status(task_id):
 def cancel_generation(task_id):
     """Cancel caption generation task"""
     try:
-        from web_caption_generation_service import WebCaptionGenerationService
+        from app.utils.processing.web_caption_generation_service import WebCaptionGenerationService
         
         db_manager = current_app.config.get('db_manager')
         if not db_manager:

@@ -117,7 +117,7 @@ class TestStorageWebRoutesIntegration(unittest.TestCase):
     
     def test_storage_check_integration_with_web_service(self):
         """Test that web caption generation service integrates with storage checks"""
-        from web_caption_generation_service import WebCaptionGenerationService
+        from app.utils.processing.web_caption_generation_service import WebCaptionGenerationService
         from app.core.database.core.database_manager import DatabaseManager
         
         # Mock database manager

@@ -7,7 +7,7 @@
 from flask import jsonify, request
 from flask_login import current_user
 from models import UserRole
-from ..security.admin_access_control import admin_api_required
+from app.services.admin.security.admin_access_control import admin_api_required
 from datetime import datetime, timezone, timedelta
 import logging
 
@@ -597,7 +597,7 @@ def register_api_routes(bp):
     def get_system_metrics():
         """Get system metrics for multi-tenant caption management dashboard"""
         try:
-            from web_caption_generation_service import WebCaptionGenerationService
+            from app.utils.processing.web_caption_generation_service import WebCaptionGenerationService
             from app.services.monitoring.system.system_monitor import SystemMonitor
             from flask import current_app
             
@@ -665,7 +665,7 @@ def register_api_routes(bp):
     def get_active_jobs():
         """Get active caption generation jobs for admin dashboard"""
         try:
-            from web_caption_generation_service import WebCaptionGenerationService
+            from app.utils.processing.web_caption_generation_service import WebCaptionGenerationService
             from flask import current_app
             
             db_manager = current_app.config['db_manager']
@@ -790,7 +790,7 @@ def register_api_routes(bp):
     def get_all_jobs():
         """Get all caption generation jobs for admin management"""
         try:
-            from web_caption_generation_service import WebCaptionGenerationService
+            from app.utils.processing.web_caption_generation_service import WebCaptionGenerationService
             from flask import current_app
             
             db_manager = current_app.config['db_manager']
@@ -898,7 +898,7 @@ def register_api_routes(bp):
     def get_system_metrics_detailed():
         """Get detailed system metrics for multi-tenant caption management dashboard"""
         try:
-            from web_caption_generation_service import WebCaptionGenerationService
+            from app.utils.processing.web_caption_generation_service import WebCaptionGenerationService
             from app.services.monitoring.system.system_monitor import SystemMonitor
             from flask import current_app
             
@@ -1022,7 +1022,7 @@ def register_api_routes(bp):
             days = data.get('days', 30)
             dry_run = data.get('dry_run', True)
             
-            from ..services.cleanup_service import CleanupService
+            from admin.services.cleanup_service import CleanupService
             from flask import current_app
             
             db_manager = current_app.config['db_manager']
@@ -1119,7 +1119,7 @@ def register_api_routes(bp):
     def active_tasks():
         """Get active tasks for monitoring dashboard"""
         try:
-            from ..services.monitoring_service import AdminMonitoringService
+            from admin.services.monitoring_service import AdminMonitoringService
             from flask import current_app
             
             monitoring_service = AdminMonitoringService(current_app.config['db_manager'])

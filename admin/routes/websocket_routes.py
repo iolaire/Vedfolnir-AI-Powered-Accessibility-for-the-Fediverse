@@ -118,7 +118,7 @@ class AdminDashboardWebSocket:
     async def _get_current_metrics(self):
         """Get current system metrics for broadcasting"""
         try:
-            from web_caption_generation_service import WebCaptionGenerationService
+            from app.utils.processing.web_caption_generation_service import WebCaptionGenerationService
             from app.services.monitoring.system.system_monitor import SystemMonitor
             
             # Use a dummy admin user ID for system metrics

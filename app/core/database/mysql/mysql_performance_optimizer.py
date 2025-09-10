@@ -24,7 +24,7 @@ from sqlalchemy.engine import Engine
 from sqlalchemy.pool import QueuePool
 
 from config import Config
-from database import get_db_connection
+from app.core.database.core.database_manager import DatabaseManager
 
 logger = logging.getLogger(__name__)
 

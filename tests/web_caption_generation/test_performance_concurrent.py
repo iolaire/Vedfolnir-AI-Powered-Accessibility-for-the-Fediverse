@@ -12,7 +12,7 @@ import uuid
 import time
 from concurrent.futures import ThreadPoolExecutor
 
-from web_caption_generation_service import WebCaptionGenerationService
+from app.utils.processing.web_caption_generation_service import WebCaptionGenerationService
 from app.services.task.core.task_queue_manager import TaskQueueManager
 from models import CaptionGenerationTask, TaskStatus, CaptionGenerationSettings
 from app.core.database.core.database_manager import DatabaseManager

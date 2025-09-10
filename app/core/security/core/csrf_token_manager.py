@@ -231,7 +231,7 @@ class CSRFTokenManager:
         """
         try:
             # First try Redis session (for authenticated users)
-            from session_middleware_v2 import get_current_session_id
+            from app.core.session.middleware.session_middleware_v2 import get_current_session_id
             redis_session_id = get_current_session_id()
             
             if redis_session_id and not redis_session_id.startswith('.eJ') and not redis_session_id.startswith('eyJ'):
@@ -370,7 +370,7 @@ class CSRFValidationContext:
         """Get session ID for context"""
         try:
             # Try Redis session first
-            from session_middleware_v2 import get_current_session_id
+            from app.core.session.middleware.session_middleware_v2 import get_current_session_id
             redis_session_id = get_current_session_id()
             if redis_session_id and not redis_session_id.startswith('.eJ') and not redis_session_id.startswith('eyJ'):
                 return redis_session_id

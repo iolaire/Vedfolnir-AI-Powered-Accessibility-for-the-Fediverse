@@ -150,7 +150,7 @@ class SystemRecoveryManager:
                     self.db_session.close()
                     
                     # Create new session
-                    from database import get_db_session
+                    from app.core.database.core.database_manager import DatabaseManager
                     new_session = get_db_session()
                     
                     # Test MySQL connection with version check
@@ -453,7 +453,7 @@ def health_check_recovery():
 def _check_database_health() -> bool:
     """Check database health"""
     try:
-        from database import get_db_session
+        from app.core.database.core.database_manager import DatabaseManager
         db_session = get_db_session()
         db_session.execute("SELECT 1")
         db_session.close()

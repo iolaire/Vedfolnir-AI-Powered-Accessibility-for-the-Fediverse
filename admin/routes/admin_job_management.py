@@ -525,7 +525,7 @@ def register_routes(bp):
 def get_job_statistics(admin_user_id, admin_mode=True):
     """Get job statistics for admin dashboard"""
     try:
-        from web_caption_generation_service import WebCaptionGenerationService
+        from app.utils.processing.web_caption_generation_service import WebCaptionGenerationService
         
         db_manager = current_app.config['db_manager']
         service = WebCaptionGenerationService(db_manager)
@@ -571,7 +571,7 @@ def get_job_statistics(admin_user_id, admin_mode=True):
 def get_admin_jobs(admin_user_id):
     """Get jobs that require admin management"""
     try:
-        from web_caption_generation_service import WebCaptionGenerationService
+        from app.utils.processing.web_caption_generation_service import WebCaptionGenerationService
         
         db_manager = current_app.config['db_manager']
         service = WebCaptionGenerationService(db_manager)

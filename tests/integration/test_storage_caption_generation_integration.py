@@ -25,7 +25,7 @@ sys.path.insert(0, os.path.join(os.path.dirname(__file__), '..', '..'))
 from app.services.storage.components.storage_limit_enforcer import StorageLimitEnforcer, StorageCheckResult, StorageBlockingState
 from app.services.storage.components.storage_monitor_service import StorageMonitorService, StorageMetrics
 from app.services.storage.components.storage_configuration_service import StorageConfigurationService
-from web_caption_generation_service import WebCaptionGenerationService
+from app.utils.processing.web_caption_generation_service import WebCaptionGenerationService
 from app.core.database.core.database_manager import DatabaseManager
 from config import Config
 from models import CaptionGenerationSettings

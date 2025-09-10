@@ -165,7 +165,7 @@ def switch_platform(platform_id):
             
             # RACE CONDITION FIX: Cancel active tasks before switching
             try:
-                from web_caption_generation_service import WebCaptionGenerationService
+                from app.utils.processing.web_caption_generation_service import WebCaptionGenerationService
                 from app.core.database.core.database_manager import DatabaseManager
                 
                 db_manager = current_app.config.get('db_manager')
