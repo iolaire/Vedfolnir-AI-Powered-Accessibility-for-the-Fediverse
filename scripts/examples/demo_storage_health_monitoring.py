@@ -14,11 +14,11 @@ import json
 import time
 from datetime import datetime
 
-from storage_health_checker import StorageHealthChecker, StorageHealthStatus
-from storage_monitoring_dashboard_integration import StorageMonitoringDashboardIntegration
-from storage_alert_system import StorageAlertSystem
-from storage_configuration_service import StorageConfigurationService
-from storage_monitor_service import StorageMonitorService
+from app.services.monitoring.health.checkers.storage_health_checker import StorageHealthChecker, StorageHealthStatus
+from app.services.storage.components.storage_monitoring_dashboard_integration import StorageMonitoringDashboardIntegration
+from app.services.storage.components.storage_alert_system import StorageAlertSystem
+from app.services.storage.components.storage_configuration_service import StorageConfigurationService
+from app.services.storage.components.storage_monitor_service import StorageMonitorService
 
 
 def demo_storage_health_checker():

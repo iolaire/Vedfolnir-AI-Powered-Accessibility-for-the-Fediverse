@@ -16,16 +16,16 @@ from typing import Optional, Dict, Any, List
 from sqlalchemy.exc import SQLAlchemyError
 from sqlalchemy import and_
 
-from database import DatabaseManager
+from app.core.database.core.database_manager import DatabaseManager
 from models import (
     CaptionGenerationTask, CaptionGenerationSettings, CaptionGenerationUserSettings,
     GenerationResults, TaskStatus, PlatformConnection, User, UserRole, JobPriority,
     JobAuditLog
 )
-from task_queue_manager import TaskQueueManager
+from app.services.task.core.task_queue_manager import TaskQueueManager
 from progress_tracker import ProgressTracker
-from platform_aware_caption_adapter import PlatformAwareCaptionAdapter
-from security.core.security_utils import sanitize_for_log
+from app.services.platform.adapters.platform_aware_caption_adapter import PlatformAwareCaptionAdapter
+from app.core.security.core.security_utils import sanitize_for_log
 from error_recovery_manager import error_recovery_manager, handle_caption_error
 from enhanced_error_recovery_manager import EnhancedErrorRecoveryManager
 
@@ -128,7 +128,7 @@ class WebCaptionGenerationService:
             ValueError: If storage limit is exceeded and generation should be blocked
         """
         try:
-            from storage_limit_enforcer import StorageLimitEnforcer, StorageCheckResult
+            from app.services.storage.components.storage_limit_enforcer import StorageLimitEnforcer, StorageCheckResult
             storage_enforcer = StorageLimitEnforcer()
             
             # Perform storage check which includes automatic re-enabling logic

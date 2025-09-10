@@ -23,22 +23,22 @@ from flask_wtf.csrf import CSRFError
 from wtforms import StringField, SubmitField
 
 # Import CSRF components
-from security.core.csrf_token_manager import (
+from app.core.security.core.csrf_token_manager import (
     CSRFTokenManager, CSRFTokenError, CSRFValidationContext,
     get_csrf_token_manager, initialize_csrf_token_manager
 )
-from security.core.csrf_middleware import (
+from app.core.security.core.csrf_middleware import (
     CSRFMiddleware, csrf_exempt, require_csrf,
     initialize_csrf_middleware, get_csrf_middleware
 )
-from security.core.csrf_error_handler import (
+from app.core.security.core.csrf_error_handler import (
     CSRFErrorHandler, get_csrf_error_handler, register_csrf_error_handlers
 )
 
 # Import test helpers
 from tests.test_helpers import create_test_user_with_platforms, cleanup_test_user
 from config import Config
-from database import DatabaseManager
+from app.core.database.core.database_manager import DatabaseManager
 from models import UserRole
 
 class TestCSRFTokenGeneration(unittest.TestCase):

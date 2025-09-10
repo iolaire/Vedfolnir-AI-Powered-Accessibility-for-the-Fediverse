@@ -20,10 +20,10 @@ from datetime import datetime, timedelta
 import sys
 sys.path.insert(0, os.path.join(os.path.dirname(__file__), '..', '..'))
 
-from storage_configuration_service import StorageConfigurationService
-from storage_override_system import StorageOverrideSystem, OverrideValidationError
-from admin_storage_dashboard import AdminStorageDashboard
-from storage_limit_enforcer import StorageLimitEnforcer
+from app.services.storage.components.storage_configuration_service import StorageConfigurationService
+from app.services.storage.components.storage_override_system import StorageOverrideSystem, OverrideValidationError
+from app.services.admin.components.admin_storage_dashboard import AdminStorageDashboard
+from app.services.storage.components.storage_limit_enforcer import StorageLimitEnforcer
 from models import User, UserRole, StorageOverride
 
 
@@ -193,7 +193,7 @@ class TestStorageAdminAuthorization(unittest.TestCase):
         for malicious_path in malicious_paths:
             with patch('storage_monitor_service.StorageMonitorService.STORAGE_IMAGES_DIR', malicious_path):
                 try:
-                    from storage_monitor_service import StorageMonitorService
+                    from app.services.storage.components.storage_monitor_service import StorageMonitorService
                     monitor = StorageMonitorService(config_service=mock_config)
                     
                     # Should not allow access to paths outside storage directory
@@ -396,8 +396,8 @@ class TestStorageDataSecurity(unittest.TestCase):
             f.write(b'test image data')
         
         # Test that storage calculation respects file permissions
-        from storage_monitor_service import StorageMonitorService
-        from storage_configuration_service import StorageConfigurationService
+        from app.services.storage.components.storage_monitor_service import StorageMonitorService
+        from app.services.storage.components.storage_configuration_service import StorageConfigurationService
         
         config_service = StorageConfigurationService()
         
@@ -425,8 +425,8 @@ class TestStorageDataSecurity(unittest.TestCase):
             os.symlink(target_file, symlink_path)
             
             # Storage calculation should not follow symlinks outside storage directory
-            from storage_monitor_service import StorageMonitorService
-            from storage_configuration_service import StorageConfigurationService
+            from app.services.storage.components.storage_monitor_service import StorageMonitorService
+            from app.services.storage.components.storage_configuration_service import StorageConfigurationService
             
             config_service = StorageConfigurationService()
             
@@ -466,8 +466,8 @@ class TestStorageDataSecurity(unittest.TestCase):
         mock_redis.ping.return_value = True
         
         # Test secure Redis operations
-        from storage_limit_enforcer import StorageLimitEnforcer
-        from storage_configuration_service import StorageConfigurationService
+        from app.services.storage.components.storage_limit_enforcer import StorageLimitEnforcer
+        from app.services.storage.components.storage_configuration_service import StorageConfigurationService
         
         config_service = StorageConfigurationService()
         mock_monitor = Mock()

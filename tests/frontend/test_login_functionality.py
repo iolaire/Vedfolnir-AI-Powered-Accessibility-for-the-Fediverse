@@ -18,7 +18,7 @@ def test_basic_imports():
         from web_app import app
         from models import User, PlatformConnection, UserSession
         from unified_session_manager import UnifiedSessionManager as SessionManager
-        from database import DatabaseManager
+        from app.core.database.core.database_manager import DatabaseManager
         from config import Config
         print("✅ All imports successful")
         return True
@@ -32,7 +32,7 @@ def test_database_connection():
     print("Testing database connection...")
     try:
         from config import Config
-        from database import DatabaseManager
+        from app.core.database.core.database_manager import DatabaseManager
         from models import User, PlatformConnection, UserSession
         
         config = Config()
@@ -60,7 +60,7 @@ def create_test_user():
     print("Creating test user...")
     try:
         from config import Config
-        from database import DatabaseManager
+        from app.core.database.core.database_manager import DatabaseManager
         from models import User, UserRole, PlatformConnection
         
         config = Config()
@@ -120,7 +120,7 @@ def cleanup_test_user(user_id):
     print("Cleaning up test user...")
     try:
         from config import Config
-        from database import DatabaseManager
+        from app.core.database.core.database_manager import DatabaseManager
         from models import User, UserSession, PlatformConnection
         
         config = Config()
@@ -154,7 +154,7 @@ def test_user_authentication():
     test_user_id = None
     try:
         from config import Config
-        from database import DatabaseManager
+        from app.core.database.core.database_manager import DatabaseManager
         from models import User
         
         # Create test user
@@ -199,7 +199,7 @@ def test_session_creation():
     try:
         from web_app import app
         from unified_session_manager import UnifiedSessionManager as SessionManager
-        from database import DatabaseManager
+        from app.core.database.core.database_manager import DatabaseManager
         from config import Config
         from models import User, PlatformConnection
         
@@ -257,7 +257,7 @@ def test_login_flow():
     test_user_id = None
     try:
         from web_app import app
-        from database import DatabaseManager
+        from app.core.database.core.database_manager import DatabaseManager
         from config import Config
         from models import User, PlatformConnection
         
@@ -358,7 +358,7 @@ def test_session_persistence():
     test_user_id = None
     try:
         from web_app import app
-        from database import DatabaseManager
+        from app.core.database.core.database_manager import DatabaseManager
         from config import Config
         from models import User, UserSession
         from flask import session

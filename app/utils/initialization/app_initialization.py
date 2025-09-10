@@ -10,12 +10,12 @@ with proper session management integration to prevent DetachedInstanceError.
 import logging
 from flask import Flask
 from flask_login import LoginManager
-from session_manager import SessionManager
+from app.core.session.core.session_manager import SessionManager
 from database_context_middleware import DatabaseContextMiddleware
 from session_aware_user import SessionAwareUser
 from detached_instance_handler import create_global_detached_instance_handler
 from safe_template_context import create_safe_template_context_processor
-from database import DatabaseManager
+from app.core.database.core.database_manager import DatabaseManager
 from models import User
 
 logger = logging.getLogger(__name__)

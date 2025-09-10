@@ -18,12 +18,12 @@ from datetime import datetime, timezone, timedelta
 from concurrent.futures import ThreadPoolExecutor, as_completed
 
 from config import Config
-from database import DatabaseManager
+from app.core.database.core.database_manager import DatabaseManager
 from models import CaptionGenerationTask, TaskStatus, JobPriority, User, UserRole
 from enhanced_error_recovery_manager import EnhancedErrorRecoveryManager
-from admin_management_service import AdminManagementService
-from system_monitor import SystemMonitor
-from alert_manager import AlertManager, AlertType, AlertSeverity
+from app.services.admin.components.admin_management_service import AdminManagementService
+from app.services.monitoring.system.system_monitor import SystemMonitor
+from app.services.alerts.components.alert_manager import AlertManager, AlertType, AlertSeverity
 
 
 class TestNetworkErrorRecovery(unittest.TestCase):

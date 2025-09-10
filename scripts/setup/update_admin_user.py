@@ -20,7 +20,7 @@ import getpass
 # Add the project root to the Python path
 sys.path.insert(0, os.path.join(os.path.dirname(__file__), '..', '..'))
 
-from database import DatabaseManager
+from app.core.database.core.database_manager import DatabaseManager
 from models import User, UserRole
 
 # Set up logging

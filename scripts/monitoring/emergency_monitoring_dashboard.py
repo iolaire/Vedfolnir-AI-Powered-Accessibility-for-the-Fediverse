@@ -23,9 +23,9 @@ sys.path.insert(0, os.path.join(os.path.dirname(__file__), '..'))
 from flask import Flask, render_template_string, jsonify, request
 from dotenv import load_dotenv
 from config import Config
-from database import DatabaseManager
-from notification_emergency_recovery import NotificationEmergencyRecovery
-from unified_notification_manager import UnifiedNotificationManager
+from app.core.database.core.database_manager import DatabaseManager
+from app.services.notification.components.notification_emergency_recovery import NotificationEmergencyRecovery
+from app.services.notification.manager.unified_manager import UnifiedNotificationManager
 from websocket_factory import WebSocketFactory
 from websocket_auth_handler import WebSocketAuthHandler
 from websocket_namespace_manager import WebSocketNamespaceManager

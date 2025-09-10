@@ -247,10 +247,16 @@ class WebSocketConnectionRecovery {
      * Handle connection errors
      */
     _handleConnectionError(error) {
-        this.logger.error('❌ WebSocket connection error:', error);
-        
-        // Analyze error type
+        // Analyze error type first
         const errorType = this._analyzeError(error);
+        
+        // Only log errors that aren't common network issues or if it's the first few errors
+        if (this.state.consecutiveErrors < 3 && 
+            !error.message?.includes('NetworkError') &&
+            !error.message?.includes('ERR_NETWORK') &&
+            errorType !== 'network') {
+            this.logger.warn('WebSocket connection issue:', error.message || error.toString());
+        }
         
         // Update error tracking
         this.state.lastError = error;

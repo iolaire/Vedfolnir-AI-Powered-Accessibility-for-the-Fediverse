@@ -16,8 +16,8 @@ from datetime import datetime, timezone
 # Add project root to path for imports
 sys.path.insert(0, os.path.join(os.path.dirname(__file__), '..', '..'))
 
-from configuration_cache import ConfigurationCache, CacheEntry, CacheStats
-from configuration_service import ConfigurationValue, ConfigurationSource
+from app.core.configuration.cache.configuration_cache import ConfigurationCache, CacheEntry, CacheStats
+from app.core.configuration.core.configuration_service import ConfigurationValue, ConfigurationSource
 
 
 class TestConfigurationCache(unittest.TestCase):

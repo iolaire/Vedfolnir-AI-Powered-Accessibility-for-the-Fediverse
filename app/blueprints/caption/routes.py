@@ -1,8 +1,8 @@
 from flask import Blueprint, render_template, request, jsonify, redirect, url_for, current_app, g
 from flask_login import login_required, current_user
-from utils.response_helpers import success_response, error_response
-from utils.decorators import require_platform_context
-from utils.request_helpers import get_form_int, get_form_float
+from app.utils.web.response_helpers import success_response, error_response
+from app.utils.web.decorators import require_platform_context
+from app.utils.web.request_helpers import get_form_int, get_form_float
 import asyncio
 
 caption_bp = Blueprint('caption', __name__, url_prefix='/caption')
@@ -47,7 +47,7 @@ def generation():
         form = CaptionGenerationForm()
         
         # Get current platform context using the same method as platform management
-        from app.services.platform_service import PlatformService
+        from app.services.platform.components.platform_service import PlatformService
         platform_service = PlatformService()
         platform_data = platform_service.get_user_platforms(include_stats=False)
         current_platform = platform_data['current_platform']

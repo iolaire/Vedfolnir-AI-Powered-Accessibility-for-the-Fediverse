@@ -5,7 +5,7 @@ Test session creation directly to verify database lock fixes
 
 import sys
 from config import Config
-from database import DatabaseManager
+from app.core.database.core.database_manager import DatabaseManager
 from unified_session_manager import UnifiedSessionManager
 from models import User, UserRole
 

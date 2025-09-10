@@ -16,12 +16,12 @@ import time
 from unittest.mock import Mock, patch, MagicMock
 from datetime import datetime, timezone
 
-from admin_system_health_notification_handler import AdminSystemHealthNotificationHandler, HealthAlertType
-from admin_dashboard_health_integration import AdminDashboardHealthIntegration
-from unified_notification_manager import UnifiedNotificationManager, AdminNotificationMessage, NotificationType, NotificationPriority, NotificationCategory
-from system_monitor import SystemMonitor, SystemHealth
+from app.services.admin.components.admin_system_health_notification_handler import AdminSystemHealthNotificationHandler, HealthAlertType
+from app.services.admin.components.admin_dashboard_health_integration import AdminDashboardHealthIntegration
+from app.services.notification.manager.unified_manager import UnifiedNotificationManager, AdminNotificationMessage, NotificationType, NotificationPriority, NotificationCategory
+from app.services.monitoring.system.system_monitor import SystemMonitor, SystemHealth
 from models import UserRole
-from database import DatabaseManager
+from app.core.database.core.database_manager import DatabaseManager
 
 
 class TestAdminHealthNotificationsIntegration(unittest.TestCase):

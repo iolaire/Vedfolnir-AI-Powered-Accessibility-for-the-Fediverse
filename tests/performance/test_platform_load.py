@@ -12,7 +12,7 @@ import time
 import threading
 from tests.fixtures.platform_fixtures import PlatformTestCase
 from models import User, UserRole, PlatformConnection, Post, Image
-from platform_context import PlatformContextManager
+from app.services.platform.core.platform_context import PlatformContextManager
 
 class TestPlatformLoadTesting(PlatformTestCase):
     """Test system performance under load"""

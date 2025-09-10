@@ -40,11 +40,11 @@ def validate_form_submission(form):
     return request.method == 'POST' and form.validate()
 from functools import wraps
 from config import Config
-from database import DatabaseManager
+from app.core.database.core.database_manager import DatabaseManager
 from models import ProcessingStatus, Image, Post, User, UserRole, ProcessingRun, PlatformConnection
 from sqlalchemy.orm import joinedload
 from sqlalchemy.exc import SQLAlchemyError
-from activitypub_client import ActivityPubClient
+from app.services.activitypub.components.activitypub_client import ActivityPubClient
 from ollama_caption_generator import OllamaCaptionGenerator
 from caption_quality_assessment import CaptionQualityManager
 from health_check import HealthChecker
@@ -54,24 +54,24 @@ from session_middleware_v2 import get_current_session_context, get_current_sessi
 from request_scoped_session_manager import RequestScopedSessionManager
 from session_aware_user import SessionAwareUser
 from session_aware_decorators import with_db_session, require_platform_context
-from security.core.security_utils import sanitize_for_log, sanitize_html_input
+from app.core.security.core.security_utils import sanitize_for_log, sanitize_html_input
 from enhanced_input_validation import enhanced_input_validation, EnhancedInputValidator
-from enhanced_maintenance_mode_service import EnhancedMaintenanceModeService
-from maintenance_mode_middleware import MaintenanceModeMiddleware
-from security.core.security_middleware import SecurityMiddleware, require_https, validate_csrf_token, sanitize_filename, generate_secure_token, rate_limit, validate_input_length, require_secure_connection
+from app.services.maintenance.enhanced.enhanced_maintenance_mode_service import EnhancedMaintenanceModeService
+from app.services.maintenance.components.maintenance_mode_middleware import MaintenanceModeMiddleware
+from app.core.security.core.security_middleware import SecurityMiddleware, require_https, validate_csrf_token, sanitize_filename, generate_secure_token, rate_limit, validate_input_length, require_secure_connection
 from security_decorators import conditional_rate_limit, conditional_validate_csrf_token, conditional_validate_input_length, conditional_enhanced_input_validation
-from security.core.role_based_access import require_role, require_admin, require_viewer_or_higher, platform_access_required, content_access_required, api_require_admin, api_platform_access_required, api_content_access_required
-from security.middleware.platform_access_middleware import PlatformAccessMiddleware, filter_images_for_user, filter_posts_for_user, filter_platforms_for_user
-from security.core.security_config import security_config
-from security.features.caption_security import CaptionSecurityManager, caption_generation_auth_required, validate_task_access, caption_generation_rate_limit, validate_caption_settings_input, log_caption_security_event
+from app.core.security.core.role_based_access import require_role, require_admin, require_viewer_or_higher, platform_access_required, content_access_required, api_require_admin, api_platform_access_required, api_content_access_required
+from app.core.security.middleware.platform_access_middleware import PlatformAccessMiddleware, filter_images_for_user, filter_posts_for_user, filter_platforms_for_user
+from app.core.security.core.security_config import security_config
+from app.core.security.features.caption_security import CaptionSecurityManager, caption_generation_auth_required, validate_task_access, caption_generation_rate_limit, validate_caption_settings_input, log_caption_security_event
 from error_recovery_manager import error_recovery_manager
 from web_caption_generation_service import WebCaptionGenerationService
 from caption_review_integration import CaptionReviewIntegration
 
-from security.logging.secure_error_handlers import register_secure_error_handlers
+from app.core.security.logging.secure_error_handlers import register_secure_error_handlers
 # Removed WebSocketProgressHandler import - using SSE instead
 from progress_tracker import ProgressTracker
-from task_queue_manager import TaskQueueManager
+from app.services.task.core.task_queue_manager import TaskQueueManager
 
 app = Flask(__name__)
 config = Config()
@@ -174,7 +174,7 @@ pre_auth_handler = PreAuthSessionHandler(app)
 app.logger.debug("Pre-authentication session handler initialized for CSRF tokens")
 
 # Initialize enhanced CSRF token manager
-from security.core.csrf_token_manager import initialize_csrf_token_manager
+from app.core.security.core.csrf_token_manager import initialize_csrf_token_manager
 csrf_token_manager = initialize_csrf_token_manager(app)
 
 # Initialize platform access middleware
@@ -241,11 +241,11 @@ def inject_role_context():
     }
 
 # Initialize CSRF error handler
-from security.core.csrf_error_handler import register_csrf_error_handlers
+from app.core.security.core.csrf_error_handler import register_csrf_error_handlers
 csrf_error_handler = register_csrf_error_handlers(app)
 
 # Initialize CSRF middleware
-from security.core.csrf_middleware import initialize_csrf_middleware
+from app.core.security.core.csrf_middleware import initialize_csrf_middleware
 csrf_middleware = initialize_csrf_middleware(app)
 
 # Configure CSRF settings
@@ -359,9 +359,9 @@ app.websocket_auth_handler = websocket_auth_handler
 app.websocket_namespace_manager = websocket_namespace_manager
 
 # Initialize unified notification system components
-from unified_notification_manager import UnifiedNotificationManager
+from app.services.notification.manager.unified_manager import UnifiedNotificationManager
 from notification_message_router import NotificationMessageRouter
-from notification_persistence_manager import NotificationPersistenceManager
+from app.services.notification.components.notification_persistence_manager import NotificationPersistenceManager
 from dashboard_notification_handlers import register_dashboard_notification_handlers
 
 # Initialize unified notification system
@@ -477,7 +477,7 @@ from database_context_middleware import DatabaseContextMiddleware
 database_context_middleware = DatabaseContextMiddleware(app, request_session_manager)
 
 # Initialize session performance monitoring
-from session_performance_monitor import initialize_performance_monitoring
+from app.services.monitoring.performance.monitors.session_performance_monitor import initialize_performance_monitoring
 from session_monitoring_cli import register_session_monitoring_commands
 from session_monitoring_routes import register_session_monitoring_routes
 from session_performance_optimizer import initialize_session_optimizations
@@ -494,7 +494,7 @@ register_session_monitoring_commands(app)
 register_session_monitoring_routes(app)
 
 # Initialize session health checking and alerting system
-from session_health_checker import get_session_health_checker
+from app.services.monitoring.health.checkers.session_health_checker import get_session_health_checker
 from session_health_routes import register_session_health_routes
 from session_alerting_system import get_alerting_system
 
@@ -532,7 +532,7 @@ from session_alert_routes import register_session_alert_routes
 register_session_alert_routes(app)
 
 # Register security audit API routes
-from admin.routes.security_audit_api import register_security_audit_api_routes
+from app.blueprints.admin.security_audit_api import register_security_audit_api_routes
 register_security_audit_api_routes(app)
 app.logger.debug("Security audit API routes registered")
 
@@ -545,12 +545,12 @@ app.config['db_manager'] = db_manager
 app.config['caption_security_manager'] = caption_security_manager
 
 # Initialize system configuration manager
-from system_configuration_manager import SystemConfigurationManager
+from app.core.configuration.core.system_configuration_manager import SystemConfigurationManager
 system_configuration_manager = SystemConfigurationManager(db_manager)
 app.config['system_configuration_manager'] = system_configuration_manager
 
 # Initialize configuration service
-from configuration_service import ConfigurationService
+from app.core.configuration.core.configuration_service import ConfigurationService
 configuration_service = ConfigurationService(db_manager)
 app.config['configuration_service'] = configuration_service
 
@@ -563,7 +563,7 @@ maintenance_middleware = MaintenanceModeMiddleware(app, maintenance_service)
 app.config['maintenance_middleware'] = maintenance_middleware
 
 # Initialize maintenance mode service
-from maintenance_mode_service import MaintenanceModeService
+from app.services.maintenance.components.maintenance_mode_service import MaintenanceModeService
 maintenance_service = MaintenanceModeService(configuration_service)
 app.maintenance_service = maintenance_service
 
@@ -766,7 +766,7 @@ def role_required(role):
                     if not user_id:
                         app.logger.warning("User ID not accessible from current_user")
                         # Send error notification
-                        from notification_helpers import send_error_notification
+                        from app.services.notification.helpers.notification_helpers import send_error_notification
                         send_error_notification("User authentication error. Please log in again.", "Error")
                         logout_user()
                         return redirect(url_for('user_management.login'))
@@ -775,14 +775,14 @@ def role_required(role):
                     if not server_user:
                         app.logger.warning(f"User account not found for ID: {user_id}")
                         # Send error notification
-                        from notification_helpers import send_error_notification
+                        from app.services.notification.helpers.notification_helpers import send_error_notification
                         send_error_notification("User account not found.", "Error")
                         logout_user()
                         return redirect(url_for('user_management.login'))
                     if not server_user.is_active:
                         app.logger.warning(f"Inactive user attempted access: {sanitize_for_log(server_user.username)}")
                         # Send error notification
-                        from notification_helpers import send_error_notification
+                        from app.services.notification.helpers.notification_helpers import send_error_notification
                         send_error_notification("Your account has been deactivated.", "Error")
                         logout_user()
                         return redirect(url_for('user_management.login'))
@@ -796,7 +796,7 @@ def role_required(role):
                     if not server_user.has_permission(role):
                         app.logger.warning(f"Access denied: user {sanitize_for_log(server_user.username)} (role: {sanitize_for_log(server_user.role.value if server_user.role else 'None')}) attempted to access {sanitize_for_log(role.value)} resource")
                         # Send error notification
-                        from notification_helpers import send_error_notification
+                        from app.services.notification.helpers.notification_helpers import send_error_notification
                         send_error_notification("You do not have permission to access this page.", "Error")
                         return redirect(url_for('main.index'))
                     
@@ -806,7 +806,7 @@ def role_required(role):
             except SQLAlchemyError as e:
                 app.logger.error(f"Database error during authorization: {sanitize_for_log(str(e))}")
                 # Send error notification
-                from notification_helpers import send_error_notification
+                from app.services.notification.helpers.notification_helpers import send_error_notification
                 send_error_notification("Authorization error. Please try again.", "Error")
                 return redirect(url_for('user_management.login'))
             
@@ -831,7 +831,7 @@ def platform_required(f):
                 user_id = getattr(current_user, 'id', None)
                 if not user_id:
                     # Send error notification
-                    from notification_helpers import send_error_notification
+                    from app.services.notification.helpers.notification_helpers import send_error_notification
                     send_error_notification("User authentication error. Please log in again.", "Error")
                     return redirect(url_for('user_management.login'))
                     
@@ -842,12 +842,12 @@ def platform_required(f):
                 
                 if user_platforms == 0:
                     # Send warning notification
-                    from notification_helpers import send_warning_notification
+                    from app.services.notification.helpers.notification_helpers import send_warning_notification
                     send_warning_notification("You need to set up at least one platform connection to access this feature.", "Warning")
                     return redirect(url_for('first_time_setup'))
                 else:
                     # Send warning notification
-                    from notification_helpers import send_warning_notification
+                    from app.services.notification.helpers.notification_helpers import send_warning_notification
                     send_warning_notification("Please select a platform to continue.", "Warning")
                     return redirect(url_for('platform.management'))
         
@@ -867,7 +867,7 @@ def platform_access_required(platform_type=None, instance_url=None):
             context = get_current_session_context()
             if not context or not context.get('platform_connection_id'):
                 # Send error notification
-                from notification_helpers import send_error_notification
+                from app.services.notification.helpers.notification_helpers import send_error_notification
                 send_error_notification("No active platform connection found.", "Error")
                 return redirect(url_for('platform.management'))
             
@@ -876,7 +876,7 @@ def platform_access_required(platform_type=None, instance_url=None):
                 user_id = getattr(current_user, 'id', None)
                 if not user_id:
                     # Send error notification
-                    from notification_helpers import send_error_notification
+                    from app.services.notification.helpers.notification_helpers import send_error_notification
                     send_error_notification("User authentication error. Please log in again.", "Error")
                     return redirect(url_for('user_management.login'))
                     
@@ -888,7 +888,7 @@ def platform_access_required(platform_type=None, instance_url=None):
                 
                 if not current_platform:
                     # Send error notification
-                    from notification_helpers import send_error_notification
+                    from app.services.notification.helpers.notification_helpers import send_error_notification
                     send_error_notification("Current platform connection is no longer available.", "Error")
                     return redirect(url_for('platform.management'))
                 
@@ -899,14 +899,14 @@ def platform_access_required(platform_type=None, instance_url=None):
             # Validate platform type if specified
             if platform_type and platform_type_actual != platform_type:
                 # Send error notification
-                from notification_helpers import send_error_notification
+                from app.services.notification.helpers.notification_helpers import send_error_notification
                 send_error_notification(f'This feature requires a {platform_type.title()} connection. Current platform: {platform_type_actual.title()}', "Platform Mismatch")
                 return redirect(url_for('platform.management'))
             
             # Validate instance URL if specified
             if instance_url and instance_url_actual != instance_url:
                 # Send error notification
-                from notification_helpers import send_error_notification
+                from app.services.notification.helpers.notification_helpers import send_error_notification
                 send_error_notification("f'This feature requires access to {instance_url}. Current instance: {instance_url_actual}'", "Error")
                 return redirect(url_for('platform.management'))
             

@@ -17,8 +17,8 @@ from unittest.mock import Mock, patch, MagicMock
 from flask import Flask
 from werkzeug.test import Client
 
-from admin.routes.configuration_routes import configuration_bp
-from system_configuration_manager import (
+from app.blueprints.admin.configuration_routes import configuration_bp
+from app.core.configuration.core.system_configuration_manager import (
     SystemConfigurationManager, ConfigurationCategory, 
     ConfigurationExport, ConfigurationValidationResult,
     ConfigurationChange, ConfigurationSchema, ConfigurationDataType
@@ -61,7 +61,7 @@ class TestConfigurationRoutes(unittest.TestCase):
             sess['user_id'] = user_id or self.admin_user_id
             sess['role'] = 'admin' if is_admin else 'reviewer'
     
-    @patch('admin.routes.configuration_routes.require_admin')
+    @patch('app.blueprints.admin.configuration_routes.require_admin')
     def test_get_configuration_schema_all(self, mock_require_admin):
         """Test getting all configuration schemas"""
         mock_require_admin.return_value = lambda f: f  # Bypass decorator
@@ -90,7 +90,7 @@ class TestConfigurationRoutes(unittest.TestCase):
         self.assertIn('schemas', data)
         self.assertIn('test_key', data['schemas'])
     
-    @patch('admin.routes.configuration_routes.require_admin')
+    @patch('app.blueprints.admin.configuration_routes.require_admin')
     def test_get_configuration_schema_specific(self, mock_require_admin):
         """Test getting specific configuration schema"""
         mock_require_admin.return_value = lambda f: f  # Bypass decorator
@@ -117,7 +117,7 @@ class TestConfigurationRoutes(unittest.TestCase):
         self.assertIn('schema', data)
         self.assertEqual(data['schema']['key'], 'test_key')
     
-    @patch('admin.routes.configuration_routes.require_admin')
+    @patch('app.blueprints.admin.configuration_routes.require_admin')
     def test_get_configuration_documentation(self, mock_require_admin):
         """Test getting configuration documentation"""
         mock_require_admin.return_value = lambda f: f  # Bypass decorator
@@ -140,8 +140,8 @@ class TestConfigurationRoutes(unittest.TestCase):
         self.assertIn('documentation', data)
         self.assertIn('system', data['documentation'])
     
-    @patch('admin.routes.configuration_routes.require_admin')
-    @patch('admin.routes.configuration_routes.session')
+    @patch('app.blueprints.admin.configuration_routes.require_admin')
+    @patch('app.blueprints.admin.configuration_routes.session')
     def test_get_configurations(self, mock_session, mock_require_admin):
         """Test getting all configurations"""
         mock_require_admin.return_value = lambda f: f  # Bypass decorator
@@ -163,8 +163,8 @@ class TestConfigurationRoutes(unittest.TestCase):
         self.assertEqual(len(data['configurations']), 2)
         self.assertEqual(data['total_count'], 2)
     
-    @patch('admin.routes.configuration_routes.require_admin')
-    @patch('admin.routes.configuration_routes.session')
+    @patch('app.blueprints.admin.configuration_routes.require_admin')
+    @patch('app.blueprints.admin.configuration_routes.session')
     def test_get_configurations_with_category_filter(self, mock_session, mock_require_admin):
         """Test getting configurations with category filter"""
         mock_require_admin.return_value = lambda f: f  # Bypass decorator
@@ -186,8 +186,8 @@ class TestConfigurationRoutes(unittest.TestCase):
             self.admin_user_id, ConfigurationCategory.SYSTEM, False
         )
     
-    @patch('admin.routes.configuration_routes.require_admin')
-    @patch('admin.routes.configuration_routes.session')
+    @patch('app.blueprints.admin.configuration_routes.require_admin')
+    @patch('app.blueprints.admin.configuration_routes.session')
     def test_get_configuration_specific(self, mock_session, mock_require_admin):
         """Test getting specific configuration"""
         mock_require_admin.return_value = lambda f: f  # Bypass decorator
@@ -204,8 +204,8 @@ class TestConfigurationRoutes(unittest.TestCase):
         self.assertEqual(data['key'], 'test_key')
         self.assertEqual(data['value'], 'test_value')
     
-    @patch('admin.routes.configuration_routes.require_admin')
-    @patch('admin.routes.configuration_routes.session')
+    @patch('app.blueprints.admin.configuration_routes.require_admin')
+    @patch('app.blueprints.admin.configuration_routes.session')
     def test_get_configuration_not_found(self, mock_session, mock_require_admin):
         """Test getting non-existent configuration"""
         mock_require_admin.return_value = lambda f: f  # Bypass decorator
@@ -221,8 +221,8 @@ class TestConfigurationRoutes(unittest.TestCase):
         data = json.loads(response.data)
         self.assertIn('error', data)
     
-    @patch('admin.routes.configuration_routes.require_admin')
-    @patch('admin.routes.configuration_routes.session')
+    @patch('app.blueprints.admin.configuration_routes.require_admin')
+    @patch('app.blueprints.admin.configuration_routes.session')
     def test_set_configuration_success(self, mock_session, mock_require_admin):
         """Test setting configuration successfully"""
         mock_require_admin.return_value = lambda f: f  # Bypass decorator
@@ -246,8 +246,8 @@ class TestConfigurationRoutes(unittest.TestCase):
             'test_key', 'new_value', self.admin_user_id, 'test update'
         )
     
-    @patch('admin.routes.configuration_routes.require_admin')
-    @patch('admin.routes.configuration_routes.session')
+    @patch('app.blueprints.admin.configuration_routes.require_admin')
+    @patch('app.blueprints.admin.configuration_routes.session')
     def test_set_configuration_failure(self, mock_session, mock_require_admin):
         """Test setting configuration failure"""
         mock_require_admin.return_value = lambda f: f  # Bypass decorator
@@ -264,8 +264,8 @@ class TestConfigurationRoutes(unittest.TestCase):
         data = json.loads(response.data)
         self.assertIn('error', data)
     
-    @patch('admin.routes.configuration_routes.require_admin')
-    @patch('admin.routes.configuration_routes.session')
+    @patch('app.blueprints.admin.configuration_routes.require_admin')
+    @patch('app.blueprints.admin.configuration_routes.session')
     def test_set_configurations_batch_success(self, mock_session, mock_require_admin):
         """Test batch configuration update success"""
         mock_require_admin.return_value = lambda f: f  # Bypass decorator
@@ -290,8 +290,8 @@ class TestConfigurationRoutes(unittest.TestCase):
         self.assertEqual(data['success_count'], 2)
         self.assertEqual(len(data['failed_configurations']), 0)
     
-    @patch('admin.routes.configuration_routes.require_admin')
-    @patch('admin.routes.configuration_routes.session')
+    @patch('app.blueprints.admin.configuration_routes.require_admin')
+    @patch('app.blueprints.admin.configuration_routes.session')
     def test_set_configurations_batch_validation_failure(self, mock_session, mock_require_admin):
         """Test batch configuration update with validation failure"""
         mock_require_admin.return_value = lambda f: f  # Bypass decorator
@@ -312,7 +312,7 @@ class TestConfigurationRoutes(unittest.TestCase):
         data = json.loads(response.data)
         self.assertIn('validation_errors', data)
     
-    @patch('admin.routes.configuration_routes.require_admin')
+    @patch('app.blueprints.admin.configuration_routes.require_admin')
     def test_validate_configurations(self, mock_require_admin):
         """Test configuration validation endpoint"""
         mock_require_admin.return_value = lambda f: f  # Bypass decorator
@@ -333,8 +333,8 @@ class TestConfigurationRoutes(unittest.TestCase):
         self.assertTrue(data['is_valid'])
         self.assertEqual(len(data['warnings']), 1)
     
-    @patch('admin.routes.configuration_routes.require_admin')
-    @patch('admin.routes.configuration_routes.session')
+    @patch('app.blueprints.admin.configuration_routes.require_admin')
+    @patch('app.blueprints.admin.configuration_routes.session')
     def test_get_configuration_history(self, mock_session, mock_require_admin):
         """Test getting configuration history"""
         mock_require_admin.return_value = lambda f: f  # Bypass decorator
@@ -363,8 +363,8 @@ class TestConfigurationRoutes(unittest.TestCase):
         self.assertEqual(data['history'][0]['old_value'], 'old')
         self.assertEqual(data['history'][0]['new_value'], 'new')
     
-    @patch('admin.routes.configuration_routes.require_admin')
-    @patch('admin.routes.configuration_routes.session')
+    @patch('app.blueprints.admin.configuration_routes.require_admin')
+    @patch('app.blueprints.admin.configuration_routes.session')
     def test_rollback_configuration_success(self, mock_session, mock_require_admin):
         """Test configuration rollback success"""
         mock_require_admin.return_value = lambda f: f  # Bypass decorator
@@ -383,8 +383,8 @@ class TestConfigurationRoutes(unittest.TestCase):
         self.assertIn('message', data)
         self.assertEqual(data['key'], 'test_key')
     
-    @patch('admin.routes.configuration_routes.require_admin')
-    @patch('admin.routes.configuration_routes.session')
+    @patch('app.blueprints.admin.configuration_routes.require_admin')
+    @patch('app.blueprints.admin.configuration_routes.session')
     def test_rollback_configuration_failure(self, mock_session, mock_require_admin):
         """Test configuration rollback failure"""
         mock_require_admin.return_value = lambda f: f  # Bypass decorator
@@ -402,8 +402,8 @@ class TestConfigurationRoutes(unittest.TestCase):
         data = json.loads(response.data)
         self.assertIn('error', data)
     
-    @patch('admin.routes.configuration_routes.require_admin')
-    @patch('admin.routes.configuration_routes.session')
+    @patch('app.blueprints.admin.configuration_routes.require_admin')
+    @patch('app.blueprints.admin.configuration_routes.session')
     def test_export_configurations(self, mock_session, mock_require_admin):
         """Test configuration export"""
         mock_require_admin.return_value = lambda f: f  # Bypass decorator
@@ -427,8 +427,8 @@ class TestConfigurationRoutes(unittest.TestCase):
         self.assertIn('metadata', data)
         self.assertEqual(data['exported_by'], self.admin_user_id)
     
-    @patch('admin.routes.configuration_routes.require_admin')
-    @patch('admin.routes.configuration_routes.session')
+    @patch('app.blueprints.admin.configuration_routes.require_admin')
+    @patch('app.blueprints.admin.configuration_routes.session')
     def test_import_configurations_success(self, mock_session, mock_require_admin):
         """Test configuration import success"""
         mock_require_admin.return_value = lambda f: f  # Bypass decorator
@@ -451,8 +451,8 @@ class TestConfigurationRoutes(unittest.TestCase):
         self.assertTrue(data['success'])
         self.assertIn('Import successful', data['messages'])
     
-    @patch('admin.routes.configuration_routes.require_admin')
-    @patch('admin.routes.configuration_routes.session')
+    @patch('app.blueprints.admin.configuration_routes.require_admin')
+    @patch('app.blueprints.admin.configuration_routes.session')
     def test_import_configurations_failure(self, mock_session, mock_require_admin):
         """Test configuration import failure"""
         mock_require_admin.return_value = lambda f: f  # Bypass decorator
@@ -475,7 +475,7 @@ class TestConfigurationRoutes(unittest.TestCase):
         self.assertFalse(data['success'])
         self.assertIn('Import failed', data['messages'])
     
-    @patch('admin.routes.configuration_routes.require_admin')
+    @patch('app.blueprints.admin.configuration_routes.require_admin')
     def test_get_configuration_categories(self, mock_require_admin):
         """Test getting configuration categories"""
         mock_require_admin.return_value = lambda f: f  # Bypass decorator
@@ -497,7 +497,7 @@ class TestConfigurationRoutes(unittest.TestCase):
         # Remove configuration manager from app config
         self.app.config.pop('system_configuration_manager', None)
         
-        with patch('admin.routes.configuration_routes.require_admin') as mock_require_admin:
+        with patch('app.blueprints.admin.configuration_routes.require_admin') as mock_require_admin:
             mock_require_admin.return_value = lambda f: f  # Bypass decorator
             
             # Make request
@@ -508,12 +508,12 @@ class TestConfigurationRoutes(unittest.TestCase):
             self.assertIn('error', data)
             self.assertIn('Configuration manager not available', data['error'])
     
-    @patch('admin.routes.configuration_routes.require_admin')
+    @patch('app.blueprints.admin.configuration_routes.require_admin')
     def test_missing_session_user_id(self, mock_require_admin):
         """Test endpoints when user ID is not in session"""
         mock_require_admin.return_value = lambda f: f  # Bypass decorator
         
-        with patch('admin.routes.configuration_routes.session') as mock_session:
+        with patch('app.blueprints.admin.configuration_routes.session') as mock_session:
             mock_session.get.return_value = None  # No user ID in session
             
             # Make request
@@ -524,8 +524,8 @@ class TestConfigurationRoutes(unittest.TestCase):
             self.assertIn('error', data)
             self.assertIn('Admin user ID not found in session', data['error'])
     
-    @patch('admin.routes.configuration_routes.require_admin')
-    @patch('admin.routes.configuration_routes.session')
+    @patch('app.blueprints.admin.configuration_routes.require_admin')
+    @patch('app.blueprints.admin.configuration_routes.session')
     def test_invalid_category_filter(self, mock_session, mock_require_admin):
         """Test invalid category filter"""
         mock_require_admin.return_value = lambda f: f  # Bypass decorator
@@ -539,8 +539,8 @@ class TestConfigurationRoutes(unittest.TestCase):
         self.assertIn('error', data)
         self.assertIn('Invalid category', data['error'])
     
-    @patch('admin.routes.configuration_routes.require_admin')
-    @patch('admin.routes.configuration_routes.session')
+    @patch('app.blueprints.admin.configuration_routes.require_admin')
+    @patch('app.blueprints.admin.configuration_routes.session')
     def test_missing_request_data(self, mock_session, mock_require_admin):
         """Test endpoints with missing request data"""
         mock_require_admin.return_value = lambda f: f  # Bypass decorator

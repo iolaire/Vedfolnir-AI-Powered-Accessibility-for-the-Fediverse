@@ -11,7 +11,7 @@ import uuid
 
 from caption_security import CaptionSecurityManager
 from models import User, UserRole, PlatformConnection
-from database import DatabaseManager
+from app.core.database.core.database_manager import DatabaseManager
 
 class TestCaptionGenerationSecurity(unittest.TestCase):
     """Security tests for caption generation system"""

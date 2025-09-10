@@ -26,12 +26,12 @@ from typing import Dict, Any, List, Tuple, Optional
 sys.path.insert(0, os.path.join(os.path.dirname(__file__), '..'))
 
 try:
-    from notification_emergency_recovery import NotificationEmergencyRecovery, EmergencyLevel, FailureType
-    from unified_notification_manager import UnifiedNotificationManager
+    from app.services.notification.components.notification_emergency_recovery import NotificationEmergencyRecovery, EmergencyLevel, FailureType
+    from app.services.notification.manager.unified_manager import UnifiedNotificationManager
     from websocket_factory import WebSocketFactory
     from websocket_auth_handler import WebSocketAuthHandler
     from websocket_namespace_manager import WebSocketNamespaceManager
-    from database import DatabaseManager
+    from app.core.database.core.database_manager import DatabaseManager
     from config import Config
 except ImportError as e:
     print(f"❌ Import error: {e}")

@@ -16,8 +16,8 @@ from dataclasses import dataclass, asdict
 from datetime import datetime, timezone, timedelta
 from enum import Enum
 
-from emergency_maintenance_handler import EmergencyMaintenanceHandler, EmergencyReport
-from emergency_job_termination_manager import EmergencyJobTerminationManager, JobTerminationRecord
+from app.services.maintenance.emergency.emergency_maintenance_handler import EmergencyMaintenanceHandler, EmergencyReport
+from app.services.task.emergency.emergency_job_termination_manager import EmergencyJobTerminationManager, JobTerminationRecord
 
 logger = logging.getLogger(__name__)
 

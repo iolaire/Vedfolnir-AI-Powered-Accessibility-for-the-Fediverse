@@ -14,15 +14,15 @@ import asyncio
 from typing import Dict, Any, Optional
 from flask import Flask
 
-from database import DatabaseManager
-from task_queue_manager import TaskQueueManager
+from app.core.database.core.database_manager import DatabaseManager
+from app.services.task.core.task_queue_manager import TaskQueueManager
 from progress_tracker import ProgressTracker
 from system_recovery_manager import SystemRecoveryManager, initialize_system_recovery
 from graceful_shutdown_handler import initialize_graceful_shutdown
 from database_connection_recovery import DatabaseConnectionRecovery
 from ai_service_monitor import AIServiceMonitor, initialize_ai_service_monitor
-from concurrent_operation_manager import ConcurrentOperationManager, initialize_concurrent_operation_manager
-from security.core.security_utils import sanitize_for_log
+from app.services.batch.concurrent.concurrent_operation_manager import ConcurrentOperationManager, initialize_concurrent_operation_manager
+from app.core.security.core.security_utils import sanitize_for_log
 
 logger = logging.getLogger(__name__)
 

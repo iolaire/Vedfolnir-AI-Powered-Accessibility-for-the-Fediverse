@@ -36,7 +36,7 @@ except Exception as e:
     app.redis_backend = None
 
 # Initialize database
-from database import DatabaseManager
+from app.core.database.core.database_manager import DatabaseManager
 db_manager = DatabaseManager(config)
 app.config['db_manager'] = db_manager
 
@@ -75,16 +75,16 @@ def load_user(user_id):
         return session.query(User).get(int(user_id))
 
 # Initialize security systems
-from security.core.csrf_token_manager import csrf_token_manager
+from app.core.security.core.csrf_token_manager import csrf_token_manager
 csrf_token_manager.init_app(app)
 
-from security.core.security_monitoring import security_monitor
+from app.core.security.core.security_monitoring import security_monitor
 security_monitor.init_app(app)
 
-from security.core.csrf_error_handler import register_csrf_error_handlers
+from app.core.security.core.csrf_error_handler import register_csrf_error_handlers
 register_csrf_error_handlers(app)
 
-from security.core.csrf_middleware import CSRFMiddleware
+from app.core.security.core.csrf_middleware import CSRFMiddleware
 csrf_middleware = CSRFMiddleware(app)
 
 # Register all blueprints

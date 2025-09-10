@@ -18,7 +18,7 @@ from unittest.mock import patch
 sys.path.insert(0, os.path.join(os.path.dirname(__file__), '..', '..'))
 
 from config import Config, StorageConfig
-from storage_configuration_service import StorageConfigurationService
+from app.services.storage.components.storage_configuration_service import StorageConfigurationService
 
 
 class TestStorageConfigurationIntegration(unittest.TestCase):

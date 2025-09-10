@@ -20,11 +20,11 @@ import time
 # Add project root to path for imports
 sys.path.insert(0, os.path.join(os.path.dirname(__file__), '..', '..'))
 
-from maintenance_mode_transition_manager import (
+from app.services.maintenance.components.maintenance_mode_transition_manager import (
     MaintenanceModeTransitionManager, TransitionState, TransitionStatus,
     RunningJobInfo
 )
-from maintenance_mode_service import MaintenanceModeService, MaintenanceChangeEvent
+from app.services.maintenance.components.maintenance_mode_service import MaintenanceModeService, MaintenanceChangeEvent
 
 
 class TestMaintenanceModeTransitions(unittest.TestCase):

@@ -308,7 +308,7 @@ def register_api_routes(bp):
                     return jsonify({'error': 'Action ID is required'}), 400
                 else:
                     # Send error notification
-                    from notification_helpers import send_error_notification
+                    from app.services.notification.helpers.notification_helpers import send_error_notification
                     send_error_notification("Action is required", "Error")
                     return redirect(url_for('admin.system_maintenance'))
             
@@ -325,7 +325,7 @@ def register_api_routes(bp):
                     duration = custom_duration
                 
                 # Use the proper multi-tenant control service
-                from multi_tenant_control_service import MultiTenantControlService
+                from app.services.batch.components.multi_tenant_control_service import MultiTenantControlService
                 mt_service = MultiTenantControlService(db_manager)
                 
                 success = mt_service.pause_system_jobs(current_user.id, reason)
@@ -346,7 +346,7 @@ def register_api_routes(bp):
                     }
             elif action_id == 'resume_system':
                 # Use the proper multi-tenant control service
-                from multi_tenant_control_service import MultiTenantControlService
+                from app.services.batch.components.multi_tenant_control_service import MultiTenantControlService
                 mt_service = MultiTenantControlService(db_manager)
                 
                 success = mt_service.resume_system_jobs(current_user.id)
@@ -376,7 +376,7 @@ def register_api_routes(bp):
                     return jsonify({'error': error_msg}), 400
                 else:
                     # Send error notification
-                    from notification_helpers import send_error_notification
+                    from app.services.notification.helpers.notification_helpers import send_error_notification
                     send_error_notification(error_msg, "Error")
                     return redirect(url_for('admin.system_maintenance'))
             
@@ -389,11 +389,11 @@ def register_api_routes(bp):
                 # Handle form submission response
                 if result['success']:
                     # Send success notification
-                    from notification_helpers import send_success_notification
+                    from app.services.notification.helpers.notification_helpers import send_success_notification
                     send_success_notification(result.get('message', 'Maintenance action completed successfully'), "Maintenance Complete")
                 else:
                     # Send error notification
-                    from notification_helpers import send_error_notification
+                    from app.services.notification.helpers.notification_helpers import send_error_notification
                     send_error_notification(result.get('message', 'Maintenance action failed'), "Maintenance Failed")
                 return redirect(url_for('admin.system_maintenance'))
         
@@ -403,7 +403,7 @@ def register_api_routes(bp):
                 return jsonify({'error': 'Failed to execute maintenance action'}), 500
             else:
                 # Send error notification
-                from notification_helpers import send_error_notification
+                from app.services.notification.helpers.notification_helpers import send_error_notification
                 send_error_notification("Failed to execute maintenance action", "Error")
                 return redirect(url_for('admin.system_maintenance'))
     
@@ -791,7 +791,7 @@ def cleanup_old_data(reason, admin_user_id):
 def log_maintenance_action(action_id, reason, admin_user_id, success):
     """Log maintenance action to database"""
     try:
-        from multi_tenant_control_service import MultiTenantControlService
+        from app.services.batch.components.multi_tenant_control_service import MultiTenantControlService
         db_manager = current_app.config['db_manager']
         mt_service = MultiTenantControlService(db_manager)
         

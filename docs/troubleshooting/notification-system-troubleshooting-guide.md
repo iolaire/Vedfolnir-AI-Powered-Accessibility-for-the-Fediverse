@@ -185,7 +185,7 @@ def handle_admin_connect():
 #### Diagnostic Steps
 ```python
 # Check notification manager status
-from unified_notification_manager import UnifiedNotificationManager
+from app.services.notification.core.unified_notification_manager import UnifiedNotificationManager
 manager = UnifiedNotificationManager(socketio, db_manager)
 stats = manager.get_delivery_stats()
 print('Delivery stats:', stats)
@@ -333,8 +333,8 @@ import os
 sys.path.insert(0, os.path.join(os.path.dirname(__file__), '..', '..'))
 
 from config import Config
-from database import DatabaseManager
-from unified_notification_manager import UnifiedNotificationManager
+from app.core.database.core.database_manager import DatabaseManager
+from app.services.notification.core.unified_notification_manager import UnifiedNotificationManager
 import redis
 
 def check_notification_system_health():
@@ -672,7 +672,7 @@ class WebSocketRecovery:
 3. **Reset User Sessions**
    ```python
    # Clear user sessions if authentication issues
-   from session_manager import SessionManager
+   from app.core.session.core.session_manager import SessionManager
    session_manager = SessionManager(db_manager)
    session_manager.cleanup_all_sessions()
    ```

@@ -58,8 +58,8 @@ echo "=== Configuration-Only Rollback ==="
 python3 -c "
 import json
 import sys
-from system_configuration_manager import SystemConfigurationManager
-from database import DatabaseManager
+from app.core.configuration.core.system_configuration_manager import SystemConfigurationManager
+from app.core.database.core.database_manager import DatabaseManager
 from config import Config
 
 # Load backup
@@ -430,7 +430,7 @@ class EmergencyRollbackMonitor:
         
         # Check database availability
         try:
-            from database import DatabaseManager
+            from app.core.database.core.database_manager import DatabaseManager
             from config import Config
             
             config = Config()

@@ -140,7 +140,7 @@ def test_session_manager_v2():
     try:
         from session_manager_v2 import SessionManagerV2
         from redis_session_backend import RedisSessionBackend
-        from database import DatabaseManager
+        from app.core.database.core.database_manager import DatabaseManager
         from config import Config
         
         config = Config()

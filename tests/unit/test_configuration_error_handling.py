@@ -16,7 +16,7 @@ from datetime import datetime, timezone
 # Add project root to path for imports
 sys.path.insert(0, os.path.join(os.path.dirname(__file__), '..', '..'))
 
-from configuration_error_handling import (
+from app.core.configuration.error_handling.configuration_error_handling import (
     ConfigurationErrorHandler, ErrorSeverity, FallbackSource,
     ConfigurationError, FallbackAttempt, RecoveryAction,
     get_error_handler, set_error_handler

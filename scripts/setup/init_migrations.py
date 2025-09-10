@@ -14,7 +14,7 @@ logger = logging.getLogger(__name__)
 
 def run_command(command_args):
     """Run a command safely without shell injection"""
-    from security.core.security_utils import sanitize_for_log
+    from app.core.security.core.security_utils import sanitize_for_log
     logger.info(f"Running command: {sanitize_for_log(' '.join(command_args))}")
     try:
         result = subprocess.run(command_args, shell=False, check=True, capture_output=True, text=True)

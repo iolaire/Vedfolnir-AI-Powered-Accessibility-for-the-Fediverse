@@ -18,8 +18,8 @@ from pathlib import Path
 project_root = Path(__file__).parent.parent.parent
 sys.path.insert(0, str(project_root))
 
-from security.config.production_security_config import ProductionSecurityConfig
-from security.monitoring.security_alerting import get_security_alert_manager
+from app.core.security.config.production_security_config import ProductionSecurityConfig
+from app.core.security.monitoring.security_alerting import get_security_alert_manager
 
 logging.basicConfig(level=logging.INFO, format='%(asctime)s - %(levelname)s - %(message)s')
 logger = logging.getLogger(__name__)

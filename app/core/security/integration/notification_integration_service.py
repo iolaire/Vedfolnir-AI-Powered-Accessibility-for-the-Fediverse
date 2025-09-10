@@ -12,18 +12,37 @@ notifications and replacing legacy security notification mechanisms.
 Requirements: 4.5, 8.1, 8.2, 8.3, 8.4, 8.5
 """
 
+"""
+⚠️  DEPRECATED: This file is deprecated and will be removed in a future version.
+Please use the unified notification system instead:
+- unified_notification_manager.py (core system)
+- notification_service_adapters.py (service adapters)
+- notification_helpers.py (helper functions)
+- app/websocket/core/consolidated_handlers.py (WebSocket handling)
+
+Migration guide: docs/implementation/notification-consolidation-final-summary.md
+"""
+
+import warnings
+warnings.warn(
+    "This notification system is deprecated. Use the unified notification system instead.",
+    DeprecationWarning,
+    stacklevel=2
+)
+
+
 import logging
 from typing import Dict, Any, Optional, List
 from datetime import datetime, timezone
 from flask import request, g
 
-from admin_security_audit_notification_handler import (
+from app.services.admin.components.admin_security_audit_notification_handler import (
     AdminSecurityAuditNotificationHandler,
     SecurityNotificationType,
     SecurityEventContext
 )
-from security.monitoring.security_event_logger import SecurityEventType, SecurityEventSeverity
-from security.monitoring.security_alerting import SecurityAlertManager, AlertSeverity
+from app.core.security.monitoring.security_event_logger import SecurityEventType, SecurityEventSeverity
+from app.core.security.monitoring.security_alerting import SecurityAlertManager, AlertSeverity
 from models import UserRole
 
 logger = logging.getLogger(__name__)

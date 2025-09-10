@@ -15,7 +15,7 @@ from unittest.mock import Mock, patch, AsyncMock
 import httpx
 
 # Import the modules we're testing
-from activitypub_client import ActivityPubClient
+from app.services.activitypub.components.activitypub_client import ActivityPubClient
 from config import ActivityPubConfig, RateLimitConfig
 from rate_limiter import get_rate_limiter
 

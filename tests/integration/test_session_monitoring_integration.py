@@ -9,7 +9,7 @@ This script tests the complete session monitoring system.
 """
 
 import time
-from session_performance_monitor import SessionPerformanceMonitor, get_performance_monitor
+from app.services.monitoring.performance.monitors.session_performance_monitor import SessionPerformanceMonitor, get_performance_monitor
 
 def test_basic_monitoring():
     """Test basic monitoring functionality"""

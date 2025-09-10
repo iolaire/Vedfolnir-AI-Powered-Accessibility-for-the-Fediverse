@@ -13,7 +13,7 @@ from unittest.mock import Mock, patch, AsyncMock
 from datetime import datetime, timedelta
 
 from config import Config
-from database import DatabaseManager
+from app.core.database.core.database_manager import DatabaseManager
 from models import User, UserRole, UserAuditLog
 from services.gdpr_service import GDPRService
 from services.user_management_service import UserProfileService

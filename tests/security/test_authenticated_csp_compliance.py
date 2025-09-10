@@ -20,7 +20,7 @@ from urllib.parse import urljoin
 # Add project root to path for imports
 sys.path.insert(0, os.path.join(os.path.dirname(__file__), '..', '..'))
 
-from security.config.strict_csp_config import StrictCSPConfig
+from app.core.security.config.strict_csp_config import StrictCSPConfig
 
 
 class TestAuthenticatedCSPCompliance(unittest.TestCase):

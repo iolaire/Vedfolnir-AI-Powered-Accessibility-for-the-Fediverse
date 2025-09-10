@@ -17,7 +17,7 @@ import os
 # Add project root to path for imports
 sys.path.insert(0, os.path.join(os.path.dirname(__file__), '..', '..'))
 
-from configuration_metrics import (
+from app.core.configuration.monitoring.configuration_metrics import (
     ConfigurationMetricsCollector,
     ConfigurationAccessMetric,
     ConfigurationCacheMetric,
@@ -508,7 +508,7 @@ class TestConfigurationMetricsCollector(unittest.TestCase):
         old_timestamp = datetime.now(timezone.utc) - timedelta(hours=2)
         
         # Manually create an old metric
-        from configuration_metrics import ConfigurationAccessMetric
+        from app.core.configuration.monitoring.configuration_metrics import ConfigurationAccessMetric
         old_metric = ConfigurationAccessMetric(
             key="old_key",
             timestamp=old_timestamp,

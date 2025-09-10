@@ -9,6 +9,14 @@ import logging
 
 api_bp = Blueprint('api', __name__, url_prefix='/api')
 
+# Import additional API route modules
+from .page_notification_routes import page_notification_bp
+from .websocket_client_config_routes import websocket_client_config_bp
+
+# Register sub-blueprints
+api_bp.register_blueprint(page_notification_bp)
+api_bp.register_blueprint(websocket_client_config_bp)
+
 @api_bp.route('/session/state', methods=['GET'])
 def get_session_state():
     """Get current session state"""
@@ -158,7 +166,7 @@ def switch_platform(platform_id):
             # RACE CONDITION FIX: Cancel active tasks before switching
             try:
                 from web_caption_generation_service import WebCaptionGenerationService
-                from database import DatabaseManager
+                from app.core.database.core.database_manager import DatabaseManager
                 
                 db_manager = current_app.config.get('db_manager')
                 if db_manager:
@@ -435,23 +443,36 @@ def csp_report():
     This endpoint logs the violations for security monitoring and debugging.
     """
     try:
-        # CSP reports are sent as JSON with Content-Type: application/csp-report
-        # Handle different content types that browsers might send
-        content_type = request.headers.get('Content-Type', '')
+        # CSP reports can be sent with various content types by different browsers
+        # Handle all possible content types gracefully
+        content_type = request.headers.get('Content-Type', '').lower()
         
-        if 'application/csp-report' in content_type or 'application/json' in content_type:
-            # Try to get JSON data
-            csp_data = request.get_json()
-        else:
-            # Fallback: try to parse raw data as JSON
-            try:
-                raw_data = request.get_data(as_text=True)
-                csp_data = json.loads(raw_data) if raw_data else {}
-            except (json.JSONDecodeError, UnicodeDecodeError):
-                csp_data = {}
+        csp_data = None
+        
+        # Try multiple approaches to get the CSP data
+        if any(ct in content_type for ct in ['application/csp-report', 'application/json']):
+            # Standard CSP report or JSON content type
+            csp_data = request.get_json(silent=True)
         
         if not csp_data:
-            current_app.logger.warning("CSP report received with no data")
+            # Fallback: try to parse raw data as JSON regardless of content type
+            try:
+                raw_data = request.get_data(as_text=True)
+                if raw_data:
+                    csp_data = json.loads(raw_data)
+            except (json.JSONDecodeError, UnicodeDecodeError, ValueError):
+                # If JSON parsing fails, create minimal report from headers
+                csp_data = {
+                    'csp-report': {
+                        'document-uri': request.headers.get('Referer', 'unknown'),
+                        'user-agent': request.headers.get('User-Agent', 'unknown'),
+                        'content-type': content_type,
+                        'raw-data-length': len(request.get_data())
+                    }
+                }
+        
+        if not csp_data:
+            current_app.logger.warning(f"CSP report received with no parseable data. Content-Type: {content_type}")
             return '', 204  # No Content
         
         # Extract useful information from the CSP report

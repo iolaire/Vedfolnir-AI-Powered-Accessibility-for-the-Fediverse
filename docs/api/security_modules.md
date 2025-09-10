@@ -552,7 +552,7 @@ Log a security audit event.
 
 ```python
 from security.features.session_security import SessionSecurityHardening, SessionFingerprint
-from database import DatabaseManager
+from app.core.database.core.database_manager import DatabaseManager
 from flask import request
 
 db_manager = DatabaseManager(config)

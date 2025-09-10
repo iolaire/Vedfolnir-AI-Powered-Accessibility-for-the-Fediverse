@@ -19,7 +19,7 @@ from unittest.mock import Mock
 # Add project root to path
 sys.path.insert(0, '.')
 
-from admin_security_audit_notification_handler import (
+from app.services.admin.components.admin_security_audit_notification_handler import (
     AdminSecurityAuditNotificationHandler,
     SecurityNotificationType,
     SecurityEventContext,

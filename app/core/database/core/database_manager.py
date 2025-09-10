@@ -13,8 +13,8 @@ from sqlalchemy.exc import SQLAlchemyError
 from sqlalchemy.pool import QueuePool
 from models import Base, Post, Image, ProcessingRun, ProcessingStatus, UserRole, User, PlatformConnection
 from config import Config
-from platform_context import PlatformContextManager, PlatformContextError
-from security.core.security_utils import sanitize_for_log
+from app.services.platform.core.platform_context import PlatformContextManager, PlatformContextError
+from app.core.security.core.security_utils import sanitize_for_log
 
 logger = getLogger(__name__)
 

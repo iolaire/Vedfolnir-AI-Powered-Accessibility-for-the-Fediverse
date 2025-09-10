@@ -15,12 +15,12 @@ from datetime import datetime, timezone
 import os
 
 from models import PlatformConnection, GenerationResults, CaptionGenerationSettings
-from database import DatabaseManager
-from activitypub_client import ActivityPubClient
-from image_processor import ImageProcessor
-from ollama_caption_generator import OllamaCaptionGenerator
+from app.core.database.core.database_manager import DatabaseManager
+from app.services.activitypub.components.activitypub_client import ActivityPubClient
+from app.utils.processing.image_processor import ImageProcessor
+from app.utils.processing.ollama_caption_generator import OllamaCaptionGenerator
 from config import Config
-from security.core.security_utils import sanitize_for_log
+from app.core.security.core.security_utils import sanitize_for_log
 
 logger = logging.getLogger(__name__)
 

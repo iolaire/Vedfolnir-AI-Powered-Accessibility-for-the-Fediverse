@@ -18,13 +18,13 @@ import sys
 import os
 sys.path.insert(0, os.path.join(os.path.dirname(__file__), '..', '..'))
 
-from emergency_maintenance_handler import (
+from app.services.maintenance.emergency.emergency_maintenance_handler import (
     EmergencyMaintenanceHandler, 
     EmergencyReport, 
     EmergencyModeError, 
     JobTerminationError
 )
-from enhanced_maintenance_mode_service import MaintenanceMode
+from app.services.maintenance.enhanced.enhanced_maintenance_mode_service import MaintenanceMode
 from models import User, UserRole, TaskStatus
 
 

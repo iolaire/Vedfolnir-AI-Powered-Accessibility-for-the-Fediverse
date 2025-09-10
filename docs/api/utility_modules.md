@@ -254,8 +254,8 @@ Filter posts query by current platform context.
 #### Usage Example
 
 ```python
-from platform_context import PlatformContextManager, PlatformContext
-from database import DatabaseManager
+from app.services.platform.core.platform_context import PlatformContextManager, PlatformContext
+from app.core.database.core.database_manager import DatabaseManager
 from config import Config
 
 config = Config()
@@ -411,7 +411,7 @@ Register a callback for progress updates.
 
 ```python
 from progress_tracker import ProgressTracker, ProgressStatus
-from database import DatabaseManager
+from app.core.database.core.database_manager import DatabaseManager
 from config import Config
 
 config = Config()

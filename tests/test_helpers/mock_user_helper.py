@@ -16,7 +16,7 @@ from datetime import datetime, timezone
 from typing import Optional, Dict, Any, List
 from sqlalchemy.orm import Session
 from models import User, PlatformConnection, UserRole
-from database import DatabaseManager
+from app.core.database.core.database_manager import DatabaseManager
 from config import Config
 
 logger = logging.getLogger(__name__)

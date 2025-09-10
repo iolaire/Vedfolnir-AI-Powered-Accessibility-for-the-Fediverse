@@ -16,7 +16,7 @@ from datetime import datetime, timezone, timedelta
 from unittest.mock import Mock, patch, MagicMock
 
 from config import Config
-from database import DatabaseManager
+from app.core.database.core.database_manager import DatabaseManager
 from models import User, UserSession, PlatformConnection, UserRole
 from unified_session_manager import (
     UnifiedSessionManager, 

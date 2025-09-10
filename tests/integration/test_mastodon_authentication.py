@@ -11,7 +11,7 @@ import asyncio
 import httpx
 from dataclasses import dataclass
 
-from activitypub_platforms import MastodonPlatform, PlatformAdapterError
+from app.services.activitypub.components.activitypub_platforms import MastodonPlatform, PlatformAdapterError
 from config import ActivityPubConfig
 
 @dataclass

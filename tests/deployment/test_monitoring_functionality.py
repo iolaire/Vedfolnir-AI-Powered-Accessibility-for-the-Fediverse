@@ -36,9 +36,8 @@ class TestHealthMonitoringFunctionality(unittest.TestCase):
         mock_get.return_value = mock_response
         
         # Import health monitor
-        sys.path.insert(0, os.path.join(os.path.dirname(__file__), '..', '..', 'monitoring'))
         try:
-            import platform_health
+            from app.services.platform.components import platform_health
             monitor = platform_health.PlatformHealthMonitor()
             
             # Test connection check
@@ -56,9 +55,8 @@ class TestHealthMonitoringFunctionality(unittest.TestCase):
         # Mock failed response
         mock_get.side_effect = Exception("Connection failed")
         
-        sys.path.insert(0, os.path.join(os.path.dirname(__file__), '..', '..', 'monitoring'))
         try:
-            import platform_health
+            from app.services.platform.components import platform_health
             monitor = platform_health.PlatformHealthMonitor()
             
             result = monitor.check_platform_connections()
@@ -71,9 +69,8 @@ class TestHealthMonitoringFunctionality(unittest.TestCase):
     
     def test_database_health_check(self):
         """Test database health check functionality"""
-        sys.path.insert(0, os.path.join(os.path.dirname(__file__), '..', '..', 'monitoring'))
         try:
-            import platform_health
+            from app.services.platform.components import platform_health
             monitor = platform_health.PlatformHealthMonitor()
             
             # Test database check (should handle missing database gracefully)
@@ -85,9 +82,8 @@ class TestHealthMonitoringFunctionality(unittest.TestCase):
     
     def test_system_resource_check(self):
         """Test system resource monitoring"""
-        sys.path.insert(0, os.path.join(os.path.dirname(__file__), '..', '..', 'monitoring'))
         try:
-            import platform_health
+            from app.services.platform.components import platform_health
             monitor = platform_health.PlatformHealthMonitor()
             
             result = monitor.check_system_resources()

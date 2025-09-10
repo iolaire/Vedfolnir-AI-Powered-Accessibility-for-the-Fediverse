@@ -25,16 +25,16 @@ from typing import Dict, List, Any, Optional
 sys.path.insert(0, os.path.join(os.path.dirname(__file__), '..', '..'))
 
 from config import Config
-from database import DatabaseManager
+from app.core.database.core.database_manager import DatabaseManager
 from models import User, UserRole, NotificationType, NotificationPriority, NotificationCategory
-from unified_notification_manager import (
+from app.services.notification.manager.unified_manager import (
     UnifiedNotificationManager, NotificationMessage, AdminNotificationMessage, SystemNotificationMessage
 )
 from websocket_factory import WebSocketFactory
 from websocket_auth_handler import WebSocketAuthHandler
 from websocket_namespace_manager import WebSocketNamespaceManager
 from notification_message_router import NotificationMessageRouter
-from notification_persistence_manager import NotificationPersistenceManager
+from app.services.notification.components.notification_persistence_manager import NotificationPersistenceManager
 from page_notification_integrator import PageNotificationIntegrator
 
 

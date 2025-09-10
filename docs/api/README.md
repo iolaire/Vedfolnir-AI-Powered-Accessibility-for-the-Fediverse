@@ -36,7 +36,7 @@ This directory contains comprehensive API documentation for all Vedfolnir module
 
 #### Database Operations
 ```python
-from database import DatabaseManager
+from app.core.database.core.database_manager import DatabaseManager
 from config import Config
 
 config = Config()
@@ -58,7 +58,7 @@ caption, metadata = await generator.generate_caption('/path/to/image.jpg')
 
 #### Platform Context
 ```python
-from platform_context import PlatformContextManager
+from app.services.platform.core.platform_context import PlatformContextManager
 
 context_manager = PlatformContextManager(session)
 context = context_manager.set_context(user_id=123, platform_connection_id=456)
@@ -241,7 +241,7 @@ logging.basicConfig(level=logging.DEBUG)
 ### Performance Monitoring
 Use built-in monitoring for performance analysis:
 ```python
-from monitoring.platform_health import PlatformHealthMonitor
+from app.services.platform.components.platform_health import PlatformHealthMonitor
 monitor = PlatformHealthMonitor(config)
 health_status = monitor.check_system_health()
 ```

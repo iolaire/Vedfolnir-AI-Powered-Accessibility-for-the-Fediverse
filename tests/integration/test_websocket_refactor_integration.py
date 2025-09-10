@@ -17,7 +17,7 @@ from unittest.mock import Mock, patch, MagicMock
 sys.path.insert(0, os.path.join(os.path.dirname(__file__), '..', '..'))
 
 from config import Config
-from database import DatabaseManager
+from app.core.database.core.database_manager import DatabaseManager
 
 
 class TestWebSocketRefactorIntegration(unittest.TestCase):

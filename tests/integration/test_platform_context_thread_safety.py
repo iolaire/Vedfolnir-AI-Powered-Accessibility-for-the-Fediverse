@@ -14,7 +14,7 @@ import time
 from unittest.mock import Mock, patch, MagicMock
 from sqlalchemy.orm import Session
 
-from platform_context import PlatformContextManager, PlatformContext, PlatformContextError
+from app.services.platform.core.platform_context import PlatformContextManager, PlatformContext, PlatformContextError
 from models import User, PlatformConnection
 
 class TestPlatformContextThreadSafety(unittest.TestCase):

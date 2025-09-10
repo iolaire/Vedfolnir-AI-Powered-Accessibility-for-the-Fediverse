@@ -8,9 +8,9 @@ from flask import Flask, g, current_app
 from flask_login import current_user
 from sqlalchemy.exc import SQLAlchemyError
 from sqlalchemy.orm.exc import DetachedInstanceError
-from session_manager import SessionManager
+from app.core.session.core.session_manager import SessionManager
 from models import PlatformConnection, User
-from security.core.security_utils import sanitize_for_log
+from app.core.security.core.security_utils import sanitize_for_log
 
 logger = logging.getLogger(__name__)
 

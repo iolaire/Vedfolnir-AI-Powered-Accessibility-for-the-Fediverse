@@ -28,7 +28,7 @@ from flask import Flask
 sys.path.insert(0, os.path.dirname(os.path.dirname(os.path.abspath(__file__))))
 
 from config import Config
-from database import DatabaseManager
+from app.core.database.core.database_manager import DatabaseManager
 from models import User, PlatformConnection, UserRole
 from request_scoped_session_manager import RequestScopedSessionManager
 from session_manager_v2 import SessionManagerV2 as SessionManager
@@ -110,7 +110,7 @@ class TestDashboardSessionManagement(unittest.TestCase):
         """Set up the dashboard route with proper decorators and dependencies"""
         from flask_login import LoginManager, current_user
         from session_aware_decorators import with_db_session, require_platform_context
-        from security.core.security_utils import sanitize_for_log
+        from app.core.security.core.security_utils import sanitize_for_log
         
         login_manager = LoginManager()
         login_manager.init_app(self.app)

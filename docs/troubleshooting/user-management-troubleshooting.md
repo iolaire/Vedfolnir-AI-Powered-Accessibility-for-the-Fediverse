@@ -58,7 +58,7 @@ This comprehensive troubleshooting guide addresses common issues with the Vedfol
 ```bash
 # Check user account status
 python -c "
-from database import DatabaseManager
+from app.core.database.core.database_manager import DatabaseManager
 from config import Config
 from models import User
 
@@ -116,7 +116,7 @@ except Exception as e:
 ```bash
 # Check if username exists
 python -c "
-from database import DatabaseManager
+from app.core.database.core.database_manager import DatabaseManager
 from config import Config
 from models import User
 
@@ -164,7 +164,7 @@ session.close()
 ```bash
 # Check email usage
 python -c "
-from database import DatabaseManager
+from app.core.database.core.database_manager import DatabaseManager
 from config import Config
 from models import User
 
@@ -269,7 +269,7 @@ Examples of valid passwords:
 ```bash
 # Check recent email attempts
 python -c "
-from database import DatabaseManager
+from app.core.database.core.database_manager import DatabaseManager
 from config import Config
 from models import User
 
@@ -331,7 +331,7 @@ except Exception as e:
 ```bash
 # Admin can manually verify email
 python -c "
-from database import DatabaseManager
+from app.core.database.core.database_manager import DatabaseManager
 from config import Config
 from models import User
 
@@ -365,7 +365,7 @@ session.close()
 ```bash
 # Check token status
 python -c "
-from database import DatabaseManager
+from app.core.database.core.database_manager import DatabaseManager
 from config import Config
 from models import User, EmailVerificationToken
 from datetime import datetime
@@ -406,7 +406,7 @@ session.close()
 ```bash
 # Admin can generate new token
 python -c "
-from database import DatabaseManager
+from app.core.database.core.database_manager import DatabaseManager
 from config import Config
 from models import User
 from services.user_management_service import UserRegistrationService
@@ -446,7 +446,7 @@ session.close()
 ```bash
 # Check account details
 python -c "
-from database import DatabaseManager
+from app.core.database.core.database_manager import DatabaseManager
 from config import Config
 from models import User
 
@@ -477,7 +477,7 @@ session.close()
 # Verify password hash (admin only)
 python -c "
 from werkzeug.security import check_password_hash
-from database import DatabaseManager
+from app.core.database.core.database_manager import DatabaseManager
 from config import Config
 from models import User
 
@@ -529,7 +529,7 @@ session.close()
 ```bash
 # Check lockout status
 python -c "
-from database import DatabaseManager
+from app.core.database.core.database_manager import DatabaseManager
 from config import Config
 from models import User
 from datetime import datetime, timedelta
@@ -568,7 +568,7 @@ session.close()
 ```bash
 # Admin can unlock account immediately
 python -c "
-from database import DatabaseManager
+from app.core.database.core.database_manager import DatabaseManager
 from config import Config
 from models import User
 
@@ -634,7 +634,7 @@ session.close()
 ```bash
 # Check user profile status
 python -c "
-from database import DatabaseManager
+from app.core.database.core.database_manager import DatabaseManager
 from config import Config
 from models import User
 
@@ -695,7 +695,7 @@ session.close()
 ```bash
 # Check email change status
 python -c "
-from database import DatabaseManager
+from app.core.database.core.database_manager import DatabaseManager
 from config import Config
 from models import User, EmailVerificationToken
 
@@ -739,7 +739,7 @@ session.close()
 ```bash
 # Admin can update email directly
 python -c "
-from database import DatabaseManager
+from app.core.database.core.database_manager import DatabaseManager
 from config import Config
 from models import User
 
@@ -777,7 +777,7 @@ session.close()
 ```bash
 # Check password reset status
 python -c "
-from database import DatabaseManager
+from app.core.database.core.database_manager import DatabaseManager
 from config import Config
 from models import User
 
@@ -817,7 +817,7 @@ session.close()
 ```bash
 # Admin can reset password directly
 python -c "
-from database import DatabaseManager
+from app.core.database.core.database_manager import DatabaseManager
 from config import Config
 from models import User
 from werkzeug.security import generate_password_hash
@@ -869,7 +869,7 @@ session.close()
 ```bash
 # Clean up expired tokens
 python -c "
-from database import DatabaseManager
+from app.core.database.core.database_manager import DatabaseManager
 from config import Config
 from models import User
 from datetime import datetime, timedelta
@@ -909,7 +909,7 @@ session.close()
 ```bash
 # Check user role and permissions
 python -c "
-from database import DatabaseManager
+from app.core.database.core.database_manager import DatabaseManager
 from config import Config
 from models import User, UserRole
 
@@ -945,7 +945,7 @@ session.close()
 ```bash
 # Admin can change user role
 python -c "
-from database import DatabaseManager
+from app.core.database.core.database_manager import DatabaseManager
 from config import Config
 from models import User, UserRole
 
@@ -986,7 +986,7 @@ session.close()
 ```bash
 # Check platform connections
 python -c "
-from database import DatabaseManager
+from app.core.database.core.database_manager import DatabaseManager
 from config import Config
 from models import User, PlatformConnection
 
@@ -1184,7 +1184,7 @@ echo "SESSION_CLEANUP_INTERVAL=7200" >> .env  # 2 hours
 ```bash
 # Check active sessions for user
 python -c "
-from database import DatabaseManager
+from app.core.database.core.database_manager import DatabaseManager
 from config import Config
 from models import User, UserSession
 
@@ -1226,7 +1226,7 @@ session.close()
 ```bash
 # Check user data for export
 python -c "
-from database import DatabaseManager
+from app.core.database.core.database_manager import DatabaseManager
 from config import Config
 from models import User
 from services.gdpr_service import GDPRService
@@ -1276,7 +1276,7 @@ except Exception as e:
 ```bash
 # Check account deletion status
 python -c "
-from database import DatabaseManager
+from app.core.database.core.database_manager import DatabaseManager
 from config import Config
 from models import User
 
@@ -1310,7 +1310,7 @@ session.close()
 ```bash
 # Admin can delete user account
 python -c "
-from database import DatabaseManager
+from app.core.database.core.database_manager import DatabaseManager
 from config import Config
 from services.user_management_service import UserProfileService
 from services.email_service import EmailService
@@ -1349,7 +1349,7 @@ except Exception as e:
 ```bash
 # Verify admin status
 python -c "
-from database import DatabaseManager
+from app.core.database.core.database_manager import DatabaseManager
 from config import Config
 from models import User, UserRole
 
@@ -1385,7 +1385,7 @@ session.close()
 ```bash
 # Grant admin role to user
 python -c "
-from database import DatabaseManager
+from app.core.database.core.database_manager import DatabaseManager
 from config import Config
 from models import User, UserRole
 
@@ -1423,7 +1423,7 @@ session.close()
 ```bash
 # Check admin service status
 python -c "
-from database import DatabaseManager
+from app.core.database.core.database_manager import DatabaseManager
 from config import Config
 from services.user_management_service import AdminUserService
 from services.email_service import EmailService
@@ -1477,7 +1477,7 @@ except Exception as e:
 ```bash
 # Test database connection
 python -c "
-from database import DatabaseManager
+from app.core.database.core.database_manager import DatabaseManager
 from config import Config
 
 config = Config()
@@ -1547,7 +1547,7 @@ if os.path.exists(db_path):
 ```bash
 # Optimize database
 python -c "
-from database import DatabaseManager
+from app.core.database.core.database_manager import DatabaseManager
 from config import Config
 
 config = Config()
@@ -1567,7 +1567,7 @@ print('Database optimized')
 ```bash
 # Clean up expired tokens and sessions
 python -c "
-from database import DatabaseManager
+from app.core.database.core.database_manager import DatabaseManager
 from config import Config
 from models import User, UserSession, EmailVerificationToken
 from datetime import datetime, timedelta
@@ -1614,7 +1614,7 @@ session.close()
 ```bash
 # Add missing indexes
 python -c "
-from database import DatabaseManager
+from app.core.database.core.database_manager import DatabaseManager
 from config import Config
 
 config = Config()
@@ -1694,7 +1694,7 @@ print(f'Memory Percent: {process.memory_percent():.2f}%')
 ```bash
 # Check recent login attempts
 python -c "
-from database import DatabaseManager
+from app.core.database.core.database_manager import DatabaseManager
 from config import Config
 from models import User, UserAuditLog
 
@@ -1772,7 +1772,7 @@ If all admin accounts are locked or inaccessible:
 ```bash
 # Create emergency admin account
 python -c "
-from database import DatabaseManager
+from app.core.database.core.database_manager import DatabaseManager
 from config import Config
 from models import User, UserRole
 from werkzeug.security import generate_password_hash
@@ -1821,7 +1821,7 @@ sqlite3 storage/database/vedfolnir.db "PRAGMA integrity_check;"
 
 # Or recreate database
 python -c "
-from database import DatabaseManager
+from app.core.database.core.database_manager import DatabaseManager
 from config import Config
 
 config = Config()
@@ -1844,7 +1844,7 @@ cp .env backups/$(date +%Y%m%d_%H%M%S)/
 # Reset database
 rm storage/database/vedfolnir.db
 python -c "
-from database import DatabaseManager
+from app.core.database.core.database_manager import DatabaseManager
 from config import Config
 
 config = Config()
@@ -1855,7 +1855,7 @@ print('Database reset complete')
 
 # Create initial admin user
 python -c "
-from database import DatabaseManager
+from app.core.database.core.database_manager import DatabaseManager
 from config import Config
 from models import User, UserRole
 from werkzeug.security import generate_password_hash

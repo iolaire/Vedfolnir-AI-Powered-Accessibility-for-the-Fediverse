@@ -8,9 +8,9 @@ Simple unit tests for Platform-Aware Caption Generator Adapter
 import unittest
 from unittest.mock import Mock, patch
 
-from platform_aware_caption_adapter import PlatformAwareCaptionAdapter
+from app.services.platform.adapters.platform_aware_caption_adapter import PlatformAwareCaptionAdapter
 from models import PlatformConnection, CaptionGenerationSettings
-from database import DatabaseManager
+from app.core.database.core.database_manager import DatabaseManager
 from config import Config
 
 class TestPlatformAwareCaptionAdapterSimple(unittest.TestCase):

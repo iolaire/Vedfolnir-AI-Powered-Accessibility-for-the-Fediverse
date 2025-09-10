@@ -20,7 +20,7 @@ from sqlalchemy import text, Index
 from sqlalchemy.exc import SQLAlchemyError
 from flask import g, has_request_context
 
-from database import DatabaseManager
+from app.core.database.core.database_manager import DatabaseManager
 from models import UserSession, User, PlatformConnection
 
 logger = logging.getLogger(__name__)

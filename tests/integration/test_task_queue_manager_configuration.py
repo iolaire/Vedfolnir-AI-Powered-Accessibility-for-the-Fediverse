@@ -18,9 +18,9 @@ from datetime import datetime, timezone, timedelta
 # Add project root to path for imports
 sys.path.insert(0, os.path.join(os.path.dirname(__file__), '..', '..'))
 
-from task_queue_manager import TaskQueueManager
-from configuration_service import ConfigurationService
-from task_queue_configuration_adapter import TaskQueueConfigurationAdapter
+from app.services.task.core.task_queue_manager import TaskQueueManager
+from app.core.configuration.core.configuration_service import ConfigurationService
+from app.services.task.configuration.task_queue_configuration_adapter import TaskQueueConfigurationAdapter
 from models import CaptionGenerationTask, TaskStatus, JobPriority
 
 

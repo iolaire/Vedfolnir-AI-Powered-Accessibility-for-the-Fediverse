@@ -13,7 +13,7 @@ def test_redis_session_creation():
     """Test Redis session creation and management"""
     try:
         from config import Config
-        from database import DatabaseManager
+        from app.core.database.core.database_manager import DatabaseManager
         from session_factory import create_session_manager
         from models import User, UserRole
         
@@ -108,7 +108,7 @@ def test_multiple_sessions():
     """Test multiple concurrent Redis sessions"""
     try:
         from config import Config
-        from database import DatabaseManager
+        from app.core.database.core.database_manager import DatabaseManager
         from session_factory import create_session_manager
         from models import User
         

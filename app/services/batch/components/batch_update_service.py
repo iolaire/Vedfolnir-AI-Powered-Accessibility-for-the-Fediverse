@@ -7,19 +7,19 @@ from json import dumps
 from typing import List, Dict, Any, Tuple, Optional
 from datetime import datetime
 from config import Config
-from database import DatabaseManager
-from activitypub_client import ActivityPubClient
+from app.core.database.core.database_manager import DatabaseManager
+from app.services.activitypub.components.activitypub_client import ActivityPubClient
 from models import ProcessingStatus, Image
-from security.core.security_utils import sanitize_for_log
-from feature_flag_service import FeatureFlagService
-from feature_flag_decorators import FeatureFlagMiddleware
+from app.core.security.core.security_utils import sanitize_for_log
+from app.core.configuration.core.configuration_service import ConfigurationService
+from app.services.feature_flags.feature_flag_decorators import FeatureFlagMiddleware
 
 logger = getLogger(__name__)
 
 class BatchUpdateService:
     """Service for batch updating approved captions to ActivityPub"""
     
-    def __init__(self, config: Config, feature_service: Optional[FeatureFlagService] = None):
+    def __init__(self, config: Config, feature_service: Optional[ConfigurationService] = None):
         self.config = config
         self.db = DatabaseManager(config)
         self.batch_size = getattr(config, 'batch_size', 5)  # Default batch size of 5

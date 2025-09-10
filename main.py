@@ -10,13 +10,13 @@ import json
 from typing import List, Dict, Any
 from datetime import datetime, timezone
 from config import Config
-from database import DatabaseManager
-from activitypub_client import ActivityPubClient
-from image_processor import ImageProcessor
-from ollama_caption_generator import OllamaCaptionGenerator
+from app.core.database.core.database_manager import DatabaseManager
+from app.services.activitypub.components.activitypub_client import ActivityPubClient
+from app.utils.processing.image_processor import ImageProcessor
+from app.utils.processing.ollama_caption_generator import OllamaCaptionGenerator
 from models import ProcessingRun, ProcessingStatus, Image
-from utils import get_retry_stats_summary, get_retry_stats_detailed
-from logger import (
+from app.utils.helpers.utils import get_retry_stats_summary, get_retry_stats_detailed
+from app.utils.logging.logger import (
     setup_logging, log_with_context, log_error, log_error_summary,
     get_error_summary, get_error_report, reset_error_collector
 )
@@ -257,7 +257,7 @@ class Vedfolnir:
             
             # Check if caption generator is available
             if caption_generator is None:
-                from security.core.security_utils import sanitize_for_log
+                from app.core.security.core.security_utils import sanitize_for_log
                 logger.warning(f"Skipping image processing for post {sanitize_for_log(post_id)} - no caption generator available")
                 return
             

@@ -12,7 +12,7 @@ from datetime import datetime, timedelta
 from unittest.mock import patch
 
 from config import Config
-from database import DatabaseManager
+from app.core.database.core.database_manager import DatabaseManager
 from models import User, PlatformConnection, UserSession, UserRole
 from session_manager_v2 import SessionManagerV2 as SessionManager
 

@@ -386,7 +386,7 @@ The test suite automatically detects database availability:
    python scripts/setup/verify_env_setup.py
    
    # Check database credentials
-   python -c "from database import DatabaseManager; from config import Config; DatabaseManager(Config())"
+   python -c "from app.core.database.core.database_manager import DatabaseManager; from config import Config; DatabaseManager(Config())"
    ```
 
 2. **Import Errors**

@@ -23,19 +23,19 @@ from typing import List, Dict, Any, Optional
 
 # Import all the services and components we need to test
 from config import Config
-from database import DatabaseManager
+from app.core.database.core.database_manager import DatabaseManager
 from models import (
     User, UserRole, CaptionGenerationTask, TaskStatus, JobPriority,
     SystemConfiguration, JobAuditLog, PlatformConnection
 )
 
 # Import all the multi-tenant services
-from admin_management_service import AdminManagementService, SystemOverview, JobDetails, ErrorDiagnostics
-from multi_tenant_control_service import MultiTenantControlService, UserJobLimits, RateLimits
+from app.services.admin.components.admin_management_service import AdminManagementService, SystemOverview, JobDetails, ErrorDiagnostics
+from app.services.batch.components.multi_tenant_control_service import MultiTenantControlService, UserJobLimits, RateLimits
 from web_caption_generation_service import WebCaptionGenerationService
-from task_queue_manager import TaskQueueManager
-from system_monitor import SystemMonitor, ResourceUsage
-from alert_manager import AlertManager, Alert, AlertType, AlertSeverity
+from app.services.task.core.task_queue_manager import TaskQueueManager
+from app.services.monitoring.system.system_monitor import SystemMonitor, ResourceUsage
+from app.services.alerts.components.alert_manager import AlertManager, Alert, AlertType, AlertSeverity
 from audit_logger import AuditLogger
 from enhanced_error_recovery_manager import EnhancedErrorRecoveryManager
 

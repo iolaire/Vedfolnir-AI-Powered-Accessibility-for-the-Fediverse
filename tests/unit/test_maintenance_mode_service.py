@@ -20,11 +20,11 @@ import time
 # Add project root to path for imports
 sys.path.insert(0, os.path.join(os.path.dirname(__file__), '..', '..'))
 
-from maintenance_mode_service import (
+from app.services.maintenance.components.maintenance_mode_service import (
     MaintenanceModeService, MaintenanceStatus, MaintenanceInfo, 
     MaintenanceChangeEvent, MaintenanceModeError
 )
-from configuration_service import ConfigurationValue, ConfigurationSource
+from app.core.configuration.core.configuration_service import ConfigurationValue, ConfigurationSource
 
 
 class TestMaintenanceModeService(unittest.TestCase):

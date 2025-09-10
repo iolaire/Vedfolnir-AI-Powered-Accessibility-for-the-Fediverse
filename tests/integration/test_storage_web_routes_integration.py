@@ -19,9 +19,9 @@ from unittest.mock import Mock, patch
 import sys
 sys.path.insert(0, os.path.join(os.path.dirname(__file__), '..', '..'))
 
-from storage_limit_enforcer import StorageLimitEnforcer, StorageCheckResult
-from storage_monitor_service import StorageMonitorService
-from storage_configuration_service import StorageConfigurationService
+from app.services.storage.components.storage_limit_enforcer import StorageLimitEnforcer, StorageCheckResult
+from app.services.storage.components.storage_monitor_service import StorageMonitorService
+from app.services.storage.components.storage_configuration_service import StorageConfigurationService
 
 
 class TestStorageWebRoutesIntegration(unittest.TestCase):
@@ -118,7 +118,7 @@ class TestStorageWebRoutesIntegration(unittest.TestCase):
     def test_storage_check_integration_with_web_service(self):
         """Test that web caption generation service integrates with storage checks"""
         from web_caption_generation_service import WebCaptionGenerationService
-        from database import DatabaseManager
+        from app.core.database.core.database_manager import DatabaseManager
         
         # Mock database manager
         mock_db_manager = Mock(spec=DatabaseManager)

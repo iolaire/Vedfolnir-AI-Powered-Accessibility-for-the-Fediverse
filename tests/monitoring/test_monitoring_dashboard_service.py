@@ -21,8 +21,8 @@ from monitoring_dashboard_service import (
     ReportFormat, DashboardWidget, ReportConfig, DashboardAlert
 )
 from models import UserRole, TaskStatus, CaptionGenerationTask, User
-from alert_manager import AlertType, AlertSeverity
-from database import DatabaseManager
+from app.services.alerts.components.alert_manager import AlertType, AlertSeverity
+from app.core.database.core.database_manager import DatabaseManager
 
 
 class TestMonitoringDashboardService(unittest.TestCase):

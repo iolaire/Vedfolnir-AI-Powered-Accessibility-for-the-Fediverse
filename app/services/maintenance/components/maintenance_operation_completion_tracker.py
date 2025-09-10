@@ -17,7 +17,7 @@ from dataclasses import dataclass
 from datetime import datetime, timezone, timedelta
 from enum import Enum
 
-from database import DatabaseManager
+from app.core.database.core.database_manager import DatabaseManager
 from models import CaptionGenerationTask, TaskStatus, User
 
 logger = logging.getLogger(__name__)

@@ -179,7 +179,7 @@ class MaintenanceOperationClassifier:
         self._custom_patterns: Dict[str, OperationType] = {}
         
         # Blocking rules per maintenance mode
-        from enhanced_maintenance_mode_service import MaintenanceMode
+        from app.services.maintenance.enhanced.enhanced_maintenance_mode_service import MaintenanceMode
         self._blocking_rules: Dict[MaintenanceMode, List[OperationType]] = {
             MaintenanceMode.NORMAL: [
                 OperationType.CAPTION_GENERATION,
@@ -292,7 +292,7 @@ class MaintenanceOperationClassifier:
         """
         try:
             # Import here to avoid circular imports
-            from enhanced_maintenance_mode_service import MaintenanceMode
+            from app.services.maintenance.enhanced.enhanced_maintenance_mode_service import MaintenanceMode
             
             # Admin operations are never blocked
             if operation_type == OperationType.ADMIN_OPERATIONS:

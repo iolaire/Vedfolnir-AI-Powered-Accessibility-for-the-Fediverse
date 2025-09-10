@@ -15,56 +15,64 @@ from datetime import datetime, timezone
 from typing import Optional, Dict, Any
 from dataclasses import dataclass
 
-from unified_notification_manager import UnifiedNotificationManager, NotificationMessage
+from app.services.notification.manager.unified_manager import (
+    UnifiedNotificationManager, 
+    NotificationMessage,
+    StorageNotificationMessage,
+    PerformanceNotificationMessage,
+    DashboardNotificationMessage,
+    MonitoringNotificationMessage,
+    HealthNotificationMessage
+)
 from models import NotificationType, NotificationCategory, NotificationPriority
 
 logger = logging.getLogger(__name__)
 
-@dataclass
-class StorageNotificationMessage(NotificationMessage):
-    """Storage-specific notification message"""
-    storage_gb: Optional[float] = None
-    limit_gb: Optional[float] = None
-    usage_percentage: Optional[float] = None
-    blocked_at: Optional[datetime] = None
-    should_hide_form: bool = False
-    
-    def __post_init__(self):
-        super().__post_init__()
-        self.category = NotificationCategory.STORAGE
-
-@dataclass
-class PerformanceNotificationMessage(NotificationMessage):
-    """Performance monitoring notification message"""
-    metrics: Optional[Dict[str, float]] = None
-    threshold_exceeded: Optional[str] = None
-    recovery_action: Optional[str] = None
-    
-    def __post_init__(self):
-        super().__post_init__()
-        self.category = NotificationCategory.PERFORMANCE
+# Specialized message types are now imported from app.services.notification.manager.unified_manager
 
 class StorageNotificationAdapter:
     """Adapter for storage notifications using UnifiedNotificationManager"""
     
     def __init__(self, notification_manager: UnifiedNotificationManager):
+        if not isinstance(notification_manager, UnifiedNotificationManager):
+            raise TypeError("notification_manager must be UnifiedNotificationManager instance")
         self.notification_manager = notification_manager
     
     def send_storage_limit_notification(self, user_id: int, storage_context) -> bool:
         """Send storage limit notification via unified system"""
+        if not isinstance(user_id, int) or user_id <= 0:
+            raise ValueError("user_id must be a positive integer")
+            
         try:
+            # Validate storage_context attributes with proper defaults
+            is_blocked = getattr(storage_context, 'is_blocked', False)
+            reason = getattr(storage_context, 'reason', 'Storage limit notification')
+            storage_gb = getattr(storage_context, 'storage_gb', None)
+            limit_gb = getattr(storage_context, 'limit_gb', None)
+            usage_percentage = getattr(storage_context, 'usage_percentage', None)
+            blocked_at = getattr(storage_context, 'blocked_at', None)
+            should_hide_form = getattr(storage_context, 'should_hide_form', False)
+            
+            # Validate numeric values
+            if storage_gb is not None and not isinstance(storage_gb, (int, float)):
+                storage_gb = None
+            if limit_gb is not None and not isinstance(limit_gb, (int, float)):
+                limit_gb = None
+            if usage_percentage is not None and not isinstance(usage_percentage, (int, float)):
+                usage_percentage = None
+            
             message = StorageNotificationMessage(
                 id=str(uuid.uuid4()),
-                type=NotificationType.WARNING if getattr(storage_context, 'is_blocked', False) else NotificationType.INFO,
+                type=NotificationType.WARNING if is_blocked else NotificationType.INFO,
                 title="Storage Limit Alert",
-                message=getattr(storage_context, 'reason', 'Storage limit notification'),
+                message=reason,
                 user_id=user_id,
-                storage_gb=getattr(storage_context, 'storage_gb', None),
-                limit_gb=getattr(storage_context, 'limit_gb', None),
-                usage_percentage=getattr(storage_context, 'usage_percentage', None),
-                blocked_at=getattr(storage_context, 'blocked_at', None),
-                should_hide_form=getattr(storage_context, 'should_hide_form', False),
-                priority=NotificationPriority.HIGH if getattr(storage_context, 'is_blocked', False) else NotificationPriority.NORMAL
+                storage_gb=storage_gb,
+                limit_gb=limit_gb,
+                usage_percentage=usage_percentage,
+                blocked_at=blocked_at,
+                should_hide_form=bool(should_hide_form),
+                priority=NotificationPriority.HIGH if is_blocked else NotificationPriority.NORMAL
             )
             
             return self.notification_manager.send_user_notification(user_id, message)
@@ -77,24 +85,41 @@ class PlatformNotificationAdapter:
     """Adapter for platform notifications using UnifiedNotificationManager"""
     
     def __init__(self, notification_manager: UnifiedNotificationManager):
+        if not isinstance(notification_manager, UnifiedNotificationManager):
+            raise TypeError("notification_manager must be UnifiedNotificationManager instance")
         self.notification_manager = notification_manager
     
     def send_platform_operation_notification(self, user_id: int, operation_result) -> bool:
         """Send platform operation notification via unified system"""
+        if not isinstance(user_id, int) or user_id <= 0:
+            raise ValueError("user_id must be a positive integer")
+            
         try:
+            # Validate operation_result attributes with proper defaults
+            success = getattr(operation_result, 'success', False)
+            message_text = getattr(operation_result, 'message', 'Platform operation completed')
+            operation_type = getattr(operation_result, 'operation_type', 'operation')
+            platform_data = getattr(operation_result, 'platform_data', None)
+            error_details = getattr(operation_result, 'error_details', None)
+            requires_refresh = getattr(operation_result, 'requires_refresh', False)
+            
+            # Ensure platform_data is a dict or None
+            if platform_data is not None and not isinstance(platform_data, dict):
+                platform_data = {}
+            
             message = NotificationMessage(
                 id=str(uuid.uuid4()),
-                type=NotificationType.SUCCESS if getattr(operation_result, 'success', False) else NotificationType.ERROR,
-                title=f"Platform {getattr(operation_result, 'operation_type', 'Operation').title()}",
-                message=getattr(operation_result, 'message', 'Platform operation completed'),
+                type=NotificationType.SUCCESS if success else NotificationType.ERROR,
+                title=f"Platform {operation_type.title()}",
+                message=message_text,
                 user_id=user_id,
                 category=NotificationCategory.PLATFORM,
                 priority=NotificationPriority.NORMAL,
                 data={
-                    'operation_type': getattr(operation_result, 'operation_type', None),
-                    'platform_data': getattr(operation_result, 'platform_data', None),
-                    'error_details': getattr(operation_result, 'error_details', None),
-                    'requires_refresh': getattr(operation_result, 'requires_refresh', False)
+                    'operation_type': operation_type,
+                    'platform_data': platform_data,
+                    'error_details': error_details,
+                    'requires_refresh': bool(requires_refresh)
                 }
             )
             
@@ -113,15 +138,15 @@ class DashboardNotificationAdapter:
     def send_dashboard_update_notification(self, user_id: int, update_type: str, message: str, data: Optional[Dict] = None) -> bool:
         """Send dashboard update notification via unified system"""
         try:
-            notification = NotificationMessage(
+            notification = DashboardNotificationMessage(
                 id=str(uuid.uuid4()),
                 type=NotificationType.INFO,
                 title=f"Dashboard Update: {update_type.title()}",
                 message=message,
                 user_id=user_id,
-                category=NotificationCategory.DASHBOARD,
                 priority=NotificationPriority.LOW,
-                data=data or {}
+                update_type=update_type,
+                dashboard_data=data or {}
             )
             
             return self.notification_manager.send_user_notification(user_id, notification)
@@ -154,14 +179,15 @@ class MonitoringNotificationAdapter:
                 "normal": NotificationPriority.NORMAL
             }
             
-            notification = NotificationMessage(
+            notification = MonitoringNotificationMessage(
                 id=str(uuid.uuid4()),
                 type=type_mapping.get(severity, NotificationType.INFO),
                 title=f"System Alert: {alert_type.title()}",
                 message=message,
                 user_id=user_id,
-                category=NotificationCategory.MONITORING,
                 priority=priority_mapping.get(severity, NotificationPriority.NORMAL),
+                alert_type=alert_type,
+                severity=severity,
                 data=data or {}
             )
             
@@ -222,15 +248,16 @@ class HealthNotificationAdapter:
                 "unknown": NotificationPriority.NORMAL
             }
             
-            notification = NotificationMessage(
+            notification = HealthNotificationMessage(
                 id=str(uuid.uuid4()),
                 type=type_mapping.get(status, NotificationType.INFO),
                 title=f"Health Check: {component}",
                 message=message,
                 user_id=user_id,
-                category=NotificationCategory.HEALTH,
                 priority=priority_mapping.get(status, NotificationPriority.NORMAL),
-                data=data or {'component': component, 'status': status}
+                component=component,
+                status=status,
+                health_data=data or {}
             )
             
             return self.notification_manager.send_user_notification(user_id, notification)
@@ -238,3 +265,95 @@ class HealthNotificationAdapter:
         except Exception as e:
             logger.error(f"Error sending health notification: {e}")
             return False
+
+
+class EmailNotificationAdapter:
+    """
+    Email notification adapter for the unified notification system
+    
+    Integrates email functionality with the unified notification manager
+    to send email notifications alongside web notifications.
+    """
+    
+    def __init__(self, notification_manager: UnifiedNotificationManager):
+        if not isinstance(notification_manager, UnifiedNotificationManager):
+            raise TypeError("notification_manager must be UnifiedNotificationManager instance")
+        
+        self.notification_manager = notification_manager
+        self.logger = logging.getLogger(__name__)
+    
+    def send_email_notification(self, user_id: int, subject: str, message: str, 
+                               email_template: str = None, template_data: dict = None) -> bool:
+        """
+        Send email notification through unified system
+        
+        Args:
+            user_id: Target user ID
+            subject: Email subject line
+            message: Email message content
+            email_template: Optional email template name
+            template_data: Optional template data
+            
+        Returns:
+            True if notification sent successfully, False otherwise
+        """
+        try:
+            # Create notification message
+            notification_message = NotificationMessage(
+                id=str(uuid.uuid4()),
+                type=NotificationType.INFO,
+                title=subject,
+                message=message,
+                category=NotificationCategory.USER,
+                user_id=user_id,
+                priority=NotificationPriority.NORMAL,
+                data={
+                    'email_template': email_template,
+                    'template_data': template_data or {},
+                    'delivery_method': 'email'
+                }
+            )
+            
+            # Send through unified notification manager
+            result = self.notification_manager.send_user_notification(user_id, notification_message)
+            
+            if result:
+                self.logger.info(f"Email notification sent successfully to user {user_id}")
+            else:
+                self.logger.error(f"Failed to send email notification to user {user_id}")
+            
+            return result
+            
+        except Exception as e:
+            self.logger.error(f"Error sending email notification: {e}")
+            return False
+    
+    def send_verification_email(self, user_id: int, verification_link: str) -> bool:
+        """Send email verification notification"""
+        return self.send_email_notification(
+            user_id=user_id,
+            subject="Email Verification Required",
+            message=f"Please verify your email address by clicking the link: {verification_link}",
+            email_template="email_verification",
+            template_data={'verification_link': verification_link}
+        )
+    
+    def send_password_reset_email(self, user_id: int, reset_link: str) -> bool:
+        """Send password reset notification"""
+        return self.send_email_notification(
+            user_id=user_id,
+            subject="Password Reset Request",
+            message=f"Click the following link to reset your password: {reset_link}",
+            email_template="password_reset",
+            template_data={'reset_link': reset_link}
+        )
+    
+    def send_gdpr_export_email(self, user_id: int, download_link: str) -> bool:
+        """Send GDPR data export notification"""
+        return self.send_email_notification(
+            user_id=user_id,
+            subject="Your Data Export is Ready",
+            message=f"Your personal data export is ready for download: {download_link}",
+            email_template="gdpr_export",
+            template_data={'download_link': download_link}
+        )

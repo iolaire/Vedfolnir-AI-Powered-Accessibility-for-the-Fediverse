@@ -17,11 +17,11 @@ import sys
 import os
 sys.path.insert(0, os.path.join(os.path.dirname(__file__), '..', '..'))
 
-from background_cleanup_manager import (
+from app.services.task.core.background_cleanup_manager import (
     BackgroundCleanupManager, CleanupConfig, TaskHealthStatus, 
     TaskHealthMetrics, TaskCoordinationInfo
 )
-from database import DatabaseManager
+from app.core.database.core.database_manager import DatabaseManager
 
 
 class TestEnhancedBackgroundCleanupManager(unittest.TestCase):
@@ -318,7 +318,7 @@ class TestEnhancedBackgroundCleanupManager(unittest.TestCase):
     def test_enhanced_get_cleanup_stats(self):
         """Test enhanced get_cleanup_stats includes health monitoring data"""
         # Add some test stats
-        from background_cleanup_manager import CleanupStats
+        from app.services.task.core.background_cleanup_manager import CleanupStats
         test_stat = CleanupStats(
             operation_name='test_operation',
             items_cleaned=10,

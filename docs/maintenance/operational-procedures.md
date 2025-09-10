@@ -244,7 +244,7 @@ This document outlines the operational procedures for managing the Enhanced Main
    ```bash
    # Review admin users
    python -c "
-   from database import DatabaseManager
+   from app.core.database.core.database_manager import DatabaseManager
    from models import User, UserRole
    from config import Config
    config = Config()
@@ -457,7 +457,7 @@ This document outlines the operational procedures for managing the Enhanced Main
    ```bash
    # Change all admin passwords
    python -c "
-   from database import DatabaseManager
+   from app.core.database.core.database_manager import DatabaseManager
    from models import User, UserRole
    from config import Config
    import getpass
@@ -509,7 +509,7 @@ This document outlines the operational procedures for managing the Enhanced Main
    ```bash
    # Verify data integrity after recovery
    python -c "
-   from database import DatabaseManager
+   from app.core.database.core.database_manager import DatabaseManager
    from models import *
    from config import Config
    config = Config()

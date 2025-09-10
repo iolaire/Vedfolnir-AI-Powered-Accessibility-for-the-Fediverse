@@ -18,7 +18,7 @@ from datetime import datetime, timezone, timedelta
 from session_manager_v2 import SessionManagerV2 as SessionManager
 from unified_session_manager import SessionValidationError
 from redis_session_middleware import get_current_session_context, get_current_session_id, get_current_user_id, get_current_platform_id
-from database import DatabaseManager
+from app.core.database.core.database_manager import DatabaseManager
 from models import User, PlatformConnection, UserSession
 
 class SessionConsolidationFinalE2ETest(unittest.TestCase):

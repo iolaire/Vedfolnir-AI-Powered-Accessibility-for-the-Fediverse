@@ -14,13 +14,13 @@ import json
 from datetime import datetime, timezone
 from unittest.mock import Mock
 
-from admin_user_management_notification_handler import (
+from app.services.admin.components.admin_user_management_notification_handler import (
     AdminUserManagementNotificationHandler, UserOperationContext
 )
-from admin_user_management_integration import (
+from app.services.admin.components.admin_user_management_integration import (
     AdminUserManagementIntegration, create_admin_user_management_integration
 )
-from unified_notification_manager import (
+from app.services.notification.manager.unified_manager import (
     UnifiedNotificationManager, AdminNotificationMessage,
     NotificationType, NotificationPriority, NotificationCategory
 )

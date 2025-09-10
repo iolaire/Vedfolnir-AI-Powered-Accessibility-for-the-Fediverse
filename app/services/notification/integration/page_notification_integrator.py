@@ -19,7 +19,7 @@ from flask import Flask, request, session, current_app
 from app.websocket.core.factory import WebSocketFactory
 from app.websocket.core.auth_handler import WebSocketAuthHandler
 from app.websocket.core.namespace_manager import WebSocketNamespaceManager
-from unified_notification_manager import UnifiedNotificationManager
+from app.services.notification.manager.unified_manager import UnifiedNotificationManager
 
 logger = logging.getLogger(__name__)
 

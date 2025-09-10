@@ -29,7 +29,7 @@ def register_routes(bp):
         if not current_user.role == UserRole.ADMIN:
             # Send access denied notification via WebSocket instead of flash
             try:
-                from unified_notification_manager import AdminNotificationMessage
+                from app.services.notification.manager.unified_manager import AdminNotificationMessage
                 from models import NotificationType, NotificationPriority, NotificationCategory
                 
                 notification_manager = current_app.config.get('notification_manager')
@@ -56,7 +56,7 @@ def register_routes(bp):
             if not maintenance_service:
                 # Send service unavailable notification via WebSocket instead of flash
                 try:
-                    from unified_notification_manager import AdminNotificationMessage
+                    from app.services.notification.manager.unified_manager import AdminNotificationMessage
                     from models import NotificationType, NotificationPriority, NotificationCategory
                     
                     notification_manager = current_app.config.get('notification_manager')
@@ -99,7 +99,7 @@ def register_routes(bp):
             logger.error(f"Error loading maintenance mode dashboard: {e}")
             # Send error notification via WebSocket instead of flash
             try:
-                from unified_notification_manager import AdminNotificationMessage
+                from app.services.notification.manager.unified_manager import AdminNotificationMessage
                 from models import NotificationType, NotificationPriority, NotificationCategory
                 
                 notification_manager = current_app.config.get('notification_manager')
@@ -157,7 +157,7 @@ def register_routes(bp):
                     return jsonify({'success': False, 'error': 'Invalid duration format'}), 400
             
             # Import maintenance mode enum
-            from enhanced_maintenance_mode_service import MaintenanceMode
+            from app.services.maintenance.enhanced.enhanced_maintenance_mode_service import MaintenanceMode
             
             # Validate and convert mode
             mode_mapping = {
@@ -394,7 +394,7 @@ def register_routes(bp):
             maintenance_service = current_app.config.get('maintenance_service')
             
             # Import and create validator
-            from maintenance_configuration_validator import MaintenanceConfigurationValidator
+            from app.services.maintenance.components.maintenance_configuration_validator import MaintenanceConfigurationValidator
             validator = MaintenanceConfigurationValidator(maintenance_service=maintenance_service)
             
             # Perform comprehensive validation
@@ -434,7 +434,7 @@ def register_routes(bp):
         if not current_user.role == UserRole.ADMIN:
             # Send access denied notification via WebSocket instead of flash
             try:
-                from unified_notification_manager import AdminNotificationMessage
+                from app.services.notification.manager.unified_manager import AdminNotificationMessage
                 from models import NotificationType, NotificationPriority, NotificationCategory
                 
                 notification_manager = current_app.config.get('notification_manager')
@@ -461,7 +461,7 @@ def register_routes(bp):
             if not maintenance_service:
                 # Send service unavailable notification via WebSocket instead of flash
                 try:
-                    from unified_notification_manager import AdminNotificationMessage
+                    from app.services.notification.manager.unified_manager import AdminNotificationMessage
                     from models import NotificationType, NotificationPriority, NotificationCategory
                     
                     notification_manager = current_app.config.get('notification_manager')
@@ -492,7 +492,7 @@ def register_routes(bp):
             logger.error(f"Error loading maintenance monitoring dashboard: {e}")
             # Send error notification via WebSocket instead of flash
             try:
-                from unified_notification_manager import AdminNotificationMessage
+                from app.services.notification.manager.unified_manager import AdminNotificationMessage
                 from models import NotificationType, NotificationPriority, NotificationCategory
                 
                 notification_manager = current_app.config.get('notification_manager')

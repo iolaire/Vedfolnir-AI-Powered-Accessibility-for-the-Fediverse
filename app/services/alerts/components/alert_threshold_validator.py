@@ -14,7 +14,7 @@ from typing import Dict, Any, List, Optional, Tuple, Union
 from dataclasses import dataclass
 from enum import Enum
 
-from alert_manager import AlertThresholds
+from .alert_manager import AlertThresholds
 
 logger = logging.getLogger(__name__)
 

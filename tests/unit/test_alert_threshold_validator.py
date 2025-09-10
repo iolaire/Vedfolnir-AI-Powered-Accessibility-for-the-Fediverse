@@ -16,10 +16,10 @@ import os
 # Add project root to path for imports
 sys.path.insert(0, os.path.join(os.path.dirname(__file__), '..', '..'))
 
-from alert_threshold_validator import (
+from app.services.alerts.components.alert_threshold_validator import (
     AlertThresholdValidator, ValidationResult, ValidationIssue, ValidationSeverity
 )
-from alert_manager import AlertThresholds
+from app.services.alerts.components.alert_manager import AlertThresholds
 
 
 class TestAlertThresholdValidator(unittest.TestCase):

@@ -19,9 +19,9 @@ import threading
 from flask import Flask, request, jsonify, g, current_app
 from flask_login import current_user
 
-from enhanced_maintenance_mode_service import EnhancedMaintenanceModeService
-from maintenance_operation_classifier import MaintenanceOperationClassifier, OperationType
-from maintenance_response_helper import MaintenanceResponseHelper
+from app.services.maintenance.enhanced.enhanced_maintenance_mode_service import EnhancedMaintenanceModeService
+from app.services.maintenance.components.maintenance_operation_classifier import MaintenanceOperationClassifier, OperationType
+from app.services.maintenance.components.maintenance_response_helper import MaintenanceResponseHelper
 from models import User, UserRole
 
 logger = logging.getLogger(__name__)

@@ -13,7 +13,7 @@ import logging
 from typing import Optional, Dict, Any, Callable
 from datetime import datetime, timedelta
 
-from configuration_service import ConfigurationService
+from app.core.configuration.core.configuration_service import ConfigurationService
 
 logger = logging.getLogger(__name__)
 

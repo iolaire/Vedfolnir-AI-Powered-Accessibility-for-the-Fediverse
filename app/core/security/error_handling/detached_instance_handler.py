@@ -206,7 +206,7 @@ class DetachedInstanceHandler:
     def _record_recovery_metrics(self, object_type: str, duration: float, success: bool):
         """Record recovery performance metrics"""
         try:
-            from session_performance_monitor import get_performance_monitor
+            from app.services.monitoring.performance.monitors.session_performance_monitor import get_performance_monitor
             monitor = get_performance_monitor()
             monitor.record_detached_instance_recovery(object_type, duration, success)
         except ImportError:

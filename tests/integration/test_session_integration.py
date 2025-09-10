@@ -12,7 +12,7 @@ from unittest.mock import patch, MagicMock
 from bs4 import BeautifulSoup
 
 from config import Config
-from database import DatabaseManager
+from app.core.database.core.database_manager import DatabaseManager
 from models import User, PlatformConnection, UserRole
 from unified_session_manager import UnifiedSessionManager as SessionManager, get_current_platform_context
 from web_app import app

@@ -78,7 +78,7 @@ import logging
 import threading
 from typing import Optional, Dict, Any, Callable
 
-from configuration_service import ConfigurationService, ConfigurationError
+from app.core.configuration.core.configuration_service import ConfigurationService, ConfigurationError
 
 logger = logging.getLogger(__name__)
 

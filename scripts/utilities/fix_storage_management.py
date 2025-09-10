@@ -20,12 +20,12 @@ def fix_storage_management():
         line = lines[i]
         
         # Fix notification import indentation issues
-        if 'from notification_helpers import' in line:
+        if 'from app.services.notification.helpers.notification_helpers import' in line:
             # Check if it's improperly indented
-            if line.startswith('                from notification_helpers'):
+            if line.startswith('                from app.services.notification.helpers.notification_helpers'):
                 # This is too indented, fix it
                 line = '            ' + line.strip()
-            elif line.startswith('        from notification_helpers'):
+            elif line.startswith('        from app.services.notification.helpers.notification_helpers'):
                 # This might be correct for some contexts
                 pass
             elif not line.startswith('    ') and not line.startswith('#'):

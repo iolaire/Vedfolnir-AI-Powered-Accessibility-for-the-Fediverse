@@ -6,8 +6,8 @@ import unittest
 import time
 import threading
 from unittest.mock import Mock, patch, MagicMock
-from session_performance_monitor import SessionPerformanceMonitor, SessionMetrics, RequestMetrics
-from session_performance_monitor import get_performance_monitor, initialize_performance_monitoring
+from app.services.monitoring.performance.monitors.session_performance_monitor import SessionPerformanceMonitor, SessionMetrics, RequestMetrics
+from app.services.monitoring.performance.monitors.session_performance_monitor import get_performance_monitor, initialize_performance_monitoring
 
 class TestSessionMetrics(unittest.TestCase):
     """Test SessionMetrics dataclass"""

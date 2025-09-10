@@ -268,7 +268,7 @@ class ResponsivenessConfig:
 python -c "from web_app import app; from config import Config; config = Config(); print(f'Memory: {config.get_memory_usage()}%')"
 
 # Check database connections
-python -c "from database import DatabaseManager; from config import Config; db = DatabaseManager(Config()); print(db.get_mysql_performance_stats())"
+python -c "from app.core.database.core.database_manager import DatabaseManager; from config import Config; db = DatabaseManager(Config()); print(db.get_mysql_performance_stats())"
 
 # Verify Redis connectivity
 python -c "from session_middleware_v2 import RedisSessionManager; manager = RedisSessionManager(); print(manager.health_check())"
@@ -280,7 +280,7 @@ python -c "from session_middleware_v2 import RedisSessionManager; manager = Redi
 tail -f logs/webapp.log | grep "slow_request"
 
 # Monitor background tasks
-python -c "from background_cleanup_manager import BackgroundCleanupManager; manager = BackgroundCleanupManager(); print(manager.get_cleanup_stats())"
+python -c "from app.services.task.core.background_cleanup_manager import BackgroundCleanupManager; manager = BackgroundCleanupManager(); print(manager.get_cleanup_stats())"
 
 # View health check results
 curl -s http://localhost:5000/admin/api/health/responsiveness | python -m json.tool

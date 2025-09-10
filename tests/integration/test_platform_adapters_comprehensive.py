@@ -16,7 +16,7 @@ from dataclasses import dataclass
 from typing import Optional, Dict, Any, List
 import httpx
 
-from activitypub_platforms import (
+from app.services.activitypub.components.activitypub_platforms import (
     ActivityPubPlatform,
     PixelfedPlatform,
     MastodonPlatform,

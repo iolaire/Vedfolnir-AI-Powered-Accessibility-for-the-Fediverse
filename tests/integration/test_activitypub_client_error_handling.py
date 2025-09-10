@@ -15,8 +15,8 @@ from unittest.mock import Mock, AsyncMock, patch, MagicMock
 from dataclasses import dataclass
 from typing import Dict, List, Any, Optional
 
-from activitypub_client import ActivityPubClient
-from activitypub_platforms import (
+from app.services.activitypub.components.activitypub_client import ActivityPubClient
+from app.services.activitypub.components.activitypub_platforms import (
     PlatformAdapterFactory,
     PlatformAdapterError,
     PixelfedPlatform,

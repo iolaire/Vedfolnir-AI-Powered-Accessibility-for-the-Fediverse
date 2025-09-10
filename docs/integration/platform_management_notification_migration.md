@@ -178,7 +178,7 @@ Add notification service initialization to Flask app:
 
 ```python
 # In app initialization
-from platform_management_notification_integration import PlatformManagementNotificationService
+from app.services.platform.integration.platform_management_notification_integration import PlatformManagementNotificationService
 from page_notification_integrator import PageNotificationIntegrator
 
 # Initialize services

@@ -129,7 +129,7 @@ class DatabaseConfigValidator:
         try:
             sys.path.append(str(self.project_root))
             from config import Config
-            from database import DatabaseManager
+            from app.core.database.core.database_manager import DatabaseManager
             
             config = Config()
             db_manager = DatabaseManager(config)

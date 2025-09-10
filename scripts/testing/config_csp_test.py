@@ -31,7 +31,7 @@ class CSPTestConfig(Config):
         Config.init_app(app)
         
         # Enable CSP testing middleware
-        from security.config.strict_csp_config import CSPTestingMiddleware
+        from app.core.security.config.strict_csp_config import CSPTestingMiddleware
         
         csp_middleware = CSPTestingMiddleware(
             app=app,

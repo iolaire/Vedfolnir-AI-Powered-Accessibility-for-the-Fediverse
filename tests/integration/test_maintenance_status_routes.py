@@ -22,9 +22,9 @@ from flask import Flask
 # Add project root to path for imports
 sys.path.insert(0, os.path.join(os.path.dirname(__file__), '..', '..'))
 
-from routes.maintenance_status_routes import maintenance_status_bp, init_maintenance_status_api
-from maintenance_status_api import MaintenanceStatusResponse, BlockedOperation
-from enhanced_maintenance_mode_service import MaintenanceStatus, MaintenanceMode
+from app.blueprints.admin.maintenance_status_routes import maintenance_status_bp, init_maintenance_status_api
+from app.services.maintenance.components.maintenance_status_api import MaintenanceStatusResponse, BlockedOperation
+from app.services.maintenance.enhanced.enhanced_maintenance_mode_service import MaintenanceStatus, MaintenanceMode
 
 
 class TestMaintenanceStatusRoutes(unittest.TestCase):

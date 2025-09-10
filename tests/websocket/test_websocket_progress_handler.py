@@ -17,9 +17,9 @@ except ImportError:
     WebSocketProgressHandler = None
 
 from progress_tracker import ProgressTracker, ProgressStatus
-from task_queue_manager import TaskQueueManager
+from app.services.task.core.task_queue_manager import TaskQueueManager
 from models import CaptionGenerationTask, TaskStatus
-from database import DatabaseManager
+from app.core.database.core.database_manager import DatabaseManager
 
 class TestWebSocketProgressHandler(unittest.TestCase):
     """Test cases for WebSocketProgressHandler"""

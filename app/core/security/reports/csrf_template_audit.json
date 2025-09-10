@@ -1,0 +1,726 @@
+{
+  "scan_metadata": {
+    "scan_timestamp": "2025-08-12T08:04:36.388046",
+    "templates_directory": "templates",
+    "total_templates_scanned": 29
+  },
+  "summary": {
+    "scan_summary": {
+      "total_templates": 29,
+      "protected_templates": 29,
+      "protection_rate": 1.0,
+      "average_compliance_score": 0.8189655172413793,
+      "high_compliance_templates": 20,
+      "scan_timestamp": "2025-08-12T08:04:36.388108"
+    },
+    "vulnerability_summary": {
+      "total_vulnerabilities": 27,
+      "by_severity": {
+        "HIGH": 15,
+        "MEDIUM": 9,
+        "LOW": 3
+      },
+      "by_type": {
+        "exposed_csrf_token": 15,
+        "csrf_in_comment": 7,
+        "unnecessary_csrf_token": 3,
+        "csrf_in_visible_script": 2
+      }
+    },
+    "form_summary": {
+      "total_forms": 19,
+      "post_forms": 13,
+      "get_forms": 6
+    },
+    "csrf_methods": {
+      "hidden_tag": 4,
+      "csrf_token_direct": 8,
+      "meta_only": 0,
+      "none": 17,
+      "error": 0
+    },
+    "top_vulnerabilities": [
+      [
+        "exposed_csrf_token",
+        15
+      ],
+      [
+        "csrf_in_comment",
+        7
+      ],
+      [
+        "unnecessary_csrf_token",
+        3
+      ],
+      [
+        "csrf_in_visible_script",
+        2
+      ]
+    ]
+  },
+  "detailed_results": [
+    {
+      "template_path": "templates/404.html",
+      "csrf_protected": true,
+      "csrf_method": "none",
+      "vulnerabilities": [],
+      "recommendations": [],
+      "compliance_score": 1.0,
+      "form_count": 0,
+      "post_form_count": 0,
+      "get_form_count": 0,
+      "ajax_endpoints": [],
+      "last_audited": "2025-08-12T08:04:36.356820"
+    },
+    {
+      "template_path": "templates/500.html",
+      "csrf_protected": true,
+      "csrf_method": "none",
+      "vulnerabilities": [],
+      "recommendations": [],
+      "compliance_score": 1.0,
+      "form_count": 0,
+      "post_form_count": 0,
+      "get_form_count": 0,
+      "ajax_endpoints": [],
+      "last_audited": "2025-08-12T08:04:36.357308"
+    },
+    {
+      "template_path": "templates/admin/session_monitoring_dashboard.html",
+      "csrf_protected": true,
+      "csrf_method": "none",
+      "vulnerabilities": [],
+      "recommendations": [],
+      "compliance_score": 1.0,
+      "form_count": 0,
+      "post_form_count": 0,
+      "get_form_count": 0,
+      "ajax_endpoints": [
+        "/admin/session-monitoring/alerts"
+      ],
+      "last_audited": "2025-08-12T08:04:36.358094"
+    },
+    {
+      "template_path": "templates/admin_cleanup.html",
+      "csrf_protected": true,
+      "csrf_method": "csrf_token_direct",
+      "vulnerabilities": [
+        {
+          "type": "exposed_csrf_token",
+          "severity": "HIGH",
+          "description": "CSRF token is visible in HTML output instead of being in a hidden field",
+          "line_number": 123,
+          "code_snippet": "{{ csrf_token() }}",
+          "recommendation": "Use {{ form.hidden_tag() }} instead of {{ csrf_token() }}"
+        },
+        {
+          "type": "exposed_csrf_token",
+          "severity": "HIGH",
+          "description": "CSRF token is visible in HTML output instead of being in a hidden field",
+          "line_number": 146,
+          "code_snippet": "{{ csrf_token() }}",
+          "recommendation": "Use {{ form.hidden_tag() }} instead of {{ csrf_token() }}"
+        },
+        {
+          "type": "exposed_csrf_token",
+          "severity": "HIGH",
+          "description": "CSRF token is visible in HTML output instead of being in a hidden field",
+          "line_number": 176,
+          "code_snippet": "{{ csrf_token() }}",
+          "recommendation": "Use {{ form.hidden_tag() }} instead of {{ csrf_token() }}"
+        },
+        {
+          "type": "exposed_csrf_token",
+          "severity": "HIGH",
+          "description": "CSRF token is visible in HTML output instead of being in a hidden field",
+          "line_number": 206,
+          "code_snippet": "{{ csrf_token() }}",
+          "recommendation": "Use {{ form.hidden_tag() }} instead of {{ csrf_token() }}"
+        },
+        {
+          "type": "exposed_csrf_token",
+          "severity": "HIGH",
+          "description": "CSRF token is visible in HTML output instead of being in a hidden field",
+          "line_number": 224,
+          "code_snippet": "{{ csrf_token() }}",
+          "recommendation": "Use {{ form.hidden_tag() }} instead of {{ csrf_token() }}"
+        },
+        {
+          "type": "exposed_csrf_token",
+          "severity": "HIGH",
+          "description": "CSRF token is visible in HTML output instead of being in a hidden field",
+          "line_number": 262,
+          "code_snippet": "{{ csrf_token() }}",
+          "recommendation": "Use {{ form.hidden_tag() }} instead of {{ csrf_token() }}"
+        }
+      ],
+      "recommendations": [
+        "Replace {{ csrf_token() }} with {{ form.hidden_tag() }} to hide tokens",
+        "Use {{ form.hidden_tag() }} instead of {{ csrf_token() }}",
+        "Ensure all POST forms validate CSRF tokens on the server side"
+      ],
+      "compliance_score": 0.0,
+      "form_count": 6,
+      "post_form_count": 6,
+      "get_form_count": 0,
+      "ajax_endpoints": [],
+      "last_audited": "2025-08-12T08:04:36.359845"
+    },
+    {
+      "template_path": "templates/admin_monitoring.html",
+      "csrf_protected": true,
+      "csrf_method": "none",
+      "vulnerabilities": [],
+      "recommendations": [],
+      "compliance_score": 1.0,
+      "form_count": 0,
+      "post_form_count": 0,
+      "get_form_count": 0,
+      "ajax_endpoints": [
+        "/api/admin/user_activity?days=7",
+        "/api/admin/system_overview",
+        "/api/admin/active_tasks",
+        "/api/admin/cleanup_tasks"
+      ],
+      "last_audited": "2025-08-12T08:04:36.362168"
+    },
+    {
+      "template_path": "templates/base.html",
+      "csrf_protected": true,
+      "csrf_method": "csrf_token_direct",
+      "vulnerabilities": [
+        {
+          "type": "exposed_csrf_token",
+          "severity": "HIGH",
+          "description": "CSRF token is visible in HTML output instead of being in a hidden field",
+          "line_number": 10,
+          "code_snippet": "<meta name=\"csrf-token\" content=\"{{ csrf_token() }}\">",
+          "recommendation": "Use {{ form.hidden_tag() }} instead of {{ csrf_token() }}"
+        },
+        {
+          "type": "csrf_in_comment",
+          "severity": "MEDIUM",
+          "description": "CSRF token or reference found in HTML comment",
+          "line_number": 2,
+          "code_snippet": null,
+          "recommendation": "Remove CSRF references from HTML comments"
+        }
+      ],
+      "recommendations": [
+        "Replace {{ csrf_token() }} with {{ form.hidden_tag() }} to hide tokens",
+        "Use {{ form.hidden_tag() }} instead of {{ csrf_token() }}",
+        "Remove CSRF references from HTML comments"
+      ],
+      "compliance_score": 0.5,
+      "form_count": 0,
+      "post_form_count": 0,
+      "get_form_count": 0,
+      "ajax_endpoints": [],
+      "last_audited": "2025-08-12T08:04:36.364240"
+    },
+    {
+      "template_path": "templates/batch_review.html",
+      "csrf_protected": true,
+      "csrf_method": "csrf_token_direct",
+      "vulnerabilities": [
+        {
+          "type": "exposed_csrf_token",
+          "severity": "HIGH",
+          "description": "CSRF token is visible in HTML output instead of being in a hidden field",
+          "line_number": 99,
+          "code_snippet": "{{ csrf_token() }}",
+          "recommendation": "Use {{ form.hidden_tag() }} instead of {{ csrf_token() }}"
+        },
+        {
+          "type": "unnecessary_csrf_token",
+          "severity": "LOW",
+          "description": "CSRF token found in GET form (unnecessary)",
+          "line_number": 98,
+          "code_snippet": null,
+          "recommendation": "Remove CSRF token from GET forms as they should be idempotent"
+        },
+        {
+          "type": "csrf_in_comment",
+          "severity": "MEDIUM",
+          "description": "CSRF token or reference found in HTML comment",
+          "line_number": 1,
+          "code_snippet": null,
+          "recommendation": "Remove CSRF references from HTML comments"
+        },
+        {
+          "type": "csrf_in_visible_script",
+          "severity": "MEDIUM",
+          "description": "CSRF token directly embedded in visible JavaScript",
+          "line_number": 10,
+          "code_snippet": null,
+          "recommendation": "Use meta tag and document.querySelector for CSRF token access"
+        }
+      ],
+      "recommendations": [
+        "Replace {{ csrf_token() }} with {{ form.hidden_tag() }} to hide tokens",
+        "Use {{ form.hidden_tag() }} instead of {{ csrf_token() }}",
+        "Remove CSRF token from GET forms as they should be idempotent",
+        "Remove CSRF references from HTML comments",
+        "Use meta tag and document.querySelector for CSRF token access",
+        "Verify GET forms are idempotent and do not change server state"
+      ],
+      "compliance_score": 0.35000000000000003,
+      "form_count": 1,
+      "post_form_count": 0,
+      "get_form_count": 1,
+      "ajax_endpoints": [],
+      "last_audited": "2025-08-12T08:04:36.365189"
+    },
+    {
+      "template_path": "templates/caption_generation.html",
+      "csrf_protected": true,
+      "csrf_method": "hidden_tag",
+      "vulnerabilities": [],
+      "recommendations": [
+        "Ensure all POST forms validate CSRF tokens on the server side"
+      ],
+      "compliance_score": 1.0,
+      "form_count": 1,
+      "post_form_count": 1,
+      "get_form_count": 0,
+      "ajax_endpoints": [],
+      "last_audited": "2025-08-12T08:04:36.367089"
+    },
+    {
+      "template_path": "templates/caption_settings.html",
+      "csrf_protected": true,
+      "csrf_method": "hidden_tag",
+      "vulnerabilities": [],
+      "recommendations": [
+        "Ensure all POST forms validate CSRF tokens on the server side"
+      ],
+      "compliance_score": 1.0,
+      "form_count": 1,
+      "post_form_count": 1,
+      "get_form_count": 0,
+      "ajax_endpoints": [
+        "/api/validate_caption_settings",
+        "/api/caption_settings"
+      ],
+      "last_audited": "2025-08-12T08:04:36.368181"
+    },
+    {
+      "template_path": "templates/components/add_platform_modal.html",
+      "csrf_protected": true,
+      "csrf_method": "csrf_token_direct",
+      "vulnerabilities": [
+        {
+          "type": "exposed_csrf_token",
+          "severity": "HIGH",
+          "description": "CSRF token is visible in HTML output instead of being in a hidden field",
+          "line_number": 14,
+          "code_snippet": "{{ csrf_token() }}",
+          "recommendation": "Use {{ form.hidden_tag() }} instead of {{ csrf_token() }}"
+        }
+      ],
+      "recommendations": [
+        "Replace {{ csrf_token() }} with {{ form.hidden_tag() }} to hide tokens",
+        "Use {{ form.hidden_tag() }} instead of {{ csrf_token() }}"
+      ],
+      "compliance_score": 0.6000000000000001,
+      "form_count": 1,
+      "post_form_count": 0,
+      "get_form_count": 0,
+      "ajax_endpoints": [],
+      "last_audited": "2025-08-12T08:04:36.369000"
+    },
+    {
+      "template_path": "templates/errors/400.html",
+      "csrf_protected": true,
+      "csrf_method": "none",
+      "vulnerabilities": [],
+      "recommendations": [],
+      "compliance_score": 1.0,
+      "form_count": 0,
+      "post_form_count": 0,
+      "get_form_count": 0,
+      "ajax_endpoints": [],
+      "last_audited": "2025-08-12T08:04:36.369709"
+    },
+    {
+      "template_path": "templates/errors/401.html",
+      "csrf_protected": true,
+      "csrf_method": "none",
+      "vulnerabilities": [],
+      "recommendations": [],
+      "compliance_score": 1.0,
+      "form_count": 0,
+      "post_form_count": 0,
+      "get_form_count": 0,
+      "ajax_endpoints": [],
+      "last_audited": "2025-08-12T08:04:36.370194"
+    },
+    {
+      "template_path": "templates/errors/403.html",
+      "csrf_protected": true,
+      "csrf_method": "none",
+      "vulnerabilities": [],
+      "recommendations": [],
+      "compliance_score": 1.0,
+      "form_count": 0,
+      "post_form_count": 0,
+      "get_form_count": 0,
+      "ajax_endpoints": [],
+      "last_audited": "2025-08-12T08:04:36.370528"
+    },
+    {
+      "template_path": "templates/errors/404.html",
+      "csrf_protected": true,
+      "csrf_method": "none",
+      "vulnerabilities": [],
+      "recommendations": [],
+      "compliance_score": 1.0,
+      "form_count": 0,
+      "post_form_count": 0,
+      "get_form_count": 0,
+      "ajax_endpoints": [],
+      "last_audited": "2025-08-12T08:04:36.370822"
+    },
+    {
+      "template_path": "templates/errors/429.html",
+      "csrf_protected": true,
+      "csrf_method": "none",
+      "vulnerabilities": [],
+      "recommendations": [],
+      "compliance_score": 1.0,
+      "form_count": 0,
+      "post_form_count": 0,
+      "get_form_count": 0,
+      "ajax_endpoints": [],
+      "last_audited": "2025-08-12T08:04:36.371120"
+    },
+    {
+      "template_path": "templates/errors/500.html",
+      "csrf_protected": true,
+      "csrf_method": "none",
+      "vulnerabilities": [],
+      "recommendations": [],
+      "compliance_score": 1.0,
+      "form_count": 0,
+      "post_form_count": 0,
+      "get_form_count": 0,
+      "ajax_endpoints": [],
+      "last_audited": "2025-08-12T08:04:36.371398"
+    },
+    {
+      "template_path": "templates/errors/session_error.html",
+      "csrf_protected": true,
+      "csrf_method": "none",
+      "vulnerabilities": [],
+      "recommendations": [],
+      "compliance_score": 1.0,
+      "form_count": 0,
+      "post_form_count": 0,
+      "get_form_count": 0,
+      "ajax_endpoints": [],
+      "last_audited": "2025-08-12T08:04:36.372041"
+    },
+    {
+      "template_path": "templates/first_time_setup.html",
+      "csrf_protected": true,
+      "csrf_method": "none",
+      "vulnerabilities": [],
+      "recommendations": [],
+      "compliance_score": 1.0,
+      "form_count": 0,
+      "post_form_count": 0,
+      "get_form_count": 0,
+      "ajax_endpoints": [],
+      "last_audited": "2025-08-12T08:04:36.373409"
+    },
+    {
+      "template_path": "templates/health_dashboard.html",
+      "csrf_protected": true,
+      "csrf_method": "none",
+      "vulnerabilities": [],
+      "recommendations": [],
+      "compliance_score": 1.0,
+      "form_count": 0,
+      "post_form_count": 0,
+      "get_form_count": 0,
+      "ajax_endpoints": [],
+      "last_audited": "2025-08-12T08:04:36.374196"
+    },
+    {
+      "template_path": "templates/includes/favicon_meta.html",
+      "csrf_protected": true,
+      "csrf_method": "none",
+      "vulnerabilities": [],
+      "recommendations": [],
+      "compliance_score": 1.0,
+      "form_count": 0,
+      "post_form_count": 0,
+      "get_form_count": 0,
+      "ajax_endpoints": [],
+      "last_audited": "2025-08-12T08:04:36.374556"
+    },
+    {
+      "template_path": "templates/index.html",
+      "csrf_protected": true,
+      "csrf_method": "none",
+      "vulnerabilities": [],
+      "recommendations": [],
+      "compliance_score": 1.0,
+      "form_count": 0,
+      "post_form_count": 0,
+      "get_form_count": 0,
+      "ajax_endpoints": [],
+      "last_audited": "2025-08-12T08:04:36.375532"
+    },
+    {
+      "template_path": "templates/login.html",
+      "csrf_protected": true,
+      "csrf_method": "hidden_tag",
+      "vulnerabilities": [],
+      "recommendations": [
+        "Ensure all POST forms validate CSRF tokens on the server side"
+      ],
+      "compliance_score": 1.0,
+      "form_count": 1,
+      "post_form_count": 1,
+      "get_form_count": 0,
+      "ajax_endpoints": [],
+      "last_audited": "2025-08-12T08:04:36.376041"
+    },
+    {
+      "template_path": "templates/platform_management.html",
+      "csrf_protected": true,
+      "csrf_method": "csrf_token_direct",
+      "vulnerabilities": [
+        {
+          "type": "csrf_in_comment",
+          "severity": "MEDIUM",
+          "description": "CSRF token or reference found in HTML comment",
+          "line_number": 1,
+          "code_snippet": null,
+          "recommendation": "Remove CSRF references from HTML comments"
+        }
+      ],
+      "recommendations": [
+        "Replace {{ csrf_token() }} with {{ form.hidden_tag() }} to hide tokens",
+        "Remove CSRF references from HTML comments"
+      ],
+      "compliance_score": 0.7,
+      "form_count": 1,
+      "post_form_count": 0,
+      "get_form_count": 0,
+      "ajax_endpoints": [],
+      "last_audited": "2025-08-12T08:04:36.376659"
+    },
+    {
+      "template_path": "templates/profile.html",
+      "csrf_protected": true,
+      "csrf_method": "none",
+      "vulnerabilities": [],
+      "recommendations": [],
+      "compliance_score": 1.0,
+      "form_count": 1,
+      "post_form_count": 0,
+      "get_form_count": 0,
+      "ajax_endpoints": [
+        "/api/update_user_settings"
+      ],
+      "last_audited": "2025-08-12T08:04:36.380757"
+    },
+    {
+      "template_path": "templates/review.html",
+      "csrf_protected": true,
+      "csrf_method": "none",
+      "vulnerabilities": [],
+      "recommendations": [],
+      "compliance_score": 1.0,
+      "form_count": 0,
+      "post_form_count": 0,
+      "get_form_count": 0,
+      "ajax_endpoints": [],
+      "last_audited": "2025-08-12T08:04:36.381262"
+    },
+    {
+      "template_path": "templates/review_batch.html",
+      "csrf_protected": true,
+      "csrf_method": "csrf_token_direct",
+      "vulnerabilities": [
+        {
+          "type": "exposed_csrf_token",
+          "severity": "HIGH",
+          "description": "CSRF token is visible in HTML output instead of being in a hidden field",
+          "line_number": 88,
+          "code_snippet": "{{ csrf_token() }}",
+          "recommendation": "Use {{ form.hidden_tag() }} instead of {{ csrf_token() }}"
+        },
+        {
+          "type": "unnecessary_csrf_token",
+          "severity": "LOW",
+          "description": "CSRF token found in GET form (unnecessary)",
+          "line_number": 87,
+          "code_snippet": null,
+          "recommendation": "Remove CSRF token from GET forms as they should be idempotent"
+        },
+        {
+          "type": "csrf_in_comment",
+          "severity": "MEDIUM",
+          "description": "CSRF token or reference found in HTML comment",
+          "line_number": 1,
+          "code_snippet": null,
+          "recommendation": "Remove CSRF references from HTML comments"
+        }
+      ],
+      "recommendations": [
+        "Replace {{ csrf_token() }} with {{ form.hidden_tag() }} to hide tokens",
+        "Use {{ form.hidden_tag() }} instead of {{ csrf_token() }}",
+        "Remove CSRF token from GET forms as they should be idempotent",
+        "Remove CSRF references from HTML comments",
+        "Verify GET forms are idempotent and do not change server state"
+      ],
+      "compliance_score": 0.45,
+      "form_count": 1,
+      "post_form_count": 0,
+      "get_form_count": 1,
+      "ajax_endpoints": [],
+      "last_audited": "2025-08-12T08:04:36.384176"
+    },
+    {
+      "template_path": "templates/review_batches.html",
+      "csrf_protected": true,
+      "csrf_method": "csrf_token_direct",
+      "vulnerabilities": [
+        {
+          "type": "exposed_csrf_token",
+          "severity": "HIGH",
+          "description": "CSRF token is visible in HTML output instead of being in a hidden field",
+          "line_number": 22,
+          "code_snippet": "{{ csrf_token() }}",
+          "recommendation": "Use {{ form.hidden_tag() }} instead of {{ csrf_token() }}"
+        },
+        {
+          "type": "unnecessary_csrf_token",
+          "severity": "LOW",
+          "description": "CSRF token found in GET form (unnecessary)",
+          "line_number": 21,
+          "code_snippet": null,
+          "recommendation": "Remove CSRF token from GET forms as they should be idempotent"
+        },
+        {
+          "type": "csrf_in_comment",
+          "severity": "MEDIUM",
+          "description": "CSRF token or reference found in HTML comment",
+          "line_number": 1,
+          "code_snippet": null,
+          "recommendation": "Remove CSRF references from HTML comments"
+        }
+      ],
+      "recommendations": [
+        "Replace {{ csrf_token() }} with {{ form.hidden_tag() }} to hide tokens",
+        "Use {{ form.hidden_tag() }} instead of {{ csrf_token() }}",
+        "Remove CSRF token from GET forms as they should be idempotent",
+        "Remove CSRF references from HTML comments",
+        "Verify GET forms are idempotent and do not change server state"
+      ],
+      "compliance_score": 0.45,
+      "form_count": 1,
+      "post_form_count": 0,
+      "get_form_count": 1,
+      "ajax_endpoints": [],
+      "last_audited": "2025-08-12T08:04:36.385346"
+    },
+    {
+      "template_path": "templates/review_single.html",
+      "csrf_protected": true,
+      "csrf_method": "hidden_tag",
+      "vulnerabilities": [
+        {
+          "type": "exposed_csrf_token",
+          "severity": "HIGH",
+          "description": "CSRF token is visible in HTML output instead of being in a hidden field",
+          "line_number": 148,
+          "code_snippet": "{{ csrf_token() }}",
+          "recommendation": "Use {{ form.hidden_tag() }} instead of {{ csrf_token() }}"
+        },
+        {
+          "type": "csrf_in_comment",
+          "severity": "MEDIUM",
+          "description": "CSRF token or reference found in HTML comment",
+          "line_number": 1,
+          "code_snippet": null,
+          "recommendation": "Remove CSRF references from HTML comments"
+        },
+        {
+          "type": "csrf_in_visible_script",
+          "severity": "MEDIUM",
+          "description": "CSRF token directly embedded in visible JavaScript",
+          "line_number": 10,
+          "code_snippet": null,
+          "recommendation": "Use meta tag and document.querySelector for CSRF token access"
+        }
+      ],
+      "recommendations": [
+        "Use {{ form.hidden_tag() }} instead of {{ csrf_token() }}",
+        "Remove CSRF references from HTML comments",
+        "Use meta tag and document.querySelector for CSRF token access",
+        "Ensure all POST forms validate CSRF tokens on the server side"
+      ],
+      "compliance_score": 0.6000000000000001,
+      "form_count": 1,
+      "post_form_count": 1,
+      "get_form_count": 0,
+      "ajax_endpoints": [],
+      "last_audited": "2025-08-12T08:04:36.386714"
+    },
+    {
+      "template_path": "templates/user_management.html",
+      "csrf_protected": true,
+      "csrf_method": "csrf_token_direct",
+      "vulnerabilities": [
+        {
+          "type": "exposed_csrf_token",
+          "severity": "HIGH",
+          "description": "CSRF token is visible in HTML output instead of being in a hidden field",
+          "line_number": 87,
+          "code_snippet": "{{ csrf_token() }}",
+          "recommendation": "Use {{ form.hidden_tag() }} instead of {{ csrf_token() }}"
+        },
+        {
+          "type": "exposed_csrf_token",
+          "severity": "HIGH",
+          "description": "CSRF token is visible in HTML output instead of being in a hidden field",
+          "line_number": 129,
+          "code_snippet": "{{ csrf_token() }}",
+          "recommendation": "Use {{ form.hidden_tag() }} instead of {{ csrf_token() }}"
+        },
+        {
+          "type": "exposed_csrf_token",
+          "severity": "HIGH",
+          "description": "CSRF token is visible in HTML output instead of being in a hidden field",
+          "line_number": 176,
+          "code_snippet": "{{ csrf_token() }}",
+          "recommendation": "Use {{ form.hidden_tag() }} instead of {{ csrf_token() }}"
+        },
+        {
+          "type": "csrf_in_comment",
+          "severity": "MEDIUM",
+          "description": "CSRF token or reference found in HTML comment",
+          "line_number": 1,
+          "code_snippet": null,
+          "recommendation": "Remove CSRF references from HTML comments"
+        }
+      ],
+      "recommendations": [
+        "Replace {{ csrf_token() }} with {{ form.hidden_tag() }} to hide tokens",
+        "Use {{ form.hidden_tag() }} instead of {{ csrf_token() }}",
+        "Remove CSRF references from HTML comments",
+        "Ensure all POST forms validate CSRF tokens on the server side"
+      ],
+      "compliance_score": 0.10000000000000003,
+      "form_count": 3,
+      "post_form_count": 3,
+      "get_form_count": 0,
+      "ajax_endpoints": [],
+      "last_audited": "2025-08-12T08:04:36.387901"
+    }
+  ]
+}

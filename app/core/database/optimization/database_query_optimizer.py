@@ -17,13 +17,13 @@ from sqlalchemy import text, func, and_, or_, desc, asc
 from sqlalchemy.orm import Session, joinedload, selectinload
 from sqlalchemy.exc import SQLAlchemyError
 
-from database import DatabaseManager
+from app.core.database.core.database_manager import DatabaseManager
 from models import (
     CaptionGenerationTask, TaskStatus, User, UserRole, PlatformConnection,
     JobPriority, SystemConfiguration, JobAuditLog, ProcessingRun
 )
-from performance_cache_manager import PerformanceCacheManager, cached_method
-from security.core.security_utils import sanitize_for_log
+from app.services.performance.components.performance_cache_manager import PerformanceCacheManager, cached_method
+from app.core.security.core.security_utils import sanitize_for_log
 
 logger = logging.getLogger(__name__)
 

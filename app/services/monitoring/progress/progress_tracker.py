@@ -16,9 +16,9 @@ from typing import Optional, Dict, Any, Callable, List
 from dataclasses import dataclass, asdict
 from sqlalchemy.exc import SQLAlchemyError
 
-from database import DatabaseManager
+from app.core.database.core.database_manager import DatabaseManager
 from models import CaptionGenerationTask, TaskStatus, GenerationResults
-from security.core.security_utils import sanitize_for_log
+from app.core.security.core.security_utils import sanitize_for_log
 
 logger = logging.getLogger(__name__)
 
@@ -161,7 +161,7 @@ class ProgressTracker:
         """
         try:
             # Import here to avoid circular imports
-            from unified_notification_manager import UnifiedNotificationManager, NotificationMessage
+            from app.services.notification.manager.unified_manager import UnifiedNotificationManager, NotificationMessage
             from models import NotificationType, NotificationPriority, NotificationCategory
             
             # Get notification manager from Flask app context
@@ -324,7 +324,7 @@ class ProgressTracker:
     def _send_completion_notification(self, user_id: int, task_id: str, results: Any):
         """Send WebSocket notification for task completion"""
         try:
-            from unified_notification_manager import UnifiedNotificationManager, NotificationMessage
+            from app.services.notification.manager.unified_manager import UnifiedNotificationManager, NotificationMessage
             from models import NotificationType, NotificationPriority, NotificationCategory
             from flask import current_app
             
@@ -365,7 +365,7 @@ class ProgressTracker:
     def _send_error_notification(self, user_id: int, task_id: str, error_message: str, error_details: Dict[str, Any]):
         """Send WebSocket notification for task error"""
         try:
-            from unified_notification_manager import UnifiedNotificationManager, NotificationMessage
+            from app.services.notification.manager.unified_manager import UnifiedNotificationManager, NotificationMessage
             from models import NotificationType, NotificationPriority, NotificationCategory
             from flask import current_app
             
@@ -406,7 +406,7 @@ class ProgressTracker:
             maintenance_data: Maintenance information
         """
         try:
-            from unified_notification_manager import UnifiedNotificationManager, NotificationMessage
+            from app.services.notification.manager.unified_manager import UnifiedNotificationManager, NotificationMessage
             from models import NotificationType, NotificationPriority, NotificationCategory
             from flask import current_app
             
@@ -721,7 +721,7 @@ class ProgressTracker:
             message: Optional status message
         """
         try:
-            from unified_notification_manager import UnifiedNotificationManager, NotificationMessage
+            from app.services.notification.manager.unified_manager import UnifiedNotificationManager, NotificationMessage
             from models import NotificationType, NotificationPriority, NotificationCategory
             from flask import current_app
             
@@ -771,7 +771,7 @@ class ProgressTracker:
             recovery_suggestions: Optional recovery suggestions
         """
         try:
-            from unified_notification_manager import UnifiedNotificationManager, NotificationMessage
+            from app.services.notification.manager.unified_manager import UnifiedNotificationManager, NotificationMessage
             from models import NotificationType, NotificationPriority, NotificationCategory
             from flask import current_app
             

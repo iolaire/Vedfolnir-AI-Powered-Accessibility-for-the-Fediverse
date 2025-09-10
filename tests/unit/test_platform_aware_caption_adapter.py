@@ -10,9 +10,9 @@ from unittest.mock import Mock, patch, AsyncMock
 import asyncio
 from datetime import datetime, timezone
 
-from platform_aware_caption_adapter import PlatformAwareCaptionAdapter
+from app.services.platform.adapters.platform_aware_caption_adapter import PlatformAwareCaptionAdapter
 from models import PlatformConnection, CaptionGenerationSettings, GenerationResults
-from database import DatabaseManager
+from app.core.database.core.database_manager import DatabaseManager
 from config import Config
 
 class TestPlatformAwareCaptionAdapter(unittest.TestCase):

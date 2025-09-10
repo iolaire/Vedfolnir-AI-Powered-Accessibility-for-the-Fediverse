@@ -9,7 +9,7 @@ import unittest
 import asyncio
 from unittest.mock import MagicMock, patch
 from config import ActivityPubConfig, Config
-from activitypub_platforms import (
+from app.services.activitypub.components.activitypub_platforms import (
     ActivityPubPlatform, PixelfedPlatform, MastodonPlatform, PleromaPlatform,
     get_platform_adapter, detect_platform_type
 )

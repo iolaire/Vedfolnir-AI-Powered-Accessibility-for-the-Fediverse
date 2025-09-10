@@ -18,7 +18,7 @@ from flask import url_for
 from unittest.mock import patch, MagicMock
 
 from config import Config
-from database import DatabaseManager
+from app.core.database.core.database_manager import DatabaseManager
 from models import User, UserSession, PlatformConnection, UserRole
 from tests.test_helpers import create_test_user_with_platforms, cleanup_test_user
 
@@ -418,7 +418,7 @@ from datetime import datetime, timezone, timedelta
 from flask import url_for
 
 from config import Config
-from database import DatabaseManager
+from app.core.database.core.database_manager import DatabaseManager
 from models import User, UserSession, PlatformConnection, UserRole
 from tests.test_helpers import create_test_user_with_platforms, cleanup_test_user
 

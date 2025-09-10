@@ -10,8 +10,8 @@ from unittest.mock import Mock, AsyncMock, patch
 import asyncio
 import httpx
 
-from activitypub_client import ActivityPubClient
-from activitypub_platforms import MastodonPlatform
+from app.services.activitypub.components.activitypub_client import ActivityPubClient
+from app.services.activitypub.components.activitypub_platforms import MastodonPlatform
 from config import ActivityPubConfig
 
 class TestMastodonAuthenticationIntegration(unittest.TestCase):

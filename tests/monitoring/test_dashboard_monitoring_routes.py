@@ -19,7 +19,7 @@ from flask import Flask
 from flask_login import login_user
 
 from models import User, UserRole
-from admin.routes.dashboard_monitoring import register_dashboard_routes
+from app.blueprints.admin.dashboard_monitoring import register_dashboard_routes
 from monitoring_dashboard_service import ReportType, ReportFormat
 
 
@@ -188,7 +188,7 @@ class TestDashboardMonitoringRoutes(unittest.TestCase):
         mock_service_class.return_value = mock_service
         
         from monitoring_dashboard_service import DashboardAlert
-        from alert_manager import AlertType, AlertSeverity
+        from app.services.alerts.components.alert_manager import AlertType, AlertSeverity
         
         mock_alerts = [
             DashboardAlert(

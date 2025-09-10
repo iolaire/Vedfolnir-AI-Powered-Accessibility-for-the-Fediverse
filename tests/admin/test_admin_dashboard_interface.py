@@ -118,8 +118,8 @@ class TestAdminDashboardInterface(unittest.TestCase):
         for css_class in required_classes:
             self.assertIn(css_class, content, f"CSS should contain {css_class} class")
     
-    @patch('admin.routes.dashboard.current_app')
-    @patch('admin.routes.dashboard.current_user')
+    @patch('app.blueprints.admin.dashboard.current_app')
+    @patch('app.blueprints.admin.dashboard.current_user')
     def test_dashboard_route_helper_functions(self, mock_current_user, mock_current_app):
         """Test the dashboard route helper functions"""
         # Mock admin user
@@ -131,11 +131,11 @@ class TestAdminDashboardInterface(unittest.TestCase):
         mock_current_app.logger = Mock()
         
         # Import the helper functions
-        from admin.routes.dashboard import get_system_metrics, get_active_jobs_for_admin, get_system_alerts, get_system_configuration
+        from app.blueprints.admin.dashboard import get_system_metrics, get_active_jobs_for_admin, get_system_alerts, get_system_configuration
         
         # Test get_system_metrics with mocked services
-        with patch('admin.routes.dashboard.WebCaptionGenerationService') as mock_service_class:
-            with patch('admin.routes.dashboard.SystemMonitor') as mock_monitor_class:
+        with patch('app.blueprints.admin.dashboard.WebCaptionGenerationService') as mock_service_class:
+            with patch('app.blueprints.admin.dashboard.SystemMonitor') as mock_monitor_class:
                 mock_service = Mock()
                 mock_service.get_system_metrics.return_value = {
                     'active_jobs': 5,
@@ -157,7 +157,7 @@ class TestAdminDashboardInterface(unittest.TestCase):
                 self.assertEqual(metrics['active_jobs'], 5)
         
         # Test get_active_jobs_for_admin with mocked service
-        with patch('admin.routes.dashboard.WebCaptionGenerationService') as mock_service_class:
+        with patch('app.blueprints.admin.dashboard.WebCaptionGenerationService') as mock_service_class:
             mock_service = Mock()
             mock_service.get_all_active_jobs.return_value = [
                 {
@@ -177,7 +177,7 @@ class TestAdminDashboardInterface(unittest.TestCase):
             self.assertEqual(jobs[0]['task_id'], 'test-task-123')
         
         # Test get_system_alerts with mocked alert manager
-        with patch('admin.routes.dashboard.AlertManager') as mock_alert_class:
+        with patch('app.blueprints.admin.dashboard.AlertManager') as mock_alert_class:
             mock_alert_manager = Mock()
             mock_alert_manager.get_active_alerts.return_value = [
                 {

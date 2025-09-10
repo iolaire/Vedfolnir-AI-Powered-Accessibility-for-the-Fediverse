@@ -15,7 +15,7 @@ from models import (
     CaptionGenerationTask, TaskStatus, Post, Image, 
     GenerationResults, User, PlatformConnection
 )
-from database import DatabaseManager
+from app.core.database.core.database_manager import DatabaseManager
 
 class TestCaptionReviewIntegration(unittest.TestCase):
     """Tests for caption review integration system"""

@@ -5,7 +5,7 @@
 from flask import Blueprint, jsonify, render_template, request, current_app
 from flask_login import login_required, current_user
 from functools import wraps
-from session_performance_monitor import get_performance_monitor
+from app.services.monitoring.performance.monitors.session_performance_monitor import get_performance_monitor
 from models import UserRole
 
 def admin_required(f):

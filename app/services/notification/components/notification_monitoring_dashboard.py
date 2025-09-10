@@ -16,9 +16,9 @@ from typing import Dict, Any, Optional
 from flask import Blueprint, jsonify, render_template, request, current_app
 from flask_login import login_required, current_user
 
-from notification_system_monitor import NotificationSystemMonitor, AlertSeverity
+from app.services.monitoring.system.notification_monitor import NotificationSystemMonitor, AlertSeverity
 from models import UserRole
-from security.core.role_based_access import require_admin
+from app.core.security.core.role_based_access import require_admin
 
 logger = logging.getLogger(__name__)
 

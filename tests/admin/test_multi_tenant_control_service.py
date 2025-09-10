@@ -8,10 +8,10 @@ from datetime import datetime
 from unittest.mock import Mock, patch, MagicMock
 
 from config import Config
-from database import DatabaseManager
+from app.core.database.core.database_manager import DatabaseManager
 from models import User, UserRole, CaptionGenerationTask, TaskStatus, JobPriority, SystemConfiguration, JobAuditLog
-from multi_tenant_control_service import MultiTenantControlService, UserJobLimits, RateLimits
-from system_monitor import ResourceUsage
+from app.services.batch.components.multi_tenant_control_service import MultiTenantControlService, UserJobLimits, RateLimits
+from app.services.monitoring.system.system_monitor import ResourceUsage
 
 class TestMultiTenantControlService(unittest.TestCase):
     """Test cases for MultiTenantControlService"""

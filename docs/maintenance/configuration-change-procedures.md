@@ -623,7 +623,7 @@ echo "Backup File: $BACKUP_FILE"
 # Execute rollback
 python -c "
 from system_configuration_manager import SystemConfigurationManager
-from database import DatabaseManager
+from app.core.database.core.database_manager import DatabaseManager
 from config import Config
 import json
 

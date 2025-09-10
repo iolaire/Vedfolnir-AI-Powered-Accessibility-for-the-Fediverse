@@ -512,7 +512,7 @@ class TestMaintenanceNotificationIntegration(unittest.TestCase):
         """Test that maintenance routes have the correct structure"""
         # Import the routes module to ensure it loads without errors
         try:
-            from admin.routes import maintenance_mode
+            from app.blueprints.admin import maintenance_mode
             self.assertTrue(True, "Maintenance mode routes loaded successfully")
         except ImportError as e:
             self.fail(f"Failed to import maintenance mode routes: {e}")

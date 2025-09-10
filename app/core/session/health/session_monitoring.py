@@ -20,9 +20,9 @@ from collections import defaultdict, deque
 from threading import Lock
 
 from models import UserSession, User
-from database import DatabaseManager
-from security.core.security_utils import sanitize_for_log
-from session_config import get_session_config, SessionConfig
+from app.core.database.core.database_manager import DatabaseManager
+from app.core.security.core.security_utils import sanitize_for_log
+from app.core.session.config import get_session_config, SessionConfig
 
 logger = getLogger(__name__)
 

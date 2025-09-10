@@ -10,7 +10,7 @@ Tests access control and authorization for platform operations.
 import unittest
 from tests.fixtures.platform_fixtures import PlatformTestCase
 from models import User, UserRole, PlatformConnection
-from platform_context import PlatformContextManager, PlatformContextError
+from app.services.platform.core.platform_context import PlatformContextManager, PlatformContextError
 
 class TestPlatformAccessControl(PlatformTestCase):
     """Test platform access control mechanisms"""

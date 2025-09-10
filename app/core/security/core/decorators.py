@@ -13,7 +13,7 @@ from functools import wraps
 
 # Import original decorators
 try:
-    from security.core.security_middleware import rate_limit, validate_csrf_token, validate_input_length
+    from app.core.security.core.security_middleware import rate_limit, validate_csrf_token, validate_input_length
     from enhanced_input_validation import enhanced_input_validation
 except ImportError:
     # Fallback if security modules not available

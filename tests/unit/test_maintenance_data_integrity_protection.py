@@ -18,14 +18,14 @@ from datetime import datetime, timezone
 # Add project root to path for imports
 sys.path.insert(0, os.path.join(os.path.dirname(__file__), '..', '..'))
 
-from maintenance_data_integrity_protection import (
+from app.services.maintenance.components.maintenance_data_integrity_protection import (
     MaintenanceDataIntegrityProtection,
     DataModificationAttemptType,
     DataModificationStatus,
     DataModificationAttempt,
     DataConsistencyCheck
 )
-from enhanced_maintenance_mode_service import MaintenanceMode, MaintenanceStatus
+from app.services.maintenance.enhanced.enhanced_maintenance_mode_service import MaintenanceMode, MaintenanceStatus
 
 
 class TestMaintenanceDataIntegrityProtection(unittest.TestCase):

@@ -254,7 +254,7 @@ class TestDataIsolationSecurity(PlatformTestCase):
         self.session.commit()
         
         # User1 should not be able to set context to user2's platform
-        from platform_context import PlatformContextManager, PlatformContextError
+        from app.services.platform.core.platform_context import PlatformContextManager, PlatformContextError
         context_manager = PlatformContextManager(self.session)
         
         with self.assertRaises(PlatformContextError):

@@ -21,9 +21,9 @@ from datetime import datetime, timezone, timedelta
 
 # Test imports
 from config import Config
-from database import DatabaseManager
+from app.core.database.core.database_manager import DatabaseManager
 from models import CaptionGenerationTask, TaskStatus, User, UserRole, PlatformConnection, JobPriority
-from task_queue_manager import TaskQueueManager
+from app.services.task.core.task_queue_manager import TaskQueueManager
 from progress_tracker import ProgressTracker
 
 # Recovery components
@@ -31,7 +31,7 @@ from system_recovery_manager import SystemRecoveryManager, initialize_system_rec
 from graceful_shutdown_handler import GracefulShutdownHandler, initialize_graceful_shutdown
 from database_connection_recovery import DatabaseConnectionRecovery
 from ai_service_monitor import AIServiceMonitor, ServiceStatus
-from concurrent_operation_manager import ConcurrentOperationManager, OperationType, LockScope
+from app.services.batch.concurrent.concurrent_operation_manager import ConcurrentOperationManager, OperationType, LockScope
 
 class TestSystemRecoveryIntegration(unittest.TestCase):
     """Integration tests for system recovery components"""
@@ -45,7 +45,7 @@ class TestSystemRecoveryIntegration(unittest.TestCase):
         self.config.storage.database_url = "sqlite:///:memory:"
         
         # Initialize database manager with SQLite support
-        from database import DatabaseManager
+        from app.core.database.core.database_manager import DatabaseManager
         import os
         
         # Temporarily override environment to allow SQLite for testing

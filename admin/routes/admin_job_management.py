@@ -20,7 +20,7 @@ def register_routes(bp):
             from flask import redirect, url_for
             # from notification_flash_replacement import send_notification  # Removed - using unified notification system
             # Send error notification
-            from notification_helpers import send_error_notification
+            from app.services.notification.helpers.notification_helpers import send_error_notification
             send_error_notification("Access denied. Admin privileges required.", "Access Denied")
             return redirect(url_for('main.index'))
         
@@ -52,7 +52,7 @@ def register_routes(bp):
             from flask import redirect, url_for
             # from notification_flash_replacement import send_notification  # Removed - using unified notification system
             # Send error notification
-            from notification_helpers import send_error_notification
+            from app.services.notification.helpers.notification_helpers import send_error_notification
             send_error_notification("Access denied. Admin privileges required.", "Access Denied")
             return redirect(url_for('main.index'))
         
@@ -131,7 +131,7 @@ def register_routes(bp):
             from flask import redirect, url_for
             # from notification_flash_replacement import send_notification  # Removed - using unified notification system
             # Send error notification
-            from notification_helpers import send_error_notification
+            from app.services.notification.helpers.notification_helpers import send_error_notification
             send_error_notification("Access denied. Admin privileges required.", "Access Denied")
             return redirect(url_for('main.index'))
         
@@ -157,7 +157,7 @@ def register_routes(bp):
                                 .count()
             
             # Check actual maintenance mode status
-            from multi_tenant_control_service import MultiTenantControlService
+            from app.services.batch.components.multi_tenant_control_service import MultiTenantControlService
             mt_service = MultiTenantControlService(db_manager)
             is_maintenance = mt_service.is_maintenance_mode()
             maintenance_reason = mt_service.get_maintenance_reason()
@@ -237,13 +237,13 @@ def register_routes(bp):
             from flask import redirect, url_for
             # from notification_flash_replacement import send_notification  # Removed - using unified notification system
             # Send error notification
-            from notification_helpers import send_error_notification
+            from app.services.notification.helpers.notification_helpers import send_error_notification
             send_error_notification("Access denied. Admin privileges required.", "Access Denied")
             return redirect(url_for('main.index'))
         
         # Check current maintenance mode status
         db_manager = current_app.config['db_manager']
-        from multi_tenant_control_service import MultiTenantControlService
+        from app.services.batch.components.multi_tenant_control_service import MultiTenantControlService
         mt_service = MultiTenantControlService(db_manager)
         is_maintenance = mt_service.is_maintenance_mode()
         maintenance_reason = mt_service.get_maintenance_reason()
@@ -263,13 +263,13 @@ def register_routes(bp):
             from flask import redirect, url_for
             # from notification_flash_replacement import send_notification  # Removed - using unified notification system
             # Send error notification
-            from notification_helpers import send_error_notification
+            from app.services.notification.helpers.notification_helpers import send_error_notification
             send_error_notification("Access denied. Admin privileges required.", "Access Denied")
             return redirect(url_for('main.index'))
         
         # Check current maintenance mode status
         db_manager = current_app.config['db_manager']
-        from multi_tenant_control_service import MultiTenantControlService
+        from app.services.batch.components.multi_tenant_control_service import MultiTenantControlService
         mt_service = MultiTenantControlService(db_manager)
         is_maintenance = mt_service.is_maintenance_mode()
         maintenance_reason = mt_service.get_maintenance_reason()
@@ -291,7 +291,7 @@ def register_routes(bp):
             from flask import redirect, url_for
             # from notification_flash_replacement import send_notification  # Removed - using unified notification system
             # Send error notification
-            from notification_helpers import send_error_notification
+            from app.services.notification.helpers.notification_helpers import send_error_notification
             send_error_notification("Access denied. Admin privileges required.", "Access Denied")
             return redirect(url_for('main.index'))
         
@@ -315,7 +315,7 @@ def register_routes(bp):
             from flask import redirect, url_for
             # from notification_flash_replacement import send_notification  # Removed - using unified notification system
             # Send error notification
-            from notification_helpers import send_error_notification
+            from app.services.notification.helpers.notification_helpers import send_error_notification
             send_error_notification("Access denied. Admin privileges required.", "Access Denied")
             return redirect(url_for('main.index'))
         
@@ -355,7 +355,7 @@ def register_routes(bp):
             from flask import redirect, url_for
             # from notification_flash_replacement import send_notification  # Removed - using unified notification system
             # Send error notification
-            from notification_helpers import send_error_notification
+            from app.services.notification.helpers.notification_helpers import send_error_notification
             send_error_notification("Access denied. Admin privileges required.", "Access Denied")
             return redirect(url_for('main.index'))
         
@@ -403,7 +403,7 @@ def register_routes(bp):
             from flask import redirect, url_for
             # from notification_flash_replacement import send_notification  # Removed - using unified notification system
             # Send error notification
-            from notification_helpers import send_error_notification
+            from app.services.notification.helpers.notification_helpers import send_error_notification
             send_error_notification("Access denied. You can only view your own job history.", "Error")
             return redirect(url_for('admin.job_management'))
         
@@ -418,7 +418,7 @@ def register_routes(bp):
                 from flask import redirect, url_for
                 # from notification_flash_replacement import send_notification  # Removed - using unified notification system
                 # Send error notification
-                from notification_helpers import send_error_notification
+                from app.services.notification.helpers.notification_helpers import send_error_notification
                 send_error_notification("User not found.", "Error")
                 return redirect(url_for('admin.job_management'))
             
@@ -460,7 +460,7 @@ def register_routes(bp):
             from flask import redirect, url_for
             # from notification_flash_replacement import send_notification  # Removed - using unified notification system
             # Send error notification
-            from notification_helpers import send_error_notification
+            from app.services.notification.helpers.notification_helpers import send_error_notification
             send_error_notification("Access denied. Admin privileges required.", "Access Denied")
             return redirect(url_for('main.index'))
         
@@ -474,7 +474,7 @@ def register_routes(bp):
             from flask import redirect, url_for
             # from notification_flash_replacement import send_notification  # Removed - using unified notification system
             # Send error notification
-            from notification_helpers import send_error_notification
+            from app.services.notification.helpers.notification_helpers import send_error_notification
             send_error_notification("Access denied. Admin privileges required.", "Access Denied")
             return redirect(url_for('main.index'))
         

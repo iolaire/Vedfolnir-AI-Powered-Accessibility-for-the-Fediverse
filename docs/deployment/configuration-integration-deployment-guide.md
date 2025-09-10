@@ -98,7 +98,7 @@ python -c "
 import json
 from datetime import datetime
 from config import Config
-from database import DatabaseManager
+from app.core.database.core.database_manager import DatabaseManager
 
 config = Config()
 db_manager = DatabaseManager(config)
@@ -181,9 +181,9 @@ import os
 sys.path.insert(0, os.path.join(os.path.dirname(__file__), '..'))
 
 from config import Config
-from database import DatabaseManager
-from configuration_service import ConfigurationService
-from system_configuration_manager import SystemConfigurationManager
+from app.core.database.core.database_manager import DatabaseManager
+from app.core.configuration.core.configuration_service import ConfigurationService
+from app.core.configuration.core.system_configuration_manager import SystemConfigurationManager
 
 def deploy_configuration_service():
     """Deploy core configuration service"""
@@ -244,7 +244,7 @@ def deploy_configuration_cache():
     print("=== Deploying Configuration Cache ===")
     
     try:
-        from configuration_cache import ConfigurationCache
+        from app.core.configuration.cache.configuration_cache import ConfigurationCache
         
         # Initialize cache
         print("1. Initializing configuration cache...")
@@ -253,7 +253,7 @@ def deploy_configuration_cache():
         
         # Test cache operations
         print("2. Testing cache operations...")
-        from configuration_service import ConfigurationValue, ConfigurationSource
+        from app.core.configuration.core.configuration_service import ConfigurationValue, ConfigurationSource
         from datetime import datetime, timezone
         
         test_config = ConfigurationValue(
@@ -306,7 +306,7 @@ def deploy_event_bus():
     print("=== Deploying Configuration Event Bus ===")
     
     try:
-        from configuration_event_bus import ConfigurationEventBus, ConfigurationChangeEvent, EventType
+        from app.core.configuration.events.configuration_event_bus import ConfigurationEventBus, ConfigurationChangeEvent, EventType
         from datetime import datetime, timezone
         
         # Initialize event bus
@@ -378,10 +378,10 @@ def deploy_task_queue_adapter():
     print("=== Deploying Task Queue Configuration Adapter ===")
     
     try:
-        from task_queue_manager import TaskQueueManager
-        from task_queue_configuration_adapter import TaskQueueConfigurationAdapter
-        from configuration_service import ConfigurationService
-        from database import DatabaseManager
+        from app.services.task.core.task_queue_manager import TaskQueueManager
+        from app.services.task.configuration.task_queue_configuration_adapter import TaskQueueConfigurationAdapter
+        from app.core.configuration.core.configuration_service import ConfigurationService
+        from app.core.database.core.database_manager import DatabaseManager
         from config import Config
         
         # Initialize dependencies
@@ -434,10 +434,10 @@ def deploy_session_adapter():
     print("=== Deploying Session Configuration Adapter ===")
     
     try:
-        from session_configuration_adapter import SessionConfigurationAdapter
-        from configuration_service import ConfigurationService
+        from app.core.configuration.adapters.session_configuration_adapter import SessionConfigurationAdapter
+        from app.core.configuration.core.configuration_service import ConfigurationService
         from redis_session_manager import RedisSessionManager
-        from database import DatabaseManager
+        from app.core.database.core.database_manager import DatabaseManager
         from config import Config
         
         # Initialize dependencies
@@ -497,10 +497,10 @@ def deploy_alert_adapter():
     print("=== Deploying Alert Configuration Adapter ===")
     
     try:
-        from alert_configuration_adapter import AlertConfigurationAdapter
-        from alert_manager import AlertManager
-        from configuration_service import ConfigurationService
-        from database import DatabaseManager
+        from app.core.configuration.adapters.alert_configuration_adapter import AlertConfigurationAdapter
+        from app.services.alerts.components.alert_manager import AlertManager
+        from app.core.configuration.core.configuration_service import ConfigurationService
+        from app.core.database.core.database_manager import DatabaseManager
         from config import Config
         
         # Initialize dependencies
@@ -556,8 +556,8 @@ def deploy_feature_flag_service():
     
     try:
         from feature_flag_service import FeatureFlagService
-        from configuration_service import ConfigurationService
-        from database import DatabaseManager
+        from app.core.configuration.core.configuration_service import ConfigurationService
+        from app.core.database.core.database_manager import DatabaseManager
         from config import Config
         
         # Initialize dependencies
@@ -605,9 +605,9 @@ def deploy_maintenance_mode_service():
     print("=== Deploying Maintenance Mode Service ===")
     
     try:
-        from maintenance_mode_service import MaintenanceModeService
-        from configuration_service import ConfigurationService
-        from database import DatabaseManager
+        from app.services.maintenance.components.maintenance_mode_service import MaintenanceModeService
+        from app.core.configuration.core.configuration_service import ConfigurationService
+        from app.core.database.core.database_manager import DatabaseManager
         from config import Config
         
         # Initialize dependencies
@@ -661,12 +661,12 @@ def integrate_with_web_application():
         integration_code = '''
 # Add to web_app.py initialization
 
-from configuration_service import ConfigurationService
-from task_queue_configuration_adapter import TaskQueueConfigurationAdapter
-from session_configuration_adapter import SessionConfigurationAdapter
+from app.core.configuration.core.configuration_service import ConfigurationService
+from app.services.task.configuration.task_queue_configuration_adapter import TaskQueueConfigurationAdapter
+from app.core.configuration.adapters.session_configuration_adapter import SessionConfigurationAdapter
 from alert_configuration_adapter import AlertConfigurationAdapter
 from feature_flag_service import FeatureFlagService
-from maintenance_mode_service import MaintenanceModeService
+from app.services.maintenance.components.maintenance_mode_service import MaintenanceModeService
 
 def initialize_configuration_system(app, db_manager):
     """Initialize configuration system integration"""
@@ -755,8 +755,8 @@ def migrate_hardcoded_configurations():
     print("=== Migrating Hardcoded Configurations ===")
     
     try:
-        from system_configuration_manager import SystemConfigurationManager, ConfigurationCategory, ConfigurationDataType
-        from database import DatabaseManager
+        from app.core.configuration.core.system_configuration_manager import SystemConfigurationManager, ConfigurationCategory, ConfigurationDataType
+        from app.core.database.core.database_manager import DatabaseManager
         from config import Config
         
         config = Config()
@@ -867,8 +867,8 @@ def migrate_environment_variables():
     
     try:
         import os
-        from system_configuration_manager import SystemConfigurationManager, ConfigurationCategory, ConfigurationDataType
-        from database import DatabaseManager
+        from app.core.configuration.core.system_configuration_manager import SystemConfigurationManager, ConfigurationCategory, ConfigurationDataType
+        from app.core.database.core.database_manager import DatabaseManager
         from config import Config
         
         config = Config()
@@ -1080,8 +1080,8 @@ def run_post_deployment_validation():
 def validate_core_services():
     """Validate core configuration services"""
     try:
-        from configuration_service import ConfigurationService
-        from database import DatabaseManager
+        from app.core.configuration.core.configuration_service import ConfigurationService
+        from app.core.database.core.database_manager import DatabaseManager
         from config import Config
         
         config = Config()
@@ -1115,8 +1115,8 @@ def validate_service_adapters():
 def validate_configuration_access():
     """Validate configuration access patterns"""
     try:
-        from configuration_service import ConfigurationService
-        from database import DatabaseManager
+        from app.core.configuration.core.configuration_service import ConfigurationService
+        from app.core.database.core.database_manager import DatabaseManager
         from config import Config
         import time
         
@@ -1142,8 +1142,8 @@ def validate_configuration_access():
 def validate_event_system():
     """Validate event system functionality"""
     try:
-        from configuration_service import ConfigurationService
-        from database import DatabaseManager
+        from app.core.configuration.core.configuration_service import ConfigurationService
+        from app.core.database.core.database_manager import DatabaseManager
         from config import Config
         import time
         
@@ -1178,8 +1178,8 @@ def validate_event_system():
 def validate_performance():
     """Validate system performance"""
     try:
-        from configuration_service import ConfigurationService
-        from database import DatabaseManager
+        from app.core.configuration.core.configuration_service import ConfigurationService
+        from app.core.database.core.database_manager import DatabaseManager
         from config import Config
         import time
         import psutil
@@ -1385,8 +1385,8 @@ import time
 import json
 import logging
 from datetime import datetime
-from configuration_service import ConfigurationService
-from database import DatabaseManager
+from app.core.configuration.core.configuration_service import ConfigurationService
+from app.core.database.core.database_manager import DatabaseManager
 from config import Config
 
 def monitor_configuration_system():

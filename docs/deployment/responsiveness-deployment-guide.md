@@ -511,7 +511,7 @@ done
 
 # Test database connectivity
 echo "Testing database connectivity..."
-if python -c "from database import DatabaseManager; from config import Config; DatabaseManager(Config()).test_mysql_connection()" 2>/dev/null; then
+if python -c "from app.core.database.core.database_manager import DatabaseManager; from config import Config; DatabaseManager(Config()).test_mysql_connection()" 2>/dev/null; then
     echo "✅ Database connection successful"
 else
     echo "❌ Database connection failed"
@@ -901,7 +901,7 @@ curl -f http://localhost:5000/health
 curl -f http://localhost:5000/admin
 
 # 3. Database connectivity
-python -c "from database import DatabaseManager; from config import Config; print(DatabaseManager(Config()).test_mysql_connection())"
+python -c "from app.core.database.core.database_manager import DatabaseManager; from config import Config; print(DatabaseManager(Config()).test_mysql_connection())"
 
 # 4. Redis connectivity
 redis-cli ping

@@ -229,7 +229,7 @@ CHECK TABLE users, platform_connections, posts, images, processing_runs, user_se
 
 # Verify data consistency
 python -c "
-from database import DatabaseManager
+from app.core.database.core.database_manager import DatabaseManager
 from models import *
 from config import Config
 config = Config()
@@ -306,7 +306,7 @@ curl -f http://localhost:5000/api/maintenance/status || echo "Maintenance API fa
 
 # Test database connectivity
 python -c "
-from database import DatabaseManager
+from app.core.database.core.database_manager import DatabaseManager
 from config import Config
 config = Config()
 db_manager = DatabaseManager(config)
@@ -349,7 +349,7 @@ curl -X POST http://localhost:5000/api/maintenance/disable \
 ```bash
 # Verify user data integrity
 python -c "
-from database import DatabaseManager
+from app.core.database.core.database_manager import DatabaseManager
 from models import User, UserRole
 from config import Config
 config = Config()
@@ -366,7 +366,7 @@ with db_manager.get_session() as session:
 
 # Verify platform connections
 python -c "
-from database import DatabaseManager
+from app.core.database.core.database_manager import DatabaseManager
 from models import PlatformConnection
 from config import Config
 config = Config()
@@ -589,7 +589,7 @@ echo "Reviewing monitoring configuration..."
 
 # Verify alerting is working
 python -c "
-from monitoring.alert_manager import AlertManager
+from app.services.alerts.components.alert_manager import AlertManager
 am = AlertManager()
 am.send_alert('rollback_test', 'Rollback Recovery Test', 'Testing alert system after rollback', 'info')
 print('Test alert sent')

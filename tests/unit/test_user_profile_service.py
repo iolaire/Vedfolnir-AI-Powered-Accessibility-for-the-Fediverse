@@ -18,7 +18,7 @@ from sqlalchemy.orm import sessionmaker
 from models import Base, User, UserRole, UserAuditLog
 from services.user_management_service import UserProfileService
 from config import Config
-from database import DatabaseManager
+from app.core.database.core.database_manager import DatabaseManager
 
 class TestUserProfileService(unittest.TestCase):
     """Test UserProfileService functionality"""

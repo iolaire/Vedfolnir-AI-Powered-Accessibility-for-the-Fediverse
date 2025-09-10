@@ -19,9 +19,9 @@ from datetime import datetime, timezone
 # Add project root to path for imports
 sys.path.insert(0, os.path.join(os.path.dirname(__file__), '..', '..'))
 
-from storage_user_notification_system import StorageUserNotificationSystem
-from storage_limit_enforcer import StorageLimitEnforcer, StorageBlockingState, StorageCheckResult
-from storage_monitor_service import StorageMetrics
+from app.services.storage.components.storage_user_notification_system import StorageUserNotificationSystem
+from app.services.storage.components.storage_limit_enforcer import StorageLimitEnforcer, StorageBlockingState, StorageCheckResult
+from app.services.storage.components.storage_monitor_service import StorageMetrics
 
 
 class TestStorageUserNotificationIntegration(unittest.TestCase):

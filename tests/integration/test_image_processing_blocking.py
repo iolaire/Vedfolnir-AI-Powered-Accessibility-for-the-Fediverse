@@ -18,10 +18,10 @@ from datetime import datetime, timezone
 # Add project root to path for imports
 sys.path.insert(0, os.path.join(os.path.dirname(__file__), '..', '..'))
 
-from enhanced_maintenance_mode_service import EnhancedMaintenanceModeService, MaintenanceMode, MaintenanceStatus
-from maintenance_operation_classifier import MaintenanceOperationClassifier, OperationType
-from maintenance_mode_middleware import MaintenanceModeMiddleware
-from maintenance_response_helper import MaintenanceResponseHelper
+from app.services.maintenance.enhanced.enhanced_maintenance_mode_service import EnhancedMaintenanceModeService, MaintenanceMode, MaintenanceStatus
+from app.services.maintenance.components.maintenance_operation_classifier import MaintenanceOperationClassifier, OperationType
+from app.services.maintenance.components.maintenance_mode_middleware import MaintenanceModeMiddleware
+from app.services.maintenance.components.maintenance_response_helper import MaintenanceResponseHelper
 from models import User, UserRole
 
 

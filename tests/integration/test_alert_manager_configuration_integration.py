@@ -18,10 +18,10 @@ from datetime import datetime, timezone
 # Add project root to path for imports
 sys.path.insert(0, os.path.join(os.path.dirname(__file__), '..', '..'))
 
-from alert_manager import AlertManager, AlertThresholds, NotificationChannel, NotificationConfig
-from configuration_service import ConfigurationService
-from configuration_event_bus import ConfigurationEventBus, ConfigurationChangeEvent, EventType
-from database import DatabaseManager
+from app.services.alerts.components.alert_manager import AlertManager, AlertThresholds, NotificationChannel, NotificationConfig
+from app.core.configuration.core.configuration_service import ConfigurationService
+from app.core.configuration.events.configuration_event_bus import ConfigurationEventBus, ConfigurationChangeEvent, EventType
+from app.core.database.core.database_manager import DatabaseManager
 from config import Config
 
 

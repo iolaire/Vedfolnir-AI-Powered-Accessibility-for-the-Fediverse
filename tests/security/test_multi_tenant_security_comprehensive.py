@@ -17,10 +17,10 @@ from unittest.mock import Mock, patch, MagicMock
 from datetime import datetime, timezone
 
 from config import Config
-from database import DatabaseManager
+from app.core.database.core.database_manager import DatabaseManager
 from models import User, UserRole, CaptionGenerationTask, TaskStatus, JobAuditLog, PlatformConnection
-from admin_management_service import AdminManagementService
-from multi_tenant_control_service import MultiTenantControlService, UserJobLimits
+from app.services.admin.components.admin_management_service import AdminManagementService
+from app.services.batch.components.multi_tenant_control_service import MultiTenantControlService, UserJobLimits
 from web_caption_generation_service import WebCaptionGenerationService
 from audit_logger import AuditLogger
 

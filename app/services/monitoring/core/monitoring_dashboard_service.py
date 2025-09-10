@@ -21,15 +21,15 @@ from sqlalchemy import func, desc, and_, or_, text, case
 from sqlalchemy.orm import joinedload
 from sqlalchemy.exc import SQLAlchemyError
 
-from database import DatabaseManager
+from app.core.database.core.database_manager import DatabaseManager
 from models import (
     CaptionGenerationTask, TaskStatus, User, PlatformConnection, 
     Image, ProcessingStatus, ProcessingRun, UserRole
 )
 from admin.services.monitoring_service import AdminMonitoringService
-from alert_manager import AlertManager, AlertType, AlertSeverity
-from system_monitor import SystemMonitor
-from storage_monitoring_dashboard_integration import StorageMonitoringDashboardIntegration
+from app.services.alerts.components.alert_manager import AlertManager, AlertType, AlertSeverity
+from app.services.monitoring.system.system_monitor import SystemMonitor
+from app.services.storage.components.storage_monitoring_dashboard_integration import StorageMonitoringDashboardIntegration
 
 logger = logging.getLogger(__name__)
 

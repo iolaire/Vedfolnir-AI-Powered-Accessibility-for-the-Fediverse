@@ -23,8 +23,8 @@ from enum import Enum
 from sqlalchemy import and_, or_, desc, func
 from sqlalchemy.exc import SQLAlchemyError
 
-from database import DatabaseManager
-from unified_notification_manager import NotificationMessage
+from app.core.database.core.database_manager import DatabaseManager
+from app.services.notification.manager.unified_manager import NotificationMessage
 from models import NotificationStorage, NotificationType, NotificationPriority, NotificationCategory
 
 logger = logging.getLogger(__name__)

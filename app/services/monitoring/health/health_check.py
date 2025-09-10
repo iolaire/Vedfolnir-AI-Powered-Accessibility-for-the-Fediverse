@@ -22,9 +22,9 @@ import httpx
 from sqlalchemy.exc import SQLAlchemyError
 
 from config import Config
-from database import DatabaseManager
+from app.core.database.core.database_manager import DatabaseManager
 from models import ProcessingRun, Image, Post
-from activitypub_client import ActivityPubClient
+from app.services.activitypub.components.activitypub_client import ActivityPubClient
 from ollama_caption_generator import OllamaCaptionGenerator
 
 logger = logging.getLogger(__name__)
@@ -439,7 +439,7 @@ class HealthChecker:
                 # MySQL
                 try:
                     # Test MySQL connection and get database information
-                    from database import DatabaseManager
+                    from app.core.database.core.database_manager import DatabaseManager
                     from config import Config
                     
                     config = Config()
@@ -971,7 +971,7 @@ class HealthChecker:
                 return True  # No alerts needed for healthy status
             
             # Import notification helpers
-            from notification_helpers import send_admin_notification
+            from app.services.notification.helpers.notification_helpers import send_admin_notification
             from models import NotificationType, NotificationPriority
             
             # Determine notification type and priority based on status

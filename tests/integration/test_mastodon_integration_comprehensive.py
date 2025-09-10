@@ -16,8 +16,8 @@ from typing import Optional, Dict, Any, List
 import httpx
 import json
 
-from activitypub_client import ActivityPubClient
-from activitypub_platforms import MastodonPlatform, PlatformAdapterFactory
+from app.services.activitypub.components.activitypub_client import ActivityPubClient
+from app.services.activitypub.components.activitypub_platforms import MastodonPlatform, PlatformAdapterFactory
 from config import ActivityPubConfig
 from main import Vedfolnir
 

@@ -29,7 +29,7 @@ project_root = Path(__file__).parent.parent.parent
 sys.path.insert(0, str(project_root))
 
 from config import Config
-from database import DatabaseManager
+from app.core.database.core.database_manager import DatabaseManager
 from models import UserRole
 from tests.test_helpers.mock_user_helper import MockUserHelper
 

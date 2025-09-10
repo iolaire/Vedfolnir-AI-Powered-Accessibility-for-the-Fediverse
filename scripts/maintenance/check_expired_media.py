@@ -13,7 +13,7 @@ import sys
 import os
 from datetime import datetime, timedelta, timezone
 from config import Config
-from database import DatabaseManager
+from app.core.database.core.database_manager import DatabaseManager
 from models import Image, ProcessingStatus
 
 def check_expired_media(days_threshold=2, dry_run=True):

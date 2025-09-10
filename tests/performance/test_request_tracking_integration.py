@@ -80,9 +80,9 @@ class TestRequestTrackingIntegration(unittest.TestCase):
         
         self.mock_app.system_optimizer = self.mock_system_optimizer
     
-    @patch('admin.routes.performance_dashboard.current_app')
-    @patch('admin.routes.performance_dashboard.current_user')
-    @patch('admin.routes.performance_dashboard.jsonify')
+    @patch('app.services.performance.components.performance_dashboard.current_app')
+    @patch('app.services.performance.components.performance_dashboard.current_user')
+    @patch('app.services.performance.components.performance_dashboard.jsonify')
     def test_api_request_tracking_endpoint(self, mock_jsonify, mock_current_user, mock_current_app):
         """Test the request tracking API endpoint"""
         # Set up mocks
@@ -91,7 +91,7 @@ class TestRequestTrackingIntegration(unittest.TestCase):
         mock_jsonify.return_value = Mock()
         
         # Import the route function
-        from admin.routes.performance_dashboard import register_routes
+        from app.services.performance.components.performance_dashboard import register_routes
         
         # Create a mock blueprint
         mock_bp = Mock()
@@ -178,15 +178,15 @@ class TestRequestTrackingIntegration(unittest.TestCase):
                 self.assertIn(field, endpoint_data, f"Missing endpoint analysis field: {field}")
                 self.assertIsInstance(endpoint_data[field], (int, float))
     
-    @patch('admin.routes.performance_dashboard.logger')
+    @patch('app.services.performance.components.performance_dashboard.logger')
     def test_api_error_handling(self, mock_logger):
         """Test API error handling when system optimizer is not available"""
         # Test with missing system optimizer
         mock_app_no_optimizer = Mock()
         mock_app_no_optimizer.system_optimizer = None
         
-        with patch('admin.routes.performance_dashboard.current_app', mock_app_no_optimizer):
-            with patch('admin.routes.performance_dashboard.current_user') as mock_user:
+        with patch('app.services.performance.components.performance_dashboard.current_app', mock_app_no_optimizer):
+            with patch('app.services.performance.components.performance_dashboard.current_user') as mock_user:
                 mock_user.role = 'admin'
                 
                 # This would normally be called by Flask, but we're testing the logic

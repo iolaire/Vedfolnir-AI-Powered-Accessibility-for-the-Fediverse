@@ -18,8 +18,8 @@ sys.path.insert(0, os.path.join(os.path.dirname(__file__), '..', '..'))
 
 from dotenv import load_dotenv
 from config import Config
-from database import DatabaseManager
-from system_configuration_manager import SystemConfigurationManager
+from app.core.database.core.database_manager import DatabaseManager
+from app.core.configuration.core.system_configuration_manager import SystemConfigurationManager
 from models import SystemConfiguration, User, UserRole
 
 def main():
@@ -113,7 +113,7 @@ def main():
                 print(f"  {config.key}: category={config.category}, data_type={config.data_type}")
         
         # Test category filtering
-        from system_configuration_manager import ConfigurationCategory
+        from app.core.configuration.core.system_configuration_manager import ConfigurationCategory
         maintenance_configs = config_manager.get_all_configurations(
             admin_user.id, category=ConfigurationCategory.MAINTENANCE, include_sensitive=True
         )

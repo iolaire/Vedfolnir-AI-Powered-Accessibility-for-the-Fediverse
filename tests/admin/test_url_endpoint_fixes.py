@@ -14,7 +14,7 @@ import os
 sys.path.insert(0, os.path.join(os.path.dirname(__file__), '..', '..'))
 
 from flask import Flask, url_for
-from routes.user_management_routes import register_user_management_routes
+from app.blueprints.auth.user_management_routes import register_user_management_routes
 
 class TestURLEndpointFixes(unittest.TestCase):
     """Test cases for URL endpoint fixes"""

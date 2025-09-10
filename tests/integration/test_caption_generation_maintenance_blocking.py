@@ -22,12 +22,12 @@ from datetime import datetime, timezone
 sys.path.insert(0, os.path.join(os.path.dirname(__file__), '..', '..'))
 
 from flask import Flask
-from enhanced_maintenance_mode_service import EnhancedMaintenanceModeService, MaintenanceMode
-from maintenance_mode_middleware import MaintenanceModeMiddleware
+from app.services.maintenance.enhanced.enhanced_maintenance_mode_service import EnhancedMaintenanceModeService, MaintenanceMode
+from app.services.maintenance.components.maintenance_mode_middleware import MaintenanceModeMiddleware
 from web_caption_generation_service import WebCaptionGenerationService
 from models import User, UserRole, PlatformConnection
 from config import Config
-from database import DatabaseManager
+from app.core.database.core.database_manager import DatabaseManager
 
 
 class TestCaptionGenerationMaintenanceBlocking(unittest.TestCase):

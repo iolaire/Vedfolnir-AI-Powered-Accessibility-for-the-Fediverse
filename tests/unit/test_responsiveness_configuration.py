@@ -19,8 +19,8 @@ from datetime import datetime
 sys.path.insert(0, os.path.join(os.path.dirname(__file__), '..', '..'))
 
 from config import Config, ResponsivenessConfig
-from system_configuration_manager import SystemConfigurationManager, ConfigurationSchema, ConfigurationCategory, ConfigurationDataType
-from configuration_validation import ConfigurationValidator, ValidationSeverity, ImpactLevel
+from app.core.configuration.core.system_configuration_manager import SystemConfigurationManager, ConfigurationSchema, ConfigurationCategory, ConfigurationDataType
+from app.core.configuration.validation.configuration_validation import ConfigurationValidator, ValidationSeverity, ImpactLevel
 
 
 class TestResponsivenessConfiguration(unittest.TestCase):

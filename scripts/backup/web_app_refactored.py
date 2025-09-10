@@ -18,7 +18,7 @@ app = create_app()
 
 from flask import render_template, redirect, url_for, request, jsonify
 from flask_login import login_required, current_user
-from security.core.role_based_access import require_viewer_or_higher
+from app.core.security.core.role_based_access import require_viewer_or_higher
 from session_aware_decorators import with_session_error_handling
 from models import UserRole
 
@@ -110,7 +110,7 @@ if __name__ == '__main__':
         
         # Set up logging
         import logging
-        from logger import setup_logging
+        from app.utils.logging.logger import setup_logging
         
         os.makedirs(config.storage.logs_dir, exist_ok=True)
         setup_logging(
@@ -133,7 +133,7 @@ if __name__ == '__main__':
     except KeyboardInterrupt:
         app.logger.info("Application shutdown requested")
     except Exception as e:
-        from security.core.security_utils import sanitize_for_log
+        from app.core.security.core.security_utils import sanitize_for_log
         app.logger.error(f"Application startup failed: {sanitize_for_log(str(e))}")
         raise
     finally:
@@ -142,5 +142,5 @@ if __name__ == '__main__':
             if hasattr(app, 'websocket_progress_handler'):
                 app.websocket_progress_handler.cleanup()
         except Exception as cleanup_error:
-            from security.core.security_utils import sanitize_for_log
+            from app.core.security.core.security_utils import sanitize_for_log
             app.logger.warning(f"Error during cleanup: {sanitize_for_log(str(cleanup_error))}")

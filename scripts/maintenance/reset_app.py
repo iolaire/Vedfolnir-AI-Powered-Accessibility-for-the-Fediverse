@@ -21,11 +21,11 @@ from pathlib import Path
 sys.path.insert(0, os.path.join(os.path.dirname(__file__), '..', '..'))
 
 from config import Config
-from database import DatabaseManager
+from app.core.database.core.database_manager import DatabaseManager
 from data_cleanup import DataCleanupManager
 from models import Base, User, UserRole
 from sqlalchemy import create_engine
-from system_configuration_manager import SystemConfigurationManager
+from app.core.configuration.core.system_configuration_manager import SystemConfigurationManager
 
 # Set up logging
 logging.basicConfig(level=logging.INFO, format='%(asctime)s - %(levelname)s - %(message)s')

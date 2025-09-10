@@ -18,7 +18,7 @@ import sys
 import os
 sys.path.insert(0, os.path.join(os.path.dirname(__file__), '..', '..'))
 
-from emergency_maintenance_reporting import (
+from app.services.maintenance.emergency.emergency_maintenance_reporting import (
     EmergencyMaintenanceReporter,
     EmergencyActivationLog,
     EmergencyDeactivationLog,

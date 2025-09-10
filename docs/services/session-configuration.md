@@ -293,9 +293,9 @@ python scripts/maintenance/session_config_manager.py --validate
 The session manager automatically uses the configuration system:
 
 ```python
-from session_manager import SessionManager
+from app.core.session.core.session_manager import SessionManager
 from session_config import get_session_config
-from database import DatabaseManager
+from app.core.database.core.database_manager import DatabaseManager
 
 # Create session manager with configuration
 db_manager = DatabaseManager(config)

@@ -12,7 +12,7 @@ It serves as both a test and an example of how to use the helpers properly.
 import unittest
 import os
 from config import Config
-from database import DatabaseManager
+from app.core.database.core.database_manager import DatabaseManager
 from models import UserRole, User, PlatformConnection
 from tests.test_helpers import (
     MockUserHelper, 

@@ -20,15 +20,15 @@ import sys
 import os
 sys.path.insert(0, os.path.join(os.path.dirname(__file__), '..', '..'))
 
-from notification_system_monitor import (
+from app.services.monitoring.system.notification_monitor import (
     NotificationSystemMonitor, NotificationSystemHealth, AlertSeverity,
     NotificationDeliveryMetrics, WebSocketConnectionMetrics, SystemPerformanceMetrics,
     NotificationSystemAlert, create_notification_system_monitor
 )
-from unified_notification_manager import UnifiedNotificationManager
-from websocket_performance_monitor import WebSocketPerformanceMonitor
+from app.services.notification.manager.unified_manager import UnifiedNotificationManager
+from app.services.monitoring.performance.monitors.websocket_performance_monitor import WebSocketPerformanceMonitor
 from websocket_namespace_manager import WebSocketNamespaceManager
-from database import DatabaseManager
+from app.core.database.core.database_manager import DatabaseManager
 
 
 class TestNotificationSystemMonitor(unittest.TestCase):

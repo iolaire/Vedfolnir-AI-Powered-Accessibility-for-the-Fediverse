@@ -13,8 +13,8 @@ import os
 # Add project root to path for imports
 sys.path.insert(0, os.path.join(os.path.dirname(__file__), '..', '..'))
 
-from maintenance_operation_classifier import MaintenanceOperationClassifier, OperationType
-from enhanced_maintenance_mode_service import MaintenanceMode
+from app.services.maintenance.components.maintenance_operation_classifier import MaintenanceOperationClassifier, OperationType
+from app.services.maintenance.enhanced.enhanced_maintenance_mode_service import MaintenanceMode
 
 
 class TestMaintenanceOperationClassifier(unittest.TestCase):

@@ -27,7 +27,7 @@ def migrate_test_file(file_path, dry_run=False):
     
     # Replace imports
     import_replacements = [
-        (r'from session_manager import SessionManager', 'from unified_session_manager import UnifiedSessionManager as SessionManager'),
+        (r'from app.core.session.core.session_manager import SessionManager', 'from unified_session_manager import UnifiedSessionManager as SessionManager'),
         (r'from session_manager import get_current_platform_context', 'from unified_session_manager import get_current_platform_context'),
         (r'from session_manager import (.*)', r'from unified_session_manager import \1'),
         (r'import session_manager', 'import unified_session_manager as session_manager'),

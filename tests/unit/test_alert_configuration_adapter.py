@@ -19,9 +19,9 @@ from datetime import datetime, timezone
 sys.path.insert(0, os.path.join(os.path.dirname(__file__), '..', '..'))
 
 from alert_configuration_adapter import AlertConfigurationAdapter, AlertConfigurationMapping
-from alert_manager import AlertManager, AlertThresholds, NotificationChannel, NotificationConfig
-from configuration_service import ConfigurationService, ConfigurationError
-from configuration_event_bus import ConfigurationEventBus, ConfigurationChangeEvent, EventType
+from app.services.alerts.components.alert_manager import AlertManager, AlertThresholds, NotificationChannel, NotificationConfig
+from app.core.configuration.core.configuration_service import ConfigurationService, ConfigurationError
+from app.core.configuration.events.configuration_event_bus import ConfigurationEventBus, ConfigurationChangeEvent, EventType
 
 
 class TestAlertConfigurationAdapter(unittest.TestCase):

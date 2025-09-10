@@ -10,7 +10,7 @@ according to task 10.3.3 requirements.
 
 import unittest
 from unittest.mock import MagicMock, patch
-from activitypub_platforms import MastodonPlatform, PixelfedPlatform, PlatformAdapterError
+from app.services.activitypub.components.activitypub_platforms import MastodonPlatform, PixelfedPlatform, PlatformAdapterError
 
 class TestMastodonMediaProcessing(unittest.TestCase):
     """Test Mastodon media attachment processing functionality"""

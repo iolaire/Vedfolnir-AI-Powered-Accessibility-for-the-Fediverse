@@ -15,7 +15,7 @@ import unittest
 from unittest.mock import Mock, patch
 
 from tests.fixtures.platform_fixtures import PlatformTestCase
-from database import DatabaseManager, PlatformValidationError, DatabaseOperationError
+from app.core.database.core.database_manager import DatabaseManager, PlatformValidationError, DatabaseOperationError
 from models import User, PlatformConnection, Post, Image, ProcessingStatus
 
 class TestPlatformConnectionCRUD(PlatformTestCase):

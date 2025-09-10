@@ -348,7 +348,7 @@ EOF
 ```bash
 # Check database connectivity
 python << 'EOF'
-from database import DatabaseManager
+from app.core.database.core.database_manager import DatabaseManager
 from config import Config
 
 config = Config()

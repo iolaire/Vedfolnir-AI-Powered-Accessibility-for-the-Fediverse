@@ -29,10 +29,10 @@ mock_unified_session_manager = Mock()
 sys.modules['unified_session_manager'] = mock_unified_session_manager
 
 from session_monitoring import SessionMonitor, MemoryMetric
-from session_health_checker import SessionHealthChecker, SessionHealthStatus
-from session_performance_monitor import SessionPerformanceMonitor
+from app.services.monitoring.health.checkers.session_health_checker import SessionHealthChecker, SessionHealthStatus
+from app.services.monitoring.performance.monitors.session_performance_monitor import SessionPerformanceMonitor
 from config import Config
-from database import DatabaseManager
+from app.core.database.core.database_manager import DatabaseManager
 from tests.test_helpers import create_test_user_with_platforms, cleanup_test_user
 
 

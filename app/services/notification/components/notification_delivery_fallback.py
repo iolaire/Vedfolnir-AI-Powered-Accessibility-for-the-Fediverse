@@ -19,7 +19,7 @@ from dataclasses import dataclass, asdict
 from enum import Enum
 from collections import deque, defaultdict
 
-from unified_notification_manager import NotificationMessage, NotificationType, NotificationPriority
+from app.services.notification.manager.unified_manager import NotificationMessage, NotificationType, NotificationPriority
 
 logger = logging.getLogger(__name__)
 

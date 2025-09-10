@@ -100,7 +100,13 @@ class DatabaseSessionSync {
             }
             
         } catch (error) {
-            console.error('[SessionSync] Failed to sync session state:', error);
+            // Only log errors if they're not common network issues
+            if (!error.message.includes('NetworkError') && 
+                !error.message.includes('Failed to fetch') &&
+                !error.message.includes('ERR_NETWORK') &&
+                this.consecutiveFailures < 3) {
+                console.warn('[SessionSync] Session sync issue:', error.message);
+            }
             
             if (error.message.includes('401') || error.message.includes('403')) {
                 this.handleSessionExpiration();
@@ -113,10 +119,15 @@ class DatabaseSessionSync {
     handleSyncError(error) {
         this.consecutiveFailures++;
         
-        console.warn(`[SessionSync] Sync failure #${this.consecutiveFailures}: ${error.message}`);
+        // Only log warnings for the first few failures to avoid console spam
+        if (this.consecutiveFailures <= 2) {
+            console.warn(`[SessionSync] Sync failure #${this.consecutiveFailures}: ${error.message}`);
+        }
         
         if (this.consecutiveFailures >= this.maxConsecutiveFailures) {
-            console.error('[SessionSync] Too many consecutive failures, reducing sync frequency');
+            if (this.consecutiveFailures === this.maxConsecutiveFailures) {
+                console.warn('[SessionSync] Multiple sync failures detected, reducing frequency');
+            }
             this.reduceSyncFrequency();
             return;
         }

@@ -33,13 +33,13 @@ app.config['SQLALCHEMY_DATABASE_URI'] = config.storage.database_url
 app.config['SQLALCHEMY_TRACK_MODIFICATIONS'] = False
 
 # Initialize database
-from database import DatabaseManager
+from app.core.database.core.database_manager import DatabaseManager
 db_manager = DatabaseManager(config)
 app.config['db_manager'] = db_manager
 
 # Initialize consolidated session manager
-from session_manager import SessionManager
-unified_session_manager = SessionManager(db_manager)
+from app.core.session.manager import UnifiedSessionManager
+unified_session_manager = UnifiedSessionManager(db_manager)
 app.unified_session_manager = unified_session_manager
 
 # Initialize Redis platform manager
@@ -96,7 +96,7 @@ def load_user(user_id):
 
 # Initialize static asset caching
 try:
-    from utils.static_cache_middleware import StaticAssetCacheMiddleware
+    from app.utils.assets.static_cache_middleware import StaticAssetCacheMiddleware
     static_cache_middleware = StaticAssetCacheMiddleware(app)
     print("✅ Static asset cache middleware initialized successfully")
 except Exception as e:
@@ -105,7 +105,7 @@ except Exception as e:
 
 # Register static asset template filters
 try:
-    from utils.static_asset_helpers import register_template_filters
+    from app.utils.assets.static_asset_helpers import register_template_filters
     register_template_filters(app)
     print("✅ Static asset template filters registered successfully")
 except Exception as e:
@@ -113,12 +113,8 @@ except Exception as e:
 
 # Initialize security systems
 try:
-    from security.core.csrf_token_manager import initialize_csrf_token_manager
-    csrf_token_manager = initialize_csrf_token_manager(app)
-    
-    from security.core.security_middleware import SecurityMiddleware
+    from app.core.security.core.security_middleware import SecurityMiddleware
     security_middleware = SecurityMiddleware(app)
-    
     print("✅ Security middleware initialized successfully")
 except Exception as e:
     print(f"⚠️  Security middleware initialization failed: {e}")
@@ -129,7 +125,7 @@ register_blueprints(app)
 
 # Register performance monitoring blueprint
 try:
-    from performance_monitoring_dashboard import register_performance_monitoring
+    from app.services.monitoring.performance.monitors.performance_monitoring_dashboard import register_performance_monitoring
     register_performance_monitoring(app)
     print("✅ Performance monitoring blueprint registered successfully")
 except Exception as e:
@@ -137,14 +133,14 @@ except Exception as e:
 
 # Register session state API
 try:
-    from session_state_api import create_session_state_routes
+    from app.core.session.api.session_state_api import create_session_state_routes
     create_session_state_routes(app)
 except Exception as e:
     app.logger.warning(f"Session state API registration failed: {e}")
 
 # Initialize request performance middleware
 try:
-    from request_performance_middleware import initialize_request_performance_middleware
+    from app.services.performance.monitors.request_performance_middleware import initialize_request_performance_middleware
     request_middleware = initialize_request_performance_middleware(app)
     print("✅ Request performance middleware initialized successfully")
 except Exception as e:
@@ -152,7 +148,7 @@ except Exception as e:
 
 # Initialize performance dashboard (minimal)
 try:
-    from admin.routes.performance_dashboard import create_performance_dashboard
+    from app.services.performance.components.performance_dashboard import create_performance_dashboard
     import psutil
     import time
     from datetime import datetime
@@ -507,7 +503,7 @@ try:
             """Update connection pool utilization metrics"""
             try:
                 # Try to get actual connection pool stats from database manager
-                from database import DatabaseManager
+                from app.core.database.core.database_manager import DatabaseManager
                 db_manager = DatabaseManager(self.config)
                 
                 # Get connection pool stats if available
@@ -785,27 +781,13 @@ except Exception as e:
         print(f"⚠️  HealthChecker initialization failed: {health_error}")
         app.config['health_checker'] = None
 
-# Register admin blueprint
-try:
-    from admin import create_admin_blueprint
-    admin_bp = create_admin_blueprint(app)
-    app.register_blueprint(admin_bp)
-    print("✅ Admin blueprint registered successfully")
-except Exception as e:
-    print(f"❌ Failed to register admin blueprint: {e}")
-    import traceback
-    traceback.print_exc()
+# Admin blueprint is now registered through app.core.blueprints.register_blueprints()
 
-# Register existing route blueprints
-try:
-    from routes.user_management_routes import user_management_bp
-    app.register_blueprint(user_management_bp)
-except Exception:
-    pass
+# User management routes are now part of the auth blueprint
 
 # Register CSRF dashboard blueprint
 try:
-    from security.monitoring.csrf_dashboard import register_csrf_dashboard
+    from app.core.security.monitoring.csrf_dashboard import register_csrf_dashboard
     register_csrf_dashboard(app)
     print("✅ CSRF dashboard blueprint registered successfully")
 except Exception as e:
@@ -835,7 +817,7 @@ def inject_role_context():
     if current_user.is_authenticated:
         try:
             # Use the same platform identification logic as the platform management page
-            from platform_utils.platform_identification import identify_user_platform
+            from app.services.platform.components.platform_identification import identify_user_platform
             
             redis_platform_manager = app.config.get('redis_platform_manager')
             db_manager = app.config.get('db_manager')
@@ -943,10 +925,75 @@ try:
     @socketio.on('disconnect')
     def handle_disconnect():
         print('Client disconnected')
+    
+    # Initialize minimal unified notification manager for WebSocket compatibility
+    class UnifiedNotificationManagerStub:
+        def set_websocket_handlers(self, handlers): 
+            pass
+        def send_notification(self, *args, **kwargs):
+            pass
+        def replay_messages_for_user(self, *args, **kwargs):
+            return 0  # Return 0 pending messages
+        def get_user_notification_history(self, *args, **kwargs):
+            return []  # Return empty history
+    
+    app.unified_notification_manager = UnifiedNotificationManagerStub()
+    print("✅ Unified notification manager stub initialized")
+
+    # Initialize consolidated WebSocket handlers for Phase 3
+    try:
+        from app.websocket.core.consolidated_handlers import initialize_consolidated_websocket_handlers
+        consolidated_handlers = initialize_consolidated_websocket_handlers(app, socketio)
+        
+        # Integrate with unified notification manager
+        if hasattr(app, 'unified_notification_manager') and consolidated_handlers:
+            app.unified_notification_manager.set_websocket_handlers(consolidated_handlers)
+            
+        print("✅ Phase 3 consolidated WebSocket handlers initialized")
+        
+    except Exception as e:
+        print(f"⚠️  Consolidated WebSocket handlers initialization failed: {e}")
         
 except ImportError:
     socketio = None
     print("SocketIO not available - real-time features disabled")
+
+
+def create_app(config_name='default'):
+    """Create Flask application for testing"""
+    from flask import Flask
+    app = Flask(__name__)
+    
+    # Configure for testing
+    app.config['TESTING'] = True
+    app.config['WTF_CSRF_ENABLED'] = False
+    
+    # Initialize unified notification manager
+    try:
+        from app.services.notification.manager.unified_manager import UnifiedNotificationManager
+        from app.websocket.core.factory import WebSocketFactory
+        from app.websocket.core.auth_handler import WebSocketAuthHandler
+        from app.websocket.core.namespace_manager import WebSocketNamespaceManager
+        # db_manager is already available in this scope
+        
+        # Initialize required components
+        websocket_factory = WebSocketFactory()
+        auth_handler = WebSocketAuthHandler()
+        namespace_manager = WebSocketNamespaceManager()
+        
+        # Initialize unified notification manager
+        app.unified_notification_manager = UnifiedNotificationManager(
+            websocket_factory=websocket_factory,
+            auth_handler=auth_handler,
+            namespace_manager=namespace_manager,
+            db_manager=db_manager
+        )
+        logger.info("✅ Unified notification manager initialized successfully")
+    except Exception as e:
+        logger.error(f"❌ Failed to initialize unified notification manager: {e}")
+        app.unified_notification_manager = None
+    
+    return app
 
 if __name__ == '__main__':
     # Configure auto-reloader to be more selective

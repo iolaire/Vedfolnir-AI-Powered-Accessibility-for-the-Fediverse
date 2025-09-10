@@ -27,5 +27,5 @@ def setup_middleware(app):
     app.logger.debug("WebSocket configuration manager initialized")
     
     # Register secure error handlers
-    from security.logging.secure_error_handlers import register_secure_error_handlers
+    from app.core.security.logging.secure_error_handlers import register_secure_error_handlers
     register_secure_error_handlers(app)

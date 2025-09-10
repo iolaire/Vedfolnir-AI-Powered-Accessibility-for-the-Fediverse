@@ -363,7 +363,7 @@ class MaintenanceProgressWebSocketHandler:
         Send progress notification via unified notification system
         """
         try:
-            from unified_notification_manager import AdminNotificationMessage
+            from app.services.notification.manager.unified_manager import AdminNotificationMessage
             from models import NotificationType, NotificationPriority, NotificationCategory
             
             # Determine notification type based on update type

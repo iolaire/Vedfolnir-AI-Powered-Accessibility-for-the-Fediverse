@@ -17,7 +17,7 @@ from datetime import datetime, timezone
 from typing import Dict, Any, Optional
 from flask import request
 from flask_login import current_user
-from security.core.security_utils import sanitize_for_log
+from app.core.security.core.security_utils import sanitize_for_log
 
 class SessionErrorLogger:
     """Specialized logger for session-related errors with structured logging"""

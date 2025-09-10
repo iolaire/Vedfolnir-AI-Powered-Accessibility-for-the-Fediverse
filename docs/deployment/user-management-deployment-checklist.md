@@ -184,7 +184,7 @@ This comprehensive checklist ensures successful deployment of the Vedfolnir user
   ```bash
   # Check database integrity
   python -c "
-  from database import DatabaseManager
+  from app.core.database.core.database_manager import DatabaseManager
   from config import Config
   
   config = Config()
@@ -284,7 +284,7 @@ This comprehensive checklist ensures successful deployment of the Vedfolnir user
   
   # Test database connectivity
   python -c "
-  from database import DatabaseManager
+  from app.core.database.core.database_manager import DatabaseManager
   from config import Config
   
   config = Config()
@@ -386,7 +386,7 @@ This comprehensive checklist ensures successful deployment of the Vedfolnir user
   ```bash
   # Monitor user registrations
   python -c "
-  from database import DatabaseManager
+  from app.core.database.core.database_manager import DatabaseManager
   from config import Config
   from models import User
   from datetime import datetime, timedelta

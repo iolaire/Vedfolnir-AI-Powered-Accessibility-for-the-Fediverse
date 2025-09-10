@@ -20,7 +20,7 @@ python scripts/testing/run_session_management_e2e_tests.py
 pg_dump vedfolnir > backup_$(date +%Y%m%d_%H%M%S).sql
 
 # Run migrations
-python -c "from database import DatabaseManager; from config import Config; DatabaseManager(Config()).create_tables()"
+python -c "from app.core.database.core.database_manager import DatabaseManager; from config import Config; DatabaseManager(Config()).create_tables()"
 ```
 
 ### 2. Deploy Application

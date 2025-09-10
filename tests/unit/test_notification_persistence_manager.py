@@ -18,11 +18,11 @@ from unittest.mock import Mock, patch
 # Add project root to path for imports
 sys.path.insert(0, os.path.join(os.path.dirname(__file__), '..'))
 
-from notification_persistence_manager import NotificationPersistenceManager, QueueStatus
-from unified_notification_manager import NotificationMessage
+from app.services.notification.components.notification_persistence_manager import NotificationPersistenceManager, QueueStatus
+from app.services.notification.manager.unified_manager import NotificationMessage
 from models import NotificationType, NotificationPriority, NotificationCategory, NotificationStorage
 from config import Config
-from database import DatabaseManager
+from app.core.database.core.database_manager import DatabaseManager
 
 
 class TestNotificationPersistenceManager(unittest.TestCase):
@@ -320,7 +320,7 @@ class TestNotificationPersistenceManager(unittest.TestCase):
     def test_pause_and_resume_queue(self):
         """Test pausing and resuming user queue"""
         # Add queue info
-        from notification_persistence_manager import OfflineQueueInfo
+        from app.services.notification.components.notification_persistence_manager import OfflineQueueInfo
         self.persistence_manager._queue_info[1] = OfflineQueueInfo(
             user_id=1,
             queue_size=5,

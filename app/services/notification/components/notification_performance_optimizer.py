@@ -24,9 +24,9 @@ import json
 import hashlib
 from concurrent.futures import ThreadPoolExecutor, as_completed
 
-from unified_notification_manager import NotificationMessage, NotificationType, NotificationPriority, NotificationCategory
+from app.services.notification.manager.unified_manager import NotificationMessage, NotificationType, NotificationPriority, NotificationCategory
 from notification_message_router import NotificationMessageRouter
-from notification_persistence_manager import NotificationPersistenceManager
+from app.services.notification.components.notification_persistence_manager import NotificationPersistenceManager
 
 logger = logging.getLogger(__name__)
 

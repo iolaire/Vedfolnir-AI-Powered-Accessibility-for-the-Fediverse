@@ -30,7 +30,7 @@ from app.websocket.core.factory import WebSocketFactory
 from app.websocket.core.auth_handler import WebSocketAuthHandler, AuthenticationContext
 from app.websocket.core.namespace_manager import WebSocketNamespaceManager
 from models import UserRole, Base, NotificationStorage, NotificationType, NotificationPriority, NotificationCategory
-from database import DatabaseManager
+from app.core.database.core.database_manager import DatabaseManager
 
 logger = logging.getLogger(__name__)
 
@@ -126,6 +126,67 @@ class SystemNotificationMessage(NotificationMessage):
         self.category = NotificationCategory.SYSTEM
         if self.affects_functionality is None:
             self.affects_functionality = []
+
+
+@dataclass
+class StorageNotificationMessage(NotificationMessage):
+    """Storage-specific notification message"""
+    storage_gb: Optional[float] = None
+    limit_gb: Optional[float] = None
+    usage_percentage: Optional[float] = None
+    blocked_at: Optional[datetime] = None
+    should_hide_form: bool = False
+    
+    def __post_init__(self):
+        super().__post_init__()
+        self.category = NotificationCategory.STORAGE
+
+
+@dataclass
+class PerformanceNotificationMessage(NotificationMessage):
+    """Performance monitoring notification message"""
+    metrics: Optional[Dict[str, float]] = None
+    threshold_exceeded: Optional[str] = None
+    recovery_action: Optional[str] = None
+    
+    def __post_init__(self):
+        super().__post_init__()
+        self.category = NotificationCategory.PERFORMANCE
+
+
+@dataclass
+class DashboardNotificationMessage(NotificationMessage):
+    """Dashboard-specific notification message"""
+    update_type: Optional[str] = None
+    dashboard_data: Optional[Dict[str, Any]] = None
+    
+    def __post_init__(self):
+        super().__post_init__()
+        self.category = NotificationCategory.DASHBOARD
+
+
+@dataclass
+class MonitoringNotificationMessage(NotificationMessage):
+    """Monitoring alert notification message"""
+    alert_type: Optional[str] = None
+    severity: Optional[str] = None
+    component: Optional[str] = None
+    
+    def __post_init__(self):
+        super().__post_init__()
+        self.category = NotificationCategory.MONITORING
+
+
+@dataclass
+class HealthNotificationMessage(NotificationMessage):
+    """Health check notification message"""
+    component: Optional[str] = None
+    status: Optional[str] = None
+    health_data: Optional[Dict[str, Any]] = None
+    
+    def __post_init__(self):
+        super().__post_init__()
+        self.category = NotificationCategory.HEALTH
 
 
 # NotificationStorage model is now imported from models.py
@@ -230,7 +291,15 @@ class UnifiedNotificationManager:
             'messages_replayed': 0
         }
         
+        # WebSocket handlers reference (set by consolidated handlers)
+        self.websocket_handlers = None
+        
         logger.info("Unified Notification Manager initialized")
+    
+    def set_websocket_handlers(self, websocket_handlers):
+        """Set consolidated WebSocket handlers reference"""
+        self.websocket_handlers = websocket_handlers
+        logger.info("WebSocket handlers integrated with UnifiedNotificationManager")
     
     def send_user_notification(self, user_id: int, message: NotificationMessage) -> bool:
         """
@@ -624,7 +693,16 @@ class UnifiedNotificationManager:
             True if delivered successfully, False otherwise
         """
         try:
-            # Check if user is connected to any namespace
+            # Use consolidated WebSocket handlers if available
+            if self.websocket_handlers:
+                if self.websocket_handlers.is_user_connected(user_id):
+                    self.websocket_handlers.broadcast_notification(message)
+                    logger.debug(f"Delivered notification {message.id} via consolidated handlers")
+                    return True
+                else:
+                    return False
+            
+            # Fallback to original WebSocket delivery method
             user_connections = self.namespace_manager._user_connections.get(user_id, set())
             
             if not user_connections:

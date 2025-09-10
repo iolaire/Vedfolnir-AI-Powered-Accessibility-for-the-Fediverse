@@ -8,7 +8,7 @@
 # appropriate unified notification calls in a future update.
 
 
-from unified_notification_manager import UnifiedNotificationManager
+from app.services.notification.manager.unified_manager import UnifiedNotificationManager
 """Admin Data Cleanup Routes"""
 
 import logging
@@ -30,7 +30,7 @@ def register_routes(bp):
         """Admin interface for data cleanup"""
         if not current_user.role == UserRole.ADMIN:
             # Send error notification
-            from notification_helpers import send_error_notification
+            from app.services.notification.helpers.notification_helpers import send_error_notification
             send_error_notification("Access denied. Admin privileges required.", "Access Denied")
             return redirect(url_for('main.index'))
             
@@ -48,7 +48,7 @@ def register_routes(bp):
         """Handle various cleanup operations"""
         if not current_user.role == UserRole.ADMIN:
             # Send error notification
-            from notification_helpers import send_error_notification
+            from app.services.notification.helpers.notification_helpers import send_error_notification
             send_error_notification("Access denied.", "Access Denied")
             return redirect(url_for('admin.cleanup'))
         
@@ -64,7 +64,7 @@ def register_routes(bp):
                 days = request.form.get('days', type=int)
                 if not days or days < 1:
                     # Send error notification
-                    from notification_helpers import send_error_notification
+                    from app.services.notification.helpers.notification_helpers import send_error_notification
                     send_error_notification("Invalid number of days.", "Invalid Input")
                     return redirect(url_for('admin.cleanup'))
                 
@@ -76,7 +76,7 @@ def register_routes(bp):
                 
                 if not days or days < 1:
                     # Send error notification
-                    from notification_helpers import send_error_notification
+                    from app.services.notification.helpers.notification_helpers import send_error_notification
                     send_error_notification("Invalid number of days.", "Invalid Input")
                     return redirect(url_for('admin.cleanup'))
                 
@@ -100,7 +100,7 @@ def register_routes(bp):
                 user_id = request.form.get('user_id')
                 if not user_id:
                     # Send error notification
-                    from notification_helpers import send_error_notification
+                    from app.services.notification.helpers.notification_helpers import send_error_notification
                     send_error_notification("Please select a user.", "Invalid Input")
                     return redirect(url_for('admin.cleanup'))
                 
@@ -114,7 +114,7 @@ def register_routes(bp):
                 
             else:
                 # Send error notification
-                from notification_helpers import send_error_notification
+                from app.services.notification.helpers.notification_helpers import send_error_notification
                 send_error_notification("Unknown cleanup operation.", "Invalid Operation")
                 return redirect(url_for('admin.cleanup'))
             
@@ -129,25 +129,25 @@ def register_routes(bp):
                 if 'limit_lifted' in result and result['limit_lifted']:
                     message += " - Storage limits automatically lifted!"
                     # Send success notification
-                    from notification_helpers import send_success_notification
+                    from app.services.notification.helpers.notification_helpers import send_success_notification
                     send_success_notification(message, "Cleanup Complete")
                 else:
                     # Send notification based on dry run status
-                    from notification_helpers import send_info_notification, send_success_notification
+                    from app.services.notification.helpers.notification_helpers import send_info_notification, send_success_notification
                     if dry_run:
                         send_info_notification(message, "Cleanup Preview")
                     else:
                         send_success_notification(message, "Cleanup Complete")
             else:
                 # Send error notification
-                from notification_helpers import send_error_notification
+                from app.services.notification.helpers.notification_helpers import send_error_notification
                 send_error_notification(f'Error: {result["error"]}', "Cleanup Failed")
                 
                 pass
         except Exception as e:
             logger.error(f"Error in cleanup operation {operation}: {e}")
             # Send error notification
-            from notification_helpers import send_error_notification
+            from app.services.notification.helpers.notification_helpers import send_error_notification
             send_error_notification(f'Cleanup operation failed: {str(e)}', "Operation Failed")
         
         return redirect(url_for('admin.cleanup'))

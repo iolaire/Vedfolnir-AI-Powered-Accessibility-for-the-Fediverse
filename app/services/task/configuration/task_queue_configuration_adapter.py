@@ -14,8 +14,8 @@ import threading
 from typing import Optional, Dict, Any, Callable
 from datetime import datetime, timezone
 
-from configuration_service import ConfigurationService, ConfigurationError
-from task_queue_manager import TaskQueueManager
+from app.core.configuration.core.configuration_service import ConfigurationService, ConfigurationError
+from app.services.task.core.task_queue_manager import TaskQueueManager
 
 logger = logging.getLogger(__name__)
 

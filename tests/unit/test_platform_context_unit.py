@@ -15,7 +15,7 @@ import unittest
 from unittest.mock import Mock, patch
 
 from tests.fixtures.platform_fixtures import PlatformTestCase
-from platform_context import PlatformContextManager, PlatformContextError
+from app.services.platform.core.platform_context import PlatformContextManager, PlatformContextError
 from models import User, PlatformConnection, Post, Image
 
 class TestPlatformContextManager(PlatformTestCase):

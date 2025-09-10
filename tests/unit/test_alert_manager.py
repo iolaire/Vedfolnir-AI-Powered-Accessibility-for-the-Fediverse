@@ -16,9 +16,9 @@ from datetime import datetime, timezone, timedelta
 from unittest.mock import Mock, patch, MagicMock
 
 from config import Config
-from database import DatabaseManager
+from app.core.database.core.database_manager import DatabaseManager
 from models import User, UserRole, AlertConfiguration, SystemAlert, AlertType, AlertSeverity
-from alert_manager import (
+from app.services.alerts.components.alert_manager import (
     AlertManager, Alert, AlertThresholds, NotificationChannel, NotificationConfig,
     AlertStatus, alert_job_failure, alert_repeated_failures, alert_resource_low,
     alert_ai_service_down, alert_queue_backup
@@ -242,7 +242,7 @@ class TestAlertManager(unittest.TestCase):
     @patch('smtplib.SMTP')
     def test_email_notification(self, mock_smtp):
         """Test email notification sending"""
-        from alert_manager import EMAIL_AVAILABLE
+        from app.services.alerts.components.alert_manager import EMAIL_AVAILABLE
         
         if not EMAIL_AVAILABLE:
             self.skipTest("Email functionality not available")

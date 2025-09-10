@@ -97,7 +97,7 @@ python validate_config.py
 python -c "
 import asyncio
 from config import Config
-from activitypub_client import ActivityPubClient
+from app.services.activitypub.components.activitypub_client import ActivityPubClient
 
 async def test():
     config = Config()
@@ -213,7 +213,7 @@ curl -X POST \
 python -c "
 import asyncio
 from config import Config
-from activitypub_client import ActivityPubClient
+from app.services.activitypub.components.activitypub_client import ActivityPubClient
 
 async def test():
     config = Config()

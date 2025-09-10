@@ -16,7 +16,7 @@ from datetime import datetime, timezone
 # Add project root to path for imports
 sys.path.insert(0, os.path.join(os.path.dirname(__file__), '..', '..'))
 
-from configuration_event_bus import (
+from app.core.configuration.events.configuration_event_bus import (
     ConfigurationEventBus, EventType, ConfigurationChangeEvent,
     ConfigurationInvalidateEvent, RestartRequiredEvent, ServiceEvent,
     Subscription

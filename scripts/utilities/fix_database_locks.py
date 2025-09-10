@@ -47,7 +47,7 @@ def main():
             logger.info("5. For connection pool issues, restart the application")
             logger.info("")
             logger.info("For comprehensive MySQL troubleshooting, use:")
-            logger.info("   python -c \"from database import DatabaseManager; from config import Config; dm = DatabaseManager(Config()); print(dm.generate_mysql_troubleshooting_guide())\"")
+            logger.info("   python -c \"from app.core.database.core.database_manager import DatabaseManager; from config import Config; dm = DatabaseManager(Config()); print(dm.generate_mysql_troubleshooting_guide())\"")
             
         else:
             logger.warning("⚠️  Non-MySQL database detected")

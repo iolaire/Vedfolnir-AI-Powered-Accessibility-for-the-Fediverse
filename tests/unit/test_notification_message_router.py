@@ -20,7 +20,7 @@ from unittest.mock import Mock, patch, MagicMock
 sys.path.insert(0, os.path.join(os.path.dirname(__file__), '..', '..'))
 
 from notification_message_router import NotificationMessageRouter, DeliveryStatus, RetryPolicy
-from unified_notification_manager import NotificationMessage, AdminNotificationMessage, SystemNotificationMessage
+from app.services.notification.manager.unified_manager import NotificationMessage, AdminNotificationMessage, SystemNotificationMessage
 from models import NotificationType, NotificationPriority, NotificationCategory, UserRole
 
 

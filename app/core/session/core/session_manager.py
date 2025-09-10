@@ -19,7 +19,7 @@ from sqlalchemy.orm import joinedload
 from sqlalchemy.exc import SQLAlchemyError
 
 from models import User, PlatformConnection, UserSession
-from database import DatabaseManager
+from app.core.database.core.database_manager import DatabaseManager
 
 logger = getLogger(__name__)
 
@@ -38,7 +38,7 @@ class SessionManager:
     def _init_redis(self):
         """Initialize Redis backend with fallback"""
         try:
-            from redis_session_backend import RedisSessionBackend
+            from app.core.session.redis.manager import RedisSessionBackend
             self._redis_backend = RedisSessionBackend.from_env()
         except Exception as e:
             logger.warning(f"Redis unavailable, using database fallback: {e}")

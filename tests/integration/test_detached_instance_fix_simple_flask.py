@@ -21,7 +21,7 @@ from tests.test_helpers import MockUserHelper
 
 # Import application components
 from config import Config
-from database import DatabaseManager
+from app.core.database.core.database_manager import DatabaseManager
 from models import User, PlatformConnection, UserRole
 from request_scoped_session_manager import RequestScopedSessionManager
 from session_aware_user import SessionAwareUser

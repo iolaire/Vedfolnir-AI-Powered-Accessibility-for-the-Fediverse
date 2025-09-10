@@ -16,7 +16,7 @@ from datetime import datetime, timezone
 
 from models import UserRole
 from session_alerting_system import AlertSeverity, AlertStatus
-from security.core.security_utils import sanitize_for_log
+from app.core.security.core.security_utils import sanitize_for_log
 
 def admin_required(f):
     """Decorator to require admin role for access."""

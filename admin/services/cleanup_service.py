@@ -20,7 +20,7 @@ class CleanupService:
         # Initialize storage cleanup integration
         self.storage_integration = None
         try:
-            from storage_cleanup_integration import StorageCleanupIntegration
+            from app.services.storage.components.storage_cleanup_integration import StorageCleanupIntegration
             self.storage_integration = StorageCleanupIntegration(db_manager=db_manager)
             logger.info("Storage cleanup integration initialized")
         except ImportError as e:

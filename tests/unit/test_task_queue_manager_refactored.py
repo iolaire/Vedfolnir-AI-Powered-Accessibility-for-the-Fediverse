@@ -14,7 +14,7 @@ from unittest.mock import patch
 from datetime import datetime, timezone
 import uuid
 
-from task_queue_manager import TaskQueueManager
+from app.services.task.core.task_queue_manager import TaskQueueManager
 from models import CaptionGenerationTask, TaskStatus, User, UserRole, CaptionGenerationSettings
 
 # Import standardized mock helpers

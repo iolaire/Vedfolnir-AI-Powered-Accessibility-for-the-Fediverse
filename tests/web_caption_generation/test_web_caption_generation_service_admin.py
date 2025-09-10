@@ -16,7 +16,7 @@ from datetime import datetime, timezone, timedelta
 from typing import List, Dict, Any
 
 from config import Config
-from database import DatabaseManager
+from app.core.database.core.database_manager import DatabaseManager
 from models import (
     User, UserRole, CaptionGenerationTask, TaskStatus, PlatformConnection,
     JobPriority, JobAuditLog

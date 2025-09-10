@@ -22,10 +22,10 @@ from dataclasses import dataclass, asdict
 from collections import deque, defaultdict
 import statistics
 
-from unified_notification_manager import UnifiedNotificationManager
-from app.websocket.services.performance_monitor import ConsolidatedWebSocketPerformanceMonitor as WebSocketPerformanceMonitor, PerformanceLevel, LoadLevel
+from app.services.notification.manager.unified_manager import UnifiedNotificationManager
+from app.services.monitoring.performance.monitors.websocket_performance_monitor import ConsolidatedWebSocketPerformanceMonitor as WebSocketPerformanceMonitor
 from app.websocket.core.namespace_manager import WebSocketNamespaceManager
-from database import DatabaseManager
+from app.core.database.core.database_manager import DatabaseManager
 from models import NotificationStorage, NotificationType, NotificationPriority, NotificationCategory
 
 logger = logging.getLogger(__name__)

@@ -117,7 +117,7 @@ def test_notification_system_components():
         # Test imports
         print("Testing component imports...")
         
-        from unified_notification_manager import UnifiedNotificationManager
+        from app.services.notification.manager.unified_manager import UnifiedNotificationManager
         print("✅ UnifiedNotificationManager imported successfully")
         
         from dashboard_notification_handlers import DashboardNotificationHandlers

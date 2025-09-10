@@ -15,9 +15,9 @@ from datetime import datetime, timezone
 from unittest.mock import Mock, patch
 
 from config import Config
-from database import DatabaseManager
+from app.core.database.core.database_manager import DatabaseManager
 from models import SystemConfiguration, User, UserRole
-from system_configuration_manager import (
+from app.core.configuration.core.system_configuration_manager import (
     SystemConfigurationManager, ConfigurationCategory, 
     ConfigurationDataType, ConfigurationValidationResult
 )

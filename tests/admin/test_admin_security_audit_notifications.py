@@ -23,16 +23,16 @@ from datetime import datetime, timezone
 # Add project root to path
 sys.path.insert(0, '.')
 
-from admin_security_audit_notification_handler import (
+from app.services.admin.components.admin_security_audit_notification_handler import (
     AdminSecurityAuditNotificationHandler,
     SecurityNotificationType,
     SecurityEventContext,
     SecurityThresholds
 )
 from security_notification_integration_service import SecurityNotificationIntegrationService
-from security.monitoring.security_event_logger import SecurityEventType, SecurityEventSeverity
-from security.monitoring.security_alerting import SecurityAlertManager
-from unified_notification_manager import UnifiedNotificationManager, NotificationPriority
+from app.core.security.monitoring.security_event_logger import SecurityEventType, SecurityEventSeverity
+from app.core.security.monitoring.security_alerting import SecurityAlertManager
+from app.services.notification.manager.unified_manager import UnifiedNotificationManager, NotificationPriority
 
 # Configure logging for tests
 logging.basicConfig(level=logging.INFO)

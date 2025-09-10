@@ -1,6 +1,6 @@
 from flask import Blueprint, render_template
 from flask_login import login_required
-from app.services.platform_service import PlatformService
+from app.services.platform.components.platform_service import PlatformService
 
 platform_bp = Blueprint('platform', __name__, url_prefix='/platform')
 

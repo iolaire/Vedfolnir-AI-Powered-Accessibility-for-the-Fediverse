@@ -18,7 +18,7 @@ from datetime import datetime, timezone, timedelta
 # Add project root to path for imports
 sys.path.insert(0, os.path.join(os.path.dirname(__file__), '..', '..'))
 
-from job_priority_scheduler import (
+from app.services.task.scheduling.job_priority_scheduler import (
     JobPriorityScheduler,
     JobPriorityScore
 )

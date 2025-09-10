@@ -13,8 +13,8 @@ from unittest.mock import Mock, MagicMock, patch
 from sqlalchemy.orm import Session
 from sqlalchemy.exc import SQLAlchemyError
 
-from database import DatabaseManager, DatabaseOperationError, PlatformValidationError
-from platform_context import PlatformContextError
+from app.core.database.core.database_manager import DatabaseManager, DatabaseOperationError, PlatformValidationError
+from app.services.platform.core.platform_context import PlatformContextError
 from models import User, PlatformConnection, Post, Image
 from config import Config
 

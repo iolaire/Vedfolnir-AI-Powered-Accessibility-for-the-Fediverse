@@ -16,7 +16,7 @@ from sqlalchemy.orm import sessionmaker
 
 from models import Base, User, UserRole, PlatformConnection, UserSession, Post, Image, ProcessingRun, ProcessingStatus
 from config import Config
-from database import DatabaseManager
+from app.core.database.core.database_manager import DatabaseManager
 
 class PlatformTestFixtures:
     """Provides test fixtures for platform-aware testing"""

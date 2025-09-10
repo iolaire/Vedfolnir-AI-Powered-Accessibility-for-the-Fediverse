@@ -18,7 +18,7 @@ from unittest.mock import patch, MagicMock
 from flask import Flask
 from flask_login import login_user, logout_user
 
-from database import DatabaseManager
+from app.core.database.core.database_manager import DatabaseManager
 from models import User, PlatformConnection, UserRole
 from unified_session_manager import UnifiedSessionManager as SessionManager
 from request_scoped_session_manager import RequestScopedSessionManager

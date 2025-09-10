@@ -16,19 +16,19 @@ import threading
 from datetime import datetime, timezone
 from unittest.mock import Mock, MagicMock
 
-from notification_system_monitor import (
+from app.services.monitoring.system.notification_monitor import (
     NotificationSystemMonitor, AlertSeverity, create_notification_system_monitor
 )
-from notification_monitoring_dashboard import NotificationMonitoringDashboard
-from notification_websocket_recovery import (
+from app.services.notification.components.notification_monitoring_dashboard import NotificationMonitoringDashboard
+from app.services.notification.components.notification_websocket_recovery import (
     NotificationWebSocketRecovery, RecoveryStrategy, create_websocket_recovery_system
 )
-from unified_notification_manager import UnifiedNotificationManager
-from websocket_performance_monitor import WebSocketPerformanceMonitor
+from app.services.notification.manager.unified_manager import UnifiedNotificationManager
+from app.services.monitoring.performance.monitors.websocket_performance_monitor import WebSocketPerformanceMonitor
 from websocket_namespace_manager import WebSocketNamespaceManager
 from websocket_factory import WebSocketFactory
 from websocket_auth_handler import WebSocketAuthHandler
-from database import DatabaseManager
+from app.core.database.core.database_manager import DatabaseManager
 
 
 class MockConnection:

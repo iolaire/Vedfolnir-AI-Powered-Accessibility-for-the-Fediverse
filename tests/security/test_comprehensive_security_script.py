@@ -22,9 +22,9 @@ from typing import Dict, List, Any, Tuple
 project_root = Path(__file__).parent.parent.parent
 sys.path.insert(0, str(project_root))
 
-from security.audit.csrf_template_scanner import CSRFTemplateScanner
-from security.audit.csrf_compliance_validator import CSRFComplianceValidator
-from security.monitoring.csrf_security_metrics import get_csrf_security_metrics
+from app.core.security.audit.csrf_template_scanner import CSRFTemplateScanner
+from app.core.security.audit.csrf_compliance_validator import CSRFComplianceValidator
+from app.core.security.monitoring.csrf_security_metrics import get_csrf_security_metrics
 
 logging.basicConfig(level=logging.INFO, format='%(asctime)s - %(levelname)s - %(message)s')
 logger = logging.getLogger(__name__)
@@ -208,7 +208,7 @@ class ComprehensiveSecurityTester:
     def _test_csrf_token_generation(self) -> float:
         """Test CSRF token generation"""
         try:
-            from security.core.csrf_token_manager import get_csrf_token_manager
+            from app.core.security.core.csrf_token_manager import get_csrf_token_manager
             csrf_manager = get_csrf_token_manager()
             
             # Test token generation
@@ -228,7 +228,7 @@ class ComprehensiveSecurityTester:
     def _test_csrf_token_validation(self) -> float:
         """Test CSRF token validation"""
         try:
-            from security.core.csrf_token_manager import get_csrf_token_manager
+            from app.core.security.core.csrf_token_manager import get_csrf_token_manager
             csrf_manager = get_csrf_token_manager()
             
             # Test valid token

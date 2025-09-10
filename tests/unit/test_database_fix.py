@@ -6,7 +6,7 @@ Test script to verify database lock fixes
 import sys
 import time
 from config import Config
-from database import DatabaseManager
+from app.core.database.core.database_manager import DatabaseManager
 from unified_session_manager import UnifiedSessionManager
 
 def test_database_connections():

@@ -25,11 +25,11 @@ from datetime import datetime, timezone
 from typing import List, Dict, Any, Tuple
 
 from config import Config
-from database import DatabaseManager
+from app.core.database.core.database_manager import DatabaseManager
 from models import SystemConfiguration
-from configuration_service import ConfigurationService, ConfigurationSource
-from configuration_cache import ConfigurationCache
-from configuration_event_bus import ConfigurationEventBus
+from app.core.configuration.core.configuration_service import ConfigurationService, ConfigurationSource
+from app.core.configuration.cache.configuration_cache import ConfigurationCache
+from app.core.configuration.events.configuration_event_bus import ConfigurationEventBus
 
 
 class TestConfigurationSystemLoad(unittest.TestCase):

@@ -20,8 +20,8 @@ from datetime import datetime, timezone, timedelta
 # Add project root to path for imports
 sys.path.insert(0, os.path.join(os.path.dirname(__file__), '..', '..'))
 
-from maintenance_status_api import MaintenanceStatusAPI, MaintenanceStatusResponse, BlockedOperation
-from enhanced_maintenance_mode_service import MaintenanceStatus, MaintenanceMode
+from app.services.maintenance.components.maintenance_status_api import MaintenanceStatusAPI, MaintenanceStatusResponse, BlockedOperation
+from app.services.maintenance.enhanced.enhanced_maintenance_mode_service import MaintenanceStatus, MaintenanceMode
 
 
 class TestMaintenanceStatusAPI(unittest.TestCase):
@@ -158,7 +158,7 @@ class TestMaintenanceStatusAPI(unittest.TestCase):
         mock_classifier_class.return_value = mock_classifier
         
         # Import OperationType for mocking
-        from maintenance_operation_classifier import OperationType
+        from app.services.maintenance.components.maintenance_operation_classifier import OperationType
         
         # Setup mock responses
         mock_classifier.is_blocked_operation.side_effect = lambda op_type, mode: op_type in [
@@ -378,7 +378,7 @@ class TestMaintenanceStatusAPI(unittest.TestCase):
     
     def test_endpoints_for_operation_type(self):
         """Test endpoint examples for operation types"""
-        from maintenance_operation_classifier import OperationType
+        from app.services.maintenance.components.maintenance_operation_classifier import OperationType
         
         # Test caption generation endpoints
         endpoints = self.api._get_endpoints_for_operation_type(OperationType.CAPTION_GENERATION)

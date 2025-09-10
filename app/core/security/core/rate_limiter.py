@@ -12,7 +12,7 @@ for rate limiting with support for different rate limits per endpoint.
 import time
 from logging import getLogger
 import asyncio
-from security.core.security_utils import sanitize_for_log
+from app.core.security.core.security_utils import sanitize_for_log
 import threading
 from typing import Dict, Optional, Tuple, Callable, Any
 from dataclasses import dataclass, field

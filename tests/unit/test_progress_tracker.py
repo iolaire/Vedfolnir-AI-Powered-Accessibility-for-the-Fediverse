@@ -12,7 +12,7 @@ import uuid
 
 from progress_tracker import ProgressTracker, ProgressStatus
 from models import CaptionGenerationTask, TaskStatus, GenerationResults
-from database import DatabaseManager
+from app.core.database.core.database_manager import DatabaseManager
 
 class TestProgressTracker(unittest.TestCase):
     """Test cases for ProgressTracker"""

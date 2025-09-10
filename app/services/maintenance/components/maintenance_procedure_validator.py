@@ -18,8 +18,8 @@ from datetime import datetime, timezone
 from enum import Enum
 import uuid
 
-from enhanced_maintenance_mode_service import EnhancedMaintenanceModeService, MaintenanceMode
-from maintenance_operation_classifier import MaintenanceOperationClassifier, OperationType
+from app.services.maintenance.enhanced.enhanced_maintenance_mode_service import EnhancedMaintenanceModeService, MaintenanceMode
+from app.services.maintenance.components.maintenance_operation_classifier import MaintenanceOperationClassifier, OperationType
 from models import User, UserRole
 
 logger = logging.getLogger(__name__)

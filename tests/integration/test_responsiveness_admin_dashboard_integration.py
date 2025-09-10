@@ -21,7 +21,7 @@ from datetime import datetime, timezone
 sys.path.insert(0, os.path.join(os.path.dirname(__file__), '..', '..'))
 
 from config import Config
-from database import DatabaseManager
+from app.core.database.core.database_manager import DatabaseManager
 from tests.test_helpers import create_test_user_with_platforms, cleanup_test_user
 from models import UserRole
 
@@ -209,16 +209,16 @@ class TestResponsivenessAdminDashboardIntegration(unittest.TestCase):
         
         with app.app_context():
             # Mock admin API routes
-            with patch('admin.routes.responsiveness_api.current_app') as mock_current_app:
+            with patch('app.blueprints.admin.responsiveness_api.current_app') as mock_current_app:
                 mock_current_app.system_optimizer = self.mock_system_optimizer
                 mock_current_app.cleanup_manager = self.mock_cleanup_manager
                 mock_current_app.db_manager = self.db_manager
                 
                 # Mock authentication decorators
-                with patch('admin.routes.responsiveness_api.login_required', lambda f: f):
-                    with patch('admin.routes.responsiveness_api.admin_required', lambda f: f):
-                        with patch('admin.routes.responsiveness_api.rate_limit', lambda **kwargs: lambda f: f):
-                            with patch('admin.routes.responsiveness_api.current_user', self.test_user):
+                with patch('app.blueprints.admin.responsiveness_api.login_required', lambda f: f):
+                    with patch('app.blueprints.admin.responsiveness_api.admin_required', lambda f: f):
+                        with patch('app.blueprints.admin.responsiveness_api.rate_limit', lambda **kwargs: lambda f: f):
+                            with patch('app.blueprints.admin.responsiveness_api.current_user', self.test_user):
                                 with app.test_client() as client:
                                     # Test responsiveness check API
                                     response = client.get('/api/responsiveness/check')
@@ -265,15 +265,15 @@ class TestResponsivenessAdminDashboardIntegration(unittest.TestCase):
         self.mock_system_optimizer.trigger_cleanup_if_needed.return_value = True
         
         with app.app_context():
-            with patch('admin.routes.responsiveness_api.current_app') as mock_current_app:
+            with patch('app.blueprints.admin.responsiveness_api.current_app') as mock_current_app:
                 mock_current_app.system_optimizer = self.mock_system_optimizer
                 
                 # Mock authentication and notifications
-                with patch('admin.routes.responsiveness_api.login_required', lambda f: f):
-                    with patch('admin.routes.responsiveness_api.admin_required', lambda f: f):
-                        with patch('admin.routes.responsiveness_api.rate_limit', lambda **kwargs: lambda f: f):
-                            with patch('admin.routes.responsiveness_api.current_user', self.test_user):
-                                with patch('admin.routes.responsiveness_api.send_success_notification'):
+                with patch('app.blueprints.admin.responsiveness_api.login_required', lambda f: f):
+                    with patch('app.blueprints.admin.responsiveness_api.admin_required', lambda f: f):
+                        with patch('app.blueprints.admin.responsiveness_api.rate_limit', lambda **kwargs: lambda f: f):
+                            with patch('app.blueprints.admin.responsiveness_api.current_user', self.test_user):
+                                with patch('app.blueprints.admin.responsiveness_api.send_success_notification'):
                                     with app.test_client() as client:
                                         # Test memory cleanup API
                                         response = client.post('/api/responsiveness/cleanup/memory')
@@ -303,7 +303,7 @@ class TestResponsivenessAdminDashboardIntegration(unittest.TestCase):
             return self.test_user if str(user_id) == str(self.test_user.id) else None
         
         with app.app_context():
-            with patch('admin.routes.responsiveness_api.current_app') as mock_current_app:
+            with patch('app.blueprints.admin.responsiveness_api.current_app') as mock_current_app:
                 mock_current_app.system_optimizer = self.mock_system_optimizer
                 mock_current_app.db_manager = self.db_manager
                 
@@ -314,11 +314,11 @@ class TestResponsivenessAdminDashboardIntegration(unittest.TestCase):
                     'pool_health_improved': True
                 }
                 
-                with patch('admin.routes.responsiveness_api.login_required', lambda f: f):
-                    with patch('admin.routes.responsiveness_api.admin_required', lambda f: f):
-                        with patch('admin.routes.responsiveness_api.rate_limit', lambda **kwargs: lambda f: f):
-                            with patch('admin.routes.responsiveness_api.current_user', self.test_user):
-                                with patch('admin.routes.responsiveness_api.send_success_notification'):
+                with patch('app.blueprints.admin.responsiveness_api.login_required', lambda f: f):
+                    with patch('app.blueprints.admin.responsiveness_api.admin_required', lambda f: f):
+                        with patch('app.blueprints.admin.responsiveness_api.rate_limit', lambda **kwargs: lambda f: f):
+                            with patch('app.blueprints.admin.responsiveness_api.current_user', self.test_user):
+                                with patch('app.blueprints.admin.responsiveness_api.send_success_notification'):
                                     with patch.object(self.db_manager, 'optimize_connection_pool', return_value=mock_optimization_result):
                                         with app.test_client() as client:
                                             # Test connection optimization API
@@ -349,7 +349,7 @@ class TestResponsivenessAdminDashboardIntegration(unittest.TestCase):
             return self.test_user if str(user_id) == str(self.test_user.id) else None
         
         with app.app_context():
-            with patch('admin.routes.performance_dashboard.current_app') as mock_current_app:
+            with patch('app.services.performance.components.performance_dashboard.current_app') as mock_current_app:
                 mock_current_app.system_optimizer = self.mock_system_optimizer
                 mock_current_app.cleanup_manager = self.mock_cleanup_manager
                 mock_current_app.session_monitor = self.mock_session_monitor
@@ -477,7 +477,7 @@ class TestResponsivenessAdminDashboardIntegration(unittest.TestCase):
             }
         ]
         
-        with patch('admin.routes.responsiveness_api.send_admin_notification', side_effect=mock_send_notification):
+        with patch('app.blueprints.admin.responsiveness_api.send_admin_notification', side_effect=mock_send_notification):
             for scenario in responsiveness_scenarios:
                 with self.subTest(status=scenario['status']):
                     # Mock responsiveness check result
@@ -495,10 +495,10 @@ class TestResponsivenessAdminDashboardIntegration(unittest.TestCase):
                     })
                     
                     # Simulate responsiveness check that triggers notification
-                    from admin.routes.responsiveness_api import process_responsiveness_alerts
+                    from app.blueprints.admin.responsiveness_api import process_responsiveness_alerts
                     
                     # Mock the function call
-                    with patch('admin.routes.responsiveness_api.process_responsiveness_alerts') as mock_process:
+                    with patch('app.blueprints.admin.responsiveness_api.process_responsiveness_alerts') as mock_process:
                         mock_process.return_value = True
                         
                         # Test notification processing

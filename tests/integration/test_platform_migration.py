@@ -23,7 +23,7 @@ class TestPlatformMigrationScenarios(MySQLIntegrationTestBase):
         
         try:
             # Simulate migration on empty database
-            from database import DatabaseManager
+            from app.core.database.core.database_manager import DatabaseManager
             from config import Config
 
 # MySQL integration test imports

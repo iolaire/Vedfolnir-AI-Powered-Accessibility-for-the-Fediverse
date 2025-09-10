@@ -10,7 +10,7 @@ from models import UserRole
 from utils.response_helpers import success_response, error_response
 # from notification_flash_replacement import send_notification  # Removed - using unified notification system
 from session_error_handlers import with_session_error_handling
-from security.core.security_middleware import rate_limit
+from app.core.security.core.security_middleware import rate_limit
 
 def register_routes(bp):
     """Register monitoring routes"""
@@ -21,7 +21,7 @@ def register_routes(bp):
         """Administrative monitoring dashboard"""
         if not current_user.role == UserRole.ADMIN:
             # Send error notification
-            from notification_helpers import send_error_notification
+            from app.services.notification.helpers.notification_helpers import send_error_notification
             send_error_notification("Access denied. Admin privileges required.", "Access Denied")
             return redirect(url_for('main.index'))
             
@@ -41,7 +41,7 @@ def register_routes(bp):
         except Exception as e:
             current_app.logger.error(f"Error loading monitoring dashboard: {str(e)}")
             # Send error notification
-            from notification_helpers import send_error_notification
+            from app.services.notification.helpers.notification_helpers import send_error_notification
             send_error_notification("Error loading monitoring dashboard.", "Error")
             return redirect(url_for('admin.dashboard'))
 

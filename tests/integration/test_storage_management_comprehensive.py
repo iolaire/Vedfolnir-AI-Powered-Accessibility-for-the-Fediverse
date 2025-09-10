@@ -22,14 +22,14 @@ from pathlib import Path
 import sys
 sys.path.insert(0, os.path.join(os.path.dirname(__file__), '..', '..'))
 
-from storage_configuration_service import StorageConfigurationService
-from storage_monitor_service import StorageMonitorService, StorageMetrics
-from storage_limit_enforcer import StorageLimitEnforcer, StorageCheckResult
-from storage_email_notification_service import StorageEmailNotificationService
-from storage_user_notification_system import StorageUserNotificationSystem
-from admin_storage_dashboard import AdminStorageDashboard
-from storage_override_system import StorageOverrideSystem
-from storage_cleanup_integration import StorageCleanupIntegration
+from app.services.storage.components.storage_configuration_service import StorageConfigurationService
+from app.services.storage.components.storage_monitor_service import StorageMonitorService, StorageMetrics
+from app.services.storage.components.storage_limit_enforcer import StorageLimitEnforcer, StorageCheckResult
+from app.services.storage.components.storage_email_notification_service import StorageEmailNotificationService
+from app.services.storage.components.storage_user_notification_system import StorageUserNotificationSystem
+from app.services.admin.components.admin_storage_dashboard import AdminStorageDashboard
+from app.services.storage.components.storage_override_system import StorageOverrideSystem
+from app.services.storage.components.storage_cleanup_integration import StorageCleanupIntegration
 
 
 class TestStorageManagementWorkflow(unittest.TestCase):

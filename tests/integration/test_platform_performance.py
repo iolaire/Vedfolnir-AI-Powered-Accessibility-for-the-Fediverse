@@ -11,7 +11,7 @@ import unittest
 import time
 from tests.mysql_test_base import MySQLIntegrationTestBase
 from models import Post, Image, PlatformConnection
-from platform_context import PlatformContextManager
+from app.services.platform.core.platform_context import PlatformContextManager
 
 class TestPlatformQueryPerformance(MySQLIntegrationTestBase):
     """Test performance of platform-filtered queries"""

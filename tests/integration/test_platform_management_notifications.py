@@ -18,16 +18,16 @@ from datetime import datetime, timezone
 # Add project root to path for imports
 sys.path.insert(0, os.path.join(os.path.dirname(__file__), '..', '..'))
 
-from platform_management_notification_integration import (
+from app.services.platform.integration.platform_management_notification_integration import (
     PlatformManagementNotificationService,
     PlatformOperationResult,
     create_platform_operation_result
 )
-from platform_management_route_integration import (
+from app.services.platform.integration.platform_management_route_integration import (
     PlatformRouteNotificationIntegrator,
     get_platform_route_integrator
 )
-from platform_management_error_handling import (
+from app.services.platform.error_handling.platform_management_error_handling import (
     PlatformErrorHandler,
     PlatformError,
     PlatformErrorType,

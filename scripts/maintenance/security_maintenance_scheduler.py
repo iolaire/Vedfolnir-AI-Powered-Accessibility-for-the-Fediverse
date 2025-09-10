@@ -38,7 +38,7 @@ class SecurityMaintenanceScheduler:
         
         try:
             # Run CSRF metrics collection
-            os.system("python -c 'from security.monitoring.csrf_security_metrics import get_csrf_security_metrics; get_csrf_security_metrics().get_csrf_dashboard_data()'")
+            os.system("python -c 'from app.core.security.monitoring.csrf_security_metrics import get_csrf_security_metrics; get_csrf_security_metrics().get_csrf_dashboard_data()'")
             
             # Check for high violation rates
             self._check_csrf_violation_rates()
@@ -105,7 +105,7 @@ class SecurityMaintenanceScheduler:
     def _check_csrf_violation_rates(self):
         """Check CSRF violation rates and alert if high"""
         try:
-            from security.monitoring.csrf_security_metrics import get_csrf_security_metrics
+            from app.core.security.monitoring.csrf_security_metrics import get_csrf_security_metrics
             
             csrf_metrics = get_csrf_security_metrics()
             compliance_metrics = csrf_metrics.get_compliance_metrics('24h')
@@ -145,7 +145,7 @@ class SecurityMaintenanceScheduler:
     def _generate_monthly_audit_report(self):
         """Generate monthly audit report"""
         try:
-            from security.reporting.security_audit_system import get_security_audit_system
+            from app.core.security.reporting.security_audit_system import get_security_audit_system
             
             audit_system = get_security_audit_system()
             report = audit_system.generate_comprehensive_audit_report("monthly")
@@ -158,7 +158,7 @@ class SecurityMaintenanceScheduler:
     def _send_security_alert(self, alert_type: str, message: str):
         """Send security alert"""
         try:
-            from security.monitoring.security_alerting import get_security_alert_manager
+            from app.core.security.monitoring.security_alerting import get_security_alert_manager
             
             alert_manager = get_security_alert_manager()
             alert_id = alert_manager.trigger_csrf_violation_alert(50, "scheduler")

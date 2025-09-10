@@ -10,7 +10,7 @@ import unittest
 from unittest.mock import Mock
 from datetime import datetime, timezone, timedelta
 
-from security.features.session_security import (
+from app.core.security.features.session_security import (
     SessionSecurityHardening, SessionFingerprint, SecurityAuditEvent,
     SuspiciousActivityType
 )

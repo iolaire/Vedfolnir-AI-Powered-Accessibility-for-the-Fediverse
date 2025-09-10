@@ -19,9 +19,9 @@ from contextlib import contextmanager
 from sqlalchemy.exc import SQLAlchemyError, DisconnectionError, TimeoutError as SQLTimeoutError
 from sqlalchemy import text
 
-from database import DatabaseManager, DatabaseOperationError
+from app.core.database.core.database_manager import DatabaseManager, DatabaseOperationError
 from responsiveness_error_recovery import ResponsivenessErrorRecoveryManager, ResponsivenessIssueType
-from notification_helpers import send_admin_notification
+from app.services.notification.helpers.notification_helpers import send_admin_notification
 from models import NotificationType, NotificationPriority
 
 logger = logging.getLogger(__name__)

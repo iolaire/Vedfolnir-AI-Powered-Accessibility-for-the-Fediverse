@@ -10,6 +10,25 @@ Integrates with the unified notification system to provide real-time updates
 for caption processing, platform operations, and system status.
 """
 
+"""
+⚠️  DEPRECATED: This file is deprecated and will be removed in a future version.
+Please use the unified notification system instead:
+- unified_notification_manager.py (core system)
+- notification_service_adapters.py (service adapters)
+- notification_helpers.py (helper functions)
+- app/websocket/core/consolidated_handlers.py (WebSocket handling)
+
+Migration guide: docs/implementation/notification-consolidation-final-summary.md
+"""
+
+import warnings
+warnings.warn(
+    "This notification system is deprecated. Use the unified notification system instead.",
+    DeprecationWarning,
+    stacklevel=2
+)
+
+
 import logging
 from datetime import datetime, timezone
 from typing import Dict, Any, Optional
@@ -17,7 +36,7 @@ from flask import current_app
 from flask_socketio import emit, join_room, leave_room
 from flask_login import current_user
 
-from unified_notification_manager import UnifiedNotificationManager, NotificationMessage, NotificationType, NotificationPriority, NotificationCategory
+from app.services.notification.manager.unified_manager import UnifiedNotificationManager, NotificationMessage, NotificationType, NotificationPriority, NotificationCategory
 from models import ProcessingStatus, UserRole
 
 logger = logging.getLogger(__name__)

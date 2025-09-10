@@ -20,12 +20,12 @@ from datetime import datetime, timedelta
 import sys
 sys.path.insert(0, os.path.join(os.path.dirname(__file__), '..', '..'))
 
-from storage_configuration_service import StorageConfigurationService
-from storage_monitor_service import StorageMonitorService, StorageMetrics
-from storage_limit_enforcer import StorageLimitEnforcer
-from storage_user_notification_system import StorageUserNotificationSystem, StorageNotificationContext
-from admin_storage_dashboard import AdminStorageDashboard
-from storage_override_system import StorageOverrideSystem
+from app.services.storage.components.storage_configuration_service import StorageConfigurationService
+from app.services.storage.components.storage_monitor_service import StorageMonitorService, StorageMetrics
+from app.services.storage.components.storage_limit_enforcer import StorageLimitEnforcer
+from app.services.storage.components.storage_user_notification_system import StorageUserNotificationSystem, StorageNotificationContext
+from app.services.admin.components.admin_storage_dashboard import AdminStorageDashboard
+from app.services.storage.components.storage_override_system import StorageOverrideSystem
 
 
 class TestStorageUserExperience(unittest.TestCase):

@@ -23,14 +23,14 @@ from pathlib import Path
 from flask import flash, current_app
 from flask_socketio import emit
 
-from unified_notification_manager import (
+from app.services.notification.manager.unified_manager import (
     UnifiedNotificationManager, NotificationMessage, 
     AdminNotificationMessage, SystemNotificationMessage
 )
 from app.websocket.core.factory import WebSocketFactory
 from app.websocket.core.auth_handler import WebSocketAuthHandler
 from app.websocket.core.namespace_manager import WebSocketNamespaceManager
-from database import DatabaseManager
+from app.core.database.core.database_manager import DatabaseManager
 from models import NotificationType, NotificationPriority, NotificationCategory
 
 logger = logging.getLogger(__name__)

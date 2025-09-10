@@ -15,7 +15,7 @@ from models import (
     CaptionGenerationTask, CaptionGenerationSettings, CaptionGenerationUserSettings,
     GenerationResults, TaskStatus, PlatformConnection, User
 )
-from database import DatabaseManager
+from app.core.database.core.database_manager import DatabaseManager
 
 class TestWebCaptionGenerationService(unittest.TestCase):
     """Test cases for WebCaptionGenerationService"""

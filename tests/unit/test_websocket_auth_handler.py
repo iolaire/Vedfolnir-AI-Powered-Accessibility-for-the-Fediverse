@@ -23,7 +23,7 @@ from websocket_auth_handler import (
     WebSocketAuthHandler, AuthenticationResult, AuthenticationContext
 )
 from models import User, UserRole
-from database import DatabaseManager
+from app.core.database.core.database_manager import DatabaseManager
 from session_manager_v2 import SessionManagerV2
 
 

@@ -19,7 +19,7 @@ import uuid
 # Add project root to path for imports
 sys.path.insert(0, os.path.join(os.path.dirname(__file__), '..', '..'))
 
-from enhanced_maintenance_mode_service import (
+from app.services.maintenance.enhanced.enhanced_maintenance_mode_service import (
     EnhancedMaintenanceModeService, 
     MaintenanceMode, 
     MaintenanceStatus
@@ -109,7 +109,7 @@ class TestEnhancedMaintenanceModeTestMode(unittest.TestCase):
             mock_classifier_class.return_value = mock_classifier
             
             # Mock operation classification
-            from maintenance_operation_classifier import OperationType
+            from app.services.maintenance.components.maintenance_operation_classifier import OperationType
             mock_classifier.classify_operation.return_value = OperationType.CAPTION_GENERATION
             mock_classifier.is_blocked_operation.return_value = True
             
@@ -150,7 +150,7 @@ class TestEnhancedMaintenanceModeTestMode(unittest.TestCase):
             mock_classifier = Mock()
             mock_classifier_class.return_value = mock_classifier
             
-            from maintenance_operation_classifier import OperationType
+            from app.services.maintenance.components.maintenance_operation_classifier import OperationType
             mock_classifier.classify_operation.return_value = OperationType.CAPTION_GENERATION
             mock_classifier.is_blocked_operation.return_value = True
             
@@ -186,7 +186,7 @@ class TestEnhancedMaintenanceModeTestMode(unittest.TestCase):
             mock_classifier = Mock()
             mock_classifier_class.return_value = mock_classifier
             
-            from maintenance_operation_classifier import OperationType
+            from app.services.maintenance.components.maintenance_operation_classifier import OperationType
             
             # Test different operation types
             test_operations = [
@@ -250,7 +250,7 @@ class TestEnhancedMaintenanceModeTestMode(unittest.TestCase):
             mock_classifier = Mock()
             mock_classifier_class.return_value = mock_classifier
             
-            from maintenance_operation_classifier import OperationType
+            from app.services.maintenance.components.maintenance_operation_classifier import OperationType
             
             # Mock expected blocked operations for TEST mode
             expected_blocked = [
@@ -297,7 +297,7 @@ class TestEnhancedMaintenanceModeTestMode(unittest.TestCase):
             mock_classifier = Mock()
             mock_classifier_class.return_value = mock_classifier
             
-            from maintenance_operation_classifier import OperationType
+            from app.services.maintenance.components.maintenance_operation_classifier import OperationType
             mock_classifier.classify_operation.return_value = OperationType.CAPTION_GENERATION
             mock_classifier.is_blocked_operation.return_value = True
             
@@ -331,7 +331,7 @@ class TestEnhancedMaintenanceModeTestMode(unittest.TestCase):
             mock_classifier = Mock()
             mock_classifier_class.return_value = mock_classifier
             
-            from maintenance_operation_classifier import OperationType
+            from app.services.maintenance.components.maintenance_operation_classifier import OperationType
             mock_classifier.classify_operation.return_value = OperationType.CAPTION_GENERATION
             mock_classifier.is_blocked_operation.return_value = True
             
@@ -367,7 +367,7 @@ class TestEnhancedMaintenanceModeTestMode(unittest.TestCase):
             mock_classifier = Mock()
             mock_classifier_class.return_value = mock_classifier
             
-            from maintenance_operation_classifier import OperationType
+            from app.services.maintenance.components.maintenance_operation_classifier import OperationType
             mock_classifier.classify_operation.return_value = OperationType.CAPTION_GENERATION
             mock_classifier.is_blocked_operation.return_value = True
             
@@ -432,7 +432,7 @@ class TestEnhancedMaintenanceModeTestMode(unittest.TestCase):
             mock_classifier = Mock()
             mock_classifier_class.return_value = mock_classifier
             
-            from maintenance_operation_classifier import OperationType
+            from app.services.maintenance.components.maintenance_operation_classifier import OperationType
             mock_classifier.classify_operation.return_value = OperationType.CAPTION_GENERATION
             mock_classifier.is_blocked_operation.return_value = True
             

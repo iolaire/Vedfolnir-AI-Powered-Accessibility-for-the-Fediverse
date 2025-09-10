@@ -25,9 +25,9 @@ from flask import request, session as flask_session, current_app
 from flask_socketio import disconnect
 
 from models import User, UserRole, PlatformConnection
-from database import DatabaseManager
-from session_manager import SessionManager
-from security.core.security_utils import sanitize_for_log, mask_sensitive_data
+from app.core.database.core.database_manager import DatabaseManager
+from app.core.session.core.session_manager import SessionManager
+from app.core.security.core.security_utils import sanitize_for_log, mask_sensitive_data
 
 logger = logging.getLogger(__name__)
 

@@ -20,8 +20,8 @@ from datetime import datetime, timezone, timedelta
 from enum import Enum
 import uuid
 
-from enhanced_maintenance_mode_service import EnhancedMaintenanceModeService
-from maintenance_procedure_validator import MaintenanceProcedureValidator, ValidationResult
+from app.services.maintenance.enhanced.enhanced_maintenance_mode_service import EnhancedMaintenanceModeService
+from app.services.maintenance.components.maintenance_procedure_validator import MaintenanceProcedureValidator, ValidationResult
 
 logger = logging.getLogger(__name__)
 

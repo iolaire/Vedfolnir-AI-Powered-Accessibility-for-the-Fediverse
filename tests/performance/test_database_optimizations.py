@@ -18,7 +18,7 @@ from sqlalchemy.orm import sessionmaker
 # Add parent directory to path to import modules
 sys.path.append(os.path.dirname(os.path.dirname(os.path.abspath(__file__))))
 
-from database import DatabaseManager
+from app.core.database.core.database_manager import DatabaseManager
 from models import Base, Post, Image, ProcessingRun, ProcessingStatus, User, UserRole
 from config import Config, StorageConfig, DatabaseConfig
 

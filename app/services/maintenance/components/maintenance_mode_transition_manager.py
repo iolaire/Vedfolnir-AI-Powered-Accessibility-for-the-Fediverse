@@ -17,8 +17,8 @@ from dataclasses import dataclass
 from datetime import datetime, timezone
 from enum import Enum
 
-from maintenance_mode_service import MaintenanceModeService, MaintenanceChangeEvent
-from database import DatabaseManager
+from app.services.maintenance.components.maintenance_mode_service import MaintenanceModeService, MaintenanceChangeEvent
+from app.core.database.core.database_manager import DatabaseManager
 
 logger = logging.getLogger(__name__)
 

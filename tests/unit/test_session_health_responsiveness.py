@@ -19,8 +19,8 @@ import os
 # Add project root for imports
 sys.path.insert(0, os.path.join(os.path.dirname(__file__), '..', '..'))
 
-from database import DatabaseManager
-from session_health_checker import SessionHealthChecker, SessionHealthStatus, SessionComponentHealth
+from app.core.database.core.database_manager import DatabaseManager
+from app.services.monitoring.health.checkers.session_health_checker import SessionHealthChecker, SessionHealthStatus, SessionComponentHealth
 from unified_session_manager import UnifiedSessionManager
 from models import UserSession
 

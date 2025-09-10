@@ -20,9 +20,9 @@ from datetime import datetime, timezone
 sys.path.insert(0, os.path.join(os.path.dirname(__file__), '..', '..'))
 
 from flask import Flask, g
-from maintenance_mode_middleware import MaintenanceModeMiddleware
-from enhanced_maintenance_mode_service import EnhancedMaintenanceModeService, MaintenanceMode, MaintenanceStatus
-from maintenance_operation_classifier import OperationType
+from app.services.maintenance.components.maintenance_mode_middleware import MaintenanceModeMiddleware
+from app.services.maintenance.enhanced.enhanced_maintenance_mode_service import EnhancedMaintenanceModeService, MaintenanceMode, MaintenanceStatus
+from app.services.maintenance.components.maintenance_operation_classifier import OperationType
 from models import User, UserRole
 
 

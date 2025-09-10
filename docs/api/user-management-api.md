@@ -41,7 +41,7 @@ services/
 from sqlalchemy.orm import Session
 from models import User, UserSession, EmailVerificationToken
 from config import Config
-from database import DatabaseManager
+from app.core.database.core.database_manager import DatabaseManager
 
 # Security dependencies
 from werkzeug.security import generate_password_hash, check_password_hash
@@ -83,7 +83,7 @@ gdpr_service = GDPRService(db_manager)
 The system uses database-stored sessions for authentication:
 
 ```python
-from session_manager import SessionManager
+from app.core.session.core.session_manager import SessionManager
 
 class AuthenticationRequired:
     """Decorator for routes requiring authentication"""

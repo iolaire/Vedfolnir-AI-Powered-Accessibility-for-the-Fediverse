@@ -20,7 +20,7 @@ from system_recovery_manager import SystemRecoveryManager
 from graceful_shutdown_handler import GracefulShutdownHandler
 from database_connection_recovery import DatabaseConnectionRecovery
 from ai_service_monitor import AIServiceMonitor, ServiceStatus, ServiceHealthCheck
-from concurrent_operation_manager import ConcurrentOperationManager, OperationType, LockScope
+from app.services.batch.concurrent.concurrent_operation_manager import ConcurrentOperationManager, OperationType, LockScope
 
 class TestSystemRecoveryComponents(unittest.TestCase):
     """Unit tests for individual recovery components"""

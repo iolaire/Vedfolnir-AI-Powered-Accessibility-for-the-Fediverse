@@ -28,7 +28,7 @@ from websocket_abuse_detector import (
     WebSocketAbuseDetector, AbuseType, AbuseAction, AbusePattern,
     ConnectionMetrics
 )
-from security.monitoring.security_event_logger import SecurityEventSeverity
+from app.core.security.monitoring.security_event_logger import SecurityEventSeverity
 
 
 class TestWebSocketSecurityManager(unittest.TestCase):

@@ -101,7 +101,7 @@ python check_db.py
 
 # Verify platform connections
 python -c "
-from database import DatabaseManager
+from app.core.database.core.database_manager import DatabaseManager
 from config import Config
 db = DatabaseManager(Config())
 platforms = db.get_user_platforms(1)  # Assuming user ID 1
@@ -446,7 +446,7 @@ python check_db.py
 
 # Test platform connections
 python -c "
-from database import DatabaseManager
+from app.core.database.core.database_manager import DatabaseManager
 from config import Config
 db = DatabaseManager(Config())
 platforms = db.get_user_platforms(1)
@@ -466,7 +466,7 @@ Test performance with the new schema:
 ```bash
 # Time a typical query
 time python -c "
-from database import DatabaseManager
+from app.core.database.core.database_manager import DatabaseManager
 from config import Config
 db = DatabaseManager(Config())
 db.set_platform_context(1, 1)  # user_id=1, platform_id=1

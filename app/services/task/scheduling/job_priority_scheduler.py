@@ -16,9 +16,9 @@ from datetime import datetime, timezone
 from dataclasses import dataclass
 from enum import Enum
 
-from database import DatabaseManager
+from app.core.database.core.database_manager import DatabaseManager
 from models import CaptionGenerationTask, TaskStatus, JobPriority, UserRole
-from performance_configuration_adapter import PerformanceConfigurationAdapter, PriorityWeights
+from app.core.configuration.adapters.performance_configuration_adapter import PerformanceConfigurationAdapter, PriorityWeights
 from sqlalchemy.orm import Session
 from sqlalchemy import and_, or_, desc, asc
 

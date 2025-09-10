@@ -27,16 +27,16 @@ import gc
 # Test framework imports
 from tests.test_helpers import create_test_user_with_platforms, cleanup_test_user
 from config import Config
-from database import DatabaseManager
+from app.core.database.core.database_manager import DatabaseManager
 from models import UserRole, NotificationType, NotificationPriority, NotificationCategory
 
 # Notification system imports
-from unified_notification_manager import (
+from app.services.notification.manager.unified_manager import (
     UnifiedNotificationManager, NotificationMessage, 
     AdminNotificationMessage, SystemNotificationMessage
 )
 from notification_message_router import NotificationMessageRouter
-from notification_persistence_manager import NotificationPersistenceManager
+from app.services.notification.components.notification_persistence_manager import NotificationPersistenceManager
 from websocket_factory import WebSocketFactory
 from websocket_auth_handler import WebSocketAuthHandler
 from websocket_namespace_manager import WebSocketNamespaceManager

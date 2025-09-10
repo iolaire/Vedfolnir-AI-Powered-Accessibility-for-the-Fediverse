@@ -10,7 +10,7 @@ Tests complete platform switching scenarios with data isolation validation.
 import unittest
 from tests.mysql_test_base import MySQLIntegrationTestBase
 from models import Post, Image, ProcessingStatus
-from platform_context import PlatformContextManager
+from app.services.platform.core.platform_context import PlatformContextManager
 
 # MySQL integration test imports
 from tests.mysql_test_base import MySQLIntegrationTestBase

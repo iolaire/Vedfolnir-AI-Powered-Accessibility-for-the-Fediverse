@@ -17,7 +17,7 @@ import os
 # Add project root to path for imports
 sys.path.insert(0, os.path.join(os.path.dirname(__file__), '..', '..'))
 
-from configuration_health_monitor import (
+from app.core.configuration.monitoring.configuration_health_monitor import (
     ConfigurationHealthMonitor,
     HealthStatus,
     ComponentType,
@@ -25,7 +25,7 @@ from configuration_health_monitor import (
     AlertThreshold,
     HealthSummary
 )
-from configuration_health_endpoints import ConfigurationHealthChecks
+from app.core.configuration.monitoring.configuration_health_endpoints import ConfigurationHealthChecks
 
 
 class TestConfigurationHealthMonitoring(unittest.TestCase):

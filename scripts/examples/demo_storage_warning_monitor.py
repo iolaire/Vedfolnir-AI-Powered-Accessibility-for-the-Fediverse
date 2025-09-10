@@ -17,11 +17,11 @@ import shutil
 from datetime import datetime
 from unittest.mock import Mock
 
-from storage_warning_monitor import StorageWarningMonitor, StorageEventType
-from storage_warning_dashboard_integration import StorageWarningDashboardIntegration
-from storage_event_logger import StorageEventLogger
-from storage_configuration_service import StorageConfigurationService
-from storage_monitor_service import StorageMonitorService, StorageMetrics
+from app.services.storage.components.storage_warning_monitor import StorageWarningMonitor, StorageEventType
+from app.services.storage.components.storage_warning_dashboard_integration import StorageWarningDashboardIntegration
+from app.services.storage.components.storage_event_logger import StorageEventLogger
+from app.services.storage.components.storage_configuration_service import StorageConfigurationService
+from app.services.storage.components.storage_monitor_service import StorageMonitorService, StorageMetrics
 
 
 def create_mock_services():

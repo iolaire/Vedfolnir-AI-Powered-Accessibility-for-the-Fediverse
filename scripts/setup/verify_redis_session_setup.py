@@ -128,7 +128,7 @@ def verify_redis_session_manager():
     try:
         from session_manager_v2 import SessionManagerV2
         from config import Config
-        from database import DatabaseManager
+        from app.core.database.core.database_manager import DatabaseManager
         
         # Initialize configuration
         config = Config()

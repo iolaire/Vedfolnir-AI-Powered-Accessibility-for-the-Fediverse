@@ -12,13 +12,13 @@ import asyncio
 from datetime import datetime, timezone
 
 from web_caption_generation_service import WebCaptionGenerationService
-from task_queue_manager import TaskQueueManager
+from app.services.task.core.task_queue_manager import TaskQueueManager
 from progress_tracker import ProgressTracker
 from models import (
     CaptionGenerationTask, TaskStatus, PlatformConnection, User,
     CaptionGenerationSettings, GenerationResults
 )
-from database import DatabaseManager
+from app.core.database.core.database_manager import DatabaseManager
 
 class TestCaptionGenerationWorkflow(unittest.TestCase):
     """Integration tests for complete caption generation workflow"""

@@ -29,7 +29,7 @@ def ensure_platform_context(db_manager, session_manager) -> Tuple[Optional[Dict[
         - was_created: Boolean indicating if context was newly created
     """
     from models import PlatformConnection
-    from security.core.security_utils import sanitize_for_log
+    from app.core.security.core.security_utils import sanitize_for_log
     
     # First try to get existing context
     context = getattr(g, 'platform_context', None)

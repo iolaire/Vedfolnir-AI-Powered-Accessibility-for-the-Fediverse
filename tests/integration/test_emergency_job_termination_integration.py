@@ -18,13 +18,13 @@ import sys
 import os
 sys.path.insert(0, os.path.join(os.path.dirname(__file__), '..', '..'))
 
-from emergency_job_termination_manager import (
+from app.services.task.emergency.emergency_job_termination_manager import (
     EmergencyJobTerminationManager,
     JobTerminationRecord,
     JobRecoveryInfo,
     TerminationStatus
 )
-from emergency_maintenance_handler import EmergencyMaintenanceHandler
+from app.services.maintenance.emergency.emergency_maintenance_handler import EmergencyMaintenanceHandler
 from models import User, UserRole, TaskStatus, CaptionGenerationTask
 
 

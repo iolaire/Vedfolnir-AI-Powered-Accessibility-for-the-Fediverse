@@ -7,6 +7,7 @@ Notification Helper Functions
 
 This module provides convenient helper functions for sending notifications
 through the unified notification system from Flask routes and other components.
+Includes consolidated adapters for specialized notification types.
 """
 
 import uuid
@@ -14,13 +15,29 @@ import logging
 from typing import Optional, Dict, Any
 from datetime import datetime, timezone
 
-from flask import current_app, session
-from unified_notification_manager import (
+from flask import current_app, has_app_context, session
+from app.services.notification.manager.unified_manager import (
     NotificationMessage, AdminNotificationMessage, SystemNotificationMessage
 )
 from models import NotificationType, NotificationPriority, NotificationCategory
 
 logger = logging.getLogger(__name__)
+
+# Import adapters for consolidated notification types
+try:
+    from app.services.notification.adapters.service_adapters import (
+        StorageNotificationAdapter,
+        PlatformNotificationAdapter, 
+        DashboardNotificationAdapter,
+        MonitoringNotificationAdapter,
+        PerformanceNotificationAdapter,
+        HealthNotificationAdapter
+    )
+    from app.services.notification.manager.unified_manager import UnifiedNotificationManager
+    ADAPTERS_AVAILABLE = True
+except ImportError as e:
+    logger.warning(f"Notification service adapters not available: {e}")
+    ADAPTERS_AVAILABLE = False
 
 
 def send_user_notification(
@@ -341,3 +358,259 @@ def send_maintenance_notification(
             'start_time': datetime.now(timezone.utc).isoformat()
         }
     )
+
+
+# Consolidated notification helper functions
+
+def send_storage_notification(user_id: int, storage_context) -> bool:
+    """Convenience function for storage notifications"""
+    if not has_app_context():
+        return True
+    
+    if not ADAPTERS_AVAILABLE:
+        logger.error("Notification service adapters not available")
+        return False
+        
+    if not isinstance(user_id, int) or user_id <= 0:
+        logger.error("Invalid user_id for storage notification")
+        return False
+        
+    try:
+        notification_manager = getattr(current_app, 'unified_notification_manager', None)
+        if not isinstance(notification_manager, UnifiedNotificationManager):
+            logger.error("Unified notification manager not available or invalid type")
+            return False
+            
+        adapter = StorageNotificationAdapter(notification_manager)
+        return adapter.send_storage_limit_notification(user_id, storage_context)
+    except Exception as e:
+        logger.error(f"Error sending storage notification: {e}")
+        return False
+
+
+def send_platform_notification(user_id: int, operation_result) -> bool:
+    """Convenience function for platform notifications"""
+    if not has_app_context():
+        return True
+    
+    if not ADAPTERS_AVAILABLE:
+        logger.error("Notification service adapters not available")
+        return False
+        
+    if not isinstance(user_id, int) or user_id <= 0:
+        logger.error("Invalid user_id for platform notification")
+        return False
+        
+    try:
+        notification_manager = getattr(current_app, 'unified_notification_manager', None)
+        if not isinstance(notification_manager, UnifiedNotificationManager):
+            logger.error("Unified notification manager not available or invalid type")
+            return False
+            
+        adapter = PlatformNotificationAdapter(notification_manager)
+        return adapter.send_platform_operation_notification(user_id, operation_result)
+        
+    except Exception as e:
+        logger.error(f"Error sending platform notification: {e}")
+        return False
+
+
+def send_email_notification(subject: str, message: str, user_id: int = None, 
+                           email_template: str = None, template_data: dict = None) -> bool:
+    """
+    Send email notification through unified system
+    
+    Args:
+        subject: Email subject line
+        message: Email message content
+        user_id: Target user ID (uses current_user if not provided)
+        email_template: Optional email template name
+        template_data: Optional template data
+        
+    Returns:
+        True if notification sent successfully, False otherwise
+    """
+    try:
+        from flask_login import current_user
+        from app.services.notification.adapters.service_adapters import EmailNotificationAdapter
+        
+        target_user_id = user_id or (current_user.id if current_user.is_authenticated else None)
+        if not target_user_id:
+            logger.error("No user ID provided for email notification")
+            return False
+        
+        # Get unified notification manager
+        manager = _get_notification_manager()
+        if not manager:
+            return False
+        
+        # Create email adapter and send notification
+        email_adapter = EmailNotificationAdapter(manager)
+        return email_adapter.send_email_notification(
+            user_id=target_user_id,
+            subject=subject,
+            message=message,
+            email_template=email_template,
+            template_data=template_data
+        )
+        
+    except Exception as e:
+        logger.error(f"Error sending email notification: {e}")
+        return False
+
+
+def send_verification_email(verification_link: str, user_id: int = None) -> bool:
+    """Send email verification notification"""
+    try:
+        from flask_login import current_user
+        from app.services.notification.adapters.service_adapters import EmailNotificationAdapter
+        
+        target_user_id = user_id or (current_user.id if current_user.is_authenticated else None)
+        if not target_user_id:
+            logger.error("No user ID provided for verification email")
+            return False
+        
+        manager = _get_notification_manager()
+        if not manager:
+            return False
+        
+        email_adapter = EmailNotificationAdapter(manager)
+        return email_adapter.send_verification_email(target_user_id, verification_link)
+        
+    except Exception as e:
+        logger.error(f"Error sending verification email: {e}")
+        return False
+
+
+def send_password_reset_email(reset_link: str, user_id: int = None) -> bool:
+    """Send password reset email notification"""
+    try:
+        from flask_login import current_user
+        from app.services.notification.adapters.service_adapters import EmailNotificationAdapter
+        
+        target_user_id = user_id or (current_user.id if current_user.is_authenticated else None)
+        if not target_user_id:
+            logger.error("No user ID provided for password reset email")
+            return False
+        
+        manager = _get_notification_manager()
+        if not manager:
+            return False
+        
+        email_adapter = EmailNotificationAdapter(manager)
+        return email_adapter.send_password_reset_email(target_user_id, reset_link)
+        
+    except Exception as e:
+        logger.error(f"Error sending password reset email: {e}")
+        return False
+
+
+def send_gdpr_export_email(download_link: str, user_id: int = None) -> bool:
+    """Send GDPR data export email notification"""
+    try:
+        from flask_login import current_user
+        from app.services.notification.adapters.service_adapters import EmailNotificationAdapter
+        
+        target_user_id = user_id or (current_user.id if current_user.is_authenticated else None)
+        if not target_user_id:
+            logger.error("No user ID provided for GDPR export email")
+            return False
+        
+        manager = _get_notification_manager()
+        if not manager:
+            return False
+        
+        email_adapter = EmailNotificationAdapter(manager)
+        return email_adapter.send_gdpr_export_email(target_user_id, download_link)
+        
+    except Exception as e:
+        logger.error(f"Error sending GDPR export email: {e}")
+        return False
+
+
+def send_dashboard_notification(user_id: int, update_type: str, message: str, data: Optional[Dict] = None) -> bool:
+    """Convenience function for dashboard notifications"""
+    if not has_app_context():
+        return True
+    
+    if not DashboardNotificationAdapter:
+        logger.error("DashboardNotificationAdapter not available")
+        return False
+        
+    try:
+        notification_manager = getattr(current_app, 'unified_notification_manager', None)
+        if not notification_manager:
+            logger.error("Unified notification manager not available")
+            return False
+            
+        adapter = DashboardNotificationAdapter(notification_manager)
+        return adapter.send_dashboard_update_notification(user_id, update_type, message, data)
+    except Exception as e:
+        logger.error(f"Error sending dashboard notification: {e}")
+        return False
+
+
+def send_monitoring_notification(user_id: int, alert_type: str, message: str, severity: str = "normal", data: Optional[Dict] = None) -> bool:
+    """Convenience function for monitoring notifications"""
+    if not has_app_context():
+        return True
+    
+    if not MonitoringNotificationAdapter:
+        logger.error("MonitoringNotificationAdapter not available")
+        return False
+        
+    try:
+        notification_manager = getattr(current_app, 'unified_notification_manager', None)
+        if not notification_manager:
+            logger.error("Unified notification manager not available")
+            return False
+            
+        adapter = MonitoringNotificationAdapter(notification_manager)
+        return adapter.send_monitoring_alert(user_id, alert_type, message, severity, data)
+    except Exception as e:
+        logger.error(f"Error sending monitoring notification: {e}")
+        return False
+
+
+def send_performance_notification(user_id: int, metrics: Dict[str, float], threshold_exceeded: str, recovery_action: str = None) -> bool:
+    """Convenience function for performance notifications"""
+    if not has_app_context():
+        return True
+    
+    if not PerformanceNotificationAdapter:
+        logger.error("PerformanceNotificationAdapter not available")
+        return False
+        
+    try:
+        notification_manager = getattr(current_app, 'unified_notification_manager', None)
+        if not notification_manager:
+            logger.error("Unified notification manager not available")
+            return False
+            
+        adapter = PerformanceNotificationAdapter(notification_manager)
+        return adapter.send_performance_alert(user_id, metrics, threshold_exceeded, recovery_action)
+    except Exception as e:
+        logger.error(f"Error sending performance notification: {e}")
+        return False
+
+
+def send_health_notification(user_id: int, component: str, status: str, message: str, data: Optional[Dict] = None) -> bool:
+    """Convenience function for health check notifications"""
+    if not has_app_context():
+        return True
+    
+    if not HealthNotificationAdapter:
+        logger.error("HealthNotificationAdapter not available")
+        return False
+        
+    try:
+        notification_manager = getattr(current_app, 'unified_notification_manager', None)
+        if not notification_manager:
+            logger.error("Unified notification manager not available")
+            return False
+            
+        adapter = HealthNotificationAdapter(notification_manager)
+        return adapter.send_health_alert(user_id, component, status, message, data)
+    except Exception as e:
+        logger.error(f"Error sending health notification: {e}")
+        return False

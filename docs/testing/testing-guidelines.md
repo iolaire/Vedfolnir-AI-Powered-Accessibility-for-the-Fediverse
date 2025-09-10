@@ -79,7 +79,7 @@ When writing tests that involve user sessions, authentication, or platform conne
 import unittest
 from tests.test_helpers import create_test_user_with_platforms, cleanup_test_user
 from config import Config
-from database import DatabaseManager
+from app.core.database.core.database_manager import DatabaseManager
 
 class TestUserSessions(unittest.TestCase):
     def setUp(self):
@@ -250,7 +250,7 @@ import unittest
 from unified_session_manager import UnifiedSessionManager, get_current_platform_context
 from tests.test_helpers import create_test_user_with_platforms, cleanup_test_user
 from config import Config
-from database import DatabaseManager
+from app.core.database.core.database_manager import DatabaseManager
 
 class TestUnifiedSessions(unittest.TestCase):
     def setUp(self):
@@ -350,7 +350,7 @@ When updating existing tests to use UnifiedSessionManager:
 1. **Replace Imports**:
    ```python
    # OLD
-   from session_manager import SessionManager
+   from app.core.session.core.session_manager import SessionManager
    
    # NEW
    from unified_session_manager import UnifiedSessionManager
@@ -379,7 +379,7 @@ import unittest
 from unified_session_manager import UnifiedSessionManager
 from tests.test_helpers import create_test_user_with_platforms, cleanup_test_user
 from config import Config
-from database import DatabaseManager
+from app.core.database.core.database_manager import DatabaseManager
 
 class TestDatabaseOperations(unittest.TestCase):
     def setUp(self):
@@ -475,6 +475,6 @@ from unified_session_manager import UnifiedSessionManager
 from request_scoped_session_manager import RequestScopedSessionManager
 from tests.test_helpers import create_test_user_with_platforms, cleanup_test_user
 from config import Config
-from database import DatabaseManager
+from app.core.database.core.database_manager import DatabaseManager
 from models import UserRole
 ```

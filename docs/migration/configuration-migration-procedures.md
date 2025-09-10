@@ -252,7 +252,7 @@ class GradualMigrationStrategy:
         Migrate single configuration to system
         """
         try:
-            from system_configuration_manager import SystemConfigurationManager
+            from app.core.configuration.core.system_configuration_manager import SystemConfigurationManager
             
             config_manager = SystemConfigurationManager(self.config_service.db_manager)
             
@@ -362,8 +362,8 @@ def migrate_phase_1():
 
 def execute_migration_phase(configs, phase_name):
     """Execute migration phase"""
-    from system_configuration_manager import SystemConfigurationManager, ConfigurationCategory, ConfigurationDataType
-    from database import DatabaseManager
+    from app.core.configuration.core.system_configuration_manager import SystemConfigurationManager, ConfigurationCategory, ConfigurationDataType
+    from app.core.database.core.database_manager import DatabaseManager
     from config import Config
     
     config = Config()
@@ -562,8 +562,8 @@ def validate_migration():
 def test_configuration_access():
     """Test configuration access after migration"""
     try:
-        from configuration_service import ConfigurationService
-        from database import DatabaseManager
+        from app.core.configuration.core.configuration_service import ConfigurationService
+        from app.core.database.core.database_manager import DatabaseManager
         from config import Config
         
         config = Config()

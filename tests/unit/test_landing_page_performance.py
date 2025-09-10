@@ -28,14 +28,14 @@ from utils.asset_optimizer import (
     get_critical_css,
     get_resource_hints
 )
-from utils.performance_monitor import (
+from app.services.monitoring.performance.monitors.performance_monitor import (
     PerformanceMonitor,
     PerformanceMetrics,
     get_performance_monitor,
     monitor_performance,
     record_database_query
 )
-from utils.performance_context import (
+from app.services.performance.components.performance_context import (
     performance_context_processor,
     _determine_page_type,
     _should_enable_template_caching
@@ -249,9 +249,9 @@ class TestPerformanceMonitoring(unittest.TestCase):
     
     def test_request_monitoring_workflow(self):
         """Test complete request monitoring workflow."""
-        with patch('utils.performance_monitor.g') as mock_g, \
-             patch('utils.performance_monitor.request') as mock_request, \
-             patch('utils.performance_monitor.current_user') as mock_user:
+        with patch('app.services.performance.components.performance_monitor.g') as mock_g, \
+             patch('app.services.performance.components.performance_monitor.request') as mock_request, \
+             patch('app.services.performance.components.performance_monitor.current_user') as mock_user:
             
             mock_request.endpoint = 'main.index'
             mock_user.is_authenticated = False
@@ -279,7 +279,7 @@ class TestPerformanceMonitoring(unittest.TestCase):
     
     def test_database_query_tracking(self):
         """Test database query tracking for anonymous users."""
-        with patch('utils.performance_monitor.g') as mock_g:
+        with patch('app.services.performance.components.performance_monitor.g') as mock_g:
             metrics = PerformanceMetrics()
             metrics.user_type = 'anonymous'
             mock_g.performance_metrics = metrics
@@ -295,7 +295,7 @@ class TestPerformanceMonitoring(unittest.TestCase):
     
     def test_zero_database_queries_for_anonymous_users(self):
         """Test that anonymous users can have zero database queries."""
-        with patch('utils.performance_monitor.g') as mock_g:
+        with patch('app.services.performance.components.performance_monitor.g') as mock_g:
             metrics = PerformanceMetrics()
             metrics.user_type = 'anonymous'
             metrics.route_name = 'main.index'
@@ -308,7 +308,7 @@ class TestPerformanceMonitoring(unittest.TestCase):
             stats = self.monitor.get_performance_summary()
             self.assertEqual(stats['database_queries_saved'], 1)
     
-    @patch('utils.performance_monitor.wraps')
+    @patch('app.services.performance.components.performance_monitor.wraps')
     def test_performance_monitoring_decorator(self, mock_wraps):
         """Test performance monitoring decorator."""
         # Mock the decorator behavior
@@ -324,8 +324,8 @@ class TestPerformanceMonitoring(unittest.TestCase):
 class TestPerformanceContextProcessor(unittest.TestCase):
     """Test performance context processor."""
     
-    @patch('utils.performance_context.current_user')
-    @patch('utils.performance_context.request')
+    @patch('app.services.performance.components.performance_context.current_user')
+    @patch('app.services.performance.components.performance_context.request')
     def test_performance_context_processor(self, mock_request, mock_user):
         """Test performance context processor."""
         mock_request.endpoint = 'main.index'
@@ -347,8 +347,8 @@ class TestPerformanceContextProcessor(unittest.TestCase):
         # Should enable template caching for anonymous users
         self.assertTrue(performance_data['flags']['enable_template_caching'])
     
-    @patch('utils.performance_context.current_user')
-    @patch('utils.performance_context.request')
+    @patch('app.services.performance.components.performance_context.current_user')
+    @patch('app.services.performance.components.performance_context.request')
     def test_page_type_determination(self, mock_request, mock_user):
         """Test page type determination."""
         # Test landing page for anonymous user
@@ -363,7 +363,7 @@ class TestPerformanceContextProcessor(unittest.TestCase):
         page_type = _determine_page_type()
         self.assertEqual(page_type, 'dashboard')
     
-    @patch('utils.performance_context.current_user')
+    @patch('app.services.performance.components.performance_context.current_user')
     def test_template_caching_flag(self, mock_user):
         """Test template caching flag determination."""
         # Should enable for anonymous users
@@ -385,7 +385,7 @@ class TestLandingPagePerformanceIntegration(unittest.TestCase):
         self.app.config['TEMPLATE_CACHE_TTL_SECONDS'] = 60
         
         # Register context processor
-        from utils.performance_context import register_performance_context_processor
+        from app.services.performance.components.performance_context import register_performance_context_processor
         register_performance_context_processor(self.app)
     
     def test_template_cache_integration(self):
@@ -419,8 +419,8 @@ class TestLandingPagePerformanceIntegration(unittest.TestCase):
             monitor = get_performance_monitor()
             
             # Should track metrics
-            with patch('utils.performance_monitor.g') as mock_g, \
-                 patch('utils.performance_monitor.request') as mock_request:
+            with patch('app.services.performance.components.performance_monitor.g') as mock_g, \
+                 patch('app.services.performance.components.performance_monitor.request') as mock_request:
                 
                 mock_request.endpoint = 'main.index'
                 

@@ -25,7 +25,7 @@ def test_user_authentication():
     
     try:
         from config import Config
-        from database import DatabaseManager
+        from app.core.database.core.database_manager import DatabaseManager
         from redis_session_backend import RedisSessionBackend
         from session_manager_v2 import SessionManagerV2
         from session_middleware_v2 import create_user_session
@@ -99,7 +99,7 @@ def test_platform_switching():
     
     try:
         from config import Config
-        from database import DatabaseManager
+        from app.core.database.core.database_manager import DatabaseManager
         from redis_session_backend import RedisSessionBackend
         from session_manager_v2 import SessionManagerV2
         from models import User, PlatformConnection
@@ -191,7 +191,7 @@ def test_session_persistence():
     
     try:
         from config import Config
-        from database import DatabaseManager
+        from app.core.database.core.database_manager import DatabaseManager
         from redis_session_backend import RedisSessionBackend
         from session_manager_v2 import SessionManagerV2
         from models import User
@@ -259,7 +259,7 @@ def test_session_stats():
     
     try:
         from config import Config
-        from database import DatabaseManager
+        from app.core.database.core.database_manager import DatabaseManager
         from redis_session_backend import RedisSessionBackend
         from session_manager_v2 import SessionManagerV2
         from models import User

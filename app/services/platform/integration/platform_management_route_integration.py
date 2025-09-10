@@ -15,7 +15,7 @@ from typing import Dict, Any, Optional, Tuple
 from flask import jsonify, current_app
 from flask_login import current_user
 
-from platform_management_notification_integration import (
+from app.services.platform.integration.platform_management_notification_integration import (
     PlatformManagementNotificationService,
     PlatformOperationResult,
     create_platform_operation_result,

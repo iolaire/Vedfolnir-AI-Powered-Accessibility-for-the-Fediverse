@@ -18,8 +18,8 @@ from datetime import datetime, timezone
 # Add project root to path for imports
 sys.path.insert(0, os.path.join(os.path.dirname(__file__), '..', '..'))
 
-from enhanced_maintenance_mode_service import EnhancedMaintenanceModeService, MaintenanceMode
-from maintenance_procedure_validator import (
+from app.services.maintenance.enhanced.enhanced_maintenance_mode_service import EnhancedMaintenanceModeService, MaintenanceMode
+from app.services.maintenance.components.maintenance_procedure_validator import (
     MaintenanceProcedureValidator, 
     ValidationSeverity,
     ValidationResult
@@ -56,7 +56,7 @@ class TestMaintenanceProcedureValidation(unittest.TestCase):
             mock_classifier = Mock()
             mock_classifier_class.return_value = mock_classifier
             
-            from maintenance_operation_classifier import OperationType
+            from app.services.maintenance.components.maintenance_operation_classifier import OperationType
             mock_classifier.classify_operation.return_value = OperationType.CAPTION_GENERATION
             mock_classifier.is_blocked_operation.return_value = True
             mock_classifier.get_blocked_operations_for_mode.return_value = [
@@ -89,7 +89,7 @@ class TestMaintenanceProcedureValidation(unittest.TestCase):
             mock_classifier = Mock()
             mock_classifier_class.return_value = mock_classifier
             
-            from maintenance_operation_classifier import OperationType
+            from app.services.maintenance.components.maintenance_operation_classifier import OperationType
             mock_classifier.classify_operation.return_value = OperationType.CAPTION_GENERATION
             mock_classifier.is_blocked_operation.return_value = True
             mock_classifier.get_blocked_operations_for_mode.return_value = [
@@ -122,7 +122,7 @@ class TestMaintenanceProcedureValidation(unittest.TestCase):
             mock_classifier = Mock()
             mock_classifier_class.return_value = mock_classifier
             
-            from maintenance_operation_classifier import OperationType
+            from app.services.maintenance.components.maintenance_operation_classifier import OperationType
             mock_classifier.classify_operation.return_value = OperationType.CAPTION_GENERATION
             mock_classifier.is_blocked_operation.return_value = True
             
@@ -157,7 +157,7 @@ class TestMaintenanceProcedureValidation(unittest.TestCase):
             mock_classifier = Mock()
             mock_classifier_class.return_value = mock_classifier
             
-            from maintenance_operation_classifier import OperationType
+            from app.services.maintenance.components.maintenance_operation_classifier import OperationType
             mock_classifier.classify_operation.return_value = OperationType.CAPTION_GENERATION
             mock_classifier.is_blocked_operation.return_value = True
             
@@ -305,7 +305,7 @@ class TestMaintenanceProcedureValidation(unittest.TestCase):
             mock_classifier = Mock()
             mock_classifier_class.return_value = mock_classifier
             
-            from maintenance_operation_classifier import OperationType
+            from app.services.maintenance.components.maintenance_operation_classifier import OperationType
             mock_classifier.classify_operation.return_value = OperationType.CAPTION_GENERATION
             mock_classifier.is_blocked_operation.return_value = True
             
@@ -366,7 +366,7 @@ class TestMaintenanceProcedureValidation(unittest.TestCase):
     def test_recommendations_generation(self):
         """Test recommendations generation"""
         # Create mock issues and coverage report
-        from maintenance_procedure_validator import ValidationIssue
+        from app.services.maintenance.components.maintenance_procedure_validator import ValidationIssue
         
         issues = [
             ValidationIssue(
@@ -408,7 +408,7 @@ class TestMaintenanceProcedureValidation(unittest.TestCase):
     
     def test_overall_status_calculation(self):
         """Test overall status calculation"""
-        from maintenance_procedure_validator import ValidationIssue
+        from app.services.maintenance.components.maintenance_procedure_validator import ValidationIssue
         
         # Test with no issues
         no_issues = []

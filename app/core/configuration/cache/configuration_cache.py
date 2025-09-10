@@ -20,7 +20,7 @@ import psutil
 import os
 
 if TYPE_CHECKING:
-    from configuration_service import ConfigurationValue
+    from app.core.configuration.core.configuration_service import ConfigurationValue
 
 logger = logging.getLogger(__name__)
 

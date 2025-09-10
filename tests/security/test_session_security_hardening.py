@@ -11,7 +11,7 @@ from unittest.mock import Mock, patch, MagicMock
 from datetime import datetime, timezone, timedelta
 import json
 
-from security.features.session_security import (
+from app.core.security.features.session_security import (
     SessionSecurityHardening, SessionFingerprint, SecurityAuditEvent,
     SuspiciousActivityType, validate_session_security, create_session_fingerprint
 )
@@ -400,7 +400,7 @@ class TestSessionSecurityIntegration(unittest.TestCase):
     
     def test_session_manager_integration(self):
         """Test integration with session manager"""
-        from security.features.session_security import initialize_session_security
+        from app.core.security.features.session_security import initialize_session_security
         
         security = initialize_session_security(self.mock_session_manager)
         

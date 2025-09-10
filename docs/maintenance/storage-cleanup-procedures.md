@@ -121,7 +121,7 @@ AUTO_CLEANUP_MAX_DELETE_PER_RUN=1000       # Limit deletions per run
 ```bash
 # Update cleanup configuration
 python -c "
-from system_configuration_manager import SystemConfigurationManager
+from app.core.configuration.core.system_configuration_manager import SystemConfigurationManager
 config_manager = SystemConfigurationManager()
 
 # Set custom retention periods

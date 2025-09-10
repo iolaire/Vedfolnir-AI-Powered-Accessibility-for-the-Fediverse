@@ -31,7 +31,7 @@ This guide covers the deployment of the multi-tenant caption management system w
 python scripts/deployment/pre_deployment_check.py --comprehensive
 
 # Check database connectivity
-python -c "from database import DatabaseManager; from config import Config; 
+python -c "from app.core.database.core.database_manager import DatabaseManager; from config import Config; 
            db = DatabaseManager(Config()); 
            with db.get_session() as s: print('Database OK')"
 

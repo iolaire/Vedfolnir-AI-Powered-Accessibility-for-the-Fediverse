@@ -222,7 +222,7 @@ def setup_logging(log_level: str = "INFO",
         use_json: Whether to output logs as JSON
         include_traceback: Whether to include traceback in error logs
     """
-    from security.core.security_utils import is_safe_path, sanitize_filename
+    from app.core.security.core.security_utils import is_safe_path, sanitize_filename
     
     # Create formatter
     formatter = StructuredFormatter(use_json=use_json, include_traceback=include_traceback)

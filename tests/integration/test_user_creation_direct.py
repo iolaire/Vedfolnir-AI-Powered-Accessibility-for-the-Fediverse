@@ -1,6 +1,6 @@
 #!/usr/bin/env python3
 
-from database import DatabaseManager
+from app.core.database.core.database_manager import DatabaseManager
 from config import Config
 from models import User, UserRole
 

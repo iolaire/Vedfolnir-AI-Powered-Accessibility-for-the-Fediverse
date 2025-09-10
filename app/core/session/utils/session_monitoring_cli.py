@@ -6,7 +6,7 @@ import click
 import json
 from flask import current_app
 from flask.cli import with_appcontext
-from session_performance_monitor import get_performance_monitor
+from app.services.monitoring.performance.monitors.session_performance_monitor import get_performance_monitor
 
 @click.group()
 def session_monitoring():

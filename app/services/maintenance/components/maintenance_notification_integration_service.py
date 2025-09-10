@@ -10,6 +10,25 @@ comprehensive notification management for system maintenance, configuration chan
 and administrative operations.
 """
 
+"""
+⚠️  DEPRECATED: This file is deprecated and will be removed in a future version.
+Please use the unified notification system instead:
+- unified_notification_manager.py (core system)
+- notification_service_adapters.py (service adapters)
+- notification_helpers.py (helper functions)
+- app/websocket/core/consolidated_handlers.py (WebSocket handling)
+
+Migration guide: docs/implementation/notification-consolidation-final-summary.md
+"""
+
+import warnings
+warnings.warn(
+    "This notification system is deprecated. Use the unified notification system instead.",
+    DeprecationWarning,
+    stacklevel=2
+)
+
+
 import logging
 from datetime import datetime, timezone, timedelta
 from typing import Dict, Any, Optional, List, Callable

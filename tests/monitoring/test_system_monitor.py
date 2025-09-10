@@ -30,12 +30,12 @@ with patch('psutil.cpu_percent', return_value=25.0), \
      patch('psutil.disk_usage', return_value=MockDisk(30.0, 100000000000, 300000000000)), \
      patch('psutil.net_io_counters', return_value=MockNetworkIO(1000000, 2000000)):
     
-    from system_monitor import (
+    from app.services.monitoring.system.system_monitor import (
         SystemMonitor, SystemHealth, PerformanceMetrics, 
         ErrorTrends, ResourceUsage
     )
     from models import CaptionGenerationTask, TaskStatus, User, UserRole
-    from database import DatabaseManager
+    from app.core.database.core.database_manager import DatabaseManager
 
 class TestSystemMonitor(unittest.TestCase):
     """Test cases for SystemMonitor class"""

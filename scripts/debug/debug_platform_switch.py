@@ -14,7 +14,7 @@ from datetime import datetime, timezone
 sys.path.insert(0, os.path.dirname(os.path.abspath(__file__)))
 
 from config import Config
-from database import DatabaseManager
+from app.core.database.core.database_manager import DatabaseManager
 from redis_platform_manager import get_redis_platform_manager
 from session_factory import create_session_manager
 

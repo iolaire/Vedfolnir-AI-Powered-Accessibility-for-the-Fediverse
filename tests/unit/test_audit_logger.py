@@ -16,7 +16,7 @@ from unittest.mock import Mock, patch, MagicMock
 
 from audit_logger import AuditLogger
 from models import JobAuditLog, User, CaptionGenerationTask
-from database import DatabaseManager
+from app.core.database.core.database_manager import DatabaseManager
 from config import Config
 
 

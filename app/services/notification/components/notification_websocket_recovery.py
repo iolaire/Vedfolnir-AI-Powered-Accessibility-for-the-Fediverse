@@ -21,7 +21,7 @@ from collections import defaultdict, deque
 from app.websocket.core.factory import WebSocketFactory
 from app.websocket.core.namespace_manager import WebSocketNamespaceManager
 from app.websocket.core.auth_handler import WebSocketAuthHandler
-from notification_system_monitor import NotificationSystemMonitor
+from app.services.monitoring.system.notification_monitor import NotificationSystemMonitor
 
 logger = logging.getLogger(__name__)
 

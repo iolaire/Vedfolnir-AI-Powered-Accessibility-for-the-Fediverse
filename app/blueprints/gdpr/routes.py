@@ -1,17 +1,25 @@
-from flask import Blueprint, render_template, redirect, url_for, flash, request, jsonify, make_response, current_app
-from flask_login import login_required, current_user
-from datetime import datetime
+# Copyright (C) 2025 iolaire mcfadden.
+# This program is free software: you can redistribute it and/or modify it under the terms of the GNU Affero General Public License as published by the Free Software Foundation, either version 3 of the License, or (at your option) any later version.
+# THE SOFTWARE IS PROVIDED "AS IS", WITHOUT WARRANTY OF ANY KIND, EXPRESS OR IMPLIED, INCLUDING BUT NOT LIMITED TO THE WARRANTIES OF MERCHANTABILITY, FITNESS FOR A PARTICULAR PURPOSE AND NONINFRINGEMENT. IN NO EVENT SHALL THE AUTHORS OR COPYRIGHT HOLDERS BE LIABLE FOR ANY CLAIM, DAMAGES OR OTHER LIABILITY, WHETHER IN AN ACTION OF CONTRACT, TORT OR OTHERWISE, ARISING FROM, OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE SOFTWARE.
+
+"""
+GDPR Routes
+
+Routes for handling GDPR data subject rights and privacy management.
+"""
+
 import json
 import logging
+from datetime import datetime
+from flask import Blueprint, render_template, request, redirect, url_for, jsonify, make_response, current_app
+from flask_login import login_required, current_user
+# from notification_flash_replacement import send_notification  # Removed - using unified notification system
 
 from forms.gdpr_forms import (
     DataExportRequestForm, DataRectificationForm, DataErasureRequestForm,
-    ConsentManagementForm, PrivacyRequestForm, DataPortabilityForm
+    ConsentManagementForm, PrivacyRequestForm, GDPRComplianceReportForm,
+    DataPortabilityForm
 )
-
-gdpr_bp = Blueprint('gdpr', __name__, url_prefix='/gdpr')
-
-logger = logging.getLogger(__name__)
 
 def validate_form_submission(form):
     """
@@ -19,6 +27,15 @@ def validate_form_submission(form):
     Since we're using regular WTForms instead of Flask-WTF
     """
     return request.method == 'POST' and form.validate()
+from services.gdpr_service import GDPRDataSubjectService, GDPRPrivacyService
+from services.user_management_service import UserProfileService
+from app.core.session.core.session_manager import SessionManager
+from models import UserAuditLog
+
+logger = logging.getLogger(__name__)
+
+# Create GDPR blueprint
+gdpr_bp = Blueprint('gdpr', __name__, url_prefix='/gdpr')
 
 def get_client_info():
     """Get client IP and user agent for audit logging"""
@@ -26,121 +43,106 @@ def get_client_info():
     user_agent = request.environ.get('HTTP_USER_AGENT', '')
     return ip_address, user_agent
 
-@gdpr_bp.route('/privacy_policy')
-def privacy_policy():
-    """Privacy policy page"""
-    return render_template('gdpr/privacy_policy.html')
-
-@gdpr_bp.route('/privacy_request', methods=['GET', 'POST'])
-@login_required
-def privacy_request():
-    """Privacy request form"""
-    form = PrivacyRequestForm()
-    
-    if validate_form_submission(form):
-        try:
-            # Basic form submission handling
-            flash('Your privacy request has been submitted successfully. We will respond within 30 days as required by GDPR.', 'success')
-            
-            # In a real implementation, this would:
-            # 1. Log the privacy request
-            # 2. Create a support ticket
-            # 3. Send confirmation email
-            # 4. Route to appropriate team for handling
-            # 5. Set up response tracking
-            
-            return redirect(url_for('gdpr.privacy_request'))
-            
-        except Exception as e:
-            logger.error(f"Error processing privacy request: {e}")
-            flash('An error occurred while submitting your privacy request.', 'error')
-    
-    return render_template('gdpr/privacy_request.html', form=form)
-
-@gdpr_bp.route('/consent_management', methods=['GET', 'POST'])
-@login_required
-def consent_management():
-    """Consent management page"""
-    form = ConsentManagementForm()
-    
-    # Pre-populate form with current consent status
-    if request.method == 'GET':
-        form.data_processing_consent.data = getattr(current_user, 'data_processing_consent', True)
-    
-    if validate_form_submission(form):
-        try:
-            # Basic form submission handling
-            flash('Your consent preferences have been updated successfully.', 'success')
-            
-            # In a real implementation, this would:
-            # 1. Update the user's consent preferences
-            # 2. Log the consent change for audit purposes
-            # 3. Send confirmation email if consent was withdrawn
-            # 4. Restrict data processing if consent was withdrawn
-            
-            return redirect(url_for('gdpr.consent_management'))
-            
-        except Exception as e:
-            logger.error(f"Error processing consent management: {e}")
-            flash('An error occurred while updating your consent preferences.', 'error')
-    
-    return render_template('gdpr/consent_management.html', form=form)
-
-@gdpr_bp.route('/data_export', methods=['GET', 'POST'])
+@gdpr_bp.route('/data-export', methods=['GET', 'POST'])
 @login_required
 def data_export():
-    """Data export page"""
+    """Handle personal data export requests (GDPR Article 20)"""
     form = DataExportRequestForm()
     
     if validate_form_submission(form):
         try:
-            # For now, implement basic form submission handling
-            # Send success notification
-            flash('Your data export request has been submitted successfully.', 'success')
+            request_session_manager = SessionManager(current_app.config['db_manager'])
             
-            # In a real implementation, this would:
-            # 1. Export the user's data in the requested format
-            # 2. Send it via email or provide download link
-            # 3. Log the action for audit purposes
+            with request_session_manager.session_scope() as db_session:
+                gdpr_service = GDPRDataSubjectService(db_session, current_app.config.get('BASE_URL', 'http://localhost:5000'))
+                ip_address, user_agent = get_client_info()
             
-            return redirect(url_for('gdpr.data_export'))
+            # Export personal data
+            success, message, export_data = gdpr_service.export_personal_data(
+                user_id=current_user.id,
+                ip_address=ip_address,
+                user_agent=user_agent
+            )
             
+            if success and export_data:
+                # Filter data based on user preferences
+                filtered_data = export_data.copy()
+                
+                if not form.include_activity_log.data:
+                    filtered_data['personal_data'].pop('activity_log', None)
+                
+                if not form.include_content_data.data:
+                    filtered_data['personal_data'].pop('content_data', None)
+                
+                if not form.include_platform_data.data:
+                    filtered_data['personal_data'].pop('platform_connections', None)
+                
+                # Handle delivery method
+                if form.delivery_method.data == 'download':
+                    # Create downloadable response
+                    if form.export_format.data == 'json':
+                        response_data = json.dumps(filtered_data, indent=2, ensure_ascii=False)
+                        mimetype = 'application/json'
+                        filename = f'vedfolnir_data_export_{current_user.username}_{datetime.utcnow().strftime("%Y%m%d_%H%M%S")}.json'
+                    elif form.export_format.data == 'csv':
+                        # Convert to CSV format (simplified)
+                        response_data = gdpr_service._convert_to_csv(filtered_data)
+                        mimetype = 'text/csv'
+                        filename = f'vedfolnir_data_export_{current_user.username}_{datetime.utcnow().strftime("%Y%m%d_%H%M%S")}.csv'
+                    else:  # XML
+                        response_data = gdpr_service._convert_to_xml(filtered_data)
+                        mimetype = 'application/xml'
+                        filename = f'vedfolnir_data_export_{current_user.username}_{datetime.utcnow().strftime("%Y%m%d_%H%M%S")}.xml'
+                    
+                    response = make_response(response_data)
+                    response.headers['Content-Type'] = mimetype
+                    response.headers['Content-Disposition'] = f'attachment; filename="{filename}"'
+                    
+                    return response
+                
+                else:  # Email delivery
+                    # Use unified email notification system
+                    from app.services.notification.helpers.notification_helpers import send_gdpr_export_email, send_success_notification, send_error_notification
+                    
+                    # Create download link (in real implementation, this would be a secure temporary link)
+                    download_link = url_for('gdpr.download_export', _external=True)
+                    
+                    # Send email via unified system
+                    email_success = send_gdpr_export_email(download_link, current_user.id)
+                    
+                    if email_success:
+                        send_success_notification("Your data export has been completed. You will receive an email with instructions to access your data.", "Data Export Complete")
+                    else:
+                        send_error_notification("Data export completed, but we could not send the notification email. Please contact support.", "Email Notification Failed")
+                
+                # Store export data temporarily for download (if email delivery)
+                        pass
+                if form.delivery_method.data == 'email':
+                    # In a real implementation, you might store this in a secure temporary location
+                    # For now, we'll just show success message
+                    pass
+                
+                # Send success notification
+                from app.services.notification.helpers.notification_helpers import send_success_notification
+                send_success_notification("Your personal data export has been completed successfully.", "Data Export Complete")
+                return redirect(url_for('gdpr.data_export'))
+            else:
+                # Send error notification
+                from app.services.notification.helpers.notification_helpers import send_error_notification
+                send_error_notification(f'Data export failed: {message}', 'Data Export Failed')
+                
         except Exception as e:
             logger.error(f"Error processing data export request: {e}")
-            flash('An error occurred while processing your data export request.', 'error')
+            # Send error notification
+            from app.services.notification.helpers.notification_helpers import send_error_notification
+            send_error_notification("An error occurred while processing your data export request.", "Processing Error")
     
     return render_template('gdpr/data_export.html', form=form)
 
-@gdpr_bp.route('/data_erasure', methods=['GET', 'POST'])
-@login_required
-def data_erasure():
-    """Data erasure page"""
-    form = DataErasureRequestForm()
-    
-    if validate_form_submission(form):
-        try:
-            # Basic form submission handling
-            flash('Your data erasure request has been submitted successfully.', 'success')
-            
-            # In a real implementation, this would:
-            # 1. Validate the erasure request
-            # 2. Send confirmation email before processing
-            # 3. Schedule data deletion/anonymization
-            # 4. Log the action for audit purposes
-            # 5. Log out user if complete deletion requested
-            
-            return redirect(url_for('gdpr.data_erasure'))
-            
-        except Exception as e:
-            logger.error(f"Error processing data erasure request: {e}")
-            flash('An error occurred while processing your data erasure request.', 'error')
-    
-    return render_template('gdpr/data_erasure.html', form=form)
-
-@gdpr_bp.route('/data_rectification', methods=['GET', 'POST'])
+@gdpr_bp.route('/data-rectification', methods=['GET', 'POST'])
 @login_required
 def data_rectification():
-    """Data rectification page"""
+    """Handle data rectification requests (GDPR Article 16)"""
     form = DataRectificationForm()
     
     # Pre-populate form with current user data
@@ -151,56 +153,388 @@ def data_rectification():
     
     if validate_form_submission(form):
         try:
-            # Basic form submission handling
-            flash('Your data rectification request has been submitted successfully.', 'success')
+            request_session_manager = SessionManager(current_app.config['db_manager'])
             
-            # In a real implementation, this would:
-            # 1. Validate the rectification request
-            # 2. Update the user's data if changes are requested
-            # 3. Send email verification if email was changed
-            # 4. Log the action for audit purposes
+            with request_session_manager.session_scope() as db_session:
+                gdpr_service = GDPRDataSubjectService(db_session)
+                ip_address, user_agent = get_client_info()
+                
+                # Prepare rectification data
+                rectification_data = {}
             
-            return redirect(url_for('gdpr.data_rectification'))
+            if form.first_name.data != current_user.first_name:
+                rectification_data['first_name'] = form.first_name.data
             
+            if form.last_name.data != current_user.last_name:
+                rectification_data['last_name'] = form.last_name.data
+            
+            if form.email.data != current_user.email:
+                rectification_data['email'] = form.email.data
+            
+            if rectification_data:
+                # Rectify personal data
+                success, message, result = gdpr_service.rectify_personal_data(
+                    user_id=current_user.id,
+                    rectification_data=rectification_data,
+                    ip_address=ip_address,
+                    user_agent=user_agent
+                )
+                
+                if success:
+                    # Send success notification
+                    from app.services.notification.helpers.notification_helpers import send_success_notification
+                    send_success_notification("Your personal data has been rectified successfully.", "Data Updated")
+                    if 'email' in rectification_data:
+                        # Send info notification
+                        from app.services.notification.helpers.notification_helpers import send_info_notification
+                        send_info_notification("Your email address has been updated and requires re-verification. Please check your new email for a verification link.", "Email Verification Required")
+                        pass
+                    return redirect(url_for('profile.profile'))
+                else:
+                    # Send error notification
+                    from app.services.notification.helpers.notification_helpers import send_error_notification
+                    send_error_notification(f'Data rectification failed: {message}', 'Update Failed')
+            else:
+                # Send info notification
+                from app.services.notification.helpers.notification_helpers import send_info_notification
+                send_info_notification("No changes were detected in your data.", "No Changes")
+                pass
+                
         except Exception as e:
             logger.error(f"Error processing data rectification request: {e}")
-            flash('An error occurred while processing your data rectification request.', 'error')
+            # Send error notification
+            from app.services.notification.helpers.notification_helpers import send_error_notification
+            send_error_notification("An error occurred while processing your data rectification request.", "Processing Error")
     
     return render_template('gdpr/data_rectification.html', form=form)
 
-@gdpr_bp.route('/data_portability', methods=['GET', 'POST'])
+@gdpr_bp.route('/data-erasure', methods=['GET', 'POST'])
+@login_required
+def data_erasure():
+    """Handle data erasure requests (GDPR Article 17)"""
+    form = DataErasureRequestForm()
+    
+    if validate_form_submission(form):
+        try:
+            request_session_manager = SessionManager(current_app.config['db_manager'])
+            
+            with request_session_manager.session_scope() as db_session:
+                gdpr_service = GDPRDataSubjectService(db_session)
+                ip_address, user_agent = get_client_info()
+                
+                if form.erasure_type.data == 'complete':
+                    # Complete data erasure
+                    success, message, result = gdpr_service.erase_personal_data(
+                        user_id=current_user.id,
+                        ip_address=ip_address,
+                        user_agent=user_agent
+                    )
+                else:
+                    # Data anonymization
+                    success, message, result = gdpr_service.anonymize_personal_data(
+                    user_id=current_user.id,
+                    ip_address=ip_address,
+                    user_agent=user_agent
+                )
+            
+            if success:
+                # Send confirmation email using unified system
+                from app.services.notification.helpers.notification_helpers import send_email_notification
+                send_email_notification(
+                    subject="Data Deletion Confirmation",
+                    message=f"Your data deletion request has been processed successfully. Account type: {form.erasure_type.data}",
+                    user_id=current_user.id,
+                    email_template="data_deletion_confirmation",
+                    template_data={
+                        'username': current_user.username,
+                        'erasure_type': form.erasure_type.data
+                    }
+                )
+                
+                # Send success notification
+                from app.services.notification.helpers.notification_helpers import send_success_notification
+                send_success_notification("Your data erasure request has been processed successfully. You will receive a confirmation email.", "Account Deleted")
+                
+                # Log out user and redirect to home page
+                from flask_login import logout_user
+                logout_user()
+                return redirect(url_for('main.index'))
+            else:
+                # Send error notification
+                from app.services.notification.helpers.notification_helpers import send_error_notification
+                send_error_notification(f'Data erasure failed: {message}', 'Deletion Failed')
+                
+        except Exception as e:
+            logger.error(f"Error processing data erasure request: {e}")
+            # Send error notification
+            from app.services.notification.helpers.notification_helpers import send_error_notification
+            send_error_notification("An error occurred while processing your data erasure request.", "Processing Error")
+    
+    return render_template('gdpr/data_erasure.html', form=form)
+
+@gdpr_bp.route('/consent-management', methods=['GET', 'POST'])
+@login_required
+def consent_management():
+    """Handle consent management (GDPR Article 7)"""
+    form = ConsentManagementForm()
+    
+    # Pre-populate form with current consent status
+    if request.method == 'GET':
+        form.data_processing_consent.data = current_user.data_processing_consent
+        # Add other consent fields as they are implemented
+    
+    if validate_form_submission(form):
+        try:
+            request_session_manager = SessionManager(current_app.config['db_manager'])
+            
+            with request_session_manager.session_scope() as db_session:
+                privacy_service = GDPRPrivacyService(db_session)
+                ip_address, user_agent = get_client_info()
+                
+                # Update data processing consent
+                if form.data_processing_consent.data != current_user.data_processing_consent:
+                    success, message = privacy_service.record_consent(
+                        user_id=current_user.id,
+                        consent_type='data_processing',
+                        consent_given=form.data_processing_consent.data,
+                        ip_address=ip_address,
+                        user_agent=user_agent
+                    )
+                    
+                    if success:
+                        # Send success notification
+                        from app.services.notification.helpers.notification_helpers import send_success_notification
+                        send_success_notification(message, 'Consent Updated')
+                        
+                        # Send confirmation email for consent withdrawal using unified system
+                        if not form.data_processing_consent.data:
+                            from app.services.notification.helpers.notification_helpers import send_email_notification
+                            send_email_notification(
+                                subject="Consent Withdrawal Confirmation",
+                                message="Your consent withdrawal has been processed successfully.",
+                                user_id=current_user.id,
+                                email_template="consent_withdrawal_confirmation",
+                                template_data={
+                                    'username': current_user.username,
+                                    'base_url': current_app.config.get('BASE_URL', 'http://localhost:5000')
+                                }
+                            )
+                    else:
+                        from app.services.notification.helpers.notification_helpers import send_error_notification
+                        send_error_notification(f'Consent update failed: {message}', 'Update Failed')
+            
+            # Handle other consent types as they are implemented
+            # (marketing, analytics, third-party sharing)
+            
+            return redirect(url_for('gdpr.consent_management'))
+            
+        except Exception as e:
+            logger.error(f"Error processing consent management: {e}")
+            # Send error notification
+            from app.services.notification.helpers.notification_helpers import send_error_notification
+            send_error_notification("An error occurred while updating your consent preferences.", "Processing Error")
+    
+    return render_template('gdpr/consent_management.html', form=form)
+
+@gdpr_bp.route('/privacy-request', methods=['GET', 'POST'])
+@login_required
+def privacy_request():
+    """Handle general privacy requests"""
+    form = PrivacyRequestForm()
+    
+    if validate_form_submission(form):
+        try:
+            request_session_manager = SessionManager(current_app.config['db_manager'])
+            
+            with request_session_manager.session_scope() as db_session:
+                ip_address, user_agent = get_client_info()
+            
+            # Log the privacy request
+            UserAuditLog.log_action(
+                db_session,
+                action="gdpr_privacy_request",
+                user_id=current_user.id,
+                details=f"Privacy request: {form.request_type.data} - {form.request_details.data[:100]}...",
+                ip_address=ip_address,
+                user_agent=user_agent
+            )
+            db_session.commit()
+            
+            # In a real implementation, this would create a support ticket
+            # For now, we'll just log it and show a success message
+            
+            # Send success notification
+            from app.services.notification.helpers.notification_helpers import send_success_notification
+            send_success_notification("Your privacy request has been submitted successfully. We will respond within 30 days as required by GDPR.", "Request Submitted")
+            return redirect(url_for('gdpr.privacy_request'))
+            
+        except Exception as e:
+            logger.error(f"Error processing privacy request: {e}")
+            # Send error notification
+            from app.services.notification.helpers.notification_helpers import send_error_notification
+            send_error_notification("An error occurred while submitting your privacy request.", "Processing Error")
+    
+    return render_template('gdpr/privacy_request.html', form=form)
+
+@gdpr_bp.route('/compliance-report', methods=['GET', 'POST'])
+@login_required
+def compliance_report():
+    """Generate GDPR compliance report"""
+    form = GDPRComplianceReportForm()
+    
+    if validate_form_submission(form):
+        try:
+            request_session_manager = SessionManager(current_app.config['db_manager'])
+            
+            with request_session_manager.session_scope() as db_session:
+                privacy_service = GDPRPrivacyService(db_session)
+                
+                if form.report_type.data == 'personal':
+                    # Personal data report
+                    gdpr_service = GDPRDataSubjectService(db_session)
+                    success, message, report_data = gdpr_service.get_data_processing_info(current_user.id)
+                elif form.report_type.data == 'consent':
+                    # Consent history report
+                    success, message, report_data = privacy_service.get_consent_history(current_user.id)
+                elif form.report_type.data == 'compliance':
+                    # Full compliance report
+                    success, message, report_data = privacy_service.generate_privacy_report(current_user.id)
+                else:
+                    # Processing report
+                    success, message, report_data = privacy_service.validate_gdpr_compliance(current_user.id)
+                
+                if success and report_data:
+                    # Return JSON response for download
+                    response_data = json.dumps(report_data, indent=2, ensure_ascii=False)
+                    response = make_response(response_data)
+                    response.headers['Content-Type'] = 'application/json'
+                    response.headers['Content-Disposition'] = f'attachment; filename="gdpr_report_{form.report_type.data}_{current_user.username}_{datetime.utcnow().strftime("%Y%m%d_%H%M%S")}.json"'
+                    
+                    return response
+                else:
+                    from app.services.notification.helpers.notification_helpers import send_error_notification
+                    send_error_notification(f'Report generation failed: {message}', 'Report Generation Failed')
+                
+        except Exception as e:
+            logger.error(f"Error generating compliance report: {e}")
+            # Send error notification
+            from app.services.notification.helpers.notification_helpers import send_error_notification
+            send_error_notification("An error occurred while generating your compliance report.", "Processing Error")
+    
+    return render_template('gdpr/privacy_request.html', form=form)
+
+@gdpr_bp.route('/data-portability', methods=['GET', 'POST'])
 @login_required
 def data_portability():
-    """Data portability page"""
+    """Handle data portability requests (GDPR Article 20)"""
     form = DataPortabilityForm()
     
     if validate_form_submission(form):
         try:
-            # Basic form submission handling
-            flash('Your data portability request has been submitted successfully.', 'success')
+            request_session_manager = SessionManager(current_app.config['db_manager'])
             
-            # In a real implementation, this would:
-            # 1. Export data in the requested portable format
-            # 2. Handle transfer to destination service if specified
-            # 3. Provide download link or send via email
-            # 4. Log the action for audit purposes
+            with request_session_manager.session_scope() as db_session:
+                gdpr_service = GDPRDataSubjectService(db_session, current_app.config.get('BASE_URL', 'http://localhost:5000'))
+                ip_address, user_agent = get_client_info()
+                
+                # Export data for portability
+            success, message, export_data = gdpr_service.export_personal_data(
+                user_id=current_user.id,
+                ip_address=ip_address,
+                user_agent=user_agent
+            )
             
-            return redirect(url_for('gdpr.data_portability'))
-            
+            if success and export_data:
+                # Filter data based on categories
+                if form.data_categories.data == 'profile':
+                    filtered_data = {'personal_data': {'user_profile': export_data['personal_data']['user_profile']}}
+                elif form.data_categories.data == 'content':
+                    filtered_data = {'personal_data': {'content_data': export_data['personal_data'].get('content_data', {})}}
+                elif form.data_categories.data == 'activity':
+                    filtered_data = {'personal_data': {'activity_log': export_data['personal_data'].get('activity_log', [])}}
+                else:
+                    filtered_data = export_data
+                
+                # Add portability-specific metadata
+                filtered_data['portability_info'] = {
+                    'export_purpose': 'data_portability',
+                    'gdpr_article': 'Article 20',
+                    'destination_service': form.destination_service.data,
+                    'export_format': form.export_format.data,
+                    'structured_data': True,
+                    'machine_readable': True
+                }
+                
+                # Create response based on format
+                if form.export_format.data == 'json':
+                    response_data = json.dumps(filtered_data, indent=2, ensure_ascii=False)
+                    mimetype = 'application/json'
+                    extension = 'json'
+                elif form.export_format.data == 'csv':
+                    response_data = gdpr_service._convert_to_csv(filtered_data)
+                    mimetype = 'text/csv'
+                    extension = 'csv'
+                elif form.export_format.data == 'xml':
+                    response_data = gdpr_service._convert_to_xml(filtered_data)
+                    mimetype = 'application/xml'
+                    extension = 'xml'
+                else:
+                    # Send warning notification
+                    from app.services.notification.helpers.notification_helpers import send_warning_notification
+                    send_warning_notification("API transfer not yet implemented. Please use download format.", "Feature Not Available")
+                    return redirect(url_for('gdpr.data_portability'))
+                
+                filename = f'vedfolnir_portable_data_{current_user.username}_{datetime.utcnow().strftime("%Y%m%d_%H%M%S")}.{extension}'
+                
+                response = make_response(response_data)
+                response.headers['Content-Type'] = mimetype
+                response.headers['Content-Disposition'] = f'attachment; filename="{filename}"'
+                
+                return response
+            else:
+                from app.services.notification.helpers.notification_helpers import send_error_notification
+                send_error_notification(f'Data portability export failed: {message}', 'Export Failed')
+                
         except Exception as e:
             logger.error(f"Error processing data portability request: {e}")
-            flash('An error occurred while processing your data portability request.', 'error')
+            # Send error notification
+            from app.services.notification.helpers.notification_helpers import send_error_notification
+            send_error_notification("An error occurred while processing your data portability request.", "Processing Error")
     
-    # For now, redirect to data export since they use similar functionality
     return render_template('gdpr/data_export.html', form=form)
 
-@gdpr_bp.route('/data_processing_info')
-def data_processing_info():
-    """Data processing information"""
-    return redirect(url_for('gdpr.privacy_policy'))
+@gdpr_bp.route('/privacy-policy')
+def privacy_policy():
+    """Display privacy policy and data processing information"""
+    return render_template('gdpr/privacy_policy.html')
 
-@gdpr_bp.route('/compliance_report')
+@gdpr_bp.route('/data-processing-info')
 @login_required
-def compliance_report():
-    """GDPR compliance report"""
+def data_processing_info():
+    """Display data processing information for the user"""
+    try:
+        request_session_manager = SessionManager(current_app.config['db_manager'])
+        
+        with request_session_manager.session_scope() as db_session:
+            gdpr_service = GDPRDataSubjectService(db_session)
+            
+            success, message, processing_info = gdpr_service.get_data_processing_info(current_user.id)
+            
+            if success:
+                return render_template('gdpr/privacy_policy.html', processing_info=processing_info)
+            else:
+                from app.services.notification.helpers.notification_helpers import send_error_notification
+                send_error_notification(f'Could not retrieve data processing information: {message}', 'Information Retrieval Failed')
+                return redirect(url_for('profile.profile'))
+            
+    except Exception as e:
+        logger.error(f"Error retrieving data processing info: {e}")
+        # Send error notification
+        from app.services.notification.helpers.notification_helpers import send_error_notification
+        send_error_notification("An error occurred while retrieving data processing information.", "Processing Error")
+        return redirect(url_for('profile.profile'))
+
+@gdpr_bp.route('/rights-overview')
+def rights_overview():
+    """Display overview of GDPR rights"""
     return render_template('gdpr/rights_overview.html')

@@ -187,7 +187,7 @@ python -c "from admin_monitoring import AdminMonitoringService;
 ps aux | grep python | grep web_app
 
 # Check for stuck tasks
-python -c "from task_queue_manager import TaskQueueManager;
+python -c "from app.services.task.core.task_queue_manager import TaskQueueManager;
            manager = TaskQueueManager();
            print(manager.get_queue_stats())"
 ```

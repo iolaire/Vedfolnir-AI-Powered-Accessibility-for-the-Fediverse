@@ -17,9 +17,9 @@ from dataclasses import dataclass
 from datetime import datetime, timezone, timedelta
 from enum import Enum
 
-from enhanced_maintenance_mode_service import EnhancedMaintenanceModeService, MaintenanceMode
-from maintenance_session_manager import MaintenanceSessionManager
-from task_queue_manager import TaskQueueManager
+from app.services.maintenance.enhanced.enhanced_maintenance_mode_service import EnhancedMaintenanceModeService, MaintenanceMode, SessionInvalidationError
+from app.core.session.core.unified_session_manager import UnifiedSessionManager
+from app.services.task.core.task_queue_manager import TaskQueueManager
 from models import User, UserRole, TaskStatus
 
 logger = logging.getLogger(__name__)
@@ -65,7 +65,7 @@ class EmergencyMaintenanceHandler:
     
     def __init__(self, 
                  maintenance_service: EnhancedMaintenanceModeService,
-                 session_manager: MaintenanceSessionManager,
+                 session_manager: UnifiedSessionManager,
                  task_queue_manager: TaskQueueManager,
                  db_manager=None):
         """
@@ -326,7 +326,7 @@ class EmergencyMaintenanceHandler:
             
         except Exception as e:
             logger.error(f"Force session cleanup failed: {str(e)}")
-            from maintenance_session_manager import SessionInvalidationError
+
             raise SessionInvalidationError(f"Force session cleanup failed: {str(e)}")
     
     def enable_critical_admin_only(self) -> None:

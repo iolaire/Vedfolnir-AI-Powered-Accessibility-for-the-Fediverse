@@ -19,7 +19,7 @@ from dataclasses import dataclass
 from enum import Enum
 
 from enhanced_error_recovery_manager import EnhancedErrorRecoveryManager, EnhancedErrorCategory, EscalationLevel
-from notification_helpers import send_admin_notification, send_system_notification
+from app.services.notification.helpers.notification_helpers import send_admin_notification, send_system_notification
 from models import NotificationType, NotificationPriority
 
 logger = logging.getLogger(__name__)

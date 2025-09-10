@@ -26,17 +26,17 @@ from dotenv import load_dotenv
 load_dotenv()
 
 from config import Config
-from database import DatabaseManager
+from app.core.database.core.database_manager import DatabaseManager
 from models import StorageOverride, StorageEventLog, User, UserRole
-from storage_override_system import (
+from app.services.storage.components.storage_override_system import (
     StorageOverrideSystem, 
     OverrideInfo, 
     OverrideValidationError, 
     OverrideNotFoundError, 
     StorageOverrideSystemError
 )
-from storage_configuration_service import StorageConfigurationService
-from storage_monitor_service import StorageMonitorService
+from app.services.storage.components.storage_configuration_service import StorageConfigurationService
+from app.services.storage.components.storage_monitor_service import StorageMonitorService
 
 
 class TestStorageOverrideSystem(unittest.TestCase):

@@ -18,7 +18,7 @@ from flask import (
 from flask_login import login_required, current_user
 
 from models import UserRole
-from security.core.role_based_access import require_admin
+from app.core.security.core.role_based_access import require_admin
 from session_error_handlers import with_session_error_handling
 from utils.response_helpers import success_response, error_response
 from monitoring_dashboard_service import (
@@ -69,7 +69,7 @@ def register_dashboard_routes(bp):
         except Exception as e:
             logger.error(f"Error loading enhanced monitoring dashboard: {str(e)}")
             # Send error notification
-            from notification_helpers import send_error_notification
+            from app.services.notification.helpers.notification_helpers import send_error_notification
             send_error_notification('Error loading monitoring dashboard.', 'Dashboard Error')
             return redirect(url_for('admin.dashboard'))
     
@@ -183,7 +183,7 @@ def register_dashboard_routes(bp):
         except Exception as e:
             logger.error(f"Error loading reports dashboard: {str(e)}")
             # Send error notification
-            from notification_helpers import send_error_notification
+            from app.services.notification.helpers.notification_helpers import send_error_notification
             send_error_notification('Error loading reports dashboard.', 'Dashboard Error')
             return redirect(url_for('admin.dashboard'))
     
@@ -281,7 +281,7 @@ def register_dashboard_routes(bp):
         except Exception as e:
             logger.error(f"Error loading widget customization: {str(e)}")
             # Send error notification
-            from notification_helpers import send_error_notification
+            from app.services.notification.helpers.notification_helpers import send_error_notification
             send_error_notification('Error loading widget customization.', 'Dashboard Error')
             return redirect(url_for('admin.dashboard'))
     

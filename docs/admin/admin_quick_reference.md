@@ -97,7 +97,7 @@ python scripts/deployment/run_multi_tenant_migration.py --action rollback
 ### Database Health
 ```bash
 # Check database
-python -c "from database import DatabaseManager; from config import Config; 
+python -c "from app.core.database.core.database_manager import DatabaseManager; from config import Config; 
            db = DatabaseManager(Config()); 
            with db.get_session() as s: print('Database OK')"
 ```

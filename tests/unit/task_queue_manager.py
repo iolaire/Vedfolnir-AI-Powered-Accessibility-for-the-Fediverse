@@ -16,9 +16,9 @@ from sqlalchemy.exc import SQLAlchemyError
 from sqlalchemy.orm import Session
 from sqlalchemy import and_, or_
 
-from database import DatabaseManager
+from app.core.database.core.database_manager import DatabaseManager
 from models import CaptionGenerationTask, TaskStatus, User, UserRole, PlatformConnection, JobPriority
-from security.core.security_utils import sanitize_for_log
+from app.core.security.core.security_utils import sanitize_for_log
 
 logger = logging.getLogger(__name__)
 
@@ -50,7 +50,7 @@ class TaskQueueManager:
             try:
                 # Generate secure task ID if not already set
                 if not task.id:
-                    from security.features.caption_security import CaptionSecurityManager
+                    from app.core.security.features.caption_security import CaptionSecurityManager
                     security_manager = CaptionSecurityManager(self.db_manager)
                     task.id = security_manager.generate_secure_task_id()
                 
@@ -800,7 +800,7 @@ class TaskQueueManager:
                 )
                 
                 # Generate secure task ID
-                from security.features.caption_security import CaptionSecurityManager
+                from app.core.security.features.caption_security import CaptionSecurityManager
                 security_manager = CaptionSecurityManager(self.db_manager)
                 new_task.id = security_manager.generate_secure_task_id()
                 

@@ -19,9 +19,9 @@ from datetime import datetime, timezone
 import sys
 sys.path.insert(0, os.path.join(os.path.dirname(__file__), '..', '..'))
 
-from storage_health_checker import StorageHealthChecker, StorageHealthStatus
-from storage_configuration_service import StorageConfigurationService
-from storage_monitor_service import StorageMonitorService, StorageMetrics
+from app.services.monitoring.health.checkers.storage_health_checker import StorageHealthChecker, StorageHealthStatus
+from app.services.storage.components.storage_configuration_service import StorageConfigurationService
+from app.services.storage.components.storage_monitor_service import StorageMonitorService, StorageMetrics
 
 
 class TestStorageHealthCheckerSimple(unittest.TestCase):
@@ -225,7 +225,7 @@ class TestStorageHealthEndpointsIntegration(unittest.TestCase):
     def test_health_endpoints_import(self):
         """Test that health endpoints can be imported"""
         try:
-            from storage_health_endpoints import storage_health_bp, register_storage_health_endpoints
+            from app.services.storage.components.storage_health_endpoints import storage_health_bp, register_storage_health_endpoints
             self.assertIsNotNone(storage_health_bp)
             self.assertIsNotNone(register_storage_health_endpoints)
         except ImportError as e:
@@ -234,7 +234,7 @@ class TestStorageHealthEndpointsIntegration(unittest.TestCase):
     def test_dashboard_integration_import(self):
         """Test that dashboard integration can be imported"""
         try:
-            from storage_monitoring_dashboard_integration import StorageMonitoringDashboardIntegration
+            from app.services.storage.components.storage_monitoring_dashboard_integration import StorageMonitoringDashboardIntegration
             self.assertIsNotNone(StorageMonitoringDashboardIntegration)
         except ImportError as e:
             self.fail(f"Could not import dashboard integration: {e}")
@@ -242,7 +242,7 @@ class TestStorageHealthEndpointsIntegration(unittest.TestCase):
     def test_alert_system_import(self):
         """Test that alert system can be imported"""
         try:
-            from storage_alert_system import StorageAlertSystem, StorageAlertType, StorageAlertSeverity
+            from app.services.storage.components.storage_alert_system import StorageAlertSystem, StorageAlertType, StorageAlertSeverity
             self.assertIsNotNone(StorageAlertSystem)
             self.assertIsNotNone(StorageAlertType)
             self.assertIsNotNone(StorageAlertSeverity)

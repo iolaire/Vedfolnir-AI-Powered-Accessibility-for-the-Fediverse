@@ -17,7 +17,7 @@ from unittest.mock import Mock
 
 from notification_message_router import NotificationMessageRouter
 from websocket_namespace_manager import WebSocketNamespaceManager
-from unified_notification_manager import (
+from app.services.notification.manager.unified_manager import (
     NotificationMessage, AdminNotificationMessage, SystemNotificationMessage,
     NotificationType, NotificationPriority, NotificationCategory
 )

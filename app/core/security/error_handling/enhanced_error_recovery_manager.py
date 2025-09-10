@@ -20,7 +20,7 @@ from dataclasses import dataclass, asdict
 from collections import defaultdict, deque
 
 from error_recovery_manager import ErrorRecoveryManager, ErrorCategory, RecoveryStrategy, ErrorInfo, RecoveryConfig
-from security.core.security_utils import sanitize_for_log
+from app.core.security.core.security_utils import sanitize_for_log
 
 logger = logging.getLogger(__name__)
 

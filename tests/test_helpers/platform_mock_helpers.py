@@ -172,7 +172,7 @@ class PlatformMockHelper:
                 })
         else:
             # Mock failed operations
-            from activitypub_client import ActivityPubError
+            from app.services.activitypub.components.activitypub_client import ActivityPubError
             client_mock.verify_credentials.side_effect = ActivityPubError("Authentication failed")
             client_mock.get_posts.side_effect = ActivityPubError("Failed to fetch posts")
             

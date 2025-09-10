@@ -15,8 +15,8 @@ import logging
 from flask import jsonify, request, current_app
 from flask_login import current_user, login_required
 
-from platform_management_route_integration import get_platform_route_integrator
-from platform_management_notification_integration import get_platform_notification_service
+from app.services.platform.integration.platform_management_route_integration import get_platform_route_integrator
+from app.services.platform.integration.platform_management_notification_integration import get_platform_notification_service
 
 logger = logging.getLogger(__name__)
 
@@ -374,7 +374,7 @@ def example_direct_notification_usage():
 MIGRATION CHECKLIST FOR PLATFORM MANAGEMENT ROUTES:
 
 1. Import the integration modules:
-   from platform_management_route_integration import get_platform_route_integrator
+   from app.services.platform.integration.platform_management_route_integration import get_platform_route_integrator
 
 2. Replace direct jsonify() returns with integrator methods:
    - For add_platform: use integrator.handle_add_platform_response()

@@ -20,9 +20,9 @@ from enum import Enum
 from cachetools import TTLCache
 import uuid
 
-from database import DatabaseManager
+from app.core.database.core.database_manager import DatabaseManager
 from models import SystemConfiguration
-from system_configuration_manager import SystemConfigurationManager, ConfigurationSchema
+from app.core.configuration.core.system_configuration_manager import SystemConfigurationManager, ConfigurationSchema
 
 logger = logging.getLogger(__name__)
 

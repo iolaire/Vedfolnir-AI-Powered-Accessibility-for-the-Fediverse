@@ -20,11 +20,11 @@ from datetime import datetime, timezone
 import sys
 sys.path.insert(0, os.path.join(os.path.dirname(__file__), '..', '..'))
 
-from storage_warning_monitor import StorageWarningMonitor, StorageEventType
-from storage_warning_dashboard_integration import StorageWarningDashboardIntegration
-from storage_event_logger import StorageEventLogger, get_storage_logger
-from storage_configuration_service import StorageConfigurationService
-from storage_monitor_service import StorageMonitorService, StorageMetrics
+from app.services.storage.components.storage_warning_monitor import StorageWarningMonitor, StorageEventType
+from app.services.storage.components.storage_warning_dashboard_integration import StorageWarningDashboardIntegration
+from app.services.storage.components.storage_event_logger import StorageEventLogger, get_storage_logger
+from app.services.storage.components.storage_configuration_service import StorageConfigurationService
+from app.services.storage.components.storage_monitor_service import StorageMonitorService, StorageMetrics
 
 
 class TestStorageWarningIntegration(unittest.TestCase):

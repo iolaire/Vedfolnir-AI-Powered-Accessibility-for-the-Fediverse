@@ -99,7 +99,7 @@ def test_system_configuration_manager_integration():
     print("Testing system configuration manager integration...")
     
     try:
-        from system_configuration_manager import SystemConfigurationManager
+        from app.core.configuration.core.system_configuration_manager import SystemConfigurationManager
         
         # Create a temporary database for testing
         with tempfile.NamedTemporaryFile(suffix='.db', delete=False) as tmp_db:

@@ -14,15 +14,15 @@ from unittest.mock import Mock, patch, MagicMock
 from datetime import datetime, timezone, timedelta
 import json
 
-from admin_management_service import (
+from app.services.admin.components.admin_management_service import (
     AdminManagementService, SystemOverview, JobDetails, ErrorDiagnostics, SystemSettings
 )
 from models import (
     CaptionGenerationTask, TaskStatus, User, UserRole, PlatformConnection,
     JobPriority, SystemConfiguration, JobAuditLog
 )
-from database import DatabaseManager
-from task_queue_manager import TaskQueueManager
+from app.core.database.core.database_manager import DatabaseManager
+from app.services.task.core.task_queue_manager import TaskQueueManager
 
 
 class TestAdminManagementService(unittest.TestCase):

@@ -18,13 +18,13 @@ import os
 # Add project root to path for imports
 sys.path.insert(0, os.path.join(os.path.dirname(__file__), '..', '..'))
 
-from storage_user_notification_system import (
+from app.services.storage.components.storage_user_notification_system import (
     StorageUserNotificationSystem, 
     StorageNotificationContext,
     StorageUserNotificationSystemError
 )
-from storage_limit_enforcer import StorageBlockingState
-from storage_monitor_service import StorageMetrics
+from app.services.storage.components.storage_limit_enforcer import StorageBlockingState
+from app.services.storage.components.storage_monitor_service import StorageMetrics
 
 
 class TestStorageUserNotificationSystem(unittest.TestCase):

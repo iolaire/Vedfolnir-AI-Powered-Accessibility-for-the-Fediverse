@@ -8,7 +8,7 @@ Fix encryption key mismatch for platform credentials
 
 import os
 from config import Config
-from database import DatabaseManager
+from app.core.database.core.database_manager import DatabaseManager
 from models import PlatformConnection
 
 def fix_encryption_key():

@@ -18,8 +18,8 @@ from datetime import datetime
 # Add project root to path for imports
 sys.path.insert(0, os.path.join(os.path.dirname(__file__), '..', '..'))
 
-from admin_storage_dashboard import AdminStorageDashboard, StorageDashboardData
-from storage_monitor_service import StorageMetrics
+from app.services.admin.components.admin_storage_dashboard import AdminStorageDashboard, StorageDashboardData
+from app.services.storage.components.storage_monitor_service import StorageMetrics
 
 
 class TestAdminStorageDashboard(unittest.TestCase):

@@ -11,10 +11,10 @@ import time
 from PIL import Image
 from typing import Optional, List, Dict, Tuple, Any
 import asyncio
-from caption_quality_assessment import SimpleCaptionQualityAssessor
-from caption_formatter import CaptionFormatter
-from caption_fallback import CaptionFallbackManager
-from utils import get_retry_stats_summary
+from app.utils.processing.caption_quality_assessment import SimpleCaptionQualityAssessor
+from app.utils.processing.caption_formatter import CaptionFormatter
+from app.utils.processing.caption_fallback import CaptionFallbackManager
+from app.utils.helpers.utils import get_retry_stats_summary
 
 logger = logging.getLogger(__name__)
 

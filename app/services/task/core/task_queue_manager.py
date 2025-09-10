@@ -16,11 +16,11 @@ from sqlalchemy.exc import SQLAlchemyError
 from sqlalchemy.orm import Session
 from sqlalchemy import and_, or_
 
-from database import DatabaseManager
+from app.core.database.core.database_manager import DatabaseManager
 from models import CaptionGenerationTask, TaskStatus, User, UserRole, PlatformConnection, JobPriority
-from security.core.security_utils import sanitize_for_log
-from feature_flag_service import FeatureFlagService
-from feature_flag_decorators import FeatureFlagMiddleware
+from app.core.security.core.security_utils import sanitize_for_log
+from app.services.feature_flags.feature_flag_service import FeatureFlagService
+from app.services.feature_flags.feature_flag_decorators import FeatureFlagMiddleware
 
 logger = logging.getLogger(__name__)
 
@@ -79,7 +79,7 @@ class TaskQueueManager:
             try:
                 # Generate secure task ID if not already set
                 if not task.id:
-                    from security.features.caption_security import CaptionSecurityManager
+                    from app.core.security.features.caption_security import CaptionSecurityManager
                     security_manager = CaptionSecurityManager(self.db_manager)
                     task.id = security_manager.generate_secure_task_id()
                 
@@ -562,7 +562,7 @@ class TaskQueueManager:
                 logger.info(f"Admin {sanitize_for_log(str(admin_user_id))} cancelled task {sanitize_for_log(task_id)} - Reason: {sanitize_for_log(reason)}")
                 
                 # Send notification to user about admin cancellation
-                from notification_helpers import send_user_notification
+                from app.services.notification.helpers.notification_helpers import send_user_notification
                 from models import NotificationType, NotificationPriority, NotificationCategory
                 send_user_notification(
                     message=f"Your task has been cancelled by an administrator. Reason: {reason}",
@@ -948,7 +948,7 @@ class TaskQueueManager:
                 )
                 
                 # Generate secure task ID
-                from security.features.caption_security import CaptionSecurityManager
+                from app.core.security.features.caption_security import CaptionSecurityManager
                 security_manager = CaptionSecurityManager(self.db_manager)
                 new_task.id = security_manager.generate_secure_task_id()
                 

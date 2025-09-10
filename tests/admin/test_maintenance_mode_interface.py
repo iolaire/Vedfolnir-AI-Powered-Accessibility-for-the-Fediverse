@@ -18,9 +18,9 @@ from datetime import datetime, timezone, timedelta
 sys.path.insert(0, os.path.join(os.path.dirname(__file__), '..', '..'))
 
 from config import Config
-from database import DatabaseManager
+from app.core.database.core.database_manager import DatabaseManager
 from models import User, UserRole
-from enhanced_maintenance_mode_service import EnhancedMaintenanceModeService, MaintenanceMode, MaintenanceStatus
+from app.services.maintenance.enhanced.enhanced_maintenance_mode_service import EnhancedMaintenanceModeService, MaintenanceMode, MaintenanceStatus
 
 
 class TestMaintenanceModeAdminInterface(unittest.TestCase):
@@ -60,7 +60,7 @@ class TestMaintenanceModeAdminInterface(unittest.TestCase):
     def test_maintenance_dashboard_access_admin(self):
         """Test that admin users can access maintenance dashboard"""
         # Test route registration
-        from admin.routes.maintenance_mode import register_routes
+        from app.blueprints.admin.maintenance_mode import register_routes
         
         # Mock blueprint
         mock_bp = Mock()

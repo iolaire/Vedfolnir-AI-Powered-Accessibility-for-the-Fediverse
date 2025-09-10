@@ -173,128 +173,13 @@ class PageNotificationIntegrator {
      * Apply notification styling
      */
     applyNotificationStyling() {
-        // Add CSS if not already present
+        // Load external CSS file to avoid CSP violations
         if (!document.getElementById('notification-styles')) {
-            const style = document.createElement('style');
-            style.id = 'notification-styles';
-            style.textContent = `
-                .notification-container {
-                    max-width: 400px;
-                    font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;
-                }
-                
-                .notification {
-                    background: white;
-                    border-radius: 8px;
-                    box-shadow: 0 4px 12px rgba(0, 0, 0, 0.15);
-                    margin-bottom: 12px;
-                    padding: 16px;
-                    pointer-events: auto;
-                    position: relative;
-                    transition: all 0.3s ease;
-                    border-left: 4px solid #007bff;
-                }
-                
-                .notification.success { border-left-color: #28a745; }
-                .notification.warning { border-left-color: #ffc107; }
-                .notification.error { border-left-color: #dc3545; }
-                .notification.info { border-left-color: #17a2b8; }
-                .notification.progress { border-left-color: #6f42c1; }
-                
-                .notification-title {
-                    font-weight: 600;
-                    margin-bottom: 4px;
-                    color: #333;
-                }
-                
-                .notification-message {
-                    color: #666;
-                    font-size: 14px;
-                    line-height: 1.4;
-                }
-                
-                .notification-progress {
-                    margin-top: 8px;
-                    height: 4px;
-                    background: #e9ecef;
-                    border-radius: 2px;
-                    overflow: hidden;
-                }
-                
-                .notification-progress-bar {
-                    height: 100%;
-                    background: #007bff;
-                    width: var(--progress-width, 0%);
-                    transition: width 0.3s ease;
-                }
-                
-                .notification-close {
-                    position: absolute;
-                    top: 8px;
-                    right: 8px;
-                    background: none;
-                    border: none;
-                    font-size: 18px;
-                    cursor: pointer;
-                    color: #999;
-                    padding: 4px;
-                    line-height: 1;
-                }
-                
-                .notification-close:hover {
-                    color: #333;
-                }
-                
-                .notification-actions {
-                    margin-top: 12px;
-                    display: flex;
-                    gap: 8px;
-                }
-                
-                .notification-action {
-                    padding: 6px 12px;
-                    border: 1px solid #ddd;
-                    background: white;
-                    border-radius: 4px;
-                    cursor: pointer;
-                    font-size: 12px;
-                    text-decoration: none;
-                    color: #333;
-                }
-                
-                .notification-action:hover {
-                    background: #f8f9fa;
-                }
-                
-                .notification-action.primary {
-                    background: #007bff;
-                    color: white;
-                    border-color: #007bff;
-                }
-                
-                .notification-action.primary:hover {
-                    background: #0056b3;
-                }
-                
-                @keyframes slideInRight {
-                    from { transform: translateX(100%); opacity: 0; }
-                    to { transform: translateX(0); opacity: 1; }
-                }
-                
-                @keyframes slideOutRight {
-                    from { transform: translateX(0); opacity: 1; }
-                    to { transform: translateX(100%); opacity: 0; }
-                }
-                
-                .notification.entering {
-                    animation: slideInRight 0.3s ease;
-                }
-                
-                .notification.exiting {
-                    animation: slideOutRight 0.3s ease;
-                }
-            `;
-            document.head.appendChild(style);
+            const link = document.createElement('link');
+            link.id = 'notification-styles';
+            link.rel = 'stylesheet';
+            link.href = '/static/css/notifications.css';
+            document.head.appendChild(link);
         }
     }
     

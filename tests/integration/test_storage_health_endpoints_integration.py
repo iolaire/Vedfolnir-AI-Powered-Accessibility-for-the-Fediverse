@@ -16,7 +16,7 @@ from flask import Flask
 from unittest.mock import Mock
 
 # Import the storage health endpoints
-from storage_health_endpoints import register_storage_health_endpoints
+from app.services.storage.components.storage_health_endpoints import register_storage_health_endpoints
 
 
 def test_storage_health_endpoints():

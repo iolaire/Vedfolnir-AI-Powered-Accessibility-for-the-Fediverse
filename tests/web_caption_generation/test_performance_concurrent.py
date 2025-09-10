@@ -13,9 +13,9 @@ import time
 from concurrent.futures import ThreadPoolExecutor
 
 from web_caption_generation_service import WebCaptionGenerationService
-from task_queue_manager import TaskQueueManager
+from app.services.task.core.task_queue_manager import TaskQueueManager
 from models import CaptionGenerationTask, TaskStatus, CaptionGenerationSettings
-from database import DatabaseManager
+from app.core.database.core.database_manager import DatabaseManager
 
 class TestConcurrentPerformance(unittest.TestCase):
     """Performance tests for concurrent caption generation scenarios"""

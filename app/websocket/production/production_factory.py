@@ -10,7 +10,7 @@ from flask_socketio import SocketIO
 from ..core.factory import WebSocketFactory
 from ..core.config_manager import ConsolidatedWebSocketConfigManager
 from ..middleware.security_manager import ConsolidatedWebSocketSecurityManager
-from ..services.performance_monitor import ConsolidatedWebSocketPerformanceMonitor
+from app.services.monitoring.performance.monitors.websocket_performance_monitor import ConsolidatedWebSocketPerformanceMonitor
 from ..services.error_handler import ConsolidatedWebSocketErrorHandler
 from ..services.connection_optimizer import ConsolidatedWebSocketConnectionOptimizer
 

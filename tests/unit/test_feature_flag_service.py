@@ -24,8 +24,8 @@ from feature_flag_service import (
     FeatureFlagService, FeatureFlagState, FeatureFlagInfo, FeatureFlagUsageMetrics,
     FeatureFlagError, FeatureFlagNotFoundError
 )
-from configuration_service import ConfigurationValue, ConfigurationSource
-from configuration_event_bus import ConfigurationChangeEvent, EventType
+from app.core.configuration.core.configuration_service import ConfigurationValue, ConfigurationSource
+from app.core.configuration.events.configuration_event_bus import ConfigurationChangeEvent, EventType
 
 
 class TestFeatureFlagService(unittest.TestCase):

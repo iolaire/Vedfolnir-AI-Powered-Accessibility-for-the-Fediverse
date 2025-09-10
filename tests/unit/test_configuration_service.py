@@ -18,11 +18,11 @@ from datetime import datetime, timezone
 # Add project root to path for imports
 sys.path.insert(0, os.path.join(os.path.dirname(__file__), '..', '..'))
 
-from configuration_service import (
+from app.core.configuration.core.configuration_service import (
     ConfigurationService, ConfigurationValue, ConfigurationSource,
     ConfigurationError, ConfigurationNotFoundError, ConfigurationValidationError
 )
-from system_configuration_manager import ConfigurationSchema, ConfigurationDataType, ConfigurationCategory
+from app.core.configuration.core.system_configuration_manager import ConfigurationSchema, ConfigurationDataType, ConfigurationCategory
 
 
 class TestConfigurationService(unittest.TestCase):

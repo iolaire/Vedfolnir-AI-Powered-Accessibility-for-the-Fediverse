@@ -17,8 +17,8 @@ import os
 # Add project root to path for imports
 sys.path.insert(0, os.path.join(os.path.dirname(__file__), '..', '..'))
 
-from task_queue_configuration_adapter import TaskQueueConfigurationAdapter, TaskQueueConfigurationError
-from configuration_service import ConfigurationError
+from app.services.task.configuration.task_queue_configuration_adapter import TaskQueueConfigurationAdapter, TaskQueueConfigurationError
+from app.core.configuration.core.configuration_service import ConfigurationError
 
 
 class TestTaskQueueConfigurationAdapter(unittest.TestCase):

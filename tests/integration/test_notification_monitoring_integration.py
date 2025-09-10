@@ -20,15 +20,15 @@ import sys
 import os
 sys.path.insert(0, os.path.join(os.path.dirname(__file__), '..', '..'))
 
-from notification_system_monitor import NotificationSystemMonitor, AlertSeverity
-from notification_monitoring_dashboard import NotificationMonitoringDashboard
-from notification_websocket_recovery import NotificationWebSocketRecovery, RecoveryStrategy
-from unified_notification_manager import UnifiedNotificationManager
-from websocket_performance_monitor import WebSocketPerformanceMonitor
+from app.services.monitoring.system.notification_monitor import NotificationSystemMonitor, AlertSeverity
+from app.services.notification.components.notification_monitoring_dashboard import NotificationMonitoringDashboard
+from app.services.notification.components.notification_websocket_recovery import NotificationWebSocketRecovery, RecoveryStrategy
+from app.services.notification.manager.unified_manager import UnifiedNotificationManager
+from app.services.monitoring.performance.monitors.websocket_performance_monitor import WebSocketPerformanceMonitor
 from websocket_namespace_manager import WebSocketNamespaceManager
 from websocket_factory import WebSocketFactory
 from websocket_auth_handler import WebSocketAuthHandler
-from database import DatabaseManager
+from app.core.database.core.database_manager import DatabaseManager
 
 
 class TestNotificationMonitoringIntegration(unittest.TestCase):

@@ -20,7 +20,7 @@ from datetime import datetime, timezone, timedelta
 sys.path.insert(0, os.path.join(os.path.dirname(__file__), '..', '..'))
 
 from config import Config
-from database import DatabaseManager
+from app.core.database.core.database_manager import DatabaseManager
 
 
 class TestEnhancedSessionMonitoringResponsiveness(unittest.TestCase):
@@ -355,7 +355,7 @@ class TestEnhancedSessionMonitoringResponsiveness(unittest.TestCase):
         """Test session health checker with responsiveness integration"""
         # Import or mock session health checker
         try:
-            from session_health_checker import SessionHealthChecker
+            from app.services.monitoring.health.checkers.session_health_checker import SessionHealthChecker
         except ImportError:
             # Create mock SessionHealthChecker
             class SessionHealthChecker:

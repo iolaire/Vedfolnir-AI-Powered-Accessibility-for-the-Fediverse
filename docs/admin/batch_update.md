@@ -47,7 +47,7 @@ The batch update service can also be used programmatically:
 
 ```python
 from config import Config
-from batch_update_service import BatchUpdateService
+from app.services.batch.components.batch_update_service import BatchUpdateService
 
 # Load configuration
 config = Config()

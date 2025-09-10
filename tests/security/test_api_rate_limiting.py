@@ -8,7 +8,7 @@ Integration test for API rate limiting with ActivityPubClient.
 import asyncio
 import unittest
 from config import Config
-from activitypub_client import ActivityPubClient
+from app.services.activitypub.components.activitypub_client import ActivityPubClient
 from rate_limiter import get_rate_limiter, RateLimitConfig
 
 class TestAPIRateLimiting(unittest.IsolatedAsyncioTestCase):

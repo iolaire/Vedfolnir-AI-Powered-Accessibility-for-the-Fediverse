@@ -20,7 +20,7 @@ The main session management class that handles all database session operations.
 
 ```python
 from unified_session_manager import UnifiedSessionManager
-from database import DatabaseManager
+from app.core.database.core.database_manager import DatabaseManager
 
 # Initialize unified session manager
 db_manager = DatabaseManager()

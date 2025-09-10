@@ -9,7 +9,7 @@ Tests the fix for "Text can't be blank" error when updating media captions.
 import unittest
 from unittest.mock import Mock, AsyncMock, patch
 import asyncio
-from activitypub_platforms import MastodonPlatform
+from app.services.activitypub.components.activitypub_platforms import MastodonPlatform
 
 class TestMastodonStatusEdit(unittest.TestCase):
     """Test Mastodon status edit functionality"""

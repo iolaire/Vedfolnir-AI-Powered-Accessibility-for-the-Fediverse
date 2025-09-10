@@ -114,7 +114,7 @@ grep -r "session" docs/api/generated/session_*.md
 #### Database Operations
 ```python
 # Pattern found in database.md
-from database import DatabaseManager
+from app.core.database.core.database_manager import DatabaseManager
 from config import Config
 
 config = Config()

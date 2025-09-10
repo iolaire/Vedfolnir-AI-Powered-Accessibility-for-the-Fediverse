@@ -165,7 +165,7 @@ def test_direct_authentication():
         from dotenv import load_dotenv
         load_dotenv()
         from config import Config
-        from database import DatabaseManager
+        from app.core.database.core.database_manager import DatabaseManager
         from services.user_service import UserService
         
         config = Config()

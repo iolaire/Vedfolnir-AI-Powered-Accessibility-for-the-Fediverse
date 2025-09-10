@@ -36,7 +36,7 @@ except Exception as e:
 
 # Verify platform connections
 python -c "
-from database import DatabaseManager
+from app.core.database.core.database_manager import DatabaseManager
 from config import Config
 try:
     db = DatabaseManager(Config())
@@ -291,7 +291,7 @@ sudo tail -n 50 /var/log/redis/redis-server.log | grep -i error
    ```bash
    # Test all platform connections
    python -c "
-   from database import DatabaseManager
+   from app.core.database.core.database_manager import DatabaseManager
    from config import Config
    
    db = DatabaseManager(Config())
@@ -667,7 +667,7 @@ sudo tail -n 50 /var/log/redis/redis-server.log | grep -i error
    # Test password verification
    python -c "
    from werkzeug.security import check_password_hash
-   from database import DatabaseManager
+   from app.core.database.core.database_manager import DatabaseManager
    from config import Config
    db = DatabaseManager(Config())
    user = db.get_user_by_username('admin')

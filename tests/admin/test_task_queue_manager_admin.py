@@ -10,9 +10,9 @@ from unittest.mock import Mock, patch, MagicMock
 from datetime import datetime, timedelta, timezone
 import uuid
 
-from task_queue_manager import TaskQueueManager
+from app.services.task.core.task_queue_manager import TaskQueueManager
 from models import CaptionGenerationTask, TaskStatus, User, UserRole, CaptionGenerationSettings, JobPriority
-from database import DatabaseManager
+from app.core.database.core.database_manager import DatabaseManager
 
 
 class TestTaskQueueManagerAdmin(unittest.TestCase):

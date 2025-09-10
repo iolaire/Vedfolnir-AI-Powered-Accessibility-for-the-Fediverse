@@ -12,7 +12,7 @@ import unittest
 import asyncio
 from unittest.mock import MagicMock, patch, AsyncMock
 from config import ActivityPubConfig
-from activitypub_platforms import (
+from app.services.activitypub.components.activitypub_platforms import (
     ActivityPubPlatform, PixelfedPlatform, MastodonPlatform, PleromaPlatform,
     PlatformAdapterFactory, get_platform_adapter,
     PlatformAdapterError, UnsupportedPlatformError, PlatformDetectionError

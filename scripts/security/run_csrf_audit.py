@@ -19,8 +19,8 @@ from datetime import datetime
 # Add parent directory to path for imports
 sys.path.append(str(Path(__file__).parent.parent.parent))
 
-from security.audit.csrf_template_scanner import CSRFTemplateScanner
-from security.audit.csrf_compliance_validator import (
+from app.core.security.audit.csrf_template_scanner import CSRFTemplateScanner
+from app.core.security.audit.csrf_compliance_validator import (
     CSRFComplianceValidator, SecurityAuditReporter, ContinuousIntegrationValidator
 )
 

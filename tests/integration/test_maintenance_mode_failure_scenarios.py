@@ -24,16 +24,16 @@ import json
 sys.path.insert(0, os.path.join(os.path.dirname(__file__), '..', '..'))
 
 from config import Config
-from database import DatabaseManager
+from app.core.database.core.database_manager import DatabaseManager
 from models import User, UserRole
-from enhanced_maintenance_mode_service import (
+from app.services.maintenance.enhanced.enhanced_maintenance_mode_service import (
     EnhancedMaintenanceModeService, MaintenanceMode, MaintenanceStatus,
     MaintenanceActivationError, SessionInvalidationError
 )
-from maintenance_mode_middleware import MaintenanceModeMiddleware
-from emergency_maintenance_handler import EmergencyMaintenanceHandler
-from maintenance_status_api import MaintenanceStatusAPI
-from configuration_service import ConfigurationService
+from app.services.maintenance.components.maintenance_mode_middleware import MaintenanceModeMiddleware
+from app.services.maintenance.emergency.emergency_maintenance_handler import EmergencyMaintenanceHandler
+from app.services.maintenance.components.maintenance_status_api import MaintenanceStatusAPI
+from app.core.configuration.core.configuration_service import ConfigurationService
 from tests.test_helpers.mock_configurations import MockConfigurationService
 from tests.test_helpers.mock_user_helper import create_test_user_with_platforms, cleanup_test_user
 

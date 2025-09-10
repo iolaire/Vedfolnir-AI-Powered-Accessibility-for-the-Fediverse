@@ -38,7 +38,7 @@ def update_session_platform_fixed(platform_connection_id: int) -> bool:
         logger.info(f"Starting platform update to {platform_connection_id}")
         
         # Get current session ID
-        from session_middleware_v2 import get_current_session_id
+        from app.core.session.middleware.session_middleware import get_current_session_id
         session_id = get_current_session_id()
         if not session_id:
             logger.error("No current session ID found")
@@ -145,7 +145,7 @@ def validate_platform_session(expected_platform_id: Optional[int] = None) -> Dic
         
         # Check Redis session
         try:
-            from session_middleware_v2 import get_current_session_id
+            from app.core.session.middleware.session_middleware import get_current_session_id
             session_id = get_current_session_id()
             if session_id:
                 session_manager = getattr(current_app, 'session_manager', None)
@@ -204,7 +204,7 @@ def debug_session_state() -> Dict[str, Any]:
     }
     
     try:
-        from session_middleware_v2 import get_current_session_id
+        from app.core.session.middleware.session_middleware import get_current_session_id
         session_id = get_current_session_id()
         debug_info['session_id'] = session_id
         

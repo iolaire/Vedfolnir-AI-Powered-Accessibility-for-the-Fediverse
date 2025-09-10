@@ -19,7 +19,7 @@ def fix_file_indentation(filepath):
             line = lines[i]
             
             # Check if this is a notification import that needs fixing
-            if 'from notification_helpers import' in line and not line.strip().startswith('#'):
+            if 'from app.services.notification.helpers.notification_helpers import' in line and not line.strip().startswith('#'):
                 # Check if it's improperly indented
                 if i > 0:
                     prev_line = lines[i-1].strip()

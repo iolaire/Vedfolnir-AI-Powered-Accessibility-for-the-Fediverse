@@ -12,7 +12,7 @@ that involve user sessions and platform connections.
 import unittest
 import os
 from config import Config
-from database import DatabaseManager
+from app.core.database.core.database_manager import DatabaseManager
 from models import UserRole
 from tests.test_helpers import create_test_user_with_platforms, cleanup_test_user
 

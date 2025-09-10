@@ -472,7 +472,7 @@ class ConfigurationMigrator:
         
         try:
             # Check if database migration is needed
-            from database import DatabaseManager
+            from app.core.database.core.database_manager import DatabaseManager
             
             db_manager = DatabaseManager(self.config)
             
@@ -671,7 +671,7 @@ class ConfigurationMigrator:
     def _validate_database_config(self) -> Dict[str, Any]:
         """Validate database configuration"""
         try:
-            from database import DatabaseManager
+            from app.core.database.core.database_manager import DatabaseManager
             
             db_manager = DatabaseManager(self.config)
             

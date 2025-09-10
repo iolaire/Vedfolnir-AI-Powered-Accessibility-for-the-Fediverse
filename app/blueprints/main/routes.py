@@ -5,12 +5,12 @@
 from flask import Blueprint, render_template, redirect, url_for, current_app, request, jsonify, abort
 from flask_login import login_required, current_user
 from models import UserRole, PlatformConnection, User
-from utils.session_detection import has_previous_session, SessionDetectionResult
-from utils.request_helpers import sanitize_user_input
-from utils.error_responses import handle_security_error
-from utils.template_cache import cached_render_template, get_template_cache_stats
-from utils.performance_monitor import monitor_performance, record_database_query
-from utils.landing_page_fallback import (
+from app.utils.session.session_detection import has_previous_session, SessionDetectionResult
+from app.utils.web.request_helpers import sanitize_user_input
+from app.utils.web.error_responses import handle_security_error
+from app.utils.templates.template_cache import cached_render_template, get_template_cache_stats
+from app.services.monitoring.performance.monitors.performance_monitor import monitor_performance, record_database_query
+from app.utils.landing.landing_page_fallback import (
     ensure_system_stability, 
     handle_template_rendering_error,
     handle_session_detection_error,
@@ -21,7 +21,7 @@ from utils.landing_page_fallback import (
     TemplateRenderingError,
     SessionDetectionError
 )
-from security_decorators import conditional_rate_limit, conditional_enhanced_input_validation
+from app.core.security.core.decorators import conditional_rate_limit, conditional_enhanced_input_validation
 import logging
 import traceback
 
@@ -353,7 +353,7 @@ def profile():
     from forms.user_management_forms import ProfileEditForm
     from models import User
     from unified_session_manager import unified_session_manager
-    from notification_helpers import send_success_notification, send_error_notification
+    from app.services.notification.helpers.notification_helpers import send_success_notification, send_error_notification
     import logging
     
     logger = logging.getLogger(__name__)
@@ -362,7 +362,7 @@ def profile():
     # Pre-populate form with fresh user data from database for GET requests
     if request.method == 'GET':
         # Get fresh user data from database to ensure we have latest changes
-        from database import DatabaseManager
+        from app.core.database.core.database_manager import DatabaseManager
         from config import Config
         
         config = Config()
@@ -394,7 +394,7 @@ def profile():
             logger.info("Form validation successful, attempting to update profile")
             try:
                 # Use a direct database session to ensure we get the latest user data
-                from database import DatabaseManager
+                from app.core.database.core.database_manager import DatabaseManager
                 from config import Config
                 
                 config = Config()

@@ -10,13 +10,13 @@ from typing import Dict, Any, Optional, List
 from sqlalchemy.orm import Session
 from sqlalchemy import and_, or_
 
-from database import DatabaseManager
+from app.core.database.core.database_manager import DatabaseManager
 from models import (
     User, UserRole, CaptionGenerationTask, TaskStatus, JobPriority, 
     SystemConfiguration, JobAuditLog
 )
-from system_monitor import ResourceUsage
-from rate_limiter import RateLimitConfig
+from app.services.monitoring.core.system_monitor import ResourceUsage
+from app.core.security.core.rate_limiter import RateLimitConfig
 
 logger = logging.getLogger(__name__)
 

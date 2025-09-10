@@ -11,8 +11,8 @@ from unittest.mock import Mock, AsyncMock, patch
 from dataclasses import dataclass
 from typing import Optional
 
-from activitypub_client import ActivityPubClient
-from activitypub_platforms import PlatformAdapterFactory, PixelfedPlatform, MastodonPlatform
+from app.services.activitypub.components.activitypub_client import ActivityPubClient
+from app.services.activitypub.components.activitypub_platforms import PlatformAdapterFactory, PixelfedPlatform, MastodonPlatform
 from config import RetryConfig, RateLimitConfig
 
 @dataclass

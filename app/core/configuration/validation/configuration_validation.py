@@ -922,7 +922,7 @@ class ConfigurationValidator:
     
     def validate_single_value(self, key: str, value: Any, schema) -> 'ValidationResult':
         """Validate a single configuration value against its schema"""
-        from system_configuration_manager import ConfigurationDataType
+        from app.core.configuration.core.system_configuration_manager import ConfigurationDataType
         
         errors = []
         warnings = []

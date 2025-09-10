@@ -233,7 +233,7 @@ class TestDatabaseManagerPatchingStrategies(unittest.TestCase):
             MockDatabaseManager.return_value = mock_instance
             
             # Import and create instance
-            from database import DatabaseManager
+            from app.core.database.core.database_manager import DatabaseManager
             from config import Config
             
             config = Config()

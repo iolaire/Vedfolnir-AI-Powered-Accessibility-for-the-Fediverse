@@ -17,8 +17,8 @@ from datetime import datetime, timezone
 from enum import Enum
 import uuid
 
-from configuration_service import ConfigurationService
-from configuration_event_bus import ConfigurationEventBus, EventType, ConfigurationChangeEvent
+from app.core.configuration.core.configuration_service import ConfigurationService
+from app.core.configuration.events.configuration_event_bus import ConfigurationEventBus, EventType, ConfigurationChangeEvent
 
 logger = logging.getLogger(__name__)
 

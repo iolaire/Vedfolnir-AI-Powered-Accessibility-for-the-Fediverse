@@ -9,12 +9,8 @@
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <meta name="csrf-token" content="{{ csrf_token }}">
     
-    <!-- Security Headers -->
-    <meta http-equiv="X-Content-Type-Options" content="nosniff">
-    <meta http-equiv="X-Frame-Options" content="DENY">
-    <meta http-equiv="X-XSS-Protection" content="1; mode=block">
-    <meta http-equiv="Referrer-Policy" content="strict-origin-when-cross-origin">
-    <meta http-equiv="Permissions-Policy" content="geolocation=(), microphone=(), camera=()">
+    <!-- Security Headers (Note: Security headers are set via HTTP headers in SecurityMiddleware) -->
+    <!-- Keeping only CSRF token meta tag for JavaScript access -->>
     <title>{% block title %}Vedfolnir{% endblock %}</title>
     
     <!-- Performance Optimizations -->

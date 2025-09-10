@@ -346,7 +346,7 @@ def example_test_with_patched_class():
     
     with patch_database_manager_class() as MockDatabaseManager:
         # Import and create a new database manager instance
-        from database import DatabaseManager
+        from app.core.database.core.database_manager import DatabaseManager
         from config import Config
         
         config = Config()

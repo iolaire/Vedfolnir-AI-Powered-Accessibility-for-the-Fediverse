@@ -7,7 +7,7 @@ Direct test of cleanup functionality without web interface
 """
 
 from config import Config
-from database import DatabaseManager
+from app.core.database.core.database_manager import DatabaseManager
 
 def test_cleanup_direct():
     """Test cleanup functionality directly"""
@@ -88,7 +88,7 @@ def test_web_route_simulation():
     try:
         # Simulate the admin_cleanup_runs route
         from config import Config
-        from database import DatabaseManager
+        from app.core.database.core.database_manager import DatabaseManager
         from data_cleanup import DataCleanupManager
         
         # Simulate form data

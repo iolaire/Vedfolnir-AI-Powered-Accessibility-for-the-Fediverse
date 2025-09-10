@@ -17,7 +17,7 @@ from sqlalchemy.orm import sessionmaker
 from models import Base, User, UserRole, UserAuditLog
 from services.gdpr_service import GDPRService
 from config import Config
-from database import DatabaseManager
+from app.core.database.core.database_manager import DatabaseManager
 
 class TestGDPRService(unittest.TestCase):
     """Test GDPR Service functionality"""

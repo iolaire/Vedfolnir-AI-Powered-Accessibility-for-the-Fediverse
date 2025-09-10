@@ -31,7 +31,7 @@ except ImportError:
     MimeText = None
     MimeMultipart = None
 
-from database import DatabaseManager
+from app.core.database.core.database_manager import DatabaseManager
 from models import User, UserRole, AlertType as ModelAlertType, AlertSeverity as ModelAlertSeverity
 from config import Config
 
@@ -192,8 +192,8 @@ class AlertManager:
     def _initialize_configuration_integration(self):
         """Initialize configuration service integration"""
         try:
-            from alert_configuration_adapter import AlertConfigurationAdapter
-            from configuration_event_bus import ConfigurationEventBus
+            from app.core.configuration.adapters.alert_configuration_adapter import AlertConfigurationAdapter
+            from app.core.configuration.events.configuration_event_bus import ConfigurationEventBus
             
             # Create event bus if not provided
             event_bus = getattr(self.configuration_service, 'event_bus', None)

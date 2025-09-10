@@ -33,14 +33,14 @@ def admin_required(f):
     def decorated_function(*args, **kwargs):
         if not current_user.is_authenticated:
             # Send info notification
-            from notification_helpers import send_info_notification
+            from app.services.notification.helpers.notification_helpers import send_info_notification
             send_info_notification("Please log in to access the admin interface.", "Information")
             return redirect(url_for('user_management.login', next=request.url))
         
         if current_user.role != UserRole.ADMIN:
             logger.warning(f"Non-admin user {current_user.id} attempted to access admin function {f.__name__}")
             # Send error notification
-            from notification_helpers import send_error_notification
+            from app.services.notification.helpers.notification_helpers import send_error_notification
             send_error_notification("Access denied. Administrator privileges required.", "Error")
             
             # Log security event
@@ -91,7 +91,7 @@ def admin_required(f):
         except Exception as e:
             logger.error(f"Error in admin access control for {f.__name__}: {e}")
             # Send error notification
-            from notification_helpers import send_error_notification
+            from app.services.notification.helpers.notification_helpers import send_error_notification
             send_error_notification("An error occurred while accessing the admin interface.", "Error")
             return redirect(url_for('main.index'))
     
@@ -170,7 +170,7 @@ def admin_session_preservation(f):
                     logger.error(f"Failed to restore admin session after error: {restore_error}")
             
             # Send error notification
-            from notification_helpers import send_error_notification
+            from app.services.notification.helpers.notification_helpers import send_error_notification
             send_error_notification("An error occurred during the admin operation.", "Error")
             return redirect(url_for('admin.user_management'))
     
@@ -315,7 +315,7 @@ def ensure_admin_count(f):
                             }), 400
                         else:
                             # Send error notification
-                            from notification_helpers import send_error_notification
+                            from app.services.notification.helpers.notification_helpers import send_error_notification
                             send_error_notification("Cannot delete or modify the last administrator account.", "Error")
                             return redirect(url_for('admin.user_management'))
                 finally:
@@ -326,7 +326,7 @@ def ensure_admin_count(f):
                     return jsonify({'success': False, 'error': 'Error validating admin count'}), 500
                 else:
                     # Send error notification
-                    from notification_helpers import send_error_notification
+                    from app.services.notification.helpers.notification_helpers import send_error_notification
                     send_error_notification("Error validating admin count.", "Error")
                     return redirect(url_for('admin.user_management'))
         

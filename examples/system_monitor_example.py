@@ -13,8 +13,8 @@ import asyncio
 import logging
 from datetime import datetime, timezone
 from config import Config
-from database import DatabaseManager
-from system_monitor import SystemMonitor
+from app.core.database.core.database_manager import DatabaseManager
+from app.services.monitoring.system.system_monitor import SystemMonitor
 import redis
 
 # Set up logging

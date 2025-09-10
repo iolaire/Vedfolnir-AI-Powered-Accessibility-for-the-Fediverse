@@ -16,7 +16,7 @@ from pathlib import Path
 # Add project root to path
 sys.path.insert(0, os.path.join(os.path.dirname(__file__), '..', '..'))
 
-from security.config.strict_csp_config import StrictCSPConfig
+from app.core.security.config.strict_csp_config import StrictCSPConfig
 
 
 def setup_logging(verbose=False):
@@ -161,7 +161,7 @@ class CSPTestConfig(Config):
         Config.init_app(app)
         
         # Enable CSP testing middleware
-        from security.config.strict_csp_config import CSPTestingMiddleware
+        from app.core.security.config.strict_csp_config import CSPTestingMiddleware
         
         csp_middleware = CSPTestingMiddleware(
             app=app,

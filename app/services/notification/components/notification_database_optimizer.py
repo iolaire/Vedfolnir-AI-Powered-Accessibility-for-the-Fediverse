@@ -26,7 +26,7 @@ from sqlalchemy.orm import sessionmaker
 from sqlalchemy.pool import QueuePool
 from sqlalchemy.engine import Engine
 
-from database import DatabaseManager
+from app.core.database.core.database_manager import DatabaseManager
 from models import NotificationStorage, NotificationType, NotificationPriority, NotificationCategory
 
 logger = logging.getLogger(__name__)

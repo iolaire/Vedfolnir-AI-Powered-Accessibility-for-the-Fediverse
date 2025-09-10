@@ -159,6 +159,6 @@ def create_session_cookie_manager(app_config: dict) -> SessionCookieManager:
     if not cookie_manager.validate_cookie_security():
         logger.warning("Session cookie security validation failed")
     
-    from security.core.security_utils import sanitize_for_log
+    from app.core.security.core.security_utils import sanitize_for_log
     logger.info(f"Created session cookie manager: {sanitize_for_log(cookie_name)}, max_age={sanitize_for_log(str(max_age))}, secure={sanitize_for_log(str(secure))}")
     return cookie_manager

@@ -17,7 +17,7 @@ from concurrent.futures import ThreadPoolExecutor, as_completed
 from unittest.mock import MagicMock, patch
 
 from unified_session_manager import UnifiedSessionManager
-from database import DatabaseManager
+from app.core.database.core.database_manager import DatabaseManager
 from models import User, PlatformConnection, UserSession
 
 class SessionConsolidationLoadTest(unittest.TestCase):

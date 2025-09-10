@@ -359,7 +359,7 @@ Main session management class using database as single source of truth.
 
 ```python
 from unified_session_manager import UnifiedSessionManager
-from database import DatabaseManager
+from app.core.database.core.database_manager import DatabaseManager
 
 session_manager = UnifiedSessionManager(db_manager)
 ```

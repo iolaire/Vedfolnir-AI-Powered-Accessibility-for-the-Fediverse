@@ -23,9 +23,9 @@ from concurrent.futures import ThreadPoolExecutor, as_completed
 import sys
 sys.path.insert(0, os.path.join(os.path.dirname(__file__), '..', '..'))
 
-from storage_monitor_service import StorageMonitorService, StorageMetrics
-from storage_configuration_service import StorageConfigurationService
-from storage_limit_enforcer import StorageLimitEnforcer
+from app.services.storage.components.storage_monitor_service import StorageMonitorService, StorageMetrics
+from app.services.storage.components.storage_configuration_service import StorageConfigurationService
+from app.services.storage.components.storage_limit_enforcer import StorageLimitEnforcer
 
 
 class TestStorageCalculationPerformance(unittest.TestCase):

@@ -13,7 +13,7 @@ from unittest.mock import Mock, MagicMock, patch
 from sqlalchemy.orm import Session
 from sqlalchemy.exc import SQLAlchemyError
 
-from platform_context import PlatformContextManager, PlatformContext, PlatformContextError
+from app.services.platform.core.platform_context import PlatformContextManager, PlatformContext, PlatformContextError
 from models import User, PlatformConnection
 
 class TestPlatformContextErrorHandling(unittest.TestCase):

@@ -17,9 +17,9 @@ from dataclasses import dataclass
 from datetime import datetime, timezone, timedelta
 from enum import Enum
 
-from task_queue_manager import TaskQueueManager
+from app.services.task.core.task_queue_manager import TaskQueueManager
 from models import User, UserRole, TaskStatus, CaptionGenerationTask
-from database import DatabaseManager
+from app.core.database.core.database_manager import DatabaseManager
 
 logger = logging.getLogger(__name__)
 

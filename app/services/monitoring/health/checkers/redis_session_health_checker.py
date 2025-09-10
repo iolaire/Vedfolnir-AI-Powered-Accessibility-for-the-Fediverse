@@ -17,12 +17,12 @@ from enum import Enum
 from logging import getLogger
 
 from models import UserSession, User, PlatformConnection
-from database import DatabaseManager
-from unified_session_manager import UnifiedSessionManager
-from session_manager import SessionManager
-from session_monitoring import get_session_monitor
-from session_config import get_session_config
-from security.core.security_utils import sanitize_for_log
+from app.core.database.core.database_manager import DatabaseManager
+from app.core.session.manager import UnifiedSessionManager
+from app.core.session.core.session_manager import SessionManager
+from app.core.session.health.session_monitoring import get_session_monitor
+from app.core.session.config import get_session_config
+from app.core.security.core.security_utils import sanitize_for_log
 
 logger = getLogger(__name__)
 

@@ -22,8 +22,8 @@ import json
 # Add project root to path for imports
 sys.path.insert(0, os.path.join(os.path.dirname(__file__), '..', '..'))
 
-from enhanced_maintenance_mode_service import EnhancedMaintenanceModeService
-from maintenance_procedure_validator import MaintenanceProcedureValidator
+from app.services.maintenance.enhanced.enhanced_maintenance_mode_service import EnhancedMaintenanceModeService
+from app.services.maintenance.components.maintenance_procedure_validator import MaintenanceProcedureValidator
 from test_mode_monitor import (
     TestModeMonitor,
     TestModeStatus,
@@ -193,7 +193,7 @@ class TestTestModeMonitor(unittest.TestCase):
         
         # Mock validation result
         with patch.object(self.validator, 'validate_maintenance_procedures') as mock_validate:
-            from maintenance_procedure_validator import ValidationResult
+            from app.services.maintenance.components.maintenance_procedure_validator import ValidationResult
             mock_result = Mock(spec=ValidationResult)
             mock_result.overall_status = "PASS"
             mock_result.total_tests_run = 10

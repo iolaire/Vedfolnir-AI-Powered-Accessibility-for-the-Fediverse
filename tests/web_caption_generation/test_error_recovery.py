@@ -12,7 +12,7 @@ from datetime import datetime, timezone
 
 from error_recovery_manager import ErrorRecoveryManager, ErrorCategory, RecoveryStrategy
 from models import CaptionGenerationTask, TaskStatus, User, PlatformConnection
-from database import DatabaseManager
+from app.core.database.core.database_manager import DatabaseManager
 
 class TestErrorRecoverySystem(unittest.TestCase):
     """Tests for error recovery and handling system"""

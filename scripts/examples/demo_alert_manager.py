@@ -11,9 +11,9 @@ alert system including alert generation, acknowledgment, and reporting.
 
 import time
 from config import Config
-from database import DatabaseManager
+from app.core.database.core.database_manager import DatabaseManager
 from models import User, UserRole
-from alert_manager import (
+from app.services.alerts.components.alert_manager import (
     AlertManager, AlertType, AlertSeverity,
     alert_job_failure, alert_repeated_failures, alert_resource_low,
     alert_ai_service_down, alert_queue_backup

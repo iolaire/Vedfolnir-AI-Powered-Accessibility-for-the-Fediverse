@@ -24,10 +24,10 @@ from feature_flag_decorators import (
     FeatureFlagMiddleware, require_feature_flag, batch_processing_required,
     advanced_monitoring_required, auto_retry_required
 )
-from batch_update_service import BatchUpdateService
-from task_queue_manager import TaskQueueManager
+from app.services.batch.components.batch_update_service import BatchUpdateService
+from app.services.task.core.task_queue_manager import TaskQueueManager
 from advanced_monitoring_service import AdvancedMonitoringService
-from configuration_service import ConfigurationService, ConfigurationValue, ConfigurationSource
+from app.core.configuration.core.configuration_service import ConfigurationService, ConfigurationValue, ConfigurationSource
 
 
 class TestFeatureFlagEnforcement(unittest.TestCase):
@@ -70,7 +70,7 @@ class TestFeatureFlagEnforcement(unittest.TestCase):
             self.assertTrue(result)
             
             # Test service initialization with mocked DatabaseManager
-            with patch('batch_update_service.DatabaseManager', return_value=self.mock_db_manager):
+            with patch('app.services.batch.components.batch_update_service.DatabaseManager', return_value=self.mock_db_manager):
                 batch_service = BatchUpdateService(self.mock_config, self.feature_service)
                 self.assertIsNotNone(batch_service.feature_service)
                 self.assertIsNotNone(batch_service.feature_middleware)
@@ -87,7 +87,7 @@ class TestFeatureFlagEnforcement(unittest.TestCase):
         """Test BatchUpdateService behavior when feature flag is disabled"""
         # Disable batch processing
         with patch.object(self.feature_service, 'is_enabled', return_value=False):
-            with patch('batch_update_service.DatabaseManager', return_value=self.mock_db_manager):
+            with patch('app.services.batch.components.batch_update_service.DatabaseManager', return_value=self.mock_db_manager):
                 batch_service = BatchUpdateService(self.mock_config, self.feature_service)
                 
                 # Run batch update - should return early with feature disabled message
@@ -301,7 +301,7 @@ class TestFeatureFlagEnforcement(unittest.TestCase):
         )
         
         # Simulate configuration change
-        from configuration_event_bus import ConfigurationChangeEvent, EventType
+        from app.core.configuration.events.configuration_event_bus import ConfigurationChangeEvent, EventType
         
         change_event = ConfigurationChangeEvent(
             event_type=EventType.CONFIGURATION_CHANGED,

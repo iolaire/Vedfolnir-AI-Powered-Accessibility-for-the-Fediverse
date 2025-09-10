@@ -19,9 +19,9 @@ from logging import getLogger
 from collections import defaultdict, deque
 from threading import Lock
 
-from session_health_checker import SessionHealthChecker, SessionHealthStatus
-from session_config import get_session_config
-from security.core.security_utils import sanitize_for_log
+from app.services.monitoring.health.checkers.session_health_checker import SessionHealthChecker, SessionHealthStatus
+from app.core.session.config import get_session_config
+from app.core.security.core.security_utils import sanitize_for_log
 
 logger = getLogger(__name__)
 

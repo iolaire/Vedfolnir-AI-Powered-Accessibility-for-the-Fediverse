@@ -28,7 +28,7 @@ sys.path.insert(0, os.path.join(os.path.dirname(__file__), '..', '..'))
 from flask import Flask
 from flask_socketio import SocketIO, emit, disconnect
 from config import Config
-from database import DatabaseManager
+from app.core.database.core.database_manager import DatabaseManager
 from models import User, UserRole
 from websocket_config_manager import WebSocketConfigManager
 from websocket_cors_manager import CORSManager

@@ -22,9 +22,9 @@ import os
 sys.path.insert(0, os.path.join(os.path.dirname(__file__), '..'))
 
 from config import Config
-from database import DatabaseManager
+from app.core.database.core.database_manager import DatabaseManager
 from page_notification_integrator import PageNotificationIntegrator, PageType, PageNotificationConfig
-from routes.page_notification_routes import register_page_notification_routes
+from app.blueprints.api.page_notification_routes import register_page_notification_routes
 
 
 class TestPageNotificationIntegrator(unittest.TestCase):

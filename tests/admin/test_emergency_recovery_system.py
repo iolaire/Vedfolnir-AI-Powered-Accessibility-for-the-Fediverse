@@ -21,15 +21,15 @@ from datetime import datetime, timezone
 # Add project root to path
 sys.path.insert(0, os.path.join(os.path.dirname(__file__), '..'))
 
-from notification_emergency_recovery import (
+from app.services.notification.components.notification_emergency_recovery import (
     NotificationEmergencyRecovery, EmergencyLevel, RecoveryAction, FailureType,
     EmergencyEvent, RecoveryPlan
 )
-from unified_notification_manager import UnifiedNotificationManager
+from app.services.notification.manager.unified_manager import UnifiedNotificationManager
 from websocket_factory import WebSocketFactory
 from websocket_auth_handler import WebSocketAuthHandler
 from websocket_namespace_manager import WebSocketNamespaceManager
-from database import DatabaseManager
+from app.core.database.core.database_manager import DatabaseManager
 
 
 class TestEmergencyRecoverySystem(unittest.TestCase):

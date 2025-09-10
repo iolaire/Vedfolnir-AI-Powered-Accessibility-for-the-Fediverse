@@ -293,10 +293,10 @@ import uuid
 from datetime import datetime, timezone
 from unittest.mock import Mock, patch
 
-from unified_notification_manager import UnifiedNotificationManager, NotificationMessage
+from app.services.notification.core.unified_notification_manager import UnifiedNotificationManager, NotificationMessage
 from notification_service_adapters import StorageNotificationAdapter, PlatformNotificationAdapter
 from models import NotificationType, NotificationCategory, NotificationPriority
-from database import DatabaseManager
+from app.core.database.core.database_manager import DatabaseManager
 from config import Config
 
 class TestUnifiedNotificationSystem(unittest.TestCase):

@@ -15,7 +15,7 @@ import os
 # Add project root to path for imports
 sys.path.insert(0, os.path.join(os.path.dirname(__file__), '..', '..'))
 
-from maintenance_session_manager import (
+from app.services.maintenance.components.maintenance_session_manager import (
     MaintenanceSessionManager, SessionInfo, SessionInvalidationError
 )
 from models import User, UserRole

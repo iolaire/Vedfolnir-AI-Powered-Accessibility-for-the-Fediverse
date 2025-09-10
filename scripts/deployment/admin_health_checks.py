@@ -28,7 +28,7 @@ from dotenv import load_dotenv
 load_dotenv()
 
 from config import Config
-from database import DatabaseManager
+from app.core.database.core.database_manager import DatabaseManager
 
 # Configure logging
 logging.basicConfig(
@@ -427,7 +427,7 @@ class AdminHealthChecker:
             monitoring_components = []
             
             try:
-                from system_monitor import SystemMonitor
+                from app.services.monitoring.system.system_monitor import SystemMonitor
                 monitoring_components.append('SystemMonitor')
             except ImportError:
                 pass
@@ -488,7 +488,7 @@ class AdminHealthChecker:
             alert_components = []
             
             try:
-                from alert_manager import AlertManager
+                from app.services.alerts.components.alert_manager import AlertManager
                 alert_components.append('AlertManager')
             except ImportError:
                 pass

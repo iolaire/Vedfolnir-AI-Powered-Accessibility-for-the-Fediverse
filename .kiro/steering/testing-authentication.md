@@ -37,7 +37,7 @@ def create_authenticated_session(base_url="http://127.0.0.1:5000", username="adm
 ### 2. Direct Database Testing
 ```python
 from config import Config
-from database import DatabaseManager
+from app.core.database.core.database_manager import DatabaseManager
 from models import User
 import getpass
 

@@ -10,7 +10,7 @@ sys.path.append('.')
 from web_app import app
 from flask import url_for
 from models import User, UserRole
-from database import DatabaseManager
+from app.core.database.core.database_manager import DatabaseManager
 from config import Config
 from bs4 import BeautifulSoup
 

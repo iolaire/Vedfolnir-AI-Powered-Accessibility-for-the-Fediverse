@@ -20,7 +20,7 @@ from datetime import datetime, timezone
 from flask import current_app
 from flask_login import current_user
 
-from platform_management_notification_integration import (
+from app.services.platform.integration.platform_management_notification_integration import (
     PlatformManagementNotificationService,
     get_platform_notification_service
 )
@@ -425,7 +425,7 @@ class PlatformErrorHandler:
                 )
             else:
                 # Send general platform error notification
-                from platform_management_notification_integration import (
+                from app.services.platform.integration.platform_management_notification_integration import (
                     create_platform_operation_result
                 )
                 

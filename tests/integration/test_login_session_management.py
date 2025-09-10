@@ -31,7 +31,7 @@ from werkzeug.wrappers import Response
 sys.path.insert(0, os.path.dirname(os.path.dirname(os.path.abspath(__file__))))
 
 from config import Config
-from database import DatabaseManager
+from app.core.database.core.database_manager import DatabaseManager
 from models import User, PlatformConnection, UserRole
 from request_scoped_session_manager import RequestScopedSessionManager
 from session_manager_v2 import SessionManagerV2 as SessionManager
@@ -169,7 +169,7 @@ class TestLoginSessionManagement(unittest.TestCase):
             submit = SubmitField('Login')
         
         # Import required functions
-        from security.core.security_utils import sanitize_for_log
+        from app.core.security.core.security_utils import sanitize_for_log
         from sqlalchemy.orm import joinedload
         
         # Define the updated login route

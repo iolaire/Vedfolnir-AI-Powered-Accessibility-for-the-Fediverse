@@ -18,7 +18,7 @@ from dataclasses import dataclass
 from flask import current_app
 from flask_login import current_user
 
-from unified_notification_manager import (
+from app.services.notification.manager.unified_manager import (
     UnifiedNotificationManager, NotificationMessage, SystemNotificationMessage
 )
 from models import NotificationType, NotificationPriority, NotificationCategory

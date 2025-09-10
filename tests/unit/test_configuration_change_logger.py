@@ -17,7 +17,7 @@ import os
 # Add project root to path for imports
 sys.path.insert(0, os.path.join(os.path.dirname(__file__), '..', '..'))
 
-from configuration_change_logger import (
+from app.core.configuration.monitoring.configuration_change_logger import (
     ConfigurationChangeLogger,
     ConfigurationChange,
     SystemBehaviorSnapshot,

@@ -14,10 +14,10 @@ from typing import Dict, Any, Optional, List, Callable
 from dataclasses import dataclass
 from datetime import datetime, timezone
 
-from alert_manager import AlertManager, AlertThresholds, NotificationChannel, NotificationConfig
-from configuration_service import ConfigurationService, ConfigurationError
-from configuration_event_bus import ConfigurationEventBus, ConfigurationChangeEvent, EventType
-from alert_threshold_validator import AlertThresholdValidator, ValidationResult, ValidationSeverity
+from app.services.alerts.components.alert_manager import AlertManager, AlertThresholds, NotificationChannel, NotificationConfig
+from app.core.configuration.core.configuration_service import ConfigurationService, ConfigurationError
+from app.core.configuration.events.configuration_event_bus import ConfigurationEventBus, ConfigurationChangeEvent, EventType
+from app.services.alerts.components.alert_threshold_validator import AlertThresholdValidator, ValidationResult, ValidationSeverity
 
 logger = logging.getLogger(__name__)
 

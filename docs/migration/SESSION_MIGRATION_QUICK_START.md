@@ -28,7 +28,7 @@ Update these key files manually:
 #### web_app.py
 ```python
 # BEFORE
-from session_manager import SessionManager, get_current_platform_context
+from app.core.session.core.session_manager import SessionManager, get_current_platform_context
 session_manager = SessionManager(db_manager)
 
 # AFTER  
@@ -39,7 +39,7 @@ from unified_session_manager import get_current_platform_context
 #### session_health_checker.py
 ```python
 # BEFORE
-from session_manager import SessionManager
+from app.core.session.core.session_manager import SessionManager
 def get_session_health_checker(db_manager: DatabaseManager, session_manager: SessionManager):
 
 # AFTER
@@ -98,7 +98,7 @@ mv session_manager_compat.py session_manager.py
 ### Import Changes
 ```python
 # OLD
-from session_manager import SessionManager, get_current_platform_context
+from app.core.session.core.session_manager import SessionManager, get_current_platform_context
 
 # NEW  
 from unified_session_manager import UnifiedSessionManager, get_current_platform_context

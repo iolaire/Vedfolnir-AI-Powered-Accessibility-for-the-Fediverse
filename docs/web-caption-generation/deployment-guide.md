@@ -585,8 +585,8 @@ systemctl status vedfolnir-worker
 
 # Monitor task queue
 python -c "
-from task_queue_manager import TaskQueueManager
-from database import DatabaseManager
+from app.services.task.core.task_queue_manager import TaskQueueManager
+from app.core.database.core.database_manager import DatabaseManager
 from config import Config
 manager = TaskQueueManager(DatabaseManager(Config()))
 print(manager.get_queue_stats())

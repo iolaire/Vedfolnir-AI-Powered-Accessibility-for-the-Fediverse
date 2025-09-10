@@ -15,7 +15,7 @@ curl -s http://localhost:5000/health/detailed | jq
 
 # Check database connectivity
 python -c "
-from database import DatabaseManager
+from app.core.database.core.database_manager import DatabaseManager
 from config import Config
 try:
     db = DatabaseManager(Config())
@@ -54,7 +54,7 @@ netstat -tlnp | grep :5000
 # Check for active tasks
 python -c "
 from web_caption_generation_service import WebCaptionGenerationService
-from database import DatabaseManager
+from app.core.database.core.database_manager import DatabaseManager
 from config import Config
 service = WebCaptionGenerationService(DatabaseManager(Config()))
 stats = service.get_service_stats()
@@ -64,8 +64,8 @@ print(f'Active sessions: {stats[\"active_progress_sessions\"]}')
 
 # Check task queue
 python -c "
-from task_queue_manager import TaskQueueManager
-from database import DatabaseManager
+from app.services.task.core.task_queue_manager import TaskQueueManager
+from app.core.database.core.database_manager import DatabaseManager
 from config import Config
 manager = TaskQueueManager(DatabaseManager(Config()))
 print('Queue statistics:', manager.get_queue_stats())
@@ -78,8 +78,8 @@ print('Queue statistics:', manager.get_queue_stats())
 ```bash
 # Cancel all active tasks for a user
 python -c "
-from task_queue_manager import TaskQueueManager
-from database import DatabaseManager
+from app.services.task.core.task_queue_manager import TaskQueueManager
+from app.core.database.core.database_manager import DatabaseManager
 from config import Config
 manager = TaskQueueManager(DatabaseManager(Config()))
 # Replace USER_ID with actual user ID
@@ -109,7 +109,7 @@ python background_worker.py &
 ```bash
 # Emergency: Clear all queued tasks
 python -c "
-from database import DatabaseManager
+from app.core.database.core.database_manager import DatabaseManager
 from config import Config
 from models import CaptionGenerationTask, TaskStatus
 db = DatabaseManager(Config())
@@ -186,7 +186,7 @@ sudo ufw allow 5000  # If needed for testing
 ```bash
 # Test platform connections
 python -c "
-from database import DatabaseManager
+from app.core.database.core.database_manager import DatabaseManager
 from config import Config
 from models import PlatformConnection
 db = DatabaseManager(Config())
@@ -333,8 +333,8 @@ sqlite3 storage/database/vedfolnir.db "REINDEX;"
 ```bash
 # Clean up old completed tasks
 python -c "
-from task_queue_manager import TaskQueueManager
-from database import DatabaseManager
+from app.services.task.core.task_queue_manager import TaskQueueManager
+from app.core.database.core.database_manager import DatabaseManager
 from config import Config
 manager = TaskQueueManager(DatabaseManager(Config()))
 cleaned = manager.cleanup_completed_tasks(older_than_hours=168)  # 1 week
@@ -425,8 +425,8 @@ print('Flask secret key set:', bool(os.getenv('FLASK_SECRET_KEY')))
 
 # Check active sessions
 python -c "
-from session_manager import SessionManager
-from database import DatabaseManager
+from app.core.session.core.session_manager import SessionManager
+from app.core.database.core.database_manager import DatabaseManager
 from config import Config
 sm = SessionManager(DatabaseManager(Config()))
 # This would require implementing session listing
@@ -449,7 +449,7 @@ export FLASK_SECRET_KEY=$(python -c "import secrets; print(secrets.token_hex(32)
 ```bash
 # Clear all sessions (users will need to re-login)
 python -c "
-from database import DatabaseManager
+from app.core.database.core.database_manager import DatabaseManager
 from config import Config
 from models import UserSession
 db = DatabaseManager(Config())
@@ -493,7 +493,7 @@ sudo systemctl stop vedfolnir-worker
 
 # Clear stuck tasks
 python -c "
-from database import DatabaseManager
+from app.core.database.core.database_manager import DatabaseManager
 from config import Config
 from models import CaptionGenerationTask, TaskStatus
 db = DatabaseManager(Config())

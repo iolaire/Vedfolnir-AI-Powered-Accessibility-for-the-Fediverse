@@ -19,8 +19,8 @@ from datetime import datetime, timezone
 from dataclasses import dataclass
 from enum import Enum
 
-from configuration_service import ConfigurationService, ConfigurationError
-from task_queue_manager import TaskQueueManager
+from app.core.configuration.core.configuration_service import ConfigurationService, ConfigurationError
+from app.services.task.core.task_queue_manager import TaskQueueManager
 from models import JobPriority
 
 logger = logging.getLogger(__name__)

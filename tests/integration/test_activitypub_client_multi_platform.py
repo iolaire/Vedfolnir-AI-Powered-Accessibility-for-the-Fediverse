@@ -17,8 +17,8 @@ from dataclasses import dataclass
 from typing import Dict, List, Any, Optional
 
 # Import the classes we're testing
-from activitypub_client import ActivityPubClient
-from activitypub_platforms import (
+from app.services.activitypub.components.activitypub_client import ActivityPubClient
+from app.services.activitypub.components.activitypub_platforms import (
     PlatformAdapterFactory, 
     PlatformAdapterError, 
     PixelfedPlatform, 

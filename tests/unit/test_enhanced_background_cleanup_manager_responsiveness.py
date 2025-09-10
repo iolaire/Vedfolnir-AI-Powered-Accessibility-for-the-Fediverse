@@ -21,8 +21,8 @@ from datetime import datetime, timezone
 sys.path.insert(0, os.path.join(os.path.dirname(__file__), '..', '..'))
 
 from config import Config
-from database import DatabaseManager
-from background_cleanup_manager import BackgroundCleanupManager
+from app.core.database.core.database_manager import DatabaseManager
+from app.services.task.core.background_cleanup_manager import BackgroundCleanupManager
 
 
 class TestEnhancedBackgroundCleanupManagerResponsiveness(unittest.TestCase):

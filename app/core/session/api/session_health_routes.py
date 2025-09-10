@@ -15,8 +15,8 @@ from datetime import datetime, timezone, timedelta
 from typing import Dict, Any
 
 from models import UserRole
-from session_health_checker import get_session_health_checker, SessionHealthStatus
-from security.core.security_utils import sanitize_for_log
+from app.services.monitoring.health.checkers.session_health_checker import get_session_health_checker, SessionHealthStatus
+from app.core.security.core.security_utils import sanitize_for_log
 
 def admin_required(f):
     """Decorator to require admin role for access."""
@@ -56,7 +56,7 @@ def health_status():
         
         # Use Redis-compatible health checker for better session counting
         try:
-            from redis_session_health_checker import get_redis_session_health_checker
+            from app.services.monitoring.health.checkers.redis_session_health_checker import get_redis_session_health_checker
             health_checker = get_redis_session_health_checker(db_manager, session_manager)
             system_health = health_checker.check_comprehensive_session_health()
             
@@ -103,7 +103,7 @@ def session_statistics():
         
         # Use Redis-compatible health checker for accurate session counts
         try:
-            from redis_session_health_checker import get_redis_session_health_checker
+            from app.services.monitoring.health.checkers.redis_session_health_checker import get_redis_session_health_checker
             health_checker = get_redis_session_health_checker(db_manager, session_manager)
             session_counts = health_checker.get_session_counts()
             

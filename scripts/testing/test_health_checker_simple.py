@@ -24,7 +24,7 @@ def test_health_checker_import():
         
         # Test database manager import
         print("3. Testing DatabaseManager import...")
-        from database import DatabaseManager
+        from app.core.database.core.database_manager import DatabaseManager
         db_manager = DatabaseManager(config)
         print("✅ DatabaseManager initialized successfully")
         

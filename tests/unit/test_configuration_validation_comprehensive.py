@@ -16,7 +16,7 @@ from dataclasses import dataclass
 from typing import Optional
 
 from config import ActivityPubConfig, ConfigurationError
-from activitypub_platforms import PlatformAdapterFactory, PlatformAdapterError
+from app.services.activitypub.components.activitypub_platforms import PlatformAdapterFactory, PlatformAdapterError
 
 class TestActivityPubConfigValidation(unittest.TestCase):
     """Test ActivityPubConfig validation for both platforms"""

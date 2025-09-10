@@ -24,15 +24,15 @@ sys.path.insert(0, '.')
 
 from dotenv import load_dotenv
 from config import Config
-from database import DatabaseManager
+from app.core.database.core.database_manager import DatabaseManager
 from websocket_factory import WebSocketFactory
 from websocket_auth_handler import WebSocketAuthHandler
 from websocket_namespace_manager import WebSocketNamespaceManager
-from unified_notification_manager import UnifiedNotificationManager
-from security.monitoring.security_event_logger import SecurityEventLogger, SecurityEventType, SecurityEventSeverity
-from security.monitoring.security_alerting import SecurityAlertManager
+from app.services.notification.manager.unified_manager import UnifiedNotificationManager
+from app.core.security.monitoring.security_event_logger import SecurityEventLogger, SecurityEventType, SecurityEventSeverity
+from app.core.security.monitoring.security_alerting import SecurityAlertManager
 from session_security import SessionSecurityManager
-from admin_security_audit_notification_handler import (
+from app.services.admin.components.admin_security_audit_notification_handler import (
     AdminSecurityAuditNotificationHandler,
     SecurityNotificationType,
     SecurityEventContext,

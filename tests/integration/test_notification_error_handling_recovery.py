@@ -22,12 +22,12 @@ from collections import deque
 # Add project root to path for imports
 sys.path.insert(0, os.path.join(os.path.dirname(__file__), '..', '..'))
 
-from unified_notification_manager import (
+from app.services.notification.manager.unified_manager import (
     UnifiedNotificationManager, NotificationMessage, 
     AdminNotificationMessage, SystemNotificationMessage
 )
 from notification_message_router import NotificationMessageRouter
-from notification_persistence_manager import NotificationPersistenceManager
+from app.services.notification.components.notification_persistence_manager import NotificationPersistenceManager
 from models import (
     NotificationType, NotificationPriority, NotificationCategory, 
     UserRole

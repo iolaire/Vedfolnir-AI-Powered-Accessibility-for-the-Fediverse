@@ -19,8 +19,8 @@ from unittest.mock import Mock
 # Add project root to path for imports
 sys.path.insert(0, os.path.join(os.path.dirname(__file__), '..', '..'))
 
-from storage_email_notification_service import StorageEmailNotificationService
-from storage_monitor_service import StorageMetrics
+from app.services.storage.components.storage_email_notification_service import StorageEmailNotificationService
+from app.services.storage.components.storage_monitor_service import StorageMetrics
 from services.email_service import EmailService
 
 

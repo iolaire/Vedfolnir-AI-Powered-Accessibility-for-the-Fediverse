@@ -18,9 +18,9 @@ from datetime import datetime, timezone, timedelta
 sys.path.insert(0, os.path.join(os.path.dirname(__file__), '..', '..'))
 
 from config import Config
-from database import DatabaseManager
+from app.core.database.core.database_manager import DatabaseManager
 from models import User, UserRole
-from enhanced_maintenance_mode_service import EnhancedMaintenanceModeService, MaintenanceMode, MaintenanceStatus
+from app.services.maintenance.enhanced.enhanced_maintenance_mode_service import EnhancedMaintenanceModeService, MaintenanceMode, MaintenanceStatus
 
 
 class TestMaintenanceMonitoringDashboard(unittest.TestCase):
@@ -55,7 +55,7 @@ class TestMaintenanceMonitoringDashboard(unittest.TestCase):
     def test_monitoring_data_collection(self):
         """Test monitoring data collection functionality"""
         # Import the helper function
-        from admin.routes.maintenance_mode import _collect_monitoring_data
+        from app.blueprints.admin.maintenance_mode import _collect_monitoring_data
         
         # Create test status
         test_status = MaintenanceStatus(
@@ -102,7 +102,7 @@ class TestMaintenanceMonitoringDashboard(unittest.TestCase):
     
     def test_impact_percentage_calculation(self):
         """Test impact percentage calculation"""
-        from admin.routes.maintenance_mode import _calculate_impact_percentage
+        from app.blueprints.admin.maintenance_mode import _calculate_impact_percentage
         
         # Test normal maintenance mode
         normal_status = Mock()
@@ -134,7 +134,7 @@ class TestMaintenanceMonitoringDashboard(unittest.TestCase):
     
     def test_affected_users_count_calculation(self):
         """Test affected users count calculation"""
-        from admin.routes.maintenance_mode import _get_affected_users_count
+        from app.blueprints.admin.maintenance_mode import _get_affected_users_count
         
         # Test active maintenance
         active_status = Mock()
@@ -166,7 +166,7 @@ class TestMaintenanceMonitoringDashboard(unittest.TestCase):
     
     def test_blocked_requests_count_calculation(self):
         """Test blocked requests count calculation"""
-        from admin.routes.maintenance_mode import _get_blocked_requests_count
+        from app.blueprints.admin.maintenance_mode import _get_blocked_requests_count
         
         # Test with service stats
         service_stats = {
@@ -189,7 +189,7 @@ class TestMaintenanceMonitoringDashboard(unittest.TestCase):
     
     def test_active_sessions_data_structure(self):
         """Test active sessions data structure"""
-        from admin.routes.maintenance_mode import _get_active_sessions_data
+        from app.blueprints.admin.maintenance_mode import _get_active_sessions_data
         
         sessions_data = _get_active_sessions_data()
         
@@ -214,7 +214,7 @@ class TestMaintenanceMonitoringDashboard(unittest.TestCase):
     def test_monitoring_dashboard_access_control(self):
         """Test monitoring dashboard access control"""
         # Test route registration
-        from admin.routes.maintenance_mode import register_routes
+        from app.blueprints.admin.maintenance_mode import register_routes
         
         # Mock blueprint
         mock_bp = Mock()
@@ -231,7 +231,7 @@ class TestMaintenanceMonitoringDashboard(unittest.TestCase):
     
     def test_monitoring_data_error_handling(self):
         """Test monitoring data collection error handling"""
-        from admin.routes.maintenance_mode import _collect_monitoring_data
+        from app.blueprints.admin.maintenance_mode import _collect_monitoring_data
         
         # Create a service that throws errors
         error_service = Mock()
@@ -281,7 +281,7 @@ class TestMaintenanceMonitoringDashboard(unittest.TestCase):
     
     def test_real_time_monitoring_data_updates(self):
         """Test real-time monitoring data updates"""
-        from admin.routes.maintenance_mode import _collect_monitoring_data
+        from app.blueprints.admin.maintenance_mode import _collect_monitoring_data
         
         # Test with changing maintenance status
         initial_status = MaintenanceStatus(
@@ -334,7 +334,7 @@ class TestMaintenanceMonitoringDashboard(unittest.TestCase):
     
     def test_performance_metrics_structure(self):
         """Test performance metrics data structure"""
-        from admin.routes.maintenance_mode import _collect_monitoring_data
+        from app.blueprints.admin.maintenance_mode import _collect_monitoring_data
         
         with patch.object(self.maintenance_service, 'get_maintenance_status') as mock_status:
             with patch.object(self.maintenance_service, 'get_blocked_operations', return_value=[]):

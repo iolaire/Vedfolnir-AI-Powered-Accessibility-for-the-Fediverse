@@ -18,7 +18,7 @@ import logging
 # Add project root to path for imports
 sys.path.insert(0, os.path.join(os.path.dirname(__file__), '..', '..'))
 
-from storage_configuration_service import StorageConfigurationService, StorageLimitConfig
+from app.services.storage.components.storage_configuration_service import StorageConfigurationService, StorageLimitConfig
 
 
 class TestStorageLimitConfig(unittest.TestCase):

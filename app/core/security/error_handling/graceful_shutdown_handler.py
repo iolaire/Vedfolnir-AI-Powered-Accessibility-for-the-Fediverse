@@ -19,7 +19,7 @@ from typing import Dict, Any, Optional, List
 from flask import Flask
 
 from system_recovery_manager import SystemRecoveryManager
-from security.core.security_utils import sanitize_for_log
+from app.core.security.core.security_utils import sanitize_for_log
 
 logger = logging.getLogger(__name__)
 

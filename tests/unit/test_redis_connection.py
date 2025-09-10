@@ -119,7 +119,7 @@ def test_session_manager():
     """Test the Redis session manager"""
     try:
         from config import Config
-        from database import DatabaseManager
+        from app.core.database.core.database_manager import DatabaseManager
         from session_manager_v2 import SessionManagerV2
         
         print("\nTesting Redis session manager...")

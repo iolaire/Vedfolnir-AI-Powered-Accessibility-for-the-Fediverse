@@ -28,7 +28,7 @@ from tests.mysql_test_config import (
     setup_test_environment
 )
 from config import Config
-from database import DatabaseManager
+from app.core.database.core.database_manager import DatabaseManager
 from models import User, PlatformConnection, Post, Image
 
 

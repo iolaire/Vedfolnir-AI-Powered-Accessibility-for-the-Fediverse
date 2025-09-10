@@ -76,7 +76,7 @@ def test_data_cleanup_import():
         from data_cleanup import DataCleanupManager
         print("✓ DataCleanupManager imported successfully")
         
-        from database import DatabaseManager
+        from app.core.database.core.database_manager import DatabaseManager
         config = Config()
         db_manager = DatabaseManager(config)
         

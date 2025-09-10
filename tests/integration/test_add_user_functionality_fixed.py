@@ -11,7 +11,7 @@ sys.path.insert(0, os.path.join(os.path.dirname(__file__), '..'))
 
 from database_manager_test_utils import patch_web_app_database_manager, create_mock_user, create_mock_platform_connection
 from models import User, UserRole, PlatformConnection
-from database import DatabaseManager
+from app.core.database.core.database_manager import DatabaseManager
 from config import Config
 
 class TestAddUserFunctionalityFixed(MySQLIntegrationTestBase):

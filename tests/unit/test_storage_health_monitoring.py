@@ -20,13 +20,13 @@ from datetime import datetime, timezone
 import sys
 sys.path.insert(0, os.path.join(os.path.dirname(__file__), '..', '..'))
 
-from storage_health_checker import (
+from app.services.monitoring.health.checkers.storage_health_checker import (
     StorageHealthChecker, StorageHealthStatus, StorageComponentHealth, StorageSystemHealth
 )
-from storage_monitoring_dashboard_integration import StorageMonitoringDashboardIntegration
-from storage_alert_system import StorageAlertSystem, StorageAlertType, StorageAlertSeverity
-from storage_configuration_service import StorageConfigurationService
-from storage_monitor_service import StorageMonitorService, StorageMetrics
+from app.services.storage.components.storage_monitoring_dashboard_integration import StorageMonitoringDashboardIntegration
+from app.services.storage.components.storage_alert_system import StorageAlertSystem, StorageAlertType, StorageAlertSeverity
+from app.services.storage.components.storage_configuration_service import StorageConfigurationService
+from app.services.storage.components.storage_monitor_service import StorageMonitorService, StorageMetrics
 
 
 class TestStorageHealthChecker(unittest.TestCase):

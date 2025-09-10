@@ -19,7 +19,7 @@ from sqlalchemy import and_, or_, desc, asc, func
 from flask import request, session as flask_session
 
 from models import JobAuditLog, User, CaptionGenerationTask, PlatformConnection
-from database import DatabaseManager
+from app.core.database.core.database_manager import DatabaseManager
 
 logger = logging.getLogger(__name__)
 

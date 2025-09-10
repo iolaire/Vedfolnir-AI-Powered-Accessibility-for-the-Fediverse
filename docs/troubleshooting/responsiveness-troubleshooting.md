@@ -89,7 +89,7 @@ watch -n 5 'python -c "import psutil; print(f\"Memory: {psutil.virtual_memory().
 ```bash
 # Check database connection status
 python -c "
-from database import DatabaseManager
+from app.core.database.core.database_manager import DatabaseManager
 from config import Config
 db = DatabaseManager(Config())
 stats = db.get_mysql_performance_stats()
@@ -102,7 +102,7 @@ mysql -u root -p -e "SHOW PROCESSLIST;" | wc -l
 
 # Check for connection leaks
 python -c "
-from database import DatabaseManager
+from app.core.database.core.database_manager import DatabaseManager
 from config import Config
 db = DatabaseManager(Config())
 leak_info = db.detect_connection_leaks()
@@ -158,7 +158,7 @@ tail -f logs/webapp.log | grep "response_time" | tail -20
 
 # Identify slow endpoints
 python -c "
-from utils.performance_monitor import PerformanceMonitor
+from app.services.monitoring.performance.monitors.performance_monitor import PerformanceMonitor
 monitor = PerformanceMonitor()
 slow_requests = monitor.get_slow_requests(limit=10)
 for request in slow_requests:
@@ -216,7 +216,7 @@ with app.app_context():
 ```bash
 # Check background task status
 python -c "
-from background_cleanup_manager import BackgroundCleanupManager
+from app.services.task.core.background_cleanup_manager import BackgroundCleanupManager
 manager = BackgroundCleanupManager()
 stats = manager.get_cleanup_stats()
 print(f'Active tasks: {stats.get(\"active_tasks\", 0)}')
@@ -226,7 +226,7 @@ print(f'Error count: {stats.get(\"error_count\", 0)}')
 
 # Monitor task coordination
 python -c "
-from background_cleanup_manager import BackgroundCleanupManager
+from app.services.task.core.background_cleanup_manager import BackgroundCleanupManager
 manager = BackgroundCleanupManager()
 coordination_status = manager.get_coordination_status()
 print(f'Coordination health: {coordination_status}')
@@ -557,7 +557,7 @@ else
 fi
 
 # Check database connectivity
-if python -c "from database import DatabaseManager; from config import Config; DatabaseManager(Config()).test_mysql_connection()" 2>/dev/null; then
+if python -c "from app.core.database.core.database_manager import DatabaseManager; from config import Config; DatabaseManager(Config()).test_mysql_connection()" 2>/dev/null; then
     echo "✓ Database connected"
 else
     echo "✗ Database connection failed"
@@ -595,7 +595,7 @@ echo "*/5 * * * * /path/to/health_check.sh >> /var/log/vedfolnir_health.log 2>&1
 python -c "
 import json
 from datetime import datetime
-from utils.performance_monitor import PerformanceMonitor
+from app.services.monitoring.performance.monitors.performance_monitor import PerformanceMonitor
 
 monitor = PerformanceMonitor()
 baseline = {

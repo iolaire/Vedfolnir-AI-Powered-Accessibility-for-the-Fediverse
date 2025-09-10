@@ -21,12 +21,12 @@ import requests
 # Add parent directory to path to import modules
 sys.path.append(os.path.dirname(os.path.dirname(os.path.abspath(__file__))))
 
-from database import DatabaseManager
+from app.core.database.core.database_manager import DatabaseManager
 from models import Post, Image, ProcessingStatus, User, UserRole
 from config import Config
-from activitypub_client import ActivityPubClient
+from app.services.activitypub.components.activitypub_client import ActivityPubClient
 from ollama_caption_generator import OllamaCaptionGenerator
-from post_service import PostingService
+from app.services.activitypub.posts.service import PostingService
 from image_processor import ImageProcessor
 import main
 

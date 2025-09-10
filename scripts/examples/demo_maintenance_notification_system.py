@@ -38,8 +38,8 @@ def demo_maintenance_notification_system():
         # Import required modules
         from dotenv import load_dotenv
         from config import Config
-        from database import DatabaseManager
-        from unified_notification_manager import UnifiedNotificationManager
+        from app.core.database.core.database_manager import DatabaseManager
+        from app.services.notification.manager.unified_manager import UnifiedNotificationManager
         from admin_maintenance_notification_handler import AdminMaintenanceNotificationHandler, MaintenanceNotificationData
         from maintenance_progress_websocket_handler import MaintenanceProgressWebSocketHandler
         from maintenance_notification_integration_service import (
@@ -320,8 +320,8 @@ def demo_maintenance_error_scenarios():
         from admin_maintenance_notification_handler import AdminMaintenanceNotificationHandler
         from dotenv import load_dotenv
         from config import Config
-        from database import DatabaseManager
-        from unified_notification_manager import UnifiedNotificationManager
+        from app.core.database.core.database_manager import DatabaseManager
+        from app.services.notification.manager.unified_manager import UnifiedNotificationManager
         from models import User, UserRole
         
         # Load configuration

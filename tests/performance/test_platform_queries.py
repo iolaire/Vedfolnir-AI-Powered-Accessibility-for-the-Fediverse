@@ -11,7 +11,7 @@ import unittest
 import time
 from tests.fixtures.platform_fixtures import PlatformTestCase
 from models import Post, Image, PlatformConnection
-from platform_context import PlatformContextManager
+from app.services.platform.core.platform_context import PlatformContextManager
 
 class TestPlatformQueryPerformance(PlatformTestCase):
     """Test performance of platform-filtered queries"""

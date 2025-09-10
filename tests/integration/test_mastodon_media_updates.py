@@ -12,8 +12,8 @@ import asyncio
 import httpx
 import json
 
-from activitypub_client import ActivityPubClient
-from activitypub_platforms import MastodonPlatform, PlatformAdapterError
+from app.services.activitypub.components.activitypub_client import ActivityPubClient
+from app.services.activitypub.components.activitypub_platforms import MastodonPlatform, PlatformAdapterError
 from config import ActivityPubConfig
 
 class TestMastodonMediaUpdates(unittest.TestCase):

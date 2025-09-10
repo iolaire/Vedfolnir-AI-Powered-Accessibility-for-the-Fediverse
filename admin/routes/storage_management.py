@@ -8,7 +8,7 @@
 # appropriate unified notification calls in a future update.
 
 
-from unified_notification_manager import UnifiedNotificationManager
+from app.services.notification.manager.unified_manager import UnifiedNotificationManager
 """
 Admin Storage Management Routes
 
@@ -21,9 +21,9 @@ from flask_login import login_required, current_user
 from models import UserRole
 # from notification_flash_replacement import send_notification  # Removed - using unified notification system
 from session_error_handlers import with_session_error_handling
-from admin_storage_dashboard import AdminStorageDashboard
-from storage_override_system import StorageOverrideSystem, OverrideValidationError, OverrideNotFoundError, StorageOverrideSystemError
-from database import DatabaseManager
+from app.services.admin.components.admin_storage_dashboard import AdminStorageDashboard
+from app.services.storage.components.storage_override_system import StorageOverrideSystem, OverrideValidationError, OverrideNotFoundError, StorageOverrideSystemError
+from app.core.database.core.database_manager import DatabaseManager
 from config import Config
 import logging
 
@@ -39,7 +39,7 @@ def register_routes(bp):
         """Detailed storage monitoring dashboard"""
         if not current_user.role == UserRole.ADMIN:
             # Send error notification
-            from notification_helpers import send_error_notification
+            from app.services.notification.helpers.notification_helpers import send_error_notification
             send_error_notification("Access denied. Admin privileges required.", "Access Denied")
             return redirect(url_for('admin.dashboard'))
         
@@ -65,7 +65,7 @@ def register_routes(bp):
         except Exception as e:
             logger.error(f"Error loading storage dashboard: {e}")
             # Send error notification
-            from notification_helpers import send_error_notification
+            from app.services.notification.helpers.notification_helpers import send_error_notification
             send_error_notification(f"Error loading storage dashboard: {e}", "Error")
             return redirect(url_for('admin.dashboard'))
     
@@ -107,14 +107,14 @@ def register_routes(bp):
         """Refresh storage calculations (invalidate cache)"""
         if not current_user.role == UserRole.ADMIN:
             # Send error notification
-            from notification_helpers import send_error_notification
+            from app.services.notification.helpers.notification_helpers import send_error_notification
             send_error_notification("Access denied. Admin privileges required.", "Access Denied")
             return redirect(url_for('admin.dashboard'))
         
         # Handle GET requests by redirecting to storage dashboard
         if request.method == 'GET':
             # Send info notification
-            from notification_helpers import send_info_notification
+            from app.services.notification.helpers.notification_helpers import send_info_notification
             send_info_notification("Use the refresh button on the storage dashboard to refresh data.", "Information")
             return redirect(url_for('admin.storage_dashboard'))
         
@@ -131,14 +131,14 @@ def register_routes(bp):
             # Use the formatted values from the to_dict() method
             dashboard_dict = dashboard_data.to_dict()
             # Send success notification
-            from notification_helpers import send_success_notification
+            from app.services.notification.helpers.notification_helpers import send_success_notification
             send_success_notification(f"Storage data refreshed. Current usage: {dashboard_dict['formatted_usage']} / {dashboard_dict['formatted_limit']}", "Success")
             logger.info(f"Storage data refreshed by admin user {current_user.username}")
             
         except Exception as e:
             logger.error(f"Error refreshing storage data: {e}")
             # Send error notification
-            from notification_helpers import send_error_notification
+            from app.services.notification.helpers.notification_helpers import send_error_notification
             send_error_notification(f"Error refreshing storage data: {e}", "Error")
         
         # Redirect back to referring page or storage dashboard
@@ -150,7 +150,7 @@ def register_routes(bp):
         """Storage limit override management"""
         if not current_user.role == UserRole.ADMIN:
             # Send error notification
-            from notification_helpers import send_error_notification
+            from app.services.notification.helpers.notification_helpers import send_error_notification
             send_error_notification("Access denied. Admin privileges required.", "Access Denied")
             return redirect(url_for('admin.dashboard'))
         
@@ -178,7 +178,7 @@ def register_routes(bp):
                     )
                     
                     # Send success notification
-                    from notification_helpers import send_success_notification
+                    from app.services.notification.helpers.notification_helpers import send_success_notification
                     send_success_notification(f"Storage override activated for {duration_hours} hours: {reason}", "Success")
                     logger.info(f"Storage override {override_info.id} activated by {current_user.username} for {duration_hours}h: {reason}")
                     
@@ -193,21 +193,21 @@ def register_routes(bp):
                     
                     if success:
                         # Send success notification
-                        from notification_helpers import send_success_notification
+                        from app.services.notification.helpers.notification_helpers import send_success_notification
                         send_success_notification("Storage override deactivated", "Success")
                         logger.info(f"Storage override deactivated by {current_user.username}: {deactivation_reason}")
                     else:
                         # Send warning notification
-                        from notification_helpers import send_warning_notification
+                        from app.services.notification.helpers.notification_helpers import send_warning_notification
                         send_warning_notification("No active override found to deactivate", "Warning")
                 else:
                     # Send error notification
-                    from notification_helpers import send_error_notification
+                    from app.services.notification.helpers.notification_helpers import send_error_notification
                     send_error_notification("Invalid override action", "Error")
                     
             except Exception as e:
                 # Send error notification
-                from notification_helpers import send_error_notification
+                from app.services.notification.helpers.notification_helpers import send_error_notification
                 send_error_notification(f"Override operation error: {e}", "Error")
                 logger.error(f"Override operation error for {current_user.username}: {e}")
             
@@ -257,7 +257,7 @@ def register_routes(bp):
         except Exception as e:
             logger.error(f"Error loading storage override page: {e}")
             # Send error notification
-            from notification_helpers import send_error_notification
+            from app.services.notification.helpers.notification_helpers import send_error_notification
             send_error_notification(f"Error loading storage override page: {e}", "Error")
             return redirect(url_for('admin.storage_dashboard'))
     

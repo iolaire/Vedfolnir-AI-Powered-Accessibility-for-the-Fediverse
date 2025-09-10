@@ -14,7 +14,7 @@ from sqlalchemy.orm import sessionmaker
 
 from models import Base, User, UserRole, UserAuditLog
 from config import Config
-from database import DatabaseManager
+from app.core.database.core.database_manager import DatabaseManager
 
 class TestUserModelMethods(unittest.TestCase):
     """Test User model methods and validation"""

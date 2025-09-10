@@ -11,7 +11,7 @@ sys.path.append(os.path.dirname(os.path.dirname(os.path.dirname(os.path.abspath(
 import logging
 from sqlalchemy import create_engine, text
 from config import Config
-from database import DatabaseManager
+from app.core.database.core.database_manager import DatabaseManager
 import redis
 
 # Set up logging

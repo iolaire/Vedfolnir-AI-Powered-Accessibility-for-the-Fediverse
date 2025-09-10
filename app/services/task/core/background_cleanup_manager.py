@@ -24,10 +24,10 @@ from collections import defaultdict, deque
 from sqlalchemy import and_, func, text
 from sqlalchemy.exc import SQLAlchemyError
 
-from database import DatabaseManager
+from app.core.database.core.database_manager import DatabaseManager
 from models import JobAuditLog, CaptionGenerationTask, TaskStatus, ProcessingRun, User
-from performance_cache_manager import PerformanceCacheManager, CacheKeyGenerator
-from security.core.security_utils import sanitize_for_log
+from app.services.performance.components.performance_cache_manager import PerformanceCacheManager, CacheKeyGenerator
+from app.core.security.core.security_utils import sanitize_for_log
 
 logger = logging.getLogger(__name__)
 

@@ -30,9 +30,9 @@ import os
 sys.path.insert(0, os.path.join(os.path.dirname(__file__), '..'))
 
 from config import Config
-from database import DatabaseManager
-from configuration_service import ConfigurationService
-from system_configuration_manager import SystemConfigurationManager
+from app.core.database.core.database_manager import DatabaseManager
+from app.core.configuration.core.configuration_service import ConfigurationService
+from app.core.configuration.core.system_configuration_manager import SystemConfigurationManager
 
 def run_health_check():
     """Run comprehensive configuration system health check"""
@@ -713,7 +713,7 @@ read -p "Are you sure? (yes/no): " confirm
 if [ "$confirm" = "yes" ]; then
     python -c "
 from system_configuration_manager import SystemConfigurationManager
-from database import DatabaseManager
+from app.core.database.core.database_manager import DatabaseManager
 from config import Config
 
 config = Config()

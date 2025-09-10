@@ -21,8 +21,8 @@ from flask import Flask, render_template_string
 from jinja2 import Environment, FileSystemLoader, meta
 
 # Import CSRF components for testing
-from security.audit.csrf_template_scanner import CSRFTemplateScanner
-from security.audit.security_auditor import SecurityAuditor
+from app.core.security.audit.csrf_template_scanner import CSRFTemplateScanner
+from app.core.security.audit.security_auditor import SecurityAuditor
 
 @dataclass
 class TemplateSecurityIssue:

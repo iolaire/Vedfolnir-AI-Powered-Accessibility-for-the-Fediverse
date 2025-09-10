@@ -19,7 +19,7 @@ from sqlalchemy.exc import SQLAlchemyError
 sys.path.insert(0, os.path.dirname(os.path.abspath(__file__)))
 
 from config import Config
-from database import DatabaseManager
+from app.core.database.core.database_manager import DatabaseManager
 
 def migrate_database():
     """Add original_post_date column to images table"""

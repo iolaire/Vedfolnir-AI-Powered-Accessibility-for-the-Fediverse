@@ -15,7 +15,7 @@ from models import (
     CaptionGenerationTask, TaskStatus, PlatformConnection, User, UserRole,
     CaptionGenerationSettings
 )
-from database import DatabaseManager
+from app.core.database.core.database_manager import DatabaseManager
 
 class TestPlatformSwitchingIntegration(unittest.TestCase):
     """Test cases for platform switching integration with caption generation"""

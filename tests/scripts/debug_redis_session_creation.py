@@ -15,7 +15,7 @@ from dotenv import load_dotenv
 load_dotenv()
 
 from config import Config
-from database import DatabaseManager
+from app.core.database.core.database_manager import DatabaseManager
 from session_manager_v2 import SessionManagerV2
 from redis_session_backend import RedisSessionBackend
 from models import User, PlatformConnection

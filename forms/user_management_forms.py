@@ -119,7 +119,7 @@ class UserRegistrationForm(Form):
         
         # Check if username is already taken (this will be done in the service layer too)
         # We do a basic check here for immediate feedback
-        from database import DatabaseManager
+        from app.core.database.core.database_manager import DatabaseManager
         from config import Config
         
         try:
@@ -144,7 +144,7 @@ class UserRegistrationForm(Form):
             raise ValidationError(f"Invalid email address: {str(e)}")
         
         # Check if email is already registered
-        from database import DatabaseManager
+        from app.core.database.core.database_manager import DatabaseManager
         from config import Config
         
         try:

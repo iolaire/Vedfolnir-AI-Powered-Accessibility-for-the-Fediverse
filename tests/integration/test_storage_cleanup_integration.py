@@ -20,10 +20,10 @@ from datetime import datetime
 # Add project root to path
 sys.path.insert(0, os.path.join(os.path.dirname(__file__), '..'))
 
-from storage_cleanup_integration import StorageCleanupIntegration, CleanupResult, StorageCleanupSummary
-from storage_configuration_service import StorageConfigurationService
-from storage_monitor_service import StorageMonitorService, StorageMetrics
-from storage_limit_enforcer import StorageLimitEnforcer
+from app.services.storage.components.storage_cleanup_integration import StorageCleanupIntegration, CleanupResult, StorageCleanupSummary
+from app.services.storage.components.storage_configuration_service import StorageConfigurationService
+from app.services.storage.components.storage_monitor_service import StorageMonitorService, StorageMetrics
+from app.services.storage.components.storage_limit_enforcer import StorageLimitEnforcer
 from models import ProcessingStatus
 
 

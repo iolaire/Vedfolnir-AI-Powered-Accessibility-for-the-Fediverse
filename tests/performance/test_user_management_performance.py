@@ -13,7 +13,7 @@ from unittest.mock import Mock, patch
 from concurrent.futures import ThreadPoolExecutor, as_completed
 
 from config import Config
-from database import DatabaseManager
+from app.core.database.core.database_manager import DatabaseManager
 from models import User, UserRole, UserAuditLog
 from services.user_management_service import (
     UserRegistrationService, UserAuthenticationService, 

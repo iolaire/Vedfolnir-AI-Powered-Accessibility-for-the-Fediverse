@@ -10,7 +10,7 @@ sys.path.append(os.path.dirname(os.path.dirname(os.path.dirname(os.path.abspath(
 
 import logging
 from config import Config
-from database import DatabaseManager, DatabaseOperationError
+from app.core.database.core.database_manager import DatabaseManager, DatabaseOperationError
 
 # Set up logging
 logging.basicConfig(level=logging.INFO, format='%(asctime)s - %(levelname)s - %(message)s')

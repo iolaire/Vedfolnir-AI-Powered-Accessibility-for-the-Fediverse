@@ -25,10 +25,10 @@ from dotenv import load_dotenv
 load_dotenv()
 
 from config import Config
-from database import DatabaseManager
+from app.core.database.core.database_manager import DatabaseManager
 from models import User, UserRole
 from user_profile_notification_helper import UserProfileNotificationHelper
-from unified_notification_manager import UnifiedNotificationManager
+from app.services.notification.manager.unified_manager import UnifiedNotificationManager
 
 logger = logging.getLogger(__name__)
 

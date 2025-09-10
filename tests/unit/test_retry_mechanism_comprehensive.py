@@ -16,7 +16,7 @@ import httpx
 # Add parent directory to path to allow importing from project root
 sys.path.insert(0, os.path.abspath(os.path.join(os.path.dirname(__file__), '..')))
 
-from utils import retry, async_retry, get_retry_stats_summary, reset_retry_stats, RetryConfig
+from app.utils.helpers.utils import retry, async_retry, get_retry_stats_summary, reset_retry_stats, RetryConfig
 from rate_limiter import RateLimiter, RateLimitConfig, TokenBucket
 
 class TestRetryMechanism(unittest.TestCase):

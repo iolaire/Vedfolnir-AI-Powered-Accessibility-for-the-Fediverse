@@ -15,7 +15,7 @@ from models import (
     User, UserRole, CaptionGenerationTask, TaskStatus, 
     PlatformConnection, CaptionGenerationUserSettings
 )
-from database import DatabaseManager
+from app.core.database.core.database_manager import DatabaseManager
 
 class TestAdminMonitoring(unittest.TestCase):
     """Tests for administrative monitoring and controls"""

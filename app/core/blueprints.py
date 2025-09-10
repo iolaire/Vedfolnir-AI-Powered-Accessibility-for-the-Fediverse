@@ -32,3 +32,7 @@ def register_blueprints(app):
     # Register static/utility blueprint
     from app.blueprints.static import static_bp
     app.register_blueprint(static_bp)
+
+    # Register admin blueprint
+    from app.blueprints.admin import admin_bp
+    app.register_blueprint(admin_bp)

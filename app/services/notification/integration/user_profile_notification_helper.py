@@ -9,6 +9,25 @@ This module provides helper functions for sending user profile and settings noti
 through the unified WebSocket notification system, replacing legacy Flask flash messages.
 """
 
+"""
+⚠️  DEPRECATED: This file is deprecated and will be removed in a future version.
+Please use the unified notification system instead:
+- unified_notification_manager.py (core system)
+- notification_service_adapters.py (service adapters)
+- notification_helpers.py (helper functions)
+- app/websocket/core/consolidated_handlers.py (WebSocket handling)
+
+Migration guide: docs/implementation/notification-consolidation-final-summary.md
+"""
+
+import warnings
+warnings.warn(
+    "This notification system is deprecated. Use the unified notification system instead.",
+    DeprecationWarning,
+    stacklevel=2
+)
+
+
 import logging
 import uuid
 from datetime import datetime, timezone
@@ -16,7 +35,7 @@ from typing import Optional, Dict, Any
 from flask import current_app
 from flask_login import current_user
 
-from unified_notification_manager import (
+from app.services.notification.manager.unified_manager import (
     UnifiedNotificationManager, NotificationMessage, NotificationType, 
     NotificationPriority, NotificationCategory
 )
@@ -381,7 +400,7 @@ def send_profile_notification(notification_type: str, success: bool, message: st
             # Fallback to unified notification system if profile helper not available
             # from notification_flash_replacement import send_notification  # Removed - using unified notification system
             # Send notification using unified system
-            from notification_helpers import send_success_notification, send_error_notification
+            from app.services.notification.helpers.notification_helpers import send_success_notification, send_error_notification
             if success:
                 send_success_notification(message, 'Profile Update')
             else:

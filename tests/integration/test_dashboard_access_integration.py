@@ -31,7 +31,7 @@ from sqlalchemy.exc import SQLAlchemyError
 sys.path.insert(0, os.path.dirname(os.path.dirname(os.path.abspath(__file__))))
 
 from config import Config
-from database import DatabaseManager
+from app.core.database.core.database_manager import DatabaseManager
 from models import User, PlatformConnection, UserRole, Post, Image, ProcessingStatus
 from request_scoped_session_manager import RequestScopedSessionManager
 from session_manager_v2 import SessionManagerV2 as SessionManager

@@ -70,7 +70,7 @@ def check_platform_encryption():
     
     try:
         from models import PlatformConnection
-        from database import DatabaseManager
+        from app.core.database.core.database_manager import DatabaseManager
         from config import Config
         
         # Check if encryption methods exist

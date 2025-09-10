@@ -19,7 +19,7 @@ sys.path.insert(0, os.path.abspath(os.path.join(os.path.dirname(__file__), '..',
 from web_app import app
 from models import User, UserRole
 from config import Config
-from database import DatabaseManager
+from app.core.database.core.database_manager import DatabaseManager
 
 class TestWebSocketConnection(unittest.TestCase):
     """Test cases for WebSocket connection and admin API endpoints."""

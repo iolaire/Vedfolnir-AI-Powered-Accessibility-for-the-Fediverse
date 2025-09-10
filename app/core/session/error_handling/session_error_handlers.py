@@ -8,7 +8,7 @@
 # appropriate unified notification calls in a future update.
 
 
-from unified_notification_manager import UnifiedNotificationManager
+from app.services.notification.manager.unified_manager import UnifiedNotificationManager
 """
 Session Error Handlers
 
@@ -27,7 +27,7 @@ from flask import (
 from flask_login import current_user, logout_user
 from sqlalchemy.exc import SQLAlchemyError, InvalidRequestError
 from sqlalchemy.orm.exc import DetachedInstanceError
-from security.core.security_utils import sanitize_for_log
+from app.core.security.core.security_utils import sanitize_for_log
 
 def safe_get_user_id(current_user):
     """Safely get user ID from current_user, handling Attribute objects"""
@@ -35,7 +35,7 @@ def safe_get_user_id(current_user):
         return getattr(current_user, 'id', None)
     except (AttributeError, TypeError):
         return None
-from session_error_logger import get_session_error_logger
+from .session_error_logger import get_session_error_logger
 
 logger = logging.getLogger(__name__)
 
@@ -95,7 +95,7 @@ class SessionErrorHandler:
             # Login page - clear any session cookies and show login form
             from flask import make_response
             response = make_response(redirect(url_for('login')))
-            from session_cookie_manager import create_session_cookie_manager
+            from app.core.session.core.session_cookie_manager import create_session_cookie_manager
             cookie_manager = create_session_cookie_manager({})
             cookie_manager.clear_session_cookie(response)
             # Session expired - handled by unified notification system
@@ -113,7 +113,7 @@ class SessionErrorHandler:
                         user_id = getattr(current_user, 'id', None)
                         if not user_id:
                             # Send error notification
-                            from notification_helpers import send_error_notification
+                            from app.services.notification.helpers.notification_helpers import send_error_notification
                             send_error_notification("User authentication error. Please log in again.", "Authentication Error")
                             return redirect(url_for('user_management.login'))
                             
@@ -124,12 +124,12 @@ class SessionErrorHandler:
                         
                         if user_platforms == 0:
                             # Send warning notification
-                            from notification_helpers import send_warning_notification
+                            from app.services.notification.helpers.notification_helpers import send_warning_notification
                             send_warning_notification("No active platform connections found. Please set up a platform.", "Platform Setup Required")
                             return redirect(url_for('first_time_setup'))
                         else:
                             # Send info notification
-                            from notification_helpers import send_info_notification
+                            from app.services.notification.helpers.notification_helpers import send_info_notification
                             send_info_notification("Session refreshed. Please select your platform.", "Session Refreshed")
                             return redirect(url_for('platform.management'))
                             
@@ -141,14 +141,14 @@ class SessionErrorHandler:
         elif endpoint and 'platform' in endpoint:
             # Platform-related endpoints - redirect to platform management
             # Send warning notification
-            from notification_helpers import send_warning_notification
+            from app.services.notification.helpers.notification_helpers import send_warning_notification
             send_warning_notification("Platform connection issue detected. Please verify your platform settings.", "Platform Issue")
             return redirect(url_for('platform.management'))
             
         elif endpoint in ['review', 'batch_review']:
             # Review endpoints - try to recover or redirect to dashboard
             # Send warning notification
-            from notification_helpers import send_warning_notification
+            from app.services.notification.helpers.notification_helpers import send_warning_notification
             send_warning_notification("Session issue detected while reviewing. Returning to dashboard.", "Session Issue")
             return redirect(url_for('admin.health_dashboard'))
             
@@ -247,7 +247,7 @@ class SessionErrorHandler:
             else:
                 try:
                     # Send error notification
-                    from notification_helpers import send_error_notification
+                    from app.services.notification.helpers.notification_helpers import send_error_notification
                     send_error_notification("Database connection issue. Please try again.", "Database Error")
                     return redirect(url_for('admin.health_dashboard') if current_user.is_authenticated else url_for('login'))
                 except Exception:
@@ -264,7 +264,7 @@ class SessionErrorHandler:
         else:
             try:
                 # Send error notification
-                from notification_helpers import send_error_notification
+                from app.services.notification.helpers.notification_helpers import send_error_notification
                 send_error_notification("A database error occurred. Please try again.", "Database Error")
                 return redirect(url_for('admin.health_dashboard') if current_user.is_authenticated else url_for('login'))
             except Exception:
@@ -315,7 +315,7 @@ class SessionErrorHandler:
         try:
             # Clear database session if exists
             try:
-                from redis_session_backend import get_session_id
+                from app.core.session.redis.manager import get_session_id
             except ImportError:
                 def get_session_id():
                     return None
@@ -333,7 +333,7 @@ class SessionErrorHandler:
             logger.error(f"Error during forced logout: {sanitize_for_log(str(logout_error))}")
         
         # Send warning notification
-        from notification_helpers import send_warning_notification
+        from app.services.notification.helpers.notification_helpers import send_warning_notification
         send_warning_notification(message, "Session Warning")
         return redirect(url_for('login'))
     
@@ -419,7 +419,7 @@ def with_session_error_handling(f: Callable) -> Callable:
                 }), 500
             else:
                 # Send error notification
-                from notification_helpers import send_error_notification
+                from app.services.notification.helpers.notification_helpers import send_error_notification
                 send_error_notification("An unexpected error occurred. Please try again.", "Unexpected Error")
                 return redirect(url_for('admin.health_dashboard') if current_user.is_authenticated else url_for('login'))
     
@@ -478,7 +478,7 @@ def register_session_error_handlers(app, session_manager, detached_instance_hand
                             if not platform_connection_id:
                                 # No platform context - redirect to platform management
                                 # Send info notification
-                                from notification_helpers import send_info_notification
+                                from app.services.notification.helpers.notification_helpers import send_info_notification
                                 send_info_notification("Please select a platform to continue.", "Platform Selection Required")
                                 return redirect(url_for('platform.management'))
                         except Exception:
@@ -492,7 +492,7 @@ def register_session_error_handlers(app, session_manager, detached_instance_hand
                             if not (hasattr(current_user, 'role') and current_user.role == UserRole.ADMIN):
                                 # Non-admin users shouldn't access health dashboard
                                 # Send error notification
-                                from notification_helpers import send_error_notification
+                                from app.services.notification.helpers.notification_helpers import send_error_notification
                                 send_error_notification("Access denied. Admin privileges required.", "Access Denied")
                                 return redirect(url_for('main.index'))
                         except (Exception, ImportError):
@@ -512,7 +512,7 @@ def register_session_error_handlers(app, session_manager, detached_instance_hand
                     if not request.endpoint or 'api' not in request.endpoint:
                         try:
                             # Send warning notification
-                            from notification_helpers import send_warning_notification
+                            from app.services.notification.helpers.notification_helpers import send_warning_notification
                             send_warning_notification("Session validation failed. Please log in again.", "Session Validation Failed")
                             return redirect(url_for('login'))
                         except Exception:

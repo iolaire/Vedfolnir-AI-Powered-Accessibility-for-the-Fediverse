@@ -2,7 +2,7 @@ from flask import current_app
 from flask_login import current_user
 from models import Image, CaptionGenerationUserSettings
 from session_middleware_v2 import get_current_session_context
-from security.core.security_utils import sanitize_for_log
+from app.core.security.core.security_utils import sanitize_for_log
 
 class CaptionService:
     """Service for caption generation operations"""
@@ -49,14 +49,46 @@ class CaptionService:
             return None, "Error loading caption generation data"
     
     def _get_storage_status(self):
-        """Get storage status for template"""
+        """Get storage status for template using unified notification system"""
         try:
-            from storage_user_notification_system import StorageUserNotificationSystem
-            storage_notification_system = StorageUserNotificationSystem()
-            return storage_notification_system.get_storage_status_for_template()
+            from flask import current_user
+            from app.services.notification.helpers.notification_helpers import send_storage_notification
+            
+            # Get storage context from storage monitoring system
+            storage_context = self._get_storage_notification_context()
+            
+            if storage_context and current_user.is_authenticated:
+                # Send notification via unified system (replaces StorageUserNotificationSystem)
+                if storage_context.is_blocked or storage_context.usage_percentage > 90:
+                    send_storage_notification(current_user.id, storage_context)
+                
+                # Return storage status for template
+                return {
+                    'is_blocked': storage_context.is_blocked,
+                    'should_hide_form': storage_context.should_hide_form,
+                    'usage_percentage': storage_context.usage_percentage,
+                    'storage_gb': storage_context.storage_gb,
+                    'limit_gb': storage_context.limit_gb,
+                    'reason': storage_context.reason
+                }
+            
+            return {}
+            
         except Exception as e:
             current_app.logger.error(f"Failed to get storage status: {sanitize_for_log(str(e))}")
             return {}
+    
+    def _get_storage_notification_context(self):
+        """Get storage notification context from storage monitoring system"""
+        try:
+            from app.services.storage.components.storage_user_notification_system import get_storage_notification_context
+            return get_storage_notification_context()
+        except ImportError:
+            # Fallback if storage system not available
+            return None
+        except Exception as e:
+            current_app.logger.error(f"Failed to get storage context: {sanitize_for_log(str(e))}")
+            return None
     
     def _get_active_task(self, caption_service):
         """Get user's active task"""

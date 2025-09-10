@@ -19,7 +19,7 @@ import sys
 import os
 sys.path.insert(0, os.path.join(os.path.dirname(__file__), '..', '..'))
 
-from maintenance_operation_completion_tracker import (
+from app.services.maintenance.components.maintenance_operation_completion_tracker import (
     MaintenanceOperationCompletionTracker,
     ActiveJobInfo,
     CompletionNotification

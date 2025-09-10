@@ -19,15 +19,15 @@ from datetime import datetime, timezone
 from typing import Dict, Any, List
 
 from config import Config
-from database import DatabaseManager
+from app.core.database.core.database_manager import DatabaseManager
 from models import SystemConfiguration, User, UserRole
-from system_configuration_manager import SystemConfigurationManager, ConfigurationCategory, ConfigurationDataType
-from configuration_service import ConfigurationService, ConfigurationSource
-from task_queue_configuration_adapter import TaskQueueConfigurationAdapter
-from session_configuration_adapter import SessionConfigurationAdapter
-from alert_configuration_adapter import AlertConfigurationAdapter
+from app.core.configuration.core.system_configuration_manager import SystemConfigurationManager, ConfigurationCategory, ConfigurationDataType
+from app.core.configuration.core.configuration_service import ConfigurationService, ConfigurationSource
+from app.services.task.configuration.task_queue_configuration_adapter import TaskQueueConfigurationAdapter
+from app.core.configuration.adapters.session_configuration_adapter import SessionConfigurationAdapter
+from app.core.configuration.adapters.alert_configuration_adapter import AlertConfigurationAdapter
 from feature_flag_service import FeatureFlagService
-from maintenance_mode_service import MaintenanceModeService
+from app.services.maintenance.components.maintenance_mode_service import MaintenanceModeService
 
 
 class TestConfigurationSystemE2E(unittest.TestCase):

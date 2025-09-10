@@ -49,8 +49,8 @@ echo
 # 1. Check system health
 echo "1. Checking system health..."
 python3 -c "
-from configuration_service import ConfigurationService
-from database import DatabaseManager
+from app.core.configuration.core.configuration_service import ConfigurationService
+from app.core.database.core.database_manager import DatabaseManager
 from config import Config
 
 try:
@@ -123,7 +123,7 @@ Daily configuration review should include:
    # Check recent configuration changes
    python3 -c "
    from system_configuration_manager import SystemConfigurationManager
-   from database import DatabaseManager
+   from app.core.database.core.database_manager import DatabaseManager
    from config import Config
    from datetime import datetime, timedelta
    
@@ -278,7 +278,7 @@ def bulk_update_configurations(updates, updated_by="admin"):
         updated_by: User making the changes
     """
     from system_configuration_manager import SystemConfigurationManager
-    from database import DatabaseManager
+    from app.core.database.core.database_manager import DatabaseManager
     from config import Config
     
     config = Config()
@@ -504,7 +504,7 @@ read -p "Continue? (yes/no): " confirm
 if [ "$confirm" = "yes" ]; then
     python3 -c "
 from system_configuration_manager import SystemConfigurationManager
-from database import DatabaseManager
+from app.core.database.core.database_manager import DatabaseManager
 from config import Config
 
 config = Config()

@@ -12,10 +12,10 @@ import os
 sys.path.insert(0, os.path.dirname(os.path.abspath(__file__)))
 
 from config import Config
-from database import DatabaseManager
+from app.core.database.core.database_manager import DatabaseManager
 from unified_session_manager import UnifiedSessionManager as SessionManager
 from models import User, PlatformConnection
-from platform_context_utils import ensure_platform_context, validate_platform_context, refresh_platform_context
+from app.services.platform.utils.platform_context_utils import ensure_platform_context, validate_platform_context, refresh_platform_context
 
 # MySQL integration test imports
 from tests.mysql_test_base import MySQLIntegrationTestBase

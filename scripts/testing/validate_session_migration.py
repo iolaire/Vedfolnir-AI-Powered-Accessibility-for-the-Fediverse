@@ -25,7 +25,7 @@ class SessionMigrationValidation(unittest.TestCase):
         """Set up test environment"""
         try:
             from config import Config
-            from database import DatabaseManager
+            from app.core.database.core.database_manager import DatabaseManager
             
             self.config = Config()
             self.db_manager = DatabaseManager(self.config)
@@ -172,7 +172,7 @@ class SessionMigrationValidation(unittest.TestCase):
     def test_session_health_checker_compatibility(self):
         """Test that session health checker works with UnifiedSessionManager"""
         try:
-            from session_health_checker import SessionHealthChecker, get_session_health_checker
+            from app.services.monitoring.health.checkers.session_health_checker import SessionHealthChecker, get_session_health_checker
             from unified_session_manager import UnifiedSessionManager
             
             # Test that health checker can be created with UnifiedSessionManager

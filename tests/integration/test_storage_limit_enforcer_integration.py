@@ -18,9 +18,9 @@ from unittest.mock import Mock, patch
 import sys
 sys.path.insert(0, os.path.join(os.path.dirname(__file__), '..', '..'))
 
-from storage_limit_enforcer import StorageLimitEnforcer, StorageCheckResult
-from storage_configuration_service import StorageConfigurationService
-from storage_monitor_service import StorageMonitorService
+from app.services.storage.components.storage_limit_enforcer import StorageLimitEnforcer, StorageCheckResult
+from app.services.storage.components.storage_configuration_service import StorageConfigurationService
+from app.services.storage.components.storage_monitor_service import StorageMonitorService
 
 
 class TestStorageLimitEnforcerIntegration(unittest.TestCase):

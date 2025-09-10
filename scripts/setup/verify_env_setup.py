@@ -54,7 +54,7 @@ def check_database_connection():
         load_dotenv()
         
         from config import Config
-        from database import DatabaseManager
+        from app.core.database.core.database_manager import DatabaseManager
         
         config = Config()
         db_manager = DatabaseManager(config)
@@ -79,7 +79,7 @@ def check_admin_user():
         load_dotenv()
         
         from config import Config
-        from database import DatabaseManager
+        from app.core.database.core.database_manager import DatabaseManager
         from models import User, UserRole
         
         config = Config()

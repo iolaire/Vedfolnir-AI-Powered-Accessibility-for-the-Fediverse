@@ -17,8 +17,8 @@ from sqlalchemy import create_engine
 from sqlalchemy.orm import sessionmaker
 
 from models import Base, User, UserRole
-from routes.user_management_routes import register_user_management_routes
-from database import DatabaseManager
+from app.blueprints.auth.user_management_routes import register_user_management_routes
+from app.core.database.core.database_manager import DatabaseManager
 from config import Config
 
 # MySQL integration test imports

@@ -33,7 +33,7 @@ from websocket_cors_manager import CORSManager
 from websocket_auth_handler import WebSocketAuthHandler, AuthenticationResult
 from websocket_factory import WebSocketFactory
 from session_manager_v2 import SessionManagerV2
-from database import DatabaseManager
+from app.core.database.core.database_manager import DatabaseManager
 
 
 class PerformanceMetrics:

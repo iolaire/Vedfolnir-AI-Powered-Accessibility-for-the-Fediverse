@@ -14,8 +14,8 @@ from typing import Dict, Any, Optional
 from datetime import datetime, timezone
 from flask import jsonify, render_template_string
 
-from enhanced_maintenance_mode_service import MaintenanceStatus, MaintenanceMode
-from maintenance_operation_classifier import OperationType
+from app.services.maintenance.enhanced.enhanced_maintenance_mode_service import MaintenanceStatus, MaintenanceMode
+from app.services.maintenance.components.maintenance_operation_classifier import OperationType
 
 logger = logging.getLogger(__name__)
 

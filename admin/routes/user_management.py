@@ -9,13 +9,13 @@ from flask_login import login_required, current_user
 from models import User, UserRole
 # from notification_flash_replacement import send_notification  # Removed - using unified notification system
 from session_error_handlers import with_session_error_handling
-from security.core.security_middleware import rate_limit, validate_input_length, validate_csrf_token
+from app.core.security.core.security_middleware import rate_limit, validate_input_length, validate_csrf_token
 from enhanced_input_validation import enhanced_input_validation
-from security.core.security_utils import sanitize_for_log
+from app.core.security.core.security_utils import sanitize_for_log
 from ..forms.user_forms import EditUserForm, DeleteUserForm, AddUserForm, ResetPasswordForm, UserStatusForm
 from ..services.user_service import UserService
 from ..security.admin_access_control import admin_required, admin_session_preservation, admin_user_management_access, ensure_admin_count
-from unified_notification_manager import UnifiedNotificationManager
+from app.services.notification.manager.unified_manager import UnifiedNotificationManager
 
 def validate_form_submission(form):
     """
@@ -170,7 +170,7 @@ def register_routes(bp):
                     original_user = session.query(User).filter_by(id=form.user_id.data).first()
                     if not original_user:
                         # Send error notification
-                        from notification_helpers import send_error_notification
+                        from app.services.notification.helpers.notification_helpers import send_error_notification
                         send_error_notification("User not found.", "User Not Found")
                         return redirect(url_for('admin.user_management'))
                     
@@ -214,24 +214,24 @@ def register_routes(bp):
                         )
                     
                     # Send success notification
-                    from notification_helpers import send_success_notification
+                    from app.services.notification.helpers.notification_helpers import send_success_notification
                     send_success_notification(f'User {form.username.data} updated successfully', 'User Updated')
                 else:
                     # Send error notification
-                    from notification_helpers import send_error_notification
+                    from app.services.notification.helpers.notification_helpers import send_error_notification
                     send_error_notification("Failed to update user.", "Update Failed")
                     pass
                     
             except Exception as e:
                 current_app.logger.error(f"Error updating user: {sanitize_for_log(str(e))}")
                 # Send error notification
-                from notification_helpers import send_error_notification
+                from app.services.notification.helpers.notification_helpers import send_error_notification
                 send_error_notification("An error occurred while updating the user.", "Update Error")
         else:
             for field, errors in form.errors.items():
                 for error in errors:
                     # Send error notification
-                    from notification_helpers import send_error_notification
+                    from app.services.notification.helpers.notification_helpers import send_error_notification
                     send_error_notification(f'{field}: {error}', 'Form Validation Error')
         
         return redirect(url_for('admin.user_management'))
@@ -249,7 +249,7 @@ def register_routes(bp):
         if validate_form_submission(form):
             if int(form.user_id.data) == current_user.id:
                 # Send error notification
-                from notification_helpers import send_error_notification
+                from app.services.notification.helpers.notification_helpers import send_error_notification
                 send_error_notification("You cannot delete your own account.", "Invalid Operation")
                 return redirect(url_for('admin.user_management'))
             
@@ -263,7 +263,7 @@ def register_routes(bp):
                     target_user = session.query(User).filter_by(id=int(form.user_id.data)).first()
                     if not target_user:
                         # Send error notification
-                        from notification_helpers import send_error_notification
+                        from app.services.notification.helpers.notification_helpers import send_error_notification
                         send_error_notification("User not found.", "User Not Found")
                         return redirect(url_for('admin.user_management'))
                     
@@ -287,19 +287,19 @@ def register_routes(bp):
                     )
                     
                     # Send success notification
-                    from notification_helpers import send_success_notification
+                    from app.services.notification.helpers.notification_helpers import send_success_notification
                     send_success_notification(message, 'User Deleted')
                     # Preserve admin session
                     user_service.preserve_admin_session(current_user.id)
                 else:
                     # Send error notification
-                    from notification_helpers import send_error_notification
+                    from app.services.notification.helpers.notification_helpers import send_error_notification
                     send_error_notification(message, 'User Deletion Failed')
                     
             except Exception as e:
                 current_app.logger.error(f"Error deleting user: {sanitize_for_log(str(e))}")
                 # Send error notification
-                from notification_helpers import send_error_notification
+                from app.services.notification.helpers.notification_helpers import send_error_notification
                 send_error_notification("An error occurred while deleting the user.", "Delete Error")
         
         return redirect(url_for('admin.user_management'))
@@ -481,7 +481,7 @@ def register_routes(bp):
         """Update user role"""
         if not current_user.role == UserRole.ADMIN:
             # Send error notification
-            from notification_helpers import send_error_notification
+            from app.services.notification.helpers.notification_helpers import send_error_notification
             send_error_notification("Access denied. Admin privileges required.", "Access Denied")
             return redirect(url_for('admin.user_management'))
             
@@ -492,7 +492,7 @@ def register_routes(bp):
         
         if not user_id or not new_role:
             # Send error notification
-            from notification_helpers import send_error_notification
+            from app.services.notification.helpers.notification_helpers import send_error_notification
             send_error_notification("Missing required fields.", "Invalid Input")
             return redirect(url_for('admin.user_management'))
         
@@ -500,7 +500,7 @@ def register_routes(bp):
             new_role_enum = UserRole(new_role)
         except ValueError:
             # Send error notification
-            from notification_helpers import send_error_notification
+            from app.services.notification.helpers.notification_helpers import send_error_notification
             send_error_notification("Invalid role specified.", "Invalid Role")
             return redirect(url_for('admin.user_management'))
         
@@ -514,7 +514,7 @@ def register_routes(bp):
                 target_user = session.query(User).filter_by(id=int(user_id)).first()
                 if not target_user:
                     # Send error notification
-                    from notification_helpers import send_error_notification
+                    from app.services.notification.helpers.notification_helpers import send_error_notification
                     send_error_notification("User not found.", "User Not Found")
                     return redirect(url_for('admin.user_management'))
                 
@@ -539,17 +539,17 @@ def register_routes(bp):
                 )
                 
                 # Send success notification
-                from notification_helpers import send_success_notification
+                from app.services.notification.helpers.notification_helpers import send_success_notification
                 send_success_notification(message, 'Role Changed')
             else:
                 # Send error notification
-                from notification_helpers import send_error_notification
+                from app.services.notification.helpers.notification_helpers import send_error_notification
                 send_error_notification(message, 'Role Change Failed')
                 
         except Exception as e:
             current_app.logger.error(f"Error updating user role: {sanitize_for_log(str(e))}")
             # Send error notification
-            from notification_helpers import send_error_notification
+            from app.services.notification.helpers.notification_helpers import send_error_notification
             send_error_notification("An error occurred while updating user role.", "Role Update Error")
         
         return redirect(url_for('admin.user_management'))
@@ -563,7 +563,7 @@ def register_routes(bp):
         """Update user account status"""
         if not current_user.role == UserRole.ADMIN:
             # Send error notification
-            from notification_helpers import send_error_notification
+            from app.services.notification.helpers.notification_helpers import send_error_notification
             send_error_notification("Access denied. Admin privileges required.", "Access Denied")
             return redirect(url_for('admin.user_management'))
             
@@ -576,7 +576,7 @@ def register_routes(bp):
         
         if not user_id:
             # Send error notification
-            from notification_helpers import send_error_notification
+            from app.services.notification.helpers.notification_helpers import send_error_notification
             send_error_notification("Missing user ID.", "Invalid Input")
             return redirect(url_for('admin.user_management'))
         
@@ -660,17 +660,17 @@ def register_routes(bp):
                     )
                 
                 # Send success notification
-                from notification_helpers import send_success_notification
+                from app.services.notification.helpers.notification_helpers import send_success_notification
                 send_success_notification(message, 'Status Changed')
             else:
                 # Send error notification
-                from notification_helpers import send_error_notification
+                from app.services.notification.helpers.notification_helpers import send_error_notification
                 send_error_notification(message, 'Status Change Failed')
                 
         except Exception as e:
             current_app.logger.error(f"Error updating user status: {sanitize_for_log(str(e))}")
             # Send error notification
-            from notification_helpers import send_error_notification
+            from app.services.notification.helpers.notification_helpers import send_error_notification
             send_error_notification("An error occurred while updating user status.", "Status Update Error")
         
         return redirect(url_for('admin.user_management'))
@@ -682,7 +682,7 @@ def register_routes(bp):
         """Reset user password as admin"""
         if not current_user.role == UserRole.ADMIN:
             # Send error notification
-            from notification_helpers import send_error_notification
+            from app.services.notification.helpers.notification_helpers import send_error_notification
             send_error_notification("Access denied. Admin privileges required.", "Access Denied")
             return redirect(url_for('admin.user_management'))
             
@@ -693,7 +693,7 @@ def register_routes(bp):
         
         if not user_id:
             # Send error notification
-            from notification_helpers import send_error_notification
+            from app.services.notification.helpers.notification_helpers import send_error_notification
             send_error_notification("Missing user ID.", "Invalid Input")
             return redirect(url_for('admin.user_management'))
         
@@ -707,7 +707,7 @@ def register_routes(bp):
                 target_user = session.query(User).filter_by(id=int(user_id)).first()
                 if not target_user:
                     # Send error notification
-                    from notification_helpers import send_error_notification
+                    from app.services.notification.helpers.notification_helpers import send_error_notification
                     send_error_notification("User not found.", "User Not Found")
                     return redirect(url_for('admin.user_management'))
                 
@@ -732,21 +732,21 @@ def register_routes(bp):
                 
                 if reset_method == 'generate' and temp_password:
                     # Send success notification with temporary password
-                    from notification_helpers import send_success_notification
+                    from app.services.notification.helpers.notification_helpers import send_success_notification
                     send_success_notification(f'Password reset successfully. Temporary password: {temp_password}', 'Password Reset')
                 else:
                     # Send success notification
-                    from notification_helpers import send_success_notification
+                    from app.services.notification.helpers.notification_helpers import send_success_notification
                     send_success_notification(message, 'Password Reset')
             else:
                 # Send error notification
-                from notification_helpers import send_error_notification
+                from app.services.notification.helpers.notification_helpers import send_error_notification
                 send_error_notification(message, 'Password Reset Failed')
                 
         except Exception as e:
             current_app.logger.error(f"Error resetting user password: {sanitize_for_log(str(e))}")
             # Send error notification
-            from notification_helpers import send_error_notification
+            from app.services.notification.helpers.notification_helpers import send_error_notification
             send_error_notification("An error occurred while resetting password.", "Password Reset Error")
         
         return redirect(url_for('admin.user_management'))

@@ -15,7 +15,7 @@ import os
 # Add project root to path for imports
 sys.path.insert(0, os.path.join(os.path.dirname(__file__), '..', '..'))
 
-from enhanced_maintenance_mode_service import (
+from app.services.maintenance.enhanced.enhanced_maintenance_mode_service import (
     EnhancedMaintenanceModeService, MaintenanceMode, MaintenanceStatus,
     MaintenanceActivationError, SessionInvalidationError
 )

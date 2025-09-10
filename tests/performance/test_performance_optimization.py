@@ -17,13 +17,13 @@ from datetime import datetime, timedelta, timezone
 from unittest.mock import Mock, patch, MagicMock
 
 from config import Config
-from database import DatabaseManager
+from app.core.database.core.database_manager import DatabaseManager
 from models import User, UserRole, CaptionGenerationTask, TaskStatus, JobPriority, JobAuditLog
 from performance_cache_manager import PerformanceCacheManager, CacheConfig, CacheKeyGenerator
 from database_query_optimizer import DatabaseQueryOptimizer
-from background_cleanup_manager import BackgroundCleanupManager, CleanupConfig
-from enhanced_admin_management_service import EnhancedAdminManagementService
-from task_queue_manager import TaskQueueManager
+from app.services.task.core.background_cleanup_manager import BackgroundCleanupManager, CleanupConfig
+from app.services.admin.enhanced.enhanced_admin_management_service import EnhancedAdminManagementService
+from app.services.task.core.task_queue_manager import TaskQueueManager
 
 class TestPerformanceCacheManager(unittest.TestCase):
     """Test performance cache manager functionality"""

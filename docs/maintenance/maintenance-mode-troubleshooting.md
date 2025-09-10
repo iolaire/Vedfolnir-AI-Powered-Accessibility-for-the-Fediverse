@@ -39,7 +39,7 @@ Before diving into specific issues, run through this quick diagnostic checklist:
 # Test configuration service connectivity
 python -c "
 from config import Config
-from configuration_service import ConfigurationService
+from app.core.configuration.core.configuration_service import ConfigurationService
 config = Config()
 service = ConfigurationService(config)
 try:
@@ -55,7 +55,7 @@ except Exception as e:
 # Test database connectivity
 python -c "
 from config import Config
-from database import DatabaseManager
+from app.core.database.core.database_manager import DatabaseManager
 config = Config()
 db_manager = DatabaseManager(config)
 try:
@@ -72,7 +72,7 @@ except Exception as e:
 # Verify admin user permissions
 python -c "
 from config import Config
-from database import DatabaseManager
+from app.core.database.core.database_manager import DatabaseManager
 from models import User
 config = Config()
 db_manager = DatabaseManager(config)
@@ -127,7 +127,7 @@ grep -E "^DB_|^DATABASE_" .env
 # Update user role to admin
 python -c "
 from config import Config
-from database import DatabaseManager
+from app.core.database.core.database_manager import DatabaseManager
 from models import User, UserRole
 config = Config()
 db_manager = DatabaseManager(config)
@@ -386,7 +386,7 @@ print('Emergency handler initialized successfully')
 ```bash
 # List currently running jobs
 python -c "
-from task_queue_manager import TaskQueueManager
+from app.services.task.core.task_queue_manager import TaskQueueManager
 from config import Config
 config = Config()
 manager = TaskQueueManager(config)
@@ -433,7 +433,7 @@ print(f'Emergency mode deactivated: {result}')
 ```bash
 # Manually terminate running jobs
 python -c "
-from task_queue_manager import TaskQueueManager
+from app.services.task.core.task_queue_manager import TaskQueueManager
 from config import Config
 config = Config()
 manager = TaskQueueManager(config)
@@ -446,7 +446,7 @@ print(f'Terminated {terminated} jobs')
 ```bash
 # Reset emergency state in configuration
 python -c "
-from configuration_service import ConfigurationService
+from app.core.configuration.core.configuration_service import ConfigurationService
 from config import Config
 config = Config()
 service = ConfigurationService(config)
@@ -486,7 +486,7 @@ df -h
 ```bash
 # Check database connection pool
 python -c "
-from database import DatabaseManager
+from app.core.database.core.database_manager import DatabaseManager
 from config import Config
 config = Config()
 db_manager = DatabaseManager(config)
@@ -725,10 +725,10 @@ echo "=== Maintenance Mode Health Check ==="
 echo "Date: $(date)"
 
 # Check configuration service
-python -c "from config import Config; from configuration_service import ConfigurationService; print('Config service: OK')" 2>/dev/null || echo "Config service: ERROR"
+python -c "from config import Config; from app.core.configuration.core.configuration_service import ConfigurationService; print('Config service: OK')" 2>/dev/null || echo "Config service: ERROR"
 
 # Check database
-python -c "from database import DatabaseManager; from config import Config; db = DatabaseManager(Config()); print('Database: OK')" 2>/dev/null || echo "Database: ERROR"
+python -c "from app.core.database.core.database_manager import DatabaseManager; from config import Config; db = DatabaseManager(Config()); print('Database: OK')" 2>/dev/null || echo "Database: ERROR"
 
 # Check Redis
 redis-cli ping >/dev/null 2>&1 && echo "Redis: OK" || echo "Redis: ERROR"

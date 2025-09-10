@@ -19,7 +19,7 @@ sys.path.insert(0, os.path.dirname(os.path.dirname(os.path.abspath(__file__))))
 
 from config import Config
 from models import User, PlatformConnection, Post, Image
-from database import DatabaseManager
+from app.core.database.core.database_manager import DatabaseManager
 
 class PlatformDataBackup:
     """Platform-aware data backup utility"""

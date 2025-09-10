@@ -17,7 +17,7 @@ from datetime import datetime, timezone, timedelta
 # Add project root to path
 sys.path.insert(0, os.path.join(os.path.dirname(__file__), '..', '..'))
 
-from maintenance_configuration_validator import (
+from app.services.maintenance.components.maintenance_configuration_validator import (
     MaintenanceConfigurationValidator,
     ValidationSeverity,
     ValidationMessage,

@@ -71,7 +71,7 @@ def test_database_manager_patching():
     # Test 3: Patch the DatabaseManager class
     print("\n3. Testing class-level patching:")
     try:
-        from database import DatabaseManager
+        from app.core.database.core.database_manager import DatabaseManager
         
         with patch('database.DatabaseManager') as MockDatabaseManager:
             # Configure the mock class
@@ -237,7 +237,7 @@ class TestDatabaseManagerPatching(MySQLIntegrationTestBase):
             MockDatabaseManager.return_value = mock_instance
             
             # Import and create instance
-            from database import DatabaseManager
+            from app.core.database.core.database_manager import DatabaseManager
             from config import Config
 
 # MySQL integration test imports

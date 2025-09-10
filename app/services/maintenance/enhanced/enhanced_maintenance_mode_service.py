@@ -17,7 +17,7 @@ from datetime import datetime, timezone
 from enum import Enum
 import uuid
 
-from configuration_service import ConfigurationService
+from app.core.configuration.core.configuration_service import ConfigurationService
 from models import User, UserRole
 
 logger = logging.getLogger(__name__)
@@ -104,7 +104,7 @@ class EnhancedMaintenanceModeService:
         self._completion_tracker = None
         if db_manager:
             try:
-                from maintenance_operation_completion_tracker import MaintenanceOperationCompletionTracker
+                from app.services.maintenance.components.maintenance_operation_completion_tracker import MaintenanceOperationCompletionTracker
                 self._completion_tracker = MaintenanceOperationCompletionTracker(
                     db_manager=db_manager,
                     maintenance_service=self
@@ -313,7 +313,7 @@ class EnhancedMaintenanceModeService:
                 return False
             
             # Import operation classifier here to avoid circular imports
-            from maintenance_operation_classifier import MaintenanceOperationClassifier
+            from app.services.maintenance.components.maintenance_operation_classifier import MaintenanceOperationClassifier
             
             # Use operation classifier to determine if operation should be blocked
             classifier = MaintenanceOperationClassifier()
@@ -399,7 +399,7 @@ class EnhancedMaintenanceModeService:
                 return []
             
             # Import operation classifier here to avoid circular imports
-            from maintenance_operation_classifier import MaintenanceOperationClassifier, OperationType
+            from app.services.maintenance.components.maintenance_operation_classifier import MaintenanceOperationClassifier, OperationType
             
             classifier = MaintenanceOperationClassifier()
             blocked_operations = []
@@ -476,7 +476,7 @@ class EnhancedMaintenanceModeService:
         """
         try:
             # Import operation classifier here to avoid circular imports
-            from maintenance_operation_classifier import MaintenanceOperationClassifier
+            from app.services.maintenance.components.maintenance_operation_classifier import MaintenanceOperationClassifier
             
             # Ensure operation has leading slash for classification
             # (classifier patterns expect URL paths like /start_caption_generation)
@@ -1041,7 +1041,7 @@ class EnhancedMaintenanceModeService:
                     return  # Test mode not active
                 
                 # Import operation classifier here to avoid circular imports
-                from maintenance_operation_classifier import MaintenanceOperationClassifier
+                from app.services.maintenance.components.maintenance_operation_classifier import MaintenanceOperationClassifier
                 
                 classifier = MaintenanceOperationClassifier()
                 operation_type = classifier.classify_operation(operation, 'GET')
@@ -1217,7 +1217,7 @@ class EnhancedMaintenanceModeService:
         """
         try:
             # Import operation classifier here to avoid circular imports
-            from maintenance_operation_classifier import MaintenanceOperationClassifier
+            from app.services.maintenance.components.maintenance_operation_classifier import MaintenanceOperationClassifier
             
             classifier = MaintenanceOperationClassifier()
             expected_blocked_operations = classifier.get_blocked_operations_for_mode(MaintenanceMode.TEST)

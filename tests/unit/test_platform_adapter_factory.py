@@ -13,7 +13,7 @@ from unittest.mock import Mock, patch
 from dataclasses import dataclass
 from typing import Optional
 
-from activitypub_platforms import (
+from app.services.activitypub.components.activitypub_platforms import (
     PlatformAdapterFactory,
     PlatformAdapterError,
     UnsupportedPlatformError,

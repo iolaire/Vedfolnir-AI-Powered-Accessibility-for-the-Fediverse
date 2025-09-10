@@ -9,7 +9,7 @@ from flask_login import UserMixin
 from sqlalchemy.exc import SQLAlchemyError
 from sqlalchemy.orm.exc import DetachedInstanceError
 from models import User, PlatformConnection
-from session_manager import SessionManager
+from app.core.session.core.session_manager import SessionManager
 
 logger = logging.getLogger(__name__)
 

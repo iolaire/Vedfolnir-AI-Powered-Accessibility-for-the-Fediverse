@@ -22,7 +22,7 @@ import sys
 import os
 sys.path.insert(0, os.path.join(os.path.dirname(__file__), '..', '..'))
 
-from notification_performance_optimizer import (
+from app.services.notification.components.notification_performance_optimizer import (
     NotificationPerformanceOptimizer, OptimizationLevel, NotificationCache,
     NotificationBatcher, NotificationThrottler, MemoryManager,
     BatchConfiguration, ThrottleConfiguration, CacheConfiguration, MemoryConfiguration
@@ -31,13 +31,13 @@ from websocket_connection_optimizer import (
     WebSocketConnectionOptimizer, ConnectionPool, ConnectionPoolConfig,
     ResourceLimits, ConnectionState, ConnectionPriority
 )
-from notification_database_optimizer import (
+from app.services.notification.components.notification_database_optimizer import (
     NotificationDatabaseOptimizer, DatabaseOptimizationConfig,
     QueryCache, BatchProcessor, QueryPerformanceMonitor, QueryType
 )
-from unified_notification_manager import NotificationMessage, NotificationType, NotificationPriority, NotificationCategory
+from app.services.notification.manager.unified_manager import NotificationMessage, NotificationType, NotificationPriority, NotificationCategory
 from notification_message_router import NotificationMessageRouter
-from notification_persistence_manager import NotificationPersistenceManager
+from app.services.notification.components.notification_persistence_manager import NotificationPersistenceManager
 
 
 class TestNotificationCache(unittest.TestCase):

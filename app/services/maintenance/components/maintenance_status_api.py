@@ -175,7 +175,7 @@ class MaintenanceStatusAPI:
                 return []
             
             # Import operation classifier
-            from maintenance_operation_classifier import MaintenanceOperationClassifier, OperationType
+            from app.services.maintenance.components.maintenance_operation_classifier import MaintenanceOperationClassifier, OperationType
             
             classifier = MaintenanceOperationClassifier()
             blocked_operations = []
@@ -290,7 +290,7 @@ class MaintenanceStatusAPI:
         """
         try:
             # Import operation classifier
-            from maintenance_operation_classifier import MaintenanceOperationClassifier, OperationType
+            from app.services.maintenance.components.maintenance_operation_classifier import MaintenanceOperationClassifier, OperationType
             
             # Map operation types to example endpoints
             endpoint_examples = {

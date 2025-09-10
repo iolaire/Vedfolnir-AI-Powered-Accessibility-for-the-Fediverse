@@ -10,7 +10,7 @@ sys.path.append(os.path.dirname(os.path.dirname(os.path.dirname(os.path.abspath(
 
 import logging
 from config import Config
-from database import DatabaseManager, DatabaseOperationError
+from app.core.database.core.database_manager import DatabaseManager, DatabaseOperationError
 from mysql_connection_validator import validate_mysql_connection
 
 # Set up logging
@@ -180,7 +180,7 @@ def test_mysql_specific_recovery():
     
     try:
         # Test system recovery module
-        from security.error_handling.system_recovery import SystemRecoveryManager
+        from app.core.security.error_handling.system_recovery import SystemRecoveryManager
         
         recovery_manager = SystemRecoveryManager()
         

@@ -16,7 +16,7 @@ from datetime import datetime
 from unittest.mock import patch, MagicMock
 
 from config import Config
-from database import DatabaseManager
+from app.core.database.core.database_manager import DatabaseManager
 from models import User, UserRole, UserAuditLog
 from services.user_management_service import UserProfileService, UserDeletionService
 

@@ -27,7 +27,7 @@ def update_imports_in_file(file_path, dry_run=False):
     # Update import statements
     patterns = [
         # Direct imports
-        (r'from session_manager import SessionManager', 'from unified_session_manager import UnifiedSessionManager'),
+        (r'from app.core.session.core.session_manager import SessionManager', 'from unified_session_manager import UnifiedSessionManager'),
         (r'from session_manager import get_current_platform_context', 'from unified_session_manager import get_current_platform_context'),
         (r'from session_manager import get_current_platform', 'from unified_session_manager import get_current_platform'),
         (r'from session_manager import get_current_user_from_context', 'from unified_session_manager import get_current_user_from_context'),

@@ -20,8 +20,8 @@ from datetime import datetime, timezone, timedelta
 sys.path.insert(0, os.path.join(os.path.dirname(__file__), '..', '..'))
 
 from queue_size_monitor import QueueSizeMonitor, AlertLevel, QueueAlert
-from task_queue_manager import TaskQueueManager
-from task_queue_configuration_adapter import TaskQueueConfigurationAdapter
+from app.services.task.core.task_queue_manager import TaskQueueManager
+from app.services.task.configuration.task_queue_configuration_adapter import TaskQueueConfigurationAdapter
 
 
 class TestQueueSizeLimiting(unittest.TestCase):

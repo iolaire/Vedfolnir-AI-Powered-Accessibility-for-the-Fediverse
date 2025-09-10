@@ -55,7 +55,7 @@ Updated `web_app.py` from complex try/catch fallback pattern to:
 
 ```python
 # Initialize consolidated session manager
-from session_manager import SessionManager
+from app.core.session.core.session_manager import SessionManager
 unified_session_manager = SessionManager(db_manager)
 app.unified_session_manager = unified_session_manager
 ```

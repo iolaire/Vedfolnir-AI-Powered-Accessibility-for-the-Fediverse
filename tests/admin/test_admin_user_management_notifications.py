@@ -18,13 +18,13 @@ from datetime import datetime, timezone
 # Add project root to path for imports
 sys.path.insert(0, os.path.join(os.path.dirname(__file__), '..', '..'))
 
-from admin_user_management_notification_handler import (
+from app.services.admin.components.admin_user_management_notification_handler import (
     AdminUserManagementNotificationHandler, UserOperationContext
 )
-from admin_user_management_integration import (
+from app.services.admin.components.admin_user_management_integration import (
     AdminUserManagementIntegration, create_admin_user_management_integration
 )
-from unified_notification_manager import (
+from app.services.notification.manager.unified_manager import (
     UnifiedNotificationManager, AdminNotificationMessage, 
     NotificationType, NotificationPriority, NotificationCategory
 )

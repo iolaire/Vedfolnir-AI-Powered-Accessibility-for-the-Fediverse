@@ -12,7 +12,7 @@ from datetime import datetime, timedelta
 from unittest.mock import Mock, patch, AsyncMock
 
 from config import Config
-from database import DatabaseManager
+from app.core.database.core.database_manager import DatabaseManager
 from models import User, UserRole
 from services.user_management_service import PasswordManagementService
 from tests.test_helpers import create_test_user_with_platforms, cleanup_test_user

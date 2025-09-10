@@ -19,11 +19,11 @@ import json
 # Add project root to path
 sys.path.insert(0, os.path.join(os.path.dirname(__file__), '..', '..'))
 
-from notification_emergency_recovery import (
+from app.services.notification.components.notification_emergency_recovery import (
     NotificationEmergencyRecovery, EmergencyLevel, FailureType, RecoveryAction,
     EmergencyEvent, RecoveryPlan
 )
-from unified_notification_manager import NotificationMessage
+from app.services.notification.manager.unified_manager import NotificationMessage
 from models import NotificationType, NotificationPriority, NotificationCategory
 
 

@@ -20,8 +20,8 @@ from pathlib import Path
 # Add project root to path
 sys.path.insert(0, os.path.join(os.path.dirname(__file__), '..', '..'))
 
-from storage_monitor_service import StorageMonitorService
-from storage_configuration_service import StorageConfigurationService
+from app.services.storage.components.storage_monitor_service import StorageMonitorService
+from app.services.storage.components.storage_configuration_service import StorageConfigurationService
 
 
 def create_demo_files(storage_dir: str) -> dict:

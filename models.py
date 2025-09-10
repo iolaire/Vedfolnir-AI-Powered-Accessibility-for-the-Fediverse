@@ -997,7 +997,7 @@ class PlatformConnection(Base):
         
         try:
             # Import here to avoid circular imports
-            from activitypub_client import ActivityPubClient
+            from app.services.activitypub.components.activitypub_client import ActivityPubClient
             import asyncio
             
             config = self.to_activitypub_config()
@@ -2047,7 +2047,7 @@ class NotificationStorage(Base):
     
     def to_notification_message(self):
         """Convert to NotificationMessage object"""
-        from unified_notification_manager import NotificationMessage
+        from app.services.notification.manager.unified_manager import NotificationMessage
         
         data = json.loads(self.data) if self.data else {}
         return NotificationMessage(

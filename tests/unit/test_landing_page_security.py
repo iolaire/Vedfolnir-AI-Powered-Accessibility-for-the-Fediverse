@@ -95,8 +95,8 @@ class TestLandingPageSecurity(unittest.TestCase):
     def test_security_middleware_initialization(self):
         """Test that security middleware can be imported and initialized"""
         try:
-            from security.core.security_middleware import SecurityMiddleware
-            from security.core.csrf_token_manager import CSRFTokenManager, get_csrf_token_manager
+            from app.core.security.core.security_middleware import SecurityMiddleware
+            from app.core.security.core.csrf_token_manager import CSRFTokenManager, get_csrf_token_manager
             
             # Test that classes can be instantiated
             self.assertTrue(SecurityMiddleware)

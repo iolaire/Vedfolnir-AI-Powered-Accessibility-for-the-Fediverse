@@ -20,7 +20,7 @@ from datetime import datetime, timezone
 from dataclasses import dataclass
 from enum import Enum
 
-from performance_configuration_adapter import PerformanceConfigurationAdapter, MemoryLimitExceededError
+from app.core.configuration.adapters.performance_configuration_adapter import PerformanceConfigurationAdapter, MemoryLimitExceededError
 
 logger = logging.getLogger(__name__)
 

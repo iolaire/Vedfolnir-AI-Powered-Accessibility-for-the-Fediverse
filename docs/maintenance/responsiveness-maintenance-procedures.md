@@ -45,7 +45,7 @@ print(f'  CPU: {cpu:.1f}%')
 # 4. Database connection health
 echo -e "\n4. Database Health:"
 python -c "
-from database import DatabaseManager
+from app.core.database.core.database_manager import DatabaseManager
 from config import Config
 db = DatabaseManager(Config())
 try:
@@ -65,7 +65,7 @@ redis-cli info memory | grep used_memory_human | cut -d: -f2
 # 6. Background task status
 echo -e "\n6. Background Tasks:"
 python -c "
-from background_cleanup_manager import BackgroundCleanupManager
+from app.services.task.core.background_cleanup_manager import BackgroundCleanupManager
 try:
     manager = BackgroundCleanupManager()
     stats = manager.get_cleanup_stats()
@@ -89,7 +89,7 @@ echo "=== Daily Evening Performance Review - $(date) ==="
 # 1. Performance summary
 echo "1. Daily Performance Summary:"
 python -c "
-from utils.performance_monitor import PerformanceMonitor
+from app.services.monitoring.performance.monitors.performance_monitor import PerformanceMonitor
 try:
     monitor = PerformanceMonitor()
     today_stats = monitor.get_daily_stats()
@@ -118,7 +118,7 @@ print('  Peak usage: Check monitoring dashboard for historical data')
 # 3. Cleanup effectiveness
 echo -e "\n3. Cleanup Effectiveness:"
 python -c "
-from background_cleanup_manager import BackgroundCleanupManager
+from app.services.task.core.background_cleanup_manager import BackgroundCleanupManager
 try:
     manager = BackgroundCleanupManager()
     cleanup_stats = manager.get_daily_cleanup_stats()
@@ -159,7 +159,7 @@ echo "=== Weekly Performance Analysis - $(date) ==="
 # 1. Performance trend analysis
 echo "1. Performance Trend Analysis:"
 python -c "
-from utils.performance_monitor import PerformanceMonitor
+from app.services.monitoring.performance.monitors.performance_monitor import PerformanceMonitor
 from datetime import datetime, timedelta
 
 monitor = PerformanceMonitor()
@@ -197,7 +197,7 @@ WHERE start_time >= DATE_SUB(NOW(), INTERVAL 7 DAY);
 # 3. Connection pool analysis
 echo -e "\n3. Connection Pool Analysis:"
 python -c "
-from database import DatabaseManager
+from app.core.database.core.database_manager import DatabaseManager
 from config import Config
 try:
     db = DatabaseManager(Config())
@@ -212,7 +212,7 @@ except Exception as e:
 # 4. Memory usage analysis
 echo -e "\n4. Memory Usage Analysis:"
 python -c "
-from utils.performance_monitor import PerformanceMonitor
+from app.services.monitoring.performance.monitors.performance_monitor import PerformanceMonitor
 try:
     monitor = PerformanceMonitor()
     memory_analysis = monitor.analyze_weekly_memory_usage()
@@ -285,7 +285,7 @@ echo "1. Performance Baseline Comparison:"
 python -c "
 import json
 from datetime import datetime, timedelta
-from utils.performance_monitor import PerformanceMonitor
+from app.services.monitoring.performance.monitors.performance_monitor import PerformanceMonitor
 
 try:
     # Load baseline metrics
@@ -313,7 +313,7 @@ except Exception as e:
 # 2. Capacity planning analysis
 echo -e "\n2. Capacity Planning Analysis:"
 python -c "
-from utils.performance_monitor import PerformanceMonitor
+from app.services.monitoring.performance.monitors.performance_monitor import PerformanceMonitor
 try:
     monitor = PerformanceMonitor()
     capacity_analysis = monitor.analyze_capacity_trends()
@@ -372,7 +372,7 @@ echo "=== Monthly Configuration Optimization - $(date) ==="
 echo "1. Configuration Effectiveness Analysis:"
 python -c "
 from config import Config
-from utils.performance_monitor import PerformanceMonitor
+from app.services.monitoring.performance.monitors.performance_monitor import PerformanceMonitor
 
 config = Config()
 monitor = PerformanceMonitor()
@@ -449,7 +449,7 @@ logrotate /etc/logrotate.d/vedfolnir >> $LOG_FILE 2>&1
 
 # 4. Update performance metrics
 python -c "
-from utils.performance_monitor import PerformanceMonitor
+from app.services.monitoring.performance.monitors.performance_monitor import PerformanceMonitor
 try:
     monitor = PerformanceMonitor()
     monitor.update_daily_metrics()
@@ -658,7 +658,7 @@ except Exception as e:
 echo -e "\n2. Alert Threshold Optimization:"
 python -c "
 from config import Config
-from utils.performance_monitor import PerformanceMonitor
+from app.services.monitoring.performance.monitors.performance_monitor import PerformanceMonitor
 
 try:
     config = Config()
@@ -872,7 +872,7 @@ EOF
 
 # Add performance metrics
 python -c "
-from utils.performance_monitor import PerformanceMonitor
+from app.services.monitoring.performance.monitors.performance_monitor import PerformanceMonitor
 try:
     monitor = PerformanceMonitor()
     daily_stats = monitor.get_daily_stats()
@@ -899,7 +899,7 @@ EOF
 
 # Add recommendations
 python -c "
-from utils.performance_monitor import PerformanceMonitor
+from app.services.monitoring.performance.monitors.performance_monitor import PerformanceMonitor
 try:
     monitor = PerformanceMonitor()
     recommendations = monitor.get_maintenance_recommendations()

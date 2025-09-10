@@ -16,7 +16,7 @@ from flask_login import LoginManager, login_user, logout_user, login_required, c
 
 # Import new session components
 from config import Config
-from database import DatabaseManager
+from app.core.database.core.database_manager import DatabaseManager
 from redis_session_backend import RedisSessionBackend
 from flask_redis_session_interface import FlaskRedisSessionInterface
 from session_manager_v2 import SessionManagerV2

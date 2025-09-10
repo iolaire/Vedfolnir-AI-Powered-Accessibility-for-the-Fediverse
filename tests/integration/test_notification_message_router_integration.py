@@ -17,7 +17,7 @@ from datetime import datetime, timezone
 from notification_message_router import NotificationMessageRouter
 from websocket_namespace_manager import WebSocketNamespaceManager
 from websocket_auth_handler import WebSocketAuthHandler
-from unified_notification_manager import (
+from app.services.notification.manager.unified_manager import (
     NotificationMessage, AdminNotificationMessage, SystemNotificationMessage,
     NotificationType, NotificationPriority, NotificationCategory
 )

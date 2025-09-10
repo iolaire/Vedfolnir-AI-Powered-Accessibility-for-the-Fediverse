@@ -197,7 +197,7 @@ class SessionConsolidationValidator:
         
         try:
             from unified_session_manager import UnifiedSessionManager
-            from database import DatabaseManager
+            from app.core.database.core.database_manager import DatabaseManager
             from models import User, PlatformConnection
             
             db_manager = DatabaseManager()
@@ -344,7 +344,7 @@ class SessionConsolidationValidator:
     def cleanup_load_test_data(self):
         """Clean up load test data"""
         try:
-            from database import DatabaseManager
+            from app.core.database.core.database_manager import DatabaseManager
             from models import User, PlatformConnection
             
             db_manager = DatabaseManager()

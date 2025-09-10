@@ -20,9 +20,9 @@ from enum import Enum
 from sqlalchemy.exc import SQLAlchemyError
 from sqlalchemy.orm import Session
 
-from database import DatabaseManager
+from app.core.database.core.database_manager import DatabaseManager
 from models import SystemConfiguration, User, UserRole, JobAuditLog
-from security.core.security_utils import sanitize_for_log
+from app.core.security.core.security_utils import sanitize_for_log
 
 logger = logging.getLogger(__name__)
 

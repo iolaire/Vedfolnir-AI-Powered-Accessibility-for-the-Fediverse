@@ -5,7 +5,7 @@ Test script to verify the performance monitoring fix works without hanging.
 
 import time
 import threading
-from session_performance_monitor import SessionPerformanceMonitor
+from app.services.monitoring.performance.monitors.session_performance_monitor import SessionPerformanceMonitor
 
 def test_performance_monitor():
     """Test that performance monitoring doesn't hang"""

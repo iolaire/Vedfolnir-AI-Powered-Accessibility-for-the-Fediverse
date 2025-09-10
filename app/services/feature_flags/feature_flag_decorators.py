@@ -15,7 +15,7 @@ from typing import Callable, Any, Optional, Union
 from flask import jsonify, render_template, request, current_app, abort
 import asyncio
 
-from feature_flag_service import FeatureFlagService
+from app.core.configuration.core.configuration_service import ConfigurationService
 
 logger = logging.getLogger(__name__)
 
@@ -52,18 +52,18 @@ def require_feature_flag(feature_key: str,
             # Try to get from function arguments if not in Flask context
             if not feature_service:
                 for arg in args:
-                    if isinstance(arg, FeatureFlagService):
+                    if isinstance(arg, ConfigurationService):
                         feature_service = arg
                         break
                 
                 if not feature_service:
                     for value in kwargs.values():
-                        if isinstance(value, FeatureFlagService):
+                        if isinstance(value, ConfigurationService):
                             feature_service = value
                             break
             
             if not feature_service:
-                logger.error("FeatureFlagService not available")
+                logger.error("ConfigurationService not available")
                 if graceful_degradation:
                     return None
                 return _create_error_response("Feature flag service unavailable", 500)
@@ -125,18 +125,18 @@ def require_feature_flag_async(feature_key: str,
             # Try to get from function arguments
             if not feature_service:
                 for arg in args:
-                    if isinstance(arg, FeatureFlagService):
+                    if isinstance(arg, ConfigurationService):
                         feature_service = arg
                         break
                 
                 if not feature_service:
                     for value in kwargs.values():
-                        if isinstance(value, FeatureFlagService):
+                        if isinstance(value, ConfigurationService):
                             feature_service = value
                             break
             
             if not feature_service:
-                logger.error("FeatureFlagService not available for async function")
+                logger.error("ConfigurationService not available for async function")
                 if graceful_degradation:
                     return None
                 raise RuntimeError("Feature flag service unavailable")
@@ -219,12 +219,12 @@ class FeatureFlagMiddleware:
     Middleware for feature flag enforcement in services and background tasks
     """
     
-    def __init__(self, feature_service: FeatureFlagService):
+    def __init__(self, feature_service: ConfigurationService):
         """
         Initialize middleware
         
         Args:
-            feature_service: FeatureFlagService instance
+            feature_service: ConfigurationService instance
         """
         self.feature_service = feature_service
     

@@ -20,7 +20,7 @@ from datetime import datetime, timezone, timedelta
 from unittest.mock import patch, MagicMock
 
 from config import Config
-from database import DatabaseManager
+from app.core.database.core.database_manager import DatabaseManager
 from models import (
     User, UserRole, PlatformConnection, CaptionGenerationTask, TaskStatus,
     Image, ProcessingStatus, GenerationResults

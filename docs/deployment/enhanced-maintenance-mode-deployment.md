@@ -221,7 +221,7 @@ python -c "from config import Config; c = Config(); print('Config loaded success
 ```bash
 # Run any pending database migrations
 python -c "
-from database import DatabaseManager
+from app.core.database.core.database_manager import DatabaseManager
 from config import Config
 config = Config()
 db_manager = DatabaseManager(config)
@@ -234,7 +234,7 @@ print('Database migrations completed')
 ```bash
 # Verify database schema
 python -c "
-from database import DatabaseManager
+from app.core.database.core.database_manager import DatabaseManager
 from models import *
 from config import Config
 config = Config()
@@ -345,7 +345,7 @@ curl -f http://localhost:5000/api/maintenance/status || echo "Maintenance API fa
 
 # Test database connectivity
 python -c "
-from database import DatabaseManager
+from app.core.database.core.database_manager import DatabaseManager
 from config import Config
 config = Config()
 db_manager = DatabaseManager(config)
@@ -541,7 +541,7 @@ fi
 
 # Check database
 python3 -c "
-from database import DatabaseManager
+from app.core.database.core.database_manager import DatabaseManager
 from config import Config
 config = Config()
 db_manager = DatabaseManager(config)
@@ -718,7 +718,7 @@ curl -f http://localhost:5000/health
 
 # Test database connectivity
 python -c "
-from database import DatabaseManager
+from app.core.database.core.database_manager import DatabaseManager
 from config import Config
 config = Config()
 db_manager = DatabaseManager(config)

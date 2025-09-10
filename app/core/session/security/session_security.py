@@ -16,9 +16,9 @@ from logging import getLogger
 from datetime import datetime, timezone, timedelta
 from typing import Optional, Dict, Any, List
 from flask import request, g
-from unified_session_manager import SessionValidationError, SessionExpiredError, SessionNotFoundError
+from app.core.session.manager import SessionValidationError, SessionExpiredError, SessionNotFoundError
 from models import UserSession, User
-from database import DatabaseManager
+from app.core.database.core.database_manager import DatabaseManager
 
 logger = getLogger(__name__)
 

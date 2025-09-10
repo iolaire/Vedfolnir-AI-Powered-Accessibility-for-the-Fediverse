@@ -33,7 +33,7 @@ try:
     print("✅ Config loaded")
     
     print("2. Loading database manager...")
-    from database import DatabaseManager
+    from app.core.database.core.database_manager import DatabaseManager
     db_manager = DatabaseManager(config)
     print("✅ Database manager loaded")
     
@@ -43,7 +43,7 @@ try:
     print("✅ Progress tracker loaded")
     
     print("4. Loading task queue manager...")
-    from task_queue_manager import TaskQueueManager
+    from app.services.task.core.task_queue_manager import TaskQueueManager
     task_queue_manager = TaskQueueManager(db_manager)
     print("✅ Task queue manager loaded")
     

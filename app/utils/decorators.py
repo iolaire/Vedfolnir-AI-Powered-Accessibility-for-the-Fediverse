@@ -1,10 +1,10 @@
 from functools import wraps
 from flask import current_app, redirect, url_for
 from flask_login import current_user
-from security.core.security_middleware import rate_limit, validate_csrf_token
-from security.core.role_based_access import require_viewer_or_higher
+from app.core.security.core.security_middleware import rate_limit, validate_csrf_token
+from app.core.security.core.role_based_access import require_viewer_or_higher
 from session_aware_decorators import with_session_error_handling, require_platform_context
-from security.core.security_utils import sanitize_for_log
+from app.core.security.core.security_utils import sanitize_for_log
 
 def standard_route(func):
     """Standard route decorator combining common patterns"""
@@ -43,7 +43,7 @@ def safe_execute(operation_name):
                 return func(*args, **kwargs)
             except Exception as e:
                 current_app.logger.error(f"Error in {operation_name}: {sanitize_for_log(str(e))}")
-                from notification_helpers import send_error_notification
+                from app.services.notification.helpers.notification_helpers import send_error_notification
                 send_error_notification(f"Error in {operation_name}", "Error")
                 return redirect(url_for('main.index'))
         return wrapper

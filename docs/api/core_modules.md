@@ -438,7 +438,7 @@ Save image data to database.
 #### Usage Example
 
 ```python
-from database import DatabaseManager
+from app.core.database.core.database_manager import DatabaseManager
 from config import Config
 
 config = Config()
@@ -514,7 +514,7 @@ Update media description (alt text) for a media item.
 #### Usage Example
 
 ```python
-from activitypub_client import ActivityPubClient
+from app.services.activitypub.components.activitypub_client import ActivityPubClient
 from models import PlatformConnection
 
 # Initialize with platform connection
@@ -756,8 +756,8 @@ Clean up expired sessions.
 #### Usage Example
 
 ```python
-from session_manager import SessionManager
-from database import DatabaseManager
+from app.core.session.core.session_manager import SessionManager
+from app.core.database.core.database_manager import DatabaseManager
 from config import Config
 
 config = Config()
@@ -809,7 +809,7 @@ All modules include comprehensive test coverage. See the testing guidelines for 
 import unittest
 from tests.test_helpers import create_test_user_with_platforms, cleanup_test_user
 from config import Config
-from database import DatabaseManager
+from app.core.database.core.database_manager import DatabaseManager
 
 class TestCoreModule(unittest.TestCase):
     def setUp(self):

@@ -20,17 +20,17 @@ from unittest.mock import Mock, patch, MagicMock
 # Add project root to path for imports
 sys.path.insert(0, os.path.join(os.path.dirname(__file__), '..', '..'))
 
-from unified_notification_manager import (
+from app.services.notification.manager.unified_manager import (
     UnifiedNotificationManager, NotificationMessage, 
     AdminNotificationMessage, SystemNotificationMessage
 )
-from notification_persistence_manager import NotificationPersistenceManager
+from app.services.notification.components.notification_persistence_manager import NotificationPersistenceManager
 from models import (
     NotificationType, NotificationPriority, NotificationCategory, 
     UserRole, User, NotificationStorage
 )
 from config import Config
-from database import DatabaseManager
+from app.core.database.core.database_manager import DatabaseManager
 
 
 class TestNotificationDatabaseIntegration(unittest.TestCase):

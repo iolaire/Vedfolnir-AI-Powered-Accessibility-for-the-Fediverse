@@ -158,7 +158,7 @@ def test_performance_monitoring():
     
     # Test that performance monitoring utilities work
     try:
-        from utils.performance_monitor import get_performance_monitor
+        from app.services.monitoring.performance.monitors.performance_monitor import get_performance_monitor
         from utils.template_cache import get_template_cache_stats
         from utils.asset_optimizer import get_critical_css, get_resource_hints
         

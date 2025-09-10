@@ -112,7 +112,7 @@ def test_session_manager():
     
     try:
         from config import Config
-        from database import DatabaseManager
+        from app.core.database.core.database_manager import DatabaseManager
         from redis_session_backend import RedisSessionBackend
         from session_manager_v2 import SessionManagerV2
         
@@ -219,7 +219,7 @@ def test_database_connection():
     
     try:
         from config import Config
-        from database import DatabaseManager
+        from app.core.database.core.database_manager import DatabaseManager
         from models import User, PlatformConnection
         
         config = Config()

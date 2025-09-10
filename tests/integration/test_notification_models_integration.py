@@ -23,7 +23,7 @@ from models import (
     NotificationStorage, NotificationType, NotificationPriority, 
     NotificationCategory, User, UserRole
 )
-from unified_notification_manager import NotificationMessage
+from app.services.notification.manager.unified_manager import NotificationMessage
 
 
 class TestNotificationModelsIntegration(unittest.TestCase):

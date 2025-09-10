@@ -8,7 +8,7 @@
 # appropriate unified notification calls in a future update.
 
 
-from unified_notification_manager import UnifiedNotificationManager
+from app.services.notification.manager.unified_manager import UnifiedNotificationManager
 """Admin System Health Routes"""
 
 from flask import render_template, jsonify, redirect, url_for, current_app
@@ -16,7 +16,7 @@ from flask_login import login_required, current_user
 from models import UserRole
 # from notification_flash_replacement import send_notification  # Removed - using unified notification system
 from session_error_handlers import with_session_error_handling
-from security.core.security_middleware import rate_limit
+from app.core.security.core.security_middleware import rate_limit
 import asyncio
 from datetime import datetime, timezone
 
@@ -236,7 +236,7 @@ def register_routes(bp):
         """Enhanced health dashboard with multi-tenant caption management"""
         if not current_user.role == UserRole.ADMIN:
             # Send error notification
-            from notification_helpers import send_error_notification
+            from app.services.notification.helpers.notification_helpers import send_error_notification
             send_error_notification("Access denied. Admin privileges required.", "Access Denied")
             return redirect(url_for('main.index'))
             
@@ -300,7 +300,7 @@ def register_routes(bp):
             
         except Exception as e:
             # Send error notification
-            from notification_helpers import send_error_notification
+            from app.services.notification.helpers.notification_helpers import send_error_notification
             send_error_notification(f'Error loading health dashboard: {str(e)}', 'Dashboard Error')
             return redirect(url_for('admin.dashboard'))
 
@@ -310,13 +310,13 @@ def register_routes(bp):
         """CSRF Security Dashboard - uses live data directly"""
         if not current_user.role == UserRole.ADMIN:
             # Send error notification
-            from notification_helpers import send_error_notification
+            from app.services.notification.helpers.notification_helpers import send_error_notification
             send_error_notification("Access denied. Admin privileges required.", "Access Denied")
             return redirect(url_for('main.index'))
         
         try:
             # Import and use the live CSRF metrics
-            from security.monitoring.csrf_security_metrics import get_csrf_security_metrics
+            from app.core.security.monitoring.csrf_security_metrics import get_csrf_security_metrics
             csrf_metrics = get_csrf_security_metrics()
             dashboard_data = csrf_metrics.get_csrf_dashboard_data()
             
@@ -341,7 +341,7 @@ def register_routes(bp):
         """Security Audit Dashboard"""
         if not current_user.role == UserRole.ADMIN:
             # Send error notification
-            from notification_helpers import send_error_notification
+            from app.services.notification.helpers.notification_helpers import send_error_notification
             send_error_notification("Access denied. Admin privileges required.", "Access Denied")
             return redirect(url_for('main.index'))
         return render_template('security_audit_dashboard.html')
@@ -358,7 +358,7 @@ def register_routes(bp):
         """Session Health Dashboard"""
         if not current_user.role == UserRole.ADMIN:
             # Send error notification
-            from notification_helpers import send_error_notification
+            from app.services.notification.helpers.notification_helpers import send_error_notification
             send_error_notification("Access denied. Admin privileges required.", "Access Denied")
             return redirect(url_for('main.index'))
         return render_template('session_health_dashboard.html')
@@ -369,7 +369,7 @@ def register_routes(bp):
         """Session Monitoring Dashboard"""
         if not current_user.role == UserRole.ADMIN:
             # Send error notification
-            from notification_helpers import send_error_notification
+            from app.services.notification.helpers.notification_helpers import send_error_notification
             send_error_notification("Access denied. Admin privileges required.", "Access Denied")
             return redirect(url_for('main.index'))
         return render_template('session_monitoring_dashboard.html')
@@ -381,7 +381,7 @@ def get_system_metrics(admin_user_id):
     try:
         # Import services
         from web_caption_generation_service import WebCaptionGenerationService
-        from system_monitor import SystemMonitor
+        from app.services.monitoring.system.system_monitor import SystemMonitor
         
         # Get web caption generation service
         db_manager = current_app.config['db_manager']
@@ -459,7 +459,7 @@ def get_active_jobs_for_admin(admin_user_id):
 def get_system_alerts():
     """Get system alerts for admin dashboard"""
     try:
-        from alert_manager import AlertManager
+        from app.services.alerts.components.alert_manager import AlertManager
         
         db_manager = current_app.config['db_manager']
         config = current_app.config.get('config')

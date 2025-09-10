@@ -3,7 +3,7 @@
 # THE SOFTWARE IS PROVIDED "AS IS", WITHOUT WARRANTY OF ANY KIND, EXPRESS OR IMPLIED, INCLUDING BUT NOT LIMITED TO THE WARRANTIES OF MERCHANTABILITY, FITNESS FOR A PARTICULAR PURPOSE AND NONINFRINGEMENT. IN NO EVENT SHALL THE AUTHORS OR COPYRIGHT HOLDERS BE LIABLE FOR ANY CLAIM, DAMAGES OR OTHER LIABILITY, WHETHER IN AN ACTION OF CONTRACT, TORT OR OTHERWISE, ARISING FROM, OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE SOFTWARE.
 import os
 import logging
-from logger import setup_logging
+from app.utils.logging.logger import setup_logging
 
 # Set up logging to file before loading config
 setup_logging(log_file="logs/webapp.log")
@@ -364,7 +364,7 @@ class StorageConfig:
         
         # Initialize storage limit management service
         try:
-            from storage_configuration_service import StorageConfigurationService
+            from app.services.storage.core.storage_configuration_service import StorageConfigurationService
             self.limit_service = StorageConfigurationService()
         except ImportError as e:
             logging.warning(f"Could not import StorageConfigurationService: {e}")
@@ -544,7 +544,7 @@ class Config:
         """Get session configuration (lazy loading)"""
         if self._session_config is None:
             try:
-                from session_config import get_session_config
+                from app.core.session.config import get_session_config
                 self._session_config = get_session_config()
             except ImportError:
                 # Fallback if session_config is not available

@@ -8,7 +8,7 @@ from unittest.mock import patch, MagicMock, AsyncMock
 from datetime import datetime
 
 from config import Config, BatchUpdateConfig
-from batch_update_service import BatchUpdateService
+from app.services.batch.components.batch_update_service import BatchUpdateService
 from models import Post, Image, ProcessingStatus
 
 class TestBatchUpdateService(unittest.TestCase):
@@ -96,7 +96,7 @@ class TestBatchUpdateService(unittest.TestCase):
             {"url": "http://example.com/image4.jpg", "name": ""}
         ]
     
-    @patch('batch_update_service.ActivityPubClient')
+    @patch('app.services.batch.components.batch_update_service.ActivityPubClient')
     def test_batch_update_captions(self, mock_client_class):
         """Test batch updating captions"""
         # Set up the database mock
@@ -142,7 +142,7 @@ class TestBatchUpdateService(unittest.TestCase):
         # Verify the database was updated
         self.assertEqual(self.db_mock.mark_image_posted.call_count, 4)
     
-    @patch('batch_update_service.ActivityPubClient')
+    @patch('app.services.batch.components.batch_update_service.ActivityPubClient')
     def test_batch_update_with_failures(self, mock_client_class):
         """Test batch updating with some failures"""
         # Set up the database mock
@@ -186,7 +186,7 @@ class TestBatchUpdateService(unittest.TestCase):
         # Verify the database was updated for successful images only
         self.assertEqual(self.db_mock.mark_image_posted.call_count, 3)
     
-    @patch('batch_update_service.ActivityPubClient')
+    @patch('app.services.batch.components.batch_update_service.ActivityPubClient')
     def test_verification_and_rollback(self, mock_client_class):
         """Test verification and rollback functionality"""
         # Set up the database mock

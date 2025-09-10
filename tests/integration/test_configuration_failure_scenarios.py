@@ -21,18 +21,18 @@ from datetime import datetime, timezone
 from typing import Dict, Any, List, Optional
 
 from config import Config
-from database import DatabaseManager
+from app.core.database.core.database_manager import DatabaseManager
 from models import SystemConfiguration, User, UserRole
-from system_configuration_manager import SystemConfigurationManager
-from configuration_service import (
+from app.core.configuration.core.system_configuration_manager import SystemConfigurationManager
+from app.core.configuration.core.configuration_service import (
     ConfigurationService, ConfigurationSource, ConfigurationError,
     ConfigurationServiceUnavailableError, ConfigurationNotFoundError
 )
-from configuration_cache import ConfigurationCache
-from configuration_event_bus import ConfigurationEventBus
-from task_queue_configuration_adapter import TaskQueueConfigurationAdapter
-from session_configuration_adapter import SessionConfigurationAdapter
-from alert_configuration_adapter import AlertConfigurationAdapter
+from app.core.configuration.cache.configuration_cache import ConfigurationCache
+from app.core.configuration.events.configuration_event_bus import ConfigurationEventBus
+from app.services.task.configuration.task_queue_configuration_adapter import TaskQueueConfigurationAdapter
+from app.core.configuration.adapters.session_configuration_adapter import SessionConfigurationAdapter
+from app.core.configuration.adapters.alert_configuration_adapter import AlertConfigurationAdapter
 
 
 class TestConfigurationFailureScenarios(unittest.TestCase):

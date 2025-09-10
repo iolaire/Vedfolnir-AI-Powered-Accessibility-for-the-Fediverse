@@ -195,7 +195,7 @@ Replace legacy session manager usage in `web_app.py`:
 
 ```python
 # BEFORE (lines 33, 265, 302, 311):
-from session_manager import SessionManager, get_current_platform_context
+from app.core.session.core.session_manager import SessionManager, get_current_platform_context
 session_manager = SessionManager(db_manager)
 session_health_checker = get_session_health_checker(db_manager, session_manager)
 app.config['session_manager'] = session_manager
@@ -213,7 +213,7 @@ Update `session_health_checker.py`:
 
 ```python
 # BEFORE:
-from session_manager import SessionManager
+from app.core.session.core.session_manager import SessionManager
 
 class SessionHealthChecker:
     def __init__(self, db_manager: DatabaseManager, session_manager: SessionManager):
@@ -290,7 +290,7 @@ def migrate_test_file(file_path):
     
     # Replace imports
     old_imports = [
-        r'from session_manager import SessionManager',
+        r'from app.core.session.core.session_manager import SessionManager',
         r'from session_manager import get_current_platform_context',
         r'from session_manager import .*',
         r'import session_manager'
@@ -529,7 +529,7 @@ class SessionMigrationValidation(unittest.TestCase):
     
     def setUp(self):
         from config import Config
-        from database import DatabaseManager
+        from app.core.database.core.database_manager import DatabaseManager
         from unified_session_manager import UnifiedSessionManager
         
         self.config = Config()

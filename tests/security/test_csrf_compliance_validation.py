@@ -18,11 +18,11 @@ from datetime import datetime, timedelta
 from unittest.mock import patch, MagicMock
 
 # Import compliance validation components
-from security.audit.csrf_compliance_validator import (
+from app.core.security.audit.csrf_compliance_validator import (
     CSRFComplianceValidator, ComplianceReport, ComplianceLevel,
     SecurityAuditReporter, ContinuousIntegrationValidator
 )
-from security.audit.csrf_template_scanner import CSRFTemplateScanner, CSRFAuditResult, TemplateSecurityIssue
+from app.core.security.audit.csrf_template_scanner import CSRFTemplateScanner, CSRFAuditResult, TemplateSecurityIssue
 
 class TestCSRFComplianceScoring(unittest.TestCase):
     """Test CSRF compliance scoring system"""

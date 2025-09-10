@@ -21,7 +21,7 @@ sys.path.insert(0, os.path.join(os.path.dirname(__file__), '..', '..'))
 
 from tests.test_helpers import create_test_user_with_platforms, cleanup_test_user
 from config import Config
-from database import DatabaseManager
+from app.core.database.core.database_manager import DatabaseManager
 from models import UserRole
 from flask_login import LoginManager
 
@@ -309,7 +309,7 @@ class TestResponsivenessDashboard(unittest.TestCase):
     
     def test_responsiveness_check_api(self):
         """Test responsiveness check API endpoint"""
-        from admin.routes.responsiveness_api import register_routes
+        from app.blueprints.admin.responsiveness_api import register_routes
         from flask import Flask, Blueprint
         
         app = Flask(__name__)
@@ -328,16 +328,16 @@ class TestResponsivenessDashboard(unittest.TestCase):
         bp = Blueprint('admin', __name__)
         
         # Mock the decorators before registering routes
-        with patch('admin.routes.responsiveness_api.login_required', lambda f: f):
-            with patch('admin.routes.responsiveness_api.admin_required', lambda f: f):
-                with patch('admin.routes.responsiveness_api.rate_limit', lambda **kwargs: lambda f: f):
+        with patch('app.blueprints.admin.responsiveness_api.login_required', lambda f: f):
+            with patch('app.blueprints.admin.responsiveness_api.admin_required', lambda f: f):
+                with patch('app.blueprints.admin.responsiveness_api.rate_limit', lambda **kwargs: lambda f: f):
                     register_routes(bp)
         
         app.register_blueprint(bp)
         
         with app.app_context():
             # Mock current_app with system_optimizer
-            with patch('admin.routes.responsiveness_api.current_app') as mock_current_app:
+            with patch('app.blueprints.admin.responsiveness_api.current_app') as mock_current_app:
                 mock_current_app.system_optimizer = self.mock_system_optimizer
                 
                 with patch('flask_login.current_user', self.test_user):
@@ -367,7 +367,7 @@ class TestResponsivenessDashboard(unittest.TestCase):
         mock_config.cleanup_enabled = True
         self.mock_system_optimizer.responsiveness_config = mock_config
         
-        from admin.routes.responsiveness_api import register_routes
+        from app.blueprints.admin.responsiveness_api import register_routes
         from flask import Flask, Blueprint
         
         app = Flask(__name__)
@@ -386,16 +386,16 @@ class TestResponsivenessDashboard(unittest.TestCase):
         bp = Blueprint('admin', __name__)
         
         # Mock the decorators before registering routes
-        with patch('admin.routes.responsiveness_api.login_required', lambda f: f):
-            with patch('admin.routes.responsiveness_api.admin_required', lambda f: f):
-                with patch('admin.routes.responsiveness_api.rate_limit', lambda **kwargs: lambda f: f):
+        with patch('app.blueprints.admin.responsiveness_api.login_required', lambda f: f):
+            with patch('app.blueprints.admin.responsiveness_api.admin_required', lambda f: f):
+                with patch('app.blueprints.admin.responsiveness_api.rate_limit', lambda **kwargs: lambda f: f):
                     register_routes(bp)
         
         app.register_blueprint(bp)
         
         with app.app_context():
             # Mock current_app with system_optimizer
-            with patch('admin.routes.responsiveness_api.current_app') as mock_current_app:
+            with patch('app.blueprints.admin.responsiveness_api.current_app') as mock_current_app:
                 mock_current_app.system_optimizer = self.mock_system_optimizer
                 
                 with patch('flask_login.current_user', self.test_user):
@@ -420,7 +420,7 @@ class TestResponsivenessDashboard(unittest.TestCase):
     
     def test_connection_optimization_api(self):
         """Test connection optimization API endpoint"""
-        from admin.routes.responsiveness_api import register_routes
+        from app.blueprints.admin.responsiveness_api import register_routes
         from flask import Flask, Blueprint
         
         app = Flask(__name__)
@@ -439,16 +439,16 @@ class TestResponsivenessDashboard(unittest.TestCase):
         bp = Blueprint('admin', __name__)
         
         # Mock the decorators before registering routes
-        with patch('admin.routes.responsiveness_api.login_required', lambda f: f):
-            with patch('admin.routes.responsiveness_api.admin_required', lambda f: f):
-                with patch('admin.routes.responsiveness_api.rate_limit', lambda **kwargs: lambda f: f):
+        with patch('app.blueprints.admin.responsiveness_api.login_required', lambda f: f):
+            with patch('app.blueprints.admin.responsiveness_api.admin_required', lambda f: f):
+                with patch('app.blueprints.admin.responsiveness_api.rate_limit', lambda **kwargs: lambda f: f):
                     register_routes(bp)
         
         app.register_blueprint(bp)
         
         with app.app_context():
             # Mock current_app with system_optimizer and db_manager
-            with patch('admin.routes.responsiveness_api.current_app') as mock_current_app:
+            with patch('app.blueprints.admin.responsiveness_api.current_app') as mock_current_app:
                 mock_current_app.system_optimizer = self.mock_system_optimizer
                 mock_db_manager = Mock()
                 mock_db_manager.optimize_connection_pool.return_value = {
@@ -619,7 +619,7 @@ class TestResponsivenessDashboard(unittest.TestCase):
             'timestamp': datetime.now(timezone.utc).isoformat()
         }
         
-        from admin.routes.responsiveness_api import register_routes
+        from app.blueprints.admin.responsiveness_api import register_routes
         from flask import Flask, Blueprint
         
         app = Flask(__name__)
@@ -638,9 +638,9 @@ class TestResponsivenessDashboard(unittest.TestCase):
         bp = Blueprint('admin', __name__)
         
         # Mock the decorators before registering routes
-        with patch('admin.routes.responsiveness_api.login_required', lambda f: f):
-            with patch('admin.routes.responsiveness_api.admin_required', lambda f: f):
-                with patch('admin.routes.responsiveness_api.rate_limit', lambda **kwargs: lambda f: f):
+        with patch('app.blueprints.admin.responsiveness_api.login_required', lambda f: f):
+            with patch('app.blueprints.admin.responsiveness_api.admin_required', lambda f: f):
+                with patch('app.blueprints.admin.responsiveness_api.rate_limit', lambda **kwargs: lambda f: f):
                     register_routes(bp)
         
         app.register_blueprint(bp)
@@ -648,11 +648,11 @@ class TestResponsivenessDashboard(unittest.TestCase):
         with app.app_context():
             with app.test_client() as client:
                 # Test that the API returns the issues
-                with patch('admin.routes.responsiveness_api.current_app') as mock_current_app:
+                with patch('app.blueprints.admin.responsiveness_api.current_app') as mock_current_app:
                     mock_current_app.system_optimizer = self.mock_system_optimizer
                     
                     with patch('flask_login.current_user', self.test_user):
-                        with patch('admin.routes.responsiveness_api.current_user', self.test_user):
+                        with patch('app.blueprints.admin.responsiveness_api.current_user', self.test_user):
                             # Simulate login session
                             with client.session_transaction() as sess:
                                 sess['_user_id'] = str(self.test_user.id)

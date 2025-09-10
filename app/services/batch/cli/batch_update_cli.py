@@ -13,7 +13,7 @@ import json
 import sys
 import os
 from config import Config
-from batch_update_service import BatchUpdateService
+from app.services.batch.components.batch_update_service import BatchUpdateService
 
 # Create logs directory if it doesn't exist
 os.makedirs('logs', exist_ok=True)
