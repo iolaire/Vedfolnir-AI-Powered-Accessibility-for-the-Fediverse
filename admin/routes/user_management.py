@@ -8,9 +8,9 @@ from flask import render_template, request, jsonify, redirect, url_for, current_
 from flask_login import login_required, current_user
 from models import User, UserRole
 # from notification_flash_replacement import send_notification  # Removed - using unified notification system
-from session_error_handlers import with_session_error_handling
+from app.core.session.error_handling.session_error_handlers import with_session_error_handling
 from app.core.security.core.security_middleware import rate_limit, validate_input_length, validate_csrf_token
-from enhanced_input_validation import enhanced_input_validation
+from app.core.security.validation.enhanced_input_validation import enhanced_input_validation
 from app.core.security.core.security_utils import sanitize_for_log
 from ..forms.user_forms import EditUserForm, DeleteUserForm, AddUserForm, ResetPasswordForm, UserStatusForm
 from ..services.user_service import UserService

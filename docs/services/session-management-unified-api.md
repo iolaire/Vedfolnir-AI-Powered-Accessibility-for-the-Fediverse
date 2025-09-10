@@ -19,7 +19,7 @@ The unified session management system eliminates the complexity of dual session 
 The main session management class that handles all database session operations.
 
 ```python
-from unified_session_manager import UnifiedSessionManager
+from app.core.session.manager import UnifiedSessionManager
 from app.core.database.core.database_manager import DatabaseManager
 
 # Initialize unified session manager
@@ -137,7 +137,7 @@ success = session_manager.destroy_session(session_id)
 Manages secure cookies containing only session IDs.
 
 ```python
-from session_cookie_manager import SessionCookieManager, create_session_cookie_manager
+from app.core.session.cookies.session_cookie_manager import SessionCookieManager, create_session_cookie_manager
 
 # Create from Flask app config
 cookie_manager = create_session_cookie_manager(app.config)
@@ -360,8 +360,8 @@ def get_user_data():
 
 ```python
 from flask import request, jsonify, make_response
-from unified_session_manager import UnifiedSessionManager
-from session_cookie_manager import SessionCookieManager
+from app.core.session.manager import UnifiedSessionManager
+from app.core.session.cookies.session_cookie_manager import SessionCookieManager
 
 @app.route('/login', methods=['POST'])
 def login():
@@ -530,7 +530,7 @@ enable_cross_tab_sync = config.features.enable_cross_tab_sync
 ### Session Exceptions
 
 ```python
-from unified_session_manager import (
+from app.core.session.manager import (
     SessionValidationError,
     SessionExpiredError,
     SessionNotFoundError,

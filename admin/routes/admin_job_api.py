@@ -8,7 +8,7 @@ from flask import jsonify, request, current_app, session, redirect, url_for
 from flask_login import login_required, current_user
 from models import UserRole
 # from notification_flash_replacement import send_notification  # Removed - using unified notification system
-from session_error_handlers import with_session_error_handling
+from app.core.session.error_handling.session_error_handlers import with_session_error_handling
 from functools import wraps
 import logging
 

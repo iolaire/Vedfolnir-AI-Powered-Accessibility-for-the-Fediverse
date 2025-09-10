@@ -12,7 +12,7 @@ import os
 # Add project root to path
 sys.path.insert(0, os.path.dirname(os.path.dirname(os.path.dirname(os.path.abspath(__file__)))))
 
-from admin.services.user_service import UserService
+from app.services.admin.components.user_service import UserService
 from models import UserRole
 
 class TestUserService(unittest.TestCase):

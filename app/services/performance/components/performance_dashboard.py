@@ -25,7 +25,7 @@ from models import UserRole
 # from notification_flash_replacement import send_notification  # Removed - using unified notification system
 from app.core.session.error_handling.session_error_handlers import with_session_error_handling
 from app.core.security.core.security_middleware import rate_limit
-from admin.security.admin_access_control import admin_required
+from app.services.admin.security.admin_access_control import admin_required
 
 logger = logging.getLogger(__name__)
 

@@ -358,7 +358,7 @@ Set-Cookie: session_id=; expires=Thu, 01 Jan 1970 00:00:00 GMT; Secure; HttpOnly
 Main session management class using database as single source of truth.
 
 ```python
-from unified_session_manager import UnifiedSessionManager
+from app.core.session.manager import UnifiedSessionManager
 from app.core.database.core.database_manager import DatabaseManager
 
 session_manager = UnifiedSessionManager(db_manager)
@@ -466,7 +466,7 @@ print(f"Cleaned up {count} expired sessions")
 Manages secure session cookies containing only session IDs.
 
 ```python
-from session_cookie_manager import SessionCookieManager
+from app.core.session.cookies.session_cookie_manager import SessionCookieManager
 
 cookie_manager = SessionCookieManager(
     cookie_name='session_id',

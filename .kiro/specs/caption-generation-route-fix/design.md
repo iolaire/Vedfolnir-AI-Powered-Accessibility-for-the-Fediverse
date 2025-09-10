@@ -72,7 +72,7 @@ def caption_generation():
 
 **Interface:**
 ```python
-from session_middleware_v2 import get_current_session_context
+from app.core.session.middleware.session_middleware import get_current_session_context
 
 def caption_generation():
     # Get session context (includes platform info)

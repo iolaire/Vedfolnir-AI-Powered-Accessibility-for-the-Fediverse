@@ -45,21 +45,21 @@ from models import ProcessingStatus, Image, Post, User, UserRole, ProcessingRun,
 from sqlalchemy.orm import joinedload
 from sqlalchemy.exc import SQLAlchemyError
 from app.services.activitypub.components.activitypub_client import ActivityPubClient
-from ollama_caption_generator import OllamaCaptionGenerator
-from caption_quality_assessment import CaptionQualityManager
-from health_check import HealthChecker
+from app.utils.processing.ollama_caption_generator import OllamaCaptionGenerator
+from app.utils.processing.caption_quality_assessment import CaptionQualityManager
+from app.services.monitoring.health.health_check import HealthChecker
 # Use new Redis session middleware V2 for session context
-from session_middleware_v2 import get_current_session_context, get_current_session_id, get_current_user_id, update_session_platform
+from app.core.session.middleware.session_middleware import get_current_session_context, get_current_session_id, get_current_user_id, update_session_platform
 # Removed Flask session manager imports - using database sessions only
-from request_scoped_session_manager import RequestScopedSessionManager
-from session_aware_user import SessionAwareUser
-from session_aware_decorators import with_db_session, require_platform_context
+from app.core.session.managers.request_scoped_session_manager import RequestScopedSessionManager
+from app.core.session.components.session_aware_user import SessionAwareUser
+from app.core.session.decorators.session_aware_decorators import with_db_session, require_platform_context
 from app.core.security.core.security_utils import sanitize_for_log, sanitize_html_input
-from enhanced_input_validation import enhanced_input_validation, EnhancedInputValidator
+from app.core.security.validation.enhanced_input_validation import enhanced_input_validation, EnhancedInputValidator
 from app.services.maintenance.enhanced.enhanced_maintenance_mode_service import EnhancedMaintenanceModeService
 from app.services.maintenance.components.maintenance_mode_middleware import MaintenanceModeMiddleware
 from app.core.security.core.security_middleware import SecurityMiddleware, require_https, validate_csrf_token, sanitize_filename, generate_secure_token, rate_limit, validate_input_length, require_secure_connection
-from security_decorators import conditional_rate_limit, conditional_validate_csrf_token, conditional_validate_input_length, conditional_enhanced_input_validation
+from app.core.security.decorators.security_decorators import conditional_rate_limit, conditional_validate_csrf_token, conditional_validate_input_length, conditional_enhanced_input_validation
 from app.core.security.core.role_based_access import require_role, require_admin, require_viewer_or_higher, platform_access_required, content_access_required, api_require_admin, api_platform_access_required, api_content_access_required
 from app.core.security.middleware.platform_access_middleware import PlatformAccessMiddleware, filter_images_for_user, filter_posts_for_user, filter_platforms_for_user
 from app.core.security.core.security_config import security_config
@@ -314,10 +314,10 @@ health_checker = HealthChecker(config, db_manager)
 app.config['health_checker'] = health_checker
 
 # Initialize session management system
-from session_manager_v2 import SessionManagerV2
-from session_middleware_v2 import SessionMiddleware
-from session_security import create_session_security_manager
-from session_monitoring import SessionMonitor
+from app.core.session.manager import SessionManagerV2
+from app.core.session.middleware.session_middleware import SessionMiddleware
+from app.core.session.security.session_security import create_session_security_manager
+from app.services.monitoring.session.session_monitoring import SessionMonitor
 
 # Create session monitor
 session_monitor = SessionMonitor(db_manager)
@@ -953,7 +953,7 @@ from app.core.blueprints import register_blueprints
 register_blueprints(app)
 
 # Register admin blueprint
-from admin import create_admin_blueprint
+from app.services.admin import create_admin_blueprint
 admin_bp = create_admin_blueprint(app)
 app.register_blueprint(admin_bp)
 

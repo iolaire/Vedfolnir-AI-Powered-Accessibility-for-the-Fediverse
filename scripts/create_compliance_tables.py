@@ -11,7 +11,7 @@ from sqlalchemy.exc import OperationalError
 # Add project root to path
 sys.path.insert(0, os.path.dirname(os.path.dirname(os.path.abspath(__file__))))
 
-from unified_session_manager import unified_session_manager
+from app.core.session.manager import unified_session_manager
 from models import Base
 
 def create_compliance_tables():

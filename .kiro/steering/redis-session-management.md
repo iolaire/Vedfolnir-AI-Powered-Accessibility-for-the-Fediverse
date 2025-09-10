@@ -72,7 +72,7 @@ user_id = session.get('user_id')
 session['last_activity'] = datetime.utcnow().isoformat()
 
 # Session management
-from session_middleware_v2 import create_user_session, destroy_current_session
+from app.core.session.middleware.session_middleware import create_user_session, destroy_current_session
 session_id = create_user_session(user_id, platform_id)
 destroy_current_session()
 ```

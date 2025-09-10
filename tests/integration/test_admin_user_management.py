@@ -15,7 +15,7 @@ from config import Config
 from app.core.database.core.database_manager import DatabaseManager
 from models import User, UserRole, UserAuditLog
 from services.user_management_service import UserRegistrationService, UserAuthenticationService, PasswordManagementService
-from admin.services.user_service import UserService
+from app.services.admin.components.user_service import UserService
 from tests.test_helpers import create_test_user_with_platforms, cleanup_test_user
 
 # MySQL integration test imports

@@ -22,7 +22,7 @@ from statistics import mean, median
 from config import Config
 from app.core.database.core.database_manager import DatabaseManager
 from models import User, PlatformConnection, UserSession, UserRole
-from unified_session_manager import UnifiedSessionManager as SessionManager
+from app.core.session.manager import UnifiedSessionManager as SessionManager
 from tests.test_helpers import create_test_user_with_platforms, cleanup_test_user
 
 class TestConcurrentSessionOperations(unittest.TestCase):

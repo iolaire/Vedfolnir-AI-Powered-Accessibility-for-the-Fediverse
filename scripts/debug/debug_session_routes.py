@@ -8,8 +8,8 @@ These routes should be removed in production.
 
 from flask import Blueprint, jsonify, session, g, current_app
 from flask_login import login_required, current_user
-from session_middleware_v2 import get_current_session_context, get_current_session_id
-from session_platform_fix import validate_platform_session, debug_session_state
+from app.core.session.middleware.session_middleware import get_current_session_context, get_current_session_id
+from app.core.session.components.session_platform_fix import validate_platform_session, debug_session_state
 import json
 
 debug_bp = Blueprint('debug_session', __name__, url_prefix='/debug')

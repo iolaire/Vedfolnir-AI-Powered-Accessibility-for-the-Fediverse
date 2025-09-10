@@ -26,7 +26,7 @@ from models import (
     CaptionGenerationTask, TaskStatus, User, PlatformConnection, 
     Image, ProcessingStatus, ProcessingRun, UserRole
 )
-from admin.services.monitoring_service import AdminMonitoringService
+from app.services.admin.components.monitoring_service import AdminMonitoringService
 from app.services.alerts.components.alert_manager import AlertManager, AlertType, AlertSeverity
 from app.services.monitoring.system.system_monitor import SystemMonitor
 from app.services.storage.components.storage_monitoring_dashboard_integration import StorageMonitoringDashboardIntegration

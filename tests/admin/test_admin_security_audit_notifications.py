@@ -29,7 +29,7 @@ from app.services.admin.components.admin_security_audit_notification_handler imp
     SecurityEventContext,
     SecurityThresholds
 )
-from security_notification_integration_service import SecurityNotificationIntegrationService
+from app.services.notification.components.security_notification_integration_service import SecurityNotificationIntegrationService
 from app.core.security.monitoring.security_event_logger import SecurityEventType, SecurityEventSeverity
 from app.core.security.monitoring.security_alerting import SecurityAlertManager
 from app.services.notification.manager.unified_manager import UnifiedNotificationManager, NotificationPriority

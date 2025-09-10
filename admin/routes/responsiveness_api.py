@@ -17,7 +17,7 @@ from flask import jsonify, request, current_app
 from flask_login import login_required, current_user
 from models import UserRole
 from app.core.security.core.security_middleware import rate_limit
-from admin.security.admin_access_control import admin_required
+from app.services.admin.security.admin_access_control import admin_required
 
 logger = logging.getLogger(__name__)
 

@@ -13,7 +13,7 @@ sys.path.append(os.path.dirname(os.path.abspath(__file__)))
 
 from config import Config
 from app.core.database.core.database_manager import DatabaseManager
-from unified_session_manager import UnifiedSessionManager as SessionManager
+from app.core.session.manager import UnifiedSessionManager as SessionManager
 from models import User, PlatformConnection
 
 def test_concurrent_sessions():

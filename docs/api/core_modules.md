@@ -588,7 +588,7 @@ Get generation statistics.
 #### Usage Example
 
 ```python
-from ollama_caption_generator import OllamaCaptionGenerator
+from app.utils.processing.ollama_caption_generator import OllamaCaptionGenerator
 from config import Config
 
 config = Config()
@@ -673,7 +673,7 @@ Optimize image for processing.
 #### Usage Example
 
 ```python
-from image_processor import ImageProcessor
+from app.utils.processing.image_processor import ImageProcessor
 from config import Config
 
 config = Config()

@@ -83,7 +83,7 @@ Decorator for adding retry logic to async functions.
 
 **Example:**
 ```python
-from utils import async_retry, RetryConfig
+from app.utils.helpers.utils import async_retry, RetryConfig
 
 # Using decorator with default config
 @async_retry(max_attempts=5, base_delay=2.0)
@@ -675,7 +675,7 @@ All utility modules implement comprehensive error handling:
 All modules use structured logging with sanitized output for security:
 
 ```python
-from security.core.security_utils import sanitize_for_log
+from app.core.security.core.security_utils import sanitize_for_log
 
 logger.info(f"Operation completed for user {sanitize_for_log(user_id)}")
 ```

@@ -41,8 +41,8 @@ db_manager = DatabaseManager(config)
 app.config['db_manager'] = db_manager
 
 # Initialize session manager
-from session_factory import create_session_manager
-from session_security_manager import SessionSecurityManager
+from app.core.session.factory import create_session_manager
+from app.core.session.security.session_security_manager import SessionSecurityManager
 
 session_security_manager = SessionSecurityManager()
 
@@ -92,7 +92,7 @@ from app.core.blueprints import register_blueprints
 register_blueprints(app)
 
 # Register admin blueprint
-from admin import create_admin_blueprint
+from app.services.admin import create_admin_blueprint
 admin_bp = create_admin_blueprint(app)
 app.register_blueprint(admin_bp)
 

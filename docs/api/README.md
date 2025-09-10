@@ -48,7 +48,7 @@ posts = db_manager.get_posts_without_alt_text('user123', limit=10)
 
 #### Caption Generation
 ```python
-from ollama_caption_generator import OllamaCaptionGenerator
+from app.utils.processing.ollama_caption_generator import OllamaCaptionGenerator
 
 generator = OllamaCaptionGenerator(config.ollama)
 await generator.initialize()
@@ -66,7 +66,7 @@ context = context_manager.set_context(user_id=123, platform_connection_id=456)
 
 #### Security Utilities
 ```python
-from security.core.security_utils import sanitize_for_log, sanitize_filename
+from app.core.security.core.security_utils import sanitize_for_log, sanitize_filename
 
 # Safe logging
 logger.info(f"User input: {sanitize_for_log(user_input)}")

@@ -19,8 +19,8 @@ from config import Config
 from app.core.database.core.database_manager import DatabaseManager
 from redis_session_backend import RedisSessionBackend
 from flask_redis_session_interface import FlaskRedisSessionInterface
-from session_manager_v2 import SessionManagerV2
-from session_middleware_v2 import SessionMiddleware, create_user_session, destroy_current_session, update_session_platform
+from app.core.session.manager import SessionManagerV2
+from app.core.session.middleware.session_middleware import SessionMiddleware, create_user_session, destroy_current_session, update_session_platform
 from models import User, PlatformConnection
 
 # Create Flask app

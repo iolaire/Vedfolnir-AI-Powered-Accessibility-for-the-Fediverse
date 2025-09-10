@@ -8,7 +8,7 @@ import os
 # Add parent directory to path to import modules
 sys.path.insert(0, os.path.abspath(os.path.join(os.path.dirname(__file__), '..')))
 
-from caption_quality_assessment import CaptionQualityManager, SimpleCaptionQualityAssessor
+from app.utils.processing.caption_quality_assessment import CaptionQualityManager, SimpleCaptionQualityAssessor
 
 class TestCaptionQuality(unittest.TestCase):
     """Test cases for caption quality assessment"""

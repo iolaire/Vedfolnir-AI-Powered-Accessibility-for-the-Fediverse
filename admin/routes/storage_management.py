@@ -20,7 +20,7 @@ from flask import render_template, current_app, jsonify, request, redirect, url_
 from flask_login import login_required, current_user
 from models import UserRole
 # from notification_flash_replacement import send_notification  # Removed - using unified notification system
-from session_error_handlers import with_session_error_handling
+from app.core.session.error_handling.session_error_handlers import with_session_error_handling
 from app.services.admin.components.admin_storage_dashboard import AdminStorageDashboard
 from app.services.storage.components.storage_override_system import StorageOverrideSystem, OverrideValidationError, OverrideNotFoundError, StorageOverrideSystemError
 from app.core.database.core.database_manager import DatabaseManager

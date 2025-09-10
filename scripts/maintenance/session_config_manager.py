@@ -20,7 +20,7 @@ from typing import Dict, Any, List
 # Add project root to path
 sys.path.insert(0, os.path.join(os.path.dirname(__file__), '..', '..'))
 
-from session_config import get_session_config, reload_session_config, SessionConfig, SessionEnvironment
+from app.core.session.config import get_session_config, reload_session_config, SessionConfig, SessionEnvironment
 
 def validate_configuration() -> Dict[str, Any]:
     """Validate current session configuration"""

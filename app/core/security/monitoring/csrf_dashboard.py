@@ -14,7 +14,7 @@ from flask import Blueprint, render_template, jsonify, request
 from flask_login import login_required, current_user
 
 from app.core.security.monitoring.csrf_security_metrics import get_csrf_security_metrics
-from admin.security.admin_access_control import admin_required
+from app.services.admin.security.admin_access_control import admin_required
 
 logger = logging.getLogger(__name__)
 

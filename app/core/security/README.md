@@ -55,19 +55,19 @@ Security-specific test files:
 
 ### Core Security Utilities
 ```python
-from security.core.security_utils import sanitize_for_log, sanitize_html_input
-from security.core.security_config import security_config
-from security.core.security_middleware import SecurityMiddleware, validate_csrf_token
+from app.core.security.core.security_utils import sanitize_for_log, sanitize_html_input
+from app.core.security.core.security_config import security_config
+from app.core.security.core.security_middleware import SecurityMiddleware, validate_csrf_token
 ```
 
 ### Feature-Specific Security
 ```python
-from security.features.caption_security import CaptionSecurityManager
+from app.core.security.features.caption_security import CaptionSecurityManager
 ```
 
 ### Security Logging
 ```python
-from security.logging.secure_error_handlers import register_secure_error_handlers
+from app.core.security.logging.secure_error_handlers import register_secure_error_handlers
 from security.logging.secure_logging import SecureLogger
 ```
 

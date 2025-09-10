@@ -38,7 +38,7 @@ Sanitize a value for safe logging to prevent log injection attacks.
 
 **Example:**
 ```python
-from security.core.security_utils import sanitize_for_log
+from app.core.security.core.security_utils import sanitize_for_log
 
 # Safe logging of user input
 user_input = "malicious\nlog\rinjection\x00attempt"
@@ -73,7 +73,7 @@ Sanitize a filename to prevent directory traversal and file system attacks.
 
 **Example:**
 ```python
-from security.core.security_utils import sanitize_filename
+from app.core.security.core.security_utils import sanitize_filename
 
 # Prevent directory traversal
 dangerous_name = "../../../etc/passwd"
@@ -108,7 +108,7 @@ Validate that a URL is safe and well-formed.
 
 **Example:**
 ```python
-from security.core.security_utils import validate_url
+from app.core.security.core.security_utils import validate_url
 
 # Valid URLs
 assert validate_url("https://example.com/path") == True
@@ -137,7 +137,7 @@ Sanitize HTML input to prevent XSS attacks.
 
 **Example:**
 ```python
-from security.core.security_utils import sanitize_html_input
+from app.core.security.core.security_utils import sanitize_html_input
 
 # Remove dangerous scripts
 dangerous_html = '<script>alert("xss")</script><p>Safe content</p>'
@@ -161,7 +161,7 @@ Generate a cryptographically secure random token.
 
 **Example:**
 ```python
-from security.core.security_utils import generate_secure_token
+from app.core.security.core.security_utils import generate_secure_token
 
 # Generate session token
 session_token = generate_secure_token(32)
@@ -302,7 +302,7 @@ Check for suspicious patterns in requests.
 
 ```python
 from flask import Flask
-from security.core.security_middleware import SecurityMiddleware
+from app.core.security.core.security_middleware import SecurityMiddleware
 
 app = Flask(__name__)
 security = SecurityMiddleware(app)
@@ -336,7 +336,7 @@ Decorator to require HTTPS for specific routes.
 
 **Example:**
 ```python
-from security.core.security_middleware import require_https
+from app.core.security.core.security_middleware import require_https
 
 @app.route('/admin')
 @require_https
@@ -360,7 +360,7 @@ Decorator to validate CSRF tokens for specific routes.
 
 **Example:**
 ```python
-from security.core.security_middleware import validate_csrf_token
+from app.core.security.core.security_middleware import validate_csrf_token
 
 @app.route('/api/update', methods=['POST'])
 @validate_csrf_token
@@ -387,7 +387,7 @@ Decorator to apply rate limiting to specific routes.
 
 **Example:**
 ```python
-from security.core.security_middleware import rate_limit
+from app.core.security.core.security_middleware import rate_limit
 
 @app.route('/api/expensive-operation')
 @rate_limit(requests_per_minute=10, per_user=True)
@@ -551,7 +551,7 @@ Log a security audit event.
 #### Usage Example
 
 ```python
-from security.features.session_security import SessionSecurityHardening, SessionFingerprint
+from app.core.security.features.session_security import SessionSecurityHardening, SessionFingerprint
 from app.core.database.core.database_manager import DatabaseManager
 from flask import request
 
@@ -640,7 +640,7 @@ SECURITY_HEADERS = {
 Always validate and sanitize user input:
 
 ```python
-from security.core.security_utils import sanitize_html_input, sanitize_for_log
+from app.core.security.core.security_utils import sanitize_html_input, sanitize_for_log
 
 @app.route('/api/comment', methods=['POST'])
 def create_comment():
@@ -660,7 +660,7 @@ def create_comment():
 Implement secure session handling:
 
 ```python
-from security.features.session_security import SessionSecurityHardening
+from app.core.security.features.session_security import SessionSecurityHardening
 
 @app.before_request
 def check_session_security():
@@ -697,7 +697,7 @@ def bad_request(error):
 Log security events for monitoring:
 
 ```python
-from security.core.security_monitoring import log_security_event, SecurityEventType
+from app.core.security.monitoring.security_monitoring import log_security_event, SecurityEventType
 
 def log_login_attempt(user_id: int, success: bool):
     log_security_event(
@@ -719,7 +719,7 @@ def log_login_attempt(user_id: int, success: bool):
 
 ```python
 import unittest
-from security.core.security_utils import sanitize_for_log, sanitize_filename
+from app.core.security.core.security_utils import sanitize_for_log, sanitize_filename
 
 class TestSecurityUtils(unittest.TestCase):
     def test_sanitize_for_log(self):

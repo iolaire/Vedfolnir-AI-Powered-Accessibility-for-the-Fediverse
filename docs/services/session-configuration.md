@@ -214,7 +214,7 @@ python scripts/maintenance/session_config_manager.py --generate-template --outpu
 ### Programmatic Configuration
 
 ```python
-from session_config import get_session_config, reload_session_config
+from app.core.session.config import get_session_config, reload_session_config
 
 # Get current configuration
 config = get_session_config()
@@ -294,7 +294,7 @@ The session manager automatically uses the configuration system:
 
 ```python
 from app.core.session.core.session_manager import SessionManager
-from session_config import get_session_config
+from app.core.session.config import get_session_config
 from app.core.database.core.database_manager import DatabaseManager
 
 # Create session manager with configuration
@@ -492,7 +492,7 @@ Main configuration class containing all session management settings.
 ### Basic Configuration
 
 ```python
-from session_config import get_session_config
+from app.core.session.config import get_session_config
 
 # Get configuration
 config = get_session_config()
@@ -510,7 +510,7 @@ print(f"Session lifetime: {session_lifetime}")
 
 ```python
 import os
-from session_config import SessionConfig, SessionEnvironment
+from app.core.session.config import SessionConfig, SessionEnvironment
 
 # Set environment
 os.environ['SESSION_ENVIRONMENT'] = 'production'
@@ -530,7 +530,7 @@ else:
 ### Custom Configuration
 
 ```python
-from session_config import SessionConfig, SessionTimeoutConfig
+from app.core.session.config import SessionConfig, SessionTimeoutConfig
 from datetime import timedelta
 
 # Create custom timeout configuration

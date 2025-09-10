@@ -16,7 +16,7 @@ import statistics
 from concurrent.futures import ThreadPoolExecutor, as_completed
 from unittest.mock import MagicMock, patch
 
-from unified_session_manager import UnifiedSessionManager
+from app.core.session.manager import UnifiedSessionManager
 from app.core.database.core.database_manager import DatabaseManager
 from models import User, PlatformConnection, UserSession
 

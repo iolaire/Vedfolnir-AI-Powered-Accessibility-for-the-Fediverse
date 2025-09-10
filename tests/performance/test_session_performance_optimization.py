@@ -14,7 +14,7 @@ from unittest.mock import patch, MagicMock
 
 from config import Config
 from app.core.database.core.database_manager import DatabaseManager
-from session_performance_optimizer import SessionPerformanceOptimizer, SessionCache, get_session_optimizer
+from app.services.performance.components.session_performance_optimizer import SessionPerformanceOptimizer, SessionCache, get_session_optimizer
 from models import User, UserSession, PlatformConnection, UserRole
 from tests.test_helpers import create_test_user_with_platforms, cleanup_test_user
 

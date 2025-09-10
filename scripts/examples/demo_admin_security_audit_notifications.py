@@ -31,7 +31,7 @@ from websocket_namespace_manager import WebSocketNamespaceManager
 from app.services.notification.manager.unified_manager import UnifiedNotificationManager
 from app.core.security.monitoring.security_event_logger import SecurityEventLogger, SecurityEventType, SecurityEventSeverity
 from app.core.security.monitoring.security_alerting import SecurityAlertManager
-from session_security import SessionSecurityManager
+from app.core.session.security.session_security import SessionSecurityManager
 from app.services.admin.components.admin_security_audit_notification_handler import (
     AdminSecurityAuditNotificationHandler,
     SecurityNotificationType,

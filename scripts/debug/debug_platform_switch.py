@@ -16,7 +16,7 @@ sys.path.insert(0, os.path.dirname(os.path.abspath(__file__)))
 from config import Config
 from app.core.database.core.database_manager import DatabaseManager
 from redis_platform_manager import get_redis_platform_manager
-from session_factory import create_session_manager
+from app.core.session.factory import create_session_manager
 
 def debug_platform_switch():
     """Debug platform switching functionality"""

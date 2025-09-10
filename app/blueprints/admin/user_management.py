@@ -12,9 +12,9 @@ from app.core.session.error_handling.session_error_handlers import with_session_
 from app.core.security.core.security_middleware import rate_limit, validate_input_length, validate_csrf_token
 from app.core.security.validation.enhanced_input_validation import enhanced_input_validation
 from app.core.security.core.security_utils import sanitize_for_log
-from admin.forms.user_forms import EditUserForm, DeleteUserForm, AddUserForm, ResetPasswordForm, UserStatusForm
-from admin.services.user_service import UserService
-from admin.security.admin_access_control import admin_required, admin_session_preservation, admin_user_management_access, ensure_admin_count
+from app.services.admin.forms.user_forms import EditUserForm, DeleteUserForm, AddUserForm, ResetPasswordForm, UserStatusForm
+from app.services.admin.components.user_service import UserService
+from app.services.admin.security.admin_access_control import admin_required, admin_session_preservation, admin_user_management_access, ensure_admin_count
 from app.services.notification.manager.unified_manager import UnifiedNotificationManager
 
 def validate_form_submission(form):

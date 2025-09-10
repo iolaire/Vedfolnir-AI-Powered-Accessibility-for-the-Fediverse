@@ -18,7 +18,7 @@ from datetime import datetime, timedelta
 # Add project root to path
 sys.path.insert(0, os.path.dirname(os.path.dirname(os.path.abspath(__file__))))
 
-from unified_session_manager import unified_session_manager
+from app.core.session.manager import unified_session_manager
 from models import ComplianceAudit, ComplianceRequirement, ComplianceMetric, ComplianceStandard, ComplianceStatus, ComplianceCategory, User
 
 logging.basicConfig(level=logging.INFO, format='%(asctime)s - %(name)s - %(levelname)s - %(message)s')

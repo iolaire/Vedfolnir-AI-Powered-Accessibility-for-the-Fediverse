@@ -28,7 +28,7 @@ from app.services.notification.components.notification_emergency_recovery import
 from app.services.notification.manager.unified_manager import UnifiedNotificationManager
 from websocket_factory import WebSocketFactory
 from websocket_auth_handler import WebSocketAuthHandler
-from websocket_namespace_manager import WebSocketNamespaceManager
+from app.websocket.core.websocket_namespace_manager import WebSocketNamespaceManager
 
 # Load environment
 load_dotenv()

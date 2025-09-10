@@ -7,9 +7,9 @@
 from flask import render_template, jsonify, redirect, url_for, current_app
 from flask_login import login_required, current_user
 from models import UserRole
-from utils.response_helpers import success_response, error_response
+from app.utils.helpers.response_helpers import success_response, error_response
 # from notification_flash_replacement import send_notification  # Removed - using unified notification system
-from session_error_handlers import with_session_error_handling
+from app.core.session.error_handling.session_error_handlers import with_session_error_handling
 from app.core.security.core.security_middleware import rate_limit
 
 def register_routes(bp):

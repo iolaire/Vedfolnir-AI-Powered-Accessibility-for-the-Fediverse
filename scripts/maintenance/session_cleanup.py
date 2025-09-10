@@ -24,8 +24,8 @@ sys.path.insert(0, os.path.dirname(os.path.dirname(os.path.dirname(os.path.abspa
 
 from config import Config
 from app.core.database.core.database_manager import DatabaseManager
-from unified_session_manager import UnifiedSessionManager as SessionManager
-from session_monitoring import get_session_monitor
+from app.core.session.manager import UnifiedSessionManager as SessionManager
+from app.services.monitoring.session.session_monitoring import get_session_monitor
 from models import UserSession
 
 logger = getLogger(__name__)

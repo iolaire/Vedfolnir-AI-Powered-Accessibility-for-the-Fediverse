@@ -20,7 +20,7 @@ sys.path.insert(0, os.path.dirname(os.path.dirname(os.path.dirname(os.path.abspa
 
 from config import Config
 from app.core.database.core.database_manager import DatabaseManager
-from unified_session_manager import UnifiedSessionManager as SessionManager
+from app.core.session.manager import UnifiedSessionManager as SessionManager
 from app.core.security.features.session_security import SessionSecurityHardening
 
 def setup_database():

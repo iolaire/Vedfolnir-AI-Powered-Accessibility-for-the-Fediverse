@@ -20,9 +20,9 @@ sys.path.insert(0, os.path.dirname(os.path.dirname(os.path.dirname(__file__))))
 
 from config import Config
 from app.core.database.core.database_manager import DatabaseManager
-from unified_session_manager import UnifiedSessionManager as SessionManager
+from app.core.session.manager import UnifiedSessionManager as SessionManager
 from app.services.monitoring.health.checkers.session_health_checker import get_session_health_checker
-from session_alerting_system import get_alerting_system
+from app.services.alerts.components.session_alerting_system import get_alerting_system
 
 @dataclass
 class CheckResult:

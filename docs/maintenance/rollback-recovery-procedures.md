@@ -381,7 +381,7 @@ with db_manager.get_session() as session:
 ```bash
 # Test session creation and management
 python -c "
-from redis_session_manager import RedisSessionManager
+from app.core.session.redis.redis_session_manager import RedisSessionManager
 from config import Config
 config = Config()
 manager = RedisSessionManager(config)

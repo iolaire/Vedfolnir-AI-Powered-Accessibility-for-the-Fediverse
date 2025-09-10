@@ -19,8 +19,8 @@ from flask_login import login_required, current_user
 
 from models import UserRole
 from app.core.security.core.role_based_access import require_admin
-from session_error_handlers import with_session_error_handling
-from utils.response_helpers import success_response, error_response
+from app.core.session.error_handling.session_error_handlers import with_session_error_handling
+from app.utils.helpers.response_helpers import success_response, error_response
 from monitoring_dashboard_service import (
     MonitoringDashboardService, ReportType, ReportFormat, DashboardWidgetType
 )

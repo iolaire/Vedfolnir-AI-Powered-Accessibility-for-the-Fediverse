@@ -21,7 +21,7 @@ import logging
 # Add project root to path
 sys.path.insert(0, os.path.join(os.path.dirname(__file__), '..', '..'))
 
-from utils.landing_page_fallback import test_error_scenarios
+from app.utils.landing.landing_page_fallback import test_error_scenarios
 
 def setup_logging():
     """Set up logging for the test script"""

@@ -17,7 +17,7 @@ from typing import List
 project_root = Path(__file__).parent.parent.parent
 sys.path.insert(0, str(project_root))
 
-from admin.feature_flags import FeatureFlagManager, RolloutStrategy, FeatureState
+from app.services.admin.components.feature_flags import FeatureFlagManager, RolloutStrategy, FeatureState
 
 class FeatureFlagCLI:
     """Command-line interface for feature flag management"""

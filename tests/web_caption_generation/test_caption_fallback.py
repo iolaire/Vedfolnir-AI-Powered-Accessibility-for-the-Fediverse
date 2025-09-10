@@ -12,7 +12,7 @@ import logging
 sys.path.append(os.path.dirname(os.path.dirname(os.path.abspath(__file__))))
 
 from caption_fallback import CaptionFallbackManager, FallbackConfig
-from ollama_caption_generator import OllamaCaptionGenerator
+from app.utils.processing.ollama_caption_generator import OllamaCaptionGenerator
 from config import OllamaConfig, RetryConfig
 
 # Configure logging for tests

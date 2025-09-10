@@ -22,7 +22,7 @@ systemctl is-active vedfolnir mysql redis nginx | paste <(echo -e "Vedfolnir\nMy
 # 2. Review overnight alerts
 echo -e "\n2. Overnight Alerts:"
 python -c "
-from admin.services.monitoring_service import MonitoringService
+from app.services.admin.components.monitoring_service import MonitoringService
 service = MonitoringService()
 alerts = service.get_alerts_since_hours(12)
 if alerts:
@@ -132,7 +132,7 @@ except Exception as e:
 # 4. Alert summary
 echo -e "\n4. Daily Alert Summary:"
 python -c "
-from admin.services.monitoring_service import MonitoringService
+from app.services.admin.components.monitoring_service import MonitoringService
 try:
     service = MonitoringService()
     daily_alerts = service.get_daily_alert_summary()
@@ -327,7 +327,7 @@ except Exception as e:
 # 3. Security audit
 echo -e "\n3. Security Audit:"
 python -c "
-from security.audit.security_audit import SecurityAudit
+from app.core.security.audit.security_audit import SecurityAudit
 try:
     audit = SecurityAudit()
     results = audit.run_monthly_audit()
@@ -479,7 +479,7 @@ echo "[$DATE] Starting automated weekly maintenance" >> $LOG_FILE
 
 # 3. Security scan
 python -c "
-from security.audit.security_audit import SecurityAudit
+from app.core.security.audit.security_audit import SecurityAudit
 try:
     audit = SecurityAudit()
     results = audit.run_weekly_scan()
@@ -628,7 +628,7 @@ echo "=== Alert System Maintenance ==="
 # 1. Review alert effectiveness
 echo "1. Alert Effectiveness Review:"
 python -c "
-from admin.services.monitoring_service import MonitoringService
+from app.services.admin.components.monitoring_service import MonitoringService
 from datetime import datetime, timedelta
 
 try:
@@ -685,7 +685,7 @@ except Exception as e:
 # 3. Clean up old alerts
 echo -e "\n3. Alert Cleanup:"
 python -c "
-from admin.services.monitoring_service import MonitoringService
+from app.services.admin.components.monitoring_service import MonitoringService
 from datetime import datetime, timedelta
 
 try:
@@ -714,7 +714,7 @@ echo "=== Monitoring Dashboard Maintenance ==="
 # 1. Update dashboard metrics
 echo "1. Dashboard Metrics Update:"
 python -c "
-from admin.services.monitoring_service import MonitoringService
+from app.services.admin.components.monitoring_service import MonitoringService
 
 try:
     service = MonitoringService()
@@ -738,7 +738,7 @@ except Exception as e:
 # 2. Optimize dashboard performance
 echo -e "\n2. Dashboard Performance Optimization:"
 python -c "
-from admin.services.monitoring_service import MonitoringService
+from app.services.admin.components.monitoring_service import MonitoringService
 
 try:
     service = MonitoringService()

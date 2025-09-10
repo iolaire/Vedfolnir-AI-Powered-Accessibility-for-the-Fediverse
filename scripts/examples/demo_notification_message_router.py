@@ -15,8 +15,8 @@ import uuid
 from datetime import datetime, timezone
 from unittest.mock import Mock
 
-from notification_message_router import NotificationMessageRouter
-from websocket_namespace_manager import WebSocketNamespaceManager
+from app.services.notification.components.notification_message_router import NotificationMessageRouter
+from app.websocket.core.websocket_namespace_manager import WebSocketNamespaceManager
 from app.services.notification.manager.unified_manager import (
     NotificationMessage, AdminNotificationMessage, SystemNotificationMessage,
     NotificationType, NotificationPriority, NotificationCategory

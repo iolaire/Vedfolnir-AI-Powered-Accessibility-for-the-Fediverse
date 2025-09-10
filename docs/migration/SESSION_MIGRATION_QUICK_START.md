@@ -32,7 +32,7 @@ from app.core.session.core.session_manager import SessionManager, get_current_pl
 session_manager = SessionManager(db_manager)
 
 # AFTER  
-from unified_session_manager import get_current_platform_context
+from app.core.session.manager import get_current_platform_context
 # Remove session_manager creation - use unified_session_manager only
 ```
 
@@ -43,7 +43,7 @@ from app.core.session.core.session_manager import SessionManager
 def get_session_health_checker(db_manager: DatabaseManager, session_manager: SessionManager):
 
 # AFTER
-from unified_session_manager import UnifiedSessionManager  
+from app.core.session.manager import UnifiedSessionManager  
 def get_session_health_checker(db_manager: DatabaseManager, session_manager: UnifiedSessionManager):
 ```
 
@@ -101,7 +101,7 @@ mv session_manager_compat.py session_manager.py
 from app.core.session.core.session_manager import SessionManager, get_current_platform_context
 
 # NEW  
-from unified_session_manager import UnifiedSessionManager, get_current_platform_context
+from app.core.session.manager import UnifiedSessionManager, get_current_platform_context
 ```
 
 ### Class Changes

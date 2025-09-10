@@ -14,7 +14,7 @@ The issue was that the `HealthChecker` class was not being initialized in the ma
 ### 1. Added HealthChecker Initialization to web_app.py
 ```python
 # Initialize HealthChecker for comprehensive system monitoring
-from health_check import HealthChecker
+from app.services.monitoring.health.health_check import HealthChecker
 health_checker = HealthChecker(config, db_manager)
 app.config['health_checker'] = health_checker
 
@@ -50,7 +50,7 @@ Ensured HealthChecker initialization even if other components fail:
 ```python
 # Still try to initialize HealthChecker even if performance dashboard fails
 try:
-    from health_check import HealthChecker
+    from app.services.monitoring.health.health_check import HealthChecker
     health_checker = HealthChecker(config, db_manager)
     app.config['health_checker'] = health_checker
     # ... verification and testing code ...

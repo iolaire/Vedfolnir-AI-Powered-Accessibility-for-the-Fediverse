@@ -26,7 +26,7 @@ load_dotenv()
 
 from config import Config
 from app.core.database.core.database_manager import DatabaseManager
-from admin.feature_flags import FeatureFlagManager
+from app.services.admin.components.feature_flags import FeatureFlagManager
 
 # Configure logging
 logging.basicConfig(

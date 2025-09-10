@@ -127,8 +127,8 @@ with db_manager.get_session() as session:
 #### Security Implementation
 ```python
 # Pattern found in security modules
-from security.core.security_utils import sanitize_for_log
-from security.core.security_middleware import rate_limit
+from app.core.security.core.security_utils import sanitize_for_log
+from app.core.security.core.security_middleware import rate_limit
 
 @rate_limit(requests_per_minute=30)
 def secure_endpoint():

@@ -36,7 +36,7 @@ from app.services.notification.components.notification_database_optimizer import
     QueryCache, BatchProcessor, QueryPerformanceMonitor, QueryType
 )
 from app.services.notification.manager.unified_manager import NotificationMessage, NotificationType, NotificationPriority, NotificationCategory
-from notification_message_router import NotificationMessageRouter
+from app.services.notification.components.notification_message_router import NotificationMessageRouter
 from app.services.notification.components.notification_persistence_manager import NotificationPersistenceManager
 
 

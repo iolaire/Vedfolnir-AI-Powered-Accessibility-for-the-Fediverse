@@ -17,7 +17,7 @@ from unittest.mock import Mock, patch
 # Add project root to path
 sys.path.insert(0, os.path.join(os.path.dirname(__file__), '..'))
 
-from admin.services.cleanup_service import CleanupService
+from app.services.admin.components.cleanup_service import CleanupService
 from models import ProcessingStatus
 
 

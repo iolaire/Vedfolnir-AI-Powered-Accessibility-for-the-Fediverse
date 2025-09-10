@@ -11,7 +11,7 @@ from unittest.mock import patch
 sys.path.insert(0, os.path.abspath(os.path.join(os.path.dirname(__file__), '..')))
 
 from config import CaptionConfig
-from caption_quality_assessment import SimpleCaptionQualityAssessor, CaptionQualityManager
+from app.utils.processing.caption_quality_assessment import SimpleCaptionQualityAssessor, CaptionQualityManager
 
 class TestCaptionConfigIntegration(unittest.TestCase):
     """Test caption configuration integration with quality assessment"""

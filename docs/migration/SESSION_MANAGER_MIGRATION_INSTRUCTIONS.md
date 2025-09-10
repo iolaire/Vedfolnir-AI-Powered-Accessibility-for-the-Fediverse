@@ -159,7 +159,7 @@ DEPRECATED: This module is for migration purposes only. Use unified_session_mana
 """
 
 import warnings
-from unified_session_manager import (
+from app.core.session.manager import (
     UnifiedSessionManager,
     get_current_platform_context,
     get_current_platform,
@@ -201,7 +201,7 @@ session_health_checker = get_session_health_checker(db_manager, session_manager)
 app.config['session_manager'] = session_manager
 
 # AFTER:
-from unified_session_manager import get_current_platform_context
+from app.core.session.manager import get_current_platform_context
 # Remove session_manager creation - use unified_session_manager only
 session_health_checker = get_session_health_checker(db_manager, unified_session_manager)
 app.config['session_manager'] = unified_session_manager  # For backward compatibility
@@ -219,7 +219,7 @@ class SessionHealthChecker:
     def __init__(self, db_manager: DatabaseManager, session_manager: SessionManager):
 
 # AFTER:
-from unified_session_manager import UnifiedSessionManager
+from app.core.session.manager import UnifiedSessionManager
 
 class SessionHealthChecker:
     def __init__(self, db_manager: DatabaseManager, session_manager: UnifiedSessionManager):
@@ -246,7 +246,7 @@ Update `security/features/caption_security.py`:
 from session_manager import get_current_platform_context
 
 # AFTER:
-from unified_session_manager import get_current_platform_context
+from app.core.session.manager import get_current_platform_context
 ```
 
 #### Step 3.2: Update Platform Context Utils
@@ -255,7 +255,7 @@ Update `platform_context_utils.py`:
 
 ```python
 # BEFORE:
-from unified_session_manager import UnifiedSessionManager
+from app.core.session.manager import UnifiedSessionManager
 unified_session_manager = UnifiedSessionManager(db_manager)
 
 # AFTER:
@@ -297,9 +297,9 @@ def migrate_test_file(file_path):
     ]
     
     new_imports = [
-        'from unified_session_manager import UnifiedSessionManager as SessionManager',
-        'from unified_session_manager import get_current_platform_context',
-        'from unified_session_manager import *',
+        'from app.core.session.manager import UnifiedSessionManager as SessionManager',
+        'from app.core.session.manager import get_current_platform_context',
+        'from app.core.session.manager import *',
         'import unified_session_manager as session_manager'
     ]
     
@@ -391,7 +391,7 @@ For session-related tests, always use the unified session manager:
 
 ```python
 # Test unified session functionality
-from unified_session_manager import UnifiedSessionManager
+from app.core.session.manager import UnifiedSessionManager
 
 class TestUnifiedSessions(unittest.TestCase):
     def setUp(self):
@@ -453,7 +453,7 @@ def update_imports_in_file(file_path):
         
         # Update import statements
         patterns = [
-            (r'from session_manager import', 'from unified_session_manager import'),
+            (r'from session_manager import', 'from app.core.session.manager import'),
             (r'import session_manager', 'import unified_session_manager as session_manager'),
         ]
         
@@ -530,7 +530,7 @@ class SessionMigrationValidation(unittest.TestCase):
     def setUp(self):
         from config import Config
         from app.core.database.core.database_manager import DatabaseManager
-        from unified_session_manager import UnifiedSessionManager
+        from app.core.session.manager import UnifiedSessionManager
         
         self.config = Config()
         self.db_manager = DatabaseManager(self.config)
@@ -538,13 +538,13 @@ class SessionMigrationValidation(unittest.TestCase):
     
     def test_unified_session_manager_import(self):
         """Test that UnifiedSessionManager can be imported and instantiated"""
-        from unified_session_manager import UnifiedSessionManager
+        from app.core.session.manager import UnifiedSessionManager
         manager = UnifiedSessionManager(self.db_manager)
         self.assertIsNotNone(manager)
     
     def test_platform_context_functions(self):
         """Test that platform context functions are available"""
-        from unified_session_manager import (
+        from app.core.session.manager import (
             get_current_platform_context,
             get_current_platform,
             get_current_user_from_context,

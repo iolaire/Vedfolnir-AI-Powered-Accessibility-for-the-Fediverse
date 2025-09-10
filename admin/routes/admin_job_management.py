@@ -7,7 +7,7 @@
 from flask import render_template, current_app, request, session
 from flask_login import login_required, current_user
 from models import UserRole
-from session_error_handlers import with_session_error_handling
+from app.core.session.error_handling.session_error_handlers import with_session_error_handling
 
 def register_routes(bp):
     """Register admin job management routes"""

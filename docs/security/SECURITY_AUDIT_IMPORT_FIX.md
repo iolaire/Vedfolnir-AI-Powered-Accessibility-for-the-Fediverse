@@ -22,14 +22,14 @@ The security audit API was trying to import functions that didn't exist in the s
 
 **Before (Incorrect):**
 ```python
-from security.core.security_monitoring import get_security_monitor
-from security.monitoring.csrf_security_metrics import get_csrf_metrics_manager
+from app.core.security.monitoring.security_monitoring import get_security_monitor
+from app.core.security.monitoring.csrf_security_metrics import get_csrf_metrics_manager
 ```
 
 **After (Correct):**
 ```python
-from security.core.security_monitoring import security_monitor
-from security.monitoring.csrf_security_metrics import get_csrf_security_metrics
+from app.core.security.monitoring.security_monitoring import security_monitor
+from app.core.security.monitoring.csrf_security_metrics import get_csrf_security_metrics
 ```
 
 ### ✅ **Updated Function Calls**

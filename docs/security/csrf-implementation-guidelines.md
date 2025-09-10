@@ -60,7 +60,7 @@ fetch('/api/endpoint', {
 ```python
 from flask import request
 from flask_wtf.csrf import validate_csrf
-from security.core.csrf_token_manager import get_csrf_token_manager
+from app.core.security.core.csrf_token_manager import get_csrf_token_manager
 
 @app.route('/api/endpoint', methods=['POST'])
 @login_required
@@ -79,7 +79,7 @@ def protected_endpoint():
 #### Custom CSRF Validation
 
 ```python
-from security.core.csrf_token_manager import get_csrf_token_manager
+from app.core.security.core.csrf_token_manager import get_csrf_token_manager
 
 def validate_custom_csrf(token, session_id=None):
     """Custom CSRF validation for special cases"""

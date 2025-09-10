@@ -19,7 +19,7 @@ app = create_app()
 from flask import render_template, redirect, url_for, request, jsonify
 from flask_login import login_required, current_user
 from app.core.security.core.role_based_access import require_viewer_or_higher
-from session_aware_decorators import with_session_error_handling
+from app.core.session.decorators.session_aware_decorators import with_session_error_handling
 from models import UserRole
 
 # Temporary routes - to be moved to appropriate blueprints

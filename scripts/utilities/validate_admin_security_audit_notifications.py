@@ -26,7 +26,7 @@ from app.services.admin.components.admin_security_audit_notification_handler imp
     SecurityThresholds,
     create_admin_security_audit_notification_handler
 )
-from security_notification_integration_service import (
+from app.services.notification.components.security_notification_integration_service import (
     SecurityNotificationIntegrationService,
     create_security_notification_integration_service
 )
