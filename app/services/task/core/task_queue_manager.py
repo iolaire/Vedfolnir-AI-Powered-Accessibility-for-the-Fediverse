@@ -248,7 +248,9 @@ class TaskQueueManager:
                     return None
                 
                 # Get queued tasks with priority ordering
-                queued_tasks = session.query(CaptionGenerationTask).join(User).filter(
+                queued_tasks = session.query(CaptionGenerationTask).join(
+                    User, CaptionGenerationTask.user_id == User.id
+                ).filter(
                     CaptionGenerationTask.status == TaskStatus.QUEUED
                 ).order_by(
                     # Priority order: URGENT, HIGH, NORMAL, LOW

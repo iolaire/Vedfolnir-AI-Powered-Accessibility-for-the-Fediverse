@@ -3,7 +3,7 @@
 {% block title %}CSRF Protection Dashboard{% endblock %}
 
 {% block head %}
-<script>
+<script nonce="{{ g.csp_nonce if g.csp_nonce else '' }}">
 // CSRF Dashboard JavaScript for live data
 let csrfDashboard = {
     data: null,

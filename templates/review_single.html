@@ -47,7 +47,7 @@
                     </button>
                 </div>
                 <div class="image-zoom-wrapper overflow-hidden">
-                    <img src="{{ url_for('serve_image', filename=image.local_path.split('/')[-1]) }}" 
+                    <img src="{{ url_for('static.serve_image', filename=image.local_path.split('/')[-1]) }}" 
                          class="card-img-top image-zoomable" alt="Image {{ image.id }}">
                 </div>
             </div>

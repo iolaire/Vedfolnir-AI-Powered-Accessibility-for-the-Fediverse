@@ -210,7 +210,7 @@
 {% endblock %}
 
 {% block extra_js %}
-<script>
+<script nonce="{{ g.csp_nonce if g.csp_nonce else '' }}">
 document.addEventListener('DOMContentLoaded', function() {
     // Form submission confirmation
     document.querySelector('form')?.addEventListener('submit', function(e) {

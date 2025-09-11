@@ -135,7 +135,7 @@
 {% endblock %}
 
 {% block extra_js %}
-<script>
+<script nonce="{{ g.csp_nonce if g.csp_nonce else '' }}">
 let selectedJobs = [];
 
 document.addEventListener('DOMContentLoaded', function() {

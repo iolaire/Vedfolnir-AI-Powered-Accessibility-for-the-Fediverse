@@ -88,12 +88,43 @@ def send_user_notification(
         # Get user ID from session if not provided
         if user_id is None:
             user_id = session.get('user_id')
-            # For anonymous users (like during registration), allow notifications without user_id
+            # For anonymous users (like during registration), store notifications in session
             if not user_id:
-                logger.debug("No user ID available for notification - allowing for anonymous user")
-                # For anonymous users, we'll log the notification but not send it through the system
-                logger.info(f"Anonymous user notification: {title} - {message}")
-                return True  # Return success since we handled it
+                logger.debug("No user ID available for notification - storing in session for anonymous user")
+                
+                # Generate title if not provided
+                if title is None:
+                    title_map = {
+                        NotificationType.SUCCESS: "Success",
+                        NotificationType.ERROR: "Error", 
+                        NotificationType.WARNING: "Warning",
+                        NotificationType.INFO: "Information"
+                    }
+                    title = title_map.get(notification_type, "Notification")
+                
+                # Store notification in session for anonymous users
+                if 'anonymous_notifications' not in session:
+                    session['anonymous_notifications'] = []
+                
+                notification_data = {
+                    'id': str(uuid.uuid4()),
+                    'type': notification_type.value,
+                    'title': title,
+                    'message': message,
+                    'priority': priority.value,
+                    'category': category.value,
+                    'data': data or {},
+                    'requires_action': requires_action,
+                    'action_url': action_url,
+                    'action_text': action_text,
+                    'timestamp': datetime.now(timezone.utc).isoformat()
+                }
+                
+                session['anonymous_notifications'].append(notification_data)
+                session.modified = True
+                
+                logger.info(f"Anonymous user notification stored in session: {title} - {message}")
+                return True
         
         # Generate title if not provided
         if title is None:
@@ -624,4 +655,53 @@ def send_health_notification(user_id: int, component: str, status: str, message:
         return adapter.send_health_alert(user_id, component, status, message, data)
     except Exception as e:
         logger.error(f"Error sending health notification: {e}")
+        return False
+
+
+def get_anonymous_notifications() -> list:
+    """
+    Get anonymous user notifications from session and clear them
+    
+    Returns:
+        List of notification dictionaries for anonymous users
+    """
+    try:
+        if not has_app_context():
+            return []
+        
+        anonymous_notifications = session.get('anonymous_notifications', [])
+        
+        if anonymous_notifications:
+            logger.debug(f"Retrieved {len(anonymous_notifications)} anonymous notifications from session")
+            # Clear notifications from session after retrieval
+            session['anonymous_notifications'] = []
+            session.modified = True
+        
+        return anonymous_notifications
+        
+    except Exception as e:
+        logger.error(f"Error retrieving anonymous notifications: {e}")
+        return []
+
+
+def clear_anonymous_notifications() -> bool:
+    """
+    Clear all anonymous notifications from session
+    
+    Returns:
+        True if notifications were cleared successfully
+    """
+    try:
+        if not has_app_context():
+            return False
+        
+        if 'anonymous_notifications' in session:
+            session['anonymous_notifications'] = []
+            session.modified = True
+            logger.debug("Cleared anonymous notifications from session")
+        
+        return True
+        
+    except Exception as e:
+        logger.error(f"Error clearing anonymous notifications: {e}")
         return False

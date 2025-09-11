@@ -164,7 +164,7 @@
             
             <!-- Image -->
             <div class="position-relative">
-                <img src="{{ url_for('serve_image', filename=image.local_path.split('/')[-1]) }}" 
+                <img src="{{ url_for('static.serve_image', filename=image.local_path.split('/')[-1]) }}" 
                      class="card-img-top image-preview" 
                      alt="Image {{ image.id }}">
                 

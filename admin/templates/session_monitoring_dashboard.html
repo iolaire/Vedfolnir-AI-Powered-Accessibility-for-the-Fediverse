@@ -75,7 +75,7 @@
     </div>
 </div>
 
-<script>
+<script nonce="{{ g.csp_nonce if g.csp_nonce else '' }}">
 // Function to update session monitoring data
 function updateSessionMonitoring() {
     fetch('/admin/session-health/statistics')

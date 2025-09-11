@@ -138,6 +138,7 @@ def start_generation():
         # Platform context is now available in g.session_context
         platform_connection_id = g.session_context.get('platform_connection_id')
         if not platform_connection_id:
+            current_app.logger.error("No platform connection ID available in session context")
             return error_response("No platform connection available", 400)
         from models import CaptionGenerationSettings
         

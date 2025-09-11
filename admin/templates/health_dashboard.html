@@ -206,7 +206,7 @@
     </div>
 </div>
 
-<script>
+<script nonce="{{ g.csp_nonce if g.csp_nonce else '' }}">
 document.addEventListener('DOMContentLoaded', function() {
     // Ensure all buttons are visible and functional
     const buttons = document.querySelectorAll('.btn');
@@ -245,7 +245,7 @@ setInterval(() => {
 */
 </script>
 
-<style>
+<style nonce="{{ g.csp_nonce if g.csp_nonce else '' }}">
 .badge-lg {
     font-size: 0.9em;
     padding: 0.5em 0.75em;

@@ -7,7 +7,7 @@
 {% block title %}Admin Help Center - Vedfolnir{% endblock %}
 
 {% block head %}
-<style>
+<style nonce="{{ g.csp_nonce if g.csp_nonce else '' }}">
     .help-section {
         background: white;
         border: 1px solid #dee2e6;
@@ -647,7 +647,7 @@
 {% endblock %}
 
 {% block extra_js %}
-<script>
+<script nonce="{{ g.csp_nonce if g.csp_nonce else '' }}">
 // Help Center JavaScript
 function showSection(sectionId) {
     // Hide all sections

@@ -7,8 +7,8 @@ static_bp = Blueprint('static', __name__)
 
 @static_bp.route('/images/<path:filename>')
 def serve_image(filename):
-    """Serve images from the images directory"""
-    return send_from_directory('images', filename)
+    """Serve images from the storage/images directory"""
+    return send_from_directory('storage/images', filename)
 
 @static_bp.route('/static/js/<path:filename>')
 def serve_js(filename):

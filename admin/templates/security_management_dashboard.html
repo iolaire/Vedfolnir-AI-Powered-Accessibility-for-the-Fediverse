@@ -252,7 +252,7 @@
     </div>
 </div>
 
-<script>
+<script nonce="{{ g.csp_nonce if g.csp_nonce else '' }}">
 // Auto-refresh dashboard every 30 seconds
 setInterval(function() {
     location.reload();

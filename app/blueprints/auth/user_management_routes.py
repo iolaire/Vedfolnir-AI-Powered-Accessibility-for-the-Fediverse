@@ -13,7 +13,7 @@ import asyncio
 import logging
 from datetime import datetime
 from urllib.parse import urlparse as url_parse
-from flask import Blueprint, render_template, request, redirect, url_for, current_app, make_response
+from flask import Blueprint, render_template, request, redirect, url_for, current_app, make_response, jsonify
 from flask_login import login_user, logout_user, login_required, current_user
 from sqlalchemy.orm import joinedload
 
@@ -327,6 +327,32 @@ def forgot_password():
             send_error_notification("Password reset failed due to a system error. Please try again.", "Reset Error")
     
     return render_template('user_management/forgot_password.html', form=form)
+
+
+@user_management_bp.route('/get-anonymous-notifications', methods=['GET'])
+def get_anonymous_notifications():
+    """Get anonymous user notifications from session"""
+    try:
+        from app.services.notification.helpers.notification_helpers import get_anonymous_notifications
+        
+        # Retrieve anonymous notifications
+        notifications = get_anonymous_notifications()
+        
+        return jsonify({
+            'success': True,
+            'notifications': notifications,
+            'count': len(notifications)
+        })
+        
+    except Exception as e:
+        logger.error(f"Error retrieving anonymous notifications: {e}")
+        return jsonify({
+            'success': False,
+            'error': 'Failed to retrieve notifications',
+            'notifications': [],
+            'count': 0
+        }), 500
+
 
 @user_management_bp.route('/resend-verification', methods=['POST'])
 @login_required
@@ -696,22 +722,41 @@ def delete_profile():
 def profile():
     """User profile management"""
     form = ProfileEditForm()
+    profile_data = None
     
-    # Pre-populate form with current user data
-    if request.method == 'GET':
-        form.first_name.data = current_user.first_name
-        form.last_name.data = current_user.last_name
-        form.email.data = current_user.email
-    
-    if validate_form_submission(form):
-        try:
-            # Use request-scoped session manager for database operations
-            unified_session_manager = getattr(current_app, "unified_session_manager", None)
-            
-            with unified_session_manager.get_db_session() as db_session:
-                # Update user profile
-                user = db_session.query(User).filter_by(id=current_user.id).first()
-                if user:
+    try:
+        # Use request-scoped session manager for database operations
+        unified_session_manager = getattr(current_app, "unified_session_manager", None)
+        
+        with unified_session_manager.get_db_session() as db_session:
+            # Fetch user profile data
+            user = db_session.query(User).filter_by(id=current_user.id).first()
+            if user:
+                # Create profile data object
+                profile_data = {
+                    'username': user.username,
+                    'first_name': user.first_name,
+                    'last_name': user.last_name,
+                    'full_name': f"{user.first_name or ''} {user.last_name or ''}".strip() or None,
+                    'email': user.email,
+                    'email_verified': user.email_verified,
+                    'role': user.role.value if user.role else 'viewer',
+                    'is_active': user.is_active,
+                    'created_at': user.created_at,
+                    'last_login': user.last_login,
+                    'data_processing_consent': getattr(user, 'data_processing_consent', False),
+                    'data_processing_consent_date': getattr(user, 'data_processing_consent_date', None),
+                    'platform_count': 0  # TODO: Count connected platforms
+                }
+                
+                # Pre-populate form with current user data
+                if request.method == 'GET':
+                    form.first_name.data = user.first_name
+                    form.last_name.data = user.last_name
+                    form.email.data = user.email
+                
+                if validate_form_submission(form):
+                    # Update user profile
                     user.first_name = form.first_name.data
                     user.last_name = form.last_name.data
                     user.email = form.email.data
@@ -721,19 +766,22 @@ def profile():
                     from app.services.notification.helpers.notification_helpers import send_success_notification
                     send_success_notification("Profile updated successfully!", "Profile Updated")
                     logger.info(f"Profile updated for user {sanitize_for_log(user.username)}")
-                else:
-                    # Send error notification
-                    from app.services.notification.helpers.notification_helpers import send_error_notification
-                    send_error_notification("User not found.", "Update Failed")
                     
-                    pass
-        except Exception as e:
-            logger.error(f"Error updating profile: {e}")
-            # Send error notification
-            from app.services.notification.helpers.notification_helpers import send_error_notification
-            send_error_notification("Profile update failed due to a system error.", "Update Error")
+                    # Redirect to refresh the page with updated data
+                    return redirect(url_for('auth.user_management.profile'))
+            else:
+                # Send error notification
+                from app.services.notification.helpers.notification_helpers import send_error_notification
+                send_error_notification("User not found.", "Profile Error")
+                logger.error(f"User not found for ID: {current_user.id}")
+                
+    except Exception as e:
+        logger.error(f"Error loading/updating profile: {e}")
+        # Send error notification
+        from app.services.notification.helpers.notification_helpers import send_error_notification
+        send_error_notification("Profile operation failed due to a system error.", "Profile Error")
     
-    return render_template('user_management/profile.html', form=form)
+    return render_template('user_management/profile.html', form=form, profile_data=profile_data)
 
 @user_management_bp.route('/profile/export')
 @login_required

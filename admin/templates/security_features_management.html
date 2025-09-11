@@ -217,7 +217,7 @@
     </div>
 </div>
 
-<script>
+<script nonce="{{ g.csp_nonce if g.csp_nonce else '' }}">
 function runSecurityScan() {
     // Placeholder for security scan functionality
     alert('Security scan functionality would be implemented here.\n\nThis would trigger a comprehensive security audit of the system.');

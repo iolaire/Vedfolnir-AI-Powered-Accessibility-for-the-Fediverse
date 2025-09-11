@@ -440,7 +440,7 @@
 {% endblock %}
 
 {% block extra_js %}
-<script>
+<script nonce="{{ g.csp_nonce if g.csp_nonce else '' }}">
 document.addEventListener('DOMContentLoaded', function() {
     // Add confirmation dialogs for cleanup operations
     const forms = document.querySelectorAll('form[action*="cleanup"]');

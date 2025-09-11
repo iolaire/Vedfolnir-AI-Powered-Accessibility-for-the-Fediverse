@@ -179,7 +179,7 @@
 </div>
 
 <!-- Storage Monitoring Styles -->
-<style>
+<style nonce="{{ g.csp_nonce if g.csp_nonce else '' }}">
 .storage-gauge {
     filter: drop-shadow(0 2px 4px rgba(0,0,0,0.1));
 }
@@ -226,7 +226,7 @@
 </style>
 
 <!-- Storage Monitoring JavaScript -->
-<script>
+<script nonce="{{ g.csp_nonce if g.csp_nonce else '' }}">
 document.addEventListener('DOMContentLoaded', function() {
     // Auto-refresh storage data every 5 minutes
     setInterval(function() {

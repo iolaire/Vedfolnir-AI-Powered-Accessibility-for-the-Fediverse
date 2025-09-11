@@ -7,7 +7,7 @@
 {% block title %}Storage Management - Admin Dashboard - Vedfolnir{% endblock %}
 
 {% block extra_head %}
-<style>
+<style nonce="{{ g.csp_nonce if g.csp_nonce else '' }}">
     .storage-metric-card {
         transition: transform 0.2s ease-in-out;
         border: none;
@@ -409,7 +409,7 @@
 {% endblock %}
 
 {% block extra_js %}
-<script>
+<script nonce="{{ g.csp_nonce if g.csp_nonce else '' }}">
 document.addEventListener('DOMContentLoaded', function() {
     // Auto-refresh storage data every 2 minutes
     setInterval(function() {

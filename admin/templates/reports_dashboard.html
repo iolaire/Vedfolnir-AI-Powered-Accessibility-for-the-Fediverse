@@ -6,7 +6,7 @@
 {% block title %}Reports Dashboard - Vedfolnir{% endblock %}
 
 {% block head %}
-<style>
+<style nonce="{{ g.csp_nonce if g.csp_nonce else '' }}">
     .report-card {
         transition: transform 0.2s, box-shadow 0.2s;
         cursor: pointer;
@@ -451,7 +451,7 @@
     </div>
 </div>
 
-<script>
+<script nonce="{{ g.csp_nonce if g.csp_nonce else '' }}">
 let currentReportData = null;
 
 document.addEventListener('DOMContentLoaded', function() {

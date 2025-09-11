@@ -8,7 +8,7 @@
 
 {% block extra_head %}
 <link href="{{ url_for('admin.static', filename='css/admin_job_management.css') }}" rel="stylesheet">
-<style>
+<style nonce="{{ g.csp_nonce if g.csp_nonce else '' }}">
     .job-management-container {
         background: #f8f9fa;
         border-radius: 8px;
@@ -437,7 +437,7 @@
 
         {% block extra_js %}
         <script src="{{ url_for('admin.static', filename='js/admin_job_management.js') }}"></script>
-        <script>
+        <script nonce="{{ g.csp_nonce if g.csp_nonce else '' }}">
 
             // Initialize job management
             document.addEventListener('DOMContentLoaded', function () {

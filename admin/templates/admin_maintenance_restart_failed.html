@@ -269,7 +269,7 @@
 {% endblock %}
 
 {% block extra_js %}
-<script>
+<script nonce="{{ g.csp_nonce if g.csp_nonce else '' }}">
 document.addEventListener('DOMContentLoaded', function() {
     const checkboxes = document.querySelectorAll('.job-checkbox');
     const selectedCountSpan = document.getElementById('selectedCount');

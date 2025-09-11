@@ -274,38 +274,7 @@ def render_dashboard():
                 original_exception=final_error
             )
 
-@main_bp.route('/images/<path:filename>')
-@conditional_rate_limit(requests_per_minute=120)  # Higher limit for image serving
-@conditional_enhanced_input_validation
-def serve_image(filename):
-    """
-    Serve images - redirect to static blueprint
-    
-    Security handled by decorators:
-    - Path traversal protection via enhanced input validation
-    - Rate limiting for image requests
-    """
-    logger = logging.getLogger(__name__)
-    
-    try:
-        # Basic validation (enhanced validation decorator handles most security)
-        if not filename or '..' in filename or filename.startswith('/'):
-            logger.warning(f"Invalid image filename requested: {filename}")
-            abort(404)
-        
-        # Validate file extension
-        allowed_extensions = {'.jpg', '.jpeg', '.png', '.gif', '.webp', '.svg'}
-        file_ext = '.' + filename.split('.')[-1].lower() if '.' in filename else ''
-        
-        if file_ext not in allowed_extensions:
-            logger.warning(f"Disallowed file extension requested: {file_ext}")
-            abort(404)
-        
-        return redirect(url_for('static.serve_image', filename=filename))
-        
-    except Exception as e:
-        logger.error(f"Error serving image {filename}: {sanitize_user_input(str(e))}")
-        abort(404)
+
 
 
 @main_bp.route('/index')

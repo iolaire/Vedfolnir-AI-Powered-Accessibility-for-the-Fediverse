@@ -7,7 +7,7 @@
 {% block title %}Admin Dashboard - Vedfolnir{% endblock %}
 
 {% block extra_head %}
-<style>
+<style nonce="{{ g.csp_nonce if g.csp_nonce else '' }}">
     .job-status-badge {
         font-size: 0.75rem;
         padding: 0.25rem 0.5rem;
@@ -600,7 +600,7 @@
 {% block extra_js %}
 <script src="{{ url_for('admin.static', filename='js/admin_dashboard.js') }}"></script>
 <script src="{{ url_for('admin.static', filename='js/user_limits_modal.js') }}"></script>
-<script>
+<script nonce="{{ g.csp_nonce if g.csp_nonce else '' }}">
     // Responsiveness monitoring functions
     function refreshResponsivenessData() {
         console.log('Refreshing responsiveness data...');

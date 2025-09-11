@@ -987,14 +987,14 @@ class WebCaptionGenerationService:
             service_stats = self.get_service_stats()
             
             # Get task completion metrics for the last 24 hours
-            cutoff_time = datetime.now(timezone.utc) - timedelta(hours=24)
+            cutoff_time = datetime.now() - timedelta(hours=24)
             
-            # Use string comparison for datetime to avoid timezone issues
+            # Query completed tasks in the last 24 hours
             completed_tasks_24h = session.query(CaptionGenerationTask).filter(
                 and_(
                     CaptionGenerationTask.status == TaskStatus.COMPLETED,
                     CaptionGenerationTask.completed_at.isnot(None),
-                    CaptionGenerationTask.completed_at >= cutoff_time.replace(tzinfo=None)
+                    CaptionGenerationTask.completed_at >= cutoff_time
                 )
             ).count()
             

@@ -225,7 +225,7 @@
 {% endblock %}
 
 {% block extra_js %}
-<script>
+<script nonce="{{ g.csp_nonce if g.csp_nonce else '' }}">
 function refreshHistory() {
     window.location.reload();
 }

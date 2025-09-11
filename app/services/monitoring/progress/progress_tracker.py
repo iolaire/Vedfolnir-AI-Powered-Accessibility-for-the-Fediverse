@@ -163,9 +163,15 @@ class ProgressTracker:
             # Import here to avoid circular imports
             from app.services.notification.manager.unified_manager import UnifiedNotificationManager, NotificationMessage
             from models import NotificationType, NotificationPriority, NotificationCategory
+            from flask import current_app
+            
+            # Ensure we have Flask app context
+            if not current_app:
+                from web_app import app
+                with app.app_context():
+                    return self._send_progress_notification(user_id, progress_status)
             
             # Get notification manager from Flask app context
-            from flask import current_app
             if hasattr(current_app, 'notification_manager'):
                 notification_manager = current_app.notification_manager
                 
@@ -328,6 +334,12 @@ class ProgressTracker:
             from models import NotificationType, NotificationPriority, NotificationCategory
             from flask import current_app
             
+            # Ensure we have Flask app context
+            if not current_app:
+                from web_app import app
+                with app.app_context():
+                    return self._send_completion_notification(user_id, task_id, results)
+            
             if hasattr(current_app, 'notification_manager'):
                 notification_manager = current_app.notification_manager
                 
@@ -368,6 +380,12 @@ class ProgressTracker:
             from app.services.notification.manager.unified_manager import UnifiedNotificationManager, NotificationMessage
             from models import NotificationType, NotificationPriority, NotificationCategory
             from flask import current_app
+            
+            # Ensure we have Flask app context
+            if not current_app:
+                from web_app import app
+                with app.app_context():
+                    return self._send_error_notification(user_id, task_id, error_message, error_details)
             
             if hasattr(current_app, 'notification_manager'):
                 notification_manager = current_app.notification_manager
@@ -758,6 +776,57 @@ class ProgressTracker:
         except Exception as e:
             logger.error(f"Error sending status notification: {sanitize_for_log(str(e))}")
     
+    def send_caption_complete_notification(self, user_id: int, task_id: str, results: Any):
+        """
+        Send caption generation completion notification
+        
+        Args:
+            user_id: User ID to send notification to
+            task_id: Task ID
+            results: Generation results
+        """
+        try:
+            from app.services.notification.manager.unified_manager import UnifiedNotificationManager, NotificationMessage
+            from models import NotificationType, NotificationPriority, NotificationCategory
+            from flask import current_app
+            
+            if hasattr(current_app, 'notification_manager'):
+                notification_manager = current_app.notification_manager
+                
+                # Extract results data
+                captions_generated = getattr(results, 'captions_generated', 0) if results else 0
+                images_processed = getattr(results, 'images_processed', 0) if results else 0
+                
+                notification = NotificationMessage(
+                    id=f"caption_complete_{task_id}",
+                    type=NotificationType.SUCCESS,
+                    title="Caption Generation Complete!",
+                    message=f"Generated {captions_generated} captions for {images_processed} images.",
+                    user_id=user_id,
+                    priority=NotificationPriority.NORMAL,
+                    category=NotificationCategory.CAPTION,
+                    requires_action=True,
+                    action_url="/review/batches",
+                    action_text="Review Captions",
+                    data={
+                        'task_id': task_id,
+                        'captions_generated': captions_generated,
+                        'images_processed': images_processed,
+                        'notification_type': 'caption_complete',
+                        'category': 'caption',
+                        'auto_hide': False,
+                        'persistent': True
+                    }
+                )
+                
+                notification_manager.send_notification(notification)
+                logger.info(f"Sent caption completion notification for task {task_id}")
+            else:
+                logger.warning("Notification manager not available - skipping completion notification")
+                
+        except Exception as e:
+            logger.error(f"Error sending completion notification: {str(e)[:100]}...")
+
     def send_caption_error_notification(self, user_id: int, task_id: str, error_message: str, 
                                       error_category: str = None, recovery_suggestions: List[str] = None):
         """

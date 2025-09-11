@@ -472,8 +472,47 @@
     
     <!-- Unified Notification System Initialization -->
     <script nonce="{{ g.csp_nonce if g.csp_nonce else '' }}">
+    // Function to check and display anonymous user notifications
+    function checkAndDisplayAnonymousNotifications() {
+        // Check if we're on a page that might have anonymous notifications
+        const currentPath = window.location.pathname;
+        const authPaths = ['/user-management/login', '/user-management/register', '/user-management/forgot-password', '/user-management/verify-email'];
+        
+        if (authPaths.includes(currentPath) || currentPath.startsWith('/user-management/verify-email/')) {
+            // Fetch anonymous notifications from the server
+            fetch('/user-management/get-anonymous-notifications', {
+                method: 'GET',
+                headers: {
+                    'Content-Type': 'application/json',
+                    'X-CSRFToken': document.querySelector('meta[name="csrf-token"]')?.getAttribute('content') || ''
+                },
+                credentials: 'same-origin'
+            })
+            .then(response => response.json())
+            .then(data => {
+                if (data.success && data.notifications && data.notifications.length > 0) {
+                    // Display each notification using the unified notification system
+                    data.notifications.forEach(notification => {
+                        if (window.unifiedNotificationRenderer && window.unifiedNotificationRenderer.renderNotification) {
+                            window.unifiedNotificationRenderer.renderNotification(notification);
+                        } else {
+                            // Fallback to alert if notification system not available
+                            alert(`${notification.title}: ${notification.message}`);
+                        }
+                    });
+                }
+            })
+            .catch(error => {
+                console.warn('Error fetching anonymous notifications:', error);
+            });
+        }
+    }
+
     // Initialize unified notification system
     document.addEventListener('DOMContentLoaded', function() {
+        // Check for and display anonymous user notifications
+        checkAndDisplayAnonymousNotifications();
+        
         // Initialize main notification renderer if not already initialized
         if (!window.unifiedNotificationRenderer && typeof NotificationUIRenderer !== 'undefined') {
             try {

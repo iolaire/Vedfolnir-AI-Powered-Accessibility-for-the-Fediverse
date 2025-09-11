@@ -7,7 +7,7 @@
 {% block title %}Admin Dashboard - Vedfolnir{% endblock %}
 
 {% block extra_head %}
-<style>
+<style nonce="{{ g.csp_nonce if g.csp_nonce else '' }}">
     .dashboard-card {
         transition: transform 0.2s ease-in-out;
         border: none;
@@ -472,7 +472,7 @@
 {% endblock %}
 
 {% block extra_js %}
-<script>
+<script nonce="{{ g.csp_nonce if g.csp_nonce else '' }}">
     // Auto-refresh system status every 30 seconds
     setInterval(function() {
         // You could add AJAX calls here to update system status

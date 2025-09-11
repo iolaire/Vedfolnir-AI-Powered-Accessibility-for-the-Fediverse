@@ -41,7 +41,7 @@
     </div>
 </div>
 
-<style>
+<style nonce="{{ g.csp_nonce if g.csp_nonce else '' }}">
 .admin-context-switcher {
     background: linear-gradient(135deg, #f8f9fa 0%, #e9ecef 100%);
     border: 1px solid #dee2e6;
@@ -108,7 +108,7 @@
 }
 </style>
 
-<script>
+<script nonce="{{ g.csp_nonce if g.csp_nonce else '' }}">
 // Admin context switching functionality
 let currentAdminMode = {{ 'true' if admin_mode else 'false' }};
 

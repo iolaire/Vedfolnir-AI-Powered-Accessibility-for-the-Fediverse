@@ -711,7 +711,7 @@
 {% endblock %}
 
 {% block extra_js %}
-<script>
+<script nonce="{{ g.csp_nonce if g.csp_nonce else '' }}">
 document.addEventListener('DOMContentLoaded', function() {
     
     // Initialize modals
@@ -1137,7 +1137,7 @@ document.addEventListener('DOMContentLoaded', function() {
 });
 </script>
 {% if open_add_user_modal %}
-<script>
+<script nonce="{{ g.csp_nonce if g.csp_nonce else '' }}">
     document.addEventListener('DOMContentLoaded', function() {
         const addUserModal = new bootstrap.Modal(document.getElementById('addUserModal'));
         addUserModal.show();

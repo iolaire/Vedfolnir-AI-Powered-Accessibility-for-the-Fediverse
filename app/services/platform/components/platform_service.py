@@ -60,8 +60,8 @@ class PlatformService:
     def get_maintenance_status(self):
         """Get system maintenance status"""
         try:
-            from enhanced_maintenance_mode_service import EnhancedMaintenanceModeService
-            from maintenance_response_helper import MaintenanceResponseHelper
+            from app.services.maintenance.enhanced.enhanced_maintenance_mode_service import EnhancedMaintenanceModeService
+            from app.services.maintenance.components.maintenance_response_helper import MaintenanceResponseHelper
             from app.core.configuration.core.configuration_service import ConfigurationService
             
             config_service = ConfigurationService(self.db_manager)

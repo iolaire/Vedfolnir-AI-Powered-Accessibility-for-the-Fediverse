@@ -309,7 +309,7 @@
 {% endblock %}
 
 {% block extra_js %}
-<script>
+<script nonce="{{ g.csp_nonce if g.csp_nonce else '' }}">
 document.addEventListener('DOMContentLoaded', function() {
     const dryRunCheckbox = document.getElementById('dryRun');
     const submitButton = document.querySelector('button[type="submit"]');

@@ -167,7 +167,7 @@
 {% endblock %}
 
 {% block extra_js %}
-<script>
+<script nonce="{{ g.csp_nonce if g.csp_nonce else '' }}">
 console.log('=== SYSTEM LOGS JAVASCRIPT LOADING ===');
 
 let autoScrollEnabled = false;

@@ -187,7 +187,7 @@
     </div>
 </div>
 
-<style>
+<style nonce="{{ g.csp_nonce if g.csp_nonce else '' }}">
 .history-section {
     min-height: 400px;
 }
@@ -293,7 +293,7 @@
 }
 </style>
 
-<script>
+<script nonce="{{ g.csp_nonce if g.csp_nonce else '' }}">
 // Job History Modal Management
 let currentHistoryType = 'admin';
 let historyData = {

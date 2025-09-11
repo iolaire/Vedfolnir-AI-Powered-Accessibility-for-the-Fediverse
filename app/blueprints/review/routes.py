@@ -11,6 +11,8 @@ class ReviewForm(Form):
     image_id = HiddenField('Image ID', validators=[DataRequired()])
     caption = TextAreaField('Caption', validators=[DataRequired(), Length(max=500)])
     submit = SubmitField('Submit Review')
+    action = HiddenField('Action')
+    notes = TextAreaField('Notes', validators=[Length(max=1000)])
 
 @review_bp.route('/')
 @login_required

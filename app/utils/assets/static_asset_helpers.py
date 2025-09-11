@@ -216,6 +216,13 @@ def register_template_filters(app):
         """Template filter specifically for image files"""
         return static_url_with_cache(filename)
     
+    @app.template_filter('nl2br')
+    def nl2br_filter(value):
+        """Convert newlines to HTML line breaks"""
+        if not value:
+            return value
+        return value.replace('\n', '<br>\n')
+    
     # Add global template functions
     @app.context_processor
     def inject_asset_helpers():

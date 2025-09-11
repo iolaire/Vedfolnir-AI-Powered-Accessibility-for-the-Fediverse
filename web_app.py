@@ -137,11 +137,7 @@ except Exception as e:
     print(f"⚠️  Performance monitoring blueprint registration failed: {e}")
 
 # Register session state API
-try:
-    from app.core.session.api.session_state_api import create_session_state_routes
-    create_session_state_routes(app)
-except Exception as e:
-    app.logger.warning(f"Session state API registration failed: {e}")
+
 
 # Initialize request performance middleware
 try:
@@ -889,20 +885,7 @@ def inject_role_context():
         'pending_review_count': pending_review_count
     }
 
-@app.route('/api/session/state', methods=['GET'])
-def get_session_state():
-    """Get current session state"""
-    from flask import session, jsonify
-    from flask_login import current_user
-    from datetime import datetime, timezone
-    
-    return jsonify({
-        'success': True,
-        'authenticated': current_user.is_authenticated if hasattr(current_user, 'is_authenticated') else False,
-        'session_id': session.get('_id', None),
-        'user_id': current_user.id if hasattr(current_user, 'id') and current_user.is_authenticated else None,
-        'timestamp': datetime.now(timezone.utc).isoformat()
-    })
+
 
 # Initialize email service for critical emails
 try:

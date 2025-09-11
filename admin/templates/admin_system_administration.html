@@ -176,7 +176,7 @@
     </div>
 </div>
 
-<script>
+<script nonce="{{ g.csp_nonce if g.csp_nonce else '' }}">
 // Dashboard data from server
 const dashboardData = {{ dashboard_data | tojson | safe }};
 

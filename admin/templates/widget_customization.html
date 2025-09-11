@@ -6,7 +6,7 @@
 {% block title %}Widget Customization - Vedfolnir{% endblock %}
 
 {% block head %}
-<style>
+<style nonce="{{ g.csp_nonce if g.csp_nonce else '' }}">
     .widget-grid {
         display: grid;
         grid-template-columns: repeat(12, 1fr);
@@ -438,7 +438,7 @@
     </div>
 </div>
 
-<script>
+<script nonce="{{ g.csp_nonce if g.csp_nonce else '' }}">
 class WidgetCustomizer {
     constructor() {
         this.widgets = {{ dashboard_config.widgets | tojsonfilter | safe }};

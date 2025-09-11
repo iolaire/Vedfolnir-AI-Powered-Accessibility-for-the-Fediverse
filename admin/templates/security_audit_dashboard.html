@@ -129,7 +129,7 @@
     </div>
 </div>
 
-<script>
+<script nonce="{{ g.csp_nonce if g.csp_nonce else '' }}">
 // Security audit dashboard JavaScript
 let refreshInterval;
 

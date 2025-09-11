@@ -251,7 +251,7 @@
 {% endblock %}
 
 {% block extra_js %}
-<script>
+<script nonce="{{ g.csp_nonce if g.csp_nonce else '' }}">
     console.log('=== PAUSE SYSTEM JAVASCRIPT LOADING ===');
     console.log('Script block started');
 
