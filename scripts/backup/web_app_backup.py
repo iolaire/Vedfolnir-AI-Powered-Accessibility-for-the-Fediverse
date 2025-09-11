@@ -756,7 +756,7 @@ def role_required(role):
         @wraps(f)
         def decorated_function(*args, **kwargs):
             if not current_user.is_authenticated:
-                return redirect(url_for('user_management.login', next=request.url))
+                return redirect(url_for('auth.user_management.login', next=request.url))
             
             # SECURITY FIX: Always validate user permissions from server-side database
             # Never trust client-side session data for authorization
@@ -769,7 +769,7 @@ def role_required(role):
                         from app.services.notification.helpers.notification_helpers import send_error_notification
                         send_error_notification("User authentication error. Please log in again.", "Error")
                         logout_user()
-                        return redirect(url_for('user_management.login'))
+                        return redirect(url_for('auth.user_management.login'))
                         
                     server_user = session.query(User).get(user_id)
                     if not server_user:
@@ -778,14 +778,14 @@ def role_required(role):
                         from app.services.notification.helpers.notification_helpers import send_error_notification
                         send_error_notification("User account not found.", "Error")
                         logout_user()
-                        return redirect(url_for('user_management.login'))
+                        return redirect(url_for('auth.user_management.login'))
                     if not server_user.is_active:
                         app.logger.warning(f"Inactive user attempted access: {sanitize_for_log(server_user.username)}")
                         # Send error notification
                         from app.services.notification.helpers.notification_helpers import send_error_notification
                         send_error_notification("Your account has been deactivated.", "Error")
                         logout_user()
-                        return redirect(url_for('user_management.login'))
+                        return redirect(url_for('auth.user_management.login'))
                     
                     # Debug logging for role checking
                     app.logger.debug(f"Role check: user={server_user.username}, user_role={server_user.role}, required_role={role}")
@@ -808,7 +808,7 @@ def role_required(role):
                 # Send error notification
                 from app.services.notification.helpers.notification_helpers import send_error_notification
                 send_error_notification("Authorization error. Please try again.", "Error")
-                return redirect(url_for('user_management.login'))
+                return redirect(url_for('auth.user_management.login'))
             
             return f(*args, **kwargs)
         return decorated_function
@@ -820,7 +820,7 @@ def platform_required(f):
     @wraps(f)
     def decorated_function(*args, **kwargs):
         if not current_user.is_authenticated:
-            return redirect(url_for('user_management.login', next=request.url))
+            return redirect(url_for('auth.user_management.login', next=request.url))
         
         # Check if user has platform context
         context = get_current_session_context()
@@ -833,7 +833,7 @@ def platform_required(f):
                     # Send error notification
                     from app.services.notification.helpers.notification_helpers import send_error_notification
                     send_error_notification("User authentication error. Please log in again.", "Error")
-                    return redirect(url_for('user_management.login'))
+                    return redirect(url_for('auth.user_management.login'))
                     
                 user_platforms = db_session.query(PlatformConnection).filter_by(
                     user_id=user_id,
@@ -861,7 +861,7 @@ def platform_access_required(platform_type=None, instance_url=None):
         @wraps(f)
         def decorated_function(*args, **kwargs):
             if not current_user.is_authenticated:
-                return redirect(url_for('user_management.login', next=request.url))
+                return redirect(url_for('auth.user_management.login', next=request.url))
             
             # Get current platform context and validate with fresh database query
             context = get_current_session_context()
@@ -878,7 +878,7 @@ def platform_access_required(platform_type=None, instance_url=None):
                     # Send error notification
                     from app.services.notification.helpers.notification_helpers import send_error_notification
                     send_error_notification("User authentication error. Please log in again.", "Error")
-                    return redirect(url_for('user_management.login'))
+                    return redirect(url_for('auth.user_management.login'))
                     
                 current_platform = db_session.query(PlatformConnection).filter_by(
                     id=context['platform_connection_id'],

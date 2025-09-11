@@ -28,10 +28,10 @@ This document summarizes the fixes applied to resolve `BuildError: Could not bui
 **Change**: 
 ```html
 <!-- BEFORE -->
-<a href="{{ url_for('user_management.edit_profile') }}" class="btn btn-primary btn-sm">
+<a href="{{ url_for('auth.user_management.edit_profile') }}" class="btn btn-primary btn-sm">
 
 <!-- AFTER -->
-<a href="{{ url_for('user_management.profile') }}" class="btn btn-primary btn-sm">
+<a href="{{ url_for('auth.user_management.profile') }}" class="btn btn-primary btn-sm">
 ```
 
 **Rationale**: The "Edit Profile" button should link to the same profile page since it handles both GET (display) and POST (edit) requests.
@@ -50,7 +50,7 @@ This document summarizes the fixes applied to resolve `BuildError: Could not bui
 <a href="{{ url_for('profile.profile') }}" class="btn btn-secondary me-md-2">Cancel</a>
 
 <!-- AFTER -->
-<a href="{{ url_for('user_management.profile') }}" class="btn btn-secondary me-md-2">Cancel</a>
+<a href="{{ url_for('auth.user_management.profile') }}" class="btn btn-secondary me-md-2">Cancel</a>
 ```
 
 **Rationale**: The correct blueprint name is `user_management`, not `profile`.

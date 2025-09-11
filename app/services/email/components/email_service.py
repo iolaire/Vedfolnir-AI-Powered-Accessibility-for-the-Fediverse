@@ -162,7 +162,7 @@ class EmailService:
     async def send_verification_email(self, user_email: str, username: str, 
                                     verification_token: str, base_url: str) -> bool:
         """Send email verification email"""
-        verification_url = f"{base_url}/verify-email/{verification_token}"
+        verification_url = f"{base_url.rstrip('/')}/user-management/verify-email/{verification_token}"
         
         html_body = self.render_template('email_verification.html', 
                                        username=username,
@@ -193,7 +193,7 @@ class EmailService:
     async def send_password_reset_email(self, user_email: str, username: str, 
                                       reset_token: str, base_url: str) -> bool:
         """Send password reset email"""
-        reset_url = f"{base_url}/reset-password/{reset_token}"
+        reset_url = f"{base_url.rstrip('/')}/user-management/reset-password/{reset_token}"
         
         html_body = self.render_template('password_reset.html',
                                        username=username,
@@ -226,7 +226,7 @@ class EmailService:
     async def send_account_created_email(self, user_email: str, username: str, 
                                        temporary_password: str, base_url: str) -> bool:
         """Send account created notification email"""
-        login_url = f"{base_url}/login"
+        login_url = f"{base_url.rstrip('/')}/user-management/login"
         
         html_body = self.render_template('account_created.html',
                                        username=username,
@@ -315,7 +315,7 @@ class EmailService:
     async def send_data_export_notification(self, user_email: str, username: str, 
                                           export_timestamp: str, base_url: str) -> bool:
         """Send GDPR data export notification email"""
-        profile_url = f"{base_url}/profile"
+        profile_url = f"{base_url.rstrip('/')}/user-management/profile"
         
         html_body = self.render_template('gdpr_data_export.html',
                                        username=username,
@@ -384,7 +384,7 @@ class EmailService:
     async def send_consent_withdrawal_confirmation(self, user_email: str, username: str, 
                                                  base_url: str) -> bool:
         """Send consent withdrawal confirmation email"""
-        contact_url = f"{base_url}/contact"
+        contact_url = f"{base_url.rstrip('/')}/contact"
         
         html_body = self.render_template('gdpr_consent_withdrawal.html',
                                        username=username,

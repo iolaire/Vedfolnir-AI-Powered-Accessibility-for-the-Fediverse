@@ -40,7 +40,7 @@ class TestURLEndpointFixes(unittest.TestCase):
         """Test that user_management.profile endpoint exists"""
         with self.app.test_request_context():
             try:
-                profile_url = url_for('user_management.profile')
+                profile_url = url_for('auth.user_management.profile')
                 self.assertIsNotNone(profile_url)
                 self.assertEqual(profile_url, '/profile')
                 print("✅ user_management.profile endpoint exists and builds correctly")
@@ -51,7 +51,7 @@ class TestURLEndpointFixes(unittest.TestCase):
         """Test that user_management.change_password endpoint exists"""
         with self.app.test_request_context():
             try:
-                change_password_url = url_for('user_management.change_password')
+                change_password_url = url_for('auth.user_management.change_password')
                 self.assertIsNotNone(change_password_url)
                 self.assertEqual(change_password_url, '/change-password')
                 print("✅ user_management.change_password endpoint exists and builds correctly")
@@ -62,7 +62,7 @@ class TestURLEndpointFixes(unittest.TestCase):
         """Test that user_management.edit_profile endpoint does not exist (should fail)"""
         with self.app.test_request_context():
             try:
-                edit_profile_url = url_for('user_management.edit_profile')
+                edit_profile_url = url_for('auth.user_management.edit_profile')
                 self.fail("user_management.edit_profile should not exist but it does")
             except Exception:
                 print("✅ user_management.edit_profile correctly does not exist")

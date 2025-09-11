@@ -482,4 +482,4 @@ def profile():
                 'platform_count': 0  # Will be populated if needed
             }
     
-    return render_template('user_management/profile.html', form=form, profile_data=profile_data)
+    return render_template('auth.user_management/profile.html', form=form, profile_data=profile_data)

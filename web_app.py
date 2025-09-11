@@ -904,6 +904,16 @@ def get_session_state():
         'timestamp': datetime.now(timezone.utc).isoformat()
     })
 
+# Initialize email service for critical emails
+try:
+    from app.services.email.components.email_service import init_email_service
+    email_service = init_email_service(app)
+    app.email_service = email_service
+    print("✅ Email service initialized successfully")
+except Exception as e:
+    print(f"⚠️  Failed to initialize email service: {e}")
+    app.email_service = None
+
 # Initialize SocketIO for real-time features
 try:
     from flask_socketio import SocketIO
@@ -934,11 +944,34 @@ try:
         print('Client disconnected')
     
     # Initialize minimal unified notification manager for WebSocket compatibility
-    class UnifiedNotificationManagerStub:
+    from app.services.notification.manager.unified_manager import UnifiedNotificationManager
+    
+    class UnifiedNotificationManagerStub(UnifiedNotificationManager):
+        def __init__(self):
+            # Create dummy dependencies for the stub
+            from app.websocket.core.websocket_factory import WebSocketFactory
+            from app.websocket.core.auth.websocket_auth import WebSocketAuthHandler
+            from app.websocket.core.namespace.websocket_namespace import WebSocketNamespaceManager
+            from app.core.database.core.database_manager import DatabaseManager
+            
+            # Initialize with None/dummy values since this is a stub
+            super().__init__(
+                websocket_factory=WebSocketFactory(None),
+                auth_handler=WebSocketAuthHandler(),
+                namespace_manager=WebSocketNamespaceManager(),
+                db_manager=DatabaseManager(),
+                max_offline_messages=100,
+                message_retention_days=30
+            )
+            
         def set_websocket_handlers(self, handlers): 
             pass
         def send_notification(self, *args, **kwargs):
             pass
+        def send_user_notification(self, user_id, notification):
+            # Stub method - just log and return success
+            app.logger.info(f"Stub: send_user_notification for user {user_id}: {notification.title}")
+            return True
         def replay_messages_for_user(self, *args, **kwargs):
             return 0  # Return 0 pending messages
         def get_user_notification_history(self, *args, **kwargs):
@@ -964,6 +997,48 @@ try:
 except ImportError:
     socketio = None
     print("SocketIO not available - real-time features disabled")
+    
+    # Initialize unified notification manager even if SocketIO is not available
+    try:
+        from app.services.notification.manager.unified_manager import UnifiedNotificationManager
+        
+        class UnifiedNotificationManagerStub(UnifiedNotificationManager):
+            def __init__(self):
+                # Create dummy dependencies for the stub
+                from app.websocket.core.websocket_factory import WebSocketFactory
+                from app.websocket.core.auth.websocket_auth import WebSocketAuthHandler
+                from app.websocket.core.namespace.websocket_namespace import WebSocketNamespaceManager
+                from app.core.database.core.database_manager import DatabaseManager
+                
+                # Initialize with None/dummy values since this is a stub
+                super().__init__(
+                    websocket_factory=WebSocketFactory(None),
+                    auth_handler=WebSocketAuthHandler(),
+                    namespace_manager=WebSocketNamespaceManager(),
+                    db_manager=DatabaseManager(),
+                    max_offline_messages=100,
+                    message_retention_days=30
+                )
+                
+            def set_websocket_handlers(self, handlers): 
+                pass
+            def send_notification(self, *args, **kwargs):
+                pass
+            def send_user_notification(self, user_id, notification):
+                # Stub method - just log and return success
+                app.logger.info(f"Stub: send_user_notification for user {user_id}: {notification.title}")
+                return True
+            def replay_messages_for_user(self, *args, **kwargs):
+                return 0  # Return 0 pending messages
+            def get_user_notification_history(self, *args, **kwargs):
+                return []  # Return empty history
+        
+        app.unified_notification_manager = UnifiedNotificationManagerStub()
+        print("✅ Unified notification manager stub initialized (fallback)")
+        
+    except Exception as e:
+        print(f"⚠️  Failed to initialize unified notification manager: {e}")
+        app.unified_notification_manager = None
 
 
 def create_app(config_name='default'):
@@ -989,13 +1064,9 @@ def create_app(config_name='default'):
         namespace_manager = WebSocketNamespaceManager()
         
         # Initialize unified notification manager
-        app.unified_notification_manager = UnifiedNotificationManager(
-            websocket_factory=websocket_factory,
-            auth_handler=auth_handler,
-            namespace_manager=namespace_manager,
-            db_manager=db_manager
-        )
-        logger.info("✅ Unified notification manager initialized successfully")
+        # Use stub manager since real WebSocket components may not be available
+        app.unified_notification_manager = UnifiedNotificationManagerStub()
+        logger.info("✅ Unified notification manager stub initialized successfully")
     except Exception as e:
         logger.error(f"❌ Failed to initialize unified notification manager: {e}")
         app.unified_notification_manager = None

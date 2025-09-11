@@ -68,7 +68,7 @@ class TestMainRouteLogic(unittest.TestCase):
             result = index()
             
             # Verify redirect to login
-            mock_url_for.assert_called_with('user_management.login')
+            mock_url_for.assert_called_with('auth.user_management.login')
             mock_redirect.assert_called_with('/login')
             self.assertEqual(result, "redirect to login")
     

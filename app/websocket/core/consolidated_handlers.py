@@ -55,10 +55,29 @@ class ConsolidatedWebSocketHandlers:
         def handle_unified_connect(auth):
             """Unified connection handler for all notification types"""
             try:
+                # Check if user is authenticated
                 if not current_user.is_authenticated:
-                    self.logger.warning("Unauthenticated connection attempt")
-                    return False
+                    # Allow anonymous connections with limited functionality
+                    self.logger.info("Anonymous connection attempt - allowing limited access")
+                    
+                    # Join anonymous user room
+                    join_room("anonymous_users")
+                    
+                    # Send limited connection confirmation
+                    emit('unified_connected', {
+                        'status': 'connected',
+                        'user_id': None,
+                        'pending_messages': 0,
+                        'supported_categories': ['public'],
+                        'access_level': 'anonymous',
+                        'timestamp': datetime.now(timezone.utc).isoformat(),
+                        'message': 'Connected with anonymous access - login for full functionality'
+                    })
+                    
+                    self.logger.info("Anonymous user connected successfully")
+                    return True
                 
+                # Handle authenticated users
                 user_id = current_user.id
                 self.logger.info(f"User {user_id} connecting to unified notifications")
                 
@@ -80,6 +99,7 @@ class ConsolidatedWebSocketHandlers:
                     'user_id': user_id,
                     'pending_messages': pending_count,
                     'supported_categories': self._get_user_notification_categories(user_id),
+                    'access_level': 'authenticated',
                     'timestamp': datetime.now(timezone.utc).isoformat()
                 })
                 
@@ -88,7 +108,13 @@ class ConsolidatedWebSocketHandlers:
                 
             except Exception as e:
                 self.logger.error(f"Connection error: {e}")
-                return False
+                # Don't return False on error, emit error message instead
+                emit('connection_error', {
+                    'error': 'Connection failed',
+                    'message': 'Unable to establish connection',
+                    'timestamp': datetime.now(timezone.utc).isoformat()
+                })
+                return True  # Allow connection but send error message
         
         @self.socketio.on('disconnect', namespace='/')
         def handle_unified_disconnect():
@@ -105,6 +131,10 @@ class ConsolidatedWebSocketHandlers:
                     self._leave_user_rooms(user_id)
                     
                     self.logger.info(f"User {user_id} disconnected from unified notifications")
+                else:
+                    # Handle anonymous user disconnect
+                    self.leave_anonymous_rooms()
+                    self.logger.info("Anonymous user disconnected from unified notifications")
                 
             except Exception as e:
                 self.logger.error(f"Disconnection error: {e}")
@@ -114,7 +144,22 @@ class ConsolidatedWebSocketHandlers:
             """Subscribe to specific notification categories"""
             try:
                 if not current_user.is_authenticated:
-                    return {'error': 'Not authenticated'}
+                    # Anonymous users can only subscribe to public categories
+                    category = data.get('category')
+                    if category == 'public':
+                        join_room("public_notifications")
+                        emit('subscription_confirmed', {
+                            'category': category,
+                            'status': 'subscribed',
+                            'access_level': 'anonymous'
+                        })
+                        self.logger.info("Anonymous user subscribed to public notifications")
+                    else:
+                        emit('subscription_error', {
+                            'category': category,
+                            'error': 'Authentication required for this category'
+                        })
+                    return
                 
                 user_id = current_user.id
                 category = data.get('category')
@@ -125,7 +170,8 @@ class ConsolidatedWebSocketHandlers:
                     
                     emit('subscription_confirmed', {
                         'category': category,
-                        'status': 'subscribed'
+                        'status': 'subscribed',
+                        'access_level': 'authenticated'
                     })
                     
                     self.logger.info(f"User {user_id} subscribed to category {category}")
@@ -144,7 +190,24 @@ class ConsolidatedWebSocketHandlers:
             """Request notification history"""
             try:
                 if not current_user.is_authenticated:
-                    return {'error': 'Not authenticated'}
+                    # Anonymous users can only request public notification history
+                    limit = min(data.get('limit', 10), 25)  # Lower limit for anonymous users
+                    category = data.get('category')
+                    
+                    if category == 'public':
+                        # Return empty history for anonymous users (can be enhanced later)
+                        emit('notification_history', {
+                            'messages': [],
+                            'count': 0,
+                            'category': category,
+                            'access_level': 'anonymous',
+                            'message': 'Login to view notification history'
+                        })
+                    else:
+                        emit('history_error', {
+                            'error': 'Authentication required to view notification history'
+                        })
+                    return
                 
                 user_id = current_user.id
                 limit = min(data.get('limit', 50), 100)  # Max 100 messages
@@ -158,7 +221,8 @@ class ConsolidatedWebSocketHandlers:
                 emit('notification_history', {
                     'messages': [msg.to_dict() for msg in history],
                     'count': len(history),
-                    'category': category
+                    'category': category,
+                    'access_level': 'authenticated'
                 })
                 
             except Exception as e:
@@ -199,6 +263,14 @@ class ConsolidatedWebSocketHandlers:
                 
         except Exception as e:
             self.logger.error(f"Error leaving rooms for user {user_id}: {e}")
+    
+    def leave_anonymous_rooms(self):
+        """Leave all anonymous user rooms"""
+        try:
+            leave_room("anonymous_users")
+            leave_room("public_notifications")
+        except Exception as e:
+            self.logger.error(f"Error leaving anonymous rooms: {e}")
     
     def _get_user_notification_categories(self, user_id: int) -> List[str]:
         """Get notification categories user is allowed to receive"""
@@ -254,6 +326,11 @@ class ConsolidatedWebSocketHandlers:
             if message.type == NotificationType.ERROR or message.priority == NotificationPriority.HIGH:
                 rooms.append("system_alerts")
             
+            # Public notifications go to public room and anonymous users
+            if message.category == NotificationCategory.USER:
+                rooms.append("public_notifications")
+                rooms.append("anonymous_users")
+            
             # Broadcast to all relevant rooms
             notification_data = {
                 'id': message.id,
@@ -273,6 +350,29 @@ class ConsolidatedWebSocketHandlers:
             
         except Exception as e:
             self.logger.error(f"Error broadcasting notification: {e}")
+    
+    def send_public_notification(self, title: str, message: str, notification_type: str = 'info'):
+        """Send a public notification to all connected users including anonymous users"""
+        try:
+            notification_data = {
+                'id': f"public_{datetime.now(timezone.utc).timestamp()}",
+                'type': notification_type,
+                'category': 'public',
+                'title': title,
+                'message': message,
+                'priority': 'medium',
+                'timestamp': datetime.now(timezone.utc).isoformat(),
+                'data': {'public': True}
+            }
+            
+            # Send to both public rooms
+            self.socketio.emit('unified_notification', notification_data, room="public_notifications")
+            self.socketio.emit('unified_notification', notification_data, room="anonymous_users")
+            
+            self.logger.info(f"Sent public notification: {title}")
+            
+        except Exception as e:
+            self.logger.error(f"Error sending public notification: {e}")
     
     def get_connected_users(self) -> Dict[int, Dict]:
         """Get currently connected users"""

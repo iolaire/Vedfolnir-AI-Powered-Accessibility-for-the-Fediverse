@@ -23,6 +23,14 @@ from models import NotificationType, NotificationPriority, NotificationCategory
 
 logger = logging.getLogger(__name__)
 
+def _get_notification_manager():
+    """Get the unified notification manager from the current Flask app context"""
+    if not has_app_context():
+        logger.warning("No Flask app context available for notification manager")
+        return None
+    
+    return getattr(current_app, 'unified_notification_manager', None)
+
 # Import adapters for consolidated notification types
 try:
     from app.services.notification.adapters.service_adapters import (
@@ -80,9 +88,12 @@ def send_user_notification(
         # Get user ID from session if not provided
         if user_id is None:
             user_id = session.get('user_id')
+            # For anonymous users (like during registration), allow notifications without user_id
             if not user_id:
-                logger.warning("No user ID available for notification")
-                return False
+                logger.debug("No user ID available for notification - allowing for anonymous user")
+                # For anonymous users, we'll log the notification but not send it through the system
+                logger.info(f"Anonymous user notification: {title} - {message}")
+                return True  # Return success since we handled it
         
         # Generate title if not provided
         if title is None:

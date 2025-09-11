@@ -18,7 +18,7 @@ def index():
         return render_dashboard()
     elif has_previous_session():
         # User was previously logged in, redirect to login
-        return redirect(url_for('user_management.login'))
+        return redirect(url_for('auth.user_management.login'))
     else:
         # Completely new user, show landing page
         return render_template('landing.html')

@@ -48,7 +48,7 @@ class TestLandingPageSecurity(unittest.TestCase):
             content = f.read()
         
         # Check for url_for usage instead of hardcoded URLs
-        self.assertIn("url_for('user_management.register')", content)
+        self.assertIn("url_for('auth.user_management.register')", content)
         self.assertIn("url_for('static'", content)
         # The login link is in the navigation, not directly in landing page content
     

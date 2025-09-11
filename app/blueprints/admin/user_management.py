@@ -132,7 +132,7 @@ def register_routes(bp):
         delete_form = DeleteUserForm()
         add_form = AddUserForm()
         
-        return render_template('user_management.html', 
+        return render_template('auth.user_management.html', 
                               users=user_data['users'],
                               total_users=user_data['total_count'],
                               user_stats=user_stats,

@@ -152,7 +152,7 @@ class TestWebSocketAuthHandler(unittest.TestCase):
         """Test getting user permissions by role"""
         admin_permissions = self.auth_handler.get_user_permissions(UserRole.ADMIN)
         self.assertIn('system_management', admin_permissions)
-        self.assertIn('user_management', admin_permissions)
+        self.assertIn('auth.user_management', admin_permissions)
         
         reviewer_permissions = self.auth_handler.get_user_permissions(UserRole.REVIEWER)
         self.assertIn('platform_management', reviewer_permissions)

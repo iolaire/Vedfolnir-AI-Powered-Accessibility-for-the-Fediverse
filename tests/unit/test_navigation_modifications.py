@@ -138,10 +138,10 @@ class TestNavigationModifications(unittest.TestCase):
             
             # Test URL generation for login link (simulating template usage)
             from flask import url_for
-            login_url = mock_url_for('user_management.login')
+            login_url = mock_url_for('auth.user_management.login')
             
             # Verify url_for was called with correct route
-            mock_url_for.assert_called_with('user_management.login')
+            mock_url_for.assert_called_with('auth.user_management.login')
             self.assertEqual(login_url, '/login')
     
     def test_navigation_state_transitions(self):

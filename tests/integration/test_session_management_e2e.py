@@ -427,11 +427,6 @@ class SessionManagementLoadTest(MySQLIntegrationTestBase):
         import threading
         import time
 
-# MySQL integration test imports
-from tests.mysql_test_base import MySQLIntegrationTestBase
-from tests.mysql_test_config import MySQLTestFixtures
-
-        
         validation_results = []
         start_time = time.time()
         

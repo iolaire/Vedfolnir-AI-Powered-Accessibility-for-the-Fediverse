@@ -99,7 +99,7 @@ def register():
     if current_user.is_authenticated:
         return redirect(url_for('main.index'))
     
-    form = UserRegistrationForm()
+    form = UserRegistrationForm(request.form if request.method == 'POST' else None)
     
     if validate_form_submission(form):
         # Get client information for audit logging
@@ -142,34 +142,50 @@ def register():
                 )
                 
                 if success and user:
-                    # Send verification email using unified system
+                    # Send verification email using email service directly
                     try:
-                        from app.services.notification.helpers.notification_helpers import send_verification_email
+                        from app.services.email.components.email_service import email_service
+                        import asyncio
                         
                         # Generate verification link
-                        verification_token = registration_service.generate_verification_token(user)
-                        verification_link = url_for('user_management.verify_email', 
+                        verification_token = user.generate_email_verification_token()
+                        verification_link = url_for('auth.user_management.verify_email', 
                                                    token=verification_token, _external=True)
                         
-                        # Send via unified email system
-                        email_sent = send_verification_email(verification_link, user.id)
+                        # Send via email service directly (bypasses notification system)
+                        loop = asyncio.new_event_loop()
+                        asyncio.set_event_loop(loop)
+                        try:
+                            email_sent = loop.run_until_complete(
+                                email_service.send_verification_email(
+                                    user_email=user.email,
+                                    username=user.username,
+                                    verification_token=verification_token,
+                                    base_url=request.url_root
+                                )
+                            )
+                        finally:
+                            loop.close()
                         
                         if email_sent:
                             send_success_notification(
                                 message='Registration successful! Please check your email for verification.',
-                                title='Registration Complete'
+                                title='Registration Complete',
+                                user_id=user.id
                             )
                             logger.info(f"User {sanitize_for_log(user.username)} registered successfully")
                         else:
                             send_success_notification(
                                 message='Registration successful! Please check your email for verification.',
-                                title='Registration Complete'
+                                title='Registration Complete',
+                                user_id=user.id
                             )
                     except Exception as email_error:
                         logger.error(f"Error sending verification email: {email_error}")
                         send_success_notification(
                             message='Registration successful! Please check your email for verification.',
-                            title='Registration Complete'
+                            title='Registration Complete',
+                            user_id=user.id
                         )
                     
                     return redirect(url_for('.login'))
@@ -322,7 +338,7 @@ def resend_verification():
             message='Your email is already verified.',
             title='Already Verified'
         )
-        return redirect(url_for('user_management.profile'))
+        return redirect(url_for('auth.user_management.profile'))
     
     try:
         # Use request-scoped session manager for database operations
@@ -335,16 +351,29 @@ def resend_verification():
                 base_url=get_base_url()
             )
             
-            # Resend verification email using unified system
-            from app.services.notification.helpers.notification_helpers import send_verification_email
+            # Resend verification email using email service directly
+            from app.services.email.components.email_service import email_service
+            import asyncio
             
             # Generate verification link
-            verification_token = registration_service.generate_verification_token(current_user)
-            verification_link = url_for('user_management.verify_email', 
+            verification_token = current_user.generate_email_verification_token()
+            verification_link = url_for('auth.user_management.verify_email', 
                                        token=verification_token, _external=True)
             
-            # Send via unified email system
-            email_sent = send_verification_email(verification_link, current_user.id)
+            # Send via email service directly (bypasses notification system)
+            loop = asyncio.new_event_loop()
+            asyncio.set_event_loop(loop)
+            try:
+                email_sent = loop.run_until_complete(
+                    email_service.send_verification_email(
+                        user_email=current_user.email,
+                        username=current_user.username,
+                        verification_token=verification_token,
+                        base_url=request.url_root
+                    )
+                )
+            finally:
+                loop.close()
             
             if email_sent:
                 send_success_notification(
@@ -364,7 +393,67 @@ def resend_verification():
             title='System Error'
         )
     
-    return redirect(url_for('user_management.profile'))
+    return redirect(url_for('auth.user_management.profile'))
+
+@user_management_bp.route('/verify-email/<token>', methods=['GET'])
+@conditional_rate_limit(limit=10, window_seconds=3600)  # 10 attempts per hour per IP
+def verify_email(token):
+    """Email verification with token validation"""
+    # Redirect if user is already logged in and verified
+    if current_user.is_authenticated and current_user.email_verified:
+        return redirect(url_for('main.index'))
+    
+    # Get client information for audit logging
+    ip_address = get_client_ip()
+    user_agent = get_user_agent()
+    
+    try:
+        # Use request-scoped session manager for database operations
+        unified_session_manager = getattr(current_app, "unified_session_manager", None)
+        
+        with unified_session_manager.get_db_session() as db_session:
+            # Find user by verification token
+            user = db_session.query(User).filter(User.email_verification_token == token).first()
+            
+            if user and user.verify_email_token(token):
+                # Mark email as verified
+                user.email_verified = True
+                user.email_verification_token = None
+                user.email_verification_sent_at = None
+                db_session.commit()
+                
+                # Log successful verification
+                send_success_notification(
+                    message=f'Email verified successfully for user {user.email}',
+                    title='Email Verification Successful'
+                )
+                
+                # If user is logged in, redirect to profile
+                if current_user.is_authenticated and current_user.id == user.id:
+                    return redirect(url_for('auth.user_management.profile'))
+                else:
+                    # Redirect to login with success message
+                    return redirect(url_for('auth.user_management.login', 
+                                          verification_success='true'))
+            else:
+                # Log failed verification
+                logger.warning(f"Invalid or expired email verification token: {token[:10]}...")
+                send_error_notification(
+                    message='Invalid or expired verification token',
+                    title='Email Verification Failed'
+                )
+                
+                return render_template('user_management/verification_error.html', 
+                                     error_message='Invalid or expired verification token.')
+                
+    except Exception as e:
+        logger.error(f"Error verifying email: {e}")
+        send_error_notification(
+            message='Failed to verify email due to system error.',
+            title='System Error'
+        )
+        return render_template('user_management/verification_error.html', 
+                             error_message='System error occurred during verification.')
 
 @user_management_bp.route('/reset-password/<token>', methods=['GET', 'POST'])
 @conditional_rate_limit(limit=5, window_seconds=3600)  # 5 attempts per hour per IP
@@ -398,7 +487,7 @@ def reset_password(token):
                 from app.services.notification.helpers.notification_helpers import send_error_notification
                 send_error_notification(f'Password reset failed: {token_message}', 'Password Reset Failed')
                 logger.warning(f"Invalid password reset token attempted: {token[:10]}...")
-                return redirect(url_for('user_management.forgot_password'))
+                return redirect(url_for('auth.user_management.forgot_password'))
             
             # Token is valid, show reset form
             form = PasswordResetForm()
@@ -442,7 +531,7 @@ def reset_password(token):
             message='Password reset failed due to a system error. Please try again.',
             title='Password Reset Error'
         )
-        return redirect(url_for('user_management.forgot_password'))
+        return redirect(url_for('auth.user_management.forgot_password'))
 
 @user_management_bp.route('/change-password', methods=['GET', 'POST'])
 @login_required
@@ -586,7 +675,7 @@ def delete_profile():
                     db_session.commit()
                     
                     logger.info(f"Profile deleted for user {sanitize_for_log(user.username)}")
-                    return redirect(url_for('user_management.register'))
+                    return redirect(url_for('auth.user_management.register'))
                 else:
                     send_error_notification(
                         message='User not found.',
@@ -692,7 +781,7 @@ def export_profile_data():
                 from app.services.notification.helpers.notification_helpers import send_error_notification
                 send_error_notification(f'Failed to export personal data: {message}', 'Data Export Failed')
                 logger.error(f"Data export failed for user {current_user.id}: {sanitize_for_log(message)}")
-                return redirect(url_for('user_management.profile'))
+                return redirect(url_for('auth.user_management.profile'))
                 
     except Exception as e:
         logger.error(f"Error exporting data for user {current_user.id}: {e}")
@@ -700,7 +789,7 @@ def export_profile_data():
             message='Data export failed due to a system error. Please try again.',
             title='Export Failed'
         )
-        return redirect(url_for('user_management.profile'))
+        return redirect(url_for('auth.user_management.profile'))
 
 def register_user_management_routes(app):
     """Register user management routes with the Flask app"""

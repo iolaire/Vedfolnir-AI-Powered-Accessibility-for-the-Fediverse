@@ -84,7 +84,7 @@ Most missing routes implemented as redirects to maintain template compatibility 
 ```python
 @main_bp.route('/login')
 def login_redirect():
-    return redirect(url_for('user_management.login'))
+    return redirect(url_for('auth.user_management.login'))
 ```
 
 ### Benefits:
