@@ -6,7 +6,7 @@
 
 {% block title %}System Administration - Vedfolnir Admin{% endblock %}
 
-{% block admin_content %}
+{% block content %}
 <div class="container-fluid">
     <div class="row">
         <div class="col-12">
@@ -178,7 +178,7 @@
 
 <script>
 // Dashboard data from server
-const dashboardData = {{ dashboard_data | tojsonfilter | safe }};
+const dashboardData = {{ dashboard_data | tojson | safe }};
 
 // Initialize dashboard
 document.addEventListener('DOMContentLoaded', function() {

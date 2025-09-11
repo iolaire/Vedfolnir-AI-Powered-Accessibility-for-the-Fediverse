@@ -320,11 +320,24 @@ class CSRFSecurityMetrics:
             for v in list(self.violations)[-20:]
         ]
         
+        # Create serializable versions of metrics
+        def serialize_metrics(metrics):
+            return {
+                'compliance_rate': metrics.compliance_rate,
+                'total_requests': metrics.total_requests,
+                'violation_count': metrics.violation_count,
+                'compliance_level': str(metrics.compliance_level),
+                'violations_by_type': metrics.violations_by_type,
+                'violations_by_endpoint': metrics.violations_by_endpoint,
+                'violations_by_ip': metrics.violations_by_ip,
+                'time_period': metrics.time_period
+            }
+        
         return {
             'compliance_metrics': {
-                '1h': asdict(metrics_1h),
-                '24h': asdict(metrics_24h),
-                '7d': asdict(metrics_7d)
+                '1h': serialize_metrics(metrics_1h),
+                '24h': serialize_metrics(metrics_24h),
+                '7d': serialize_metrics(metrics_7d)
             },
             'recent_violations': recent_violations,
             'top_violation_types': sorted(self.violation_counts.items(), key=lambda x: x[1], reverse=True)[:10],

@@ -9,7 +9,8 @@
       "autoApprove": [
         "browser_click",
         "browser_wait_for",
-        "browser_navigate"
+        "browser_navigate",
+        "browser_fill_form"
       ]
     }
   }

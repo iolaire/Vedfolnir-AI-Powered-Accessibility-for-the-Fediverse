@@ -172,11 +172,27 @@ def register_routes(bp):
             compliance_24h = csrf_metrics_manager.get_compliance_metrics('24h')
             compliance_7d = csrf_metrics_manager.get_compliance_metrics('7d')
             
+            # Convert compliance metrics to serializable format
+            def serialize_compliance_metrics(metrics):
+                return {
+                    'compliance_rate': metrics.compliance_rate,
+                    'total_requests': metrics.total_requests,
+                    'violation_count': metrics.violation_count,
+                    'compliance_level': str(metrics.compliance_level),
+                    'violations_by_type': metrics.violations_by_type,
+                    'violations_by_endpoint': metrics.violations_by_endpoint,
+                    'violations_by_ip': metrics.violations_by_ip,
+                    'time_period': metrics.time_period
+                }
+            
+            compliance_24h_serialized = serialize_compliance_metrics(compliance_24h)
+            compliance_7d_serialized = serialize_compliance_metrics(compliance_7d)
+            
             return render_template(
                 'csrf_security_dashboard.html',
                 dashboard_data=dashboard_data,
-                compliance_24h=compliance_24h,
-                compliance_7d=compliance_7d,
+                compliance_24h=compliance_24h_serialized,
+                compliance_7d=compliance_7d_serialized,
                 page_title='CSRF Protection Dashboard'
             )
             
@@ -300,7 +316,7 @@ def get_csrf_metrics_summary() -> Dict[str, Any]:
             'compliance_rate': compliance_metrics.compliance_rate,
             'total_requests': compliance_metrics.total_requests,
             'violations': compliance_metrics.violation_count,
-            'compliance_level': compliance_metrics.compliance_level.value if hasattr(compliance_metrics.compliance_level, 'value') else str(compliance_metrics.compliance_level)
+            'compliance_level': str(compliance_metrics.compliance_level)
         }
         
     except Exception as e:

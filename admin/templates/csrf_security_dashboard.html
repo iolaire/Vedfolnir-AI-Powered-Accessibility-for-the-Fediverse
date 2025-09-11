@@ -1,6 +1,6 @@
 {% extends "base_admin.html" %}
 
-{% block title %}CSRF Security Dashboard{% endblock %}
+{% block title %}CSRF Protection Dashboard{% endblock %}
 
 {% block head %}
 <script>
@@ -218,7 +218,7 @@ window.addEventListener('beforeunload', function() {
             
             <div id="dashboard-alert"></div>
             
-            <div class="card">
+            <div class="card" data-test-id="csrf-protection-status">
                 <div class="card-header">
                     <h5 class="mb-0">CSRF Protection Status</h5>
                 </div>
@@ -246,7 +246,7 @@ window.addEventListener('beforeunload', function() {
     <div class="row mt-4">
         <!-- Compliance Metrics -->
         <div class="col-md-4">
-            <div class="card">
+            <div class="card" id="compliance-metrics-card" data-test-id="compliance-metrics">
                 <div class="card-header">
                     <h6 class="mb-0">Compliance Metrics (24h)</h6>
                 </div>
@@ -271,7 +271,7 @@ window.addEventListener('beforeunload', function() {
         
         <!-- Top Violation Sources -->
         <div class="col-md-4">
-            <div class="card">
+            <div class="card" id="top-violation-sources-card" data-test-id="violation-sources">
                 <div class="card-header">
                     <h6 class="mb-0">Top Violation Sources</h6>
                 </div>
@@ -285,7 +285,7 @@ window.addEventListener('beforeunload', function() {
         
         <!-- Top Violation Types -->
         <div class="col-md-4">
-            <div class="card">
+            <div class="card" id="violation-types-card" data-test-id="violation-types">
                 <div class="card-header">
                     <h6 class="mb-0">Violation Types</h6>
                 </div>
@@ -301,7 +301,7 @@ window.addEventListener('beforeunload', function() {
     <!-- Real-time Updates Section -->
     <div class="row mt-4">
         <div class="col-12">
-            <div class="card">
+            <div class="card" id="real-time-monitoring-card" data-test-id="real-time-monitoring">
                 <div class="card-header d-flex justify-content-between align-items-center">
                     <h6 class="mb-0">Real-time Monitoring</h6>
                     <small class="text-muted">Last updated: <span id="last-updated">Loading...</span></small>

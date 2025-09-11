@@ -1,1 +1,29 @@
-{}
+{
+  "name": "vedfolnir",
+  "version": "1.0.0",
+  "description": "[![Security Status](https://img.shields.io/badge/Security-100%25-green)](docs/summary/SECURITY_AUDIT_SUMMARY.md) [![Test Coverage](https://img.shields.io/badge/Test%20Coverage-176.5%25-brightgreen)](docs/summary/TEST_COVERAGE_REPORT.md) [![Python](https://img.shields.io/badge/Python-3.8%2B-blue)](https://python.org) [![Flask](https://img.shields.io/badge/Flask-2.0%2B-lightgrey)](https://flask.palletsprojects.com/)",
+  "main": "0830_17_52_playwright.config.js",
+  "directories": {
+    "doc": "docs",
+    "example": "examples",
+    "test": "tests"
+  },
+  "scripts": {
+    "test": "echo \"Error: no test specified\" && exit 1"
+  },
+  "repository": {
+    "type": "git",
+    "url": "git+https://github.com/iolaire/Vedfolnir-AI-Powered-Accessibility-for-the-Fediverse.git"
+  },
+  "keywords": [],
+  "author": "",
+  "license": "ISC",
+  "type": "commonjs",
+  "bugs": {
+    "url": "https://github.com/iolaire/Vedfolnir-AI-Powered-Accessibility-for-the-Fediverse/issues"
+  },
+  "homepage": "https://github.com/iolaire/Vedfolnir-AI-Powered-Accessibility-for-the-Fediverse#readme",
+  "dependencies": {
+    "@playwright/test": "^1.55.0"
+  }
+}
