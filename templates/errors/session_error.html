@@ -95,7 +95,7 @@
 // Auto-redirect to login after 10 seconds if user doesn't take action
 setTimeout(function() {
     if (confirm('Would you like to be redirected to the login page automatically?')) {
-        window.location.href = "{{ url_for('login') }}";
+        window.location.href = "{{ url_for('auth.user_management.login') }}";
     }
 }, 10000);
 </script>

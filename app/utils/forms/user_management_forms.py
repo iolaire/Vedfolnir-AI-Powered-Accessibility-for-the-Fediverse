@@ -418,7 +418,7 @@ class ProfileDeleteForm(Form):
     
     def validate_confirmation(self, field):
         """Validate deletion confirmation"""
-        if field.data != "DELETE":
+        if not field.data or field.data.strip().upper() != "DELETE":
             raise ValidationError("Please type DELETE exactly to confirm profile deletion")
 
 class EmailVerificationResendForm(Form):

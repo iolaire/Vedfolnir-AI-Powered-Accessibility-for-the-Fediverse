@@ -67,8 +67,9 @@ def get_client_ip():
     """Get client IP address from request"""
     try:
         # Check for forwarded IP first (behind proxy)
-        if request.headers.get('X-Forwarded-For'):
-            return request.headers.get('X-Forwarded-For').split(',')[0].strip()
+        forwarded_for = request.headers.get('X-Forwarded-For')
+        if forwarded_for:
+            return forwarded_for.split(',')[0].strip()
         elif request.headers.get('X-Real-IP'):
             return request.headers.get('X-Real-IP')
         else:
@@ -202,6 +203,22 @@ def register():
                 message='Registration failed due to a system error. Please try again.',
                 title='Registration Error'
             )
+    else:
+        # Form validation failed - send notification about validation errors
+        if request.method == 'POST':
+            # Collect all form validation errors
+            error_messages = []
+            for field_name, field_errors in form.errors.items():
+                for error in field_errors:
+                    error_messages.append(f"{field_name.replace('_', ' ').title()}: {error}")
+            
+            if error_messages:
+                # Send a notification with the validation errors
+                send_error_notification(
+                    message='; '.join(error_messages),
+                    title='Registration Form Validation Failed'
+                )
+                logger.info(f"Registration form validation failed: {'; '.join(error_messages)}")
     
     return render_template('user_management/register.html', form=form)
 
@@ -666,7 +683,12 @@ def logout():
 @login_required
 def delete_profile():
     """Delete user profile"""
-    form = DeleteProfileForm()
+    form = ProfileDeleteForm(request.form)
+    
+    if request.method == 'POST':
+        logger.info(f"Delete profile form data: {dict(request.form)}")
+        logger.info(f"Form validation result: {form.validate()}")
+        logger.info(f"Form errors: {form.errors}")
     
     if validate_form_submission(form):
         try:
@@ -678,29 +700,39 @@ def delete_profile():
                 )
                 return render_template('user_management/delete_profile.html', form=form)
             
+            # Store username for logging before deletion
+            username = current_user.username
+            user_id = current_user.id
+            
             # Use request-scoped session manager for database operations
             unified_session_manager = getattr(current_app, "unified_session_manager", None)
             
             with unified_session_manager.get_db_session() as db_session:
                 # Delete user profile
-                user = db_session.query(User).filter_by(id=current_user.id).first()
+                user = db_session.query(User).filter_by(id=user_id).first()
                 if user:
-                    # Clean up user sessions first
+                    # Delete user record first
+                    db_session.delete(user)
+                    db_session.commit()
+                    
+                    # Clean up user sessions after deletion
                     try:
                         session_manager = getattr(current_app, 'unified_session_manager', None)
                         if session_manager:
-                            session_manager.cleanup_user_sessions(current_user.id)
+                            session_manager.cleanup_user_sessions(user_id)
                     except Exception as e:
                         logger.warning(f"Failed to cleanup sessions during profile deletion: {e}")
                     
                     # Log out user
                     logout_user()
                     
-                    # Delete user record
-                    db_session.delete(user)
-                    db_session.commit()
+                    logger.info(f"Profile deleted for user {sanitize_for_log(username) if username else 'unknown'}")
                     
-                    logger.info(f"Profile deleted for user {sanitize_for_log(user.username)}")
+                    # Send success notification and redirect
+                    send_success_notification(
+                        message='Your profile has been successfully deleted.',
+                        title='Profile Deleted'
+                    )
                     return redirect(url_for('auth.user_management.register'))
                 else:
                     send_error_notification(

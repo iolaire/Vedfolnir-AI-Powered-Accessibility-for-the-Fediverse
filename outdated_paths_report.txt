@@ -1,0 +1,4464 @@
+================================================================================
+OUTDATED PATH SCAN REPORT
+================================================================================
+
+Total issues found: 1081
+
+ROUTES ISSUES (293 found):
+--------------------------------------------------
+
+📁 admin/routes/admin_api.py
+   Line 19: Route not using new structure
+   Content: @bp.route('/session-health/statistics', methods=['GET'])
+
+   Line 34: Route not using new structure
+   Content: @bp.route('/session-health/status', methods=['GET'])
+
+   Line 572: Route not using new structure
+   Content: @bp.route('/alerts/<alert_id>/acknowledge', methods=['POST'])
+
+
+📁 admin/routes/admin_job_management.py
+   Line 15: Route not using new structure
+   Content: @bp.route('/job-management')
+
+   Line 47: Route not using new structure
+   Content: @bp.route('/bulk-actions')
+
+   Line 126: Route not using new structure
+   Content: @bp.route('/system-maintenance')
+
+   Line 232: Route not using new structure
+   Content: @bp.route('/maintenance/pause-system')
+
+   Line 258: Route not using new structure
+   Content: @bp.route('/maintenance/resume-system')
+
+   Line 286: Route not using new structure
+   Content: @bp.route('/maintenance/clear-queue')
+
+   Line 310: Route not using new structure
+   Content: @bp.route('/maintenance/restart-failed')
+
+   Line 350: Route not using new structure
+   Content: @bp.route('/maintenance/cleanup-data')
+
+   Line 398: Route not using new structure
+   Content: @bp.route('/job-history/<int:user_id>')
+
+   Line 455: Route not using new structure
+   Content: @bp.route('/help')
+
+   Line 469: Route not using new structure
+   Content: @bp.route('/logs')
+
+
+📁 admin/routes/cleanup.py
+   Line 27: Route not using new structure
+   Content: @bp.route('/cleanup')
+
+   Line 45: Route not using new structure
+   Content: @bp.route('/cleanup/runs', methods=['POST'])
+
+
+📁 admin/routes/dashboard.py
+   Line 17: Route not using new structure
+   Content: @bp.route('/')
+
+   Line 18: Route not using new structure
+   Content: @bp.route('/dashboard')
+
+   Line 123: Route not using new structure
+   Content: @bp.route('/configuration')
+
+
+📁 admin/routes/dashboard_monitoring.py
+   Line 33: Route not using new structure
+   Content: @bp.route('/websocket-diagnostic')
+
+   Line 40: Route not using new structure
+   Content: @bp.route('/dashboard/monitoring')
+
+   Line 175: Route not using new structure
+   Content: @bp.route('/dashboard/reports')
+
+   Line 265: Route not using new structure
+   Content: @bp.route('/dashboard/widgets/customize')
+
+
+📁 admin/routes/maintenance_mode.py
+   Line 25: Route not using new structure
+   Content: @bp.route('/maintenance-mode')
+
+   Line 430: Route not using new structure
+   Content: @bp.route('/maintenance-monitoring')
+
+
+📁 admin/routes/monitoring.py
+   Line 18: Route not using new structure
+   Content: @bp.route('/monitoring')
+
+
+📁 admin/routes/storage_management.py
+   Line 36: Route not using new structure
+   Content: @bp.route('/storage')
+
+   Line 104: Route not using new structure
+   Content: @bp.route('/storage/refresh', methods=['GET', 'POST'])
+
+   Line 147: Route not using new structure
+   Content: @bp.route('/storage/override', methods=['GET', 'POST'])
+
+   Line 264: Route not using new structure
+   Content: @bp.route('/storage/health')
+
+
+📁 admin/routes/system_health.py
+   Line 26: Route not using new structure
+   Content: @bp.route('/health')
+
+   Line 192: Route not using new structure
+   Content: @bp.route('/health/detailed')
+
+   Line 233: Route not using new structure
+   Content: @bp.route('/health/dashboard')
+
+   Line 307: Route not using new structure
+   Content: @bp.route('/csrf_security_dashboard')
+
+   Line 338: Route not using new structure
+   Content: @bp.route('/security_audit_dashboard')
+
+   Line 349: Route not using new structure
+   Content: @bp.route('/security_audit')
+
+   Line 355: Route not using new structure
+   Content: @bp.route('/session_health_dashboard')
+
+   Line 366: Route not using new structure
+   Content: @bp.route('/session_monitoring_dashboard')
+
+
+📁 admin/routes/user_management.py
+   Line 67: Route not using new structure
+   Content: @bp.route('/users')
+
+   Line 150: Route not using new structure
+   Content: @bp.route('/users/edit', methods=['POST'])
+
+   Line 239: Route not using new structure
+   Content: @bp.route('/users/delete', methods=['POST'])
+
+   Line 307: Route not using new structure
+   Content: @bp.route('/users/add', methods=['POST'])
+
+   Line 409: Route not using new structure
+   Content: @bp.route('/users/<int:user_id>/details')
+
+   Line 435: Route not using new structure
+   Content: @bp.route('/users/<int:user_id>/resend-verification', methods=['POST'])
+
+   Line 475: Route not using new structure
+   Content: @bp.route('/users/role/update', methods=['POST'])
+
+   Line 557: Route not using new structure
+   Content: @bp.route('/users/status/update', methods=['POST'])
+
+   Line 678: Route not using new structure
+   Content: @bp.route('/users/password/reset', methods=['POST'])
+
+
+📁 admin/templates/admin_job_history.html
+   Line 163: URL endpoint not using blueprint structure
+   Content: <a href="{{ url_for('review') }}?job_id={{ job.task_id }}" class="btn btn-outline-primary" title="Review Results">
+   Endpoint: review
+
+
+📁 admin/templates/base_admin.html
+   Line 17: URL endpoint not using blueprint structure
+   Content: <link href="{{ url_for('static', filename='css/bootstrap-fallback.css') }}" rel="stylesheet">
+   Endpoint: static
+
+   Line 22: URL endpoint not using blueprint structure
+   Content: <link href="{{ url_for('static', filename='css/css-variables.css') }}" rel="stylesheet">
+   Endpoint: static
+
+   Line 25: URL endpoint not using blueprint structure
+   Content: <link href="{{ url_for('static', filename='css/utilities.css') }}" rel="stylesheet">
+   Endpoint: static
+
+   Line 28: URL endpoint not using blueprint structure
+   Content: <link href="{{ url_for('static', filename='css/style.css') }}" rel="stylesheet">
+   Endpoint: static
+
+   Line 29: URL endpoint not using blueprint structure
+   Content: <link href="{{ url_for('static', filename='css/components.css') }}" rel="stylesheet">
+   Endpoint: static
+
+   Line 30: URL endpoint not using blueprint structure
+   Content: <link href="{{ url_for('static', filename='css/security-extracted.css') }}" rel="stylesheet">
+   Endpoint: static
+
+   Line 31: URL endpoint not using blueprint structure
+   Content: <link href="{{ url_for('static', filename='css/platform_styles.css') }}" rel="stylesheet">
+   Endpoint: static
+
+   Line 32: URL endpoint not using blueprint structure
+   Content: <link href="{{ url_for('static', filename='css/fixes.css') }}" rel="stylesheet">
+   Endpoint: static
+
+   Line 33: URL endpoint not using blueprint structure
+   Content: <link href="{{ url_for('static', filename='css/admin.css') }}" rel="stylesheet">
+   Endpoint: static
+
+   Line 38: URL endpoint not using blueprint structure
+   Content: <link href="{{ url_for('static', filename='css/unified-notifications.css') }}" rel="stylesheet">
+   Endpoint: static
+
+   Line 39: URL endpoint not using blueprint structure
+   Content: <link href="{{ url_for('static', filename='css/notification-ui.css') }}" rel="stylesheet">
+   Endpoint: static
+
+   Line 40: URL endpoint not using blueprint structure
+   Content: <link href="{{ url_for('static', filename='css/legacy-notification-fallback.css') }}" rel="stylesheet">
+   Endpoint: static
+
+   Line 51: URL endpoint not using blueprint structure
+   Content: <img src="{{ url_for('static', filename='images/Logo.png') }}"
+   Endpoint: static
+
+   Line 241: URL endpoint not using blueprint structure
+   Content: <script src="{{ url_for('static', filename='js/csrf-handler.js') }}"></script>
+   Endpoint: static
+
+   Line 242: URL endpoint not using blueprint structure
+   Content: <script src="{{ url_for('static', filename='js/progress-bar-utils.js') }}"></script>
+   Endpoint: static
+
+   Line 246: URL endpoint not using blueprint structure
+   Content: <script src="{{ url_for('static', filename='js/notification-ui-renderer.js') }}"></script>
+   Endpoint: static
+
+   Line 247: URL endpoint not using blueprint structure
+   Content: <script src="{{ url_for('static', filename='js/page_notification_integrator.js') }}"></script>
+   Endpoint: static
+
+   Line 249: URL endpoint not using blueprint structure
+   Content: <script src="{{ url_for('static', filename='js/app.js') }}"></script>
+   Endpoint: static
+
+   Line 250: URL endpoint not using blueprint structure
+   Content: <script src="{{ url_for('static', filename='js/error_handler.js') }}"></script>
+   Endpoint: static
+
+   Line 254: URL endpoint not using blueprint structure
+   Content: <script src="{{ url_for('static', filename='js/websocket-transport-optimizer.js') }}"></script>
+   Endpoint: static
+
+   Line 255: URL endpoint not using blueprint structure
+   Content: <script src="{{ url_for('static', filename='js/websocket-bundle.js') }}"></script>
+   Endpoint: static
+
+   Line 258: URL endpoint not using blueprint structure
+   Content: <script src="{{ url_for('static', filename='js/admin.js') }}"></script>
+   Endpoint: static
+
+
+📁 admin/templates/components/admin_navigation.html
+   Line 70: URL endpoint not using blueprint structure
+   Content: <a href="{{ url_for('review_list') }}" class="nav-link {{ 'active' if request.endpoint == 'review_list' }}">
+   Endpoint: review_list
+
+   Line 79: URL endpoint not using blueprint structure
+   Content: <a href="{{ url_for('review_batches') }}" class="nav-link {{ 'active' if request.endpoint == 'review_batches' }}">
+   Endpoint: review_batches
+
+
+📁 app/blueprints/admin/admin_api.py
+   Line 19: Route not using new structure
+   Content: @bp.route('/session-health/statistics', methods=['GET'])
+
+   Line 34: Route not using new structure
+   Content: @bp.route('/session-health/status', methods=['GET'])
+
+   Line 572: Route not using new structure
+   Content: @bp.route('/alerts/<alert_id>/acknowledge', methods=['POST'])
+
+
+📁 app/blueprints/admin/admin_job_management.py
+   Line 15: Route not using new structure
+   Content: @bp.route('/job-management')
+
+   Line 47: Route not using new structure
+   Content: @bp.route('/bulk-actions')
+
+   Line 126: Route not using new structure
+   Content: @bp.route('/system-maintenance')
+
+   Line 232: Route not using new structure
+   Content: @bp.route('/maintenance/pause-system')
+
+   Line 258: Route not using new structure
+   Content: @bp.route('/maintenance/resume-system')
+
+   Line 286: Route not using new structure
+   Content: @bp.route('/maintenance/clear-queue')
+
+   Line 310: Route not using new structure
+   Content: @bp.route('/maintenance/restart-failed')
+
+   Line 350: Route not using new structure
+   Content: @bp.route('/maintenance/cleanup-data')
+
+   Line 398: Route not using new structure
+   Content: @bp.route('/job-history/<int:user_id>')
+
+   Line 455: Route not using new structure
+   Content: @bp.route('/help')
+
+   Line 469: Route not using new structure
+   Content: @bp.route('/logs')
+
+
+📁 app/blueprints/admin/cleanup.py
+   Line 27: Route not using new structure
+   Content: @bp.route('/cleanup')
+
+   Line 45: Route not using new structure
+   Content: @bp.route('/cleanup/runs', methods=['POST'])
+
+
+📁 app/blueprints/admin/dashboard.py
+   Line 17: Route not using new structure
+   Content: @bp.route('/')
+
+   Line 18: Route not using new structure
+   Content: @bp.route('/dashboard')
+
+   Line 123: Route not using new structure
+   Content: @bp.route('/configuration')
+
+
+📁 app/blueprints/admin/dashboard_monitoring.py
+   Line 33: Route not using new structure
+   Content: @bp.route('/websocket-diagnostic')
+
+   Line 40: Route not using new structure
+   Content: @bp.route('/dashboard/monitoring')
+
+   Line 175: Route not using new structure
+   Content: @bp.route('/dashboard/reports')
+
+   Line 265: Route not using new structure
+   Content: @bp.route('/dashboard/widgets/customize')
+
+
+📁 app/blueprints/admin/maintenance_mode.py
+   Line 25: Route not using new structure
+   Content: @bp.route('/maintenance-mode')
+
+   Line 430: Route not using new structure
+   Content: @bp.route('/maintenance-monitoring')
+
+
+📁 app/blueprints/admin/monitoring.py
+   Line 18: Route not using new structure
+   Content: @bp.route('/monitoring')
+
+
+📁 app/blueprints/admin/platform_management.py
+   Line 59: Route not using new structure
+   Content: @bp.route('/platforms')
+
+   Line 149: Route not using new structure
+   Content: @bp.route('/platforms/<int:platform_id>/details')
+
+   Line 197: Route not using new structure
+   Content: @bp.route('/platforms/<int:platform_id>/toggle-status', methods=['POST'])
+
+   Line 251: Route not using new structure
+   Content: @bp.route('/platforms/<int:platform_id>/set-default', methods=['POST'])
+
+   Line 308: Route not using new structure
+   Content: @bp.route('/platforms/<int:platform_id>/test-connection', methods=['POST'])
+
+   Line 360: Route not using new structure
+   Content: @bp.route('/platforms/statistics')
+
+
+📁 app/blueprints/admin/security_management.py
+   Line 51: Route not using new structure
+   Content: @bp.route('/security')
+
+   Line 87: Route not using new structure
+   Content: @bp.route('/security/audit-logs')
+
+   Line 135: Route not using new structure
+   Content: @bp.route('/security/features')
+
+   Line 159: Route not using new structure
+   Content: @bp.route('/security/csrf')
+
+
+📁 app/blueprints/admin/storage_management.py
+   Line 36: Route not using new structure
+   Content: @bp.route('/storage')
+
+   Line 104: Route not using new structure
+   Content: @bp.route('/storage/refresh', methods=['GET', 'POST'])
+
+   Line 147: Route not using new structure
+   Content: @bp.route('/storage/override', methods=['GET', 'POST'])
+
+   Line 264: Route not using new structure
+   Content: @bp.route('/storage/health')
+
+
+📁 app/blueprints/admin/system_administration.py
+   Line 22: Route not using new structure
+   Content: @bp.route('/system')
+
+
+📁 app/blueprints/admin/system_health.py
+   Line 26: Route not using new structure
+   Content: @bp.route('/health')
+
+   Line 192: Route not using new structure
+   Content: @bp.route('/health/detailed')
+
+   Line 233: Route not using new structure
+   Content: @bp.route('/health/dashboard')
+
+   Line 307: Route not using new structure
+   Content: @bp.route('/csrf_security_dashboard')
+
+   Line 338: Route not using new structure
+   Content: @bp.route('/security_audit_dashboard')
+
+   Line 349: Route not using new structure
+   Content: @bp.route('/security_audit')
+
+   Line 355: Route not using new structure
+   Content: @bp.route('/session_health_dashboard')
+
+   Line 366: Route not using new structure
+   Content: @bp.route('/session_monitoring_dashboard')
+
+
+📁 app/blueprints/admin/user_management.py
+   Line 67: Route not using new structure
+   Content: @bp.route('/users')
+
+   Line 150: Route not using new structure
+   Content: @bp.route('/users/edit', methods=['POST'])
+
+   Line 239: Route not using new structure
+   Content: @bp.route('/users/delete', methods=['POST'])
+
+   Line 307: Route not using new structure
+   Content: @bp.route('/users/add', methods=['POST'])
+
+   Line 409: Route not using new structure
+   Content: @bp.route('/users/<int:user_id>/details')
+
+   Line 435: Route not using new structure
+   Content: @bp.route('/users/<int:user_id>/resend-verification', methods=['POST'])
+
+   Line 475: Route not using new structure
+   Content: @bp.route('/users/role/update', methods=['POST'])
+
+   Line 557: Route not using new structure
+   Content: @bp.route('/users/status/update', methods=['POST'])
+
+   Line 678: Route not using new structure
+   Content: @bp.route('/users/password/reset', methods=['POST'])
+
+
+📁 app/core/database/mysql/mysql_health_endpoints.py
+   Line 383: Route not using new structure
+   Content: @app.route('/health')
+
+
+📁 app/core/security/components/security_audit.py
+   Line 985: Route not using new structure
+   Content: if '@app.route(' in line and 'POST' in line:
+
+
+📁 app/core/security/error_handling/detached_instance_handler.py
+   Line 236: URL endpoint not using blueprint structure
+   Content: return redirect(url_for('login'))
+   Endpoint: login
+
+   Line 240: URL endpoint not using blueprint structure
+   Content: return redirect(url_for('dashboard'))
+   Endpoint: dashboard
+
+
+📁 app/core/session/error_handling/session_error_handlers.py
+   Line 97: URL endpoint not using blueprint structure
+   Content: response = make_response(redirect(url_for('login')))
+   Endpoint: login
+
+   Line 129: URL endpoint not using blueprint structure
+   Content: return redirect(url_for('first_time_setup'))
+   Endpoint: first_time_setup
+
+   Line 162: URL endpoint not using blueprint structure
+   Content: 'redirect': url_for('login')
+   Endpoint: login
+
+   Line 188: URL endpoint not using blueprint structure
+   Content: 'redirect': url_for('login')
+   Endpoint: login
+
+   Line 338: URL endpoint not using blueprint structure
+   Content: return redirect(url_for('login'))
+   Endpoint: login
+
+   Line 517: URL endpoint not using blueprint structure
+   Content: return redirect(url_for('login'))
+   Endpoint: login
+
+
+📁 app/core/session/error_handling/session_error_handling.py
+   Line 91: URL endpoint not using blueprint structure
+   Content: 'redirect': url_for('login')
+   Endpoint: login
+
+   Line 99: URL endpoint not using blueprint structure
+   Content: login_url = url_for('login', next=next_url) if next_url else url_for('login')
+   Endpoint: login
+
+   Line 124: URL endpoint not using blueprint structure
+   Content: 'redirect': url_for('login')
+   Endpoint: login
+
+   Line 132: URL endpoint not using blueprint structure
+   Content: login_url = url_for('login', next=next_url) if next_url else url_for('login')
+   Endpoint: login
+
+   Line 164: URL endpoint not using blueprint structure
+   Content: 'redirect': url_for('login')
+   Endpoint: login
+
+   Line 172: URL endpoint not using blueprint structure
+   Content: login_url = url_for('login', next=next_url) if next_url else url_for('login')
+   Endpoint: login
+
+   Line 279: URL endpoint not using blueprint structure
+   Content: login_url=url_for('login')
+   Endpoint: login
+
+   Line 307: URL endpoint not using blueprint structure
+   Content: <a href="{url_for('login')}" class="login-button">Log In</a>
+   Endpoint: login
+
+
+📁 app/core/session/utils/session_aware_decorators.py
+   Line 36: URL endpoint not using blueprint structure
+   Content: return redirect(url_for('login'))
+   Endpoint: login
+
+   Line 65: URL endpoint not using blueprint structure
+   Content: return redirect(url_for('login'))
+   Endpoint: login
+
+   Line 71: URL endpoint not using blueprint structure
+   Content: return redirect(url_for('login'))
+   Endpoint: login
+
+   Line 118: URL endpoint not using blueprint structure
+   Content: return redirect(url_for('login', next=request.url))
+   Endpoint: login
+
+   Line 145: URL endpoint not using blueprint structure
+   Content: return redirect(url_for('first_time_setup'))
+   Endpoint: first_time_setup
+
+   Line 186: URL endpoint not using blueprint structure
+   Content: return redirect(url_for('login'))
+   Endpoint: login
+
+   Line 224: URL endpoint not using blueprint structure
+   Content: return redirect(url_for('login'))
+   Endpoint: login
+
+   Line 275: URL endpoint not using blueprint structure
+   Content: return redirect(url_for('login'))
+   Endpoint: login
+
+
+📁 app/services/monitoring/storage/register_storage_health_endpoints.py
+   Line 49: Route not using new structure
+   Content: @app.route('/health/comprehensive')
+
+
+📁 app/services/performance/components/performance_dashboard.py
+   Line 420: Route not using new structure
+   Content: @bp.route('/performance')
+
+
+📁 app/services/storage/components/storage_health_endpoints.py
+   Line 455: Route not using new structure
+   Content: @app.route('/health/storage-summary')
+
+
+📁 app/utils/assets/asset_optimizer.py
+   Line 185: URL endpoint not using blueprint structure
+   Content: logo_url = url_for('static', filename='images/Logo.png')
+   Endpoint: static
+
+   Line 255: URL endpoint not using blueprint structure
+   Content: base_url = url_for('static', filename=asset_path)
+   Endpoint: static
+
+
+📁 app/utils/assets/static_asset_helpers.py
+   Line 52: URL endpoint not using blueprint structure
+   Content: return url_for('static', filename=filename, v=version)
+   Endpoint: static
+
+   Line 57: URL endpoint not using blueprint structure
+   Content: return url_for('static', filename=filename)
+   Endpoint: static
+
+   Line 82: URL endpoint not using blueprint structure
+   Content: return url_for('static', filename=versioned_filename)
+   Endpoint: static
+
+   Line 86: URL endpoint not using blueprint structure
+   Content: return url_for('static', filename=filename)
+   Endpoint: static
+
+   Line 139: URL endpoint not using blueprint structure
+   Content: 'url': url_for('static', filename=filename),
+   Endpoint: static
+
+
+📁 scan_outdated_paths.py
+   Line 67: Route not using new structure
+   Content: if '@app.route(' in line or '@bp.route(' in line:
+
+
+📁 scripts/backup/web_app_backup.py
+   Line 847: URL endpoint not using blueprint structure
+   Content: return redirect(url_for('first_time_setup'))
+   Endpoint: first_time_setup
+
+
+📁 scripts/backup/web_app_refactored.py
+   Line 26: Route not using new structure
+   Content: @app.route('/')
+
+   Line 36: Route not using new structure
+   Content: @app.route('/images/<path:filename>')
+
+   Line 44: Route not using new structure
+   Content: @app.route('/static/js/<path:filename>')
+
+   Line 52: Route not using new structure
+   Content: @app.route('/favicon.ico')
+
+
+📁 scripts/debug/debug_socketio.py
+   Line 70: Route not using new structure
+   Content: @app.route('/test')
+
+
+📁 scripts/monitoring/emergency_monitoring_dashboard.py
+   Line 346: Route not using new structure
+   Content: @app.route('/')
+
+
+📁 scripts/testing/web_app_redis_test.py
+   Line 202: Route not using new structure
+   Content: @app.route('/')
+
+   Line 206: URL endpoint not using blueprint structure
+   Content: return redirect(url_for('dashboard'))
+   Endpoint: dashboard
+
+   Line 207: URL endpoint not using blueprint structure
+   Content: return redirect(url_for('login'))
+   Endpoint: login
+
+   Line 209: Route not using new structure
+   Content: @app.route('/login', methods=['GET', 'POST'])
+
+   Line 243: URL endpoint not using blueprint structure
+   Content: return redirect(url_for('dashboard'))
+   Endpoint: dashboard
+
+   Line 255: Route not using new structure
+   Content: @app.route('/logout')
+
+   Line 272: Route not using new structure
+   Content: @app.route('/dashboard')
+
+   Line 289: Route not using new structure
+   Content: @app.route('/test/session_info')
+
+   Line 316: Route not using new structure
+   Content: @app.route('/test/platforms')
+
+   Line 346: Route not using new structure
+   Content: @app.route('/test/switch_platform/<int:platform_id>', methods=['POST'])
+
+   Line 368: Route not using new structure
+   Content: @app.route('/test/extend_session', methods=['POST'])
+
+   Line 391: Route not using new structure
+   Content: @app.route('/test/stats')
+
+   Line 410: Route not using new structure
+   Content: @app.route('/test/cleanup_sessions', methods=['POST'])
+
+
+📁 static/js/bundle.js
+   Line 295: URL endpoint not using blueprint structure
+   Content: <script src="{{ url_for('static', filename='js/dist/core/core.min.js', v=BUNDLE_VERSION) }}" onerror="console.warn('Core bundle failed to load')"></script>
+   Endpoint: static
+
+   Line 298: URL endpoint not using blueprint structure
+   Content: <script src="{{ url_for('static', filename='js/dist/websocket/websocket.min.js', v=BUNDLE_VERSION) }}" onerror="console.warn('WebSocket bundle failed to load')"></script>
+   Endpoint: static
+
+   Line 301: URL endpoint not using blueprint structure
+   Content: <script src="{{ url_for('static', filename='js/dist/notification/notification.min.js', v=BUNDLE_VERSION) }}" onerror="console.warn('Notification bundle failed to load')"></script>
+   Endpoint: static
+
+   Line 304: URL endpoint not using blueprint structure
+   Content: <script src="{{ url_for('static', filename='js/dist/app/app.min.js', v=BUNDLE_VERSION) }}" onerror="console.warn('App bundle failed to load')"></script>
+   Endpoint: static
+
+
+📁 templates/base.html
+   Line 49: URL endpoint not using blueprint structure
+   Content: <link href="{{ url_for('static', filename='css/bootstrap-fallback.css', v='1.0.0') }}" rel="stylesheet" onerror="console.warn('Bootstrap fallback CSS failed to load')">
+   Endpoint: static
+
+   Line 54: URL endpoint not using blueprint structure
+   Content: <link href="{{ url_for('static', filename='css/css-variables.css', v='1.0.0') }}" rel="stylesheet" onerror="console.warn('CSS variables failed to load')">
+   Endpoint: static
+
+   Line 57: URL endpoint not using blueprint structure
+   Content: <link href="{{ url_for('static', filename='css/utilities.css', v='1.0.0') }}" rel="stylesheet" onerror="console.warn('Utilities CSS failed to load')">
+   Endpoint: static
+
+   Line 60: URL endpoint not using blueprint structure
+   Content: <link href="{{ url_for('static', filename='css/style.css', v='1.0.0') }}" rel="stylesheet" onerror="console.warn('Main style CSS failed to load')">
+   Endpoint: static
+
+   Line 61: URL endpoint not using blueprint structure
+   Content: <link href="{{ url_for('static', filename='css/components.css', v='1.0.0') }}" rel="stylesheet" onerror="console.warn('Components CSS failed to load')">
+   Endpoint: static
+
+   Line 62: URL endpoint not using blueprint structure
+   Content: <link href="{{ url_for('static', filename='css/security-extracted.css', v='1.0.0') }}" rel="stylesheet" onerror="console.warn('Security CSS failed to load')">
+   Endpoint: static
+
+   Line 63: URL endpoint not using blueprint structure
+   Content: <link href="{{ url_for('static', filename='css/platform_styles.css', v='1.0.0') }}" rel="stylesheet" onerror="console.warn('Platform styles CSS failed to load')">
+   Endpoint: static
+
+   Line 64: URL endpoint not using blueprint structure
+   Content: <link href="{{ url_for('static', filename='css/fixes.css', v='1.0.0') }}" rel="stylesheet" onerror="console.warn('Fixes CSS failed to load')">
+   Endpoint: static
+
+   Line 67: URL endpoint not using blueprint structure
+   Content: <link href="{{ url_for('static', filename='css/unified-notifications.css', v='1.0.0') }}" rel="stylesheet" onerror="console.warn('Unified notifications CSS failed to load')">
+   Endpoint: static
+
+   Line 68: URL endpoint not using blueprint structure
+   Content: <link href="{{ url_for('static', filename='css/notification-ui.css', v='1.0.0') }}" rel="stylesheet" onerror="console.warn('Notification UI CSS failed to load')">
+   Endpoint: static
+
+   Line 69: URL endpoint not using blueprint structure
+   Content: <link href="{{ url_for('static', filename='css/legacy-notification-fallback.css', v='1.0.0') }}" rel="stylesheet" onerror="console.warn('Legacy notification fallback CSS failed to load')">
+   Endpoint: static
+
+   Line 117: URL endpoint not using blueprint structure
+   Content: <img src="{{ url_for('static', filename='images/Logo.png', v='1.0.0') }}"
+   Endpoint: static
+
+   Line 292: URL endpoint not using blueprint structure
+   Content: <script src="{{ url_for('static', filename='js/csrf-handler.js', v='1.0.0') }}" onerror="console.warn('CSRF handler failed to load')"></script>
+   Endpoint: static
+
+   Line 293: URL endpoint not using blueprint structure
+   Content: <script src="{{ url_for('static', filename='js/progress-bar-utils.js', v='1.0.0') }}" onerror="console.warn('Progress bar utils failed to load')"></script>
+   Endpoint: static
+
+   Line 295: URL endpoint not using blueprint structure
+   Content: <script src="{{ url_for('static', filename='js/websocket-transport-optimizer.js', v='1.0.0') }}" onerror="console.warn('WebSocket transport optimizer failed to load')"></script>
+   Endpoint: static
+
+   Line 296: URL endpoint not using blueprint structure
+   Content: <script src="{{ url_for('static', filename='js/websocket-bundle.js', v='1.0.0') }}" onerror="console.warn('WebSocket bundle failed to load')"></script>
+   Endpoint: static
+
+   Line 300: URL endpoint not using blueprint structure
+   Content: <script src="{{ url_for('static', filename='js/notification-ui-renderer.js', v='1.0.0') }}" onerror="console.warn('Notification UI renderer failed to load - notifications may not work')"></script>
+   Endpoint: static
+
+   Line 301: URL endpoint not using blueprint structure
+   Content: <script src="{{ url_for('static', filename='js/page_notification_integrator.js', v='1.0.0') }}" onerror="console.warn('Page notification integrator failed to load')"></script>
+   Endpoint: static
+
+   Line 303: URL endpoint not using blueprint structure
+   Content: <script src="{{ url_for('static', filename='js/app.js', v='1.0.0') }}" onerror="console.warn('App.js failed to load')"></script>
+   Endpoint: static
+
+   Line 304: URL endpoint not using blueprint structure
+   Content: <script src="{{ url_for('static', filename='js/error_handler.js', v='1.0.0') }}" onerror="console.warn('Error handler failed to load')"></script>
+   Endpoint: static
+
+   Line 305: URL endpoint not using blueprint structure
+   Content: <script src="{{ url_for('static', filename='js/session-sync.js', v='1.0.0') }}" onerror="console.warn('Session sync failed to load')"></script>
+   Endpoint: static
+
+   Line 306: URL endpoint not using blueprint structure
+   Content: <script src="{{ url_for('static', filename='js/navigation.js', v='1.0.0') }}" onerror="console.warn('Navigation failed to load')"></script>
+   Endpoint: static
+
+   Line 307: URL endpoint not using blueprint structure
+   Content: <script src="{{ url_for('static', filename='js/platform_context_refresh.js', v='1.0.0') }}" onerror="console.warn('Platform context refresh failed to load')"></script>
+   Endpoint: static
+
+
+📁 templates/batch_review.html
+   Line 10: URL endpoint not using blueprint structure
+   Content: <script src="{{ url_for('static', filename='js/image-zoom.js') }}"></script>
+   Endpoint: static
+
+   Line 396: URL endpoint not using blueprint structure
+   Content: <script src="{{ url_for('static', filename='js/review.js') }}"></script>
+   Endpoint: static
+
+
+📁 templates/caption_generation.html
+   Line 23: URL endpoint not using blueprint structure
+   Content: <link rel="stylesheet" href="{{ url_for('static', filename='css/caption_generation.css') }}">
+   Endpoint: static
+
+   Line 24: URL endpoint not using blueprint structure
+   Content: <script src="{{ url_for('static', filename='js/caption_generation.js') }}"></script>
+   Endpoint: static
+
+
+📁 templates/caption_settings.html
+   Line 101: URL endpoint not using blueprint structure
+   Content: <form method="POST" action="{{ url_for('save_caption_settings') }}" id="settings-form">
+   Endpoint: save_caption_settings
+
+
+📁 templates/components/admin_navigation.html
+   Line 147: URL endpoint not using blueprint structure
+   Content: <li><a class="dropdown-item" href="{{ url_for('profile') }}">
+   Endpoint: profile
+
+   Line 157: URL endpoint not using blueprint structure
+   Content: <li><a class="dropdown-item" href="{{ url_for('logout') }}">
+   Endpoint: logout
+
+
+📁 templates/emails/account_created.html
+   Line 12: URL endpoint not using blueprint structure
+   Content: <link href="{{ url_for('static', filename='css/email.css') }}" rel="stylesheet">
+   Endpoint: static
+
+
+📁 templates/emails/notification.html
+   Line 12: URL endpoint not using blueprint structure
+   Content: <link href="{{ url_for('static', filename='css/email.css') }}" rel="stylesheet">
+   Endpoint: static
+
+
+📁 templates/emails/password_reset.html
+   Line 12: URL endpoint not using blueprint structure
+   Content: <link href="{{ url_for('static', filename='css/email.css') }}" rel="stylesheet">
+   Endpoint: static
+
+
+📁 templates/errors/session_error.html
+   Line 98: URL endpoint not using blueprint structure
+   Content: window.location.href = "{{ url_for('login') }}";
+   Endpoint: login
+
+
+📁 templates/errors/user_management_error.html
+   Line 128: URL endpoint not using blueprint structure
+   Content: window.location.href = '{{ url_for("index") }}';
+   Endpoint: index
+
+
+📁 templates/first_time_setup.html
+   Line 247: URL endpoint not using blueprint structure
+   Content: <script src="{{ url_for('static', filename='js/platform_management.js') }}"></script>
+   Endpoint: static
+
+
+📁 templates/includes/favicon_meta.html
+   Line 5: URL endpoint not using blueprint structure
+   Content: <link rel="icon" type="image/x-icon" href="{{ url_for('static', filename='favicons/favicon.ico') }}">
+   Endpoint: static
+
+   Line 6: URL endpoint not using blueprint structure
+   Content: <link rel="icon" type="image/png" sizes="16x16" href="{{ url_for('static', filename='favicons/favicon-16x16.png') }}">
+   Endpoint: static
+
+   Line 7: URL endpoint not using blueprint structure
+   Content: <link rel="icon" type="image/png" sizes="32x32" href="{{ url_for('static', filename='favicons/favicon-32x32.png') }}">
+   Endpoint: static
+
+   Line 8: URL endpoint not using blueprint structure
+   Content: <link rel="icon" type="image/png" sizes="96x96" href="{{ url_for('static', filename='favicons/favicon-96x96.png') }}">
+   Endpoint: static
+
+   Line 11: URL endpoint not using blueprint structure
+   Content: <link rel="apple-touch-icon" sizes="57x57" href="{{ url_for('static', filename='favicons/apple-icon-57x57.png') }}">
+   Endpoint: static
+
+   Line 12: URL endpoint not using blueprint structure
+   Content: <link rel="apple-touch-icon" sizes="60x60" href="{{ url_for('static', filename='favicons/apple-icon-60x60.png') }}">
+   Endpoint: static
+
+   Line 13: URL endpoint not using blueprint structure
+   Content: <link rel="apple-touch-icon" sizes="72x72" href="{{ url_for('static', filename='favicons/apple-icon-72x72.png') }}">
+   Endpoint: static
+
+   Line 14: URL endpoint not using blueprint structure
+   Content: <link rel="apple-touch-icon" sizes="76x76" href="{{ url_for('static', filename='favicons/apple-icon-76x76.png') }}">
+   Endpoint: static
+
+   Line 15: URL endpoint not using blueprint structure
+   Content: <link rel="apple-touch-icon" sizes="114x114" href="{{ url_for('static', filename='favicons/apple-icon-114x114.png') }}">
+   Endpoint: static
+
+   Line 16: URL endpoint not using blueprint structure
+   Content: <link rel="apple-touch-icon" sizes="120x120" href="{{ url_for('static', filename='favicons/apple-icon-120x120.png') }}">
+   Endpoint: static
+
+   Line 17: URL endpoint not using blueprint structure
+   Content: <link rel="apple-touch-icon" sizes="144x144" href="{{ url_for('static', filename='favicons/apple-icon-144x144.png') }}">
+   Endpoint: static
+
+   Line 18: URL endpoint not using blueprint structure
+   Content: <link rel="apple-touch-icon" sizes="152x152" href="{{ url_for('static', filename='favicons/apple-icon-152x152.png') }}">
+   Endpoint: static
+
+   Line 19: URL endpoint not using blueprint structure
+   Content: <link rel="apple-touch-icon" sizes="180x180" href="{{ url_for('static', filename='favicons/apple-icon-180x180.png') }}">
+   Endpoint: static
+
+   Line 22: URL endpoint not using blueprint structure
+   Content: <link rel="icon" type="image/png" sizes="36x36" href="{{ url_for('static', filename='favicons/android-icon-36x36.png') }}">
+   Endpoint: static
+
+   Line 23: URL endpoint not using blueprint structure
+   Content: <link rel="icon" type="image/png" sizes="48x48" href="{{ url_for('static', filename='favicons/android-icon-48x48.png') }}">
+   Endpoint: static
+
+   Line 24: URL endpoint not using blueprint structure
+   Content: <link rel="icon" type="image/png" sizes="72x72" href="{{ url_for('static', filename='favicons/android-icon-72x72.png') }}">
+   Endpoint: static
+
+   Line 25: URL endpoint not using blueprint structure
+   Content: <link rel="icon" type="image/png" sizes="96x96" href="{{ url_for('static', filename='favicons/android-icon-96x96.png') }}">
+   Endpoint: static
+
+   Line 26: URL endpoint not using blueprint structure
+   Content: <link rel="icon" type="image/png" sizes="144x144" href="{{ url_for('static', filename='favicons/android-icon-144x144.png') }}">
+   Endpoint: static
+
+   Line 27: URL endpoint not using blueprint structure
+   Content: <link rel="icon" type="image/png" sizes="192x192" href="{{ url_for('static', filename='favicons/android-icon-192x192.png') }}">
+   Endpoint: static
+
+   Line 30: URL endpoint not using blueprint structure
+   Content: <link rel="manifest" href="{{ url_for('static', filename='favicons/manifest.json') }}">
+   Endpoint: static
+
+   Line 33: URL endpoint not using blueprint structure
+   Content: <meta name="msapplication-config" content="{{ url_for('static', filename='favicons/browserconfig.xml') }}">
+   Endpoint: static
+
+   Line 35: URL endpoint not using blueprint structure
+   Content: <meta name="msapplication-TileImage" content="{{ url_for('static', filename='favicons/ms-icon-144x144.png') }}">
+   Endpoint: static
+
+
+📁 templates/landing.html
+   Line 43: URL endpoint not using blueprint structure
+   Content: <meta property="og:image" content="{{ request.url_root }}{{ url_for('static', filename='images/Logo.png') }}">
+   Endpoint: static
+
+   Line 49: URL endpoint not using blueprint structure
+   Content: content="{{ request.url_root }}{{ url_for('static', filename='images/Logo.png') }}">
+   Endpoint: static
+
+   Line 75: URL endpoint not using blueprint structure
+   Content: <meta name="twitter:image" content="{{ request.url_root }}{{ url_for('static', filename='images/Logo.png') }}">
+   Endpoint: static
+
+   Line 155: URL endpoint not using blueprint structure
+   Content: "screenshot": "{{ request.url_root }}{{ url_for('static', filename='images/Logo.png') }}",
+   Endpoint: static
+
+   Line 187: URL endpoint not using blueprint structure
+   Content: "logo": "{{ request.url_root }}{{ url_for('static', filename='images/Logo.png') }}",
+   Endpoint: static
+
+   Line 344: URL endpoint not using blueprint structure
+   Content: "image": "{{ request.url_root }}{{ url_for('static', filename='images/Logo.png') }}",
+   Endpoint: static
+
+
+📁 templates/platform_management.html
+   Line 393: URL endpoint not using blueprint structure
+   Content: <script src="{{ url_for('static', filename='js/notification-ui-renderer.js') }}"></script>
+   Endpoint: static
+
+   Line 394: URL endpoint not using blueprint structure
+   Content: <script src="{{ url_for('static', filename='js/page_notification_integrator.js') }}"></script>
+   Endpoint: static
+
+   Line 397: URL endpoint not using blueprint structure
+   Content: <script src="{{ url_for('static', filename='js/platform_management_websocket.js') }}"></script>
+   Endpoint: static
+
+   Line 400: URL endpoint not using blueprint structure
+   Content: <script src="{{ url_for('static', filename='js/platform_management.js') }}"></script>
+   Endpoint: static
+
+
+📁 templates/review_single.html
+   Line 10: URL endpoint not using blueprint structure
+   Content: <script src="{{ url_for('static', filename='js/image-zoom.js') }}"></script>
+   Endpoint: static
+
+
+📁 templates/websocket_simple_test.html
+   Line 17: URL endpoint not using blueprint structure
+   Content: <link href="{{ url_for('static', filename='css/security-extracted.css') }}" rel="stylesheet">
+   Endpoint: static
+
+   Line 18: URL endpoint not using blueprint structure
+   Content: <link href="{{ url_for('static', filename='css/components.css') }}" rel="stylesheet">
+   Endpoint: static
+
+   Line 39: URL endpoint not using blueprint structure
+   Content: <script src="{{ url_for('static', filename='js/websocket-transport-optimizer.js') }}"></script>
+   Endpoint: static
+
+   Line 40: URL endpoint not using blueprint structure
+   Content: <script src="{{ url_for('static', filename='js/websocket-bundle.js') }}"></script>
+   Endpoint: static
+
+
+📁 templates/websocket_test.html
+   Line 17: URL endpoint not using blueprint structure
+   Content: <link href="{{ url_for('static', filename='css/security-extracted.css') }}" rel="stylesheet">
+   Endpoint: static
+
+   Line 18: URL endpoint not using blueprint structure
+   Content: <link href="{{ url_for('static', filename='css/components.css') }}" rel="stylesheet">
+   Endpoint: static
+
+   Line 41: URL endpoint not using blueprint structure
+   Content: <script src="{{ url_for('static', filename='js/websocket-transport-optimizer.js') }}"></script>
+   Endpoint: static
+
+   Line 42: URL endpoint not using blueprint structure
+   Content: <script src="{{ url_for('static', filename='js/websocket-bundle.js') }}"></script>
+   Endpoint: static
+
+
+📁 tests/integration/test_admin_access.py
+   Line 47: URL endpoint not using blueprint structure
+   Content: health_url = url_for('health_dashboard')
+   Endpoint: health_dashboard
+
+
+📁 tests/integration/test_dashboard_access_integration.py
+   Line 249: URL endpoint not using blueprint structure
+   Content: response = redirect(url_for('dashboard'))
+   Endpoint: dashboard
+
+   Line 279: URL endpoint not using blueprint structure
+   Content: response = make_response(redirect(url_for('login')))
+   Endpoint: login
+
+   Line 366: URL endpoint not using blueprint structure
+   Content: <a href="{{ url_for('switch_platform') }}">Switch Platform</a>
+   Endpoint: switch_platform
+
+   Line 367: URL endpoint not using blueprint structure
+   Content: <a href="{{ url_for('logout') }}">Logout</a>
+   Endpoint: logout
+
+   Line 378: URL endpoint not using blueprint structure
+   Content: return redirect(url_for('login'))
+   Endpoint: login
+
+   Line 381: URL endpoint not using blueprint structure
+   Content: return redirect(url_for('login'))
+   Endpoint: login
+
+   Line 394: URL endpoint not using blueprint structure
+   Content: return redirect(url_for('dashboard'))
+   Endpoint: dashboard
+
+   Line 425: URL endpoint not using blueprint structure
+   Content: return redirect(url_for('dashboard'))
+   Endpoint: dashboard
+
+   Line 429: URL endpoint not using blueprint structure
+   Content: return redirect(url_for('login'))
+   Endpoint: login
+
+   Line 432: URL endpoint not using blueprint structure
+   Content: return redirect(url_for('dashboard'))
+   Endpoint: dashboard
+
+   Line 441: URL endpoint not using blueprint structure
+   Content: <a href="{{ url_for('dashboard') }}">Back to Dashboard</a>
+   Endpoint: dashboard
+
+   Line 451: URL endpoint not using blueprint structure
+   Content: <a href="{{ url_for('dashboard') }}">Back to Dashboard</a>
+   Endpoint: dashboard
+
+
+📁 tests/integration/test_dashboard_session_management.py
+   Line 179: URL endpoint not using blueprint structure
+   Content: return redirect(url_for('first_time_setup'))
+   Endpoint: first_time_setup
+
+
+📁 tests/integration/test_login_session_management.py
+   Line 228: URL endpoint not using blueprint structure
+   Content: return redirect(url_for('first_time_setup'))
+   Endpoint: first_time_setup
+
+
+📁 tests/integration/test_session_decorators_integration.py
+   Line 50: URL endpoint not using blueprint structure
+   Content: return redirect(url_for('login'))
+   Endpoint: login
+
+
+📁 tests/security/test_security_comprehensive.py
+   Line 657: Route not using new structure
+   Content: @app.route('/test', methods=['GET', 'POST'])
+
+
+📁 tests/unit/test_landing_page_security.py
+   Line 52: URL endpoint not using blueprint structure
+   Content: self.assertIn("url_for('static'", content)
+   Endpoint: static
+
+
+📁 tests/unit/test_middleware_context.py
+   Line 112: Route not using new structure
+   Content: @app.route('/test_context')
+
+   Line 138: Route not using new structure
+   Content: @app.route('/test_no_session')
+
+   Line 157: Route not using new structure
+   Content: @app.route('/test_invalid_session')
+
+   Line 186: Route not using new structure
+   Content: @app.route('/test_activity_update')
+
+   Line 312: Route not using new structure
+   Content: @app.route('/test_isolation_1')
+
+   Line 318: Route not using new structure
+   Content: @app.route('/test_isolation_2')
+
+   Line 344: Route not using new structure
+   Content: @app.route('/test_error_handling')
+
+
+TEMPLATES ISSUES (88 found):
+--------------------------------------------------
+
+📁 admin/routes/admin_job_management.py
+   Line 41: Template not in organized structure
+   Content: return render_template('admin_job_management.html',
+   Template: admin_job_management.html
+
+   Line 121: Template not in organized structure
+   Content: return render_template('admin_bulk_actions.html',
+   Template: admin_bulk_actions.html
+
+   Line 228: Template not in organized structure
+   Content: return render_template('admin_system_maintenance.html',
+   Template: admin_system_maintenance.html
+
+   Line 256: Template not in organized structure
+   Content: return render_template('admin_maintenance_pause_system.html', system_status=system_status)
+   Template: admin_maintenance_pause_system.html
+
+   Line 284: Template not in organized structure
+   Content: return render_template('admin_maintenance_resume_system.html', system_status=system_status)
+   Template: admin_maintenance_resume_system.html
+
+   Line 307: Template not in organized structure
+   Content: return render_template('admin_maintenance_clear_queue.html',
+   Template: admin_maintenance_clear_queue.html
+
+   Line 346: Template not in organized structure
+   Content: return render_template('admin_maintenance_restart_failed.html',
+   Template: admin_maintenance_restart_failed.html
+
+   Line 395: Template not in organized structure
+   Content: return render_template('admin_maintenance_cleanup_data.html',
+   Template: admin_maintenance_cleanup_data.html
+
+   Line 450: Template not in organized structure
+   Content: return render_template('admin_job_history.html',
+   Template: admin_job_history.html
+
+   Line 467: Template not in organized structure
+   Content: return render_template('admin_help_center.html')
+   Template: admin_help_center.html
+
+   Line 520: Template not in organized structure
+   Content: return render_template('admin_system_logs.html',
+   Template: admin_system_logs.html
+
+
+📁 admin/routes/cleanup.py
+   Line 43: Template not in organized structure
+   Content: return render_template('admin_cleanup.html', stats=stats, users=stats.get('users', []), retention=retention)
+   Template: admin_cleanup.html
+
+
+📁 admin/routes/dashboard.py
+   Line 135: Template not in organized structure
+   Content: return render_template('configuration_management.html')
+   Template: configuration_management.html
+
+
+📁 admin/routes/dashboard_monitoring.py
+   Line 38: Template not in organized structure
+   Content: return render_template('websocket_diagnostic.html')
+   Template: websocket_diagnostic.html
+
+   Line 181: Template not in organized structure
+   Content: return render_template('reports_dashboard.html')
+   Template: reports_dashboard.html
+
+
+📁 admin/routes/monitoring.py
+   Line 36: Template not in organized structure
+   Content: return render_template('admin_monitoring.html',
+   Template: admin_monitoring.html
+
+
+📁 admin/routes/system_health.py
+   Line 293: Template not in organized structure
+   Content: return render_template('dashboard.html',
+   Template: dashboard.html
+
+   Line 323: Template not in organized structure
+   Content: return render_template('csrf_security_dashboard.html', dashboard_data=dashboard_data)
+   Template: csrf_security_dashboard.html
+
+   Line 336: Template not in organized structure
+   Content: return render_template('csrf_security_dashboard.html', dashboard_data=dashboard_data)
+   Template: csrf_security_dashboard.html
+
+   Line 347: Template not in organized structure
+   Content: return render_template('security_audit_dashboard.html')
+   Template: security_audit_dashboard.html
+
+   Line 364: Template not in organized structure
+   Content: return render_template('session_health_dashboard.html')
+   Template: session_health_dashboard.html
+
+   Line 375: Template not in organized structure
+   Content: return render_template('session_monitoring_dashboard.html')
+   Template: session_monitoring_dashboard.html
+
+
+📁 admin/routes/user_management.py
+   Line 135: Template not in organized structure
+   Content: return render_template('auth.user_management.html',
+   Template: auth.user_management.html
+
+
+📁 app/blueprints/admin/admin_job_management.py
+   Line 41: Template not in organized structure
+   Content: return render_template('admin_job_management.html',
+   Template: admin_job_management.html
+
+   Line 121: Template not in organized structure
+   Content: return render_template('admin_bulk_actions.html',
+   Template: admin_bulk_actions.html
+
+   Line 228: Template not in organized structure
+   Content: return render_template('admin_system_maintenance.html',
+   Template: admin_system_maintenance.html
+
+   Line 256: Template not in organized structure
+   Content: return render_template('admin_maintenance_pause_system.html', system_status=system_status)
+   Template: admin_maintenance_pause_system.html
+
+   Line 284: Template not in organized structure
+   Content: return render_template('admin_maintenance_resume_system.html', system_status=system_status)
+   Template: admin_maintenance_resume_system.html
+
+   Line 307: Template not in organized structure
+   Content: return render_template('admin_maintenance_clear_queue.html',
+   Template: admin_maintenance_clear_queue.html
+
+   Line 346: Template not in organized structure
+   Content: return render_template('admin_maintenance_restart_failed.html',
+   Template: admin_maintenance_restart_failed.html
+
+   Line 395: Template not in organized structure
+   Content: return render_template('admin_maintenance_cleanup_data.html',
+   Template: admin_maintenance_cleanup_data.html
+
+   Line 450: Template not in organized structure
+   Content: return render_template('admin_job_history.html',
+   Template: admin_job_history.html
+
+   Line 467: Template not in organized structure
+   Content: return render_template('admin_help_center.html')
+   Template: admin_help_center.html
+
+   Line 520: Template not in organized structure
+   Content: return render_template('admin_system_logs.html',
+   Template: admin_system_logs.html
+
+
+📁 app/blueprints/admin/cleanup.py
+   Line 43: Template not in organized structure
+   Content: return render_template('admin_cleanup.html', stats=stats, users=stats.get('users', []), retention=retention)
+   Template: admin_cleanup.html
+
+
+📁 app/blueprints/admin/dashboard.py
+   Line 135: Template not in organized structure
+   Content: return render_template('configuration_management.html')
+   Template: configuration_management.html
+
+
+📁 app/blueprints/admin/dashboard_monitoring.py
+   Line 38: Template not in organized structure
+   Content: return render_template('websocket_diagnostic.html')
+   Template: websocket_diagnostic.html
+
+   Line 181: Template not in organized structure
+   Content: return render_template('reports_dashboard.html')
+   Template: reports_dashboard.html
+
+
+📁 app/blueprints/admin/monitoring.py
+   Line 36: Template not in organized structure
+   Content: return render_template('admin_monitoring.html',
+   Template: admin_monitoring.html
+
+
+📁 app/blueprints/admin/platform_management.py
+   Line 124: Template not in organized structure
+   Content: return render_template('admin_platform_management.html',
+   Template: admin_platform_management.html
+
+
+📁 app/blueprints/admin/system_administration.py
+   Line 79: Template not in organized structure
+   Content: return render_template('admin_system_administration.html',
+   Template: admin_system_administration.html
+
+
+📁 app/blueprints/admin/system_health.py
+   Line 293: Template not in organized structure
+   Content: return render_template('dashboard.html',
+   Template: dashboard.html
+
+   Line 323: Template not in organized structure
+   Content: return render_template('csrf_security_dashboard.html', dashboard_data=dashboard_data)
+   Template: csrf_security_dashboard.html
+
+   Line 336: Template not in organized structure
+   Content: return render_template('csrf_security_dashboard.html', dashboard_data=dashboard_data)
+   Template: csrf_security_dashboard.html
+
+   Line 347: Template not in organized structure
+   Content: return render_template('security_audit_dashboard.html')
+   Template: security_audit_dashboard.html
+
+   Line 364: Template not in organized structure
+   Content: return render_template('session_health_dashboard.html')
+   Template: session_health_dashboard.html
+
+   Line 375: Template not in organized structure
+   Content: return render_template('session_monitoring_dashboard.html')
+   Template: session_monitoring_dashboard.html
+
+
+📁 app/blueprints/admin/user_management.py
+   Line 135: Template not in organized structure
+   Content: return render_template('auth.user_management.html',
+   Template: auth.user_management.html
+
+
+📁 app/blueprints/auth/routes.py
+   Line 27: Template not in organized structure
+   Content: return render_template('first_time_setup.html')
+   Template: first_time_setup.html
+
+
+📁 app/blueprints/caption/routes.py
+   Line 114: Template not in organized structure
+   Content: return render_template('caption_generation.html',
+   Template: caption_generation.html
+
+   Line 256: Template not in organized structure
+   Content: return render_template('caption_settings.html')
+   Template: caption_settings.html
+
+
+📁 app/blueprints/main/routes.py
+   Line 43: Template not in organized structure
+   Content: return cached_render_template('landing.html')
+   Template: landing.html
+
+   Line 114: Template not in organized structure
+   Content: return cached_render_template('landing.html')
+   Template: landing.html
+
+   Line 156: Template not in organized structure
+   Content: return render_template('index.html', stats={}, current_platform=None)
+   Template: index.html
+
+   Line 233: Template not in organized structure
+   Content: return render_template('index.html', stats=stats, notification_config=notification_config)
+   Template: index.html
+
+   Line 247: Template not in organized structure
+   Content: return render_template('index.html', stats={})
+   Template: index.html
+
+   Line 267: Template not in organized structure
+   Content: return render_template('index.html', stats={})
+   Template: index.html
+
+
+📁 app/blueprints/review/routes.py
+   Line 27: Template not in organized structure
+   Content: return render_template('review.html', images=[], page=1, total_pages=1, total=0, per_page=12)
+   Template: review.html
+
+   Line 46: Template not in organized structure
+   Content: return render_template('review.html',
+   Template: review.html
+
+   Line 55: Template not in organized structure
+   Content: return render_template('review.html', images=[], page=1, total_pages=1, total=0, per_page=12)
+   Template: review.html
+
+   Line 85: Template not in organized structure
+   Content: return render_template('review_single.html', image=image, form=form)
+   Template: review_single.html
+
+   Line 98: Template not in organized structure
+   Content: return render_template('batch_review.html', batches=[])
+   Template: batch_review.html
+
+   Line 114: Template not in organized structure
+   Content: return render_template('batch_review.html', images=images)
+   Template: batch_review.html
+
+   Line 118: Template not in organized structure
+   Content: return render_template('batch_review.html', images=[])
+   Template: batch_review.html
+
+
+📁 app/blueprints/static/routes.py
+   Line 46: Template not in organized structure
+   Content: return render_template('first_time_setup.html')
+   Template: first_time_setup.html
+
+   Line 88: Template not in organized structure
+   Content: return render_template('post_approved.html')
+   Template: post_approved.html
+
+   Line 158: Template not in organized structure
+   Content: return render_template('websocket_test.html')
+   Template: websocket_test.html
+
+   Line 163: Template not in organized structure
+   Content: return render_template('websocket_simple_test.html')
+   Template: websocket_simple_test.html
+
+
+📁 app/core/security/monitoring/csrf_dashboard.py
+   Line 33: Template not in organized structure
+   Content: return render_template('csrf_security_dashboard.html',
+   Template: csrf_security_dashboard.html
+
+
+📁 app/services/email/components/email_service.py
+   Line 167: Template not in organized structure
+   Content: html_body = self.render_template('email_verification.html',
+   Template: email_verification.html
+
+   Line 198: Template not in organized structure
+   Content: html_body = self.render_template('password_reset.html',
+   Template: password_reset.html
+
+   Line 231: Template not in organized structure
+   Content: html_body = self.render_template('account_created.html',
+   Template: account_created.html
+
+   Line 262: Template not in organized structure
+   Content: html_body = self.render_template('profile_deleted.html',
+   Template: profile_deleted.html
+
+   Line 295: Template not in organized structure
+   Content: html_body = self.render_template('notification.html', **context)
+   Template: notification.html
+
+   Line 320: Template not in organized structure
+   Content: html_body = self.render_template('gdpr_data_export.html',
+   Template: gdpr_data_export.html
+
+   Line 356: Template not in organized structure
+   Content: html_body = self.render_template('gdpr_data_deletion.html',
+   Template: gdpr_data_deletion.html
+
+   Line 389: Template not in organized structure
+   Content: html_body = self.render_template('gdpr_consent_withdrawal.html',
+   Template: gdpr_consent_withdrawal.html
+
+
+📁 app/services/performance/components/performance_dashboard.py
+   Line 426: Template not in organized structure
+   Content: return render_template('performance_dashboard.html')
+   Template: performance_dashboard.html
+
+
+📁 app/services/performance/components/performance_monitoring_dashboard.py
+   Line 84: Template not in organized structure
+   Content: return render_template('performance_dashboard.html',
+   Template: performance_dashboard.html
+
+
+📁 app/services/storage/components/storage_email_notification_service.py
+   Line 283: Template not in organized structure
+   Content: html_content = self.email_service.render_template('storage_limit_alert.html', **template_context)
+   Template: storage_limit_alert.html
+
+
+📁 app/utils/landing/landing_page_fallback.py
+   Line 451: Template not in organized structure
+   Content: return make_response(render_template('500.html', error=template_error), 500)
+   Template: 500.html
+
+
+📁 legacy_notification_backup/storage_email_notification_service.py
+   Line 264: Template not in organized structure
+   Content: html_content = self.email_service.render_template('storage_limit_alert.html', **template_context)
+   Template: storage_limit_alert.html
+
+
+📁 scripts/backup/web_app_backup.py
+   Line 1022: Template not in organized structure
+   Content: return render_template('platform_management.html',
+   Template: platform_management.html
+
+
+📁 scripts/backup/web_app_refactored.py
+   Line 33: Template not in organized structure
+   Content: return render_template('index.html')
+   Template: index.html
+
+
+📁 scripts/monitoring/mysql_monitoring_dashboard.py
+   Line 153: Template not in organized structure
+   Content: return render_template('mysql_dashboard.html',
+   Template: mysql_dashboard.html
+
+
+📁 tests/unit/test_legacy_system_analyzer.py
+   Line 57: Template not in organized structure
+   Content: return render_template('test.html')
+   Template: test.html
+
+
+📁 tests/web_caption_generation/test_web_app_critical.py
+   Line 198: Template not in organized structure
+   Content: return render_template('tests/templates/test.html', name='World')
+   Template: tests/templates/test.html
+
+   Line 276: Template not in organized structure
+   Content: return render_template('tests/templates/xss_test.html', user_input=user_input)
+   Template: tests/templates/xss_test.html
+
+
+IMPORTS ISSUES (627 found):
+--------------------------------------------------
+
+📁 admin/feature_flags.py
+   Line 353: Import not using app/ structure
+   Content: from flask import session, abort
+
+
+📁 admin/routes/__init__.py
+   Line 12: Import not using app/ structure
+   Content: from . import monitoring
+
+   Line 15: Import not using app/ structure
+   Content: from . import admin_api
+
+   Line 16: Import not using app/ structure
+   Content: from . import security_audit_api
+
+   Line 18: Import not using app/ structure
+   Content: from . import admin_job_management
+
+   Line 19: Import not using app/ structure
+   Content: from . import admin_job_api
+
+   Line 21: Import not using app/ structure
+   Content: from . import maintenance_mode
+
+   Line 22: Import not using app/ structure
+   Content: from . import storage_management
+
+
+📁 admin/routes/admin_api.py
+   Line 10: Import not using app/ structure
+   Content: from ..security.admin_access_control import admin_api_required
+
+   Line 228: Import not using app/ structure
+   Content: from redis_session_middleware import clear_session_platform
+
+   Line 253: Import not using app/ structure
+   Content: from .admin_access_control import get_admin_system_stats
+
+   Line 374: Import not using app/ structure
+   Content: from session_alerting_system import SessionAlertingSystem
+
+   Line 1122: Import not using app/ structure
+   Content: from ..services.monitoring_service import AdminMonitoringService
+
+
+📁 admin/routes/admin_job_api.py
+   Line 7: Import not using app/ structure
+   Content: from flask import jsonify, request, current_app, session, redirect, url_for
+
+   Line 763: Import not using app/ structure
+   Content: from admin.services.cleanup_service import CleanupService
+
+
+📁 admin/routes/admin_job_management.py
+   Line 7: Import not using app/ structure
+   Content: from flask import render_template, current_app, request, session
+
+
+📁 admin/routes/configuration_routes.py
+   Line 17: Import not using app/ structure
+   Content: from flask import Blueprint, request, jsonify, current_app, session
+
+
+📁 admin/routes/dashboard_monitoring.py
+   Line 24: Import not using app/ structure
+   Content: from monitoring_dashboard_service import (
+
+
+📁 admin/routes/maintenance_mode.py
+   Line 196: Import not using app/ structure
+   Content: from admin_maintenance_notification_handler import AdminMaintenanceNotificationHandler, MaintenanceNotificationData
+
+   Line 301: Import not using app/ structure
+   Content: from admin_maintenance_notification_handler import AdminMaintenanceNotificationHandler
+
+
+📁 admin/routes/monitoring.py
+   Line 29: Import not using app/ structure
+   Content: from ..services.monitoring_service import AdminMonitoringService
+
+   Line 57: Import not using app/ structure
+   Content: from ..services.monitoring_service import AdminMonitoringService
+
+
+📁 admin/routes/user_management.py
+   Line 17: Import not using app/ structure
+   Content: from ..security.admin_access_control import admin_required, admin_session_preservation, admin_user_management_access, ensure_admin_count
+
+
+📁 admin/services/cleanup_service.py
+   Line 84: Import not using app/ structure
+   Content: from scripts.maintenance.data_cleanup import DataCleanupManager
+
+   Line 103: Import not using app/ structure
+   Content: from scripts.maintenance.data_cleanup import DataCleanupManager
+
+   Line 122: Import not using app/ structure
+   Content: from scripts.maintenance.data_cleanup import DataCleanupManager
+
+   Line 141: Import not using app/ structure
+   Content: from scripts.maintenance.data_cleanup import DataCleanupManager
+
+   Line 176: Import not using app/ structure
+   Content: from scripts.maintenance.data_cleanup import DataCleanupManager
+
+
+📁 admin/services/user_service.py
+   Line 13: Import not using app/ structure
+   Content: from werkzeug.security import generate_password_hash
+
+
+📁 app/blueprints/admin/admin_api.py
+   Line 228: Import not using app/ structure
+   Content: from redis_session_middleware import clear_session_platform
+
+   Line 253: Import not using app/ structure
+   Content: from .admin_access_control import get_admin_system_stats
+
+   Line 374: Import not using app/ structure
+   Content: from session_alerting_system import SessionAlertingSystem
+
+   Line 1025: Import not using app/ structure
+   Content: from admin.services.cleanup_service import CleanupService
+
+   Line 1122: Import not using app/ structure
+   Content: from admin.services.monitoring_service import AdminMonitoringService
+
+
+📁 app/blueprints/admin/admin_job_api.py
+   Line 7: Import not using app/ structure
+   Content: from flask import jsonify, request, current_app, session, redirect, url_for
+
+
+📁 app/blueprints/admin/admin_job_management.py
+   Line 7: Import not using app/ structure
+   Content: from flask import render_template, current_app, request, session
+
+
+📁 app/blueprints/admin/configuration_routes.py
+   Line 17: Import not using app/ structure
+   Content: from flask import Blueprint, request, jsonify, current_app, session
+
+
+📁 app/blueprints/admin/maintenance_mode.py
+   Line 196: Import not using app/ structure
+   Content: from admin_maintenance_notification_handler import AdminMaintenanceNotificationHandler, MaintenanceNotificationData
+
+   Line 301: Import not using app/ structure
+   Content: from admin_maintenance_notification_handler import AdminMaintenanceNotificationHandler
+
+
+📁 app/blueprints/admin/routes.py
+   Line 7: Import not using app/ structure
+   Content: from . import admin_bp
+
+   Line 15: Import not using app/ structure
+   Content: from . import monitoring
+
+   Line 18: Import not using app/ structure
+   Content: from . import admin_api
+
+   Line 19: Import not using app/ structure
+   Content: from . import security_audit_api
+
+   Line 21: Import not using app/ structure
+   Content: from . import admin_job_management
+
+   Line 22: Import not using app/ structure
+   Content: from . import admin_job_api
+
+   Line 24: Import not using app/ structure
+   Content: from . import maintenance_mode
+
+   Line 25: Import not using app/ structure
+   Content: from . import storage_management
+
+   Line 27: Import not using app/ structure
+   Content: from . import platform_management
+
+   Line 28: Import not using app/ structure
+   Content: from . import system_administration
+
+   Line 29: Import not using app/ structure
+   Content: from . import security_management
+
+   Line 55: Import not using app/ structure
+   Content: from .maintenance_status_routes import maintenance_status_bp
+
+
+📁 app/blueprints/api/page_notification_routes.py
+   Line 13: Import not using app/ structure
+   Content: from flask import Blueprint, request, jsonify, session, current_app
+
+
+📁 app/blueprints/api/routes.py
+   Line 13: Import not using app/ structure
+   Content: from .page_notification_routes import page_notification_bp
+
+
+📁 app/blueprints/caption/routes.py
+   Line 82: Import not using app/ structure
+   Content: from flask import session
+
+
+📁 app/blueprints/main/routes.py
+   Line 324: Import not using app/ structure
+   Content: from unified_session_manager import unified_session_manager
+
+
+📁 app/blueprints/platform/__init__.py
+   Line 2: Import not using app/ structure
+   Content: from .routes import platform_bp
+
+
+📁 app/blueprints/static/routes.py
+   Line 53: Import not using app/ structure
+   Content: from flask import session
+
+
+📁 app/core/database/connections/database_context_middleware.py
+   Line 232: Import not using app/ structure
+   Content: from redis_session_backend import get_platform_id
+
+   Line 313: Import not using app/ structure
+   Content: from redis_session_backend import get_platform_id
+
+
+📁 app/core/database/core/database_manager.py
+   Line 11: Import not using app/ structure
+   Content: from sqlalchemy.orm import sessionmaker, scoped_session
+
+
+📁 app/core/extensions.py
+   Line 25: Import not using app/ structure
+   Content: from unified_session_manager import unified_session_manager
+
+
+📁 app/core/security/audit/audit_logger.py
+   Line 19: Import not using app/ structure
+   Content: from flask import request, session as flask_session
+
+
+📁 app/core/security/compliance/compliance_service.py
+   Line 19: Import not using app/ structure
+   Content: from unified_session_manager import unified_session_manager
+
+
+📁 app/core/security/features/caption_security.py
+   Line 173: Import not using app/ structure
+   Content: from unified_session_manager import get_current_platform_context
+
+
+📁 app/core/session/api/session_alert_routes.py
+   Line 18: Import not using app/ structure
+   Content: from session_alerting_system import AlertSeverity, AlertStatus
+
+
+📁 app/core/session/api/session_state_api.py
+   Line 14: Import not using app/ structure
+   Content: from flask import jsonify, request, g, make_response, session
+
+   Line 51: Import not using app/ structure
+   Content: from flask import session
+
+   Line 167: Import not using app/ structure
+   Content: from flask import session
+
+   Line 306: Import not using app/ structure
+   Content: from maintenance_mode_decorators import maintenance_status_info
+
+   Line 364: Import not using app/ structure
+   Content: from maintenance_mode_decorators import maintenance_status_info
+
+
+📁 app/core/session/core/session_manager.py
+   Line 17: Import not using app/ structure
+   Content: from flask import session, request, g
+
+
+📁 app/core/session/core/unified_session_manager.py
+   Line 16: Import not using app/ structure
+   Content: from sqlalchemy.orm import sessionmaker, Session
+
+
+📁 app/core/session/error_handling/session_error_handlers.py
+   Line 38: Import not using app/ structure
+   Content: from .session_error_logger import get_session_error_logger
+
+   Line 475: Import not using app/ structure
+   Content: from flask import session
+
+
+📁 app/core/session/error_handling/session_error_handling.py
+   Line 449: Import not using app/ structure
+   Content: from flask import session
+
+
+📁 app/core/session/manager.py
+   Line 16: Import not using app/ structure
+   Content: from sqlalchemy.orm import sessionmaker, Session
+
+
+📁 app/core/session/middleware/session_middleware.py
+   Line 13: Import not using app/ structure
+   Content: from flask import session, g, request, current_app
+
+
+📁 app/core/session/middleware/session_middleware_v2.py
+   Line 13: Import not using app/ structure
+   Content: from flask import session, g, request, current_app
+
+
+📁 app/core/session/utils/session_aware_decorators.py
+   Line 148: Import not using app/ structure
+   Content: from redis_session_middleware import get_current_session_context
+
+   Line 163: Import not using app/ structure
+   Content: from redis_session_middleware import update_session_platform
+
+
+📁 app/core/session/utils/session_platform_fix.py
+   Line 21: Import not using app/ structure
+   Content: from flask import session, g, request, current_app
+
+
+📁 app/services/activitypub/__init__.py
+   Line 9: Import not using app/ structure
+   Content: from .components.activitypub_platforms import (
+
+
+📁 app/services/admin/components/admin_dashboard_health_integration.py
+   Line 25: Import not using app/ structure
+   Content: from page_notification_integrator import PageNotificationIntegrator
+
+
+📁 app/services/admin/components/cleanup_service.py
+   Line 84: Import not using app/ structure
+   Content: from scripts.maintenance.data_cleanup import DataCleanupManager
+
+   Line 103: Import not using app/ structure
+   Content: from scripts.maintenance.data_cleanup import DataCleanupManager
+
+   Line 122: Import not using app/ structure
+   Content: from scripts.maintenance.data_cleanup import DataCleanupManager
+
+   Line 141: Import not using app/ structure
+   Content: from scripts.maintenance.data_cleanup import DataCleanupManager
+
+   Line 176: Import not using app/ structure
+   Content: from scripts.maintenance.data_cleanup import DataCleanupManager
+
+
+📁 app/services/admin/components/user_service.py
+   Line 13: Import not using app/ structure
+   Content: from werkzeug.security import generate_password_hash
+
+
+📁 app/services/maintenance/components/maintenance_notification_integration_service.py
+   Line 119: Import not using app/ structure
+   Content: from admin_maintenance_notification_handler import AdminMaintenanceNotificationHandler
+
+   Line 161: Import not using app/ structure
+   Content: from admin_maintenance_notification_handler import AdminMaintenanceNotificationHandler, MaintenanceNotificationData
+
+   Line 325: Import not using app/ structure
+   Content: from admin_maintenance_notification_handler import AdminMaintenanceNotificationHandler
+
+
+📁 app/services/monitoring/core/advanced_monitoring_service.py
+   Line 23: Import not using app/ structure
+   Content: from feature_flag_decorators import FeatureFlagMiddleware, advanced_monitoring_required
+
+
+📁 app/services/monitoring/health/checkers/storage_health_checker.py
+   Line 19: Import not using app/ structure
+   Content: from .storage_configuration_service import StorageConfigurationService
+
+   Line 20: Import not using app/ structure
+   Content: from .storage_monitor_service import StorageMonitorService
+
+   Line 21: Import not using app/ structure
+   Content: from .storage_limit_enforcer import StorageLimitEnforcer
+
+
+📁 app/services/monitoring/storage/register_storage_health_endpoints.py
+   Line 15: Import not using app/ structure
+   Content: from storage_health_endpoints import register_storage_health_endpoints
+
+   Line 46: Import not using app/ structure
+   Content: from storage_health_checker import StorageHealthChecker, StorageHealthStatus
+
+   Line 54: Import not using app/ structure
+   Content: from storage_health_endpoints import get_storage_health_checker
+
+
+📁 app/services/notification/components/notification_database_optimizer.py
+   Line 25: Import not using app/ structure
+   Content: from sqlalchemy.orm import sessionmaker
+
+
+📁 app/services/notification/components/notification_performance_optimizer.py
+   Line 28: Import not using app/ structure
+   Content: from notification_message_router import NotificationMessageRouter
+
+
+📁 app/services/notification/helpers/notification_helpers.py
+   Line 18: Import not using app/ structure
+   Content: from flask import current_app, has_app_context, session
+
+
+📁 app/services/notification/integration/page_notification_integrator.py
+   Line 17: Import not using app/ structure
+   Content: from flask import Flask, request, session, current_app
+
+
+📁 app/services/platform/__init__.py
+   Line 13: Import not using app/ structure
+   Content: from .components.platform_identification import (
+
+   Line 22: Import not using app/ structure
+   Content: from .components.platform_service import PlatformService
+
+   Line 25: Import not using app/ structure
+   Content: from .detection.detect_platform import detect_platform_type
+
+
+📁 app/services/platform/components/__init__.py
+   Line 11: Import not using app/ structure
+   Content: from .platform_identification import (
+
+   Line 21: Import not using app/ structure
+   Content: from .platform_service import PlatformService
+
+
+📁 app/services/platform/components/platform_identification.py
+   Line 243: Import not using app/ structure
+   Content: from flask import session, g
+
+
+📁 app/services/platform/detection/__init__.py
+   Line 11: Import not using app/ structure
+   Content: from .detect_platform import detect_platform_type
+
+
+📁 app/services/platform/integration/platform_management_notification_integration.py
+   Line 25: Import not using app/ structure
+   Content: from page_notification_integrator import PageNotificationIntegrator, PageType
+
+
+📁 app/services/platform/utils/platform_context_utils.py
+   Line 45: Import not using app/ structure
+   Content: from redis_session_middleware import get_current_session_id
+
+   Line 80: Import not using app/ structure
+   Content: from unified_session_manager import UnifiedSessionManager
+
+   Line 88: Import not using app/ structure
+   Content: from session_cookie_manager import create_session_cookie_manager
+
+   Line 177: Import not using app/ structure
+   Content: from redis_session_middleware import get_current_session_id
+
+
+📁 app/services/storage/components/__init__.py
+   Line 13: Import not using app/ structure
+   Content: from .storage_configuration_service import StorageConfigurationService
+
+   Line 14: Import not using app/ structure
+   Content: from .storage_monitor_service import StorageMonitorService, StorageMetrics
+
+   Line 15: Import not using app/ structure
+   Content: from .storage_limit_enforcer import StorageLimitEnforcer, StorageCheckResult, StorageBlockingState
+
+   Line 18: Import not using app/ structure
+   Content: from .storage_health_checker import StorageHealthChecker, StorageHealthStatus
+
+   Line 19: Import not using app/ structure
+   Content: from .storage_health_endpoints import register_storage_health_endpoints
+
+   Line 22: Import not using app/ structure
+   Content: from .storage_alert_system import StorageAlertSystem
+
+   Line 23: Import not using app/ structure
+   Content: from .storage_warning_monitor import StorageWarningMonitor, StorageEventType
+
+   Line 24: Import not using app/ structure
+   Content: from .storage_user_notification_system import StorageUserNotificationSystem
+
+   Line 25: Import not using app/ structure
+   Content: from .storage_email_notification_service import StorageEmailNotificationService
+
+   Line 28: Import not using app/ structure
+   Content: from .storage_override_system import StorageOverrideSystem
+
+   Line 29: Import not using app/ structure
+   Content: from .storage_cleanup_integration import StorageCleanupIntegration
+
+   Line 30: Import not using app/ structure
+   Content: from .storage_monitoring_dashboard_integration import StorageMonitoringDashboardIntegration
+
+   Line 31: Import not using app/ structure
+   Content: from .storage_warning_dashboard_integration import StorageWarningDashboardIntegration
+
+   Line 32: Import not using app/ structure
+   Content: from .storage_event_logger import StorageEventLogger
+
+
+📁 app/services/storage/components/storage_alert_system.py
+   Line 17: Import not using app/ structure
+   Content: from .storage_health_checker import StorageHealthChecker, StorageHealthStatus
+
+   Line 18: Import not using app/ structure
+   Content: from .storage_configuration_service import StorageConfigurationService
+
+   Line 19: Import not using app/ structure
+   Content: from .storage_monitor_service import StorageMonitorService
+
+   Line 20: Import not using app/ structure
+   Content: from .storage_limit_enforcer import StorageLimitEnforcer
+
+
+📁 app/services/storage/components/storage_cleanup_integration.py
+   Line 18: Import not using app/ structure
+   Content: from .storage_configuration_service import StorageConfigurationService
+
+   Line 19: Import not using app/ structure
+   Content: from .storage_monitor_service import StorageMonitorService, StorageMetrics
+
+   Line 20: Import not using app/ structure
+   Content: from .storage_limit_enforcer import StorageLimitEnforcer
+
+   Line 21: Import not using app/ structure
+   Content: from scripts.maintenance.data_cleanup import DataCleanupManager
+
+
+📁 app/services/storage/components/storage_email_notification_service.py
+   Line 41: Import not using app/ structure
+   Content: from .storage_monitor_service import StorageMetrics
+
+
+📁 app/services/storage/components/storage_event_logger.py
+   Line 23: Import not using app/ structure
+   Content: from .storage_warning_monitor import StorageEventType, StorageEvent
+
+   Line 24: Import not using app/ structure
+   Content: from .storage_monitor_service import StorageMetrics
+
+
+📁 app/services/storage/components/storage_health_endpoints.py
+   Line 18: Import not using app/ structure
+   Content: from .storage_health_checker import StorageHealthChecker, StorageHealthStatus
+
+   Line 19: Import not using app/ structure
+   Content: from .storage_configuration_service import StorageConfigurationService
+
+   Line 20: Import not using app/ structure
+   Content: from .storage_monitor_service import StorageMonitorService
+
+   Line 21: Import not using app/ structure
+   Content: from .storage_limit_enforcer import StorageLimitEnforcer
+
+
+📁 app/services/storage/components/storage_limit_enforcer.py
+   Line 23: Import not using app/ structure
+   Content: from .storage_configuration_service import StorageConfigurationService
+
+   Line 24: Import not using app/ structure
+   Content: from .storage_monitor_service import StorageMonitorService, StorageMetrics
+
+   Line 134: Import not using app/ structure
+   Content: from .storage_override_system import StorageOverrideSystem
+
+
+📁 app/services/storage/components/storage_monitor_service.py
+   Line 21: Import not using app/ structure
+   Content: from .storage_configuration_service import StorageConfigurationService
+
+
+📁 app/services/storage/components/storage_monitoring_dashboard_integration.py
+   Line 16: Import not using app/ structure
+   Content: from .storage_health_checker import StorageHealthChecker, StorageHealthStatus
+
+   Line 17: Import not using app/ structure
+   Content: from .storage_configuration_service import StorageConfigurationService
+
+   Line 18: Import not using app/ structure
+   Content: from .storage_monitor_service import StorageMonitorService
+
+   Line 19: Import not using app/ structure
+   Content: from .storage_limit_enforcer import StorageLimitEnforcer
+
+
+📁 app/services/storage/components/storage_override_system.py
+   Line 21: Import not using app/ structure
+   Content: from .storage_configuration_service import StorageConfigurationService
+
+   Line 22: Import not using app/ structure
+   Content: from .storage_monitor_service import StorageMonitorService
+
+
+📁 app/services/storage/components/storage_user_notification_system.py
+   Line 20: Import not using app/ structure
+   Content: from .storage_limit_enforcer import StorageLimitEnforcer, StorageBlockingState
+
+   Line 21: Import not using app/ structure
+   Content: from .storage_monitor_service import StorageMonitorService
+
+   Line 22: Import not using app/ structure
+   Content: from .storage_configuration_service import StorageConfigurationService
+
+
+📁 app/services/storage/components/storage_warning_dashboard_integration.py
+   Line 18: Import not using app/ structure
+   Content: from .storage_warning_monitor import StorageWarningMonitor, WarningNotification, StorageEvent
+
+   Line 19: Import not using app/ structure
+   Content: from .storage_configuration_service import StorageConfigurationService
+
+   Line 20: Import not using app/ structure
+   Content: from .storage_monitor_service import StorageMonitorService
+
+   Line 21: Import not using app/ structure
+   Content: from .storage_limit_enforcer import StorageLimitEnforcer
+
+
+📁 app/services/storage/components/storage_warning_monitor.py
+   Line 24: Import not using app/ structure
+   Content: from .storage_configuration_service import StorageConfigurationService
+
+   Line 25: Import not using app/ structure
+   Content: from .storage_monitor_service import StorageMonitorService, StorageMetrics
+
+   Line 26: Import not using app/ structure
+   Content: from .storage_limit_enforcer import StorageLimitEnforcer
+
+
+📁 app/services/user/components/user_management_service.py
+   Line 20: Import not using app/ structure
+   Content: from werkzeug.security import generate_password_hash
+
+
+📁 app/utils/__init__.py
+   Line 19: Import not using app/ structure
+   Content: from . import session
+
+   Line 25: Import not using app/ structure
+   Content: from .web.decorators import require_platform_context, get_platform_context_or_redirect
+
+   Line 29: Import not using app/ structure
+   Content: from .session.session_detection import has_previous_session, detect_previous_session
+
+
+📁 app/utils/decorators.py
+   Line 6: Import not using app/ structure
+   Content: from session_aware_decorators import with_session_error_handling, require_platform_context
+
+
+📁 app/utils/initialization/app_initialization.py
+   Line 15: Import not using app/ structure
+   Content: from session_aware_user import SessionAwareUser
+
+
+📁 app/utils/initialization/null_session_interface.py
+   Line 12: Import not using app/ structure
+   Content: from flask.sessions import SessionInterface, SessionMixin
+
+
+📁 app/utils/initialization/pre_auth_session.py
+   Line 10: Import not using app/ structure
+   Content: from flask import session, request, g, current_app
+
+
+📁 app/utils/session/__init__.py
+   Line 7: Import not using app/ structure
+   Content: from .session_detection import (
+
+
+📁 app/utils/session/session_detection.py
+   Line 14: Import not using app/ structure
+   Content: from flask import request, session, current_app
+
+
+📁 app/utils/web/__init__.py
+   Line 7: Import not using app/ structure
+   Content: from .decorators import require_platform_context, get_platform_context_or_redirect
+
+
+📁 app/websocket/core/auth_handler.py
+   Line 24: Import not using app/ structure
+   Content: from flask import request, session as flask_session, current_app
+
+
+📁 app/websocket/core/namespace_manager.py
+   Line 717: Import not using app/ structure
+   Content: from flask import session
+
+
+📁 app/websocket/middleware/security_manager.py
+   Line 16: Import not using app/ structure
+   Content: from flask import request, session as flask_session, current_app
+
+
+📁 app/websocket/production/production_factory.py
+   Line 12: Import not using app/ structure
+   Content: from ..middleware.security_manager import ConsolidatedWebSocketSecurityManager
+
+
+📁 legacy_notification_backup/maintenance_notification_integration_service.py
+   Line 100: Import not using app/ structure
+   Content: from admin_maintenance_notification_handler import AdminMaintenanceNotificationHandler
+
+   Line 142: Import not using app/ structure
+   Content: from admin_maintenance_notification_handler import AdminMaintenanceNotificationHandler, MaintenanceNotificationData
+
+   Line 306: Import not using app/ structure
+   Content: from admin_maintenance_notification_handler import AdminMaintenanceNotificationHandler
+
+
+📁 legacy_notification_backup/security_notification_integration_service.py
+   Line 20: Import not using app/ structure
+   Content: from admin_security_audit_notification_handler import (
+
+
+📁 migrations/platform_aware_migration.py
+   Line 17: Import not using app/ structure
+   Content: from sqlalchemy.orm import sessionmaker
+
+
+📁 migrations/user_management_migration.py
+   Line 18: Import not using app/ structure
+   Content: from sqlalchemy.orm import sessionmaker
+
+
+📁 models.py
+   Line 12: Import not using app/ structure
+   Content: from werkzeug.security import generate_password_hash, check_password_hash
+
+
+📁 scripts/backup/web_app_backup.py
+   Line 11: Import not using app/ structure
+   Content: from user_profile_notification_helper import send_profile_notification
+
+   Line 27: Import not using app/ structure
+   Content: from flask import Flask, render_template, request, jsonify, redirect, url_for, send_from_directory, g, Response, make_response, current_app, session
+
+   Line 118: Import not using app/ structure
+   Content: from flask_redis_session_interface import FlaskRedisSessionInterface
+
+   Line 119: Import not using app/ structure
+   Content: from redis_session_backend import RedisSessionBackend
+
+   Line 139: Import not using app/ structure
+   Content: from flask.sessions import SessionInterface, SessionMixin
+
+   Line 172: Import not using app/ structure
+   Content: from pre_auth_session import PreAuthSessionHandler
+
+   Line 219: Import not using app/ structure
+   Content: from admin.security.admin_access_control import get_admin_system_stats
+
+   Line 363: Import not using app/ structure
+   Content: from notification_message_router import NotificationMessageRouter
+
+   Line 365: Import not using app/ structure
+   Content: from dashboard_notification_handlers import register_dashboard_notification_handlers
+
+   Line 394: Import not using app/ structure
+   Content: from page_notification_integrator import PageNotificationIntegrator
+
+   Line 418: Import not using app/ structure
+   Content: from session_error_handling import create_session_error_handler
+
+   Line 454: Import not using app/ structure
+   Content: from session_state_api import create_session_state_routes
+
+   Line 460: Import not using app/ structure
+   Content: from session_monitoring_api import create_session_monitoring_routes
+
+   Line 481: Import not using app/ structure
+   Content: from session_monitoring_cli import register_session_monitoring_commands
+
+   Line 482: Import not using app/ structure
+   Content: from session_monitoring_routes import register_session_monitoring_routes
+
+   Line 483: Import not using app/ structure
+   Content: from session_performance_optimizer import initialize_session_optimizations
+
+   Line 498: Import not using app/ structure
+   Content: from session_health_routes import register_session_health_routes
+
+   Line 499: Import not using app/ structure
+   Content: from session_alerting_system import get_alerting_system
+
+   Line 518: Import not using app/ structure
+   Content: from redis_platform_manager import get_redis_platform_manager
+
+   Line 531: Import not using app/ structure
+   Content: from session_alert_routes import register_session_alert_routes
+
+   Line 577: Import not using app/ structure
+   Content: from session_error_logger import initialize_session_error_logging
+
+   Line 581: Import not using app/ structure
+   Content: from session_error_handlers import register_session_error_handlers, with_session_error_handling
+
+
+📁 scripts/backup/web_app_broken.py
+   Line 27: Import not using app/ structure
+   Content: from flask_redis_session_interface import FlaskRedisSessionInterface
+
+   Line 28: Import not using app/ structure
+   Content: from redis_session_backend import RedisSessionBackend
+
+   Line 50: Import not using app/ structure
+   Content: from session_manager_v2 import SessionManagerV2
+
+
+📁 scripts/database/migrate_session_performance.py
+   Line 71: Import not using app/ structure
+   Content: from session_performance_optimizer import initialize_session_optimizations
+
+
+📁 scripts/debug/debug_platform_switch.py
+   Line 18: Import not using app/ structure
+   Content: from redis_platform_manager import get_redis_platform_manager
+
+
+📁 scripts/debug/debug_routes.py
+   Line 9: Import not using app/ structure
+   Content: from flask import Blueprint, jsonify, session, current_app
+
+
+📁 scripts/debug/debug_session_routes.py
+   Line 9: Import not using app/ structure
+   Content: from flask import Blueprint, jsonify, session, g, current_app
+
+   Line 84: Import not using app/ structure
+   Content: from session_middleware_v2 import update_session_platform
+
+
+📁 scripts/deployment/admin_health_checks.py
+   Line 261: Import not using app/ structure
+   Content: from admin.feature_flags import FeatureFlagManager
+
+   Line 436: Import not using app/ structure
+   Content: from monitoring_dashboard_service import MonitoringDashboardService
+
+   Line 679: Import not using app/ structure
+   Content: from session_manager_v2 import SessionManagerV2
+
+   Line 685: Import not using app/ structure
+   Content: from session_manager_v2 import SessionManagerV2
+
+
+📁 scripts/deployment/configuration_migration.py
+   Line 457: Import not using app/ structure
+   Content: from admin.feature_flags import FeatureFlagManager
+
+   Line 642: Import not using app/ structure
+   Content: from admin.feature_flags import FeatureFlagManager
+
+
+📁 scripts/deployment/user_management_deployment_validator.py
+   Line 480: Import not using app/ structure
+   Content: from werkzeug.security import generate_password_hash, check_password_hash
+
+   Line 603: Import not using app/ structure
+   Content: from unified_session_manager import UnifiedSessionManager as SessionManager
+
+   Line 616: Import not using app/ structure
+   Content: from werkzeug.security import generate_password_hash
+
+
+📁 scripts/examples/demo_maintenance_notification_system.py
+   Line 43: Import not using app/ structure
+   Content: from admin_maintenance_notification_handler import AdminMaintenanceNotificationHandler, MaintenanceNotificationData
+
+   Line 44: Import not using app/ structure
+   Content: from maintenance_progress_websocket_handler import MaintenanceProgressWebSocketHandler
+
+   Line 45: Import not using app/ structure
+   Content: from maintenance_notification_integration_service import (
+
+   Line 320: Import not using app/ structure
+   Content: from admin_maintenance_notification_handler import AdminMaintenanceNotificationHandler
+
+
+📁 scripts/examples/demo_redis_session.py
+   Line 42: Import not using app/ structure
+   Content: from flask_redis_session import RedisSession
+
+
+📁 scripts/maintenance/session_maintenance.py
+   Line 24: Import not using app/ structure
+   Content: from scripts.maintenance.session_cleanup import SessionCleanupService
+
+   Line 25: Import not using app/ structure
+   Content: from scripts.maintenance.session_analytics import SessionAnalytics
+
+   Line 26: Import not using app/ structure
+   Content: from scripts.maintenance.session_db_maintenance import SessionDatabaseMaintenance
+
+
+📁 scripts/monitoring/mysql_monitoring_dashboard.py
+   Line 45: Import not using app/ structure
+   Content: from scripts.mysql_security_hardening import MySQLSecurityHardening
+
+
+📁 scripts/monitoring/user_management_monitoring.py
+   Line 25: Import not using app/ structure
+   Content: from sqlalchemy.orm import sessionmaker
+
+
+📁 scripts/mysql_migration/migrate_to_mysql.py
+   Line 13: Import not using app/ structure
+   Content: from sqlalchemy.orm import sessionmaker
+
+
+📁 scripts/setup/migrate_to_platform_aware.py
+   Line 29: Import not using app/ structure
+   Content: from migrations.platform_aware_migration import PlatformAwareMigration
+
+
+📁 scripts/setup/verify_redis_session_setup.py
+   Line 129: Import not using app/ structure
+   Content: from session_manager_v2 import SessionManagerV2
+
+
+📁 scripts/testing/run_session_consolidation_final_tests.py
+   Line 199: Import not using app/ structure
+   Content: from unified_session_manager import UnifiedSessionManager
+
+
+📁 scripts/testing/run_session_management_e2e_tests.py
+   Line 76: Import not using app/ structure
+   Content: from tests.test_session_management import SessionManagementTest
+
+   Line 77: Import not using app/ structure
+   Content: from tests.test_session_decorators_integration import SessionDecoratorsIntegrationTest
+
+   Line 109: Import not using app/ structure
+   Content: from tests.test_session_integration import SessionIntegrationTest
+
+   Line 110: Import not using app/ structure
+   Content: from tests.test_platform_switching_session_management import PlatformSwitchingSessionTest
+
+   Line 138: Import not using app/ structure
+   Content: from tests.integration.test_session_management_e2e import SessionManagementE2ETest
+
+   Line 163: Import not using app/ structure
+   Content: from tests.integration.test_session_management_e2e import SessionManagementLoadTest
+
+   Line 188: Import not using app/ structure
+   Content: from tests.security.test_session_security_hardening import SessionSecurityHardeningTest
+
+   Line 213: Import not using app/ structure
+   Content: from tests.performance.test_session_load import SessionLoadTest
+
+
+📁 scripts/testing/validate_db_session_migration.py
+   Line 122: Import not using app/ structure
+   Content: from unified_session_manager import UnifiedSessionManager
+
+   Line 140: Import not using app/ structure
+   Content: from unified_session_manager import UnifiedSessionManager
+
+   Line 224: Import not using app/ structure
+   Content: from unified_session_manager import UnifiedSessionManager
+
+
+📁 scripts/testing/validate_session_consolidation.py
+   Line 180: Import not using app/ structure
+   Content: from unified_session_manager import UnifiedSessionManager
+
+   Line 181: Import not using app/ structure
+   Content: from session_cookie_manager import SessionCookieManager
+
+   Line 182: Import not using app/ structure
+   Content: from redis_session_middleware import get_current_session_context
+
+
+📁 scripts/testing/validate_session_migration.py
+   Line 38: Import not using app/ structure
+   Content: from unified_session_manager import UnifiedSessionManager
+
+   Line 51: Import not using app/ structure
+   Content: from unified_session_manager import (
+
+   Line 68: Import not using app/ structure
+   Content: from unified_session_manager import UnifiedSessionManager
+
+   Line 126: Import not using app/ structure
+   Content: import session_manager_compat
+
+   Line 133: Import not using app/ structure
+   Content: from unified_session_manager import UnifiedSessionManager
+
+   Line 142: Import not using app/ structure
+   Content: from redis_session_middleware import get_current_session_context, get_current_session_id
+
+   Line 176: Import not using app/ structure
+   Content: from unified_session_manager import UnifiedSessionManager
+
+   Line 191: Import not using app/ structure
+   Content: from unified_session_manager import UnifiedSessionManager
+
+   Line 192: Import not using app/ structure
+   Content: from redis_session_middleware import get_current_session_context, get_current_session_id
+
+   Line 193: Import not using app/ structure
+   Content: from session_security import create_session_security_manager
+
+
+📁 scripts/testing/web_app_redis_test.py
+   Line 14: Import not using app/ structure
+   Content: from flask import Flask, request, jsonify, session, redirect, url_for, render_template_string
+
+   Line 20: Import not using app/ structure
+   Content: from redis_session_backend import RedisSessionBackend
+
+   Line 21: Import not using app/ structure
+   Content: from flask_redis_session_interface import FlaskRedisSessionInterface
+
+   Line 294: Import not using app/ structure
+   Content: from session_middleware_v2 import get_current_session_context, get_current_session_id
+
+   Line 373: Import not using app/ structure
+   Content: from session_middleware_v2 import extend_current_session
+
+
+📁 scripts/utilities/run_security_tests.py
+   Line 27: Import not using app/ structure
+   Content: from tests.security.test_notification_authentication_authorization import TestNotificationAuthenticationAuthorization
+
+   Line 28: Import not using app/ structure
+   Content: from tests.security.test_notification_security_validation import (
+
+   Line 32: Import not using app/ structure
+   Content: from tests.security.test_notification_abuse_detection import TestNotificationAbuseDetection
+
+
+📁 tests/admin/test_emergency_recovery_system.py
+   Line 366: Import not using app/ structure
+   Content: from scripts.notification_emergency_cli import NotificationEmergencyCLI
+
+
+📁 tests/admin/test_multi_tenant_comprehensive.py
+   Line 43: Import not using app/ structure
+   Content: from tests.test_helpers.mock_user_helper import MockUserHelper, create_test_user_with_platforms, cleanup_test_user
+
+
+📁 tests/admin/test_platform_management.py
+   Line 24: Import not using app/ structure
+   Content: from tests.test_helpers import create_test_user_with_platforms, cleanup_test_user
+
+
+📁 tests/admin/test_responsiveness_dashboard.py
+   Line 22: Import not using app/ structure
+   Content: from tests.test_helpers import create_test_user_with_platforms, cleanup_test_user
+
+
+📁 tests/fixtures/platform_fixtures.py
+   Line 15: Import not using app/ structure
+   Content: from sqlalchemy.orm import sessionmaker
+
+
+📁 tests/frontend/test_dashboard_notifications.py
+   Line 123: Import not using app/ structure
+   Content: from dashboard_notification_handlers import DashboardNotificationHandlers
+
+
+📁 tests/frontend/test_login_functionality.py
+   Line 20: Import not using app/ structure
+   Content: from unified_session_manager import UnifiedSessionManager as SessionManager
+
+   Line 201: Import not using app/ structure
+   Content: from unified_session_manager import UnifiedSessionManager as SessionManager
+
+   Line 364: Import not using app/ structure
+   Content: from flask import session
+
+
+📁 tests/frontend/test_progress_bar_javascript.py
+   Line 18: Import not using app/ structure
+   Content: from tests.test_helpers import create_test_user_with_platforms, cleanup_test_user
+
+
+📁 tests/integration/test_add_user_functionality_fixed.py
+   Line 12: Import not using app/ structure
+   Content: from database_manager_test_utils import patch_web_app_database_manager, create_mock_user, create_mock_platform_connection
+
+
+📁 tests/integration/test_admin_user_management.py
+   Line 19: Import not using app/ structure
+   Content: from tests.test_helpers import create_test_user_with_platforms, cleanup_test_user
+
+
+📁 tests/integration/test_auth_flow.py
+   Line 28: Import not using app/ structure
+   Content: from unified_session_manager import UnifiedSessionManager as SessionManager
+
+
+📁 tests/integration/test_cross_tab_functionality.py
+   Line 25: Import not using app/ structure
+   Content: from unified_session_manager import UnifiedSessionManager as SessionManager
+
+   Line 26: Import not using app/ structure
+   Content: from tests.test_helpers import create_test_user_with_platforms, cleanup_test_user
+
+
+📁 tests/integration/test_dashboard_access_integration.py
+   Line 36: Import not using app/ structure
+   Content: from request_scoped_session_manager import RequestScopedSessionManager
+
+   Line 37: Import not using app/ structure
+   Content: from session_manager_v2 import SessionManagerV2 as SessionManager
+
+   Line 39: Import not using app/ structure
+   Content: from session_aware_user import SessionAwareUser
+
+   Line 218: Import not using app/ structure
+   Content: from session_aware_decorators import with_db_session, require_platform_context
+
+
+📁 tests/integration/test_dashboard_session_management.py
+   Line 33: Import not using app/ structure
+   Content: from request_scoped_session_manager import RequestScopedSessionManager
+
+   Line 34: Import not using app/ structure
+   Content: from session_manager_v2 import SessionManagerV2 as SessionManager
+
+   Line 112: Import not using app/ structure
+   Content: from session_aware_decorators import with_db_session, require_platform_context
+
+   Line 141: Import not using app/ structure
+   Content: from session_aware_user import SessionAwareUser
+
+   Line 150: Import not using app/ structure
+   Content: from flask import session
+
+   Line 428: Import not using app/ structure
+   Content: from session_aware_decorators import with_db_session, require_platform_context
+
+
+📁 tests/integration/test_detached_instance_fix_flask_final.py
+   Line 32: Import not using app/ structure
+   Content: from request_scoped_session_manager import RequestScopedSessionManager
+
+   Line 33: Import not using app/ structure
+   Content: from session_aware_user import SessionAwareUser
+
+   Line 35: Import not using app/ structure
+   Content: from session_error_handlers import SessionErrorHandler, with_session_error_handling
+
+   Line 37: Import not using app/ structure
+   Content: from session_error_logger import SessionErrorLogger
+
+
+📁 tests/integration/test_detached_instance_fix_flask_integration.py
+   Line 24: Import not using app/ structure
+   Content: from tests.test_helpers import create_test_user_with_platforms, cleanup_test_user, MockUserHelper
+
+   Line 30: Import not using app/ structure
+   Content: from request_scoped_session_manager import RequestScopedSessionManager
+
+   Line 31: Import not using app/ structure
+   Content: from session_aware_user import SessionAwareUser
+
+   Line 33: Import not using app/ structure
+   Content: from session_error_handlers import SessionErrorHandler, with_session_error_handling
+
+   Line 35: Import not using app/ structure
+   Content: from session_error_logger import SessionErrorLogger
+
+   Line 104: Import not using app/ structure
+   Content: from tests.test_helpers.session_test_isolation import SessionTestIsolation
+
+
+📁 tests/integration/test_detached_instance_fix_simple_flask.py
+   Line 26: Import not using app/ structure
+   Content: from request_scoped_session_manager import RequestScopedSessionManager
+
+   Line 27: Import not using app/ structure
+   Content: from session_aware_user import SessionAwareUser
+
+   Line 29: Import not using app/ structure
+   Content: from session_error_handlers import SessionErrorHandler
+
+   Line 31: Import not using app/ structure
+   Content: from session_error_logger import SessionErrorLogger
+
+
+📁 tests/integration/test_detached_instance_fix_web_routes.py
+   Line 23: Import not using app/ structure
+   Content: from tests.test_helpers import create_test_user_with_platforms, cleanup_test_user, MockUserHelper
+
+   Line 29: Import not using app/ structure
+   Content: from request_scoped_session_manager import RequestScopedSessionManager
+
+   Line 30: Import not using app/ structure
+   Content: from session_aware_user import SessionAwareUser
+
+   Line 32: Import not using app/ structure
+   Content: from session_error_handlers import register_session_error_handlers
+
+   Line 34: Import not using app/ structure
+   Content: from session_error_logger import initialize_session_error_logging
+
+   Line 90: Import not using app/ structure
+   Content: from session_error_handlers import with_session_error_handling
+
+   Line 91: Import not using app/ structure
+   Content: from session_aware_decorators import with_db_session, require_platform_context
+
+   Line 431: Import not using app/ structure
+   Content: from session_error_handlers import with_session_error_handling
+
+   Line 490: Import not using app/ structure
+   Content: from session_error_handlers import with_session_error_handling
+
+   Line 491: Import not using app/ structure
+   Content: from session_aware_decorators import with_db_session
+
+   Line 536: Import not using app/ structure
+   Content: from session_error_handlers import with_session_error_handling
+
+
+📁 tests/integration/test_enhanced_review_workflow_integration.py
+   Line 30: Import not using app/ structure
+   Content: from tests.test_helpers import create_test_user_with_platforms, cleanup_test_user
+
+
+📁 tests/integration/test_feature_flag_enforcement.py
+   Line 29: Import not using app/ structure
+   Content: from advanced_monitoring_service import AdvancedMonitoringService
+
+
+📁 tests/integration/test_flask_redis_session_configuration.py
+   Line 22: Import not using app/ structure
+   Content: from flask_redis_session_interface import FlaskRedisSessionInterface, RedisSession
+
+
+📁 tests/integration/test_gdpr_compliance.py
+   Line 20: Import not using app/ structure
+   Content: from tests.test_helpers import create_test_user_with_platforms, cleanup_test_user
+
+
+📁 tests/integration/test_landing_page_final_integration.py
+   Line 28: Import not using app/ structure
+   Content: from tests.test_helpers import create_test_user_with_platforms, cleanup_test_user
+
+
+📁 tests/integration/test_landing_page_integration.py
+   Line 30: Import not using app/ structure
+   Content: from tests.test_helpers import create_test_user_with_platforms, cleanup_test_user
+
+
+📁 tests/integration/test_login_session_management.py
+   Line 36: Import not using app/ structure
+   Content: from request_scoped_session_manager import RequestScopedSessionManager
+
+   Line 37: Import not using app/ structure
+   Content: from session_manager_v2 import SessionManagerV2 as SessionManager
+
+   Line 38: Import not using app/ structure
+   Content: from unified_session_manager import get_current_platform_context
+
+   Line 39: Import not using app/ structure
+   Content: from session_aware_user import SessionAwareUser
+
+
+📁 tests/integration/test_main_route_integration.py
+   Line 13: Import not using app/ structure
+   Content: from flask import Flask, session
+
+
+📁 tests/integration/test_maintenance_mode_end_to_end.py
+   Line 37: Import not using app/ structure
+   Content: from session_manager_v2 import SessionManagerV2
+
+   Line 39: Import not using app/ structure
+   Content: from tests.test_helpers.mock_user_helper import create_test_user_with_platforms, cleanup_test_user
+
+
+📁 tests/integration/test_maintenance_mode_failure_scenarios.py
+   Line 38: Import not using app/ structure
+   Content: from tests.test_helpers.mock_user_helper import create_test_user_with_platforms, cleanup_test_user
+
+
+📁 tests/integration/test_multi_tenant_end_to_end.py
+   Line 30: Import not using app/ structure
+   Content: from tests.test_helpers.mock_user_helper import MockUserHelper, create_test_user_with_platforms, cleanup_test_user
+
+
+📁 tests/integration/test_notification_error_handling_recovery.py
+   Line 29: Import not using app/ structure
+   Content: from notification_message_router import NotificationMessageRouter
+
+
+📁 tests/integration/test_notification_message_router_integration.py
+   Line 17: Import not using app/ structure
+   Content: from notification_message_router import NotificationMessageRouter
+
+
+📁 tests/integration/test_notification_system_final_integration.py
+   Line 36: Import not using app/ structure
+   Content: from notification_message_router import NotificationMessageRouter
+
+   Line 38: Import not using app/ structure
+   Content: from page_notification_integrator import PageNotificationIntegrator
+
+
+📁 tests/integration/test_notification_websocket_integration.py
+   Line 30: Import not using app/ structure
+   Content: from notification_message_router import NotificationMessageRouter
+
+
+📁 tests/integration/test_page_notification_integration.py
+   Line 16: Import not using app/ structure
+   Content: from flask import Flask, session
+
+   Line 26: Import not using app/ structure
+   Content: from page_notification_integrator import PageNotificationIntegrator, PageType, PageNotificationConfig
+
+
+📁 tests/integration/test_password_reset_workflow.py
+   Line 18: Import not using app/ structure
+   Content: from tests.test_helpers import create_test_user_with_platforms, cleanup_test_user
+
+
+📁 tests/integration/test_platform_context.py
+   Line 16: Import not using app/ structure
+   Content: from unified_session_manager import UnifiedSessionManager as SessionManager
+
+
+📁 tests/integration/test_platform_switching_root.py
+   Line 17: Import not using app/ structure
+   Content: from unified_session_manager import UnifiedSessionManager as SessionManager
+
+
+📁 tests/integration/test_platform_switching_session_management.py
+   Line 16: Import not using app/ structure
+   Content: from web_app import api_switch_platform
+
+   Line 30: Import not using app/ structure
+   Content: from web_app import api_switch_platform
+
+   Line 43: Import not using app/ structure
+   Content: from web_app import api_switch_platform
+
+   Line 57: Import not using app/ structure
+   Content: from web_app import api_switch_platform
+
+   Line 69: Import not using app/ structure
+   Content: from web_app import api_switch_platform
+
+   Line 80: Import not using app/ structure
+   Content: from web_app import api_switch_platform
+
+   Line 93: Import not using app/ structure
+   Content: from web_app import api_switch_platform
+
+   Line 106: Import not using app/ structure
+   Content: from web_app import api_switch_platform
+
+   Line 128: Import not using app/ structure
+   Content: from web_app import api_switch_platform, request_session_manager, session_manager
+
+   Line 129: Import not using app/ structure
+   Content: from session_aware_decorators import with_db_session
+
+
+📁 tests/integration/test_responsiveness_admin_dashboard_integration.py
+   Line 25: Import not using app/ structure
+   Content: from tests.test_helpers import create_test_user_with_platforms, cleanup_test_user
+
+
+📁 tests/integration/test_responsiveness_error_recovery_integration.py
+   Line 28: Import not using app/ structure
+   Content: from session_error_handling import SessionErrorHandler
+
+
+📁 tests/integration/test_session_consolidation_final_e2e.py
+   Line 18: Import not using app/ structure
+   Content: from session_manager_v2 import SessionManagerV2 as SessionManager
+
+   Line 19: Import not using app/ structure
+   Content: from unified_session_manager import SessionValidationError
+
+   Line 20: Import not using app/ structure
+   Content: from redis_session_middleware import get_current_session_context, get_current_session_id, get_current_user_id, get_current_platform_id
+
+   Line 200: Import not using app/ structure
+   Content: from flask import session as flask_session
+
+
+📁 tests/integration/test_session_consolidation_integration.py
+   Line 23: Import not using app/ structure
+   Content: from tests.test_helpers import create_test_user_with_platforms, cleanup_test_user
+
+   Line 58: Import not using app/ structure
+   Content: from session_manager_v2 import SessionManagerV2
+
+   Line 59: Import not using app/ structure
+   Content: from session_cookie_manager import create_session_cookie_manager
+
+   Line 60: Import not using app/ structure
+   Content: from redis_session_middleware import get_current_session_context, get_current_session_id
+
+   Line 61: Import not using app/ structure
+   Content: from session_security import create_session_security_manager
+
+   Line 62: Import not using app/ structure
+   Content: from session_state_api import create_session_state_routes
+
+   Line 90: Import not using app/ structure
+   Content: from redis_session_middleware import get_current_session_context, get_current_session_id
+
+   Line 141: Import not using app/ structure
+   Content: from redis_session_middleware import update_session_platform
+
+   Line 423: Import not using app/ structure
+   Content: from tests.test_helpers import create_test_user_with_platforms, cleanup_test_user
+
+   Line 458: Import not using app/ structure
+   Content: from unified_session_manager import UnifiedSessionManager
+
+   Line 459: Import not using app/ structure
+   Content: from session_cookie_manager import create_session_cookie_manager
+
+   Line 460: Import not using app/ structure
+   Content: from redis_session_middleware import get_current_session_context, get_current_session_id
+
+   Line 461: Import not using app/ structure
+   Content: from session_security import create_session_security_manager
+
+   Line 462: Import not using app/ structure
+   Content: from session_state_api import create_session_state_routes
+
+   Line 490: Import not using app/ structure
+   Content: from redis_session_middleware import get_current_session_context, get_current_session_id
+
+   Line 541: Import not using app/ structure
+   Content: from redis_session_middleware import update_session_platform
+
+
+📁 tests/integration/test_session_creation.py
+   Line 9: Import not using app/ structure
+   Content: from unified_session_manager import UnifiedSessionManager
+
+
+📁 tests/integration/test_session_decorators_integration.py
+   Line 11: Import not using app/ structure
+   Content: from session_aware_decorators import with_db_session, require_platform_context
+
+   Line 12: Import not using app/ structure
+   Content: from request_scoped_session_manager import RequestScopedSessionManager
+
+   Line 13: Import not using app/ structure
+   Content: from session_aware_user import SessionAwareUser
+
+
+📁 tests/integration/test_session_detection_integration.py
+   Line 14: Import not using app/ structure
+   Content: from flask import Flask, session, request
+
+   Line 19: Import not using app/ structure
+   Content: from utils.session_detection import has_previous_session, detect_previous_session
+
+
+📁 tests/integration/test_session_functionality.py
+   Line 29: Import not using app/ structure
+   Content: from redis_session_backend import RedisSessionBackend
+
+   Line 30: Import not using app/ structure
+   Content: from session_manager_v2 import SessionManagerV2
+
+   Line 31: Import not using app/ structure
+   Content: from session_middleware_v2 import create_user_session
+
+   Line 103: Import not using app/ structure
+   Content: from redis_session_backend import RedisSessionBackend
+
+   Line 104: Import not using app/ structure
+   Content: from session_manager_v2 import SessionManagerV2
+
+   Line 195: Import not using app/ structure
+   Content: from redis_session_backend import RedisSessionBackend
+
+   Line 196: Import not using app/ structure
+   Content: from session_manager_v2 import SessionManagerV2
+
+   Line 263: Import not using app/ structure
+   Content: from redis_session_backend import RedisSessionBackend
+
+   Line 264: Import not using app/ structure
+   Content: from session_manager_v2 import SessionManagerV2
+
+
+📁 tests/integration/test_session_integration.py
+   Line 17: Import not using app/ structure
+   Content: from unified_session_manager import UnifiedSessionManager as SessionManager, get_current_platform_context
+
+
+📁 tests/integration/test_session_management_comprehensive.py
+   Line 23: Import not using app/ structure
+   Content: from request_scoped_session_manager import RequestScopedSessionManager
+
+   Line 24: Import not using app/ structure
+   Content: from session_aware_user import SessionAwareUser
+
+   Line 26: Import not using app/ structure
+   Content: from safe_template_context import safe_template_context, _get_safe_user_data, _get_safe_platforms_data
+
+   Line 28: Import not using app/ structure
+   Content: from tests.test_helpers import create_test_user_with_platforms, cleanup_test_user
+
+
+📁 tests/integration/test_session_management_e2e.py
+   Line 23: Import not using app/ structure
+   Content: from unified_session_manager import UnifiedSessionManager as SessionManager
+
+   Line 24: Import not using app/ structure
+   Content: from request_scoped_session_manager import RequestScopedSessionManager
+
+
+📁 tests/integration/test_session_management_fixes_integration.py
+   Line 23: Import not using app/ structure
+   Content: from tests.test_helpers import create_test_user_with_platforms, cleanup_test_user
+
+   Line 24: Import not using app/ structure
+   Content: from tests.test_helpers.session_test_isolation import SessionTestIsolation
+
+   Line 25: Import not using app/ structure
+   Content: from tests.test_helpers.session_error_helpers import SessionErrorTestHelper
+
+   Line 26: Import not using app/ structure
+   Content: from session_error_logger import SessionErrorLogger
+
+   Line 27: Import not using app/ structure
+   Content: from session_error_handlers import SessionErrorHandler
+
+   Line 28: Import not using app/ structure
+   Content: from request_scoped_session_manager import RequestScopedSessionManager
+
+   Line 30: Import not using app/ structure
+   Content: from session_state_manager import SessionStateManager, get_session_state_manager
+
+   Line 257: Import not using app/ structure
+   Content: from session_state_manager import SessionState
+
+
+📁 tests/integration/test_simple_session.py
+   Line 12: Import not using app/ structure
+   Content: from unified_session_manager import UnifiedSessionManager as SessionManager
+
+
+📁 tests/integration/test_user_registration_routes.py
+   Line 17: Import not using app/ structure
+   Content: from sqlalchemy.orm import sessionmaker
+
+
+📁 tests/integration/test_user_registration_workflow.py
+   Line 19: Import not using app/ structure
+   Content: from tests.test_helpers import create_test_user_with_platforms, cleanup_test_user
+
+
+📁 tests/integration/test_websocket_production_features.py
+   Line 41: Import not using app/ structure
+   Content: from websocket_production_monitoring import WebSocketProductionMonitor
+
+
+📁 tests/migration/test_maintenance_notification_migration.py
+   Line 43: Import not using app/ structure
+   Content: from admin_maintenance_notification_handler import AdminMaintenanceNotificationHandler
+
+   Line 56: Import not using app/ structure
+   Content: from admin_maintenance_notification_handler import (
+
+   Line 93: Import not using app/ structure
+   Content: from admin_maintenance_notification_handler import AdminMaintenanceNotificationHandler
+
+   Line 120: Import not using app/ structure
+   Content: from admin_maintenance_notification_handler import AdminMaintenanceNotificationHandler
+
+   Line 145: Import not using app/ structure
+   Content: from admin_maintenance_notification_handler import AdminMaintenanceNotificationHandler
+
+   Line 171: Import not using app/ structure
+   Content: from admin_maintenance_notification_handler import AdminMaintenanceNotificationHandler
+
+   Line 200: Import not using app/ structure
+   Content: from maintenance_progress_websocket_handler import MaintenanceProgressWebSocketHandler
+
+   Line 213: Import not using app/ structure
+   Content: from maintenance_progress_websocket_handler import MaintenanceProgressWebSocketHandler
+
+   Line 241: Import not using app/ structure
+   Content: from maintenance_progress_websocket_handler import MaintenanceProgressWebSocketHandler
+
+   Line 275: Import not using app/ structure
+   Content: from maintenance_progress_websocket_handler import MaintenanceProgressWebSocketHandler
+
+   Line 305: Import not using app/ structure
+   Content: from maintenance_progress_websocket_handler import MaintenanceProgressWebSocketHandler
+
+   Line 337: Import not using app/ structure
+   Content: from maintenance_notification_integration_service import MaintenanceNotificationIntegrationService
+
+   Line 338: Import not using app/ structure
+   Content: from maintenance_progress_websocket_handler import MaintenanceProgressWebSocketHandler
+
+   Line 357: Import not using app/ structure
+   Content: from maintenance_notification_integration_service import (
+
+   Line 362: Import not using app/ structure
+   Content: from maintenance_progress_websocket_handler import MaintenanceProgressWebSocketHandler
+
+   Line 397: Import not using app/ structure
+   Content: from maintenance_notification_integration_service import (
+
+   Line 402: Import not using app/ structure
+   Content: from maintenance_progress_websocket_handler import MaintenanceProgressWebSocketHandler
+
+   Line 479: Import not using app/ structure
+   Content: from admin_maintenance_notification_handler import AdminMaintenanceNotificationHandler
+
+
+📁 tests/monitoring/test_dashboard_monitoring_routes.py
+   Line 23: Import not using app/ structure
+   Content: from monitoring_dashboard_service import ReportType, ReportFormat
+
+   Line 190: Import not using app/ structure
+   Content: from monitoring_dashboard_service import DashboardAlert
+
+
+📁 tests/monitoring/test_monitoring_dashboard_service.py
+   Line 19: Import not using app/ structure
+   Content: from monitoring_dashboard_service import (
+
+
+📁 tests/performance/run_performance_tests.py
+   Line 27: Import not using app/ structure
+   Content: from tests.performance.test_notification_performance import NotificationPerformanceTestSuite
+
+
+📁 tests/performance/test_database_optimizations.py
+   Line 16: Import not using app/ structure
+   Content: from sqlalchemy.orm import sessionmaker
+
+
+📁 tests/performance/test_maintenance_mode_load.py
+   Line 37: Import not using app/ structure
+   Content: from tests.test_helpers.mock_user_helper import create_test_user_with_platforms, cleanup_test_user
+
+
+📁 tests/performance/test_memory_usage.py
+   Line 27: Import not using app/ structure
+   Content: from tests.test_helpers import create_test_user_with_platforms, cleanup_test_user
+
+   Line 37: Import not using app/ structure
+   Content: from notification_message_router import NotificationMessageRouter
+
+
+📁 tests/performance/test_notification_performance.py
+   Line 28: Import not using app/ structure
+   Content: from tests.test_helpers import create_test_user_with_platforms, cleanup_test_user
+
+   Line 38: Import not using app/ structure
+   Content: from notification_message_router import NotificationMessageRouter
+
+
+📁 tests/performance/test_platform_load.py
+   Line 13: Import not using app/ structure
+   Content: from tests.fixtures.platform_fixtures import PlatformTestCase
+
+
+📁 tests/performance/test_platform_queries.py
+   Line 12: Import not using app/ structure
+   Content: from tests.fixtures.platform_fixtures import PlatformTestCase
+
+
+📁 tests/performance/test_responsiveness_performance_integration.py
+   Line 26: Import not using app/ structure
+   Content: from tests.test_helpers import create_test_user_with_platforms, cleanup_test_user
+
+
+📁 tests/performance/test_session_load.py
+   Line 26: Import not using app/ structure
+   Content: from tests.test_helpers import create_test_user_with_platforms, cleanup_test_user
+
+
+📁 tests/performance/test_session_performance_optimization.py
+   Line 19: Import not using app/ structure
+   Content: from tests.test_helpers import create_test_user_with_platforms, cleanup_test_user
+
+   Line 111: Import not using app/ structure
+   Content: from unified_session_manager import UnifiedSessionManager as SessionManager
+
+   Line 133: Import not using app/ structure
+   Content: from unified_session_manager import UnifiedSessionManager as SessionManager
+
+   Line 158: Import not using app/ structure
+   Content: from unified_session_manager import UnifiedSessionManager as SessionManager
+
+   Line 193: Import not using app/ structure
+   Content: from unified_session_manager import UnifiedSessionManager as SessionManager
+
+   Line 217: Import not using app/ structure
+   Content: from unified_session_manager import UnifiedSessionManager as SessionManager
+
+   Line 263: Import not using app/ structure
+   Content: from unified_session_manager import UnifiedSessionManager as SessionManager
+
+   Line 335: Import not using app/ structure
+   Content: from unified_session_manager import UnifiedSessionManager as SessionManager
+
+   Line 365: Import not using app/ structure
+   Content: from unified_session_manager import UnifiedSessionManager as SessionManager
+
+
+📁 tests/performance/test_user_management_performance.py
+   Line 22: Import not using app/ structure
+   Content: from tests.test_helpers import create_test_user_with_platforms, cleanup_test_user
+
+
+📁 tests/performance/test_websocket_load.py
+   Line 31: Import not using app/ structure
+   Content: from tests.test_helpers import create_test_user_with_platforms, cleanup_test_user
+
+
+📁 tests/playwright/utils/0830_17_52_reset_accounts.py
+   Line 17: Import not using app/ structure
+   Content: from werkzeug.security import check_password_hash, generate_password_hash
+
+
+📁 tests/scripts/debug_redis_session_creation.py
+   Line 19: Import not using app/ structure
+   Content: from session_manager_v2 import SessionManagerV2
+
+   Line 20: Import not using app/ structure
+   Content: from redis_session_backend import RedisSessionBackend
+
+
+📁 tests/scripts/run_css_security_tests.py
+   Line 19: Import not using app/ structure
+   Content: from tests.scripts.css_security_scanner import CSSSecurityScanner
+
+   Line 37: Import not using app/ structure
+   Content: from tests.security.test_css_security_enhancement import TestCSSSecurityEnhancement
+
+   Line 45: Import not using app/ structure
+   Content: from tests.security.test_csp_compliance import TestCSPCompliance
+
+
+📁 tests/scripts/run_maintenance_mode_comprehensive_tests.py
+   Line 26: Import not using app/ structure
+   Content: from tests.integration.test_maintenance_mode_end_to_end import TestMaintenanceModeEndToEnd
+
+   Line 27: Import not using app/ structure
+   Content: from tests.performance.test_maintenance_mode_load import TestMaintenanceModeLoad
+
+   Line 28: Import not using app/ structure
+   Content: from tests.integration.test_maintenance_mode_failure_scenarios import TestMaintenanceModeFailureScenarios
+
+   Line 31: Import not using app/ structure
+   Content: from tests.unit.test_enhanced_maintenance_mode_service import TestEnhancedMaintenanceModeService
+
+   Line 32: Import not using app/ structure
+   Content: from tests.unit.test_enhanced_maintenance_mode_test_mode import TestEnhancedMaintenanceModeTestMode
+
+   Line 33: Import not using app/ structure
+   Content: from tests.unit.test_maintenance_operation_classifier import TestMaintenanceOperationClassifier
+
+   Line 34: Import not using app/ structure
+   Content: from tests.unit.test_maintenance_session_manager import TestMaintenanceSessionManager
+
+   Line 35: Import not using app/ structure
+   Content: from tests.unit.test_maintenance_status_api import TestMaintenanceStatusAPI
+
+   Line 36: Import not using app/ structure
+   Content: from tests.unit.test_emergency_maintenance_handler import TestEmergencyMaintenanceHandler
+
+   Line 37: Import not using app/ structure
+   Content: from tests.admin.test_maintenance_mode_middleware import TestMaintenanceModeMiddleware
+
+   Line 38: Import not using app/ structure
+   Content: from tests.admin.test_maintenance_mode_interface import TestMaintenanceModeAdminInterface
+
+
+📁 tests/scripts/run_multi_tenant_comprehensive_tests.py
+   Line 35: Import not using app/ structure
+   Content: from tests.test_multi_tenant_security_comprehensive import (
+
+
+📁 tests/scripts/test_websocket_debugging_tools.py
+   Line 25: Import not using app/ structure
+   Content: from websocket_monitoring_dashboard import get_connection_monitor, create_monitoring_dashboard
+
+   Line 26: Import not using app/ structure
+   Content: from websocket_health_checker import create_health_checker, setup_basic_alerts
+
+
+📁 tests/scripts/validate_maintenance_mode_tests.py
+   Line 94: Import not using app/ structure
+   Content: from enhanced_maintenance_mode_service import EnhancedMaintenanceModeService, MaintenanceMode
+
+   Line 150: Import not using app/ structure
+   Content: from tests.scripts.run_maintenance_mode_comprehensive_tests import MaintenanceModeTestRunner
+
+
+📁 tests/security/run_notification_security_tests.py
+   Line 26: Import not using app/ structure
+   Content: from test_notification_authentication_authorization import TestNotificationAuthenticationAuthorization
+
+   Line 27: Import not using app/ structure
+   Content: from test_notification_security_validation import (
+
+   Line 33: Import not using app/ structure
+   Content: from test_notification_abuse_detection import TestNotificationAbuseDetection
+
+   Line 36: Import not using app/ structure
+   Content: from test_notification_authentication_security import TestNotificationAuthenticationSecurity
+
+   Line 37: Import not using app/ structure
+   Content: from test_notification_authorization_security import TestNotificationAuthorizationSecurity
+
+   Line 38: Import not using app/ structure
+   Content: from test_notification_input_validation_security import TestNotificationInputValidationSecurity
+
+   Line 39: Import not using app/ structure
+   Content: from test_notification_xss_prevention_security import TestNotificationXSSPreventionSecurity
+
+   Line 40: Import not using app/ structure
+   Content: from test_notification_rate_limiting_security import TestNotificationRateLimitingSecurity
+
+
+📁 tests/security/test_comprehensive_security.py
+   Line 17: Import not using app/ structure
+   Content: from security_middleware import SecurityMiddleware
+
+   Line 19: Import not using app/ structure
+   Content: from security_monitoring import SecurityMonitor, SecurityEventType, SecurityEventSeverity
+
+   Line 250: Import not using app/ structure
+   Content: from security_middleware import hash_password_secure, verify_password_secure
+
+   Line 267: Import not using app/ structure
+   Content: from security_middleware import generate_secure_token
+
+   Line 281: Import not using app/ structure
+   Content: from security_middleware import sanitize_filename
+
+
+📁 tests/security/test_credential_security.py
+   Line 13: Import not using app/ structure
+   Content: from tests.fixtures.platform_fixtures import PlatformTestCase
+
+
+📁 tests/security/test_csrf_security_suite.py
+   Line 20: Import not using app/ structure
+   Content: from flask import Flask, session, request, g
+
+   Line 39: Import not using app/ structure
+   Content: from tests.test_helpers import create_test_user_with_platforms, cleanup_test_user
+
+
+📁 tests/security/test_gdpr_compliance.py
+   Line 22: Import not using app/ structure
+   Content: from tests.test_helpers import create_test_user_with_platforms, cleanup_test_user
+
+
+📁 tests/security/test_notification_abuse_detection.py
+   Line 30: Import not using app/ structure
+   Content: from notification_message_router import NotificationMessageRouter
+
+
+📁 tests/security/test_notification_authentication_authorization.py
+   Line 28: Import not using app/ structure
+   Content: from notification_message_router import NotificationMessageRouter
+
+
+📁 tests/security/test_notification_authorization_security.py
+   Line 27: Import not using app/ structure
+   Content: from notification_message_router import NotificationMessageRouter
+
+
+📁 tests/security/test_notification_security_validation.py
+   Line 32: Import not using app/ structure
+   Content: from notification_message_router import NotificationMessageRouter
+
+
+📁 tests/security/test_platform_access.py
+   Line 11: Import not using app/ structure
+   Content: from tests.fixtures.platform_fixtures import PlatformTestCase
+
+
+📁 tests/security/test_platform_encryption.py
+   Line 19: Import not using app/ structure
+   Content: from tests.fixtures.platform_fixtures import PlatformTestCase
+
+
+📁 tests/security/test_security_comprehensive.py
+   Line 21: Import not using app/ structure
+   Content: from flask import Flask, request, session
+
+   Line 60: Import not using app/ structure
+   Content: from security_middleware import validate_csrf_token
+
+   Line 211: Import not using app/ structure
+   Content: from security_middleware import SecurityMiddleware
+
+
+📁 tests/security/test_session_security.py
+   Line 18: Import not using app/ structure
+   Content: from session_manager_v2 import SessionManagerV2 as SessionManager
+
+
+📁 tests/security/test_user_management_security.py
+   Line 23: Import not using app/ structure
+   Content: from tests.test_helpers import create_test_user_with_platforms, cleanup_test_user
+
+
+📁 tests/test_helpers/__init__.py
+   Line 55: Import not using app/ structure
+   Content: from .platform_mock_helpers import (
+
+
+📁 tests/test_helpers/test_mock_user_example.py
+   Line 17: Import not using app/ structure
+   Content: from tests.test_helpers import create_test_user_with_platforms, cleanup_test_user
+
+
+📁 tests/unit/mysql_test_config.py
+   Line 25: Import not using app/ structure
+   Content: from sqlalchemy.orm import sessionmaker
+
+
+📁 tests/unit/test_database_context_middleware.py
+   Line 7: Import not using app/ structure
+   Content: from flask import Flask, g, session
+
+   Line 9: Import not using app/ structure
+   Content: from request_scoped_session_manager import RequestScopedSessionManager
+
+
+📁 tests/unit/test_database_fix.py
+   Line 10: Import not using app/ structure
+   Content: from unified_session_manager import UnifiedSessionManager
+
+
+📁 tests/unit/test_emergency_maintenance_handler.py
+   Line 189: Import not using app/ structure
+   Content: from maintenance_session_manager import SessionInvalidationError
+
+
+📁 tests/unit/test_enhanced_session_monitoring_responsiveness.py
+   Line 50: Import not using app/ structure
+   Content: from session_monitoring import SessionMonitor
+
+   Line 588: Import not using app/ structure
+   Content: from session_monitoring import SessionMonitor
+
+
+📁 tests/unit/test_feature_flag_notification_system.py
+   Line 22: Import not using app/ structure
+   Content: from feature_flag_notification_system import (
+
+
+📁 tests/unit/test_gdpr_service.py
+   Line 15: Import not using app/ structure
+   Content: from sqlalchemy.orm import sessionmaker
+
+
+📁 tests/unit/test_landing_page_comprehensive.py
+   Line 27: Import not using app/ structure
+   Content: from flask import Flask, session, request
+
+   Line 30: Import not using app/ structure
+   Content: from utils.session_detection import SessionDetectionResult, has_previous_session, detect_previous_session
+
+
+📁 tests/unit/test_landing_page_security.py
+   Line 69: Import not using app/ structure
+   Content: from utils.error_responses import handle_security_error, ErrorCodes
+
+
+📁 tests/unit/test_middleware_context.py
+   Line 17: Import not using app/ structure
+   Content: from unified_session_manager import UnifiedSessionManager as SessionManager, get_current_platform_context, get_current_platform
+
+   Line 18: Import not using app/ structure
+   Content: from redis_session_middleware import get_current_session_context, get_current_session_id
+
+   Line 103: Import not using app/ structure
+   Content: from unified_session_manager import UnifiedSessionManager
+
+
+📁 tests/unit/test_middleware_simple.py
+   Line 17: Import not using app/ structure
+   Content: from unified_session_manager import UnifiedSessionManager as SessionManager, get_current_platform_context, get_current_platform
+
+   Line 18: Import not using app/ structure
+   Content: from redis_session_middleware import get_current_session_context, get_current_session_id
+
+   Line 94: Import not using app/ structure
+   Content: from unified_session_manager import UnifiedSessionManager
+
+   Line 95: Import not using app/ structure
+   Content: from session_cookie_manager import create_session_cookie_manager
+
+   Line 145: Import not using app/ structure
+   Content: from unified_session_manager import UnifiedSessionManager
+
+   Line 146: Import not using app/ structure
+   Content: from session_cookie_manager import create_session_cookie_manager
+
+   Line 164: Import not using app/ structure
+   Content: from unified_session_manager import UnifiedSessionManager
+
+   Line 165: Import not using app/ structure
+   Content: from session_cookie_manager import create_session_cookie_manager
+
+   Line 189: Import not using app/ structure
+   Content: from session_cookie_manager import create_session_cookie_manager
+
+   Line 212: Import not using app/ structure
+   Content: from unified_session_manager import UnifiedSessionManager
+
+   Line 213: Import not using app/ structure
+   Content: from session_cookie_manager import create_session_cookie_manager
+
+   Line 244: Import not using app/ structure
+   Content: from unified_session_manager import UnifiedSessionManager
+
+   Line 245: Import not using app/ structure
+   Content: from session_cookie_manager import create_session_cookie_manager
+
+   Line 271: Import not using app/ structure
+   Content: from unified_session_manager import UnifiedSessionManager
+
+   Line 272: Import not using app/ structure
+   Content: from redis_session_middleware import get_current_session_context
+
+
+📁 tests/unit/test_navigation_modifications.py
+   Line 16: Import not using app/ structure
+   Content: from tests.test_helpers import create_test_user_with_platforms, cleanup_test_user
+
+
+📁 tests/unit/test_notification_message_router.py
+   Line 22: Import not using app/ structure
+   Content: from notification_message_router import NotificationMessageRouter, DeliveryStatus, RetryPolicy
+
+
+📁 tests/unit/test_password_management.py
+   Line 18: Import not using app/ structure
+   Content: from tests.test_helpers import create_test_user_with_platforms, cleanup_test_user
+
+
+📁 tests/unit/test_platform_context_unit.py
+   Line 17: Import not using app/ structure
+   Content: from tests.fixtures.platform_fixtures import PlatformTestCase
+
+
+📁 tests/unit/test_platform_database.py
+   Line 17: Import not using app/ structure
+   Content: from tests.fixtures.platform_fixtures import PlatformTestCase
+
+
+📁 tests/unit/test_platform_models.py
+   Line 19: Import not using app/ structure
+   Content: from tests.fixtures.platform_fixtures import PlatformTestCase, PlatformTestFixtures
+
+
+📁 tests/unit/test_platform_switch_direct.py
+   Line 17: Import not using app/ structure
+   Content: from redis_platform_manager import get_redis_platform_manager
+
+   Line 18: Import not using app/ structure
+   Content: from session_factory import create_session_manager
+
+   Line 180: Import not using app/ structure
+   Content: from redis_session_middleware import update_session_platform
+
+
+📁 tests/unit/test_redis_connection.py
+   Line 123: Import not using app/ structure
+   Content: from session_manager_v2 import SessionManagerV2
+
+
+📁 tests/unit/test_redis_platform_manager.py
+   Line 18: Import not using app/ structure
+   Content: from redis_platform_manager import get_redis_platform_manager
+
+   Line 19: Import not using app/ structure
+   Content: from session_factory import create_session_manager
+
+
+📁 tests/unit/test_redis_session.py
+   Line 50: Import not using app/ structure
+   Content: from flask_redis_session import init_redis_session
+
+   Line 82: Import not using app/ structure
+   Content: from flask_redis_session import RedisSession
+
+   Line 141: Import not using app/ structure
+   Content: from session_manager_v2 import SessionManagerV2
+
+   Line 142: Import not using app/ structure
+   Content: from redis_session_backend import RedisSessionBackend
+
+   Line 172: Import not using app/ structure
+   Content: from session_manager_v2 import SessionManagerV2
+
+   Line 173: Import not using app/ structure
+   Content: from unified_session_manager import UnifiedSessionManager
+
+
+📁 tests/unit/test_redis_session_refactor.py
+   Line 34: Import not using app/ structure
+   Content: from redis_session_backend import RedisSessionBackend
+
+   Line 116: Import not using app/ structure
+   Content: from redis_session_backend import RedisSessionBackend
+
+   Line 117: Import not using app/ structure
+   Content: from session_manager_v2 import SessionManagerV2
+
+   Line 166: Import not using app/ structure
+   Content: from redis_session_backend import RedisSessionBackend
+
+   Line 167: Import not using app/ structure
+   Content: from flask_redis_session_interface import FlaskRedisSessionInterface
+
+
+📁 tests/unit/test_redis_sessions.py
+   Line 17: Import not using app/ structure
+   Content: from session_factory import create_session_manager
+
+   Line 112: Import not using app/ structure
+   Content: from session_factory import create_session_manager
+
+
+📁 tests/unit/test_responsiveness_error_recovery.py
+   Line 33: Import not using app/ structure
+   Content: from session_error_handling import SessionErrorHandler
+
+
+📁 tests/unit/test_session_aware_decorators.py
+   Line 12: Import not using app/ structure
+   Content: from session_aware_decorators import (
+
+
+📁 tests/unit/test_session_cleanup.py
+   Line 17: Import not using app/ structure
+   Content: from session_manager_v2 import SessionManagerV2 as SessionManager
+
+
+📁 tests/unit/test_session_config.py
+   Line 16: Import not using app/ structure
+   Content: from session_config import (
+
+
+📁 tests/unit/test_session_configuration_adapter.py
+   Line 20: Import not using app/ structure
+   Content: from session_configuration_adapter import SessionConfigurationAdapter, create_session_configuration_adapter
+
+
+📁 tests/unit/test_session_consolidation_minimal.py
+   Line 24: Import not using app/ structure
+   Content: from unified_session_manager import UnifiedSessionManager
+
+   Line 32: Import not using app/ structure
+   Content: from session_cookie_manager import SessionCookieManager
+
+   Line 40: Import not using app/ structure
+   Content: from redis_session_middleware import get_current_session_context, get_current_user_id, get_current_platform_id, validate_current_session as is_session_authenticated
+
+   Line 48: Import not using app/ structure
+   Content: from unified_session_manager import UnifiedSessionManager
+
+   Line 70: Import not using app/ structure
+   Content: from session_cookie_manager import SessionCookieManager
+
+   Line 86: Import not using app/ structure
+   Content: from redis_session_middleware import get_current_session_context, get_current_user_id, get_current_platform_id, validate_current_session as is_session_authenticated
+
+   Line 118: Import not using app/ structure
+   Content: from unified_session_manager import UnifiedSessionManager
+
+   Line 119: Import not using app/ structure
+   Content: from session_cookie_manager import SessionCookieManager
+
+   Line 120: Import not using app/ structure
+   Content: from redis_session_middleware import get_current_session_context, get_current_session_id
+
+
+📁 tests/unit/test_session_cookie_manager.py
+   Line 14: Import not using app/ structure
+   Content: from session_cookie_manager import SessionCookieManager, create_session_cookie_manager
+
+
+📁 tests/unit/test_session_decorators_simple.py
+   Line 12: Import not using app/ structure
+   Content: from session_aware_decorators import (
+
+
+📁 tests/unit/test_session_detection.py
+   Line 22: Import not using app/ structure
+   Content: from utils.session_detection import (
+
+
+📁 tests/unit/test_session_detection_basic.py
+   Line 19: Import not using app/ structure
+   Content: from utils.session_detection import SessionDetectionResult
+
+
+📁 tests/unit/test_session_detection_simple.py
+   Line 19: Import not using app/ structure
+   Content: from utils.session_detection import SessionDetectionResult
+
+   Line 84: Import not using app/ structure
+   Content: from utils.session_detection import has_previous_session
+
+   Line 95: Import not using app/ structure
+   Content: from utils.session_detection import has_previous_session
+
+   Line 109: Import not using app/ structure
+   Content: from utils.session_detection import has_previous_session
+
+   Line 122: Import not using app/ structure
+   Content: from utils.session_detection import detect_previous_session
+
+   Line 144: Import not using app/ structure
+   Content: from utils.session_detection import detect_previous_session
+
+   Line 176: Import not using app/ structure
+   Content: from utils.session_detection import _check_flask_login_remember_token
+
+   Line 189: Import not using app/ structure
+   Content: from utils.session_detection import _check_flask_session_data
+
+   Line 206: Import not using app/ structure
+   Content: from utils.session_detection import _check_custom_session_cookies
+
+   Line 228: Import not using app/ structure
+   Content: from utils.session_detection import _check_redis_session_data
+
+   Line 251: Import not using app/ structure
+   Content: from utils.session_detection import _check_session_id_indicators
+
+
+📁 tests/unit/test_session_health_responsiveness.py
+   Line 24: Import not using app/ structure
+   Content: from unified_session_manager import UnifiedSessionManager
+
+
+📁 tests/unit/test_session_maintenance_utilities.py
+   Line 21: Import not using app/ structure
+   Content: from scripts.maintenance.session_cleanup import SessionCleanupService
+
+   Line 22: Import not using app/ structure
+   Content: from scripts.maintenance.session_analytics import SessionAnalytics
+
+   Line 23: Import not using app/ structure
+   Content: from scripts.maintenance.session_db_maintenance import SessionDatabaseMaintenance
+
+
+📁 tests/unit/test_session_management.py
+   Line 17: Import not using app/ structure
+   Content: from session_manager_v2 import SessionManagerV2 as SessionManager
+
+   Line 18: Import not using app/ structure
+   Content: from unified_session_manager import get_current_platform_context
+
+   Line 20: Import not using app/ structure
+   Content: from sqlalchemy.orm import sessionmaker
+
+
+📁 tests/unit/test_session_management_backend.py
+   Line 23: Import not using app/ structure
+   Content: from unified_session_manager import UnifiedSessionManager as SessionManager, SessionDatabaseError, SessionError
+
+   Line 24: Import not using app/ structure
+   Content: from tests.test_helpers import create_test_user_with_platforms, cleanup_test_user
+
+   Line 483: Import not using app/ structure
+   Content: from flask import Flask, jsonify, session
+
+
+📁 tests/unit/test_session_memory_leak_detection.py
+   Line 31: Import not using app/ structure
+   Content: from session_monitoring import SessionMonitor, MemoryMetric
+
+   Line 36: Import not using app/ structure
+   Content: from tests.test_helpers import create_test_user_with_platforms, cleanup_test_user
+
+
+📁 tests/unit/test_template_safe_context.py
+   Line 25: Import not using app/ structure
+   Content: from request_scoped_session_manager import RequestScopedSessionManager
+
+   Line 279: Import not using app/ structure
+   Content: from safe_template_context import _platform_to_safe_dict
+
+   Line 332: Import not using app/ structure
+   Content: from safe_template_context import _query_platforms_fallback
+
+
+📁 tests/unit/test_unified_session_manager.py
+   Line 21: Import not using app/ structure
+   Content: from unified_session_manager import (
+
+   Line 28: Import not using app/ structure
+   Content: from tests.test_helpers import create_test_user_with_platforms, cleanup_test_user
+
+
+📁 tests/unit/test_user_model_methods.py
+   Line 13: Import not using app/ structure
+   Content: from sqlalchemy.orm import sessionmaker
+
+
+📁 tests/unit/test_user_profile_service.py
+   Line 16: Import not using app/ structure
+   Content: from sqlalchemy.orm import sessionmaker
+
+
+📁 tests/unit/test_user_registration_service.py
+   Line 16: Import not using app/ structure
+   Content: from sqlalchemy.orm import sessionmaker
+
+
+📁 tests/unit/test_websocket_auth_handler.py
+   Line 27: Import not using app/ structure
+   Content: from session_manager_v2 import SessionManagerV2
+
+
+📁 tests/user/test_user_profile_notifications.py
+   Line 30: Import not using app/ structure
+   Content: from user_profile_notification_helper import UserProfileNotificationHelper
+
+
+📁 tests/web_caption_generation/test_admin_monitoring.py
+   Line 13: Import not using app/ structure
+   Content: from admin_monitoring import AdminMonitoringService
+
+
+📁 tests/web_caption_generation/test_security_validation.py
+   Line 12: Import not using app/ structure
+   Content: from caption_security import CaptionSecurityManager
+
+
+📁 tests/web_caption_generation/test_web_app_critical.py
+   Line 79: Import not using app/ structure
+   Content: from flask import session
+
+   Line 85: Import not using app/ structure
+   Content: from flask import session
+
+
+📁 tests/web_caption_generation/test_web_caption_generation_service_admin.py
+   Line 26: Import not using app/ structure
+   Content: from tests.test_helpers import create_test_user_with_platforms, cleanup_test_user
+
+
+📁 tests/websocket/test_notification_system.py
+   Line 19: Import not using app/ structure
+   Content: from websocket_notification_system import (
+
+   Line 23: Import not using app/ structure
+   Content: from websocket_notification_delivery import (
+
+   Line 28: Import not using app/ structure
+   Content: from websocket_notification_integration import (
+
+
+📁 tests/websocket/test_websocket_cors_comprehensive.py
+   Line 37: Import not using app/ structure
+   Content: from session_manager_v2 import SessionManagerV2
+
+   Line 38: Import not using app/ structure
+   Content: from redis_session_backend import RedisSessionBackend
+
+
+📁 tests/websocket/test_websocket_integration_scenarios.py
+   Line 38: Import not using app/ structure
+   Content: from session_manager_v2 import SessionManagerV2
+
+
+📁 tests/websocket/test_websocket_network_simulation.py
+   Line 33: Import not using app/ structure
+   Content: from session_manager_v2 import SessionManagerV2
+
+
+📁 tests/websocket/test_websocket_performance_load.py
+   Line 35: Import not using app/ structure
+   Content: from session_manager_v2 import SessionManagerV2
+
+
+📁 tests/websocket/test_websocket_security.py
+   Line 23: Import not using app/ structure
+   Content: from websocket_security_manager import (
+
+
+STATIC_FILES ISSUES (1 found):
+--------------------------------------------------
+
+📁 tests/websocket/test_websocket_bundle.html
+   Line 53: Static file path may be incorrect
+   Content: <script src="static/js/websocket-bundle.js"></script>
+   Path: static/js/websocket-bundle.js
+
+
+INCLUDES ISSUES (72 found):
+--------------------------------------------------
+
+📁 admin/templates/admin/admin_landing.html
+   Line 5: Template include/extends not using organized structure
+   Content: {% extends "base_admin.html" %}
+   Path: base_admin.html
+
+
+📁 admin/templates/admin/storage_dashboard.html
+   Line 5: Template include/extends not using organized structure
+   Content: {% extends "base_admin.html" %}
+   Path: base_admin.html
+
+
+📁 admin/templates/admin/storage_override.html
+   Line 5: Template include/extends not using organized structure
+   Content: {% extends "base_admin.html" %}
+   Path: base_admin.html
+
+
+📁 admin/templates/admin_bulk_actions.html
+   Line 5: Template include/extends not using organized structure
+   Content: {% extends "base_admin.html" %}
+   Path: base_admin.html
+
+
+📁 admin/templates/admin_cleanup.html
+   Line 4: Template include/extends not using organized structure
+   Content: {% extends "base_admin.html" %}
+   Path: base_admin.html
+
+
+📁 admin/templates/admin_help_center.html
+   Line 5: Template include/extends not using organized structure
+   Content: {% extends "base_admin.html" %}
+   Path: base_admin.html
+
+
+📁 admin/templates/admin_job_history.html
+   Line 5: Template include/extends not using organized structure
+   Content: {% extends "base_admin.html" %}
+   Path: base_admin.html
+
+
+📁 admin/templates/admin_job_management.html
+   Line 5: Template include/extends not using organized structure
+   Content: {% extends "base_admin.html" %}
+   Path: base_admin.html
+
+
+📁 admin/templates/admin_maintenance_cleanup_data.html
+   Line 5: Template include/extends not using organized structure
+   Content: {% extends "base_admin.html" %}
+   Path: base_admin.html
+
+
+📁 admin/templates/admin_maintenance_clear_queue.html
+   Line 5: Template include/extends not using organized structure
+   Content: {% extends "base_admin.html" %}
+   Path: base_admin.html
+
+
+📁 admin/templates/admin_maintenance_pause_system.html
+   Line 5: Template include/extends not using organized structure
+   Content: {% extends "base_admin.html" %}
+   Path: base_admin.html
+
+
+📁 admin/templates/admin_maintenance_restart_failed.html
+   Line 5: Template include/extends not using organized structure
+   Content: {% extends "base_admin.html" %}
+   Path: base_admin.html
+
+
+📁 admin/templates/admin_maintenance_resume_system.html
+   Line 5: Template include/extends not using organized structure
+   Content: {% extends "base_admin.html" %}
+   Path: base_admin.html
+
+
+📁 admin/templates/admin_monitoring.html
+   Line 4: Template include/extends not using organized structure
+   Content: {% extends "base_admin.html" %}
+   Path: base_admin.html
+
+
+📁 admin/templates/admin_platform_management.html
+   Line 5: Template include/extends not using organized structure
+   Content: {% extends "base_admin.html" %}
+   Path: base_admin.html
+
+
+📁 admin/templates/admin_system_administration.html
+   Line 5: Template include/extends not using organized structure
+   Content: {% extends "base_admin.html" %}
+   Path: base_admin.html
+
+
+📁 admin/templates/admin_system_logs.html
+   Line 5: Template include/extends not using organized structure
+   Content: {% extends "base_admin.html" %}
+   Path: base_admin.html
+
+
+📁 admin/templates/admin_system_maintenance.html
+   Line 5: Template include/extends not using organized structure
+   Content: {% extends "base_admin.html" %}
+   Path: base_admin.html
+
+
+📁 admin/templates/configuration_management.html
+   Line 5: Template include/extends not using organized structure
+   Content: {% extends "base_admin.html" %}
+   Path: base_admin.html
+
+
+📁 admin/templates/csrf_security_dashboard.html
+   Line 1: Template include/extends not using organized structure
+   Content: {% extends "base_admin.html" %}
+   Path: base_admin.html
+
+
+📁 admin/templates/dashboard.html
+   Line 5: Template include/extends not using organized structure
+   Content: {% extends "base_admin.html" %}
+   Path: base_admin.html
+
+
+📁 admin/templates/enhanced_monitoring_dashboard.html
+   Line 4: Template include/extends not using organized structure
+   Content: {% extends "base_admin.html" %}
+   Path: base_admin.html
+
+
+📁 admin/templates/health_dashboard.html
+   Line 4: Template include/extends not using organized structure
+   Content: {% extends "base_admin.html" %}
+   Path: base_admin.html
+
+
+📁 admin/templates/maintenance_mode_dashboard.html
+   Line 5: Template include/extends not using organized structure
+   Content: {% extends "base_admin.html" %}
+   Path: base_admin.html
+
+
+📁 admin/templates/maintenance_monitoring_dashboard.html
+   Line 5: Template include/extends not using organized structure
+   Content: {% extends "base_admin.html" %}
+   Path: base_admin.html
+
+
+📁 admin/templates/performance_dashboard.html
+   Line 5: Template include/extends not using organized structure
+   Content: {% extends "base_admin.html" %}
+   Path: base_admin.html
+
+
+📁 admin/templates/reports_dashboard.html
+   Line 4: Template include/extends not using organized structure
+   Content: {% extends "base_admin.html" %}
+   Path: base_admin.html
+
+
+📁 admin/templates/security_audit_dashboard.html
+   Line 1: Template include/extends not using organized structure
+   Content: {% extends "base_admin.html" %}
+   Path: base_admin.html
+
+
+📁 admin/templates/security_audit_logs.html
+   Line 5: Template include/extends not using organized structure
+   Content: {% extends "base_admin.html" %}
+   Path: base_admin.html
+
+
+📁 admin/templates/security_features_management.html
+   Line 5: Template include/extends not using organized structure
+   Content: {% extends "base_admin.html" %}
+   Path: base_admin.html
+
+
+📁 admin/templates/security_management_dashboard.html
+   Line 5: Template include/extends not using organized structure
+   Content: {% extends "base_admin.html" %}
+   Path: base_admin.html
+
+
+📁 admin/templates/session_health_dashboard.html
+   Line 1: Template include/extends not using organized structure
+   Content: {% extends "base_admin.html" %}
+   Path: base_admin.html
+
+
+📁 admin/templates/session_monitoring_dashboard.html
+   Line 1: Template include/extends not using organized structure
+   Content: {% extends "base_admin.html" %}
+   Path: base_admin.html
+
+
+📁 admin/templates/user_management.html
+   Line 4: Template include/extends not using organized structure
+   Content: {% extends "base_admin.html" %}
+   Path: base_admin.html
+
+
+📁 admin/templates/websocket_diagnostic.html
+   Line 5: Template include/extends not using organized structure
+   Content: {% extends "base_admin.html" %}
+   Path: base_admin.html
+
+
+📁 admin/templates/widget_customization.html
+   Line 4: Template include/extends not using organized structure
+   Content: {% extends "base_admin.html" %}
+   Path: base_admin.html
+
+
+📁 templates/404.html
+   Line 4: Template include/extends not using organized structure
+   Content: {% extends "base.html" %}
+   Path: base.html
+
+
+📁 templates/500.html
+   Line 4: Template include/extends not using organized structure
+   Content: {% extends "base.html" %}
+   Path: base.html
+
+
+📁 templates/batch_review.html
+   Line 4: Template include/extends not using organized structure
+   Content: {% extends "base.html" %}
+   Path: base.html
+
+
+📁 templates/caption_generation.html
+   Line 4: Template include/extends not using organized structure
+   Content: {% extends "base.html" %}
+   Path: base.html
+
+
+📁 templates/caption_settings.html
+   Line 5: Template include/extends not using organized structure
+   Content: {% extends "base.html" %}
+   Path: base.html
+
+
+📁 templates/errors/csrf_error.html
+   Line 5: Template include/extends not using organized structure
+   Content: {% extends "base.html" %}
+   Path: base.html
+
+
+📁 templates/errors/maintenance.html
+   Line 5: Template include/extends not using organized structure
+   Content: {% extends "base.html" %}
+   Path: base.html
+
+
+📁 templates/errors/session_error.html
+   Line 5: Template include/extends not using organized structure
+   Content: {% extends "base.html" %}
+   Path: base.html
+
+
+📁 templates/errors/user_management_error.html
+   Line 5: Template include/extends not using organized structure
+   Content: {% extends "base.html" %}
+   Path: base.html
+
+
+📁 templates/first_time_setup.html
+   Line 4: Template include/extends not using organized structure
+   Content: {% extends "base.html" %}
+   Path: base.html
+
+
+📁 templates/gdpr/consent_management.html
+   Line 5: Template include/extends not using organized structure
+   Content: {% extends "base.html" %}
+   Path: base.html
+
+
+📁 templates/gdpr/data_erasure.html
+   Line 5: Template include/extends not using organized structure
+   Content: {% extends "base.html" %}
+   Path: base.html
+
+
+📁 templates/gdpr/data_export.html
+   Line 5: Template include/extends not using organized structure
+   Content: {% extends "base.html" %}
+   Path: base.html
+
+
+📁 templates/gdpr/data_rectification.html
+   Line 5: Template include/extends not using organized structure
+   Content: {% extends "base.html" %}
+   Path: base.html
+
+
+📁 templates/gdpr/privacy_policy.html
+   Line 5: Template include/extends not using organized structure
+   Content: {% extends "base.html" %}
+   Path: base.html
+
+
+📁 templates/gdpr/privacy_request.html
+   Line 5: Template include/extends not using organized structure
+   Content: {% extends "base.html" %}
+   Path: base.html
+
+
+📁 templates/gdpr/rights_overview.html
+   Line 5: Template include/extends not using organized structure
+   Content: {% extends "base.html" %}
+   Path: base.html
+
+
+📁 templates/index.html
+   Line 4: Template include/extends not using organized structure
+   Content: {% extends "base.html" %}
+   Path: base.html
+
+
+📁 templates/landing.html
+   Line 5: Template include/extends not using organized structure
+   Content: {% extends "base.html" %}
+   Path: base.html
+
+
+📁 templates/login.html
+   Line 4: Template include/extends not using organized structure
+   Content: {% extends "base.html" %}
+   Path: base.html
+
+
+📁 templates/platform_management.html
+   Line 4: Template include/extends not using organized structure
+   Content: {% extends "base.html" %}
+   Path: base.html
+
+
+📁 templates/post_approved.html
+   Line 5: Template include/extends not using organized structure
+   Content: {% extends "base.html" %}
+   Path: base.html
+
+
+📁 templates/profile.html
+   Line 4: Template include/extends not using organized structure
+   Content: {% extends "base.html" %}
+   Path: base.html
+
+
+📁 templates/review.html
+   Line 4: Template include/extends not using organized structure
+   Content: {% extends "base.html" %}
+   Path: base.html
+
+
+📁 templates/review_batch.html
+   Line 4: Template include/extends not using organized structure
+   Content: {% extends "base.html" %}
+   Path: base.html
+
+
+📁 templates/review_batches.html
+   Line 4: Template include/extends not using organized structure
+   Content: {% extends "base.html" %}
+   Path: base.html
+
+
+📁 templates/review_single.html
+   Line 4: Template include/extends not using organized structure
+   Content: {% extends "base.html" %}
+   Path: base.html
+
+
+📁 templates/user_management/change_password.html
+   Line 6: Template include/extends not using organized structure
+   Content: {% extends "base.html" %}
+   Path: base.html
+
+
+📁 templates/user_management/delete_profile.html
+   Line 6: Template include/extends not using organized structure
+   Content: {% extends "base.html" %}
+   Path: base.html
+
+
+📁 templates/user_management/edit_profile.html
+   Line 6: Template include/extends not using organized structure
+   Content: {% extends "base.html" %}
+   Path: base.html
+
+
+📁 templates/user_management/forgot_password.html
+   Line 5: Template include/extends not using organized structure
+   Content: {% extends "base.html" %}
+   Path: base.html
+
+
+📁 templates/user_management/login.html
+   Line 5: Template include/extends not using organized structure
+   Content: {% extends "base.html" %}
+   Path: base.html
+
+
+📁 templates/user_management/profile.html
+   Line 6: Template include/extends not using organized structure
+   Content: {% extends "base.html" %}
+   Path: base.html
+
+
+📁 templates/user_management/register.html
+   Line 5: Template include/extends not using organized structure
+   Content: {% extends "base.html" %}
+   Path: base.html
+
+
+📁 templates/user_management/reset_password.html
+   Line 5: Template include/extends not using organized structure
+   Content: {% extends "base.html" %}
+   Path: base.html
+
+
+📁 tests/unit/test_review_template_css_extraction.py
+   Line 142: Template include/extends not using organized structure
+   Content: self.assertIn('{% extends "base.html" %}', content)
+   Path: base.html
+
+
+RECOMMENDATIONS:
+--------------------------------------------------
+1. Update route definitions to use blueprint structure
+2. Move templates to organized subdirectories
+3. Update imports to use app/ structure
+4. Fix static file references
+5. Update template includes/extends paths
