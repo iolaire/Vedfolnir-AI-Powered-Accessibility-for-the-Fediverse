@@ -13,12 +13,12 @@ auth_bp.register_blueprint(user_management_bp)
 @auth_bp.route('/login', methods=['GET', 'POST'])
 def login():
     """Redirect to user management login"""
-    return redirect(url_for('user_management.login'))
+    return redirect(url_for('auth.user_management.login'))
 
 @auth_bp.route('/logout')
 def logout():
     """Redirect to user management logout"""
-    return redirect(url_for('user_management.logout'))
+    return redirect(url_for('auth.user_management.logout'))
 
 @auth_bp.route('/first_time_setup')
 @login_required

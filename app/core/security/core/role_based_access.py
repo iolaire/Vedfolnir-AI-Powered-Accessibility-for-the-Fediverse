@@ -45,7 +45,7 @@ def require_role(required_role):
                 # Send info notification
                 from app.services.notification.helpers.notification_helpers import send_info_notification
                 send_info_notification("Please log in to access this page.", "Information")
-                return redirect(url_for('user_management.login', next=request.url))
+                return redirect(url_for('auth.user_management.login', next=request.url))
             
             if not current_user.has_permission(required_role):
                 logger.warning(f"Access denied for user {current_user.id} to {f.__name__}. Required: {required_role.value}, User: {current_user.role.value}")
@@ -106,7 +106,7 @@ def platform_access_required(f):
             # Send info notification
             from app.services.notification.helpers.notification_helpers import send_info_notification
             send_info_notification("Please log in to access this page.", "Information")
-            return redirect(url_for('user_management.login', next=request.url))
+            return redirect(url_for('auth.user_management.login', next=request.url))
         
         # Admin users have access to all platforms
         if current_user.role == UserRole.ADMIN:
@@ -155,7 +155,7 @@ def content_access_required(f):
             # Send info notification
             from app.services.notification.helpers.notification_helpers import send_info_notification
             send_info_notification("Please log in to access this page.", "Information")
-            return redirect(url_for('user_management.login', next=request.url))
+            return redirect(url_for('auth.user_management.login', next=request.url))
         
         # Admin users have access to all content
         if current_user.role == UserRole.ADMIN:

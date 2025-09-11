@@ -91,7 +91,7 @@ def _determine_page_type() -> str:
         # Map endpoints to page types
         page_type_mapping = {
             'main.index': 'landing' if not (current_user and current_user.is_authenticated) else 'dashboard',
-            'user_management.login': 'auth',
+            'auth.user_management.login': 'auth',
             'user_management.register': 'auth',
             'admin.dashboard': 'admin',
             'main.profile': 'profile'

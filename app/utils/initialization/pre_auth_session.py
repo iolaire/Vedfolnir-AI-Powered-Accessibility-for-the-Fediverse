@@ -69,7 +69,7 @@ class PreAuthSessionHandler:
             return True
         
         # Need session for login page (to generate CSRF tokens)
-        if request.endpoint in ['user_management.login', 'login']:
+        if request.endpoint in ['auth.user_management.login', 'login']:
             return True
         
         # Need session for any form pages

@@ -1,0 +1,514 @@
+<!-- Copyright (C) 2025 iolaire mcfadden. -->
+<!-- This program is free software: you can redistribute it and/or modify it under the terms of the GNU Affero General Public License as published by the Free Software Foundation, either version 3 of the License, or (at your option) any later version. -->
+<!-- THE SOFTWARE IS PROVIDED "AS IS", WITHOUT WARRANTY OF ANY KIND, EXPRESS OR IMPLIED, INCLUDING BUT NOT LIMITED TO THE WARRANTIES OF MERCHANTABILITY, FITNESS FOR A PARTICULAR PURPOSE AND NONINFRINGEMENT. IN NO EVENT SHALL THE AUTHORS OR COPYRIGHT HOLDERS BE LIABLE FOR ANY CLAIM, DAMAGES OR OTHER LIABILITY, WHETHER IN AN ACTION OF CONTRACT, TORT OR OTHERWISE, ARISING FROM, OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE SOFTWARE. -->
+
+{% extends "base_admin.html" %}
+
+{% block title %}System Administration - Vedfolnir Admin{% endblock %}
+
+{% block admin_content %}
+<div class="container-fluid">
+    <div class="row">
+        <div class="col-12">
+            <div class="d-flex justify-content-between align-items-center mb-4">
+                <h1 class="h3 mb-0 text-gray-800">System Administration</h1>
+                <div class="btn-group" role="group">
+                    <button type="button" class="btn btn-outline-primary" onclick="refreshDashboard()">
+                        <i class="fas fa-sync-alt"></i> Refresh
+                    </button>
+                    <button type="button" class="btn btn-outline-info" onclick="exportMetrics()">
+                        <i class="fas fa-download"></i> Export
+                    </button>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- System Health Overview -->
+    <div class="row mb-4">
+        <div class="col-12">
+            <div class="card shadow">
+                <div class="card-header py-3 d-flex flex-row align-items-center justify-content-between">
+                    <h6 class="m-0 font-weight-bold text-primary">System Health Overview</h6>
+                    <div class="dropdown no-arrow">
+                        <a class="dropdown-toggle" href="#" role="button" id="dropdownMenuLink" data-toggle="dropdown">
+                            <i class="fas fa-ellipsis-v fa-sm fa-fw text-gray-400"></i>
+                        </a>
+                        <div class="dropdown-menu dropdown-menu-right shadow">
+                            <a class="dropdown-item" href="#" onclick="refreshSystemHealth()">Refresh Health</a>
+                            <a class="dropdown-item" href="/admin/health/detailed">Detailed Health</a>
+                        </div>
+                    </div>
+                </div>
+                <div class="card-body">
+                    <div class="row" id="system-health-cards">
+                        <!-- System health cards will be populated by JavaScript -->
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Performance Metrics -->
+    <div class="row mb-4">
+        <div class="col-lg-8">
+            <div class="card shadow">
+                <div class="card-header py-3">
+                    <h6 class="m-0 font-weight-bold text-primary">Performance Metrics</h6>
+                </div>
+                <div class="card-body">
+                    <div class="chart-area">
+                        <canvas id="performanceChart"></canvas>
+                    </div>
+                </div>
+            </div>
+        </div>
+        <div class="col-lg-4">
+            <div class="card shadow">
+                <div class="card-header py-3">
+                    <h6 class="m-0 font-weight-bold text-primary">Resource Usage</h6>
+                </div>
+                <div class="card-body">
+                    <div id="resource-usage-content">
+                        <!-- Resource usage content will be populated by JavaScript -->
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Error Trends and Queue Management -->
+    <div class="row mb-4">
+        <div class="col-lg-6">
+            <div class="card shadow">
+                <div class="card-header py-3">
+                    <h6 class="m-0 font-weight-bold text-primary">Error Trends (24h)</h6>
+                </div>
+                <div class="card-body">
+                    <div id="error-trends-content">
+                        <!-- Error trends content will be populated by JavaScript -->
+                    </div>
+                </div>
+            </div>
+        </div>
+        <div class="col-lg-6">
+            <div class="card shadow">
+                <div class="card-header py-3">
+                    <h6 class="m-0 font-weight-bold text-primary">Queue Management</h6>
+                </div>
+                <div class="card-body">
+                    <div id="queue-management-content">
+                        <!-- Queue management content will be populated by JavaScript -->
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Recent Performance Metrics -->
+    <div class="row mb-4">
+        <div class="col-12">
+            <div class="card shadow">
+                <div class="card-header py-3">
+                    <h6 class="m-0 font-weight-bold text-primary">Recent Performance Metrics</h6>
+                </div>
+                <div class="card-body">
+                    <div class="table-responsive">
+                        <table class="table table-bordered" id="recent-metrics-table">
+                            <thead>
+                                <tr>
+                                    <th>Timestamp</th>
+                                    <th>Route</th>
+                                    <th>Response Time (ms)</th>
+                                    <th>DB Queries</th>
+                                    <th>User Type</th>
+                                    <th>Status</th>
+                                </tr>
+                            </thead>
+                            <tbody id="recent-metrics-tbody">
+                                <!-- Recent metrics will be populated by JavaScript -->
+                            </tbody>
+                        </table>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Stuck Jobs Alert -->
+    <div class="row mb-4" id="stuck-jobs-alert" style="display: none;">
+        <div class="col-12">
+            <div class="alert alert-warning alert-dismissible fade show" role="alert">
+                <strong>Warning!</strong> <span id="stuck-jobs-count">0</span> stuck jobs detected.
+                <button type="button" class="close" data-dismiss="alert">
+                    <span>&times;</span>
+                </button>
+                <div class="mt-2">
+                    <button type="button" class="btn btn-sm btn-warning" onclick="viewStuckJobs()">
+                        View Details
+                    </button>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+
+<!-- Stuck Jobs Modal -->
+<div class="modal fade" id="stuckJobsModal" tabindex="-1" role="dialog">
+    <div class="modal-dialog modal-lg" role="document">
+        <div class="modal-content">
+            <div class="modal-header">
+                <h5 class="modal-title">Stuck Jobs Details</h5>
+                <button type="button" class="close" data-dismiss="modal">
+                    <span>&times;</span>
+                </button>
+            </div>
+            <div class="modal-body">
+                <div id="stuck-jobs-content">
+                    <!-- Stuck jobs content will be populated by JavaScript -->
+                </div>
+            </div>
+            <div class="modal-footer">
+                <button type="button" class="btn btn-secondary" data-dismiss="modal">Close</button>
+                <button type="button" class="btn btn-warning" onclick="handleStuckJobs()">Handle Stuck Jobs</button>
+            </div>
+        </div>
+    </div>
+</div>
+
+<script>
+// Dashboard data from server
+const dashboardData = {{ dashboard_data | tojsonfilter | safe }};
+
+// Initialize dashboard
+document.addEventListener('DOMContentLoaded', function() {
+    initializeSystemAdministration();
+    
+    // Auto-refresh every 30 seconds
+    setInterval(refreshDashboard, 30000);
+});
+
+function initializeSystemAdministration() {
+    updateSystemHealthCards();
+    updatePerformanceChart();
+    updateResourceUsage();
+    updateErrorTrends();
+    updateQueueManagement();
+    updateRecentMetrics();
+    checkStuckJobs();
+}
+
+function updateSystemHealthCards() {
+    const healthData = dashboardData.system_health;
+    const container = document.getElementById('system-health-cards');
+    
+    const statusColor = getStatusColor(healthData.status);
+    
+    container.innerHTML = `
+        <div class="col-xl-3 col-md-6 mb-4">
+            <div class="card border-left-${statusColor} shadow h-100 py-2">
+                <div class="card-body">
+                    <div class="row no-gutters align-items-center">
+                        <div class="col mr-2">
+                            <div class="text-xs font-weight-bold text-${statusColor} text-uppercase mb-1">
+                                System Status
+                            </div>
+                            <div class="h5 mb-0 font-weight-bold text-gray-800">${healthData.status}</div>
+                        </div>
+                        <div class="col-auto">
+                            <i class="fas fa-server fa-2x text-gray-300"></i>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+        <div class="col-xl-3 col-md-6 mb-4">
+            <div class="card border-left-info shadow h-100 py-2">
+                <div class="card-body">
+                    <div class="row no-gutters align-items-center">
+                        <div class="col mr-2">
+                            <div class="text-xs font-weight-bold text-info text-uppercase mb-1">
+                                CPU Usage
+                            </div>
+                            <div class="h5 mb-0 font-weight-bold text-gray-800">${healthData.cpu_usage.toFixed(1)}%</div>
+                        </div>
+                        <div class="col-auto">
+                            <i class="fas fa-microchip fa-2x text-gray-300"></i>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+        <div class="col-xl-3 col-md-6 mb-4">
+            <div class="card border-left-warning shadow h-100 py-2">
+                <div class="card-body">
+                    <div class="row no-gutters align-items-center">
+                        <div class="col mr-2">
+                            <div class="text-xs font-weight-bold text-warning text-uppercase mb-1">
+                                Memory Usage
+                            </div>
+                            <div class="h5 mb-0 font-weight-bold text-gray-800">${healthData.memory_usage.toFixed(1)}%</div>
+                        </div>
+                        <div class="col-auto">
+                            <i class="fas fa-memory fa-2x text-gray-300"></i>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+        <div class="col-xl-3 col-md-6 mb-4">
+            <div class="card border-left-success shadow h-100 py-2">
+                <div class="card-body">
+                    <div class="row no-gutters align-items-center">
+                        <div class="col mr-2">
+                            <div class="text-xs font-weight-bold text-success text-uppercase mb-1">
+                                Active Tasks
+                            </div>
+                            <div class="h5 mb-0 font-weight-bold text-gray-800">${healthData.active_tasks}</div>
+                        </div>
+                        <div class="col-auto">
+                            <i class="fas fa-tasks fa-2x text-gray-300"></i>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+    `;
+}
+
+function updatePerformanceChart() {
+    const performanceData = dashboardData.performance_metrics;
+    const ctx = document.getElementById('performanceChart').getContext('2d');
+    
+    // Create a simple performance chart
+    new Chart(ctx, {
+        type: 'doughnut',
+        data: {
+            labels: ['Success Rate', 'Error Rate'],
+            datasets: [{
+                data: [performanceData.success_rate, performanceData.error_rate],
+                backgroundColor: ['#1cc88a', '#e74a3b'],
+                hoverBackgroundColor: ['#17a673', '#c0392b'],
+                hoverBorderColor: "rgba(234, 236, 244, 1)",
+            }],
+        },
+        options: {
+            maintainAspectRatio: false,
+            tooltips: {
+                backgroundColor: "rgb(255,255,255)",
+                bodyFontColor: "#858796",
+                borderColor: '#dddfeb',
+                borderWidth: 1,
+                xPadding: 15,
+                yPadding: 15,
+                displayColors: false,
+                caretPadding: 10,
+            },
+            legend: {
+                display: true
+            },
+            cutoutPercentage: 80,
+        },
+    });
+}
+
+function updateResourceUsage() {
+    const resourceData = dashboardData.resource_usage;
+    const container = document.getElementById('resource-usage-content');
+    
+    container.innerHTML = `
+        <div class="mb-3">
+            <div class="small mb-1">CPU Usage: ${resourceData.cpu_percent.toFixed(1)}%</div>
+            <div class="progress">
+                <div class="progress-bar bg-info" style="width: ${resourceData.cpu_percent}%"></div>
+            </div>
+        </div>
+        <div class="mb-3">
+            <div class="small mb-1">Memory Usage: ${resourceData.memory_percent.toFixed(1)}%</div>
+            <div class="progress">
+                <div class="progress-bar bg-warning" style="width: ${resourceData.memory_percent}%"></div>
+            </div>
+        </div>
+        <div class="mb-3">
+            <div class="small mb-1">Disk Usage: ${resourceData.disk_percent.toFixed(1)}%</div>
+            <div class="progress">
+                <div class="progress-bar bg-success" style="width: ${resourceData.disk_percent}%"></div>
+            </div>
+        </div>
+        <div class="text-muted small">
+            <div>Memory: ${(resourceData.memory_used_mb / 1024).toFixed(1)}GB / ${(resourceData.memory_total_mb / 1024).toFixed(1)}GB</div>
+            <div>Disk: ${resourceData.disk_used_gb.toFixed(1)}GB / ${resourceData.disk_total_gb.toFixed(1)}GB</div>
+            <div>DB Connections: ${resourceData.database_connections}</div>
+        </div>
+    `;
+}
+
+function updateErrorTrends() {
+    const errorData = dashboardData.error_trends;
+    const container = document.getElementById('error-trends-content');
+    
+    let categoriesHtml = '';
+    for (const [category, count] of Object.entries(errorData.error_categories)) {
+        categoriesHtml += `
+            <div class="d-flex justify-content-between align-items-center mb-2">
+                <span class="small">${category}</span>
+                <span class="badge badge-danger">${count}</span>
+            </div>
+        `;
+    }
+    
+    container.innerHTML = `
+        <div class="row">
+            <div class="col-6">
+                <div class="text-center">
+                    <div class="h4 mb-0 text-danger">${errorData.total_errors}</div>
+                    <div class="small text-muted">Total Errors</div>
+                </div>
+            </div>
+            <div class="col-6">
+                <div class="text-center">
+                    <div class="h4 mb-0 text-warning">${errorData.error_rate.toFixed(1)}%</div>
+                    <div class="small text-muted">Error Rate</div>
+                </div>
+            </div>
+        </div>
+        <hr>
+        <div class="mb-3">
+            <h6 class="small font-weight-bold">Error Categories:</h6>
+            ${categoriesHtml || '<div class="text-muted small">No errors in the last 24 hours</div>'}
+        </div>
+    `;
+}
+
+function updateQueueManagement() {
+    const container = document.getElementById('queue-management-content');
+    const healthData = dashboardData.system_health;
+    const predictedWait = dashboardData.predicted_wait_time;
+    
+    container.innerHTML = `
+        <div class="row">
+            <div class="col-6">
+                <div class="text-center">
+                    <div class="h4 mb-0 text-info">${healthData.queued_tasks}</div>
+                    <div class="small text-muted">Queued Tasks</div>
+                </div>
+            </div>
+            <div class="col-6">
+                <div class="text-center">
+                    <div class="h4 mb-0 text-primary">${Math.round(predictedWait / 60)}m</div>
+                    <div class="small text-muted">Est. Wait Time</div>
+                </div>
+            </div>
+        </div>
+        <hr>
+        <div class="mb-3">
+            <div class="small mb-1">Queue Processing Rate</div>
+            <div class="progress">
+                <div class="progress-bar bg-primary" style="width: ${Math.min(100, (healthData.active_tasks / 5) * 100)}%"></div>
+            </div>
+            <div class="small text-muted mt-1">${healthData.active_tasks} / 5 concurrent tasks</div>
+        </div>
+    `;
+}
+
+function updateRecentMetrics() {
+    const recentMetrics = dashboardData.recent_metrics;
+    const tbody = document.getElementById('recent-metrics-tbody');
+    
+    let html = '';
+    recentMetrics.forEach(metric => {
+        const timestamp = new Date(metric.timestamp).toLocaleString();
+        const statusBadge = metric.status_code === 200 ? 'success' : 'danger';
+        
+        html += `
+            <tr>
+                <td>${timestamp}</td>
+                <td>${metric.route_name || 'Unknown'}</td>
+                <td>${metric.total_time_ms}</td>
+                <td>${metric.database_queries}</td>
+                <td><span class="badge badge-${metric.user_type === 'authenticated' ? 'primary' : 'secondary'}">${metric.user_type}</span></td>
+                <td><span class="badge badge-${statusBadge}">${metric.status_code}</span></td>
+            </tr>
+        `;
+    });
+    
+    tbody.innerHTML = html || '<tr><td colspan="6" class="text-center text-muted">No recent metrics available</td></tr>';
+}
+
+function checkStuckJobs() {
+    const stuckJobs = dashboardData.stuck_jobs;
+    const alertDiv = document.getElementById('stuck-jobs-alert');
+    const countSpan = document.getElementById('stuck-jobs-count');
+    
+    if (stuckJobs && stuckJobs.length > 0) {
+        countSpan.textContent = stuckJobs.length;
+        alertDiv.style.display = 'block';
+    } else {
+        alertDiv.style.display = 'none';
+    }
+}
+
+function getStatusColor(status) {
+    switch (status) {
+        case 'healthy': return 'success';
+        case 'warning': return 'warning';
+        case 'critical': return 'danger';
+        default: return 'secondary';
+    }
+}
+
+function refreshDashboard() {
+    window.location.reload();
+}
+
+function refreshSystemHealth() {
+    fetch('/admin/system/api/health')
+        .then(response => response.json())
+        .then(data => {
+            dashboardData.system_health = data;
+            updateSystemHealthCards();
+        })
+        .catch(error => console.error('Error refreshing system health:', error));
+}
+
+function exportMetrics() {
+    const data = JSON.stringify(dashboardData, null, 2);
+    const blob = new Blob([data], { type: 'application/json' });
+    const url = URL.createObjectURL(blob);
+    const a = document.createElement('a');
+    a.href = url;
+    a.download = `system-metrics-${new Date().toISOString().split('T')[0]}.json`;
+    document.body.appendChild(a);
+    a.click();
+    document.body.removeChild(a);
+    URL.revokeObjectURL(url);
+}
+
+function viewStuckJobs() {
+    const stuckJobs = dashboardData.stuck_jobs;
+    const container = document.getElementById('stuck-jobs-content');
+    
+    let html = '<div class="list-group">';
+    stuckJobs.forEach(jobId => {
+        html += `
+            <div class="list-group-item">
+                <div class="d-flex w-100 justify-content-between">
+                    <h6 class="mb-1">Task ID: ${jobId}</h6>
+                    <small class="text-danger">Stuck</small>
+                </div>
+                <p class="mb-1">This task has been running longer than expected and may need intervention.</p>
+            </div>
+        `;
+    });
+    html += '</div>';
+    
+    container.innerHTML = html;
+    $('#stuckJobsModal').modal('show');
+}
+
+function handleStuckJobs() {
+    // This would typically make an API call to handle stuck jobs
+    alert('Stuck job handling functionality would be implemented here.');
+}
+</script>
+{% endblock %}

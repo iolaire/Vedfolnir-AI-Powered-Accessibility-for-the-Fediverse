@@ -35,7 +35,7 @@ def admin_required(f):
             # Send info notification
             from app.services.notification.helpers.notification_helpers import send_info_notification
             send_info_notification("Please log in to access the admin interface.", "Information")
-            return redirect(url_for('user_management.login', next=request.url))
+            return redirect(url_for('auth.user_management.login', next=request.url))
         
         if current_user.role != UserRole.ADMIN:
             logger.warning(f"Non-admin user {current_user.id} attempted to access admin function {f.__name__}")
@@ -108,7 +108,7 @@ def admin_session_preservation(f):
     @wraps(f)
     def decorated_function(*args, **kwargs):
         if not current_user.is_authenticated or current_user.role != UserRole.ADMIN:
-            return redirect(url_for('user_management.login'))
+            return redirect(url_for('auth.user_management.login'))
         
         # Get Redis session manager and current session
         unified_session_manager = getattr(current_app, 'unified_session_manager', None)

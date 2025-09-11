@@ -131,7 +131,7 @@ def require_platform_context(f):
                         # Send error notification
                         from app.services.notification.helpers.notification_helpers import send_error_notification
                         send_error_notification("User authentication error. Please log in again.", "Authentication Error")
-                        return redirect(url_for('user_management.login'))
+                        return redirect(url_for('auth.user_management.login'))
                     
                     user_platforms = db_session.query(PlatformConnection).filter_by(
                         user_id=user_id,

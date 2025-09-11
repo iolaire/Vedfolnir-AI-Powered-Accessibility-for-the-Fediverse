@@ -11,7 +11,7 @@ def init_extensions(app):
     """Initialize Flask extensions"""
     # Initialize Flask-Login
     login_manager.init_app(app)
-    login_manager.login_view = 'user_management.login'
+    login_manager.login_view = 'auth.user_management.login'
     login_manager.login_message = 'Please log in to access this page.'
     
     # Initialize SocketIO

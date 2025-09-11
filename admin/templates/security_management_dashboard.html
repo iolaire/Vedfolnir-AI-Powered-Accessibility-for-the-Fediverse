@@ -1,0 +1,261 @@
+<!-- Copyright (C) 2025 iolaire mcfadden. -->
+<!-- This program is free software: you can redistribute it and/or modify it under the terms of the GNU Affero General Public License as published by the Free Software Foundation, either version 3 of the License, or (at your option) any later version. -->
+<!-- THE SOFTWARE IS PROVIDED "AS IS", WITHOUT WARRANTY OF ANY KIND, EXPRESS OR IMPLIED, INCLUDING BUT NOT LIMITED TO THE WARRANTIES OF MERCHANTABILITY, FITNESS FOR A PARTICULAR PURPOSE AND NONINFRINGEMENT. IN NO EVENT SHALL THE AUTHORS OR COPYRIGHT HOLDERS BE LIABLE FOR ANY CLAIM, DAMAGES OR OTHER LIABILITY, WHETHER IN AN ACTION OF CONTRACT, TORT OR OTHERWISE, ARISING FROM, OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE SOFTWARE. -->
+
+{% extends "base_admin.html" %}
+
+{% block title %}Security Management Dashboard{% endblock %}
+
+{% block content %}
+<div class="container-fluid">
+    <div class="row">
+        <div class="col-12">
+            <h1 class="h3 mb-4">Security Management Dashboard</h1>
+            
+            <!-- Security Overview Cards -->
+            <div class="row mb-4">
+                <div class="col-md-3">
+                    <div class="card">
+                        <div class="card-body text-center">
+                            <h5 class="card-title {% if security_overview.security_score >= 90 %}text-success{% elif security_overview.security_score >= 70 %}text-warning{% else %}text-danger{% endif %}">
+                                {{ security_overview.security_score }}%
+                            </h5>
+                            <p class="card-text">Security Score</p>
+                        </div>
+                    </div>
+                </div>
+                <div class="col-md-3">
+                    <div class="card">
+                        <div class="card-body text-center">
+                            <h5 class="card-title {% if security_overview.open_issues == 0 %}text-success{% else %}text-warning{% endif %}">
+                                {{ security_overview.open_issues }}
+                            </h5>
+                            <p class="card-text">Open Issues</p>
+                        </div>
+                    </div>
+                </div>
+                <div class="col-md-3">
+                    <div class="card">
+                        <div class="card-body text-center">
+                            <h5 class="card-title text-info">{{ security_overview.recent_events_24h }}</h5>
+                            <p class="card-text">Events (24h)</p>
+                        </div>
+                    </div>
+                </div>
+                <div class="col-md-3">
+                    <div class="card">
+                        <div class="card-body text-center">
+                            <h5 class="card-title {% if csrf_summary.enabled %}text-success{% else %}text-danger{% endif %}">
+                                {% if csrf_summary.enabled %}Active{% else %}Disabled{% endif %}
+                            </h5>
+                            <p class="card-text">CSRF Protection</p>
+                        </div>
+                    </div>
+                </div>
+            </div>
+            
+            <!-- Quick Actions -->
+            <div class="row mb-4">
+                <div class="col-12">
+                    <div class="card">
+                        <div class="card-header">
+                            <h5 class="mb-0">Quick Actions</h5>
+                        </div>
+                        <div class="card-body">
+                            <div class="row">
+                                <div class="col-md-3">
+                                    <a href="{{ url_for('admin.security_audit_logs') }}" class="btn btn-primary btn-block mb-2">
+                                        <i class="fas fa-search"></i> View Audit Logs
+                                    </a>
+                                </div>
+                                <div class="col-md-3">
+                                    <a href="{{ url_for('admin.csrf_dashboard') }}" class="btn btn-info btn-block mb-2">
+                                        <i class="fas fa-shield-alt"></i> CSRF Dashboard
+                                    </a>
+                                </div>
+                                <div class="col-md-3">
+                                    <a href="{{ url_for('admin.security_features') }}" class="btn btn-success btn-block mb-2">
+                                        <i class="fas fa-cog"></i> Security Features
+                                    </a>
+                                </div>
+                                <div class="col-md-3">
+                                    <a href="{{ url_for('admin.security_audit_dashboard') }}" class="btn btn-warning btn-block mb-2">
+                                        <i class="fas fa-chart-line"></i> Advanced Audit
+                                    </a>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+            
+            <!-- Security Features Status -->
+            <div class="row mb-4">
+                <div class="col-md-6">
+                    <div class="card">
+                        <div class="card-header">
+                            <h5 class="mb-0">Security Features Status</h5>
+                        </div>
+                        <div class="card-body">
+                            {% for feature_name, feature_info in security_features.items() %}
+                            <div class="d-flex justify-content-between align-items-center mb-2">
+                                <div>
+                                    <strong>{{ feature_info.description }}</strong>
+                                    <br><small class="text-muted">{{ feature_name.replace('_', ' ').title() }}</small>
+                                </div>
+                                <div class="{% if feature_info.enabled %}text-success{% else %}text-danger{% endif %}">
+                                    {% if feature_info.enabled %}✓{% else %}✗{% endif %} {{ feature_info.status }}
+                                </div>
+                            </div>
+                            {% endfor %}
+                        </div>
+                    </div>
+                </div>
+                
+                <!-- Recent Security Events -->
+                <div class="col-md-6">
+                    <div class="card">
+                        <div class="card-header">
+                            <h5 class="mb-0">Recent Security Events</h5>
+                        </div>
+                        <div class="card-body">
+                            {% if recent_events.recent_events %}
+                                {% for event in recent_events.recent_events %}
+                                <div class="d-flex justify-content-between align-items-center mb-2">
+                                    <div>
+                                        <strong>{{ event.event_type|default('Security Event') }}</strong>
+                                        <br><small class="text-muted">{{ event.endpoint|default('Unknown') }}</small>
+                                    </div>
+                                    <div>
+                                        <span class="badge bg-danger">{{ event.severity|default('unknown')|title }}</span>
+                                        <br><small class="text-muted">{{ event.timestamp|default('Unknown time') }}</small>
+                                    </div>
+                                </div>
+                                {% endfor %}
+                            {% else %}
+                                <div class="text-muted">No recent security events</div>
+                            {% endif %}
+                            
+                            <div class="mt-3">
+                                <a href="{{ url_for('admin.security_audit_logs') }}" class="btn btn-sm btn-outline-primary">
+                                    View All Events
+                                </a>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+            
+            <!-- CSRF Protection Summary -->
+            <div class="row mb-4">
+                <div class="col-md-6">
+                    <div class="card">
+                        <div class="card-header">
+                            <h5 class="mb-0">CSRF Protection Summary</h5>
+                        </div>
+                        <div class="card-body">
+                            <div class="row">
+                                <div class="col-6">
+                                    <strong>Status:</strong>
+                                    <span class="{% if csrf_summary.enabled %}text-success{% else %}text-danger{% endif %}">
+                                        {% if csrf_summary.enabled %}Enabled{% else %}Disabled{% endif %}
+                                    </span>
+                                </div>
+                                <div class="col-6">
+                                    <strong>Compliance Rate:</strong>
+                                    <span class="text-success">{{ (csrf_summary.compliance_rate * 100)|round(1) }}%</span>
+                                </div>
+                            </div>
+                            <div class="row mt-2">
+                                <div class="col-6">
+                                    <strong>Total Requests:</strong>
+                                    <span class="text-info">{{ csrf_summary.total_requests }}</span>
+                                </div>
+                                <div class="col-6">
+                                    <strong>Violations:</strong>
+                                    <span class="{% if csrf_summary.violations == 0 %}text-success{% else %}text-warning{% endif %}">
+                                        {{ csrf_summary.violations }}
+                                    </span>
+                                </div>
+                            </div>
+                            <div class="mt-3">
+                                <a href="{{ url_for('admin.csrf_dashboard') }}" class="btn btn-sm btn-outline-info">
+                                    View CSRF Dashboard
+                                </a>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+                
+                <!-- Compliance Status -->
+                <div class="col-md-6">
+                    <div class="card">
+                        <div class="card-header">
+                            <h5 class="mb-0">Compliance Status</h5>
+                        </div>
+                        <div class="card-body">
+                            {% for standard_name, standard_info in compliance_status.items() %}
+                            <div class="d-flex justify-content-between align-items-center mb-2">
+                                <div>
+                                    <strong>{{ standard_name.replace('_', ' ').upper() }}</strong>
+                                </div>
+                                <div class="{% if standard_info.compliant %}text-success{% else %}text-danger{% endif %}">
+                                    {% if standard_info.compliant %}✓{% else %}✗{% endif %} {{ standard_info.score }}%
+                                </div>
+                            </div>
+                            {% endfor %}
+                        </div>
+                    </div>
+                </div>
+            </div>
+            
+            <!-- Security Metrics Chart -->
+            <div class="row mb-4">
+                <div class="col-12">
+                    <div class="card">
+                        <div class="card-header">
+                            <h5 class="mb-0">Security Events Timeline (24h)</h5>
+                        </div>
+                        <div class="card-body">
+                            <div class="row text-center">
+                                <div class="col-md-3">
+                                    <h4 class="text-danger">{{ recent_events.critical_events }}</h4>
+                                    <small class="text-muted">Critical Events</small>
+                                </div>
+                                <div class="col-md-3">
+                                    <h4 class="text-warning">{{ recent_events.high_events }}</h4>
+                                    <small class="text-muted">High Priority Events</small>
+                                </div>
+                                <div class="col-md-3">
+                                    <h4 class="text-info">{{ recent_events.total_events }}</h4>
+                                    <small class="text-muted">Total Events</small>
+                                </div>
+                                <div class="col-md-3">
+                                    <h4 class="text-success">{{ security_overview.security_score }}%</h4>
+                                    <small class="text-muted">Security Score</small>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+            
+            <!-- Last Updated -->
+            <div class="row">
+                <div class="col-12">
+                    <div class="text-muted text-center">
+                        <small>Last updated: {{ security_overview.last_updated }}</small>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+
+<script>
+// Auto-refresh dashboard every 30 seconds
+setInterval(function() {
+    location.reload();
+}, 30000);
+</script>
+{% endblock %}

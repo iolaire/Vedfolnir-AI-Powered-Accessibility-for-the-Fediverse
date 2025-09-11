@@ -42,6 +42,11 @@ from app.core.session.manager import UnifiedSessionManager
 unified_session_manager = UnifiedSessionManager(db_manager)
 app.unified_session_manager = unified_session_manager
 
+# Initialize core session manager with create_session capability
+from app.core.session.core.session_manager import SessionManager
+core_session_manager = SessionManager(db_manager)
+app.core_session_manager = core_session_manager
+
 # Initialize Redis platform manager
 try:
     from app.services.monitoring.platform.redis_platform_manager import get_redis_platform_manager
@@ -63,7 +68,7 @@ except Exception as e:
 # Initialize Flask-Login
 login_manager = LoginManager()
 login_manager.init_app(app)
-login_manager.login_view = 'user_management.login'
+login_manager.login_view = 'auth.user_management.login'
 
 @login_manager.user_loader
 def load_user(user_id):
@@ -861,10 +866,12 @@ def inject_role_context():
                     user_platform_count = len(user_platforms)
                 
                 # Get pending review count
+                # Store user ID to avoid detached instance issues
+                user_id = current_user.id
                 with db_manager.get_session() as db_session:
                     from models import Image, Post
                     pending_review_count = db_session.query(Image).join(Post).filter(
-                        Post.user_id == str(current_user.id),
+                        Post.user_id == str(user_id),
                         Image.status == 'pending'
                     ).count()
         

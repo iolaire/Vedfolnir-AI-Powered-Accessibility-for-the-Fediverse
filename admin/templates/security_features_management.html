@@ -1,0 +1,231 @@
+<!-- Copyright (C) 2025 iolaire mcfadden. -->
+<!-- This program is free software: you can redistribute it and/or modify it under the terms of the GNU Affero General Public License as published by the Free Software Foundation, either version 3 of the License, or (at your option) any later version. -->
+<!-- THE SOFTWARE IS PROVIDED "AS IS", WITHOUT WARRANTY OF ANY KIND, EXPRESS OR IMPLIED, INCLUDING BUT NOT LIMITED TO THE WARRANTIES OF MERCHANTABILITY, FITNESS FOR A PARTICULAR PURPOSE AND NONINFRINGEMENT. IN NO EVENT SHALL THE AUTHORS OR COPYRIGHT HOLDERS BE LIABLE FOR ANY CLAIM, DAMAGES OR OTHER LIABILITY, WHETHER IN AN ACTION OF CONTRACT, TORT OR OTHERWISE, ARISING FROM, OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE SOFTWARE. -->
+
+{% extends "base_admin.html" %}
+
+{% block title %}Security Features Management{% endblock %}
+
+{% block content %}
+<div class="container-fluid">
+    <div class="row">
+        <div class="col-12">
+            <h1 class="h3 mb-4">Security Features Management</h1>
+            
+            <!-- Security Features Status -->
+            <div class="card mb-4">
+                <div class="card-header">
+                    <h5 class="mb-0">Security Features Status</h5>
+                </div>
+                <div class="card-body">
+                    <div class="row">
+                        {% for feature_name, feature_info in features_status.items() %}
+                        <div class="col-md-6 mb-3">
+                            <div class="card {% if feature_info.enabled %}border-success{% else %}border-danger{% endif %}">
+                                <div class="card-body">
+                                    <div class="d-flex justify-content-between align-items-center">
+                                        <div>
+                                            <h6 class="card-title">{{ feature_info.description }}</h6>
+                                            <p class="card-text">
+                                                <small class="text-muted">{{ feature_name.replace('_', ' ').title() }}</small>
+                                            </p>
+                                        </div>
+                                        <div class="text-end">
+                                            <span class="badge {% if feature_info.enabled %}bg-success{% else %}bg-danger{% endif %}">
+                                                {{ feature_info.status }}
+                                            </span>
+                                        </div>
+                                    </div>
+                                    <div class="mt-2">
+                                        <small class="text-muted">
+                                            <strong>Config Key:</strong> {{ feature_info.config_key }}<br>
+                                            <strong>Current Value:</strong> {{ feature_info.config_value }}<br>
+                                            <strong>Health Status:</strong> 
+                                            <span class="{% if feature_info.health_status == 'healthy' %}text-success{% else %}text-warning{% endif %}">
+                                                {{ feature_info.health_status|title }}
+                                            </span><br>
+                                            <strong>Last Checked:</strong> {{ feature_info.last_checked }}
+                                        </small>
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
+                        {% endfor %}
+                    </div>
+                </div>
+            </div>
+            
+            <!-- Security Configuration -->
+            <div class="card mb-4">
+                <div class="card-header">
+                    <h5 class="mb-0">Security Configuration</h5>
+                </div>
+                <div class="card-body">
+                    <div class="alert alert-info">
+                        <h6>Configuration Management</h6>
+                        <p>Security configuration is managed through environment variables. 
+                        Changes require application restart to take effect.</p>
+                    </div>
+                    
+                    <div class="table-responsive">
+                        <table class="table table-striped">
+                            <thead>
+                                <tr>
+                                    <th>Configuration Key</th>
+                                    <th>Current Value</th>
+                                    <th>Description</th>
+                                    <th>Recommended</th>
+                                </tr>
+                            </thead>
+                            <tbody>
+                                <tr>
+                                    <td><code>CSRF_TOKEN_LIFETIME</code></td>
+                                    <td><span class="badge bg-info">{{ security_config.csrf_token_lifetime }}</span></td>
+                                    <td>CSRF token lifetime in seconds</td>
+                                    <td><span class="text-success">3600 (1 hour)</span></td>
+                                </tr>
+                                <tr>
+                                    <td><code>RATE_LIMIT_PER_MINUTE</code></td>
+                                    <td><span class="badge bg-info">{{ security_config.rate_limit_per_minute }}</span></td>
+                                    <td>Maximum requests per minute per IP</td>
+                                    <td><span class="text-success">60</span></td>
+                                </tr>
+                                <tr>
+                                    <td><code>SESSION_TIMEOUT</code></td>
+                                    <td><span class="badge bg-info">{{ security_config.session_timeout }}</span></td>
+                                    <td>Session timeout in seconds</td>
+                                    <td><span class="text-success">7200 (2 hours)</span></td>
+                                </tr>
+                                <tr>
+                                    <td><code>MAX_LOGIN_ATTEMPTS</code></td>
+                                    <td><span class="badge bg-info">{{ security_config.max_login_attempts }}</span></td>
+                                    <td>Maximum failed login attempts</td>
+                                    <td><span class="text-success">5</span></td>
+                                </tr>
+                                <tr>
+                                    <td><code>SECURITY_HEADERS_STRICT</code></td>
+                                    <td><span class="badge bg-info">{{ security_config.security_headers_strict }}</span></td>
+                                    <td>Enable strict security headers</td>
+                                    <td><span class="text-success">true (production)</span></td>
+                                </tr>
+                                <tr>
+                                    <td><code>AUDIT_LOG_RETENTION_DAYS</code></td>
+                                    <td><span class="badge bg-info">{{ security_config.audit_log_retention_days }}</span></td>
+                                    <td>Audit log retention period in days</td>
+                                    <td><span class="text-success">90</span></td>
+                                </tr>
+                            </tbody>
+                        </table>
+                    </div>
+                </div>
+            </div>
+            
+            <!-- Security Recommendations -->
+            <div class="card mb-4">
+                <div class="card-header">
+                    <h5 class="mb-0">Security Recommendations</h5>
+                </div>
+                <div class="card-body">
+                    <div class="row">
+                        <div class="col-md-6">
+                            <h6>Enabled Features</h6>
+                            <ul class="list-group list-group-flush">
+                                {% for feature_name, feature_info in features_status.items() %}
+                                    {% if feature_info.enabled %}
+                                    <li class="list-group-item d-flex justify-content-between align-items-center">
+                                        {{ feature_info.description }}
+                                        <span class="badge bg-success">✓</span>
+                                    </li>
+                                    {% endif %}
+                                {% endfor %}
+                            </ul>
+                        </div>
+                        <div class="col-md-6">
+                            <h6>Disabled Features</h6>
+                            {% set disabled_features = features_status.values() | selectattr('enabled', 'equalto', false) | list %}
+                            {% if disabled_features %}
+                            <ul class="list-group list-group-flush">
+                                {% for feature_name, feature_info in features_status.items() %}
+                                    {% if not feature_info.enabled %}
+                                    <li class="list-group-item d-flex justify-content-between align-items-center">
+                                        {{ feature_info.description }}
+                                        <span class="badge bg-danger">✗</span>
+                                    </li>
+                                    {% endif %}
+                                {% endfor %}
+                            </ul>
+                            <div class="alert alert-warning mt-3">
+                                <strong>Warning:</strong> Some security features are disabled. 
+                                Consider enabling them for better security.
+                            </div>
+                            {% else %}
+                            <div class="alert alert-success">
+                                <strong>Excellent:</strong> All security features are enabled.
+                            </div>
+                            {% endif %}
+                        </div>
+                    </div>
+                </div>
+            </div>
+            
+            <!-- Security Actions -->
+            <div class="card">
+                <div class="card-header">
+                    <h5 class="mb-0">Security Actions</h5>
+                </div>
+                <div class="card-body">
+                    <div class="row">
+                        <div class="col-md-3">
+                            <a href="{{ url_for('admin.security_audit_logs') }}" class="btn btn-primary btn-block mb-2">
+                                <i class="fas fa-search"></i> View Audit Logs
+                            </a>
+                        </div>
+                        <div class="col-md-3">
+                            <a href="{{ url_for('admin.csrf_dashboard') }}" class="btn btn-info btn-block mb-2">
+                                <i class="fas fa-shield-alt"></i> CSRF Dashboard
+                            </a>
+                        </div>
+                        <div class="col-md-3">
+                            <a href="{{ url_for('admin.security_audit_dashboard') }}" class="btn btn-warning btn-block mb-2">
+                                <i class="fas fa-chart-line"></i> Advanced Audit
+                            </a>
+                        </div>
+                        <div class="col-md-3">
+                            <button class="btn btn-success btn-block mb-2" onclick="runSecurityScan()">
+                                <i class="fas fa-play"></i> Run Security Scan
+                            </button>
+                        </div>
+                    </div>
+                    
+                    <div class="row mt-3">
+                        <div class="col-12">
+                            <div class="alert alert-info">
+                                <h6>Configuration Changes</h6>
+                                <p>To modify security configuration:</p>
+                                <ol>
+                                    <li>Update the appropriate environment variables in your <code>.env</code> file</li>
+                                    <li>Restart the application to apply changes</li>
+                                    <li>Verify the changes in this dashboard</li>
+                                </ol>
+                                <p><strong>Note:</strong> Always test configuration changes in a development environment first.</p>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+
+<script>
+function runSecurityScan() {
+    // Placeholder for security scan functionality
+    alert('Security scan functionality would be implemented here.\n\nThis would trigger a comprehensive security audit of the system.');
+}
+
+// Auto-refresh every 60 seconds
+setInterval(function() {
+    location.reload();
+}, 60000);
+</script>
+{% endblock %}

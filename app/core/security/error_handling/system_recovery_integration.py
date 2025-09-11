@@ -16,7 +16,7 @@ from flask import Flask
 
 from app.core.database.core.database_manager import DatabaseManager
 from app.services.task.core.task_queue_manager import TaskQueueManager
-from progress_tracker import ProgressTracker
+from app.services.monitoring.progress.progress_tracker import ProgressTracker
 from system_recovery_manager import SystemRecoveryManager, initialize_system_recovery
 from graceful_shutdown_handler import initialize_graceful_shutdown
 from database_connection_recovery import DatabaseConnectionRecovery

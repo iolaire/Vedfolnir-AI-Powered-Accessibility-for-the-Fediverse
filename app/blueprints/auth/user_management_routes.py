@@ -172,7 +172,7 @@ def register():
                             title='Registration Complete'
                         )
                     
-                    return redirect(url_for('user_management.login'))
+                    return redirect(url_for('.login'))
                 else:
                     send_error_notification(
                         message=message or 'Registration failed. Please try again.',
@@ -211,9 +211,10 @@ def login():
             unified_session_manager = getattr(current_app, "unified_session_manager", None)
             
             with unified_session_manager.get_db_session() as db_session:
-                # Initialize user authentication service
-                from services.user_management_service import UserAuthenticationService
-                user_service = UserAuthenticationService(db_session)
+                # Initialize user authentication service with core session manager
+                from app.services.user.components.user_management_service import UserAuthenticationService
+                core_session_manager = getattr(current_app, 'core_session_manager', None)
+                user_service = UserAuthenticationService(db_session, session_manager=core_session_manager)
                 
                 # Authenticate user
                 success, message, user = user_service.authenticate_user(
@@ -227,10 +228,10 @@ def login():
                     # Log in user with Flask-Login
                     login_user(user, remember=form.remember_me.data if hasattr(form, 'remember_me') else False)
                     
-                    # Create Redis session
-                    session_manager = getattr(current_app, 'unified_session_manager', None)
-                    if session_manager:
-                        session_token = session_manager.create_session(
+                    # Create Redis session using core session manager
+                    core_session_manager = getattr(current_app, 'core_session_manager', None)
+                    if core_session_manager:
+                        session_token = core_session_manager.create_session(
                             user_id=user.id,
                             platform_connection_id=None  # Will be set when user selects platform
                         )
@@ -280,7 +281,7 @@ def forgot_password():
             
             with unified_session_manager.get_db_session() as db_session:
                 # Initialize password management service
-                from services.user_management_service import PasswordManagementService
+                from app.services.user.components.user_management_service import PasswordManagementService
                 password_service = PasswordManagementService(
                     db_session=db_session,
                     base_url=get_base_url()
@@ -384,7 +385,7 @@ def reset_password(token):
         
         with unified_session_manager.get_db_session() as db_session:
             # Initialize password management service
-            from services.user_management_service import PasswordManagementService
+            from app.services.user.components.user_management_service import PasswordManagementService
             password_service = PasswordManagementService(
                 db_session=db_session,
                 base_url=get_base_url()
@@ -425,7 +426,7 @@ def reset_password(token):
                         message='Password reset successful. You can now log in with your new password.',
                         title='Password Reset Complete'
                     )
-                    return redirect(url_for('user_management.login'))
+                    return redirect(url_for('.login'))
                 else:
                     send_error_notification(
                         message=reset_message or 'Password reset failed. Please try again.',
@@ -462,7 +463,7 @@ def change_password():
             
             with unified_session_manager.get_db_session() as db_session:
                 # Initialize password management service
-                from services.user_management_service import PasswordManagementService
+                from app.services.user.components.user_management_service import PasswordManagementService
                 password_service = PasswordManagementService(
                     db_session=db_session,
                     base_url=get_base_url()
@@ -660,7 +661,7 @@ def export_profile_data():
         
         with unified_session_manager.get_db_session() as db_session:
             # Import profile service
-            from services.user_management_service import UserProfileService
+            from app.services.user.components.user_management_service import UserProfileService
             profile_service = UserProfileService(db_session=db_session, base_url=get_base_url())
             
             # Export user data
@@ -707,7 +708,7 @@ def register_user_management_routes(app):
     app.register_blueprint(user_management_bp)
     
     # Initialize email service with app
-    from services.email_service import init_email_service
+    from app.services.email.components.email_service import init_email_service
     init_email_service(app)
     
     # Store database manager in app config for route access

@@ -238,7 +238,7 @@ def register_routes(bp):
                         )
                     
                     # Also send notifications to affected users via progress tracker
-                    from progress_tracker import ProgressTracker
+                    from app.services.monitoring.progress.progress_tracker import ProgressTracker
                     progress_tracker = ProgressTracker(current_app.db_manager)
                     progress_tracker.handle_maintenance_mode_change(True, {
                         'reason': reason,
@@ -317,7 +317,7 @@ def register_routes(bp):
                         )
                     
                     # Also send notifications to affected users via progress tracker
-                    from progress_tracker import ProgressTracker
+                    from app.services.monitoring.progress.progress_tracker import ProgressTracker
                     progress_tracker = ProgressTracker(current_app.db_manager)
                     progress_tracker.handle_maintenance_mode_change(False, {
                         'reason': 'Maintenance completed',

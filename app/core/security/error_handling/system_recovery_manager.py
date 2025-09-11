@@ -24,7 +24,7 @@ from sqlalchemy import text
 from app.core.database.core.database_manager import DatabaseManager
 from models import CaptionGenerationTask, TaskStatus, User
 from app.services.task.core.task_queue_manager import TaskQueueManager
-from progress_tracker import ProgressTracker
+from app.services.monitoring.progress.progress_tracker import ProgressTracker
 from app.core.security.core.security_utils import sanitize_for_log
 
 logger = logging.getLogger(__name__)

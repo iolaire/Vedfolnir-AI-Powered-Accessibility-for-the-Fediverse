@@ -178,7 +178,7 @@ class SystemRecoveryManager:
             
             # Try to reinitialize email service
             try:
-                from services.email_service import email_service
+                from app.services.email.components.email_service import email_service
                 
                 # Test email service
                 if hasattr(email_service, 'test_connection'):
@@ -478,7 +478,7 @@ def _check_file_system_health() -> bool:
 def _check_email_service_health() -> bool:
     """Check email service health"""
     try:
-        from services.email_service import email_service
+        from app.services.email.components.email_service import email_service
         
         # If email service has a health check method, use it
         if hasattr(email_service, 'health_check'):

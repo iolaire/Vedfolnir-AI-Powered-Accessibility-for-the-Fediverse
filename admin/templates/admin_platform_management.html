@@ -1,0 +1,541 @@
+<!-- Copyright (C) 2025 iolaire mcfadden. -->
+<!-- This program is free software: you can redistribute it and/or modify it under the terms of the GNU Affero General Public License as published by the Free Software Foundation, either version 3 of the License, or (at your option) any later version. -->
+<!-- THE SOFTWARE IS PROVIDED "AS IS", WITHOUT WARRANTY OF ANY KIND, EXPRESS OR IMPLIED, INCLUDING BUT NOT LIMITED TO THE WARRANTIES OF MERCHANTABILITY, FITNESS FOR A PARTICULAR PURPOSE AND NONINFRINGEMENT. IN NO EVENT SHALL THE AUTHORS OR COPYRIGHT HOLDERS BE LIABLE FOR ANY CLAIM, DAMAGES OR OTHER LIABILITY, WHETHER IN AN ACTION OF CONTRACT, TORT OR OTHERWISE, ARISING FROM, OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE SOFTWARE. -->
+
+{% extends "base_admin.html" %}
+
+{% block title %}Platform Management - Admin{% endblock %}
+
+{% block head %}
+<style nonce="{{ g.csp_nonce }}">
+.platform-card {
+    border: 1px solid #dee2e6;
+    border-radius: 8px;
+    padding: 1rem;
+    margin-bottom: 1rem;
+    background: #fff;
+}
+
+.platform-status {
+    display: inline-block;
+    padding: 0.25rem 0.5rem;
+    border-radius: 4px;
+    font-size: 0.875rem;
+    font-weight: 500;
+}
+
+.platform-status.active {
+    background-color: #d4edda;
+    color: #155724;
+}
+
+.platform-status.inactive {
+    background-color: #f8d7da;
+    color: #721c24;
+}
+
+.platform-type-badge {
+    background-color: #e9ecef;
+    color: #495057;
+    padding: 0.25rem 0.5rem;
+    border-radius: 4px;
+    font-size: 0.75rem;
+    text-transform: uppercase;
+}
+
+.default-badge {
+    background-color: #fff3cd;
+    color: #856404;
+    padding: 0.25rem 0.5rem;
+    border-radius: 4px;
+    font-size: 0.75rem;
+}
+
+.stats-card {
+    background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+    color: white;
+    border-radius: 8px;
+    padding: 1.5rem;
+    margin-bottom: 1rem;
+}
+
+.stats-number {
+    font-size: 2rem;
+    font-weight: bold;
+    margin-bottom: 0.5rem;
+}
+
+.filter-section {
+    background: #f8f9fa;
+    padding: 1rem;
+    border-radius: 8px;
+    margin-bottom: 1.5rem;
+}
+
+.connection-status {
+    display: inline-flex;
+    align-items: center;
+    gap: 0.25rem;
+}
+
+.connection-indicator {
+    width: 8px;
+    height: 8px;
+    border-radius: 50%;
+}
+
+.connection-indicator.success {
+    background-color: #28a745;
+}
+
+.connection-indicator.error {
+    background-color: #dc3545;
+}
+
+.connection-indicator.unknown {
+    background-color: #6c757d;
+}
+</style>
+{% endblock %}
+
+{% block content %}
+<div class="d-flex justify-content-between flex-wrap flex-md-nowrap align-items-center pt-3 pb-2 mb-3 border-bottom">
+    <h1 class="h2">Platform Management</h1>
+    <div class="btn-toolbar mb-2 mb-md-0">
+        <div class="btn-group me-2">
+            <button type="button" class="btn btn-sm btn-outline-secondary" onclick="refreshPlatforms()">
+                <i class="bi bi-arrow-clockwise"></i> Refresh
+            </button>
+        </div>
+    </div>
+</div>
+
+<!-- Platform Statistics -->
+<div class="row mb-4">
+    <div class="col-md-3">
+        <div class="stats-card">
+            <div class="stats-number">{{ platform_stats.total_platforms }}</div>
+            <div>Total Platforms</div>
+        </div>
+    </div>
+    <div class="col-md-3">
+        <div class="stats-card">
+            <div class="stats-number">{{ platform_stats.active_platforms }}</div>
+            <div>Active Platforms</div>
+        </div>
+    </div>
+    <div class="col-md-3">
+        <div class="stats-card">
+            <div class="stats-number">{{ platform_stats.users_with_platforms }}</div>
+            <div>Users with Platforms</div>
+        </div>
+    </div>
+    <div class="col-md-3">
+        <div class="stats-card">
+            <div class="stats-number">{{ platform_stats.recent_activity }}</div>
+            <div>Recent Activity (7d)</div>
+        </div>
+    </div>
+</div>
+
+<!-- Filters -->
+<div class="filter-section">
+    <form method="GET" class="row g-3">
+        <div class="col-md-3">
+            <label for="platform_type" class="form-label">Platform Type</label>
+            <select class="form-select" id="platform_type" name="platform_type">
+                <option value="">All Types</option>
+                <option value="pixelfed" {% if current_filters.platform_type == 'pixelfed' %}selected{% endif %}>Pixelfed</option>
+                <option value="mastodon" {% if current_filters.platform_type == 'mastodon' %}selected{% endif %}>Mastodon</option>
+                <option value="other" {% if current_filters.platform_type == 'other' %}selected{% endif %}>Other</option>
+            </select>
+        </div>
+        <div class="col-md-3">
+            <label for="status" class="form-label">Status</label>
+            <select class="form-select" id="status" name="status">
+                <option value="">All Status</option>
+                <option value="active" {% if current_filters.status == 'active' %}selected{% endif %}>Active</option>
+                <option value="inactive" {% if current_filters.status == 'inactive' %}selected{% endif %}>Inactive</option>
+                <option value="default" {% if current_filters.status == 'default' %}selected{% endif %}>Default</option>
+            </select>
+        </div>
+        <div class="col-md-3">
+            <label for="user_id" class="form-label">User</label>
+            <select class="form-select" id="user_id" name="user_id">
+                <option value="">All Users</option>
+                {% for user in users %}
+                <option value="{{ user.id }}" {% if current_filters.user_id == user.id|string %}selected{% endif %}>
+                    {{ user.username }} ({{ user.role.value }})
+                </option>
+                {% endfor %}
+            </select>
+        </div>
+        <div class="col-md-3">
+            <label for="search" class="form-label">Search</label>
+            <div class="input-group">
+                <input type="text" class="form-control" id="search" name="search" 
+                       placeholder="Name, URL, or username..." value="{{ current_filters.search or '' }}">
+                <button class="btn btn-outline-secondary" type="submit">
+                    <i class="bi bi-search"></i>
+                </button>
+            </div>
+        </div>
+        <div class="col-md-3">
+            <label class="form-label">&nbsp;</label>
+            <button type="submit" class="btn btn-primary d-block w-100">
+                <i class="bi bi-funnel"></i> Apply Filters
+            </button>
+        </div>
+    </form>
+</div>
+
+<!-- Platform List -->
+<div class="row">
+    {% for platform in platforms %}
+    <div class="col-md-6 col-lg-4">
+        <div class="platform-card">
+            <div class="d-flex justify-content-between align-items-start mb-2">
+                <h5 class="card-title mb-0">{{ platform.name }}</h5>
+                <div class="d-flex gap-1">
+                    {% if platform.is_default %}
+                    <span class="default-badge">Default</span>
+                    {% endif %}
+                    <span class="platform-status {{ 'active' if platform.is_active else 'inactive' }}">
+                        {{ 'Active' if platform.is_active else 'Inactive' }}
+                    </span>
+                </div>
+            </div>
+            
+            <div class="mb-2">
+                <span class="platform-type-badge">{{ platform.platform_type }}</span>
+            </div>
+            
+            <div class="mb-2">
+                <small class="text-muted">
+                    <i class="bi bi-link-45deg"></i> {{ platform.instance_url }}
+                </small>
+            </div>
+            
+            <div class="mb-2">
+                <small class="text-muted">
+                    <i class="bi bi-person"></i> {{ platform.user.username }} ({{ platform.user.role.value }})
+                </small>
+            </div>
+            
+            <div class="mb-3">
+                <small class="text-muted">
+                    <i class="bi bi-at"></i> @{{ platform.username }}
+                </small>
+            </div>
+            
+            <div class="d-flex justify-content-between align-items-center">
+                <div class="connection-status">
+                    <span class="connection-indicator unknown"></span>
+                    <small class="text-muted">Connection Unknown</small>
+                </div>
+                
+                <div class="btn-group" role="group">
+                    <button type="button" class="btn btn-sm btn-outline-primary" 
+                            onclick="viewPlatformDetails({{ platform.id }})">
+                        <i class="bi bi-eye"></i>
+                    </button>
+                    <button type="button" class="btn btn-sm btn-outline-secondary" 
+                            onclick="testConnection({{ platform.id }})">
+                        <i class="bi bi-wifi"></i>
+                    </button>
+                    <div class="btn-group" role="group">
+                        <button type="button" class="btn btn-sm btn-outline-secondary dropdown-toggle" 
+                                data-bs-toggle="dropdown" aria-expanded="false">
+                            <i class="bi bi-three-dots"></i>
+                        </button>
+                        <ul class="dropdown-menu">
+                            <li>
+                                <a class="dropdown-item" href="#" onclick="togglePlatformStatus({{ platform.id }})">
+                                    <i class="bi bi-{{ 'pause' if platform.is_active else 'play' }}"></i>
+                                    {{ 'Deactivate' if platform.is_active else 'Activate' }}
+                                </a>
+                            </li>
+                            {% if platform.is_active and not platform.is_default %}
+                            <li>
+                                <a class="dropdown-item" href="#" onclick="setPlatformDefault({{ platform.id }})">
+                                    <i class="bi bi-star"></i> Set as Default
+                                </a>
+                            </li>
+                            {% endif %}
+                        </ul>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+    {% endfor %}
+</div>
+
+{% if not platforms %}
+<div class="text-center py-5">
+    <i class="bi bi-inbox display-1 text-muted"></i>
+    <h3 class="mt-3">No platforms found</h3>
+    <p class="text-muted">No platforms match your current filters.</p>
+</div>
+{% endif %}
+
+<!-- Pagination -->
+{% if pagination.total_pages > 1 %}
+<nav aria-label="Platform pagination">
+    <ul class="pagination justify-content-center">
+        <li class="page-item {{ 'disabled' if not pagination.has_prev }}">
+            <a class="page-link" href="?page={{ pagination.page - 1 }}&{{ request.query_string.decode() | replace('page=' + pagination.page|string, '') }}">
+                Previous
+            </a>
+        </li>
+        
+        {% for page_num in range(1, pagination.total_pages + 1) %}
+        {% if page_num == pagination.page %}
+        <li class="page-item active">
+            <span class="page-link">{{ page_num }}</span>
+        </li>
+        {% elif page_num <= 3 or page_num > pagination.total_pages - 3 or (page_num >= pagination.page - 1 and page_num <= pagination.page + 1) %}
+        <li class="page-item">
+            <a class="page-link" href="?page={{ page_num }}&{{ request.query_string.decode() | replace('page=' + pagination.page|string, '') }}">
+                {{ page_num }}
+            </a>
+        </li>
+        {% elif page_num == 4 or page_num == pagination.total_pages - 3 %}
+        <li class="page-item disabled">
+            <span class="page-link">...</span>
+        </li>
+        {% endif %}
+        {% endfor %}
+        
+        <li class="page-item {{ 'disabled' if not pagination.has_next }}">
+            <a class="page-link" href="?page={{ pagination.page + 1 }}&{{ request.query_string.decode() | replace('page=' + pagination.page|string, '') }}">
+                Next
+            </a>
+        </li>
+    </ul>
+</nav>
+{% endif %}
+
+<!-- Platform Details Modal -->
+<div class="modal fade" id="platformDetailsModal" tabindex="-1" aria-labelledby="platformDetailsModalLabel" aria-hidden="true">
+    <div class="modal-dialog modal-lg">
+        <div class="modal-content">
+            <div class="modal-header">
+                <h5 class="modal-title" id="platformDetailsModalLabel">Platform Details</h5>
+                <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
+            </div>
+            <div class="modal-body" id="platformDetailsContent">
+                <div class="text-center">
+                    <div class="spinner-border" role="status">
+                        <span class="visually-hidden">Loading...</span>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+{% endblock %}
+
+{% block extra_js %}
+<script nonce="{{ g.csp_nonce }}">
+function refreshPlatforms() {
+    window.location.reload();
+}
+
+function viewPlatformDetails(platformId) {
+    const modal = new bootstrap.Modal(document.getElementById('platformDetailsModal'));
+    const content = document.getElementById('platformDetailsContent');
+    
+    // Show loading spinner
+    content.innerHTML = `
+        <div class="text-center">
+            <div class="spinner-border" role="status">
+                <span class="visually-hidden">Loading...</span>
+            </div>
+        </div>
+    `;
+    
+    modal.show();
+    
+    // Fetch platform details
+    fetch(`/admin/platforms/${platformId}/details`)
+        .then(response => response.json())
+        .then(data => {
+            if (data.success) {
+                const platform = data.platform;
+                content.innerHTML = `
+                    <div class="row">
+                        <div class="col-md-6">
+                            <h6>Basic Information</h6>
+                            <table class="table table-sm">
+                                <tr><td><strong>Name:</strong></td><td>${platform.name}</td></tr>
+                                <tr><td><strong>Type:</strong></td><td>${platform.platform_type}</td></tr>
+                                <tr><td><strong>Instance URL:</strong></td><td><a href="${platform.instance_url}" target="_blank">${platform.instance_url}</a></td></tr>
+                                <tr><td><strong>Username:</strong></td><td>@${platform.username}</td></tr>
+                                <tr><td><strong>Status:</strong></td><td>
+                                    <span class="platform-status ${platform.is_active ? 'active' : 'inactive'}">
+                                        ${platform.is_active ? 'Active' : 'Inactive'}
+                                    </span>
+                                    ${platform.is_default ? '<span class="default-badge ms-1">Default</span>' : ''}
+                                </td></tr>
+                            </table>
+                        </div>
+                        <div class="col-md-6">
+                            <h6>Owner Information</h6>
+                            <table class="table table-sm">
+                                <tr><td><strong>Username:</strong></td><td>${platform.owner.username}</td></tr>
+                                <tr><td><strong>Email:</strong></td><td>${platform.owner.email}</td></tr>
+                                <tr><td><strong>Role:</strong></td><td>${platform.owner.role}</td></tr>
+                            </table>
+                            
+                            <h6>Usage Statistics</h6>
+                            <table class="table table-sm">
+                                <tr><td><strong>Total Posts:</strong></td><td>${platform.usage_stats.total_posts}</td></tr>
+                                <tr><td><strong>Total Images:</strong></td><td>${platform.usage_stats.total_images}</td></tr>
+                                <tr><td><strong>Last Activity:</strong></td><td>${platform.usage_stats.last_activity || 'Never'}</td></tr>
+                            </table>
+                        </div>
+                    </div>
+                    
+                    <div class="row mt-3">
+                        <div class="col-12">
+                            <h6>Timestamps</h6>
+                            <table class="table table-sm">
+                                <tr><td><strong>Created:</strong></td><td>${platform.created_at ? new Date(platform.created_at).toLocaleString() : 'Unknown'}</td></tr>
+                                <tr><td><strong>Last Used:</strong></td><td>${platform.last_used ? new Date(platform.last_used).toLocaleString() : 'Never'}</td></tr>
+                            </table>
+                        </div>
+                    </div>
+                `;
+            } else {
+                content.innerHTML = `
+                    <div class="alert alert-danger">
+                        <i class="bi bi-exclamation-triangle"></i>
+                        Error loading platform details: ${data.error}
+                    </div>
+                `;
+            }
+        })
+        .catch(error => {
+            content.innerHTML = `
+                <div class="alert alert-danger">
+                    <i class="bi bi-exclamation-triangle"></i>
+                    Error loading platform details: ${error.message}
+                </div>
+            `;
+        });
+}
+
+function testConnection(platformId) {
+    const button = event.target.closest('button');
+    const originalContent = button.innerHTML;
+    
+    // Show loading state
+    button.innerHTML = '<i class="bi bi-hourglass-split"></i>';
+    button.disabled = true;
+    
+    fetch(`/admin/platforms/${platformId}/test-connection`, {
+        method: 'POST',
+        headers: {
+            'Content-Type': 'application/json',
+            'X-CSRFToken': document.querySelector('meta[name="csrf-token"]').getAttribute('content')
+        }
+    })
+    .then(response => response.json())
+    .then(data => {
+        if (data.success) {
+            const test = data.connection_test;
+            if (test.success) {
+                window.showAdminNotification(
+                    `Connection successful! Response time: ${test.response_time}ms`,
+                    'success',
+                    'Connection Test'
+                );
+                
+                // Update connection indicator
+                const card = button.closest('.platform-card');
+                const indicator = card.querySelector('.connection-indicator');
+                const status = card.querySelector('.connection-status small');
+                indicator.className = 'connection-indicator success';
+                status.textContent = `Connected (${test.response_time}ms)`;
+            } else {
+                window.showAdminNotification(
+                    `Connection failed: ${test.error}`,
+                    'error',
+                    'Connection Test'
+                );
+                
+                // Update connection indicator
+                const card = button.closest('.platform-card');
+                const indicator = card.querySelector('.connection-indicator');
+                const status = card.querySelector('.connection-status small');
+                indicator.className = 'connection-indicator error';
+                status.textContent = 'Connection Failed';
+            }
+        } else {
+            window.showAdminNotification(data.error, 'error', 'Connection Test Failed');
+        }
+    })
+    .catch(error => {
+        window.showAdminNotification(`Connection test failed: ${error.message}`, 'error', 'Connection Test Error');
+    })
+    .finally(() => {
+        // Restore button state
+        button.innerHTML = originalContent;
+        button.disabled = false;
+    });
+}
+
+function togglePlatformStatus(platformId) {
+    if (!confirm('Are you sure you want to change this platform\'s status?')) {
+        return;
+    }
+    
+    fetch(`/admin/platforms/${platformId}/toggle-status`, {
+        method: 'POST',
+        headers: {
+            'Content-Type': 'application/json',
+            'X-CSRFToken': document.querySelector('meta[name="csrf-token"]').getAttribute('content')
+        }
+    })
+    .then(response => response.json())
+    .then(data => {
+        if (data.success) {
+            window.showAdminNotification(data.message, 'success', 'Platform Status Updated');
+            setTimeout(() => window.location.reload(), 1000);
+        } else {
+            window.showAdminNotification(data.error, 'error', 'Status Update Failed');
+        }
+    })
+    .catch(error => {
+        window.showAdminNotification(`Failed to update status: ${error.message}`, 'error', 'Status Update Error');
+    });
+}
+
+function setPlatformDefault(platformId) {
+    if (!confirm('Are you sure you want to set this platform as the default for its user?')) {
+        return;
+    }
+    
+    fetch(`/admin/platforms/${platformId}/set-default`, {
+        method: 'POST',
+        headers: {
+            'Content-Type': 'application/json',
+            'X-CSRFToken': document.querySelector('meta[name="csrf-token"]').getAttribute('content')
+        }
+    })
+    .then(response => response.json())
+    .then(data => {
+        if (data.success) {
+            window.showAdminNotification(data.message, 'success', 'Default Platform Set');
+            setTimeout(() => window.location.reload(), 1000);
+        } else {
+            window.showAdminNotification(data.error, 'error', 'Default Update Failed');
+        }
+    })
+    .catch(error => {
+        window.showAdminNotification(`Failed to set default: ${error.message}`, 'error', 'Default Update Error');
+    });
+}
+</script>
+{% endblock %}

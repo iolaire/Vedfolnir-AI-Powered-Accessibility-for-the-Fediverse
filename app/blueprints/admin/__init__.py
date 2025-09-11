@@ -3,9 +3,18 @@
 # THE SOFTWARE IS PROVIDED "AS IS", WITHOUT WARRANTY OF ANY KIND, EXPRESS OR IMPLIED, INCLUDING BUT NOT LIMITED TO THE WARRANTIES OF MERCHANTABILITY, FITNESS FOR A PARTICULAR PURPOSE AND NONINFRINGEMENT. IN NO EVENT SHALL THE AUTHORS OR COPYRIGHT HOLDERS BE LIABLE FOR ANY CLAIM, DAMAGES OR OTHER LIABILITY, WHETHER IN AN ACTION OF CONTRACT, TORT OR OTHERWISE, ARISING FROM, OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE SOFTWARE.
 
 from flask import Blueprint
+import os
 
-# Create admin blueprint
-admin_bp = Blueprint('admin', __name__, url_prefix='/admin')
+# Get the absolute path to the admin templates directory
+admin_templates_path = os.path.abspath(os.path.join(os.path.dirname(__file__), '../../../admin/templates'))
+admin_static_path = os.path.abspath(os.path.join(os.path.dirname(__file__), '../../../admin/static'))
+
+# Create admin blueprint with custom template and static folders
+admin_bp = Blueprint('admin', __name__, 
+                    url_prefix='/admin',
+                    template_folder=admin_templates_path,
+                    static_folder=admin_static_path,
+                    static_url_path='/admin/static')
 
 # Import all admin routes to register them with the blueprint
 from . import routes

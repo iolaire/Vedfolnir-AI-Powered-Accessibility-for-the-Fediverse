@@ -23,11 +23,11 @@ from models import (
     JobAuditLog
 )
 from app.services.task.core.task_queue_manager import TaskQueueManager
-from progress_tracker import ProgressTracker
+from app.services.monitoring.progress.progress_tracker import ProgressTracker
 from app.services.platform.adapters.platform_aware_caption_adapter import PlatformAwareCaptionAdapter
 from app.core.security.core.security_utils import sanitize_for_log
-from error_recovery_manager import error_recovery_manager, handle_caption_error
-from enhanced_error_recovery_manager import EnhancedErrorRecoveryManager
+from app.core.security.error_handling.error_recovery_manager import error_recovery_manager, handle_caption_error
+from app.core.security.error_handling.enhanced_error_recovery_manager import EnhancedErrorRecoveryManager
 
 logger = logging.getLogger(__name__)
 
@@ -114,6 +114,26 @@ class WebCaptionGenerationService:
             
         except Exception as e:
             logger.error(f"Failed to start caption generation: {sanitize_for_log(str(e))}")
+            raise
+    
+    def start_caption_generation_sync(
+        self, 
+        user_id: int, 
+        platform_connection_id: int,
+        settings: Optional[CaptionGenerationSettings] = None
+    ) -> str:
+        """Synchronous wrapper for start_caption_generation"""
+        try:
+            loop = asyncio.new_event_loop()
+            asyncio.set_event_loop(loop)
+            try:
+                return loop.run_until_complete(
+                    self.start_caption_generation(user_id, platform_connection_id, settings)
+                )
+            finally:
+                loop.close()
+        except Exception as e:
+            logger.error(f"Error in sync caption generation: {e}")
             raise
     
     async def _check_storage_limits_before_generation(self) -> None:

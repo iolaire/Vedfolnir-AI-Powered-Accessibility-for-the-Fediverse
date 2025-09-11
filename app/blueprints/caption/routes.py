@@ -135,7 +135,10 @@ def start_generation():
         
         caption_service = WebCaptionGenerationService(db_manager)
         
-        # Platform context is now available in g.platform_connection_id
+        # Platform context is now available in g.session_context
+        platform_connection_id = g.session_context.get('platform_connection_id')
+        if not platform_connection_id:
+            return error_response("No platform connection available", 400)
         from models import CaptionGenerationSettings
         
         # Create settings object from form data
@@ -160,7 +163,7 @@ def start_generation():
                     return loop.run_until_complete(
                         caption_service.start_caption_generation(
                             current_user.id,
-                            g.platform_connection_id,
+                            platform_connection_id,
                             settings=settings
                         )
                     )
@@ -176,7 +179,7 @@ def start_generation():
             # Fallback to synchronous execution
             task_id = caption_service.start_caption_generation_sync(
                 current_user.id,
-                g.platform_connection_id,
+                platform_connection_id,
                 settings=settings
             )
         

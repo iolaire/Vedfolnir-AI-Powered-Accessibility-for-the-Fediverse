@@ -154,7 +154,7 @@
     - Update all references throughout codebase
     - _Requirements: 10.1, 10.5, 10.8_
 
-- [ ] 5. Root Directory Cleanup and Verification
+- [x] 5. Root Directory Cleanup and Verification
   - [x] 5.1 Root Directory Cleanup
     - Verify only essential files remain in root: `main.py`, `web_app.py`, `config.py`, `models.py`
     - Move any remaining framework files to appropriate `app/` locations
@@ -180,6 +180,16 @@
       - ✅ Fixed template URL references: Updated all templates to use `auth.user_management.*` instead of `user_management.*`
       - ✅ Fixed admin routes: Re-enabled admin routes registration and fixed import paths
       - ✅ Fixed test suite: Corrected import paths for missing modules and test configuration
+      - ✅ Fixed services imports: Updated `services.*` imports to `app.services.*` in user management and security modules
+      - ✅ Fixed session management: Added core SessionManager with `create_session` method for proper session handling
+      - ✅ Fixed detached SQLAlchemy instances: Resolved user object access outside session context
+      - ✅ Fixed progress_tracker imports: Updated `progress_tracker` imports to `app.services.monitoring.progress.progress_tracker`
+      - ✅ Fixed error_recovery_manager imports: Updated all `error_recovery_manager` imports to use full app path
+      - ✅ Fixed caption generation: All imports in `/caption/generation` route now work correctly
+      - ✅ Added missing method: Created `start_caption_generation_sync` method in WebCaptionGenerationService
+      - ✅ Fixed platform context access: Corrected `g.platform_connection_id` to use `g.session_context['platform_connection_id']`
+      - ✅ Fixed admin template path: Updated admin blueprint to use `admin/templates` directory for template resolution
+      - ✅ Fixed admin static files: Added static folder configuration to admin blueprint for CSS/JS assets
     - _Requirements: 10.6, 10.8_
 
   - [x] 5.4 Post-Consolidation Issue Resolution
@@ -192,21 +202,26 @@
 ## Phase 2: Admin Interface Implementation
 
 - [ ] 6. Missing Admin Route Implementation
-  - [ ] 6.1 Platform Management Routes
+  - [x] 6.1 Platform Management Routes
     - Implement `/admin/platforms` route using consolidated `app/services/platform/` framework
     - Create platform management templates
     - Integrate with consolidated security framework for access control
     - Add comprehensive testing (Python + Playwright)
+    - **RESOLVED ROUTING ISSUES:**
+      - ✅ Fixed login/logout route redirects: Updated `auth.routes` to use `auth.user_management.login/logout`
+      - ✅ Fixed all route references: Updated all `user_management.login` references to `auth.user_management.login`
+      - ✅ Fixed self-references: Updated internal blueprint references to use relative paths (`.login`)
+      - ✅ Updated login manager configuration: Fixed Flask-Login view configuration
     - _Requirements: 1.1, 8.1, 8.2_
 
-  - [ ] 6.2 System Administration Routes
+  - [x] 6.2 System Administration Routes
     - Implement `/admin/system` route using consolidated frameworks
     - Create system administration dashboard
     - Integrate with consolidated monitoring framework
     - Add comprehensive testing (Python + Playwright)
     - _Requirements: 1.2, 8.1, 8.2_
 
-  - [ ] 6.3 Security Management Routes
+  - [x] 6.3 Security Management Routes
     - Implement `/admin/security` route using consolidated `app/core/security/` framework
     - Implement `/admin/security/audit` route for security audit logs
     - Create security management interfaces

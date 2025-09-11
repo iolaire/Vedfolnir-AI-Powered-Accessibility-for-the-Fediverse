@@ -68,7 +68,7 @@ def logout_all():
         logout_user()
     
     # Create response with cleared session cookie
-    response = make_response(redirect(url_for('user_management.login')))
+    response = make_response(redirect(url_for('auth.user_management.login')))
     
     # Clear session
     session.clear()

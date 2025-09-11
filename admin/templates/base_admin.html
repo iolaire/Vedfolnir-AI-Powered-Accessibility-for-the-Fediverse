@@ -110,6 +110,11 @@
                             </a>
                         </li>
                         <li class="nav-item">
+                            <a class="nav-link" href="{{ url_for('admin.platform_management') }}">
+                                <i class="bi bi-diagram-3"></i> Platform Management
+                            </a>
+                        </li>
+                        <li class="nav-item">
                             <a class="nav-link" href="{{ url_for('admin.health_dashboard') }}">
                                 <i class="bi bi-activity"></i> System Management
                             </a>
@@ -150,12 +155,12 @@
                             </a>
                         </li>
                         <li class="nav-item">
-                            <a class="nav-link" href="{{ url_for('admin.performance_dashboard') }}">
+                            <a class="nav-link" href="{{ url_for('admin.monitoring_dashboard') }}">
                                 <i class="bi bi-speedometer"></i> Performance
                             </a>
                         </li>
                         <li class="nav-item">
-                            <a class="nav-link" href="{{ url_for('admin.performance_dashboard') }}#responsiveness">
+                            <a class="nav-link" href="{{ url_for('admin.monitoring_dashboard') }}#responsiveness">
                                 <i class="bi bi-speedometer2"></i> Responsiveness
                             </a>
                         </li>

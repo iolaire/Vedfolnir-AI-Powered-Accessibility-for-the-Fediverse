@@ -93,7 +93,7 @@ def index():
             has_previous = has_previous_session()
             if has_previous:
                 logger.info("Anonymous user with previous session detected, redirecting to login")
-                return redirect(url_for('user_management.login', _external=False))
+                return redirect(url_for('auth.user_management.login', _external=False))
         except Exception as session_error:
             # Handle session detection error - default to new user
             has_previous = handle_session_detection_error(session_error, {
@@ -102,7 +102,7 @@ def index():
             })
             if has_previous:
                 logger.info("Session detection recovered, redirecting to login")
-                return redirect(url_for('user_management.login', _external=False))
+                return redirect(url_for('auth.user_management.login', _external=False))
             else:
                 logger.info("Session detection failed, treating as new user")
         
