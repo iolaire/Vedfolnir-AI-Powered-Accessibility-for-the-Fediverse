@@ -5,6 +5,7 @@ from dotenv import load_dotenv
 load_dotenv()
 
 import os
+from datetime import datetime
 from flask import Flask
 from flask_login import LoginManager
 from flask_cors import CORS
@@ -949,8 +950,33 @@ try:
             
         def set_websocket_handlers(self, handlers): 
             pass
-        def send_notification(self, *args, **kwargs):
-            pass
+        def send_notification(self, notification_type, message, title=None, user_id=None, priority=None, category=None, data=None, requires_action=False, action_url=None, action_text=None):
+            # Stub method - log the notification and make it available for anonymous users
+            app.logger.info(f"Stub: send_notification - {title or 'Notification'}: {message}")
+            
+            # For anonymous users (no user_id), store in a global list for testing
+            if user_id is None:
+                if not hasattr(app, 'anonymous_notifications'):
+                    app.anonymous_notifications = []
+                
+                notification_data = {
+                    'id': f"stub_{len(app.anonymous_notifications)}",
+                    'type': notification_type.value if hasattr(notification_type, 'value') else str(notification_type),
+                    'title': title or 'Notification',
+                    'message': message,
+                    'priority': priority.value if hasattr(priority, 'value') else str(priority),
+                    'category': category.value if hasattr(category, 'value') else str(category),
+                    'data': data or {},
+                    'requires_action': requires_action,
+                    'action_url': action_url,
+                    'action_text': action_text,
+                    'timestamp': str(datetime.now())
+                }
+                
+                app.anonymous_notifications.append(notification_data)
+                app.logger.info(f"Stub: Stored anonymous notification: {title}")
+            
+            return True
         def send_user_notification(self, user_id, notification):
             # Stub method - just log and return success
             app.logger.info(f"Stub: send_user_notification for user {user_id}: {notification.title}")

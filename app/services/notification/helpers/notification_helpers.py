@@ -79,53 +79,77 @@ def send_user_notification(
         True if notification was sent successfully, False otherwise
     """
     try:
-        # Get notification manager
-        notification_manager = getattr(current_app, 'unified_notification_manager', None)
-        if not notification_manager:
-            logger.warning("Unified notification manager not available")
-            return False
-        
         # Get user ID from session if not provided
         if user_id is None:
             user_id = session.get('user_id')
-            # For anonymous users (like during registration), store notifications in session
-            if not user_id:
-                logger.debug("No user ID available for notification - storing in session for anonymous user")
-                
-                # Generate title if not provided
-                if title is None:
-                    title_map = {
-                        NotificationType.SUCCESS: "Success",
-                        NotificationType.ERROR: "Error", 
-                        NotificationType.WARNING: "Warning",
-                        NotificationType.INFO: "Information"
-                    }
-                    title = title_map.get(notification_type, "Notification")
-                
-                # Store notification in session for anonymous users
-                if 'anonymous_notifications' not in session:
-                    session['anonymous_notifications'] = []
-                
-                notification_data = {
-                    'id': str(uuid.uuid4()),
-                    'type': notification_type.value,
-                    'title': title,
-                    'message': message,
-                    'priority': priority.value,
-                    'category': category.value,
-                    'data': data or {},
-                    'requires_action': requires_action,
-                    'action_url': action_url,
-                    'action_text': action_text,
-                    'timestamp': datetime.now(timezone.utc).isoformat()
-                }
-                
-                session['anonymous_notifications'].append(notification_data)
-                session.modified = True
-                
-                logger.info(f"Anonymous user notification stored in session: {title} - {message}")
-                return True
         
+        # For anonymous users (like during registration), store notifications in session
+        if not user_id:
+            logger.debug("No user ID available for notification - storing in session for anonymous user")
+            
+            # Generate title if not provided
+            if title is None:
+                title_map = {
+                    NotificationType.SUCCESS: "Success",
+                    NotificationType.ERROR: "Error", 
+                    NotificationType.WARNING: "Warning",
+                    NotificationType.INFO: "Information"
+                }
+                title = title_map.get(notification_type, "Notification")
+            
+            # Store notification in session for anonymous users
+            if 'anonymous_notifications' not in session:
+                session['anonymous_notifications'] = []
+            
+            notification_data = {
+                'id': str(uuid.uuid4()),
+                'type': notification_type.value,
+                'title': title,
+                'message': message,
+                'priority': priority.value,
+                'category': category.value,
+                'data': data or {},
+                'requires_action': requires_action,
+                'action_url': action_url,
+                'action_text': action_text,
+                'timestamp': datetime.now(timezone.utc).isoformat()
+            }
+            
+            session['anonymous_notifications'].append(notification_data)
+            session.modified = True
+            
+            logger.info(f"Anonymous user notification stored in session: {title} - {message}")
+            return True
+        
+        # Get notification manager for authenticated users
+        notification_manager = getattr(current_app, 'unified_notification_manager', None)
+        if not notification_manager:
+            logger.warning("Unified notification manager not available - using session fallback for authenticated user")
+            
+            # Fallback: store in session like anonymous users
+            if 'anonymous_notifications' not in session:
+                session['anonymous_notifications'] = []
+            
+            notification_data = {
+                'id': str(uuid.uuid4()),
+                'type': notification_type.value,
+                'title': title or 'Notification',
+                'message': message,
+                'priority': priority.value if priority else 'medium',
+                'category': category.value if category else 'general',
+                'data': data or {},
+                'requires_action': requires_action,
+                'action_url': action_url,
+                'action_text': action_text,
+                'timestamp': datetime.now(timezone.utc).isoformat()
+            }
+            
+            session['anonymous_notifications'].append(notification_data)
+            session.modified = True
+            
+            logger.info(f"Notification stored in session fallback: {title or 'Notification'} - {message}")
+            return True
+                
         # Generate title if not provided
         if title is None:
             title_map = {

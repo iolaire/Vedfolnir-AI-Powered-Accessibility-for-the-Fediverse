@@ -181,12 +181,27 @@ def register():
                                 title='Registration Complete',
                                 user_id=user.id
                             )
+                            # Also send notification for anonymous users (since they're not authenticated yet)
+                            send_success_notification(
+                                message='Registration successful! Please check your email for verification.',
+                                title='Registration Complete'
+                            )
                     except Exception as email_error:
                         logger.error(f"Error sending verification email: {email_error}")
                         send_success_notification(
                             message='Registration successful! Please check your email for verification.',
                             title='Registration Complete',
                             user_id=user.id
+                        )
+                        # Also send notification for anonymous users (since they're not authenticated yet)
+                        send_success_notification(
+                            message='Registration successful! Please check your email for verification.',
+                            title='Registration Complete'
+                        )
+                        # Also send notification for anonymous users (since they're not authenticated yet)
+                        send_success_notification(
+                            message='Registration successful! Please check your email for verification.',
+                            title='Registration Complete'
                         )
                     
                     return redirect(url_for('.login'))
@@ -467,7 +482,7 @@ def verify_email(token):
                 
                 # Log successful verification
                 send_success_notification(
-                    message=f'Email verified successfully for user {user.email}',
+                    message=f'Email verified successfully for user {user.email}, please login',
                     title='Email Verification Successful'
                 )
                 
@@ -547,7 +562,7 @@ def reset_password(token):
                 if reset_success and reset_user:
                     # Invalidate all existing sessions for security after password reset
                     try:
-                        session_manager = getattr(current_app, 'unified_session_manager', None)
+                        session_manager = getattr(current_app, 'core_session_manager', None)
                         if session_manager:
                             session_manager.cleanup_user_sessions(reset_user.id)
                             logger.info(f"Invalidated all sessions for user {sanitize_for_log(reset_user.username)} after password reset")
@@ -582,7 +597,10 @@ def reset_password(token):
 @conditional_validate_input_length()
 def change_password():
     """Password change for authenticated users"""
-    form = PasswordChangeForm()
+    if request.method == 'POST':
+        form = PasswordChangeForm(request.form)
+    else:
+        form = PasswordChangeForm()
     
     if validate_form_submission(form):
         # Get client information for audit logging
@@ -619,7 +637,7 @@ def change_password():
                     
                     # Invalidate all other sessions for security
                     try:
-                        session_manager = getattr(current_app, 'unified_session_manager', None)
+                        session_manager = getattr(current_app, 'core_session_manager', None)
                         if session_manager:
                             # Get current session ID from Redis session
                             from app.core.session.middleware.session_middleware_v2 import get_current_session_id
@@ -629,7 +647,21 @@ def change_password():
                     except Exception as e:
                         logger.warning(f"Failed to invalidate other sessions after password change: {e}")
                     
-                    return redirect(url_for('main.index'))
+                    # Send success notification and redirect to login page
+                    send_success_notification(
+                        message='Your password has been successfully changed. Please log in with your new password.',
+                        title='Password Changed Successfully'
+                    )
+                    
+                    # Log out the user after successful password change
+                    from app.core.session.middleware.session_middleware_v2 import destroy_current_session
+                    session_destroyed = destroy_current_session()
+                    
+                    if session_destroyed:
+                        logger.info(f"Session destroyed for user {sanitize_for_log(current_user.username)} after password change")
+                    
+                    # Redirect to login page with success message
+                    return redirect(url_for('auth.user_management.login'))
                 else:
                     send_error_notification(
                         message=message or 'Password change failed. Please try again.',
@@ -643,6 +675,22 @@ def change_password():
                 message='Password change failed. Please try again.',
                 title='Password Change Error'
             )
+    else:
+        # Form validation failed - send notification about validation errors
+        if request.method == 'POST':
+            # Collect all form validation errors
+            error_messages = []
+            for field_name, field_errors in form.errors.items():
+                for error in field_errors:
+                    error_messages.append(f"{field_name.replace('_', ' ').title()}: {error}")
+            
+            if error_messages:
+                # Send a notification with the validation errors
+                send_error_notification(
+                    message='; '.join(error_messages),
+                    title='Password Change Form Validation Failed'
+                )
+                logger.info(f"Password change form validation failed: {'; '.join(error_messages)}")
     
     return render_template('user_management/change_password.html', form=form)
 
@@ -717,7 +765,7 @@ def delete_profile():
                     
                     # Clean up user sessions after deletion
                     try:
-                        session_manager = getattr(current_app, 'unified_session_manager', None)
+                        session_manager = getattr(current_app, 'core_session_manager', None)
                         if session_manager:
                             session_manager.cleanup_user_sessions(user_id)
                     except Exception as e:
