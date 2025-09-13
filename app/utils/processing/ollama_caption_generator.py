@@ -53,6 +53,7 @@ class OllamaCaptionGenerator:
             logger.info(f"Connecting to Ollama at {self.ollama_url}")
             logger.info(f"Using model: {self.model_name}")
             logger.info(f"Connection timeout: {self.timeout}s")
+            logger.info(f"Model context size: {self.config.context_size}")
             
             # Test connection to Ollama API
             await self._validate_connection()
@@ -307,12 +308,16 @@ class OllamaCaptionGenerator:
             "model": model_name,
             "prompt": prompt,
             "images": [image_data],
-            "stream": False
+            "stream": False,
+            "options": {
+                "num_ctx": self.config.context_size
+            }
         }
         
         logger.debug(f"Sending request to Ollama API at {self.ollama_url}/api/generate")
         logger.debug(f"Using model: {model_name}")
         logger.debug(f"Prompt length: {len(prompt)} characters")
+        logger.debug(f"Context size (num_ctx): {self.config.context_size}")
         
         # Send request to Ollama with retry logic
         max_attempts = self.retry_config.max_attempts if self.retry_config else 3

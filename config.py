@@ -298,6 +298,7 @@ class OllamaConfig:
     url: str = "http://localhost:11434"
     model_name: str = "llava:7b"
     timeout: float = 60.0
+    context_size: int = 4096
     retry: RetryConfig = None
     fallback: FallbackConfig = None
     caption: CaptionConfig = None
@@ -308,6 +309,7 @@ class OllamaConfig:
             url=os.getenv("OLLAMA_URL", "http://localhost:11434"),
             model_name=os.getenv("OLLAMA_MODEL", "llava:7b"),
             timeout=float(os.getenv("OLLAMA_TIMEOUT", "60.0")),
+            context_size=int(os.getenv("OLLAMA_MODEL_CONTEXT", "4096")),
             retry=RetryConfig.from_env(),
             fallback=FallbackConfig.from_env(),
             caption=CaptionConfig.from_env(),
@@ -688,7 +690,8 @@ class Config:
             'ollama': {
                 'url': self.ollama.url,
                 'model': self.ollama.model_name,
-                'timeout': self.ollama.timeout
+                'timeout': self.ollama.timeout,
+                'context_size': self.ollama.context_size
             },
             'storage': {
                 'base_dir': self.storage.base_dir,
