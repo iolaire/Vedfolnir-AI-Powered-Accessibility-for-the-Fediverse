@@ -18,6 +18,7 @@ from app.services.notification.manager.unified_manager import UnifiedNotificatio
 from sqlalchemy import func, desc
 from datetime import datetime, timedelta
 import logging
+import json
 
 logger = logging.getLogger(__name__)
 
@@ -376,6 +377,234 @@ def register_routes(bp):
         except Exception as e:
             current_app.logger.error(f"Error getting platform statistics: {sanitize_for_log(str(e))}")
             return jsonify({'success': False, 'error': 'Failed to get platform statistics'}), 500
+    
+    # API endpoints for platform management
+    @bp.route('/api/platform/list', methods=['GET'])
+    @login_required
+    @admin_required
+    def api_platform_list():
+        """API endpoint to get platform list with filtering and pagination"""
+        
+        db_manager = current_app.config['db_manager']
+        
+        try:
+            # Get filter parameters
+            platform_type_filter = request.args.get('platform_type')
+            status_filter = request.args.get('status')
+            user_filter = request.args.get('user_id')
+            search_term = request.args.get('search')
+            page_size = int(request.args.get('page_size', 25))
+            page = int(request.args.get('page', 1))
+            offset = (page - 1) * page_size
+            
+            with db_manager.get_session() as session:
+                # Base query with user information
+                query = session.query(PlatformConnection).join(User)
+                
+                # Apply filters
+                if platform_type_filter:
+                    query = query.filter(PlatformConnection.platform_type == platform_type_filter)
+                
+                if status_filter == 'active':
+                    query = query.filter(PlatformConnection.is_active == True)
+                elif status_filter == 'inactive':
+                    query = query.filter(PlatformConnection.is_active == False)
+                elif status_filter == 'default':
+                    query = query.filter(PlatformConnection.is_default == True)
+                
+                if user_filter:
+                    try:
+                        user_id = int(user_filter)
+                        query = query.filter(PlatformConnection.user_id == user_id)
+                    except ValueError:
+                        pass
+                
+                if search_term:
+                    search_pattern = f"%{search_term}%"
+                    query = query.filter(
+                        (PlatformConnection.name.ilike(search_pattern)) |
+                        (PlatformConnection.instance_url.ilike(search_pattern)) |
+                        (User.username.ilike(search_pattern))
+                    )
+                
+                # Get total count for pagination
+                total_count = query.count()
+                
+                # Apply pagination and ordering
+                platforms = query.order_by(
+                    desc(PlatformConnection.is_active),
+                    desc(PlatformConnection.is_default),
+                    PlatformConnection.name
+                ).offset(offset).limit(page_size).all()
+                
+                # Convert to API response format
+                platform_list = []
+                for platform in platforms:
+                    platform_list.append({
+                        'id': platform.id,
+                        'name': platform.name,
+                        'platform_type': platform.platform_type,
+                        'instance_url': platform.instance_url,
+                        'username': platform.username,
+                        'is_active': platform.is_active,
+                        'is_default': platform.is_default,
+                        'created_at': platform.created_at.isoformat() if platform.created_at else None,
+                        'last_used': platform.last_used.isoformat() if platform.last_used else None,
+                        'owner': {
+                            'id': platform.user.id,
+                            'username': platform.user.username,
+                            'email': platform.user.email,
+                            'role': platform.user.role.value
+                        }
+                    })
+                
+                return jsonify({
+                    'success': True,
+                    'platforms': platform_list,
+                    'total_count': total_count,
+                    'page': page,
+                    'page_size': page_size,
+                    'total_pages': (total_count + page_size - 1) // page_size
+                })
+                
+        except Exception as e:
+            current_app.logger.error(f"Error getting platform list: {sanitize_for_log(str(e))}")
+            return jsonify({'success': False, 'error': 'Failed to get platform list'}), 500
+    
+    @bp.route('/api/platform/status', methods=['GET'])
+    @login_required
+    @admin_required
+    def api_platform_status():
+        """API endpoint to get platform status overview"""
+        
+        db_manager = current_app.config['db_manager']
+        
+        try:
+            with db_manager.get_session() as session:
+                # Get platform statistics
+                stats = _get_platform_statistics(session)
+                
+                # Get recent platform activities
+                recent_activities = []
+                recent_platforms = session.query(PlatformConnection).join(User).order_by(
+                    desc(PlatformConnection.last_used)
+                ).limit(10).all()
+                
+                for platform in recent_platforms:
+                    recent_activities.append({
+                        'platform_id': platform.id,
+                        'platform_name': platform.name,
+                        'platform_type': platform.platform_type,
+                        'username': platform.user.username,
+                        'last_used': platform.last_used.isoformat() if platform.last_used else None,
+                        'is_active': platform.is_active
+                    })
+                
+                return jsonify({
+                    'success': True,
+                    'status': {
+                        'statistics': stats,
+                        'recent_activities': recent_activities,
+                        'system_health': {
+                            'total_platforms': stats['total_platforms'],
+                            'active_platforms': stats['active_platforms'],
+                            'inactive_platforms': stats['inactive_platforms'],
+                            'users_with_platforms': stats['users_with_platforms'],
+                            'recent_activity_count': stats['recent_activity']
+                        }
+                    }
+                })
+                
+        except Exception as e:
+            current_app.logger.error(f"Error getting platform status: {sanitize_for_log(str(e))}")
+            return jsonify({'success': False, 'error': 'Failed to get platform status'}), 500
+    
+    @bp.route('/api/platform/search', methods=['GET'])
+    @login_required
+    @admin_required
+    def api_platform_search():
+        """API endpoint to search platforms"""
+        
+        db_manager = current_app.config['db_manager']
+        
+        try:
+            search_term = request.args.get('q', '').strip()
+            platform_type = request.args.get('type')
+            status = request.args.get('status')
+            limit = int(request.args.get('limit', 50))
+            
+            if not search_term:
+                return jsonify({'success': False, 'error': 'Search term is required'}), 400
+            
+            with db_manager.get_session() as session:
+                # Base query with user information
+                query = session.query(PlatformConnection).join(User)
+                
+                # Apply search filter
+                search_pattern = f"%{search_term}%"
+                query = query.filter(
+                    (PlatformConnection.name.ilike(search_pattern)) |
+                    (PlatformConnection.instance_url.ilike(search_pattern)) |
+                    (User.username.ilike(search_pattern))
+                )
+                
+                # Apply additional filters
+                if platform_type:
+                    query = query.filter(PlatformConnection.platform_type == platform_type)
+                
+                if status == 'active':
+                    query = query.filter(PlatformConnection.is_active == True)
+                elif status == 'inactive':
+                    query = query.filter(PlatformConnection.is_active == False)
+                elif status == 'default':
+                    query = query.filter(PlatformConnection.is_default == True)
+                
+                # Apply limit and ordering
+                platforms = query.order_by(
+                    desc(PlatformConnection.is_active),
+                    desc(PlatformConnection.is_default),
+                    PlatformConnection.name
+                ).limit(limit).all()
+                
+                # Convert to search results format
+                search_results = []
+                for platform in platforms:
+                    search_results.append({
+                        'id': platform.id,
+                        'name': platform.name,
+                        'platform_type': platform.platform_type,
+                        'instance_url': platform.instance_url,
+                        'username': platform.username,
+                        'is_active': platform.is_active,
+                        'is_default': platform.is_default,
+                        'owner': {
+                            'id': platform.user.id,
+                            'username': platform.user.username,
+                            'email': platform.user.email
+                        },
+                        'match_score': 100,  # Default match score
+                        'highlighted_fields': {
+                            'name': platform.name if search_term.lower() in platform.name.lower() else None,
+                            'instance_url': platform.instance_url if search_term.lower() in platform.instance_url.lower() else None,
+                            'username': platform.user.username if search_term.lower() in platform.user.username.lower() else None
+                        }
+                    })
+                
+                return jsonify({
+                    'success': True,
+                    'search_results': search_results,
+                    'search_term': search_term,
+                    'total_results': len(search_results),
+                    'filters_applied': {
+                        'platform_type': platform_type,
+                        'status': status,
+                        'limit': limit
+                    }
+                })
+                
+        except Exception as e:
+            current_app.logger.error(f"Error searching platforms: {sanitize_for_log(str(e))}")
+            return jsonify({'success': False, 'error': 'Failed to search platforms'}), 500
 
 def _get_platform_statistics(session):
     """Get comprehensive platform statistics"""

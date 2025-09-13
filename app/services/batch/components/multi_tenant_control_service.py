@@ -15,7 +15,7 @@ from models import (
     User, UserRole, CaptionGenerationTask, TaskStatus, JobPriority, 
     SystemConfiguration, JobAuditLog
 )
-from app.services.monitoring.core.system_monitor import ResourceUsage
+from app.services.monitoring.system.system_monitor import ResourceUsage
 from app.core.security.core.rate_limiter import RateLimitConfig
 
 logger = logging.getLogger(__name__)

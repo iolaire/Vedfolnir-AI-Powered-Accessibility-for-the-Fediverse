@@ -29,7 +29,7 @@ from dotenv import load_dotenv
 from config import Config
 from app.core.database.core.database_manager import DatabaseManager
 from models import User, UserAuditLog
-from services.user_management_service import UserAuthenticationService
+# UserAuthenticationService import removed - not needed for this script
 
 def setup_environment():
     """Load environment configuration"""

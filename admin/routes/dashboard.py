@@ -112,7 +112,7 @@ def register_routes(bp):
                 'error': str(e)
             }
         
-        return render_template('admin/admin_landing.html', 
+        return render_template('dashboard.html', 
                              stats=stats,
                              health_status=health_status,
                              app_version=version.__version__,

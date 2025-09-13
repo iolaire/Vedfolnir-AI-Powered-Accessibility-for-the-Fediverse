@@ -7,112 +7,13 @@
 {% block title %}Admin Dashboard - Vedfolnir{% endblock %}
 
 {% block extra_head %}
-<style nonce="{{ g.csp_nonce if g.csp_nonce else '' }}">
-    .job-status-badge {
-        font-size: 0.75rem;
-        padding: 0.25rem 0.5rem;
-    }
-    .system-metric {
-        font-size: 1.2rem;
-        font-weight: bold;
-    }
-    .alert-item {
-        border-left: 4px solid;
-        padding: 0.75rem;
-        margin-bottom: 0.5rem;
-    }
-    .alert-critical { border-left-color: #dc3545; }
-    .alert-warning { border-left-color: #ffc107; }
-    .alert-info { border-left-color: #17a2b8; }
-    .job-controls .btn {
-        padding: 0.25rem 0.5rem;
-        font-size: 0.75rem;
-    }
-    .real-time-indicator {
-        display: inline-block;
-        width: 8px;
-        height: 8px;
-        background-color: #28a745;
-        border-radius: 50%;
-        animation: pulse 2s infinite;
-    }
-    @keyframes pulse {
-        0% { opacity: 1; }
-        50% { opacity: 0.5; }
-        100% { opacity: 1; }
-    }
-    .disconnected { background-color: #dc3545; }
-    
-    /* Responsiveness Monitoring Styles */
-    .responsiveness-metric {
-        padding: 15px;
-        border-radius: 8px;
-        background: #f8f9fa;
-        border: 1px solid #e9ecef;
-    }
-    
-    .responsiveness-metric h6 {
-        margin-bottom: 10px;
-        color: #495057;
-        font-weight: 600;
-    }
-    
-    .progress {
-        height: 8px;
-        background-color: #e9ecef;
-    }
-    
-    .progress-bar.bg-success { background-color: #28a745 !important; }
-    .progress-bar.bg-warning { background-color: #ffc107 !important; }
-    .progress-bar.bg-danger { background-color: #dc3545 !important; }
-    
-    #responsivenessCard.bg-success { background-color: #28a745 !important; }
-    #responsivenessCard.bg-warning { background-color: #ffc107 !important; }
-    #responsivenessCard.bg-danger { background-color: #dc3545 !important; }
-    
-    #memoryCard.bg-success { background-color: #28a745 !important; }
-    #memoryCard.bg-warning { background-color: #ffc107 !important; }
-    #memoryCard.bg-danger { background-color: #dc3545 !important; }
-    
-    #requestPerformanceCard.bg-success { background-color: #28a745 !important; }
-    #requestPerformanceCard.bg-warning { background-color: #ffc107 !important; }
-    #requestPerformanceCard.bg-danger { background-color: #dc3545 !important; }
-    
-    #connectionPoolCard.bg-success { background-color: #28a745 !important; }
-    #connectionPoolCard.bg-warning { background-color: #ffc107 !important; }
-    #connectionPoolCard.bg-danger { background-color: #dc3545 !important; }
-    
-    .responsiveness-alert {
-        padding: 10px;
-        margin: 5px 0;
-        border-radius: 4px;
-        border-left: 4px solid;
-    }
-    
-    .responsiveness-alert.alert-warning {
-        background-color: #fff3cd;
-        border-left-color: #ffc107;
-        color: #856404;
-    }
-    
-    .responsiveness-alert.alert-danger {
-        background-color: #f8d7da;
-        border-left-color: #dc3545;
-        color: #721c24;
-    }
-    
-    .responsiveness-alert.alert-success {
-        background-color: #d4edda;
-        border-left-color: #28a745;
-        color: #155724;
-    }
-</style>
+<!-- Dashboard-specific styles moved to admin.css -->
 {% endblock %}
 
 {% block content %}
 <div class="d-flex justify-content-between flex-wrap flex-md-nowrap align-items-center pt-3 pb-2 mb-3 border-bottom">
     <h1 class="h2">
-        Multi-Tenant Caption Management Dashboard
+        Admin Dashboard - Multi-Tenant Caption Management Dashboard
         <span class="real-time-indicator" id="connectionStatus" title="Real-time updates active"></span>
     </h1>
     <div class="btn-toolbar mb-2 mb-md-0">

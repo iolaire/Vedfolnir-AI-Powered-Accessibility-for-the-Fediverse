@@ -552,4 +552,144 @@ def count_open_security_issues() -> int:
         
     except Exception as e:
         logger.error(f"Error counting security issues: {e}")
-        return 0
+
+    # Security Audit API Endpoints
+    @bp.route('/api/security/audit', methods=['GET'])
+    @login_required
+    @admin_required
+    def api_security_audit():
+        """API endpoint for security audit data"""
+        try:
+            hours = request.args.get('hours', 24, type=int)
+            audit_logs = get_security_audit_logs(hours=hours)
+            audit_stats = get_audit_statistics(hours)
+            
+            return jsonify({
+                'success': True,
+                'audit_logs': audit_logs,
+                'audit_stats': audit_stats,
+                'timestamp': datetime.now(timezone.utc).isoformat()
+            })
+        except Exception as e:
+            logger.error(f"Error getting security audit API: {e}")
+            return jsonify({'success': False, 'error': str(e)}), 500
+
+    @bp.route('/api/security/events', methods=['GET'])
+    @login_required
+    @admin_required
+    def api_security_events():
+        """API endpoint for security events data"""
+        try:
+            hours = request.args.get('hours', 24, type=int)
+            severity = request.args.get('severity', 'all')
+            
+            events = security_monitor.get_security_events(hours=hours, severity=severity)
+            
+            return jsonify({
+                'success': True,
+                'events': events,
+                'total_count': len(events),
+                'timestamp': datetime.now(timezone.utc).isoformat()
+            })
+        except Exception as e:
+            logger.error(f"Error getting security events API: {e}")
+            return jsonify({'success': False, 'error': str(e)}), 500
+
+    @bp.route('/api/security/metrics', methods=['GET'])
+    @login_required
+    @admin_required
+    def api_security_metrics():
+        """API endpoint for security metrics"""
+        try:
+            metrics = security_monitor.get_security_dashboard_data()
+            security_score = calculate_security_score()
+            open_issues = count_open_security_issues()
+            
+            return jsonify({
+                'success': True,
+                'metrics': metrics,
+                'security_score': security_score,
+                'open_issues': open_issues,
+                'timestamp': datetime.now(timezone.utc).isoformat()
+            })
+        except Exception as e:
+            logger.error(f"Error getting security metrics API: {e}")
+            return jsonify({'success': False, 'error': str(e)}), 500
+
+    @bp.route('/api/security/logs', methods=['GET'])
+    @login_required
+    @admin_required
+    def api_security_logs():
+        """API endpoint for security logs"""
+        try:
+            hours = request.args.get('hours', 24, type=int)
+            page = request.args.get('page', 1, type=int)
+            per_page = request.args.get('per_page', 50, type=int)
+            
+            logs = get_security_audit_logs(
+                hours=hours,
+                page=page,
+                per_page=per_page
+            )
+            
+            return jsonify({
+                'success': True,
+                'logs': logs,
+                'page': page,
+                'per_page': per_page,
+                'timestamp': datetime.now(timezone.utc).isoformat()
+            })
+        except Exception as e:
+            logger.error(f"Error getting security logs API: {e}")
+            return jsonify({'success': False, 'error': str(e)}), 500
+
+    @bp.route('/api/security/status', methods=['GET'])
+    @login_required
+    @admin_required
+    def api_security_status():
+        """API endpoint for security status"""
+        try:
+            metrics = security_monitor.get_security_dashboard_data()
+            security_score = calculate_security_score()
+            csrf_metrics = get_csrf_security_metrics()
+            
+            return jsonify({
+                'success': True,
+                'status': 'operational',
+                'security_score': security_score,
+                'csrf_metrics': csrf_metrics,
+                'last_updated': datetime.now(timezone.utc).isoformat()
+            })
+        except Exception as e:
+            logger.error(f"Error getting security status API: {e}")
+            return jsonify({'success': False, 'error': str(e)}), 500
+
+    @bp.route('/api/admin/security/audit', methods=['GET'])
+    @login_required
+    @admin_required
+    def api_admin_security_audit():
+        """API endpoint for admin security audit (comprehensive data)"""
+        try:
+            hours = request.args.get('hours', 24, type=int)
+            
+            # Get comprehensive audit data
+            audit_logs = get_security_audit_logs(hours=hours)
+            audit_stats = get_audit_statistics(hours)
+            metrics = security_monitor.get_security_dashboard_data()
+            security_score = calculate_security_score()
+            open_issues = count_open_security_issues()
+            available_filters = get_audit_filters()
+            
+            return jsonify({
+                'success': True,
+                'audit_logs': audit_logs,
+                'audit_stats': audit_stats,
+                'metrics': metrics,
+                'security_score': security_score,
+                'open_issues': open_issues,
+                'available_filters': available_filters,
+                'timestamp': datetime.now(timezone.utc).isoformat()
+            })
+        except Exception as e:
+            logger.error(f"Error getting admin security audit API: {e}")
+            return jsonify({'success': False, 'error': str(e)}), 500

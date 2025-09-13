@@ -16,6 +16,8 @@ from app.services.admin.forms.user_forms import EditUserForm, DeleteUserForm, Ad
 from app.services.admin.components.user_service import UserService
 from app.services.admin.security.admin_access_control import admin_required, admin_session_preservation, admin_user_management_access, ensure_admin_count
 from app.services.notification.manager.unified_manager import UnifiedNotificationManager
+import json
+from datetime import datetime
 
 def validate_form_submission(form):
     """
@@ -132,7 +134,7 @@ def register_routes(bp):
         delete_form = DeleteUserForm()
         add_form = AddUserForm()
         
-        return render_template('auth.user_management.html', 
+        return render_template('admin/user_management.html', 
                               users=user_data['users'],
                               total_users=user_data['total_count'],
                               user_stats=user_stats,
@@ -750,3 +752,547 @@ def register_routes(bp):
             send_error_notification("An error occurred while resetting password.", "Password Reset Error")
         
         return redirect(url_for('admin.user_management'))
+
+    # API Endpoints for Backend Testing
+    
+    @bp.route('/api/users/list', methods=['GET'])
+    @login_required
+    @admin_required
+    def api_users_list():
+        """API endpoint to get list of users with filtering and pagination"""
+        try:
+            db_manager = current_app.config['db_manager']
+            session_manager = current_app.config.get('session_manager')
+            user_service = UserService(db_manager, session_manager)
+            
+            # Get filter parameters
+            role_filter = request.args.get('role')
+            status_filter = request.args.get('status')
+            search_term = request.args.get('search')
+            page_size = int(request.args.get('page_size', 25))
+            page = int(request.args.get('page', 1))
+            offset = (page - 1) * page_size
+            
+            # Convert status filter to boolean parameters
+            is_active = None
+            email_verified = None
+            account_locked = None
+            
+            if status_filter == 'active':
+                is_active = True
+            elif status_filter == 'inactive':
+                is_active = False
+            elif status_filter == 'locked':
+                account_locked = True
+            elif status_filter == 'unverified':
+                email_verified = False
+            
+            # Convert role filter
+            role_enum = None
+            if role_filter:
+                try:
+                    role_enum = UserRole(role_filter)
+                except ValueError:
+                    pass
+            
+            # Get filtered users
+            user_data = user_service.get_users_with_filters(
+                role=role_enum,
+                is_active=is_active,
+                email_verified=email_verified,
+                account_locked=account_locked,
+                search_term=search_term,
+                limit=page_size,
+                offset=offset
+            )
+            
+            return jsonify({
+                'success': True,
+                'users': [user.to_dict() for user in user_data['users']],
+                'total_count': user_data['total_count'],
+                'page': page,
+                'page_size': page_size,
+                'filters': {
+                    'role': role_filter,
+                    'status': status_filter,
+                    'search': search_term
+                }
+            })
+            
+        except Exception as e:
+            current_app.logger.error(f"Error in API users list: {sanitize_for_log(str(e))}")
+            return jsonify({'success': False, 'error': 'Failed to get users list'}), 500
+    
+    @bp.route('/api/users/get', methods=['GET'])
+    @login_required
+    @admin_required
+    def api_users_get():
+        """API endpoint to get specific user details"""
+        try:
+            user_id = request.args.get('user_id', type=int)
+            username = request.args.get('username')
+            email = request.args.get('email')
+            
+            if not any([user_id, username, email]):
+                return jsonify({'success': False, 'error': 'Missing user identifier'}), 400
+            
+            db_manager = current_app.config['db_manager']
+            session_manager = current_app.config.get('session_manager')
+            user_service = UserService(db_manager, session_manager)
+            
+            user_details = None
+            if user_id:
+                user_details = user_service.get_user_details(user_id)
+            elif username:
+                user_details = user_service.get_user_by_username(username)
+            elif email:
+                user_details = user_service.get_user_by_email(email)
+            
+            if user_details:
+                return jsonify({
+                    'success': True,
+                    'user': user_details
+                })
+            else:
+                return jsonify({'success': False, 'error': 'User not found'}), 404
+                
+        except Exception as e:
+            current_app.logger.error(f"Error in API users get: {sanitize_for_log(str(e))}")
+            return jsonify({'success': False, 'error': 'Failed to get user details'}), 500
+    
+    @bp.route('/api/users/create', methods=['POST'])
+    @login_required
+    @admin_required
+    @validate_csrf_token
+    @rate_limit(limit=10, window_seconds=60)
+    @validate_input_length()
+    @enhanced_input_validation
+    def api_users_create():
+        """API endpoint to create a new user"""
+        try:
+            data = request.get_json()
+            
+            if not data:
+                return jsonify({'success': False, 'error': 'No data provided'}), 400
+            
+            # Validate required fields
+            required_fields = ['username', 'email', 'password']
+            for field in required_fields:
+                if field not in data or not data[field]:
+                    return jsonify({'success': False, 'error': f'Missing required field: {field}'}), 400
+            
+            db_manager = current_app.config['db_manager']
+            session_manager = current_app.config.get('session_manager')
+            user_service = UserService(db_manager, session_manager)
+            
+            # Create user with service
+            success, message, user_data = user_service.create_admin_user(
+                username=data['username'],
+                email=data['email'],
+                password=data['password'],
+                first_name=data.get('first_name'),
+                last_name=data.get('last_name'),
+                admin_user_id=current_user.id,
+                bypass_email_verification=data.get('email_verified', False),
+                ip_address=request.remote_addr,
+                user_agent=request.headers.get('User-Agent')
+            )
+            
+            if success and user_data:
+                # Update role if different from default
+                if data.get('role') and data['role'] != 'viewer':
+                    try:
+                        role_enum = UserRole(data['role'])
+                        user_service.update_user_role(
+                            user_id=user_data['id'],
+                            new_role=role_enum,
+                            admin_user_id=current_user.id,
+                            ip_address=request.remote_addr,
+                            user_agent=request.headers.get('User-Agent')
+                        )
+                        user_data['role'] = data['role']
+                    except ValueError:
+                        pass  # Keep default role if invalid
+                
+                # Send notification
+                create_user_notification(
+                    target_user_id=user_data['id'],
+                    target_username=data['username'],
+                    operation_type='user_created',
+                    message=f"User {data['username']} created by admin {current_user.username} via API"
+                )
+                
+                return jsonify({
+                    'success': True,
+                    'message': message,
+                    'user': user_data
+                })
+            else:
+                return jsonify({'success': False, 'error': message}), 400
+                
+        except Exception as e:
+            current_app.logger.error(f"Error in API users create: {sanitize_for_log(str(e))}")
+            return jsonify({'success': False, 'error': 'Failed to create user'}), 500
+    
+    @bp.route('/api/users/update', methods=['PUT', 'POST'])
+    @login_required
+    @admin_required
+    @rate_limit(limit=10, window_seconds=60)
+    @validate_input_length()
+    @enhanced_input_validation
+    def api_users_update():
+        """API endpoint to update user information"""
+        try:
+            data = request.get_json()
+            
+            if not data or 'user_id' not in data:
+                return jsonify({'success': False, 'error': 'Missing user_id'}), 400
+            
+            db_manager = current_app.config['db_manager']
+            session_manager = current_app.config.get('session_manager')
+            user_service = UserService(db_manager, session_manager)
+            
+            # Get original user data for change tracking
+            with db_manager.get_session() as session:
+                original_user = session.query(User).filter_by(id=data['user_id']).first()
+                if not original_user:
+                    return jsonify({'success': False, 'error': 'User not found'}), 404
+                
+                original_data = {
+                    'username': original_user.username,
+                    'email': original_user.email,
+                    'role': original_user.role.value,
+                    'is_active': original_user.is_active
+                }
+            
+            # Update user
+            success = user_service.update_user(
+                user_id=data['user_id'],
+                username=data.get('username', original_data['username']),
+                email=data.get('email', original_data['email']),
+                role=UserRole(data['role']) if data.get('role') else None,
+                is_active=data.get('is_active', original_data['is_active']),
+                password=data.get('password')
+            )
+            
+            if success:
+                # Track changes for notification
+                changes = {}
+                if data.get('username') and original_data['username'] != data['username']:
+                    changes['username'] = {'old': original_data['username'], 'new': data['username']}
+                if data.get('email') and original_data['email'] != data['email']:
+                    changes['email'] = {'old': original_data['email'], 'new': data['email']}
+                if data.get('role') and original_data['role'] != data['role']:
+                    changes['role'] = {'old': original_data['role'], 'new': data['role']}
+                if 'is_active' in data and original_data['is_active'] != data['is_active']:
+                    changes['is_active'] = {'old': original_data['is_active'], 'new': data['is_active']}
+                if data.get('password'):
+                    changes['password'] = 'updated'
+                
+                # Send notification
+                if changes:
+                    create_user_notification(
+                        target_user_id=data['user_id'],
+                        target_username=data.get('username', original_data['username']),
+                        operation_type='user_updated',
+                        message=f"User {data.get('username', original_data['username'])} updated by admin {current_user.username} via API"
+                    )
+                
+                return jsonify({
+                    'success': True,
+                    'message': 'User updated successfully',
+                    'changes': changes
+                })
+            else:
+                return jsonify({'success': False, 'error': 'Failed to update user'}), 400
+                    
+        except Exception as e:
+            current_app.logger.error(f"Error in API users update: {sanitize_for_log(str(e))}")
+            return jsonify({'success': False, 'error': 'Failed to update user'}), 500
+    
+    @bp.route('/api/users/delete', methods=['DELETE', 'POST'])
+    @login_required
+    @admin_required
+    def api_users_delete():
+        """API endpoint to delete a user"""
+        try:
+            if request.method == 'POST':
+                data = request.get_json()
+            else:
+                data = request.args.to_dict()
+            
+            if not data or 'user_id' not in data:
+                return jsonify({'success': False, 'error': 'Missing user_id'}), 400
+            
+            user_id = int(data['user_id'])
+            
+            if user_id == current_user.id:
+                return jsonify({'success': False, 'error': 'Cannot delete your own account'}), 400
+            
+            db_manager = current_app.config['db_manager']
+            session_manager = current_app.config.get('session_manager')
+            user_service = UserService(db_manager, session_manager)
+            
+            # Get user data before deletion for notification
+            with db_manager.get_session() as session:
+                target_user = session.query(User).filter_by(id=user_id).first()
+                if not target_user:
+                    return jsonify({'success': False, 'error': 'User not found'}), 404
+                
+                target_username = target_user.username
+            
+            success, message = user_service.delete_user(
+                user_id=user_id,
+                admin_user_id=current_user.id,
+                ip_address=request.remote_addr,
+                user_agent=request.headers.get('User-Agent')
+            )
+            
+            if success:
+                # Send notification
+                deletion_reason = data.get('reason', 'API deletion')
+                create_user_notification(
+                    target_user_id=user_id,
+                    target_username=target_username,
+                    operation_type='user_deleted',
+                    message=f"User {target_username} deleted by admin {current_user.username} via API. Reason: {deletion_reason}"
+                )
+                
+                # Preserve admin session
+                user_service.preserve_admin_session(current_user.id)
+                
+                return jsonify({
+                    'success': True,
+                    'message': message
+                })
+            else:
+                return jsonify({'success': False, 'error': message}), 400
+                    
+        except Exception as e:
+            current_app.logger.error(f"Error in API users delete: {sanitize_for_log(str(e))}")
+            return jsonify({'success': False, 'error': 'Failed to delete user'}), 500
+    
+    @bp.route('/api/users/search', methods=['GET'])
+    @login_required
+    @admin_required
+    def api_users_search():
+        """API endpoint to search users"""
+        try:
+            search_term = request.args.get('q', '').strip()
+            search_by = request.args.get('by', 'all')  # all, username, email
+            page_size = int(request.args.get('limit', 50))
+            
+            if not search_term:
+                return jsonify({'success': False, 'error': 'Search term required'}), 400
+            
+            db_manager = current_app.config['db_manager']
+            session_manager = current_app.config.get('session_manager')
+            user_service = UserService(db_manager, session_manager)
+            
+            # Get filtered users
+            user_data = user_service.get_users_with_filters(
+                search_term=search_term,
+                limit=page_size,
+                offset=0
+            )
+            
+            # Process search results
+            users = []
+            for user in user_data['users']:
+                user_dict = user.to_dict()
+                
+                # Add relevance score
+                score = 0
+                if search_by == 'all' or search_by == 'username':
+                    if search_term.lower() in user.username.lower():
+                        score += 10
+                if search_by == 'all' or search_by == 'email':
+                    if search_term.lower() in user.email.lower():
+                        score += 10
+                
+                # Add highlight matches
+                highlights = []
+                if search_term.lower() in user.username.lower():
+                    highlights.append('username')
+                if search_term.lower() in user.email.lower():
+                    highlights.append('email')
+                
+                user_dict['search_score'] = score
+                user_dict['search_highlights'] = highlights
+                users.append(user_dict)
+            
+            # Sort by score
+            users.sort(key=lambda x: x['search_score'], reverse=True)
+            
+            return jsonify({
+                'success': True,
+                'users': users[:page_size],
+                'total_count': len(users),
+                'search_term': search_term,
+                'search_by': search_by
+            })
+            
+        except Exception as e:
+            current_app.logger.error(f"Error in API users search: {sanitize_for_log(str(e))}")
+            return jsonify({'success': False, 'error': 'Failed to search users'}), 500
+    
+    @bp.route('/api/users/bulk', methods=['POST'])
+    @login_required
+    @admin_required
+    @rate_limit(limit=5, window_seconds=60)
+    @validate_input_length()
+    @enhanced_input_validation
+    def api_users_bulk():
+        """API endpoint for bulk user operations"""
+        try:
+            data = request.get_json()
+            
+            if not data or 'operation' not in data or 'user_ids' not in data:
+                return jsonify({'success': False, 'error': 'Missing operation or user_ids'}), 400
+            
+            operation = data['operation']
+            user_ids = [int(uid) for uid in data['user_ids']]
+            
+            if not user_ids:
+                return jsonify({'success': False, 'error': 'No user IDs provided'}), 400
+            
+            db_manager = current_app.config['db_manager']
+            session_manager = current_app.config.get('session_manager')
+            user_service = UserService(db_manager, session_manager)
+            
+            results = []
+            
+            for user_id in user_ids:
+                result = {
+                    'user_id': user_id,
+                    'success': False,
+                    'message': ''
+                }
+                
+                try:
+                    if operation == 'delete':
+                        if user_id == current_user.id:
+                            result['message'] = 'Cannot delete your own account'
+                        else:
+                            success, message = user_service.delete_user(
+                                user_id=user_id,
+                                admin_user_id=current_user.id,
+                                ip_address=request.remote_addr,
+                                user_agent=request.headers.get('User-Agent')
+                            )
+                            result['success'] = success
+                            result['message'] = message
+                    
+                    elif operation == 'activate':
+                        success, message = user_service.update_user_status(
+                            user_id=user_id,
+                            is_active=True,
+                            admin_user_id=current_user.id,
+                            ip_address=request.remote_addr,
+                            user_agent=request.headers.get('User-Agent')
+                        )
+                        result['success'] = success
+                        result['message'] = message
+                    
+                    elif operation == 'deactivate':
+                        success, message = user_service.update_user_status(
+                            user_id=user_id,
+                            is_active=False,
+                            admin_user_id=current_user.id,
+                            ip_address=request.remote_addr,
+                            user_agent=request.headers.get('User-Agent')
+                        )
+                        result['success'] = success
+                        result['message'] = message
+                    
+                    elif operation == 'lock':
+                        success, message = user_service.update_user_status(
+                            user_id=user_id,
+                            account_locked=True,
+                            admin_user_id=current_user.id,
+                            ip_address=request.remote_addr,
+                            user_agent=request.headers.get('User-Agent')
+                        )
+                        result['success'] = success
+                        result['message'] = message
+                    
+                    elif operation == 'unlock':
+                        success, message = user_service.update_user_status(
+                            user_id=user_id,
+                            account_locked=False,
+                            admin_user_id=current_user.id,
+                            ip_address=request.remote_addr,
+                            user_agent=request.headers.get('User-Agent')
+                        )
+                        result['success'] = success
+                        result['message'] = message
+                    
+                    else:
+                        result['message'] = f'Unknown operation: {operation}'
+                    
+                except Exception as e:
+                    result['message'] = f'Error: {str(e)}'
+                
+                results.append(result)
+            
+            # Send bulk operation notification
+            successful_count = sum(1 for r in results if r['success'])
+            create_user_notification(
+                target_user_id=0,  # System operation
+                target_username='bulk_users',
+                operation_type=f'bulk_{operation}',
+                message=f"Bulk {operation} completed by admin {current_user.username}. {successful_count}/{len(user_ids)} users processed successfully"
+            )
+            
+            return jsonify({
+                'success': True,
+                'operation': operation,
+                'processed': len(results),
+                'successful': successful_count,
+                'failed': len(results) - successful_count,
+                'results': results
+            })
+            
+        except Exception as e:
+            current_app.logger.error(f"Error in API users bulk: {sanitize_for_log(str(e))}")
+            return jsonify({'success': False, 'error': 'Failed to perform bulk operation'}), 500
+    
+    @bp.route('/api/admin/users', methods=['GET'])
+    @login_required
+    @admin_required
+    def api_admin_users():
+        """API endpoint for admin user management"""
+        try:
+            db_manager = current_app.config['db_manager']
+            session_manager = current_app.config.get('session_manager')
+            user_service = UserService(db_manager, session_manager)
+            
+            # Get user statistics
+            all_users = user_service.get_all_users()
+            admin_count = user_service.get_admin_count()
+            
+            user_stats = {
+                'total_users': len(all_users),
+                'active_users': len([u for u in all_users if u.is_active]),
+                'unverified_users': len([u for u in all_users if not u.email_verified]),
+                'locked_users': len([u for u in all_users if u.account_locked]),
+                'admin_users': admin_count
+            }
+            
+            # Get users by role
+            role_stats = {}
+            for role in UserRole:
+                role_users = [u for u in all_users if u.role == role]
+                role_stats[role.value] = len(role_users)
+            
+            return jsonify({
+                'success': True,
+                'statistics': user_stats,
+                'role_distribution': role_stats,
+                'admin_count': admin_count,
+                'timestamp': datetime.utcnow().isoformat()
+            })
+            
+        except Exception as e:
+            current_app.logger.error(f"Error in API admin users: {sanitize_for_log(str(e))}")
+            return jsonify({'success': False, 'error': 'Failed to get admin user data'}), 500

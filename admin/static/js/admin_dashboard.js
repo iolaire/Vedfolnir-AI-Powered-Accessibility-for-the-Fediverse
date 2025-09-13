@@ -234,6 +234,7 @@ function refreshDashboard() {
     console.log('Refreshing dashboard...');
 
     Promise.all([
+        refreshDashboardStats(),
         refreshSystemMetrics(),
         refreshActiveJobs(),
         refreshAlerts()
@@ -246,12 +247,72 @@ function refreshDashboard() {
 }
 
 /**
+ * Refresh dashboard statistics
+ */
+async function refreshDashboardStats() {
+    try {
+        console.log('Fetching dashboard statistics...');
+        const response = await fetch('/admin/api/dashboard/stats');
+        console.log('Dashboard stats response status:', response.status);
+        
+        if (!response.ok) {
+            throw new Error(`HTTP ${response.status}: ${response.statusText}`);
+        }
+        
+        const data = await response.json();
+        console.log('Dashboard stats data:', data);
+
+        if (data.users && data.platforms && data.content && data.jobs) {
+            updateDashboardStats(data);
+        } else {
+            console.error('Dashboard stats API returned invalid data:', data);
+            throw new Error('Invalid dashboard stats data received');
+        }
+    } catch (error) {
+        console.error('Failed to refresh dashboard statistics:', error);
+        showNotification(`Failed to refresh dashboard statistics: ${error.message}`, 'error');
+    }
+}
+
+/**
+ * Update dashboard statistics display
+ */
+function updateDashboardStats(stats) {
+    // Update user statistics
+    const totalUsersElement = document.getElementById('totalUsers');
+    const activeUsersElement = document.getElementById('activeUsers');
+    if (totalUsersElement) totalUsersElement.textContent = stats.users.total || 0;
+    if (activeUsersElement) activeUsersElement.textContent = stats.users.active || 0;
+    
+    // Update platform statistics
+    const totalPlatformsElement = document.getElementById('totalPlatforms');
+    if (totalPlatformsElement) totalPlatformsElement.textContent = stats.platforms.total || 0;
+    
+    // Update content statistics
+    const totalImagesElement = document.getElementById('totalImages');
+    const totalPostsElement = document.getElementById('totalPosts');
+    if (totalImagesElement) totalImagesElement.textContent = stats.content.images || 0;
+    if (totalPostsElement) totalPostsElement.textContent = stats.content.posts || 0;
+    
+    // Update job statistics
+    const activeJobsCountElement = document.getElementById('activeJobsCount');
+    const completedTodayCountElement = document.getElementById('completedTodayCount');
+    const successRateElement = document.querySelector('.card-text small');
+    
+    if (activeJobsCountElement) activeJobsCountElement.textContent = stats.jobs.active || 0;
+    if (completedTodayCountElement) completedTodayCountElement.textContent = stats.jobs.completed || 0;
+    if (successRateElement && successRateElement.textContent.includes('success rate')) {
+        successRateElement.textContent = `${stats.jobs.success_rate || 0}% success rate`;
+    }
+}
+
+/**
  * Refresh system metrics
  */
 async function refreshSystemMetrics() {
     try {
         console.log('Fetching system metrics...');
-        const response = await fetch('/admin/api/system-metrics');
+        const response = await fetch('/admin/api/system/metrics');
         console.log('System metrics response status:', response.status);
         
         if (!response.ok) {
@@ -261,11 +322,11 @@ async function refreshSystemMetrics() {
         const data = await response.json();
         console.log('System metrics data:', data);
 
-        if (data.success) {
+        if (data.system && data.health) {
             updateSystemMetrics(data);
         } else {
-            console.error('System metrics API returned success=false:', data.error);
-            throw new Error(data.error || 'API returned success=false');
+            console.error('System metrics API returned invalid data:', data);
+            throw new Error('Invalid system metrics data received');
         }
     } catch (error) {
         console.error('Failed to refresh system metrics:', error);
@@ -277,11 +338,15 @@ async function refreshSystemMetrics() {
  * Update system metrics display
  */
 function updateSystemMetrics(metrics) {
+    // Handle both old format (direct metrics) and new format (nested data)
+    const systemData = metrics.system || metrics;
+    const healthData = metrics.health || {};
+    
     const elements = {
-        'activeJobsCount': metrics.active_jobs || 0,
-        'completedTodayCount': metrics.completed_today || 0,
-        'failedJobsCount': metrics.failed_jobs || 0,
-        'systemLoadValue': `${metrics.system_load || 0}%`
+        'activeJobsCount': systemData.active_jobs || 0,
+        'completedTodayCount': systemData.completed_today || 0,
+        'failedJobsCount': systemData.failed_jobs || 0,
+        'systemLoadValue': `${systemData.system_load || 0}%`
     };
 
     Object.entries(elements).forEach(([id, value]) => {
@@ -290,6 +355,14 @@ function updateSystemMetrics(metrics) {
             element.textContent = value;
         }
     });
+    
+    // Update system health status if available
+    if (healthData.status) {
+        const healthStatusElement = document.getElementById('systemHealthStatus');
+        if (healthStatusElement) {
+            healthStatusElement.textContent = healthData.status.charAt(0).toUpperCase() + healthData.status.slice(1);
+        }
+    }
 }
 
 /**

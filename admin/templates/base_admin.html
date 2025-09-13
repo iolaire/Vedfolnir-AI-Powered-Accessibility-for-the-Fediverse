@@ -1,67 +1,72 @@
 <!DOCTYPE html>
 <html lang="en">
+
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <meta name="csrf-token" content="{{ csrf_token }}">
     <title>{% block title %}Admin - Vedfolnir{% endblock %}</title>
-    
+
     <!-- Preconnect to external resources -->
     <link rel="preconnect" href="https://fonts.googleapis.com">
     <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
-    
+
     <!-- Modern font -->
-    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&display=swap" rel="stylesheet">
-    
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&display=swap" rel="stylesheet" nonce="{{ g.csp_nonce }}">
+
     <!-- Bootstrap and icons with fallback -->
-    <link href="{{ url_for('static', filename='css/bootstrap-fallback.css') }}" rel="stylesheet">
-    <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/css/bootstrap.min.css" rel="stylesheet" onerror="this.remove()">
-    <link href="https://cdn.jsdelivr.net/npm/bootstrap-icons@1.10.0/font/bootstrap-icons.css" rel="stylesheet" onerror="this.remove()">
-    
+    <link href="{{ url_for('static', filename='css/bootstrap-fallback.css') }}" rel="stylesheet" nonce="{{ g.csp_nonce }}">
+    <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/css/bootstrap.min.css" rel="stylesheet" nonce="{{ g.csp_nonce }}"
+        onerror="this.remove()">
+    <link href="https://cdn.jsdelivr.net/npm/bootstrap-icons@1.10.0/font/bootstrap-icons.css" rel="stylesheet" nonce="{{ g.csp_nonce }}"
+        onerror="this.remove()">
+
     <!-- CSS Variables (must be loaded first) -->
-    <link href="{{ url_for('static', filename='css/css-variables.css') }}" rel="stylesheet">
-    
+    <link href="{{ url_for('static', filename='css/css-variables.css') }}" rel="stylesheet" nonce="{{ g.csp_nonce }}">
+
     <!-- Utilities (foundational classes) -->
-    <link href="{{ url_for('static', filename='css/utilities.css') }}" rel="stylesheet">
-    
+    <link href="{{ url_for('static', filename='css/utilities.css') }}" rel="stylesheet" nonce="{{ g.csp_nonce }}">
+
     <!-- Custom styles -->
-    <link href="{{ url_for('static', filename='css/style.css') }}" rel="stylesheet">
-    <link href="{{ url_for('static', filename='css/components.css') }}" rel="stylesheet">
-    <link href="{{ url_for('static', filename='css/security-extracted.css') }}" rel="stylesheet">
-    <link href="{{ url_for('static', filename='css/platform_styles.css') }}" rel="stylesheet">
-    <link href="{{ url_for('static', filename='css/fixes.css') }}" rel="stylesheet">
-    <link href="{{ url_for('static', filename='css/admin.css') }}" rel="stylesheet">
-    <link href="{{ url_for('admin.static', filename='css/admin-extracted.css') }}" rel="stylesheet">
-    <link href="{{ url_for('admin.static', filename='css/admin_dashboard.css') }}" rel="stylesheet">
-    
+    <link href="{{ url_for('static', filename='css/style.css') }}" rel="stylesheet" nonce="{{ g.csp_nonce }}">
+    <link href="{{ url_for('static', filename='css/components.css') }}" rel="stylesheet" nonce="{{ g.csp_nonce }}">
+    <link href="{{ url_for('static', filename='css/security-extracted.css') }}" rel="stylesheet" nonce="{{ g.csp_nonce }}">
+    <link href="{{ url_for('static', filename='css/platform_styles.css') }}" rel="stylesheet" nonce="{{ g.csp_nonce }}">
+    <link href="{{ url_for('static', filename='css/fixes.css') }}" rel="stylesheet" nonce="{{ g.csp_nonce }}">
+    <link href="{{ url_for('static', filename='css/admin.css') }}" rel="stylesheet" nonce="{{ g.csp_nonce }}">
+    <link href="{{ url_for('admin.static', filename='css/admin-extracted.css') }}" rel="stylesheet" nonce="{{ g.csp_nonce }}">
+    <link href="{{ url_for('admin.static', filename='css/admin_dashboard.css') }}" rel="stylesheet" nonce="{{ g.csp_nonce }}">
+
     <!-- Unified Notification System Styles -->
-    <link href="{{ url_for('static', filename='css/unified-notifications.css') }}" rel="stylesheet">
-    <link href="{{ url_for('static', filename='css/notification-ui.css') }}" rel="stylesheet">
-    <link href="{{ url_for('static', filename='css/legacy-notification-fallback.css') }}" rel="stylesheet">
-    
+    <link href="{{ url_for('static', filename='css/unified-notifications.css') }}" rel="stylesheet" nonce="{{ g.csp_nonce }}">
+    <link href="{{ url_for('static', filename='css/notification-ui.css') }}" rel="stylesheet" nonce="{{ g.csp_nonce }}">
+    <link href="{{ url_for('static', filename='css/legacy-notification-fallback.css') }}" rel="stylesheet" nonce="{{ g.csp_nonce }}">
+
     <!-- Favicon -->
     {% include 'includes/favicon_meta.html' %}
-    
+
     {% block head %}{% endblock %}
 </head>
+
 <body>
     <nav class="navbar navbar-expand-lg navbar-dark bg-dark">
         <div class="container">
-            <a class="navbar-brand d-flex align-items-center" href="{{ url_for('admin.dashboard') }}" aria-label="Vedfolnir Admin - Go to dashboard">
-                <img src="{{ url_for('static', filename='images/Logo.png') }}" 
-                     alt="Vedfolnir Logo" 
-                     class="navbar-logo me-2"
-                     height="32"
-                     onerror="this.style.display='none'">
+            <a class="navbar-brand d-flex align-items-center" href="{{ url_for('admin.dashboard') }}"
+                aria-label="Vedfolnir Admin - Go to dashboard">
+                <img src="{{ url_for('static', filename='images/Logo.png') }}" alt="Vedfolnir Logo"
+                    class="navbar-logo me-2" height="32" onerror="this.style.display='none'">
                 <span class="navbar-brand-text">Vedfolnir Admin</span>
             </a>
-            
+
             <div class="navbar-nav ms-auto">
                 <!-- Unified Admin Notification System -->
                 <div id="admin-notification-bell" class="nav-item dropdown">
-                    <button class="btn btn-outline-warning position-relative" type="button" data-bs-toggle="dropdown" aria-expanded="false" title="Admin Notifications">
+                    <button class="btn btn-outline-warning position-relative" type="button" data-bs-toggle="dropdown"
+                        aria-expanded="false" title="Admin Notifications">
                         <i class="bi bi-bell" id="admin-notification-icon"></i>
-                        <span class="position-absolute top-0 start-100 translate-middle badge rounded-pill bg-danger hidden" id="admin-notification-count">0</span>
+                        <span
+                            class="position-absolute top-0 start-100 translate-middle badge rounded-pill bg-danger hidden"
+                            id="admin-notification-count">0</span>
                     </button>
                     <div class="dropdown-menu dropdown-menu-end admin-notification-dropdown">
                         <h6 class="dropdown-header">Admin Notifications</h6>
@@ -70,14 +75,14 @@
                         </div>
                     </div>
                 </div>
-                
+
                 <!-- WebSocket Status Indicator -->
                 <div class="nav-item d-flex align-items-center me-3">
                     <div id="websocket-status" class="text-muted small">
                         <i class="bi bi-wifi-off"></i> Real-time: Initializing...
                     </div>
                 </div>
-                
+
                 <a class="nav-link" href="{{ url_for('main.index') }}">
                     <i class="bi bi-house"></i> Main App
                 </a>
@@ -160,12 +165,12 @@
                             </a>
                         </li>
                         <li class="nav-item">
-                            <a class="nav-link" href="{{ url_for('admin.monitoring_dashboard') }}">
+                            <a class="nav-link" href="{{ url_for('admin.performance_dashboard') }}">
                                 <i class="bi bi-speedometer"></i> Performance
                             </a>
                         </li>
                         <li class="nav-item">
-                            <a class="nav-link" href="{{ url_for('admin.monitoring_dashboard') }}#responsiveness">
+                            <a class="nav-link" href="{{ url_for('admin.responsiveness_dashboard') }}">
                                 <i class="bi bi-speedometer2"></i> Responsiveness
                             </a>
                         </li>
@@ -181,12 +186,14 @@
             <!-- Main Content -->
             <main class="col-md-9 ms-sm-auto col-lg-10 px-md-4">
                 <!-- Unified Admin Notification Container -->
-                <div id="admin-unified-notification-container" class="notification-container notification-position-top notification-position-center notification-stack-down" role="region" aria-label="Admin Notifications" aria-live="polite"></div>
-                
+                <div id="admin-unified-notification-container"
+                    class="notification-container notification-position-top notification-position-center notification-stack-down"
+                    role="region" aria-label="Admin Notifications" aria-live="polite"></div>
+
                 <!-- Flash Message Integration for Admin -->
                 <!-- Unified Notification System Integration -->
-<!-- Flash messages are now handled by the WebSocket-based notification system -->
-<!-- See static/js/websocket-client-factory.js for notification handling -->
+                <!-- Flash messages are now handled by the WebSocket-based notification system -->
+                <!-- See static/js/websocket-client-factory.js for notification handling -->
 
                 {% block content %}{% endblock %}
             </main>
@@ -194,11 +201,12 @@
     </div>
 
     <!-- Bootstrap JS -->
-    <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.1.3/dist/js/bootstrap.bundle.min.js" onerror="console.warn('Bootstrap JS failed to load from CDN')"></script>
-    
+    <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.1.3/dist/js/bootstrap.bundle.min.js"
+        onerror="console.warn('Bootstrap JS failed to load from CDN')"></script>
+
     <!-- Socket.IO with fallback -->
-    <script src="https://cdnjs.cloudflare.com/ajax/libs/socket.io/4.7.2/socket.io.js" crossorigin="anonymous" 
-            onerror="console.warn('Socket.IO failed to load from primary CDN, trying fallback...'); loadSocketIOFallback();"></script>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/socket.io/4.7.2/socket.io.js" crossorigin="anonymous"
+        onerror="console.warn('Socket.IO failed to load from primary CDN, trying fallback...'); loadSocketIOFallback();"></script>
     <script nonce="{{ g.csp_nonce }}">
         function loadSocketIOFallback() {
             if (typeof io === 'undefined') {
@@ -206,28 +214,28 @@
                 const script = document.createElement('script');
                 script.src = 'https://cdn.socket.io/4.7.2/socket.io.min.js';
                 script.crossOrigin = 'anonymous';
-                script.onerror = function() {
+                script.onerror = function () {
                     console.error('Socket.IO failed to load from all CDNs. WebSocket functionality will be disabled.');
                     // Create a mock io object to prevent errors
-                    window.io = function() {
+                    window.io = function () {
                         console.warn('Socket.IO not available - using mock object');
                         return {
-                            on: function() {},
-                            emit: function() {},
-                            disconnect: function() {},
+                            on: function () { },
+                            emit: function () { },
+                            disconnect: function () { },
                             connected: false
                         };
                     };
                 };
-                script.onload = function() {
+                script.onload = function () {
                     console.log('Socket.IO loaded from fallback CDN');
                 };
                 document.head.appendChild(script);
             }
         }
-        
+
         // Check if Socket.IO loaded after a short delay
-        setTimeout(function() {
+        setTimeout(function () {
             if (typeof io === 'undefined') {
                 console.warn('Socket.IO not detected, attempting fallback...');
                 loadSocketIOFallback();
@@ -236,89 +244,90 @@
             }
         }, 1000);
     </script>
-    
+
     <!-- Main app scripts -->
     <script src="{{ url_for('static', filename='js/csrf-handler.js') }}"></script>
     <script src="{{ url_for('static', filename='js/progress-bar-utils.js') }}"></script>
-    
+
     <!-- Unified Notification System Scripts -->
     <!-- Unified Notification System -->
     <script src="{{ url_for('static', filename='js/notification-ui-renderer.js') }}"></script>
     <script src="{{ url_for('static', filename='js/page_notification_integrator.js') }}"></script>
-    
+
     <script src="{{ url_for('static', filename='js/app.js') }}"></script>
     <script src="{{ url_for('static', filename='js/error_handler.js') }}"></script>
-    
+
     <!-- WebSocket Bundle (combines factory, client, keep-alive, and debug utilities) -->
     <!-- WebSocket Transport Optimizer -->
     <script src="{{ url_for('static', filename='js/websocket-transport-optimizer.js') }}"></script>
     <script src="{{ url_for('static', filename='js/websocket-bundle.js') }}"></script>
-    
+
     <!-- Custom Admin JS -->
     <script src="{{ url_for('static', filename='js/admin.js') }}"></script>
-    
+
     <!-- Admin Health Notifications -->
     <script src="{{ url_for('admin.static', filename='js/admin-health-notifications.js') }}"></script>
-    
+
     {% block extra_js %}{% endblock %}
-    
+
     <!-- Admin Unified Notification System Initialization -->
     <script nonce="{{ g.csp_nonce }}">
-    // Initialize admin notification system
-    document.addEventListener('DOMContentLoaded', function() {
-        // Initialize admin notification renderer if not already initialized
-        if (!window.adminNotificationRenderer && typeof NotificationUIRenderer !== 'undefined') {
-            window.adminNotificationRenderer = new NotificationUIRenderer('admin-unified-notification-container', {
-                position: 'top-center',
-                maxNotifications: 8,
-                autoHide: true,
-                defaultDuration: 7000,
-                theme: 'modern',
-                showIcons: true,
-                allowDismiss: true,
-                showTimestamp: true,
-                pauseOnHover: true
-            });
-        }
-        
-        // Global admin notification functions
-        window.showAdminNotification = function(message, type = 'info', title = null, options = {}) {
-            return window.adminNotificationRenderer.renderNotification({
-                type: type,
-                title: title || (type === 'error' ? 'Error' : type === 'success' ? 'Success' : type === 'warning' ? 'Warning' : 'Information'),
-                message: message,
-                priority: type === 'error' ? 'high' : 'normal',
-                ...options
-            });
-        };
-        
-        window.showAdminAlert = function(message, type = 'warning', persistent = false) {
-            return window.adminNotificationRenderer.renderSystemAlert({
-                type: type,
-                title: 'System Alert',
-                message: message,
-                persistent: persistent,
-                priority: 'critical'
-            });
-        };
-        
-        window.showAdminProgress = function(taskId, message, percentage = 0) {
-            return window.adminNotificationRenderer.renderProgressUpdate({
-                id: `admin-progress-${taskId}`,
-                taskId: taskId,
-                title: 'Processing...',
-                message: message,
-                percentage: percentage
-            });
-        };
-        
-        // Legacy alert replacement function
-        window.showLegacyAlert = function(message, type = 'info') {
-            return window.showAdminNotification(message, type);
-        };
-        
-        console.log('Admin unified notification system initialized');
-    });
+        // Initialize admin notification system
+        document.addEventListener('DOMContentLoaded', function () {
+            // Initialize admin notification renderer if not already initialized
+            if (!window.adminNotificationRenderer && typeof NotificationUIRenderer !== 'undefined') {
+                window.adminNotificationRenderer = new NotificationUIRenderer('admin-unified-notification-container', {
+                    position: 'top-center',
+                    maxNotifications: 8,
+                    autoHide: true,
+                    defaultDuration: 7000,
+                    theme: 'modern',
+                    showIcons: true,
+                    allowDismiss: true,
+                    showTimestamp: true,
+                    pauseOnHover: true
+                });
+            }
+
+            // Global admin notification functions
+            window.showAdminNotification = function (message, type = 'info', title = null, options = {}) {
+                return window.adminNotificationRenderer.renderNotification({
+                    type: type,
+                    title: title || (type === 'error' ? 'Error' : type === 'success' ? 'Success' : type === 'warning' ? 'Warning' : 'Information'),
+                    message: message,
+                    priority: type === 'error' ? 'high' : 'normal',
+                    ...options
+                });
+            };
+
+            window.showAdminAlert = function (message, type = 'warning', persistent = false) {
+                return window.adminNotificationRenderer.renderSystemAlert({
+                    type: type,
+                    title: 'System Alert',
+                    message: message,
+                    persistent: persistent,
+                    priority: 'critical'
+                });
+            };
+
+            window.showAdminProgress = function (taskId, message, percentage = 0) {
+                return window.adminNotificationRenderer.renderProgressUpdate({
+                    id: `admin-progress-${taskId}`,
+                    taskId: taskId,
+                    title: 'Processing...',
+                    message: message,
+                    percentage: percentage
+                });
+            };
+
+            // Legacy alert replacement function
+            window.showLegacyAlert = function (message, type = 'info') {
+                return window.showAdminNotification(message, type);
+            };
+
+            console.log('Admin unified notification system initialized');
+        });
     </script>
 </body>
+
 </html>

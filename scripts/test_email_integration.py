@@ -29,7 +29,7 @@ def test_email_integration():
         print("✅ Email helper functions imported successfully")
         
         # Test email service exists
-        from services.email_service import EmailService
+        from app.services.email.components.email_service import EmailService
         print("✅ EmailService available")
         
         # Test email adapter initialization

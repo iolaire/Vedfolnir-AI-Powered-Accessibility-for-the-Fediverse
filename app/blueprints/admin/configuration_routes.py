@@ -663,6 +663,270 @@ def validate_single_configuration(key: str):
         return jsonify({"error": f"Failed to validate configuration: {key}"}), 500
 
 
+@configuration_bp.route('/reset', methods=['POST'])
+@api_require_admin
+def reset_configurations():
+    """Reset configurations to default values"""
+    try:
+        config_manager: SystemConfigurationManager = current_app.config.get('system_configuration_manager')
+        if not config_manager:
+            return jsonify({"error": "Configuration manager not available"}), 500
+        
+        admin_user_id = session.get('_user_id')
+        if not admin_user_id:
+            return jsonify({"error": "Admin user ID not found in session"}), 401
+        
+        data = request.get_json() or {}
+        category_str = data.get('category')
+        
+        # Parse category if provided
+        category = None
+        if category_str:
+            try:
+                category = ConfigurationCategory(category_str)
+            except ValueError:
+                return jsonify({"error": f"Invalid category: {category_str}"}), 400
+        
+        # Reset configurations
+        reset_count = config_manager.reset_to_defaults(admin_user_id, category)
+        
+        # Refresh maintenance service cache if maintenance-related configs were reset
+        if not category or category in [ConfigurationCategory.MAINTENANCE]:
+            maintenance_service = getattr(current_app, 'maintenance_service', None)
+            if maintenance_service:
+                try:
+                    maintenance_service.refresh_status()
+                    logger.info("Maintenance service cache refreshed after configuration reset")
+                except Exception as e:
+                    logger.warning(f"Failed to refresh maintenance service cache after reset: {e}")
+        
+        return jsonify({
+            "message": "Configurations reset to defaults successfully",
+            "reset_count": reset_count,
+            "category": category.value if category else "all"
+        })
+        
+    except Exception as e:
+        logger.error(f"Error resetting configurations: {sanitize_for_log(str(e))}")
+        return jsonify({"error": "Failed to reset configurations"}), 500
+
+
+@configuration_bp.route('/defaults', methods=['GET'])
+@api_require_admin
+def get_default_configurations():
+    """Get default configuration values"""
+    try:
+        config_manager: SystemConfigurationManager = current_app.config.get('system_configuration_manager')
+        if not config_manager:
+            return jsonify({"error": "Configuration manager not available"}), 500
+        
+        category_str = request.args.get('category')
+        
+        # Parse category if provided
+        category = None
+        if category_str:
+            try:
+                category = ConfigurationCategory(category_str)
+            except ValueError:
+                return jsonify({"error": f"Invalid category: {category_str}"}), 400
+        
+        defaults = config_manager.get_default_configurations(category)
+        
+        return jsonify({
+            "defaults": defaults,
+            "category": category.value if category else "all",
+            "total_count": len(defaults)
+        })
+        
+    except Exception as e:
+        logger.error(f"Error getting default configurations: {sanitize_for_log(str(e))}")
+        return jsonify({"error": "Failed to get default configurations"}), 500
+
+
+@configuration_bp.route('/get', methods=['GET'])
+@api_require_admin
+def get_configuration_value():
+    """Get a specific configuration value using key parameter"""
+    try:
+        config_manager: SystemConfigurationManager = current_app.config.get('system_configuration_manager')
+        if not config_manager:
+            return jsonify({"error": "Configuration manager not available"}), 500
+        
+        admin_user_id = session.get('_user_id')
+        if not admin_user_id:
+            return jsonify({"error": "Admin user ID not found in session"}), 401
+        
+        key = request.args.get('key')
+        if not key:
+            return jsonify({"error": "Key parameter is required"}), 400
+        
+        value = config_manager.get_configuration(key, admin_user_id)
+        
+        if value is None:
+            return jsonify({"error": f"Configuration not found: {key}"}), 404
+        
+        return jsonify({
+            "key": key,
+            "value": value
+        })
+        
+    except Exception as e:
+        logger.error(f"Error getting configuration {sanitize_for_log(request.args.get('key', 'unknown'))}: {sanitize_for_log(str(e))}")
+        return jsonify({"error": "Failed to get configuration"}), 500
+
+
+@configuration_bp.route('/list', methods=['GET'])
+@api_require_admin
+def list_configurations():
+    """List configurations with pagination and filtering"""
+    try:
+        config_manager: SystemConfigurationManager = current_app.config.get('system_configuration_manager')
+        if not config_manager:
+            return jsonify({"error": "Configuration manager not available"}), 500
+        
+        admin_user_id = session.get('_user_id')
+        if not admin_user_id:
+            return jsonify({"error": "Admin user ID not found in session"}), 401
+        
+        # Parse query parameters
+        category_str = request.args.get('category')
+        include_sensitive = request.args.get('include_sensitive', 'false').lower() == 'true'
+        page = int(request.args.get('page', 1))
+        per_page = int(request.args.get('per_page', 50))
+        search = request.args.get('search', '').strip()
+        
+        # Parse category if provided
+        category = None
+        if category_str:
+            try:
+                category = ConfigurationCategory(category_str)
+            except ValueError:
+                return jsonify({"error": f"Invalid category: {category_str}"}), 400
+        
+        # Get configurations
+        configurations = config_manager.get_all_configurations(
+            admin_user_id, category, include_sensitive
+        )
+        
+        # Apply search filter if provided
+        if search:
+            configurations = {
+                key: value for key, value in configurations.items()
+                if search.lower() in key.lower() or search.lower() in str(value).lower()
+            }
+        
+        # Convert to list for pagination
+        config_list = [
+            {"key": key, "value": value} for key, value in configurations.items()
+        ]
+        
+        # Apply pagination
+        total_count = len(config_list)
+        start_index = (page - 1) * per_page
+        end_index = start_index + per_page
+        paginated_configs = config_list[start_index:end_index]
+        
+        return jsonify({
+            "configurations": paginated_configs,
+            "pagination": {
+                "page": page,
+                "per_page": per_page,
+                "total_count": total_count,
+                "total_pages": (total_count + per_page - 1) // per_page,
+                "has_next": end_index < total_count,
+                "has_prev": page > 1
+            },
+            "category": category.value if category else None,
+            "include_sensitive": include_sensitive,
+            "search": search or None
+        })
+        
+    except Exception as e:
+        logger.error(f"Error listing configurations: {sanitize_for_log(str(e))}")
+        return jsonify({"error": "Failed to list configurations"}), 500
+
+
+@configuration_bp.route('/search', methods=['GET'])
+@api_require_admin
+def search_configurations():
+    """Search configurations with advanced filtering"""
+    try:
+        config_manager: SystemConfigurationManager = current_app.config.get('system_configuration_manager')
+        if not config_manager:
+            return jsonify({"error": "Configuration manager not available"}), 500
+        
+        admin_user_id = session.get('_user_id')
+        if not admin_user_id:
+            return jsonify({"error": "Admin user ID not found in session"}), 401
+        
+        # Parse query parameters
+        query = request.args.get('q', '').strip()
+        category_str = request.args.get('category')
+        include_sensitive = request.args.get('include_sensitive', 'false').lower() == 'true'
+        search_type = request.args.get('type', 'key')  # 'key', 'value', 'both'
+        
+        if not query:
+            return jsonify({"error": "Search query is required"}), 400
+        
+        # Parse category if provided
+        category = None
+        if category_str:
+            try:
+                category = ConfigurationCategory(category_str)
+            except ValueError:
+                return jsonify({"error": f"Invalid category: {category_str}"}), 400
+        
+        # Get configurations
+        configurations = config_manager.get_all_configurations(
+            admin_user_id, category, include_sensitive
+        )
+        
+        # Perform search based on type
+        results = []
+        for key, value in configurations.items():
+            match_score = 0
+            match_type = []
+            
+            if search_type in ['key', 'both']:
+                if query.lower() in key.lower():
+                    match_score += 2
+                    match_type.append('key')
+                    # Exact match gets higher score
+                    if query.lower() == key.lower():
+                        match_score += 2
+            
+            if search_type in ['value', 'both']:
+                value_str = str(value).lower()
+                if query.lower() in value_str:
+                    match_score += 1
+                    match_type.append('value')
+            
+            if match_score > 0:
+                results.append({
+                    "key": key,
+                    "value": value,
+                    "match_score": match_score,
+                    "match_type": match_type,
+                    "highlighted": _highlight_matches(key, str(value), query)
+                })
+        
+        # Sort by match score (descending)
+        results.sort(key=lambda x: x['match_score'], reverse=True)
+        
+        return jsonify({
+            "query": query,
+            "results": results,
+            "total_results": len(results),
+            "search_type": search_type,
+            "category": category.value if category else None,
+            "include_sensitive": include_sensitive
+        })
+        
+    except Exception as e:
+        logger.error(f"Error searching configurations: {sanitize_for_log(str(e))}")
+        return jsonify({"error": "Failed to search configurations"}), 500
+
+
 @configuration_bp.route('/<key>/dry-run', methods=['POST'])
 @api_require_admin
 def dry_run_configuration_change(key: str):
@@ -879,3 +1143,26 @@ def _get_category_description(category: ConfigurationCategory) -> str:
         ConfigurationCategory.FEATURES: "Feature flags and optional functionality"
     }
     return descriptions.get(category, "Configuration settings")
+
+
+def _highlight_matches(key: str, value: str, query: str) -> Dict[str, str]:
+    """Highlight matches in key and value for search results"""
+    def highlight_text(text: str, pattern: str) -> str:
+        """Highlight pattern in text with HTML"""
+        if not pattern or not text:
+            return text
+        
+        import re
+        pattern = re.escape(pattern)
+        highlighted = re.sub(
+            f'({pattern})',
+            r'<mark>\1</mark>',
+            text,
+            flags=re.IGNORECASE
+        )
+        return highlighted
+    
+    return {
+        "key": highlight_text(key, query),
+        "value": highlight_text(str(value), query)
+    }

@@ -78,7 +78,7 @@
 <script nonce="{{ g.csp_nonce if g.csp_nonce else '' }}">
 // Function to update session monitoring data
 function updateSessionMonitoring() {
-    fetch('/admin/session-health/statistics')
+    fetch('/admin/api/session-monitoring/statistics')
         .then(response => response.json())
         .then(data => {
             if (data.status === 'success') {

@@ -1,0 +1,291 @@
+<!-- Copyright (C) 2025 iolaire mcfadden. -->
+<!-- This program is free software: you can redistribute it and/or modify it under the terms of the GNU Affero General Public License as published by the Free Software Foundation, either version 3 of the License, or (at your option) any later version. -->
+<!-- THE SOFTWARE IS PROVIDED "AS IS", WITHOUT WARRANTY OF ANY KIND, EXPRESS OR IMPLIED, INCLUDING BUT NOT LIMITED TO THE WARRANTIES OF MERCHANTABILITY, FITNESS FOR A PARTICULAR PURPOSE AND NONINFRINGEMENT. IN NO EVENT SHALL THE AUTHORS OR COPYRIGHT HOLDERS BE LIABLE FOR ANY CLAIM, DAMAGES OR OTHER LIABILITY, WHETHER IN AN ACTION OF CONTRACT, TORT OR OTHERWISE, ARISING FROM, OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE SOFTWARE. -->
+
+{% extends "base_admin.html" %}
+
+{% block title %}Performance Dashboard - Admin{% endblock %}
+
+{% block content %}
+<div class="d-flex justify-content-between flex-wrap flex-md-nowrap align-items-center pt-3 pb-2 mb-3 border-bottom">
+    <h1 class="h2">Performance Dashboard</h1>
+    <div class="btn-toolbar mb-2 mb-md-0">
+        <button type="button" class="btn btn-sm btn-outline-secondary" onclick="refreshMetrics()">
+            <i class="bi bi-arrow-clockwise"></i> Refresh
+        </button>
+    </div>
+</div>
+
+<!-- Performance Overview Cards -->
+<div class="row mb-4">
+    <div class="col-md-3">
+        <div class="card text-white bg-primary">
+            <div class="card-body">
+                <div class="d-flex justify-content-between">
+                    <div>
+                        <h5 class="card-title">CPU Usage</h5>
+                        <h3 id="cpu-usage">{{ performance_data.system.cpu_percent }}%</h3>
+                    </div>
+                    <div class="align-self-center">
+                        <i class="bi bi-cpu fs-1"></i>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+    <div class="col-md-3">
+        <div class="card text-white bg-info">
+            <div class="card-body">
+                <div class="d-flex justify-content-between">
+                    <div>
+                        <h5 class="card-title">Memory Usage</h5>
+                        <h3 id="memory-usage">{{ performance_data.system.memory_percent }}%</h3>
+                    </div>
+                    <div class="align-self-center">
+                        <i class="bi bi-memory fs-1"></i>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+    <div class="col-md-3">
+        <div class="card text-white bg-success">
+            <div class="card-body">
+                <div class="d-flex justify-content-between">
+                    <div>
+                        <h5 class="card-title">Requests/sec</h5>
+                        <h3 id="requests-per-sec">{{ performance_data.application.requests_per_second }}</h3>
+                    </div>
+                    <div class="align-self-center">
+                        <i class="bi bi-speedometer2 fs-1"></i>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>    
+<div class="col-md-3">
+        <div class="card text-white bg-warning">
+            <div class="card-body">
+                <div class="d-flex justify-content-between">
+                    <div>
+                        <h5 class="card-title">Avg Response</h5>
+                        <h3 id="avg-response">{{ "%.2f"|format(performance_data.application.avg_request_time) }}ms</h3>
+                    </div>
+                    <div class="align-self-center">
+                        <i class="bi bi-clock fs-1"></i>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+
+<!-- Performance Charts -->
+<div class="row mb-4">
+    <div class="col-md-6">
+        <div class="card">
+            <div class="card-header">
+                <h5>System Resources</h5>
+            </div>
+            <div class="card-body">
+                <canvas id="systemChart" width="400" height="200"></canvas>
+            </div>
+        </div>
+    </div>
+    <div class="col-md-6">
+        <div class="card">
+            <div class="card-header">
+                <h5>Application Performance</h5>
+            </div>
+            <div class="card-body">
+                <canvas id="appChart" width="400" height="200"></canvas>
+            </div>
+        </div>
+    </div>
+</div>
+
+<!-- Detailed Metrics -->
+<div class="row">
+    <div class="col-md-4">
+        <div class="card">
+            <div class="card-header">
+                <h5>System Details</h5>
+            </div>
+            <div class="card-body">
+                <table class="table table-sm">
+                    <tr>
+                        <td>Memory Used:</td>
+                        <td id="memory-used">{{ performance_data.system.memory_used_gb }} GB</td>
+                    </tr>
+                    <tr>
+                        <td>Memory Total:</td>
+                        <td>{{ performance_data.system.memory_total_gb }} GB</td>
+                    </tr>
+                    <tr>
+                        <td>Disk Used:</td>
+                        <td id="disk-used">{{ performance_data.system.disk_used_gb }} GB</td>
+                    </tr>
+                    <tr>
+                        <td>Disk Usage:</td>
+                        <td id="disk-percent">{{ performance_data.system.disk_percent }}%</td>
+                    </tr>
+                </table>
+            </div>
+        </div>
+    </div>
+    <div class="col-md-4">
+        <div class="card">
+            <div class="card-header">
+                <h5>Application Metrics</h5>
+            </div>
+            <div class="card-body">
+                <table class="table table-sm">
+                    <tr>
+                        <td>Total Requests:</td>
+                        <td id="total-requests">{{ performance_data.application.total_requests }}</td>
+                    </tr>
+                    <tr>
+                        <td>Slow Requests:</td>
+                        <td id="slow-requests">{{ performance_data.application.slow_request_count }}</td>
+                    </tr>
+                    <tr>
+                        <td>Background Tasks:</td>
+                        <td id="bg-tasks">{{ performance_data.application.background_tasks_count }}</td>
+                    </tr>
+                </table>
+            </div>
+        </div>
+    </div>
+    <div class="col-md-4">
+        <div class="card">
+            <div class="card-header">
+                <h5>Database Performance</h5>
+            </div>
+            <div class="card-body">
+                <table class="table table-sm">
+                    <tr>
+                        <td>Active Connections:</td>
+                        <td id="active-connections">{{ performance_data.database.active_connections }}</td>
+                    </tr>
+                    <tr>
+                        <td>Max Connections:</td>
+                        <td>{{ performance_data.database.max_connections }}</td>
+                    </tr>
+                    <tr>
+                        <td>Pool Utilization:</td>
+                        <td id="pool-utilization">{{ performance_data.database.connection_pool_utilization }}%</td>
+                    </tr>
+                </table>
+            </div>
+        </div>
+    </div>
+</div>
+{% endblock %}
+
+{% block extra_js %}
+<script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+<script nonce="{{ g.csp_nonce }}">
+let systemChart, appChart;
+
+document.addEventListener('DOMContentLoaded', function() {
+    initializeCharts();
+    startAutoRefresh();
+});
+
+function initializeCharts() {
+    // System Resources Chart
+    const systemCtx = document.getElementById('systemChart').getContext('2d');
+    systemChart = new Chart(systemCtx, {
+        type: 'doughnut',
+        data: {
+            labels: ['CPU Usage', 'Memory Usage', 'Available'],
+            datasets: [{
+                data: [
+                    {{ performance_data.system.cpu_percent }},
+                    {{ performance_data.system.memory_percent }},
+                    100 - {{ performance_data.system.memory_percent }}
+                ],
+                backgroundColor: ['#dc3545', '#17a2b8', '#28a745']
+            }]
+        },
+        options: {
+            responsive: true,
+            maintainAspectRatio: false
+        }
+    });
+
+    // Application Performance Chart
+    const appCtx = document.getElementById('appChart').getContext('2d');
+    appChart = new Chart(appCtx, {
+        type: 'line',
+        data: {
+            labels: ['5m ago', '4m ago', '3m ago', '2m ago', '1m ago', 'Now'],
+            datasets: [{
+                label: 'Response Time (ms)',
+                data: [0, 0, 0, 0, 0, {{ performance_data.application.avg_request_time }}],
+                borderColor: '#007bff',
+                tension: 0.1
+            }]
+        },
+        options: {
+            responsive: true,
+            maintainAspectRatio: false,
+            scales: {
+                y: {
+                    beginAtZero: true
+                }
+            }
+        }
+    });
+}
+
+function refreshMetrics() {
+    fetch('/admin/api/performance/metrics')
+        .then(response => response.json())
+        .then(data => {
+            if (data.success) {
+                updateMetrics(data.data.metrics);
+            }
+        })
+        .catch(error => console.error('Error refreshing metrics:', error));
+}
+
+function updateMetrics(metrics) {
+    // Update cards
+    document.getElementById('cpu-usage').textContent = metrics.system.cpu_percent + '%';
+    document.getElementById('memory-usage').textContent = metrics.system.memory_percent + '%';
+    document.getElementById('requests-per-sec').textContent = metrics.application.requests_per_second;
+    document.getElementById('avg-response').textContent = metrics.application.avg_request_time.toFixed(2) + 'ms';
+    
+    // Update detailed metrics
+    document.getElementById('memory-used').textContent = metrics.system.memory_used_gb + ' GB';
+    document.getElementById('disk-used').textContent = metrics.system.disk_used_gb + ' GB';
+    document.getElementById('disk-percent').textContent = metrics.system.disk_percent + '%';
+    document.getElementById('total-requests').textContent = metrics.application.total_requests;
+    document.getElementById('slow-requests').textContent = metrics.application.slow_request_count;
+    document.getElementById('bg-tasks').textContent = metrics.application.background_tasks_count;
+    document.getElementById('active-connections').textContent = metrics.database.active_connections;
+    document.getElementById('pool-utilization').textContent = metrics.database.connection_pool_utilization + '%';
+    
+    // Update charts
+    systemChart.data.datasets[0].data = [
+        metrics.system.cpu_percent,
+        metrics.system.memory_percent,
+        100 - metrics.system.memory_percent
+    ];
+    systemChart.update();
+    
+    // Add new data point to app chart
+    appChart.data.datasets[0].data.push(metrics.application.avg_request_time);
+    if (appChart.data.datasets[0].data.length > 6) {
+        appChart.data.datasets[0].data.shift();
+    }
+    appChart.update();
+}
+
+function startAutoRefresh() {
+    setInterval(refreshMetrics, 30000); // Refresh every 30 seconds
+}
+</script>
+{% endblock %}

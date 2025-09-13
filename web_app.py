@@ -750,6 +750,38 @@ try:
         print("✅ HealthChecker initialized successfully with responsiveness monitoring")
     else:
         print("⚠️  HealthChecker initialized but missing responsiveness configuration")
+    
+    # Initialize SystemConfigurationManager for configuration management
+    try:
+        from app.core.configuration.core.system_configuration_manager import SystemConfigurationManager
+        
+        # Create a wrapper class that provides the expected interface
+        class ConfigurationServiceWrapper:
+            def __init__(self, system_config_manager):
+                self.system_config_manager = system_config_manager
+            
+            def is_restart_required(self):
+                """Check if system restart is required"""
+                return False  # Default implementation
+            
+            def get_pending_restart_configs(self):
+                """Get configurations that require restart"""
+                return []
+            
+            # Delegate other methods to the system configuration manager
+            def __getattr__(self, name):
+                return getattr(self.system_config_manager, name)
+        
+        system_configuration_manager = SystemConfigurationManager(db_manager)
+        configuration_service = ConfigurationServiceWrapper(system_configuration_manager)
+        
+        app.config['system_configuration_manager'] = system_configuration_manager
+        app.config['configuration_service'] = configuration_service
+        print("✅ SystemConfigurationManager initialized successfully")
+    except Exception as e:
+        print(f"⚠️  SystemConfigurationManager initialization failed: {e}")
+        app.config['system_configuration_manager'] = None
+        app.config['configuration_service'] = None
         
     # Test basic HealthChecker functionality
     try:

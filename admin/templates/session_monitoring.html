@@ -1,0 +1,384 @@
+<!-- Copyright (C) 2025 iolaire mcfadden. -->
+<!-- This program is free software: you can redistribute it and/or modify it under the terms of the GNU Affero General Public License as published by the Free Software Foundation, either version 3 of the License, or (at your option) any later version. -->
+<!-- THE SOFTWARE IS PROVIDED "AS IS", WITHOUT WARRANTY OF ANY KIND, EXPRESS OR IMPLIED, INCLUDING BUT NOT LIMITED TO THE WARRANTIES OF MERCHANTABILITY, FITNESS FOR A PARTICULAR PURPOSE AND NONINFRINGEMENT. IN NO EVENT SHALL THE AUTHORS OR COPYRIGHT HOLDERS BE LIABLE FOR ANY CLAIM, DAMAGES OR OTHER LIABILITY, WHETHER IN AN ACTION OF CONTRACT, TORT OR OTHERWISE, ARISING FROM, OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE SOFTWARE. -->
+
+{% extends "base_admin.html" %}
+
+{% block title %}Session Monitoring - Admin{% endblock %}
+
+{% block head %}
+<style nonce="{{ g.csp_nonce }}">
+.session-stats-grid {
+    display: grid;
+    grid-template-columns: repeat(auto-fit, minmax(250px, 1fr));
+    gap: 1rem;
+    margin-bottom: 2rem;
+}
+
+.stat-card {
+    background: #fff;
+    border: 1px solid #dee2e6;
+    border-radius: 8px;
+    padding: 1.5rem;
+    text-align: center;
+}
+
+.stat-value {
+    font-size: 2rem;
+    font-weight: bold;
+    margin: 0.5rem 0;
+}
+
+.stat-label {
+    color: #6c757d;
+    font-size: 0.875rem;
+    text-transform: uppercase;
+    letter-spacing: 0.5px;
+}
+
+.session-list {
+    background: #fff;
+    border: 1px solid #dee2e6;
+    border-radius: 8px;
+    padding: 1.5rem;
+    margin-top: 2rem;
+}
+
+.session-item {
+    border-bottom: 1px solid #e9ecef;
+    padding: 1rem 0;
+}
+
+.session-item:last-child {
+    border-bottom: none;
+}
+
+.session-status {
+    display: inline-block;
+    padding: 0.25rem 0.5rem;
+    border-radius: 4px;
+    font-size: 0.875rem;
+    font-weight: 500;
+}
+
+.session-status.active {
+    background-color: #d4edda;
+    color: #155724;
+}
+
+.session-status.inactive {
+    background-color: #f8d7da;
+    color: #721c24;
+}
+
+.session-status.terminated {
+    background-color: #e2e3e5;
+    color: #383d41;
+}
+
+.alert-item {
+    padding: 0.75rem;
+    margin-bottom: 0.5rem;
+    border-radius: 4px;
+    border-left: 4px solid;
+}
+
+.alert-item.warning {
+    background-color: #fff3cd;
+    border-left-color: #ffc107;
+    color: #856404;
+}
+
+.alert-item.error {
+    background-color: #f8d7da;
+    border-left-color: #dc3545;
+    color: #721c24;
+}
+
+.loading-spinner {
+    display: inline-block;
+    width: 20px;
+    height: 20px;
+    border: 3px solid #f3f3f3;
+    border-top: 3px solid #007bff;
+    border-radius: 50%;
+    animation: spin 1s linear infinite;
+}
+
+@keyframes spin {
+    0% { transform: rotate(0deg); }
+    100% { transform: rotate(360deg); }
+}
+</style>
+{% endblock %}
+
+{% block content %}
+<div class="container-fluid">
+    <div class="d-flex justify-content-between align-items-center mb-4">
+        <h1>Session Monitoring</h1>
+        <div class="btn-group">
+            <button class="btn btn-outline-primary" onclick="refreshData()">
+                <i class="fas fa-sync-alt"></i> Refresh
+            </button>
+            <button class="btn btn-outline-secondary" onclick="exportData()">
+                <i class="fas fa-download"></i> Export
+            </button>
+        </div>
+    </div>
+
+    <!-- Session Statistics -->
+    <div class="session-stats-grid" id="sessionStats">
+        <div class="stat-card">
+            <div class="stat-label">Total Sessions</div>
+            <div class="stat-value" id="totalSessions">-</div>
+        </div>
+        <div class="stat-card">
+            <div class="stat-label">Active Sessions</div>
+            <div class="stat-value" id="activeSessions">-</div>
+        </div>
+        <div class="stat-card">
+            <div class="stat-label">Database Sessions</div>
+            <div class="stat-value" id="databaseSessions">-</div>
+        </div>
+        <div class="stat-card">
+            <div class="stat-label">Platform Sessions</div>
+            <div class="stat-value" id="platformSessions">-</div>
+        </div>
+        <div class="stat-card">
+            <div class="stat-label">Unique Users</div>
+            <div class="stat-value" id="uniqueUsers">-</div>
+        </div>
+        <div class="stat-card">
+            <div class="stat-label">Error Sessions</div>
+            <div class="stat-value" id="errorSessions">-</div>
+        </div>
+    </div>
+
+    <!-- Session Alerts -->
+    <div class="session-list">
+        <h3>Session Alerts</h3>
+        <div id="sessionAlerts">
+            <div class="loading-spinner"></div> Loading alerts...
+        </div>
+    </div>
+
+    <!-- Recent Sessions -->
+    <div class="session-list">
+        <div class="d-flex justify-content-between align-items-center mb-3">
+            <h3>Recent Sessions</h3>
+            <select class="form-select" id="sessionFilter" style="width: auto;" onchange="filterSessions()">
+                <option value="all">All Sessions</option>
+                <option value="active">Active Only</option>
+                <option value="inactive">Inactive Only</option>
+                <option value="error">Error Sessions</option>
+                <option value="terminated">Terminated</option>
+            </select>
+        </div>
+        <div id="sessionList">
+            <div class="loading-spinner"></div> Loading sessions...
+        </div>
+    </div>
+</div>
+{% endblock %}
+
+{% block scripts %}
+<script nonce="{{ g.csp_nonce }}">
+// Backend API call monitoring
+const expectedEndpoints = [
+    '/api/session-monitoring/statistics',
+    '/api/session-monitoring/sessions',
+    '/api/session-monitoring/alerts'
+];
+
+let actualEndpoints = [];
+let backendCallResults = {
+    expected: expectedEndpoints,
+    actual: [],
+    missing: [],
+    unexpected: [],
+    success: true,
+    error: null
+};
+
+function monitorBackendCalls() {
+    // Store original fetch
+    const originalFetch = window.fetch;
+    
+    window.fetch = function(...args) {
+        const url = args[0];
+        if (typeof url === 'string' && url.startsWith('/api/session-monitoring/')) {
+            actualEndpoints.push(url);
+            console.log('Backend API call detected:', url);
+        }
+        return originalFetch.apply(this, args);
+    };
+}
+
+function validateBackendCalls() {
+    backendCallResults.actual = [...new Set(actualEndpoints)];
+    backendCallResults.missing = expectedEndpoints.filter(endpoint => 
+        !backendCallResults.actual.includes(endpoint)
+    );
+    backendCallResults.unexpected = backendCallResults.actual.filter(endpoint => 
+        !expectedEndpoints.includes(endpoint)
+    );
+    backendCallResults.success = backendCallResults.missing.length === 0;
+    
+    if (!backendCallResults.success) {
+        backendCallResults.error = `Missing endpoints: ${backendCallResults.missing.join(', ')}`;
+        console.error('Backend validation failed:', backendCallResults);
+    }
+    
+    return backendCallResults;
+}
+
+// Session monitoring functions
+async function loadSessionStatistics() {
+    try {
+        const response = await fetch('/api/session-monitoring/statistics?time_range=24h');
+        if (!response.ok) throw new Error(`HTTP ${response.status}`);
+        
+        const data = await response.json();
+        if (data.success) {
+            updateStatistics(data.data);
+        } else {
+            console.error('Failed to load session statistics:', data.message);
+        }
+    } catch (error) {
+        console.error('Error loading session statistics:', error);
+        showError('Failed to load session statistics');
+    }
+}
+
+async function loadSessionAlerts() {
+    try {
+        const response = await fetch('/api/session-monitoring/alerts');
+        if (!response.ok) throw new Error(`HTTP ${response.status}`);
+        
+        const data = await response.json();
+        if (data.success) {
+            updateAlerts(data.data);
+        } else {
+            console.error('Failed to load session alerts:', data.message);
+        }
+    } catch (error) {
+        console.error('Error loading session alerts:', error);
+        showError('Failed to load session alerts');
+    }
+}
+
+async function loadSessions() {
+    try {
+        const status = document.getElementById('sessionFilter').value;
+        const response = await fetch(`/api/session-monitoring/sessions?status=${status}&page=1&per_page=10`);
+        if (!response.ok) throw new Error(`HTTP ${response.status}`);
+        
+        const data = await response.json();
+        if (data.success) {
+            updateSessionList(data.data);
+        } else {
+            console.error('Failed to load sessions:', data.message);
+        }
+    } catch (error) {
+        console.error('Error loading sessions:', error);
+        showError('Failed to load sessions');
+    }
+}
+
+function updateStatistics(stats) {
+    document.getElementById('totalSessions').textContent = stats.total_sessions || 0;
+    document.getElementById('activeSessions').textContent = stats.active_sessions || 0;
+    document.getElementById('databaseSessions').textContent = stats.database_sessions || 0;
+    document.getElementById('platformSessions').textContent = stats.platform_sessions || 0;
+    document.getElementById('uniqueUsers').textContent = stats.unique_users || 0;
+    document.getElementById('errorSessions').textContent = stats.error_sessions || 0;
+}
+
+function updateAlerts(alerts) {
+    const container = document.getElementById('sessionAlerts');
+    
+    if (alerts.length === 0) {
+        container.innerHTML = '<p class="text-muted">No active alerts</p>';
+        return;
+    }
+    
+    container.innerHTML = alerts.map(alert => `
+        <div class="alert-item ${alert.type}">
+            <strong>${alert.type.toUpperCase()}:</strong> ${alert.message}
+            <br><small class="text-muted">Severity: ${alert.severity}</small>
+        </div>
+    `).join('');
+}
+
+function updateSessionList(data) {
+    const container = document.getElementById('sessionList');
+    
+    if (data.sessions.length === 0) {
+        container.innerHTML = '<p class="text-muted">No sessions found</p>';
+        return;
+    }
+    
+    container.innerHTML = data.sessions.map(session => `
+        <div class="session-item">
+            <div class="d-flex justify-content-between align-items-start">
+                <div>
+                    <strong>${session.username || 'Unknown'}</strong>
+                    <br><small class="text-muted">${session.email || 'No email'}</small>
+                    <br><small class="text-muted">ID: ${session.id}</small>
+                </div>
+                <div class="text-end">
+                    <span class="session-status ${session.status}">${session.status}</span>
+                    <br><small class="text-muted">Created: ${new Date(session.created_at).toLocaleString()}</small>
+                    <br><small class="text-muted">Last: ${new Date(session.last_activity).toLocaleString()}</small>
+                </div>
+            </div>
+        </div>
+    `).join('');
+}
+
+function filterSessions() {
+    loadSessions();
+}
+
+function refreshData() {
+    loadSessionStatistics();
+    loadSessionAlerts();
+    loadSessions();
+}
+
+function exportData() {
+    // Simple export functionality
+    window.open('/api/session-monitoring/export?format=json', '_blank');
+}
+
+function showError(message) {
+    // Show error notification
+    const alertDiv = document.createElement('div');
+    alertDiv.className = 'alert alert-danger alert-dismissible fade show';
+    alertDiv.innerHTML = `
+        ${message}
+        <button type="button" class="btn-close" data-bs-dismiss="alert"></button>
+    `;
+    document.querySelector('.container-fluid').insertBefore(alertDiv, document.querySelector('.session-stats-grid'));
+    
+    setTimeout(() => {
+        alertDiv.remove();
+    }, 5000);
+}
+
+// Initialize when page loads
+document.addEventListener('DOMContentLoaded', function() {
+    monitorBackendCalls();
+    refreshData();
+    
+    // Auto-refresh every 30 seconds
+    setInterval(refreshData, 30000);
+    
+    // Final validation after all API calls
+    setTimeout(() => {
+        const results = validateBackendCalls();
+        console.log('Session monitoring backend validation results:', results);
+    }, 5000);
+});
+</script>
+{% endblock %}

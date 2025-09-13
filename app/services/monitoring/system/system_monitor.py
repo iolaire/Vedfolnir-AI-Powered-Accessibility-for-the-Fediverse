@@ -826,10 +826,18 @@ class SystemMonitor:
             return
         
         try:
-            # Store current health
+            # Store current health - serialize nested dicts to JSON strings
+            health_dict = health.to_dict()
+            serialized_data = {}
+            for key, value in health_dict.items():
+                if isinstance(value, dict):
+                    serialized_data[key] = json.dumps(value)
+                else:
+                    serialized_data[key] = value
+            
             self.redis_client.hset(
                 self.health_key,
-                mapping=health.to_dict()
+                mapping=serialized_data
             )
             
             # Store in time series for historical data
@@ -849,10 +857,18 @@ class SystemMonitor:
             return
         
         try:
-            # Store current metrics
+            # Store current metrics - serialize nested dicts to JSON strings
+            metrics_dict = metrics.to_dict()
+            serialized_data = {}
+            for key, value in metrics_dict.items():
+                if isinstance(value, dict):
+                    serialized_data[key] = json.dumps(value)
+                else:
+                    serialized_data[key] = value
+            
             self.redis_client.hset(
                 self.performance_key,
-                mapping=metrics.to_dict()
+                mapping=serialized_data
             )
             
             # Store in time series for historical data
@@ -872,10 +888,18 @@ class SystemMonitor:
             return
         
         try:
-            # Store current trends
+            # Store current trends - serialize nested dicts to JSON strings
+            trends_dict = trends.to_dict()
+            serialized_data = {}
+            for key, value in trends_dict.items():
+                if isinstance(value, dict) or isinstance(value, list):
+                    serialized_data[key] = json.dumps(value)
+                else:
+                    serialized_data[key] = value
+            
             self.redis_client.hset(
                 self.errors_key,
-                mapping=trends.to_dict()
+                mapping=serialized_data
             )
             
             # Store in time series for historical data
@@ -895,10 +919,18 @@ class SystemMonitor:
             return
         
         try:
-            # Store current usage
+            # Store current usage - serialize nested dicts to JSON strings
+            usage_dict = usage.to_dict()
+            serialized_data = {}
+            for key, value in usage_dict.items():
+                if isinstance(value, dict):
+                    serialized_data[key] = json.dumps(value)
+                else:
+                    serialized_data[key] = value
+            
             self.redis_client.hset(
                 self.resources_key,
-                mapping=usage.to_dict()
+                mapping=serialized_data
             )
             
             # Store in time series for historical data

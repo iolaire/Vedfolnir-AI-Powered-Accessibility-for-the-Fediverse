@@ -524,7 +524,7 @@ class UserManagementDeploymentValidator:
         
         def check_email_connectivity():
             try:
-                from services.email_service import EmailService
+                from app.services.email.components.email_service import EmailService
                 email_service = EmailService(self.config)
                 
                 # This would test SMTP connection if EmailService has a test method
@@ -541,8 +541,8 @@ class UserManagementDeploymentValidator:
         
         def check_user_registration():
             try:
-                from services.user_management_service import UserRegistrationService
-                from services.email_service import EmailService
+                from app.services.user.components.user_management_service import UserRegistrationService
+                from app.services.email.components.email_service import EmailService
                 
                 email_service = EmailService(self.config)
                 registration_service = UserRegistrationService(self.db_manager, email_service)
@@ -567,7 +567,7 @@ class UserManagementDeploymentValidator:
         
         def check_user_authentication():
             try:
-                from services.user_management_service import UserAuthenticationService
+                from app.services.user.components.user_management_service import UserAuthenticationService
                 
                 auth_service = UserAuthenticationService(self.db_manager)
                 
@@ -579,8 +579,8 @@ class UserManagementDeploymentValidator:
         
         def check_profile_management():
             try:
-                from services.user_management_service import UserProfileService
-                from services.email_service import EmailService
+                from app.services.user.components.user_management_service import UserProfileService
+                from app.services.email.components.email_service import EmailService
                 
                 email_service = EmailService(self.config)
                 profile_service = UserProfileService(self.db_manager, email_service)
@@ -717,11 +717,11 @@ class UserManagementDeploymentValidator:
         
         def check_service_imports():
             try:
-                from services.user_management_service import (
+                from app.services.user.components.user_management_service import (
                     UserRegistrationService, UserAuthenticationService,
                     UserProfileService, PasswordManagementService
                 )
-                from services.email_service import EmailService
+                from app.services.email.components.email_service import EmailService
                 return True, "Service imports successful", {}
             except Exception as e:
                 return False, f"Service import failed: {e}", {'error': str(e)}

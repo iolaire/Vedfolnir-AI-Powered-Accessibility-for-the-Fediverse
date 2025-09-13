@@ -1,0 +1,373 @@
+<!-- Copyright (C) 2025 iolaire mcfadden. -->
+<!-- This program is free software: you can redistribute it and/or modify it under the terms of the GNU Affero General Public License as published by the Free Software Foundation, either version 3 of the License, or (at your option) any later version. -->
+<!-- THE SOFTWARE IS PROVIDED "AS IS", WITHOUT WARRANTY OF ANY KIND, EXPRESS OR IMPLIED, INCLUDING BUT NOT LIMITED TO THE WARRANTIES OF MERCHANTABILITY, FITNESS FOR A PARTICULAR PURPOSE AND NONINFRINGEMENT. IN NO EVENT SHALL THE AUTHORS OR COPYRIGHT HOLDERS BE LIABLE FOR ANY CLAIM, DAMAGES OR OTHER LIABILITY, WHETHER IN AN ACTION OF CONTRACT, TORT OR OTHERWISE, ARISING FROM, OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE SOFTWARE. -->
+
+{% extends "base_admin.html" %}
+
+{% block title %}Responsiveness Dashboard - Admin{% endblock %}
+
+{% block content %}
+<div class="d-flex justify-content-between flex-wrap flex-md-nowrap align-items-center pt-3 pb-2 mb-3 border-bottom">
+    <h1 class="h2">Responsiveness Dashboard</h1>
+    <div class="btn-toolbar mb-2 mb-md-0">
+        <button type="button" class="btn btn-sm btn-outline-primary me-2" onclick="runResponsivenessCheck()">
+            <i class="bi bi-search"></i> Run Check
+        </button>
+        <button type="button" class="btn btn-sm btn-outline-secondary" onclick="refreshOverview()">
+            <i class="bi bi-arrow-clockwise"></i> Refresh
+        </button>
+    </div>
+</div>
+
+<!-- Responsiveness Status -->
+<div class="row mb-4">
+    <div class="col-md-12">
+        <div class="card" id="status-card">
+            <div class="card-body">
+                <div class="d-flex align-items-center">
+                    <div class="me-3">
+                        <i class="bi bi-speedometer2 fs-1" id="status-icon"></i>
+                    </div>
+                    <div>
+                        <h4 id="overall-status">{{ responsiveness_data.overall_status|title }}</h4>
+                        <p class="mb-0" id="status-description">
+                            {% if responsiveness_data.responsive %}
+                                System is responding within acceptable thresholds
+                            {% else %}
+                                System responsiveness issues detected
+                            {% endif %}
+                        </p>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+
+<!-- Key Metrics -->
+<div class="row mb-4">
+    <div class="col-md-3">
+        <div class="card">
+            <div class="card-body text-center">
+                <h5 class="card-title">Memory Usage</h5>
+                <div class="progress mb-2">
+                    <div class="progress-bar" id="memory-progress" 
+                         style="width: {{ responsiveness_data.metrics.memory_usage_percent }}%"></div>
+                </div>
+                <span id="memory-percent">{{ responsiveness_data.metrics.memory_usage_percent }}%</span>
+            </div>
+        </div>
+    </div>
+    <div class="col-md-3">
+        <div class="card">
+            <div class="card-body text-center">
+                <h5 class="card-title">CPU Usage</h5>
+                <div class="progress mb-2">
+                    <div class="progress-bar" id="cpu-progress" 
+                         style="width: {{ responsiveness_data.metrics.cpu_usage_percent }}%"></div>
+                </div>
+                <span id="cpu-percent">{{ responsiveness_data.metrics.cpu_usage_percent }}%</span>
+            </div>
+        </div>
+    </div> 
+   <div class="col-md-3">
+        <div class="card">
+            <div class="card-body text-center">
+                <h5 class="card-title">Avg Response Time</h5>
+                <h3 id="response-time">{{ "%.2f"|format(responsiveness_data.metrics.avg_request_time) }}ms</h3>
+                <small class="text-muted">Target: &lt; {{ responsiveness_data.thresholds.request_time_threshold * 1000 }}ms</small>
+            </div>
+        </div>
+    </div>
+    <div class="col-md-3">
+        <div class="card">
+            <div class="card-body text-center">
+                <h5 class="card-title">Connection Pool</h5>
+                <div class="progress mb-2">
+                    <div class="progress-bar" id="pool-progress" 
+                         style="width: {{ responsiveness_data.metrics.connection_pool_utilization }}%"></div>
+                </div>
+                <span id="pool-percent">{{ responsiveness_data.metrics.connection_pool_utilization }}%</span>
+            </div>
+        </div>
+    </div>
+</div>
+
+<!-- Issues and Recommendations -->
+<div class="row mb-4">
+    <div class="col-md-6">
+        <div class="card">
+            <div class="card-header">
+                <h5>Current Issues</h5>
+            </div>
+            <div class="card-body">
+                <div id="issues-list">
+                    {% if responsiveness_data.issues %}
+                        {% for issue in responsiveness_data.issues %}
+                        <div class="alert alert-warning">
+                            <i class="bi bi-exclamation-triangle"></i> {{ issue }}
+                        </div>
+                        {% endfor %}
+                    {% else %}
+                        <div class="alert alert-success">
+                            <i class="bi bi-check-circle"></i> No responsiveness issues detected
+                        </div>
+                    {% endif %}
+                </div>
+            </div>
+        </div>
+    </div>
+    <div class="col-md-6">
+        <div class="card">
+            <div class="card-header">
+                <h5>Optimization Actions</h5>
+            </div>
+            <div class="card-body">
+                <div class="d-grid gap-2">
+                    <button class="btn btn-outline-primary" onclick="optimizeMemory()">
+                        <i class="bi bi-memory"></i> Optimize Memory
+                    </button>
+                    <button class="btn btn-outline-info" onclick="optimizeConnections()">
+                        <i class="bi bi-diagram-3"></i> Optimize Connections
+                    </button>
+                </div>
+                
+                <div id="recommendations-list" class="mt-3">
+                    {% if responsiveness_data.recommendations %}
+                        <h6>Recommendations:</h6>
+                        {% for rec in responsiveness_data.recommendations %}
+                        <div class="alert alert-info alert-sm">
+                            <small>{{ rec.message }}</small>
+                        </div>
+                        {% endfor %}
+                    {% endif %}
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+
+<!-- Detailed Metrics -->
+<div class="row">
+    <div class="col-md-12">
+        <div class="card">
+            <div class="card-header">
+                <h5>Detailed Metrics</h5>
+            </div>
+            <div class="card-body">
+                <div class="row">
+                    <div class="col-md-4">
+                        <table class="table table-sm">
+                            <tr>
+                                <td>Slow Requests:</td>
+                                <td id="slow-requests">{{ responsiveness_data.metrics.slow_request_count }}</td>
+                            </tr>
+                            <tr>
+                                <td>Blocked Requests:</td>
+                                <td id="blocked-requests">{{ responsiveness_data.metrics.blocked_requests }}</td>
+                            </tr>
+                            <tr>
+                                <td>Background Tasks:</td>
+                                <td id="bg-tasks">{{ responsiveness_data.metrics.background_tasks_count }}</td>
+                            </tr>
+                        </table>
+                    </div>
+                    <div class="col-md-4">
+                        <h6>Thresholds</h6>
+                        <table class="table table-sm">
+                            <tr>
+                                <td>Memory Threshold:</td>
+                                <td>{{ responsiveness_data.thresholds.memory_threshold }}%</td>
+                            </tr>
+                            <tr>
+                                <td>CPU Threshold:</td>
+                                <td>{{ responsiveness_data.thresholds.cpu_threshold }}%</td>
+                            </tr>
+                            <tr>
+                                <td>Response Time:</td>
+                                <td>{{ responsiveness_data.thresholds.request_time_threshold }}s</td>
+                            </tr>
+                        </table>
+                    </div>
+                    <div class="col-md-4">
+                        <div id="last-updated">
+                            <small class="text-muted">
+                                Last updated: <span id="timestamp">{{ responsiveness_data.timestamp }}</span>
+                            </small>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+{% endblock %}
+
+{% block extra_js %}
+<script nonce="{{ g.csp_nonce }}">
+document.addEventListener('DOMContentLoaded', function() {
+    updateStatusCard();
+    startAutoRefresh();
+});
+
+function updateStatusCard() {
+    const statusCard = document.getElementById('status-card');
+    const statusIcon = document.getElementById('status-icon');
+    const status = '{{ responsiveness_data.overall_status }}';
+    
+    // Update card styling based on status
+    statusCard.className = 'card';
+    if (status === 'healthy') {
+        statusCard.classList.add('border-success');
+        statusIcon.className = 'bi bi-check-circle-fill fs-1 text-success';
+    } else if (status === 'warning') {
+        statusCard.classList.add('border-warning');
+        statusIcon.className = 'bi bi-exclamation-triangle-fill fs-1 text-warning';
+    } else {
+        statusCard.classList.add('border-danger');
+        statusIcon.className = 'bi bi-x-circle-fill fs-1 text-danger';
+    }
+    
+    // Update progress bar colors
+    updateProgressBars();
+}
+
+function updateProgressBars() {
+    const memoryPercent = {{ responsiveness_data.metrics.memory_usage_percent }};
+    const cpuPercent = {{ responsiveness_data.metrics.cpu_usage_percent }};
+    const poolPercent = {{ responsiveness_data.metrics.connection_pool_utilization }};
+    
+    updateProgressBar('memory-progress', memoryPercent, 80);
+    updateProgressBar('cpu-progress', cpuPercent, 85);
+    updateProgressBar('pool-progress', poolPercent, 90);
+}
+
+function updateProgressBar(id, value, threshold) {
+    const progressBar = document.getElementById(id);
+    progressBar.className = 'progress-bar';
+    
+    if (value >= threshold) {
+        progressBar.classList.add('bg-danger');
+    } else if (value >= threshold * 0.8) {
+        progressBar.classList.add('bg-warning');
+    } else {
+        progressBar.classList.add('bg-success');
+    }
+}
+
+function refreshOverview() {
+    fetch('/admin/api/responsiveness/overview')
+        .then(response => response.json())
+        .then(data => {
+            if (data.success) {
+                updateDashboard(data.data.overview);
+            }
+        })
+        .catch(error => console.error('Error refreshing overview:', error));
+}
+
+function runResponsivenessCheck() {
+    const button = event.target;
+    button.disabled = true;
+    button.innerHTML = '<i class="bi bi-hourglass-split"></i> Running...';
+    
+    fetch('/admin/api/responsiveness/check', {
+        method: 'POST',
+        headers: {
+            'Content-Type': 'application/json',
+            'X-CSRFToken': document.querySelector('meta[name="csrf-token"]').getAttribute('content')
+        }
+    })
+    .then(response => response.json())
+    .then(data => {
+        if (data.success) {
+            updateDashboard(data.data.check_result);
+            showNotification('Responsiveness check completed', 'success');
+        } else {
+            showNotification('Check failed: ' + data.error, 'error');
+        }
+    })
+    .catch(error => {
+        console.error('Error running check:', error);
+        showNotification('Check failed', 'error');
+    })
+    .finally(() => {
+        button.disabled = false;
+        button.innerHTML = '<i class="bi bi-search"></i> Run Check';
+    });
+}
+
+function optimizeMemory() {
+    optimizeSystem('memory');
+}
+
+function optimizeConnections() {
+    optimizeSystem('connections');
+}
+
+function optimizeSystem(type) {
+    fetch('/admin/api/responsiveness/optimize', {
+        method: 'POST',
+        headers: {
+            'Content-Type': 'application/json',
+            'X-CSRFToken': document.querySelector('meta[name="csrf-token"]').getAttribute('content')
+        },
+        body: JSON.stringify({ type: type })
+    })
+    .then(response => response.json())
+    .then(data => {
+        if (data.success) {
+            showNotification(data.data.message, 'success');
+            setTimeout(refreshOverview, 2000); // Refresh after optimization
+        } else {
+            showNotification('Optimization failed: ' + data.error, 'error');
+        }
+    })
+    .catch(error => {
+        console.error('Error optimizing:', error);
+        showNotification('Optimization failed', 'error');
+    });
+}
+
+function updateDashboard(data) {
+    // Update status
+    document.getElementById('overall-status').textContent = data.overall_status.charAt(0).toUpperCase() + data.overall_status.slice(1);
+    
+    // Update metrics
+    if (data.metrics) {
+        document.getElementById('memory-percent').textContent = data.metrics.memory_usage_percent + '%';
+        document.getElementById('cpu-percent').textContent = data.metrics.cpu_usage_percent + '%';
+        document.getElementById('response-time').textContent = data.metrics.avg_request_time.toFixed(2) + 'ms';
+        document.getElementById('pool-percent').textContent = data.metrics.connection_pool_utilization + '%';
+        
+        // Update progress bars
+        document.getElementById('memory-progress').style.width = data.metrics.memory_usage_percent + '%';
+        document.getElementById('cpu-progress').style.width = data.metrics.cpu_usage_percent + '%';
+        document.getElementById('pool-progress').style.width = data.metrics.connection_pool_utilization + '%';
+        
+        // Update detailed metrics
+        document.getElementById('slow-requests').textContent = data.metrics.slow_request_count;
+        document.getElementById('blocked-requests').textContent = data.metrics.blocked_requests;
+        document.getElementById('bg-tasks').textContent = data.metrics.background_tasks_count;
+    }
+    
+    // Update timestamp
+    document.getElementById('timestamp').textContent = new Date(data.timestamp).toLocaleString();
+    
+    updateStatusCard();
+}
+
+function showNotification(message, type) {
+    // Use the unified notification system
+    if (window.showAdminNotification) {
+        window.showAdminNotification(message, type);
+    } else {
+        alert(message);
+    }
+}
+
+function startAutoRefresh() {
+    setInterval(refreshOverview, 60000); // Refresh every minute
+}
+</script>
+{% endblock %}
