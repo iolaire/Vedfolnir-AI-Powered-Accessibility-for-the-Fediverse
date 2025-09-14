@@ -120,7 +120,7 @@ class TestStorageConfigurationService(unittest.TestCase):
         """Test handling of negative CAPTION_MAX_STORAGE_GB"""
         os.environ['CAPTION_MAX_STORAGE_GB'] = '-5.0'
         
-        with patch('storage_configuration_service.logger') as mock_logger:
+        with patch('app.services.storage.components.storage_configuration_service.logger') as mock_logger:
             service = StorageConfigurationService()
             
             # Should use default value
@@ -134,7 +134,7 @@ class TestStorageConfigurationService(unittest.TestCase):
         """Test handling of zero CAPTION_MAX_STORAGE_GB"""
         os.environ['CAPTION_MAX_STORAGE_GB'] = '0'
         
-        with patch('storage_configuration_service.logger') as mock_logger:
+        with patch('app.services.storage.components.storage_configuration_service.logger') as mock_logger:
             service = StorageConfigurationService()
             
             # Should use default value
@@ -148,7 +148,7 @@ class TestStorageConfigurationService(unittest.TestCase):
         """Test handling of non-numeric CAPTION_MAX_STORAGE_GB"""
         os.environ['CAPTION_MAX_STORAGE_GB'] = 'not_a_number'
         
-        with patch('storage_configuration_service.logger') as mock_logger:
+        with patch('app.services.storage.components.storage_configuration_service.logger') as mock_logger:
             service = StorageConfigurationService()
             
             # Should use default value
@@ -162,7 +162,7 @@ class TestStorageConfigurationService(unittest.TestCase):
         """Test handling of warning threshold > 100%"""
         os.environ['STORAGE_WARNING_THRESHOLD'] = '150.0'
         
-        with patch('storage_configuration_service.logger') as mock_logger:
+        with patch('app.services.storage.components.storage_configuration_service.logger') as mock_logger:
             service = StorageConfigurationService()
             
             # Should use default warning threshold (80%)
@@ -176,7 +176,7 @@ class TestStorageConfigurationService(unittest.TestCase):
         """Test handling of warning threshold = 0%"""
         os.environ['STORAGE_WARNING_THRESHOLD'] = '0'
         
-        with patch('storage_configuration_service.logger') as mock_logger:
+        with patch('app.services.storage.components.storage_configuration_service.logger') as mock_logger:
             service = StorageConfigurationService()
             
             # Should use default warning threshold (80%)
@@ -190,7 +190,7 @@ class TestStorageConfigurationService(unittest.TestCase):
         """Test handling of non-numeric warning threshold"""
         os.environ['STORAGE_WARNING_THRESHOLD'] = 'invalid'
         
-        with patch('storage_configuration_service.logger') as mock_logger:
+        with patch('app.services.storage.components.storage_configuration_service.logger') as mock_logger:
             service = StorageConfigurationService()
             
             # Should use default warning threshold (80%)
@@ -289,7 +289,7 @@ class TestStorageConfigurationService(unittest.TestCase):
         summary = service.get_configuration_summary()
         self.assertEqual(summary, {"error": "Configuration not loaded"})
     
-    @patch('storage_configuration_service.logger')
+    @patch('app.services.storage.components.storage_configuration_service.logger')
     def test_reload_configuration(self, mock_logger):
         """Test reloading configuration"""
         # Start with default configuration
@@ -313,7 +313,7 @@ class TestStorageConfigurationService(unittest.TestCase):
                        if "Reloading storage configuration" in str(call)]
         self.assertTrue(len(reload_calls) > 0, "Should log reload message")
     
-    @patch('storage_configuration_service.logger')
+    @patch('app.services.storage.components.storage_configuration_service.logger')
     def test_logging_on_successful_load(self, mock_logger):
         """Test that successful configuration loading is logged"""
         os.environ['CAPTION_MAX_STORAGE_GB'] = '12.0'
@@ -326,7 +326,7 @@ class TestStorageConfigurationService(unittest.TestCase):
         self.assertIn("Storage configuration loaded", call_args)
         self.assertIn("max_storage=12.0GB", call_args)
     
-    @patch('storage_configuration_service.logger')
+    @patch('app.services.storage.components.storage_configuration_service.logger')
     def test_logging_on_configuration_error(self, mock_logger):
         """Test logging when configuration loading fails"""
         # Mock an exception during configuration loading
@@ -380,7 +380,7 @@ class TestStorageConfigurationService(unittest.TestCase):
                 
                 os.environ['CAPTION_MAX_STORAGE_GB'] = env_value
                 
-                with patch('storage_configuration_service.logger') as mock_logger:
+                with patch('app.services.storage.components.storage_configuration_service.logger') as mock_logger:
                     service = StorageConfigurationService()
                     
                     self.assertEqual(service.get_max_storage_gb(), expected_value)
@@ -393,7 +393,7 @@ class TestStorageConfigurationService(unittest.TestCase):
         """Test Requirement 1.4: System SHALL log error and use default on invalid value"""
         os.environ['CAPTION_MAX_STORAGE_GB'] = 'invalid_value'
         
-        with patch('storage_configuration_service.logger') as mock_logger:
+        with patch('app.services.storage.components.storage_configuration_service.logger') as mock_logger:
             service = StorageConfigurationService()
             
             # Should use default value
