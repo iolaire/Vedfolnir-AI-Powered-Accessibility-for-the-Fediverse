@@ -45,7 +45,11 @@ class CaptionFormatter:
                 self.language_tool = language_tool_python.LanguageTool('en-US')
                 logger.info("LanguageTool initialized successfully for grammar checking")
             except Exception as e:
-                logger.warning(f"Failed to initialize LanguageTool: {e}")
+                # Check if it's a Java version issue and provide helpful message
+                if "java" in str(e).lower() and "17" in str(e):
+                    logger.info("LanguageTool requires Java 17+. Grammar checking disabled. Caption generation will continue without grammar checking.")
+                else:
+                    logger.warning(f"Failed to initialize LanguageTool: {e}")
                 self.language_tool = None
         else:
             logger.info("LanguageTool not available, using fallback grammar checking")

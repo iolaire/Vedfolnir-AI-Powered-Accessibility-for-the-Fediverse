@@ -75,7 +75,7 @@ class ConsolidatedWebSocketHandlers:
                     })
                     
                     self.logger.info("Anonymous user connected successfully")
-                    return True
+                    return
                 
                 # Handle authenticated users
                 user_id = current_user.id
@@ -104,17 +104,18 @@ class ConsolidatedWebSocketHandlers:
                 })
                 
                 self.logger.info(f"User {user_id} connected successfully, {pending_count} pending messages")
-                return True
                 
             except Exception as e:
                 self.logger.error(f"Connection error: {e}")
-                # Don't return False on error, emit error message instead
-                emit('connection_error', {
-                    'error': 'Connection failed',
-                    'message': 'Unable to establish connection',
-                    'timestamp': datetime.now(timezone.utc).isoformat()
-                })
-                return True  # Allow connection but send error message
+                # Emit error message but don't return anything to avoid WSGI issues
+                try:
+                    emit('connection_error', {
+                        'error': 'Connection failed',
+                        'message': 'Unable to establish connection',
+                        'timestamp': datetime.now(timezone.utc).isoformat()
+                    })
+                except Exception as emit_error:
+                    self.logger.error(f"Failed to emit connection error: {emit_error}")
         
         @self.socketio.on('disconnect', namespace='/')
         def handle_unified_disconnect():

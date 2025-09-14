@@ -4,7 +4,7 @@
 
 """Admin User Management Routes"""
 
-from flask import render_template, request, jsonify, redirect, url_for, current_app
+from flask import render_template, render_template_string, request, jsonify, redirect, url_for, current_app
 from flask_login import login_required, current_user
 from models import User, UserRole
 # from notification_flash_replacement import send_notification  # Removed - using unified notification system
@@ -71,83 +71,135 @@ def register_routes(bp):
     @admin_required
     def user_management():
         """User management interface with filtering and pagination"""
+        try:
+            db_manager = current_app.config['db_manager']
+            session_manager = current_app.config.get('session_manager')
+            user_service = UserService(db_manager, session_manager)
             
-        db_manager = current_app.config['db_manager']
-        session_manager = current_app.config.get('session_manager')
-        user_service = UserService(db_manager, session_manager)
-        
-        # Get filter parameters
-        role_filter = request.args.get('role')
-        status_filter = request.args.get('status')
-        search_term = request.args.get('search')
-        page_size = int(request.args.get('page_size', 25))
-        page = int(request.args.get('page', 1))
-        offset = (page - 1) * page_size
-        action = request.args.get('action')
-        
-        # Convert status filter to boolean parameters
-        is_active = None
-        email_verified = None
-        account_locked = None
-        
-        if status_filter == 'active':
-            is_active = True
-        elif status_filter == 'inactive':
-            is_active = False
-        elif status_filter == 'locked':
-            account_locked = True
-        elif status_filter == 'unverified':
-            email_verified = False
-        
-        # Convert role filter
-        role_enum = None
-        if role_filter:
+            # Get filter parameters
+            role_filter = request.args.get('role')
+            status_filter = request.args.get('status')
+            search_term = request.args.get('search')
+            page_size = int(request.args.get('page_size', 25))
+            page = int(request.args.get('page', 1))
+            offset = (page - 1) * page_size
+            action = request.args.get('action')
+            
+            # Convert status filter to boolean parameters
+            is_active = None
+            email_verified = None
+            account_locked = None
+            
+            if status_filter == 'active':
+                is_active = True
+            elif status_filter == 'inactive':
+                is_active = False
+            elif status_filter == 'locked':
+                account_locked = True
+            elif status_filter == 'unverified':
+                email_verified = False
+            
+            # Convert role filter
+            role_enum = None
+            if role_filter:
+                try:
+                    role_enum = UserRole(role_filter)
+                except ValueError:
+                    pass
+            
+            # Get filtered users
+            user_data = user_service.get_users_with_filters(
+                role=role_enum,
+                is_active=is_active,
+                email_verified=email_verified,
+                account_locked=account_locked,
+                search_term=search_term,
+                limit=page_size,
+                offset=offset
+            )
+            
+            # Get user statistics
+            all_users = user_service.get_all_users()
+            user_stats = {
+                'total_users': len(all_users),
+                'active_users': len([u for u in all_users if u.is_active]),
+                'unverified_users': len([u for u in all_users if not u.email_verified]),
+                'locked_users': len([u for u in all_users if u.account_locked]),
+            }
+            
+            admin_count = user_service.get_admin_count()
+            
+            # Initialize forms
+            edit_form = EditUserForm()
+            delete_form = DeleteUserForm()
+            add_form = AddUserForm()
+            
+            # Debug logging
+            current_app.logger.info(f"Rendering user management template with {len(user_data['users'])} users")
+            
+            # Try different template path approaches
+            template_name = 'user_management.html'
+            
+            # First, try to render with the blueprint's template folder
             try:
-                role_enum = UserRole(role_filter)
-            except ValueError:
-                pass
-        
-        # Get filtered users
-        user_data = user_service.get_users_with_filters(
-            role=role_enum,
-            is_active=is_active,
-            email_verified=email_verified,
-            account_locked=account_locked,
-            search_term=search_term,
-            limit=page_size,
-            offset=offset
-        )
-        
-        # Get user statistics
-        all_users = user_service.get_all_users()
-        user_stats = {
-            'total_users': len(all_users),
-            'active_users': len([u for u in all_users if u.is_active]),
-            'unverified_users': len([u for u in all_users if not u.email_verified]),
-            'locked_users': len([u for u in all_users if u.account_locked]),
-        }
-        
-        admin_count = user_service.get_admin_count()
-        
-        # Initialize forms
-        edit_form = EditUserForm()
-        delete_form = DeleteUserForm()
-        add_form = AddUserForm()
-        
-        return render_template('admin/user_management.html', 
-                              users=user_data['users'],
-                              total_users=user_data['total_count'],
-                              user_stats=user_stats,
-                              admin_count=admin_count,
-                              edit_form=edit_form, 
-                              delete_form=delete_form,
-                              add_form=add_form,
-                              current_filters={
-                                  'role': role_filter,
-                                  'status': status_filter,
-                                  'search': search_term
-                              },
-                              open_add_user_modal=(action == 'create'))
+                return render_template(template_name, 
+                                      users=user_data['users'],
+                                      total_users=user_data['total_count'],
+                                      user_stats=user_stats,
+                                      admin_count=admin_count,
+                                      edit_form=edit_form, 
+                                      delete_form=delete_form,
+                                      add_form=add_form,
+                                      current_filters={
+                                          'role': role_filter,
+                                          'status': status_filter,
+                                          'search': search_term
+                                      },
+                                      open_add_user_modal=(action == 'create'))
+            except Exception as template_error:
+                current_app.logger.error(f"Template rendering failed with blueprint template: {template_error}")
+                
+                # Fallback: try with explicit admin path
+                try:
+                    import os
+                    
+                    # Get the absolute path to the template
+                    admin_template_path = os.path.join(current_app.root_path, '..', 'admin', 'templates', 'user_management.html')
+                    current_app.logger.info(f"Trying to render template at: {admin_template_path}")
+                    
+                    # Check if template exists
+                    if os.path.exists(admin_template_path):
+                        current_app.logger.info("Template file exists, but Jinja2 can't find it")
+                    else:
+                        current_app.logger.error("Template file does not exist")
+                    
+                    # Try rendering with a simple fallback template
+                    return render_template_string("""
+                    <!DOCTYPE html>
+                    <html>
+                    <head><title>User Management - Vedfolnir</title></head>
+                    <body>
+                        <h1>User Management</h1>
+                        <p>Template rendering is temporarily unavailable. Please check the logs.</p>
+                        <p>Found {{ users|length }} users.</p>
+                        <a href="{{ url_for('main.index') }}">Return to Dashboard</a>
+                    </body>
+                    </html>
+                    """, users=user_data['users'])
+                    
+                except Exception as fallback_error:
+                    current_app.logger.error(f"Fallback template rendering failed: {fallback_error}")
+                    raise template_error
+                                  
+        except Exception as e:
+            current_app.logger.error(f"Error in user management route: {e}")
+            import traceback
+            current_app.logger.error(f"Traceback: {traceback.format_exc()}")
+            
+            # Send error notification
+            from app.services.notification.helpers.notification_helpers import send_error_notification
+            send_error_notification("An error occurred while loading the user management interface.", "Template Error")
+            return redirect(url_for('main.index'))
 
     @bp.route('/users/edit', methods=['POST'])
     @login_required

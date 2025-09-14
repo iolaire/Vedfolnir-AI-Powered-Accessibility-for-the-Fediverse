@@ -245,36 +245,44 @@ def admin_user_management_access(f):
     @admin_required
     @admin_session_preservation
     def decorated_function(*args, **kwargs):
-        # Additional user management specific checks
-        target_user_id = kwargs.get('user_id') or request.form.get('user_id') or request.json.get('user_id') if request.json else None
-        
-        if target_user_id:
-            try:
-                session_manager = getattr(current_app, "request_session_manager", None) or current_app.config.get("db_manager")
-                db_session = session_manager.get_session()
+        try:
+            # Additional user management specific checks
+            target_user_id = kwargs.get('user_id') or request.form.get('user_id') or request.json.get('user_id') if request.json else None
+            
+            if target_user_id:
                 try:
-                    from models import User
-                    target_user = db_session.query(User).filter_by(id=target_user_id).first()
-                    
-                    if target_user:
-                        # Log user management action
-                        UserAuditLog.log_action(
-                            db_session,
-                            action='USER_MANAGEMENT_ACCESS',
-                            user_id=target_user.id,
-                            admin_user_id=current_user.id,
-                            details=f"Admin accessed user management function {f.__name__} for user {target_user.username}",
-                            ip_address=request.remote_addr,
-                            user_agent=request.headers.get('User-Agent')
-                        )
-                        db_session.commit()
-                finally:
-                    session_manager.close_session(db_session)
+                    session_manager = getattr(current_app, "request_session_manager", None) or current_app.config.get("db_manager")
+                    db_session = session_manager.get_session()
+                    try:
+                        from models import User
+                        target_user = db_session.query(User).filter_by(id=target_user_id).first()
                         
-            except Exception as e:
-                logger.error(f"Error logging user management access: {e}")
-        
-        return f(*args, **kwargs)
+                        if target_user:
+                            # Log user management action
+                            UserAuditLog.log_action(
+                                db_session,
+                                action='USER_MANAGEMENT_ACCESS',
+                                user_id=target_user.id,
+                                admin_user_id=current_user.id,
+                                details=f"Admin accessed user management function {f.__name__} for user {target_user.username}",
+                                ip_address=request.remote_addr,
+                                user_agent=request.headers.get('User-Agent')
+                            )
+                            db_session.commit()
+                    finally:
+                        session_manager.close_session(db_session)
+                            
+                except Exception as e:
+                    logger.error(f"Error logging user management access: {e}")
+            
+            return f(*args, **kwargs)
+            
+        except Exception as e:
+            logger.error(f"Error in admin access control for {f.__name__}: {e}")
+            # Send error notification
+            from app.services.notification.helpers.notification_helpers import send_error_notification
+            send_error_notification("An error occurred while accessing the admin interface.", "Error")
+            return redirect(url_for('main.index'))
     
     return decorated_function
 

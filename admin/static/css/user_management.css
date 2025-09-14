@@ -1,0 +1,126 @@
+/* Copyright (C) 2025 iolaire mcfadden. */
+/* This program is free software: you can redistribute it and/or modify it under the terms of the GNU Affero General Public License as published by the Free Software Foundation, either version 3 of the License, or (at your option) any later version. */
+/* THE SOFTWARE IS PROVIDED "AS IS", WITHOUT WARRANTY OF ANY KIND, EXPRESS OR IMPLIED, INCLUDING BUT NOT LIMITED TO THE WARRANTIES OF MERCHANTABILITY, FITNESS FOR A PARTICULAR PURPOSE AND NONINFRINGEMENT. IN NO EVENT SHALL THE AUTHORS OR COPYRIGHT HOLDERS BE LIABLE FOR ANY CLAIM, DAMAGES OR OTHER LIABILITY, WHETHER IN AN ACTION OF CONTRACT, TORT OR OTHERWISE, ARISING FROM, OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE SOFTWARE. */
+
+/* User Management Styles */
+
+/* Fix dropdown positioning in table-responsive containers - targeted to user management */
+.user-table .table-responsive {
+    overflow-x: auto;
+    overflow-y: visible;
+}
+
+/* Ensure dropdown menus appear above table content */
+.user-table .dropdown-menu {
+    position: absolute !important;
+    z-index: 1050 !important;
+}
+
+/* For dropdowns at the end of tables, position them to the left */
+.user-table tbody tr:last-child .dropdown-menu,
+.user-table tbody tr:nth-last-child(2) .dropdown-menu,
+.user-table tbody tr:nth-last-child(3) .dropdown-menu {
+    transform: translateY(-100%);
+    margin-top: -8px;
+}
+
+/* Ensure dropdown button groups don't get clipped */
+.user-table .btn-group .dropdown-menu {
+    right: 0;
+    left: auto;
+}
+
+/* User statistics cards */
+.user-stats-card {
+    transition: transform 0.2s ease-in-out;
+}
+
+.user-stats-card:hover {
+    transform: translateY(-2px);
+}
+
+/* User table enhancements */
+.user-table .badge {
+    font-size: 0.75rem;
+}
+
+.user-table .btn-group .btn {
+    padding: 0.25rem 0.5rem;
+    font-size: 0.75rem;
+}
+
+/* Modal enhancements */
+.modal-body .form-check {
+    margin-bottom: 0.5rem;
+}
+
+.modal-body .alert {
+    margin-bottom: 1rem;
+}
+
+/* Filter panel */
+.filter-panel {
+    background-color: #f8f9fa;
+    border-radius: 0.375rem;
+    padding: 1rem;
+}
+
+/* User details display */
+.user-details-table {
+    font-size: 0.9rem;
+}
+
+.user-details-table td {
+    padding: 0.25rem 0.5rem;
+    border: none;
+}
+
+.user-details-table tr:nth-child(even) {
+    background-color: #f8f9fa;
+}
+
+/* Status badges */
+.status-badge-group {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 0.25rem;
+}
+
+.status-badge-group .badge {
+    font-size: 0.7rem;
+}
+
+/* Activity list */
+.activity-list .list-group-item {
+    border-left: 3px solid #dee2e6;
+    padding: 0.75rem;
+}
+
+.activity-list .list-group-item:hover {
+    background-color: #f8f9fa;
+}
+
+/* Loading states */
+.loading-spinner {
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    min-height: 200px;
+}
+
+/* Responsive adjustments */
+@media (max-width: 768px) {
+    .user-table .btn-group {
+        flex-direction: column;
+    }
+    
+    .user-table .btn-group .btn {
+        margin-bottom: 0.25rem;
+    }
+    
+    .dropdown-menu {
+        position: static !important;
+        transform: none !important;
+        margin-top: 0 !important;
+    }
+}

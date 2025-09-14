@@ -944,8 +944,8 @@ try:
     socketio = SocketIO(app, 
                        cors_allowed_origins=["http://localhost:5000", "http://127.0.0.1:5000"], 
                        async_mode=async_mode,
-                       logger=True,
-                       engineio_logger=True,
+                       logger=False,  # Disable to prevent WSGI errors
+                       engineio_logger=False,  # Disable to prevent WSGI errors
                        allow_upgrades=True,
                        transports=['polling', 'websocket'],
                        ping_timeout=60,
