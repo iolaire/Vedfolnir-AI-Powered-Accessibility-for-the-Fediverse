@@ -163,10 +163,10 @@ class ProgressTracker:
             # Import here to avoid circular imports
             from app.services.notification.manager.unified_manager import UnifiedNotificationManager, NotificationMessage
             from models import NotificationType, NotificationPriority, NotificationCategory
-            from flask import current_app
+            from flask import current_app, has_app_context
             
             # Ensure we have Flask app context
-            if not current_app:
+            if not has_app_context():
                 from web_app import app
                 with app.app_context():
                     return self._send_progress_notification(user_id, progress_status)
@@ -332,10 +332,10 @@ class ProgressTracker:
         try:
             from app.services.notification.manager.unified_manager import UnifiedNotificationManager, NotificationMessage
             from models import NotificationType, NotificationPriority, NotificationCategory
-            from flask import current_app
+            from flask import current_app, has_app_context
             
             # Ensure we have Flask app context
-            if not current_app:
+            if not has_app_context():
                 from web_app import app
                 with app.app_context():
                     return self._send_completion_notification(user_id, task_id, results)
@@ -379,10 +379,10 @@ class ProgressTracker:
         try:
             from app.services.notification.manager.unified_manager import UnifiedNotificationManager, NotificationMessage
             from models import NotificationType, NotificationPriority, NotificationCategory
-            from flask import current_app
+            from flask import current_app, has_app_context
             
             # Ensure we have Flask app context
-            if not current_app:
+            if not has_app_context():
                 from web_app import app
                 with app.app_context():
                     return self._send_error_notification(user_id, task_id, error_message, error_details)
@@ -426,7 +426,13 @@ class ProgressTracker:
         try:
             from app.services.notification.manager.unified_manager import UnifiedNotificationManager, NotificationMessage
             from models import NotificationType, NotificationPriority, NotificationCategory
-            from flask import current_app
+            from flask import current_app, has_app_context
+            
+            # Ensure we have Flask app context
+            if not has_app_context():
+                from web_app import app
+                with app.app_context():
+                    return self.send_maintenance_notification(user_id, maintenance_data)
             
             if hasattr(current_app, 'notification_manager'):
                 notification_manager = current_app.notification_manager
@@ -741,7 +747,13 @@ class ProgressTracker:
         try:
             from app.services.notification.manager.unified_manager import UnifiedNotificationManager, NotificationMessage
             from models import NotificationType, NotificationPriority, NotificationCategory
-            from flask import current_app
+            from flask import current_app, has_app_context
+            
+            # Ensure we have Flask app context
+            if not has_app_context():
+                from web_app import app
+                with app.app_context():
+                    return self.send_caption_status_notification(user_id, task_id, status, message)
             
             if hasattr(current_app, 'notification_manager'):
                 notification_manager = current_app.notification_manager
@@ -788,7 +800,13 @@ class ProgressTracker:
         try:
             from app.services.notification.manager.unified_manager import UnifiedNotificationManager, NotificationMessage
             from models import NotificationType, NotificationPriority, NotificationCategory
-            from flask import current_app
+            from flask import current_app, has_app_context
+            
+            # Ensure we have Flask app context
+            if not has_app_context():
+                from web_app import app
+                with app.app_context():
+                    return self.send_caption_complete_notification(user_id, task_id, results)
             
             if hasattr(current_app, 'notification_manager'):
                 notification_manager = current_app.notification_manager
@@ -842,7 +860,13 @@ class ProgressTracker:
         try:
             from app.services.notification.manager.unified_manager import UnifiedNotificationManager, NotificationMessage
             from models import NotificationType, NotificationPriority, NotificationCategory
-            from flask import current_app
+            from flask import current_app, has_app_context
+            
+            # Ensure we have Flask app context
+            if not has_app_context():
+                from web_app import app
+                with app.app_context():
+                    return self.send_caption_error_notification(user_id, task_id, error_message, error_category, recovery_suggestions)
             
             if hasattr(current_app, 'notification_manager'):
                 notification_manager = current_app.notification_manager

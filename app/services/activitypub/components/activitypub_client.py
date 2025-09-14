@@ -731,7 +731,8 @@ class ActivityPubClient:
             }
             
             # Use verify_credentials endpoint as it's available on most platforms
-            verify_url = f"{self.config.instance_url}/api/v1/accounts/verify_credentials"
+            base_url = self.config.instance_url.rstrip('/')
+            verify_url = f"{base_url}/api/v1/accounts/verify_credentials"
             
             try:
                 response = await self._get_with_retry(verify_url, headers)

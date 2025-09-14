@@ -93,5 +93,22 @@ class UnifiedSessionManager:
             logger.error(f"Error getting session: {e}")
             return None
 
+    def cleanup_user_sessions(self, user_id: int) -> int:
+        """Clean up all sessions for a user"""
+        count = 0
+
+        try:
+            with self.get_db_session() as db_session:
+                from models import UserSession
+                deleted = db_session.query(UserSession).filter_by(user_id=user_id).delete()
+                db_session.commit()
+                count += deleted
+
+            logger.info(f"Cleaned up {count} sessions for user {user_id}")
+        except Exception as e:
+            logger.error(f"Database session cleanup failed: {e}")
+
+        return count
+
 # Global instance
 unified_session_manager = UnifiedSessionManager()

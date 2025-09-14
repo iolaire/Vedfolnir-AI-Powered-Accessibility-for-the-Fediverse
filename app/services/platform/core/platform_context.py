@@ -238,6 +238,8 @@ class PlatformContextManager:
         """
         Get the current context, raising an error if not set.
         
+        First checks thread-local context, then falls back to Flask session.
+        
         Returns:
             The current platform context
             
@@ -245,6 +247,11 @@ class PlatformContextManager:
             PlatformContextError: If no context is set
         """
         context = self.current_context
+        
+        # If no thread-local context, try to load from Flask session
+        if not context:
+            context = self._load_context_from_flask_session()
+        
         if not context:
             raise PlatformContextError("No platform context set. Call set_context() first.")
         
@@ -252,6 +259,35 @@ class PlatformContextManager:
             raise PlatformContextError("Platform context is invalid or incomplete")
         
         return context
+    
+    def _load_context_from_flask_session(self) -> Optional[PlatformContext]:
+        """
+        Load platform context from Flask session if available.
+        
+        Returns:
+            Platform context loaded from Flask session, or None if not available
+        """
+        try:
+            from flask import session, has_request_context
+            from flask_login import current_user
+            
+            # Only try to load from session if we're in a request context
+            if not has_request_context():
+                return None
+            
+            # Check if we have the required session data
+            platform_connection_id = session.get('platform_connection_id')
+            if not platform_connection_id or not current_user.is_authenticated:
+                return None
+            
+            # Set context using the session data
+            self.logger.debug(f"Loading platform context from Flask session: user_id={current_user.id}, platform_id={platform_connection_id}")
+            context = self.set_context(current_user.id, platform_connection_id)
+            return context
+            
+        except Exception as e:
+            self.logger.warning(f"Failed to load context from Flask session: {e}")
+            return None
     
     @contextmanager
     def context_scope(self, user_id: int, platform_connection_id: Optional[int] = None,

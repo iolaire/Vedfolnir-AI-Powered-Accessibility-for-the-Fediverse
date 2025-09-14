@@ -1534,31 +1534,86 @@ class DatabaseManager:
         finally:
             session.close()
     
-    def get_processing_stats(self, platform_aware: bool = True):
-        """Get processing statistics (optionally platform-aware)"""
+    def get_processing_stats(self, platform_aware: bool = True, user_id: Optional[int] = None):
+        """Get processing statistics (optionally platform-aware and user-specific)"""
         session = self.get_session()
         try:
             if platform_aware:
-                # Get platform-specific statistics
-                post_query = self._apply_platform_filter(session.query(Post), Post)
-                image_query = self._apply_platform_filter(session.query(Image), Image)
+                # Try to get platform context first
+                platform_context_available = False
+                try:
+                    context = self.require_platform_context()
+                    platform_context_available = True
+                except PlatformContextError:
+                    platform_context_available = False
                 
-                stats = {
-                    'total_posts': post_query.count(),
-                    'total_images': image_query.count(),
-                    'pending_review': self._apply_platform_filter(
-                        session.query(Image).filter_by(status=ProcessingStatus.PENDING), Image
-                    ).count(),
-                    'approved': self._apply_platform_filter(
-                        session.query(Image).filter_by(status=ProcessingStatus.APPROVED), Image
-                    ).count(),
-                    'posted': self._apply_platform_filter(
-                        session.query(Image).filter_by(status=ProcessingStatus.POSTED), Image
-                    ).count(),
-                    'rejected': self._apply_platform_filter(
-                        session.query(Image).filter_by(status=ProcessingStatus.REJECTED), Image
-                    ).count(),
-                }
+                if platform_context_available:
+                    # Get platform-specific statistics
+                    post_query = self._apply_platform_filter(session.query(Post), Post)
+                    image_query = self._apply_platform_filter(session.query(Image), Image)
+                else:
+                    # No platform context - filter by user if available
+                    if user_id:
+                        # Filter posts by user_id
+                        post_query = session.query(Post).filter(Post.user_id == str(user_id))
+                        # Filter images by joining with posts and filtering by user_id
+                        image_query = session.query(Image).join(Post).filter(Post.user_id == str(user_id))
+                    else:
+                        # Fallback to global stats if no user context
+                        post_query = session.query(Post)
+                        image_query = session.query(Image)
+                
+                # Build statistics with the filtered queries
+                if platform_context_available:
+                    stats = {
+                        'total_posts': post_query.count(),
+                        'total_images': image_query.count(),
+                        'pending_review': self._apply_platform_filter(
+                            session.query(Image).filter_by(status=ProcessingStatus.PENDING), Image
+                        ).count(),
+                        'approved': self._apply_platform_filter(
+                            session.query(Image).filter_by(status=ProcessingStatus.APPROVED), Image
+                        ).count(),
+                        'posted': self._apply_platform_filter(
+                            session.query(Image).filter_by(status=ProcessingStatus.POSTED), Image
+                        ).count(),
+                        'rejected': self._apply_platform_filter(
+                            session.query(Image).filter_by(status=ProcessingStatus.REJECTED), Image
+                        ).count(),
+                    }
+                else:
+                    # User-specific stats without platform filtering
+                    if user_id:
+                        stats = {
+                            'total_posts': post_query.count(),
+                            'total_images': image_query.count(),
+                            'pending_review': session.query(Image).join(Post).filter(
+                                Post.user_id == str(user_id),
+                                Image.status == ProcessingStatus.PENDING
+                            ).count(),
+                            'approved': session.query(Image).join(Post).filter(
+                                Post.user_id == str(user_id),
+                                Image.status == ProcessingStatus.APPROVED
+                            ).count(),
+                            'posted': session.query(Image).join(Post).filter(
+                                Post.user_id == str(user_id),
+                                Image.status == ProcessingStatus.POSTED
+                            ).count(),
+                            'rejected': session.query(Image).join(Post).filter(
+                                Post.user_id == str(user_id),
+                                Image.status == ProcessingStatus.REJECTED
+                            ).count(),
+                        }
+                    else:
+                        # Global stats fallback
+                        stats = {
+                            'total_posts': post_query.count(),
+                            'total_images': image_query.count(),
+                            'pending_review': session.query(Image).filter_by(status=ProcessingStatus.PENDING).count(),
+                            'approved': session.query(Image).filter_by(status=ProcessingStatus.APPROVED).count(),
+                            'posted': session.query(Image).filter_by(status=ProcessingStatus.POSTED).count(),
+                            'rejected': session.query(Image).filter_by(status=ProcessingStatus.REJECTED).count(),
+                        }
                 
                 # Add platform information if context is available
                 try:

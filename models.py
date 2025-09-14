@@ -1270,6 +1270,16 @@ class GenerationResults:
     error_details: List[Dict[str, Any]] = None
     generated_image_ids: List[int] = None
     
+    @property
+    def success_rate(self) -> float:
+        """Calculate success rate as percentage of successful operations"""
+        total_operations = self.images_processed
+        if total_operations == 0:
+            return 100.0  # No operations means 100% success
+        
+        successful_operations = self.captions_generated
+        return (successful_operations / total_operations) * 100.0
+    
     def __post_init__(self):
         if self.error_details is None:
             self.error_details = []

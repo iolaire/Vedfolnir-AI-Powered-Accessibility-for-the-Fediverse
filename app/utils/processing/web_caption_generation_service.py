@@ -443,31 +443,39 @@ class WebCaptionGenerationService:
             results = await adapter.generate_captions_for_user(task.settings, progress_callback)
             results.task_id = task_id
             
-            # Complete the task
+            logger.info(f"Caption generation completed for task {sanitize_for_log(task_id)}: {results.captions_generated} captions generated")
+            
+            # Perform post-processing operations (these should not fail the main task)
+            try:
+                # Complete progress tracking with enhanced notification
+                self.progress_tracker.complete_progress(task_id, results)
+                
+                # Send completion notification with action buttons
+                self.progress_tracker.send_caption_complete_notification(
+                    task.user_id, 
+                    task_id, 
+                    {
+                        'captions_generated': results.captions_generated,
+                        'images_processed': results.images_processed,
+                        'processing_time': results.processing_time_seconds,
+                        'success_rate': results.success_rate
+                    }
+                )
+                
+                # Trigger review workflow integration
+                self._trigger_review_workflow_integration(task_id, task.user_id, results)
+                
+            except Exception as post_error:
+                # Log post-processing errors but don't fail the main task
+                logger.warning(f"Post-processing error for task {sanitize_for_log(task_id)}: {sanitize_for_log(str(post_error))}")
+            
+            # Mark the task as completed successfully (this should be the last step)
             self.task_queue_manager.complete_task(task_id, success=True)
-            
-            # Complete progress tracking with enhanced notification
-            self.progress_tracker.complete_progress(task_id, results)
-            
-            # Send completion notification with action buttons
-            self.progress_tracker.send_caption_complete_notification(
-                task.user_id, 
-                task_id, 
-                {
-                    'captions_generated': results.captions_generated,
-                    'images_processed': results.images_processed,
-                    'processing_time': results.processing_time_seconds,
-                    'success_rate': results.success_rate
-                }
-            )
-            
-            # Trigger review workflow integration
-            self._trigger_review_workflow_integration(task_id, task.user_id, results)
             
             logger.info(f"Completed caption generation task {sanitize_for_log(task_id)}: {results.captions_generated} captions generated")
             
         except Exception as e:
-            logger.error(f"Error processing task {sanitize_for_log(task_id)}: {sanitize_for_log(str(e))}")
+            logger.error(f"Error in caption generation for task {sanitize_for_log(task_id)}: {sanitize_for_log(str(e))}")
             
             # Handle error with enhanced recovery manager
             try:
@@ -1217,7 +1225,7 @@ class WebCaptionGenerationService:
         """
         try:
             # Import here to avoid circular imports
-            from caption_review_integration import CaptionReviewIntegration
+            from app.utils.processing.caption_review_integration import CaptionReviewIntegration
             
             # Create review integration instance
             review_integration = CaptionReviewIntegration(self.db_manager)

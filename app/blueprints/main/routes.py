@@ -163,6 +163,27 @@ def render_dashboard():
                     original_exception=template_error
                 )
         
+        # CRITICAL FIX: Set platform context before getting stats
+        # This ensures that get_processing_stats() filters data by the current user's platform
+        try:
+            from app.services.platform.components.platform_identification import identify_user_platform
+            redis_platform_manager = current_app.config.get('redis_platform_manager')
+            
+            # Identify user's platform and update session context
+            platform_result = identify_user_platform(
+                current_user.id,
+                redis_platform_manager,
+                db_manager,
+                include_stats=False,
+                update_session_context=True  # This is critical - sets platform context for DB queries
+            )
+            
+            logger.info(f"Platform context set for user {current_user.username}: platform_id={platform_result.platform_connection_id}")
+            
+        except Exception as platform_error:
+            logger.warning(f"Failed to set platform context for user {current_user.username}: {platform_error}")
+            # Continue without platform context - will show global stats for admins
+        
         # Use unified session manager for database queries with error handling
         try:
             with unified_session_manager.get_db_session() as db_session:
@@ -181,8 +202,10 @@ def render_dashboard():
                     return redirect(url_for('auth.first_time_setup'))
                 
                 # Get basic statistics with error handling
+                # Now that platform context is set, this will filter by current user's platform or user ID
                 try:
-                    stats = db_manager.get_processing_stats()
+                    stats = db_manager.get_processing_stats(platform_aware=True, user_id=current_user.id)  # Pass user ID for filtering
+                    logger.info(f"Retrieved user-specific stats for user {current_user.username}: {stats}")
                 except Exception as stats_error:
                     logger.error(f"Failed to get processing stats: {stats_error}")
                     stats = {

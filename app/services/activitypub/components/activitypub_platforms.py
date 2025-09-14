@@ -45,6 +45,20 @@ class ActivityPubPlatform(abc.ABC):
         """
         self.config = config
         self._validate_config()
+    
+    def _build_api_url(self, endpoint: str) -> str:
+        """
+        Build a proper API URL by combining instance URL with endpoint.
+        
+        Args:
+            endpoint: API endpoint (e.g., '/api/v1/accounts/verify_credentials')
+            
+        Returns:
+            str: Properly constructed URL without double slashes
+        """
+        base_url = self.config.instance_url.rstrip('/')
+        endpoint = endpoint.lstrip('/')
+        return f"{base_url}/{endpoint}"
         
     def _validate_config(self):
         """
@@ -256,7 +270,7 @@ class PixelfedPlatform(ActivityPubPlatform):
             }
             
             # Get user account ID
-            verify_url = f"{self.config.instance_url}/api/v1/accounts/verify_credentials"
+            verify_url = self._build_api_url("/api/v1/accounts/verify_credentials")
             response = await client._get_with_retry(verify_url, headers)
             user_data = response.json()
             account_id = user_data['id']
@@ -265,7 +279,7 @@ class PixelfedPlatform(ActivityPubPlatform):
             all_posts = []
             page_size = 40  # Pixelfed API typically returns 40 posts per page
             max_pages = (limit + page_size - 1) // page_size  # Ceiling division
-            next_page_url = f"{self.config.instance_url}/api/v1/accounts/{account_id}/statuses"
+            next_page_url = self._build_api_url(f"/api/v1/accounts/{account_id}/statuses")
             
             logger.info(f"Fetching up to {limit} posts for user {user_id} (max {max_pages} pages)")
             
@@ -347,7 +361,7 @@ class PixelfedPlatform(ActivityPubPlatform):
                 'Content-Type': 'application/json'
             }
             
-            url = f"{self.config.instance_url}/api/v1/media/{image_post_id}"
+            url = self._build_api_url(f"/api/v1/media/{image_post_id}")
             data = {'description': caption}
             
             logger.info(f"Updating media {image_post_id} with caption: {caption[:50]}...")
@@ -555,7 +569,7 @@ class MastodonPlatform(ActivityPubPlatform):
                 return False
             
             # Use the verify_credentials endpoint to validate the token
-            verify_url = f"{self.config.instance_url}/api/v1/accounts/verify_credentials"
+            verify_url = self._build_api_url("/api/v1/accounts/verify_credentials")
             
             logger.debug("Validating Mastodon access token")
             

@@ -12,303 +12,318 @@
     <!-- User Statistics Cards -->
     <div class="row mb-4">
         <div class="col-md-3">
-            <div class="card bg-primary text-white user-stats-ca</div>
-                <div class=" card-body">
-                <div class="d-flex justify-content-between">
-                    <div>
-                        <h4 class="card-title">{{ user_stats.total_users }}</h4>
-                        <p class="card-text">Total Users</p>
+            <div class="card bg-primary text-white">
+                <div class="card-body">
+                    <div class="d-flex justify-content-between">
+                        <div>
+                            <h4 class="card-title">{{ user_stats.total_users }}</h4>
+                            <p class="card-text">Total Users</p>
+                        </div>
+                        <div class="align-self-center">
+                            <i class="bi bi-people fs-1"></i>
+                        </div>
                     </div>
-                    <div class="align-self-center">
-                        <i class="bi bi-people fs-1"></i>
+                </div>
+            </div>
+        </div>
+        <div class="col-md-3">
+            <div class="card bg-success text-white">
+                <div class="card-body">
+                    <div class="d-flex justify-content-between">
+                        <div>
+                            <h4 class="card-title">{{ user_stats.active_users }}</h4>
+                            <p class="card-text">Active Users</p>
+                        </div>
+                        <div class="align-self-center">
+                            <i class="bi bi-person-check fs-1"></i>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+        <div class="col-md-3">
+            <div class="card bg-warning text-white">
+                <div class="card-body">
+                    <div class="d-flex justify-content-between">
+                        <div>
+                            <h4 class="card-title">{{ user_stats.unverified_users }}</h4>
+                            <p class="card-text">Unverified Email</p>
+                        </div>
+                        <div class="align-self-center">
+                            <i class="bi bi-envelope-exclamation fs-1"></i>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+        <div class="col-md-3">
+            <div class="card bg-danger text-white">
+                <div class="card-body">
+                    <div class="d-flex justify-content-between">
+                        <div>
+                            <h4 class="card-title">{{ user_stats.locked_users }}</h4>
+                            <p class="card-text">Locked Accounts</p>
+                        </div>
+                        <div class="align-self-center">
+                            <i class="bi bi-lock fs-1"></i>
+                        </div>
                     </div>
                 </div>
             </div>
         </div>
     </div>
-    <div class="col-md-3">
-        <div class="card bg-success text-white user-stats-card"></div>
-        <div class="card-body">
-            <div class="d-flex justify-content-between">
-                <div>
-                    <h4 class="card-title">{{ user_stats.active_users }}</h4>
-                    <p class="card-text">Active Users</p>
-                </div>
-                <div class="align-self-center">
-                    <i class="bi bi-person-check fs-1"></i>
-                </div>
-            </div>
-        </div>
-    </div>
-</div>
-<div class="col-md-3">
-    <div class="card bg-warning text-white user-stats-card"></div>
-    <div class="card-body">
-        <div class="d-flex justify-content-between">
-            <div>
-                <h4 class="card-title">{{ user_stats.unverified_users }}</h4>
-                <p class="card-text">Unverified Email</p>
-            </div>
-            <div class="align-self-center">
-                <i class="bi bi-envelope-exclamation fs-1"></i>
-            </div>
-        </div>
-    </div>
-</div>
-</div>
-<div class="col-md-3">
-    <div class="card bg-danger text-white user-stats-card"></div>
-    <div class="card-body">
-        <div class="d-flex justify-content-between">
-            <div>
-                <h4 class="card-title">{{ user_stats.locked_users }}</h4>
-                <p class="card-text">Locked Accounts</p>
-            </div>
-            <div class="align-self-center">
-                <i class="bi bi-lock fs-1"></i>
-            </div>
-        </div>
-    </div>
-</div>
-</div>
-</div>
 
-<!-- User Management Interface -->
-<div class="row mb-4">
-    <div class="col-md-12">
-        <div class="card">
-            <div class="card-header d-flex justify-content-between align-items-center">
-                <h3 class="card-title">Users</h3>
-                <div class="d-flex gap-2">
-                    <button type="button" class="btn btn-outline-secondary" id="filter-btn">
-                        <i class="bi bi-funnel"></i> Filter
-                    </button>
-                    <button type="button" class="btn btn-primary" id="add-user-btn">
-                        <i class="bi bi-person-plus"></i> Add User
-                    </button>
-                </div>
-            </div>
-
-            <!-- Filter Panel -->
-            <div class="card-body border-bottom collapse filter-panel" id="filterPanel"></div>
-            <form id="user-filter-form" class="row g-3">
-                <div class="col-md-3">
-                    <label for="filter_role" class="form-label">Role</label>
-                    <select class="form-select" id="filter_role" name="role">
-                        <option value="">All Roles</option>
-                        <option value="admin">Admin</option>
-                        <option value="moderator">Moderator</option>
-                        <option value="reviewer">Reviewer</option>
-                        <option value="viewer">Viewer</option>
-                    </select>
-                </div>
-                <div class="col-md-3">
-                    <label for="filter_status" class="form-label">Status</label>
-                    <select class="form-select" id="filter_status" name="status">
-                        <option value="">All Status</option>
-                        <option value="active">Active</option>
-                        <option value="inactive">Inactive</option>
-                        <option value="locked">Locked</option>
-                        <option value="unverified">Unverified Email</option>
-                    </select>
-                </div>
-                <div class="col-md-4">
-                    <label for="filter_search" class="form-label">Search</label>
-                    <input type="text" class="form-control" id="filter_search" name="search"
-                        placeholder="Username, email, or name...">
-                </div>
-                <div class="col-md-2">
-                    <label class="form-label">&nbsp;</label>
+    <!-- User Management Interface -->
+    <div class="row mb-4">
+        <div class="col-md-12">
+            <div class="card">
+                <div class="card-header d-flex justify-content-between align-items-center">
+                    <h3 class="card-title">Users</h3>
                     <div class="d-flex gap-2">
-                        <button type="submit" class="btn btn-outline-primary">Apply</button>
-                        <button type="button" class="btn btn-outline-secondary" id="clear-filters">Clear</button>
+                        <button type="button" class="btn btn-outline-secondary" id="filter-btn">
+                            <i class="bi bi-funnel"></i> Filter
+                        </button>
+                        <button type="button" class="btn btn-primary" id="add-user-btn">
+                            <i class="bi bi-person-plus"></i> Add User
+                        </button>
                     </div>
                 </div>
-            </form>
-        </div>
-        <div class="card-body">
-            <div class="d-flex justify-content-between align-items-center mb-3">
-                <div>
-                    <span class="text-muted">Showing {{ users|length }} of {{ total_users }} users</span>
-                </div>
-                <div class="d-flex gap-2">
-                    <select class="form-select form-select-sm" id="page-size" class="w-auto">
-                        <option value="25">25 per page</option>
-                        <option value="50">50 per page</option>
-                        <option value="100">100 per page</option>
-                    </select>
-                </div>
-            </div>
 
-            <div class="table-responsive">
-                <table class="table table-striped table-hover user-table"></table>
-                <thead class="table-dark">
-                    <tr>
-                        <th>ID</th>
-                        <th>User</th>
-                        <th>Email</th>
-                        <th>Role</th>
-                        <th>Status</th>
-                        <th>Platforms</th>
-                        <th>Created</th>
-                        <th>Last Login</th>
-                        <th>Actions</th>
-                    </tr>
-                </thead>
-                <tbody>
-                    {% for user in users %}
-                    <tr data-user-id="{{ user.id }}">
-                        <td>{{ user.id }}</td>
-                        <td>
-                            <div>
-                                <strong>{{ user.username }}</strong>
-                                {% if user.first_name or user.last_name %}
-                                <br><small class="text-muted">{{ user.first_name }} {{ user.last_name }}</small>
-                                {% endif %}
+                <!-- Filter Panel -->
+                <div class="card-body border-bottom collapse" id="filterPanel">
+                    <form id="user-filter-form" class="row g-3">
+                        <div class="col-md-3">
+                            <label for="filter_role" class="form-label">Role</label>
+                            <select class="form-select" id="filter_role" name="role">
+                                <option value="">All Roles</option>
+                                <option value="admin">Admin</option>
+                                <option value="moderator">Moderator</option>
+                                <option value="reviewer">Reviewer</option>
+                                <option value="viewer">Viewer</option>
+                            </select>
+                        </div>
+                        <div class="col-md-3">
+                            <label for="filter_status" class="form-label">Status</label>
+                            <select class="form-select" id="filter_status" name="status">
+                                <option value="">All Status</option>
+                                <option value="active">Active</option>
+                                <option value="inactive">Inactive</option>
+                                <option value="locked">Locked</option>
+                                <option value="unverified">Unverified Email</option>
+                            </select>
+                        </div>
+                        <div class="col-md-4">
+                            <label for="filter_search" class="form-label">Search</label>
+                            <input type="text" class="form-control" id="filter_search" name="search"
+                                placeholder="Username, email, or name...">
+                        </div>
+                        <div class="col-md-2">
+                            <label class="form-label">&nbsp;</label>
+                            <div class="d-flex gap-2">
+                                <button type="submit" class="btn btn-outline-primary">Apply</button>
+                                <button type="button" class="btn btn-outline-secondary"
+                                    id="clear-filters">Clear</button>
                             </div>
-                        </td>
-                        <td>
-                            <div>
-                                {{ user.email }}
-                                {% if not user.email_verified %}
-                                <br><small class="text-warning"><i class="bi bi-exclamation-triangle"></i>
-                                    Unverified</small>
-                                {% endif %}
-                            </div>
-                        </td>
-                        <td>
-                            {% set role_str = user.role if user.role is string else user.role.value %}
-                            <span
-                                class="badge bg-{{ 'danger' if role_str == 'admin' else 'warning' if role_str == 'moderator' else 'primary' if role_str == 'reviewer' else 'secondary' }}">
-                                {{ role_str.title() }}
-                            </span>
-                        </td>
-                        <td>
-                            <div class="d-flex flex-column gap-1">
-                                <span class="badge bg-{{ 'success' if user.is_active else 'secondary' }}">
-                                    {{ 'Active' if user.is_active else 'Inactive' }}
-                                </span>
-                                {% if user.account_locked %}
-                                <span class="badge bg-danger">
-                                    <i class="bi bi-lock"></i> Locked
-                                </span>
-                                {% endif %}
-                                {% if user.failed_login_attempts > 0 %}
-                                <small class="text-warning">
-                                    <i class="bi bi-exclamation-circle"></i> {{ user.failed_login_attempts }} failed
-                                    attempts
-                                </small>
-                                {% endif %}
-                            </div>
-                        </td>
-                        <td>
-                            {% if user.platform_connections_count is defined %}
-                            <span class="badge bg-info">{{ user.platform_connections_count }} platforms</span>
-                            {% else %}
-                            <span class="text-muted">-</span>
-                            {% endif %}
-                        </td>
-                        <td>
-                            <small>{{ (user.created_at.split('T')[0] if user.created_at is string else
-                                user.created_at.strftime('%Y-%m-%d')) if user.created_at else 'Unknown' }}</small>
-                        </td>
-                        <td>
-                            {% if user.last_login %}
-                            <small>{{ (user.last_login.split('.')[0].replace('T', ' ') if user.last_login is string else
-                                user.last_login.strftime('%Y-%m-%d %H:%M')) if user.last_login else 'Never' }}</small>
-                            {% else %}
-                            <small class="text-muted">Never</small>
-                            {% endif %}
-                        </td>
-                        <td>
-                            <div class="btn-group" role="group">
-                                <button type="button" class="btn btn-sm btn-outline-info" data-bs-toggle="modal"
-                                    data-bs-target="#userDetailsModal" data-user-id="{{ user.id }}"
-                                    title="View Details">
-                                    <i class="bi bi-eye"></i>
-                                </button>
-                                <button type="button" class="btn btn-sm btn-outline-primary" data-bs-toggle="modal"
-                                    data-bs-target="#editUserModal" data-user-id="{{ user.id }}"
-                                    data-username="{{ user.username }}" data-email="{{ user.email }}"
-                                    data-role="{{ user.role if user.role is string else user.role.value }}"
-                                    data-is-active="{{ user.is_active }}"
-                                    data-email-verified="{{ user.email_verified }}"
-                                    data-account-locked="{{ user.account_locked }}"
-                                    data-first-name="{{ user.first_name or '' }}"
-                                    data-last-name="{{ user.last_name or '' }}" title="Edit User">
-                                    <i class="bi bi-pencil"></i>
-                                </button>
+                        </div>
+                    </form>
+                </div>
+                <div class="card-body">
+                    <div class="d-flex justify-content-between align-items-center mb-3">
+                        <div>
+                            <span class="text-muted">Showing {{ users|length }} of {{ total_users }} users</span>
+                        </div>
+                        <div class="d-flex gap-2">
+                            <select class="form-select form-select-sm" id="page-size" class="w-auto">
+                                <option value="25">25 per page</option>
+                                <option value="50">50 per page</option>
+                                <option value="100">100 per page</option>
+                            </select>
+                        </div>
+                    </div>
 
-                                <!-- Dropdown for more actions -->
-                                <div class="btn-group" role="group">
-                                    <button type="button" class="btn btn-sm btn-outline-secondary dropdown-toggle"
-                                        data-bs-toggle="dropdown" aria-expanded="false" title="More Actions">
-                                        <i class="bi bi-three-dots"></i>
-                                    </button>
-                                    <ul class="dropdown-menu dropdown-menu-end" data-bs-boundary="viewport"></ul>
-                                    <li>
-                                        <a class="dropdown-item" href="#" data-bs-toggle="modal"
-                                            data-bs-target="#resetPasswordModal" data-user-id="{{ user.id }}"
-                                            data-username="{{ user.username }}">
-                                            <i class="bi bi-key"></i> Reset Password
-                                        </a>
-                                    </li>
-                                    <li>
-                                        <a class="dropdown-item" href="#" data-bs-toggle="modal"
-                                            data-bs-target="#userStatusModal" data-user-id="{{ user.id }}"
-                                            data-username="{{ user.username }}" data-is-active="{{ user.is_active }}"
-                                            data-account-locked="{{ user.account_locked }}"
-                                            data-email-verified="{{ user.email_verified }}">
-                                            <i class="bi bi-gear"></i> Manage Status
-                                        </a>
-                                    </li>
-                                    <li>
-                                        <a class="dropdown-item" href="#" data-bs-toggle="modal"
-                                            data-bs-target="#roleAssignmentModal" data-user-id="{{ user.id }}"
-                                            data-username="{{ user.username }}"
-                                            data-current-role="{{ user.role if user.role is string else user.role.value }}">
-                                            <i class="bi bi-person-badge"></i> Change Role
-                                        </a>
-                                    </li>
-                                    {% if not user.email_verified %}
-                                    <li>
-                                        <a class="dropdown-item" href="#"
-                                            onclick="resendVerificationEmail({{ user.id }}, '{{ user.username }}')">
-                                            <i class="bi bi-envelope"></i> Resend Verification
-                                        </a>
-                                    </li>
-                                    {% endif %}
-                                    <li>
-                                        <hr class="dropdown-divider">
-                                    </li>
-                                    {% set role_str = user.role if user.role is string else user.role.value %}
-                                    {% if not (role_str == 'admin' and admin_count <= 1) %} <li>
-                                        <a class="dropdown-item text-danger" href="#" data-bs-toggle="modal"
-                                            data-bs-target="#deleteUserModal" data-user-id="{{ user.id }}"
-                                            data-username="{{ user.username }}">
-                                            <i class="bi bi-trash"></i> Delete User
-                                        </a>
-                                        </li>
-                                        {% else %}
-                                        <li>
-                                            <span class="dropdown-item text-muted">
-                                                <i class="bi bi-shield-lock"></i> Cannot delete last admin
+                    <div class="table-responsive user-table">
+                        <table class="table table-striped table-hover">
+                            <thead class="table-dark">
+                                <tr>
+                                    <th>ID</th>
+                                    <th>User</th>
+                                    <th>Email</th>
+                                    <th>Role</th>
+                                    <th>Status</th>
+                                    <th>Platforms</th>
+                                    <th>Created</th>
+                                    <th>Last Login</th>
+                                    <th>Actions</th>
+                                </tr>
+                            </thead>
+                            <tbody>
+                                {% for user in users %}
+                                <tr data-user-id="{{ user.id }}">
+                                    <td>{{ user.id }}</td>
+                                    <td>
+                                        <div>
+                                            <strong>{{ user.username }}</strong>
+                                            {% if user.first_name or user.last_name %}
+                                            <br><small class="text-muted">{{ user.first_name }} {{ user.last_name
+                                                }}</small>
+                                            {% endif %}
+                                        </div>
+                                    </td>
+                                    <td>
+                                        <div>
+                                            {{ user.email }}
+                                            {% if not user.email_verified %}
+                                            <br><small class="text-warning"><i class="bi bi-exclamation-triangle"></i>
+                                                Unverified</small>
+                                            {% endif %}
+                                        </div>
+                                    </td>
+                                    <td>
+                                        {% set role_str = user.role if user.role is string else user.role.value %}
+                                        <span
+                                            class="badge bg-{{ 'danger' if role_str == 'admin' else 'warning' if role_str == 'moderator' else 'primary' if role_str == 'reviewer' else 'secondary' }}">
+                                            {{ role_str.title() }}
+                                        </span>
+                                    </td>
+                                    <td>
+                                        <div class="d-flex flex-column gap-1">
+                                            <span class="badge bg-{{ 'success' if user.is_active else 'secondary' }}">
+                                                {{ 'Active' if user.is_active else 'Inactive' }}
                                             </span>
-                                        </li>
+                                            {% if user.account_locked %}
+                                            <span class="badge bg-danger">
+                                                <i class="bi bi-lock"></i> Locked
+                                            </span>
+                                            {% endif %}
+                                            {% if user.failed_login_attempts > 0 %}
+                                            <small class="text-warning">
+                                                <i class="bi bi-exclamation-circle"></i> {{ user.failed_login_attempts
+                                                }} failed attempts
+                                            </small>
+                                            {% endif %}
+                                        </div>
+                                    </td>
+                                    <td>
+                                        {% if user.platform_connections_count is defined %}
+                                        <span class="badge bg-info">{{ user.platform_connections_count }}
+                                            platforms</span>
+                                        {% else %}
+                                        <span class="text-muted">-</span>
                                         {% endif %}
-                                        </ul>
-                                </div>
-                            </div>
-                        </td>
-                    </tr>
-                    {% endfor %}
-                </tbody>
-                </table>
+                                    </td>
+                                    <td>
+                                        <small>{{ (user.created_at.split('T')[0] if user.created_at is string else
+                                            user.created_at.strftime('%Y-%m-%d')) if user.created_at else 'Unknown'
+                                            }}</small>
+                                    </td>
+                                    <td>
+                                        {% if user.last_login %}
+                                        <small>{{ (user.last_login.split('.')[0].replace('T', ' ') if user.last_login is
+                                            string else user.last_login.strftime('%Y-%m-%d %H:%M')) if user.last_login
+                                            else 'Never' }}</small>
+                                        {% else %}
+                                        <small class="text-muted">Never</small>
+                                        {% endif %}
+                                    </td>
+                                    <td>
+                                        <div class="btn-group" role="group">
+                                            <button type="button" class="btn btn-sm btn-outline-info"
+                                                data-bs-toggle="modal" data-bs-target="#userDetailsModal"
+                                                data-user-id="{{ user.id }}" title="View Details">
+                                                <i class="bi bi-eye"></i>
+                                            </button>
+                                            <button type="button" class="btn btn-sm btn-outline-primary"
+                                                data-bs-toggle="modal" data-bs-target="#editUserModal"
+                                                data-user-id="{{ user.id }}" data-username="{{ user.username }}"
+                                                data-email="{{ user.email }}"
+                                                data-role="{{ user.role if user.role is string else user.role.value }}"
+                                                data-is-active="{{ user.is_active }}"
+                                                data-email-verified="{{ user.email_verified }}"
+                                                data-account-locked="{{ user.account_locked }}"
+                                                data-first-name="{{ user.first_name or '' }}"
+                                                data-last-name="{{ user.last_name or '' }}" title="Edit User">
+                                                <i class="bi bi-pencil"></i>
+                                            </button>
+
+                                            <!-- Dropdown for more actions -->
+                                            <div class="btn-group" role="group">
+                                                <button type="button"
+                                                    class="btn btn-sm btn-outline-secondary dropdown-toggle"
+                                                    data-bs-toggle="dropdown" aria-expanded="false"
+                                                    title="More Actions">
+                                                    <i class="bi bi-three-dots"></i>
+                                                </button>
+                                                <ul class="dropdown-menu">
+                                                    <li>
+                                                        <a class="dropdown-item" href="#" data-bs-toggle="modal"
+                                                            data-bs-target="#resetPasswordModal"
+                                                            data-user-id="{{ user.id }}"
+                                                            data-username="{{ user.username }}">
+                                                            <i class="bi bi-key"></i> Reset Password
+                                                        </a>
+                                                    </li>
+                                                    <li>
+                                                        <a class="dropdown-item" href="#" data-bs-toggle="modal"
+                                                            data-bs-target="#userStatusModal"
+                                                            data-user-id="{{ user.id }}"
+                                                            data-username="{{ user.username }}"
+                                                            data-is-active="{{ user.is_active }}"
+                                                            data-account-locked="{{ user.account_locked }}"
+                                                            data-email-verified="{{ user.email_verified }}">
+                                                            <i class="bi bi-gear"></i> Manage Status
+                                                        </a>
+                                                    </li>
+                                                    <li>
+                                                        <a class="dropdown-item" href="#" data-bs-toggle="modal"
+                                                            data-bs-target="#roleAssignmentModal"
+                                                            data-user-id="{{ user.id }}"
+                                                            data-username="{{ user.username }}"
+                                                            data-current-role="{{ user.role if user.role is string else user.role.value }}">
+                                                            <i class="bi bi-person-badge"></i> Change Role
+                                                        </a>
+                                                    </li>
+                                                    {% if not user.email_verified %}
+                                                    <li>
+                                                        <a class="dropdown-item" href="#"
+                                                            onclick="resendVerificationEmail({{ user.id }}, '{{ user.username }}')">
+                                                            <i class="bi bi-envelope"></i> Resend Verification
+                                                        </a>
+                                                    </li>
+                                                    {% endif %}
+                                                    <li>
+                                                        <hr class="dropdown-divider">
+                                                    </li>
+                                                    {% set role_str = user.role if user.role is string else
+                                                    user.role.value %}
+                                                    {% if not (role_str == 'admin' and admin_count <= 1) %} <li>
+                                                        <a class="dropdown-item text-danger" href="#"
+                                                            data-bs-toggle="modal" data-bs-target="#deleteUserModal"
+                                                            data-user-id="{{ user.id }}"
+                                                            data-username="{{ user.username }}">
+                                                            <i class="bi bi-trash"></i> Delete User
+                                                        </a>
+                                                        </li>
+                                                        {% else %}
+                                                        <li>
+                                                            <span class="dropdown-item text-muted">
+                                                                <i class="bi bi-shield-lock"></i> Cannot delete last
+                                                                admin
+                                                            </span>
+                                                        </li>
+                                                        {% endif %}
+                                                </ul>
+                                            </div>
+                                        </div>
+                                    </td>
+                                </tr>
+                                {% endfor %}
+                            </tbody>
+                        </table>
+                    </div>
+                </div>
             </div>
         </div>
     </div>
-</div>
-</div>
 </div>
 
 
@@ -717,105 +732,9 @@
 
 {% endblock %}
 
-{% block extra_css %}
-<style>
-    /* Fix dropdown positioning in table-responsive containers - more targeted approach */
-    .user-table .table-responsive {
-        overflow-x: auto;
-        overflow-y: visible;
-    }
-
-    /* Ensure dropdown menus appear above table content */
-    .user-table .dropdown-menu {
-        position: absolute !important;
-        z-index: 1050 !important;
-        min-width: 180px;
-    }
-
-    /* Ensure dropdown button groups don't get clipped */
-    .user-table .btn-group .dropdown-menu {
-        right: 0 !important;
-        left: auto !important;
-    }
-
-    /* Dropup positioning for when dropdown is above button */
-    .user-table .dropdown-menu.dropup {
-        top: auto !important;
-        bottom: 100% !important;
-    }
-
-    /* Add minimal padding only to the user table container */
-    .user-table .card-body {
-        padding-bottom: 40px;
-    }
-
-    /* Ensure dropdown items are properly styled */
-    .user-table .dropdown-item {
-        padding: 0.5rem 1rem;
-        white-space: nowrap;
-    }
-
-    .user-table .dropdown-item i {
-        width: 16px;
-        margin-right: 8px;
-    }
-</style>
-{% endblock %}
-
 {% block extra_js %}
 <script nonce="{{ g.csp_nonce if g.csp_nonce else '' }}">
     document.addEventListener('DOMContentLoaded', function () {
-
-        // Fix dropdown positioning for table rows
-        function adjustDropdownPosition() {
-            const dropdowns = document.querySelectorAll('.user-table .dropdown, .user-table .btn-group');
-            dropdowns.forEach(dropdown => {
-                const dropdownMenu = dropdown.querySelector('.dropdown-menu');
-                const dropdownToggle = dropdown.querySelector('.dropdown-toggle');
-
-                if (dropdownMenu && dropdownToggle) {
-                    dropdownToggle.addEventListener('show.bs.dropdown', function () {
-                        setTimeout(() => {
-                            const rect = dropdownToggle.getBoundingClientRect();
-                            const viewportHeight = window.innerHeight;
-
-                            // Check if dropdown would be cut off at bottom of viewport
-                            const spaceBelow = viewportHeight - rect.bottom;
-                            const dropdownHeight = dropdownMenu.offsetHeight || 200; // fallback height
-
-                            if (spaceBelow < dropdownHeight + 20) {
-                                // Position dropdown above the button
-                                dropdownMenu.classList.add('dropup');
-                                dropdownMenu.style.transform = 'translateY(-100%)';
-                                dropdownMenu.style.marginTop = '-8px';
-                            } else {
-                                // Position dropdown below the button (default)
-                                dropdownMenu.classList.remove('dropup');
-                                dropdownMenu.style.transform = '';
-                                dropdownMenu.style.marginTop = '';
-                            }
-
-                            // Ensure dropdown is positioned to the right edge
-                            dropdownMenu.style.right = '0';
-                            dropdownMenu.style.left = 'auto';
-                        }, 10);
-                    });
-
-                    // Reset positioning when dropdown is hidden
-                    dropdownToggle.addEventListener('hide.bs.dropdown', function () {
-                        dropdownMenu.style.transform = '';
-                        dropdownMenu.style.marginTop = '';
-                        dropdownMenu.classList.remove('dropup');
-                    });
-                }
-            });
-        }
-
-        // Initialize dropdown positioning
-        adjustDropdownPosition();
-
-        // Re-adjust when window is resized
-        window.addEventListener('resize', adjustDropdownPosition);
 
         // Initialize modals
         const addUserModal = new bootstrap.Modal(document.getElementById('addUserModal'));
@@ -1235,6 +1154,140 @@
 
                 userIdInput.value = userId;
                 usernameSpan.textContent = username;
+            });
+        }
+
+        // Fix dropdown positioning for user table
+        function fixDropdownPositioning() {
+            const userTable = document.querySelector('.user-table');
+            if (!userTable) return;
+
+            const dropdownToggles = userTable.querySelectorAll('.dropdown-toggle');
+
+            dropdownToggles.forEach(toggle => {
+                // Use show.bs.dropdown event but also override after it's shown
+                toggle.addEventListener('show.bs.dropdown', function (event) {
+                    // Let Bootstrap handle initial positioning first
+                    setTimeout(() => {
+                        const dropdown = event.target;
+                        const dropdownMenu = dropdown.nextElementSibling;
+
+                        if (!dropdownMenu) return;
+
+                        const toggleRect = dropdown.getBoundingClientRect();
+                        const spaceBelow = window.innerHeight - toggleRect.bottom;
+                        const spaceAbove = toggleRect.top;
+                        const dropdownHeight = 200; // Estimated dropdown height
+
+                        // Force override all Bootstrap positioning
+                        dropdownMenu.style.cssText = `
+                        position: fixed !important;
+                        z-index: 9999 !important;
+                        transform: none !important;
+                        margin: 0 !important;
+                        top: auto !important;
+                        left: auto !important;
+                        right: auto !important;
+                        bottom: auto !important;
+                        max-width: 250px !important;
+                        min-width: 200px !important;
+                    `;
+
+                        // Calculate optimal position
+                        if (spaceBelow >= dropdownHeight) {
+                            // Position downward
+                            dropdownMenu.style.top = toggleRect.bottom + 'px';
+                            dropdownMenu.style.right = (window.innerWidth - toggleRect.right) + 'px';
+                            dropdownMenu.style.bottom = 'auto';
+                            dropdownMenu.style.left = 'auto';
+                        } else if (spaceAbove >= dropdownHeight) {
+                            // Position upward
+                            dropdownMenu.style.bottom = (window.innerHeight - toggleRect.top) + 'px';
+                            dropdownMenu.style.right = (window.innerWidth - toggleRect.right) + 'px';
+                            dropdownMenu.style.top = 'auto';
+                            dropdownMenu.style.left = 'auto';
+                        } else {
+                            // Not enough space in either direction, position downward and clip
+                            dropdownMenu.style.top = toggleRect.bottom + 'px';
+                            dropdownMenu.style.right = (window.innerWidth - toggleRect.right) + 'px';
+                            dropdownMenu.style.bottom = 'auto';
+                            dropdownMenu.style.left = 'auto';
+                        }
+
+                        // Ensure dropdown is visible
+                        dropdownMenu.style.display = 'block';
+                        dropdownMenu.style.visibility = 'visible';
+                        dropdownMenu.style.opacity = '1';
+                    }, 10); // Small delay to override Bootstrap
+                });
+
+                // Also handle shown event to ensure our positioning sticks
+                toggle.addEventListener('shown.bs.dropdown', function (event) {
+                    const dropdown = event.target;
+                    const dropdownMenu = dropdown.nextElementSibling;
+
+                    if (!dropdownMenu) return;
+
+                    const toggleRect = dropdown.getBoundingClientRect();
+
+                    // Re-apply our positioning to ensure it sticks
+                    dropdownMenu.style.cssText = `
+                    position: fixed !important;
+                    z-index: 9999 !important;
+                    transform: none !important;
+                    margin: 0 !important;
+                    top: ${toggleRect.bottom}px !important;
+                    right: ${window.innerWidth - toggleRect.right}px !important;
+                    bottom: auto !important;
+                    left: auto !important;
+                    max-width: 250px !important;
+                    min-width: 200px !important;
+                    display: block !important;
+                    visibility: visible !important;
+                    opacity: 1 !important;
+                `;
+                });
+
+                // Handle dropdown hiding
+                toggle.addEventListener('hide.bs.dropdown', function (event) {
+                    const dropdownMenu = event.target.nextElementSibling;
+                    if (dropdownMenu) {
+                        // Reset positioning when hidden
+                        dropdownMenu.style.cssText = '';
+                    }
+                });
+            });
+        }
+
+        // Initialize dropdown positioning
+        fixDropdownPositioning();
+
+        // Handle window resize and scroll events
+        window.addEventListener('resize', function () {
+            // Close any open dropdowns on resize to prevent positioning issues
+            const openDropdowns = document.querySelectorAll('.dropdown-menu.show');
+            openDropdowns.forEach(dropdown => {
+                dropdown.classList.remove('show');
+            });
+        });
+
+        window.addEventListener('scroll', function () {
+            // Close any open dropdowns on scroll to prevent positioning issues
+            const openDropdowns = document.querySelectorAll('.dropdown-menu.show');
+            openDropdowns.forEach(dropdown => {
+                dropdown.classList.remove('show');
+            });
+        });
+
+        // Handle table scroll events
+        const tableContainer = document.querySelector('.table-responsive');
+        if (tableContainer) {
+            tableContainer.addEventListener('scroll', function () {
+                // Close any open dropdowns on table scroll
+                const openDropdowns = document.querySelectorAll('.dropdown-menu.show');
+                openDropdowns.forEach(dropdown => {
+                    dropdown.classList.remove('show');
+                });
             });
         }
     });
