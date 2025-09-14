@@ -176,3 +176,7 @@ claude/
 
 #copilot
 .github/
+
+# production scripts
+start_gunicorn.sh
+com.vedfolnir.gunicorn.plist

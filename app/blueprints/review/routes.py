@@ -30,17 +30,16 @@ def review_list():
             # Get images pending review
             query = session.query(Image).filter_by(status=ProcessingStatus.PENDING)
 
-            # Filter by user's platforms if not admin
-            if current_user.role.name != 'ADMIN':
-                user_platforms = session.query(PlatformConnection).filter_by(
-                    user_id=current_user.id, is_active=True
-                ).all()
-                platform_ids = [p.id for p in user_platforms]
-                if platform_ids:
-                    query = query.filter(Image.platform_connection_id.in_(platform_ids))
-                else:
-                    # User has no platforms, they shouldn't see any images
-                    return render_template('review.html', images=[], page=1, total_pages=1, total=0, per_page=per_page)
+            # Filter by user's platforms (applies to all users including admins)
+            user_platforms = session.query(PlatformConnection).filter_by(
+                user_id=current_user.id, is_active=True
+            ).all()
+            platform_ids = [p.id for p in user_platforms]
+            if platform_ids:
+                query = query.filter(Image.platform_connection_id.in_(platform_ids))
+            else:
+                # User has no platforms, they shouldn't see any images
+                return render_template('review.html', images=[], page=1, total_pages=1, total=0, per_page=per_page)
 
             total = query.count()
             images = query.offset((page - 1) * per_page).limit(per_page).all()
@@ -70,17 +69,16 @@ def review_single(image_id):
             # Get image with user filtering
             query = session.query(Image).filter_by(id=image_id)
 
-            # Filter by user's platforms if not admin
-            if current_user.role.name != 'ADMIN':
-                user_platforms = session.query(PlatformConnection).filter_by(
-                    user_id=current_user.id, is_active=True
-                ).all()
-                platform_ids = [p.id for p in user_platforms]
-                if platform_ids:
-                    query = query.filter(Image.platform_connection_id.in_(platform_ids))
-                else:
-                    # User has no platforms, they shouldn't see any images
-                    return redirect(url_for('review.review_list'))
+            # Filter by user's platforms (applies to all users including admins)
+            user_platforms = session.query(PlatformConnection).filter_by(
+                user_id=current_user.id, is_active=True
+            ).all()
+            platform_ids = [p.id for p in user_platforms]
+            if platform_ids:
+                query = query.filter(Image.platform_connection_id.in_(platform_ids))
+            else:
+                # User has no platforms, they shouldn't see any images
+                return redirect(url_for('review.review_list'))
 
             image = query.first()
 
@@ -119,17 +117,16 @@ def batch_review():
             # Get images grouped by platform for batch review
             query = session.query(Image).filter_by(status=ProcessingStatus.PENDING)
 
-            # Filter by user's platforms if not admin
-            if current_user.role.name != 'ADMIN':
-                user_platforms = session.query(PlatformConnection).filter_by(
-                    user_id=current_user.id, is_active=True
-                ).all()
-                platform_ids = [p.id for p in user_platforms]
-                if platform_ids:
-                    query = query.filter(Image.platform_connection_id.in_(platform_ids))
-                else:
-                    # User has no platforms, they shouldn't see any images
-                    return render_template('batch_review.html', images=[])
+            # Filter by user's platforms (applies to all users including admins)
+            user_platforms = session.query(PlatformConnection).filter_by(
+                user_id=current_user.id, is_active=True
+            ).all()
+            platform_ids = [p.id for p in user_platforms]
+            if platform_ids:
+                query = query.filter(Image.platform_connection_id.in_(platform_ids))
+            else:
+                # User has no platforms, they shouldn't see any images
+                return render_template('batch_review.html', images=[])
 
             images = query.limit(50).all()  # Limit for batch processing
             return render_template('batch_review.html', images=images)
