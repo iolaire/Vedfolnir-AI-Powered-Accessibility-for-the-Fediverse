@@ -327,7 +327,13 @@ document.addEventListener('DOMContentLoaded', function() {
                 const result = await response.json();
                 
                 if (response.ok && result.success) {
-                    // Update caption field with new caption
+                    // Update both the generated caption display and the editable field
+                    const captionContainer = document.querySelector('.caption-container');
+                    if (captionContainer) {
+                        captionContainer.textContent = result.caption;
+                    }
+
+                    // Update the editable caption field
                     captionField.value = result.caption;
                     updateCharCount();
                     

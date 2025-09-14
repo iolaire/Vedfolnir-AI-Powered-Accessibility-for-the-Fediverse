@@ -445,24 +445,33 @@ class OllamaCaptionGenerator:
         
         # Basic cleaning before passing to formatter
         max_length = self.config.caption.max_length if self.config.caption else int(os.getenv("CAPTION_MAX_LENGTH", "500"))
-        if len(caption) > max_length:
+        
+        # Reserve space for "(AI-generated)" suffix (15 characters)
+        ai_suffix = " (AI-generated)"
+        effective_max_length = max_length - len(ai_suffix)
+        
+        if len(caption) > effective_max_length:
             # Try to cut at a sentence boundary
             sentences = caption.split('. ')
             if len(sentences) > 1:
                 truncated = sentences[0] + '.'
-                if len(truncated) <= max_length:
+                if len(truncated) <= effective_max_length:
                     caption = truncated
                 else:
-                    caption = caption[:122] + '...'
+                    caption = caption[:effective_max_length - 3] + '...'
             else:
-                caption = caption[:122] + '...'
+                caption = caption[:effective_max_length - 3] + '...'
         
         # Apply enhanced formatting and grammar checking
         logger.debug(f"Original caption after basic cleaning: {caption}")
         formatted_caption = self.caption_formatter.format_caption(caption)
         logger.debug(f"Caption after enhanced formatting: {formatted_caption}")
         
-        return formatted_caption
+        # Append AI-generated suffix
+        final_caption = formatted_caption + ai_suffix
+        logger.debug(f"Final caption with AI-generated suffix: {final_caption}")
+        
+        return final_caption
     
     async def generate_multiple_captions(self, image_paths: List[str]) -> List[Tuple[Optional[str], Optional[Dict[str, Any]]]]:
         """Generate captions for multiple images

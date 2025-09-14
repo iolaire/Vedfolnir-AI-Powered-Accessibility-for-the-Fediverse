@@ -275,7 +275,7 @@ class TestOllamaCaptionGeneratorFallback(unittest.IsolatedAsyncioTestCase):
     async def test_generate_caption_primary_success(self):
         """Test generate_caption when primary attempt succeeds"""
         test_image_path = "test_image.jpg"
-        expected_result = ("Primary caption", {
+        expected_result = ("Primary caption (AI-generated)", {
             "overall_score": 85,
             "quality_level": "good",
             "needs_review": False
@@ -289,7 +289,7 @@ class TestOllamaCaptionGeneratorFallback(unittest.IsolatedAsyncioTestCase):
                 result = await self.generator.generate_caption(test_image_path)
         
         self.assertIsNotNone(result)
-        self.assertEqual(result[0], "Primary caption")
+        self.assertEqual(result[0], "Primary caption (AI-generated)")
         self.assertEqual(self.generator._try_generate_caption.call_count, 1)
         
         # Verify no fallback was used
@@ -314,7 +314,7 @@ class TestOllamaCaptionGeneratorFallback(unittest.IsolatedAsyncioTestCase):
                 result = await self.generator.generate_caption(test_image_path)
         
         self.assertIsNotNone(result)
-        self.assertEqual(result[0], "Fallback caption")
+        self.assertEqual(result[0], "Fallback caption (AI-generated)")
         self.assertEqual(self.generator._try_generate_caption.call_count, 2)
         
         # Verify fallback stats
@@ -344,7 +344,7 @@ class TestOllamaCaptionGeneratorFallback(unittest.IsolatedAsyncioTestCase):
                 result = await self.generator.generate_caption(test_image_path)
         
         self.assertIsNotNone(result)
-        self.assertEqual(result[0], "Better caption")
+        self.assertEqual(result[0], "Better caption (AI-generated)")
         self.assertEqual(self.generator._try_generate_caption.call_count, 2)
         
         # Verify fallback stats
@@ -371,7 +371,7 @@ class TestOllamaCaptionGeneratorFallback(unittest.IsolatedAsyncioTestCase):
                 result = await self.generator.generate_caption(test_image_path)
         
         self.assertIsNotNone(result)
-        self.assertEqual(result[0], "Final caption")
+        self.assertEqual(result[0], "Final caption (AI-generated)")
         self.assertEqual(self.generator._try_generate_caption.call_count, 3)
         
         # Verify fallback stats

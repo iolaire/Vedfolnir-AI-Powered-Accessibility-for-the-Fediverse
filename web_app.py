@@ -915,7 +915,10 @@ def inject_role_context():
         'active_platform': current_platform,  # Add alias for template compatibility
         'user_platforms': user_platforms,
         'user_platform_count': user_platform_count,
-        'pending_review_count': pending_review_count
+        'pending_review_count': pending_review_count,
+        'caption_max_length': config.caption.max_length,
+        'caption_optimal_min_length': config.caption.optimal_min_length,
+        'caption_optimal_max_length': config.caption.optimal_max_length
     }
 
 
@@ -962,23 +965,10 @@ try:
     # Initialize minimal unified notification manager for WebSocket compatibility
     from app.services.notification.manager.unified_manager import UnifiedNotificationManager
     
-    class UnifiedNotificationManagerStub(UnifiedNotificationManager):
+    class UnifiedNotificationManagerStub:
         def __init__(self):
-            # Create dummy dependencies for the stub
-            from app.websocket.core.websocket_factory import WebSocketFactory
-            from app.websocket.core.auth.websocket_auth import WebSocketAuthHandler
-            from app.websocket.core.namespace.websocket_namespace import WebSocketNamespaceManager
-            from app.core.database.core.database_manager import DatabaseManager
-            
-            # Initialize with None/dummy values since this is a stub
-            super().__init__(
-                websocket_factory=WebSocketFactory(None),
-                auth_handler=WebSocketAuthHandler(),
-                namespace_manager=WebSocketNamespaceManager(),
-                db_manager=DatabaseManager(),
-                max_offline_messages=100,
-                message_retention_days=30
-            )
+            # Simple stub that doesn't require WebSocket components
+            pass
             
         def set_websocket_handlers(self, handlers): 
             pass
@@ -1046,9 +1036,9 @@ except ImportError:
         class UnifiedNotificationManagerStub(UnifiedNotificationManager):
             def __init__(self):
                 # Create dummy dependencies for the stub
-                from app.websocket.core.websocket_factory import WebSocketFactory
-                from app.websocket.core.auth.websocket_auth import WebSocketAuthHandler
-                from app.websocket.core.namespace.websocket_namespace import WebSocketNamespaceManager
+                from app.websocket.core.factory import WebSocketFactory
+                from app.websocket.core.auth_handler import WebSocketAuthHandler
+                from app.websocket.core.namespace_manager import WebSocketNamespaceManager
                 from app.core.database.core.database_manager import DatabaseManager
                 
                 # Initialize with None/dummy values since this is a stub

@@ -191,7 +191,7 @@ class TestComponentIntegration(unittest.IsolatedAsyncioTestCase):
         """Test the complete workflow from fetching posts to updating alt text"""
         # Mock caption generation
         self.ollama_generator._try_generate_caption.return_value = (
-            "A beautiful landscape photo",
+            "A beautiful landscape photo (AI-generated)",
             {"overall_score": 85, "quality_level": "good", "needs_review": False}
         )
         
@@ -332,7 +332,7 @@ class TestComponentIntegration(unittest.IsolatedAsyncioTestCase):
         
         # Mock caption generation
         self.ollama_generator._try_generate_caption.return_value = (
-            "Generated caption",
+            "Generated caption (AI-generated)",
             {"overall_score": 80, "quality_level": "good", "needs_review": False}
         )
         

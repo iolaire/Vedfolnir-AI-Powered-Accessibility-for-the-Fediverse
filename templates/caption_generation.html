@@ -227,7 +227,7 @@
                 {% if task_history %}
                 <div class="task-history">
                     {% for task in task_history %}
-                    <div class="task-item" data-status="{{ task.status }}">
+                    <div class="task-item clickable" data-status="{{ task.status }}" data-task-id="{{ task.task_id }}" title="Click to view task details" style="cursor: pointer;">
                         <div class="d-flex justify-content-between align-items-start">
                             <div>
                                 <strong>{{ task.task_id[:8] }}...</strong>
@@ -294,4 +294,123 @@
 {% if active_task %}
 <div data-current-task-id="{{ active_task.task_id }}" class="hidden-task-id"></div>
 {% endif %}
+
+<!-- Task Details Modal -->
+<div class="modal fade" id="taskDetailsModal" tabindex="-1" aria-labelledby="taskDetailsModalLabel" aria-hidden="true">
+    <div class="modal-dialog modal-lg">
+        <div class="modal-content">
+            <div class="modal-header">
+                <h5 class="modal-title" id="taskDetailsModalLabel">Task Details</h5>
+                <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
+            </div>
+            <div class="modal-body" id="taskDetailsContent">
+                <!-- Task details will be loaded here -->
+            </div>
+            <div class="modal-footer">
+                <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Close</button>
+                {% if active_task and active_task.task_id %}
+                <button type="button" class="btn btn-danger" onclick="cancelGeneration('{{ active_task.task_id }}')">
+                    Cancel Task
+                </button>
+                {% endif %}
+            </div>
+        </div>
+    </div>
+</div>
+
+<script nonce="{{ g.csp_nonce if g.csp_nonce else '' }}">
+// Add event listeners for clickable task items
+document.addEventListener('DOMContentLoaded', function() {
+    const taskItems = document.querySelectorAll('.task-item.clickable');
+    taskItems.forEach(item => {
+        item.addEventListener('click', function() {
+            const taskId = this.getAttribute('data-task-id');
+            showTaskDetails(taskId);
+        });
+    });
+});
+
+function showTaskDetails(taskId) {
+    // Find the task data from the task history
+    const taskData = {{ task_history|tojson }};
+    const task = taskData.find(t => t.task_id === taskId);
+
+    if (!task) {
+        alert('Task details not found');
+        return;
+    }
+
+    // Build the task details HTML
+    let detailsHtml = `
+        <div class="task-details">
+            <div class="row mb-3">
+                <div class="col-md-6">
+                    <strong>Task ID:</strong> ${task.task_id}<br>
+                    <strong>Status:</strong> <span class="badge bg-${getStatusBadgeClass(task.status)}">${task.status}</span><br>
+                    <strong>Progress:</strong> ${task.progress_percent || 0}%
+                </div>
+                <div class="col-md-6">
+                    <strong>Created:</strong> ${formatDateTime(task.created_at)}<br>
+                    <strong>Completed:</strong> ${formatDateTime(task.completed_at)}<br>
+                    <strong>Current Step:</strong> ${task.current_step || 'N/A'}
+                </div>
+            </div>
+    `;
+
+    if (task.error_message) {
+        detailsHtml += `
+            <div class="alert alert-danger">
+                <strong>Error:</strong> ${task.error_message}
+            </div>
+        `;
+    }
+
+    // Add results if available
+    if (task.results) {
+        detailsHtml += `
+            <div class="card">
+                <div class="card-header">
+                    <h6 class="mb-0">Results</h6>
+                </div>
+                <div class="card-body">
+                    <div class="row">
+                        <div class="col-md-4">
+                            <strong>Captions Generated:</strong> ${task.results.captions_generated || 0}
+                        </div>
+                        <div class="col-md-4">
+                            <strong>Images Processed:</strong> ${task.results.images_processed || 0}
+                        </div>
+                        <div class="col-md-4">
+                            <strong>Errors:</strong> ${task.results.errors_count || 0}
+                        </div>
+                    </div>
+                </div>
+            </div>
+        `;
+    }
+
+    detailsHtml += '</div>';
+
+    // Update modal content and show it
+    document.getElementById('taskDetailsContent').innerHTML = detailsHtml;
+    const modal = new bootstrap.Modal(document.getElementById('taskDetailsModal'));
+    modal.show();
+}
+
+function getStatusBadgeClass(status) {
+    switch(status.toLowerCase()) {
+        case 'completed': return 'success';
+        case 'failed': return 'danger';
+        case 'cancelled': return 'warning';
+        case 'running': return 'primary';
+        case 'pending': return 'secondary';
+        default: return 'primary';
+    }
+}
+
+function formatDateTime(dateTimeStr) {
+    if (!dateTimeStr) return 'N/A';
+    return new Date(dateTimeStr).toLocaleString();
+}
+</script>
 {% endblock %}

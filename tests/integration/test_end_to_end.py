@@ -102,7 +102,7 @@ class TestCompleteWorkflows(EndToEndTestBase):
                     
                     # Mock caption generation
                     mock_generator.generate_caption.return_value = (
-                        "A beautiful sunset over the mountains",
+                        "A beautiful sunset over the mountains (AI-generated)",
                         {
                             "overall_score": 85,
                             "quality_level": "good",
@@ -190,7 +190,7 @@ class TestCompleteWorkflows(EndToEndTestBase):
                     self.assertEqual(len(pending_images), 1)
                     
                     image = pending_images[0]
-                    self.assertEqual(image.generated_caption, "A beautiful sunset over the mountains")
+                    self.assertEqual(image.generated_caption, "A beautiful sunset over the mountains (AI-generated)")
                     self.assertEqual(image.caption_quality_score, 85)
                     self.assertFalse(image.needs_special_review)
     
@@ -228,7 +228,7 @@ class TestCompleteWorkflows(EndToEndTestBase):
                     
                     # Mock caption generation
                     mock_generator.generate_caption.return_value = (
-                        "Generated caption",
+                        "Generated caption (AI-generated)",
                         {"overall_score": 80, "quality_level": "good", "needs_review": False}
                     )
                     
@@ -336,7 +336,7 @@ class TestCompleteWorkflows(EndToEndTestBase):
         self.assertEqual(len(pending_images), 1)
         
         image = pending_images[0]
-        self.assertEqual(image.generated_caption, "Generated caption for review")
+        self.assertEqual(image.generated_caption, "Generated caption for review (AI-generated)")
         self.assertEqual(image.status, ProcessingStatus.PENDING)
         
         # 2. Review and approve
@@ -470,7 +470,7 @@ class TestCompleteWorkflows(EndToEndTestBase):
                     # Retry should succeed with fallback
                     caption_result = await generator.generate_caption("/tmp/test.jpg")
                     self.assertIsNotNone(caption_result)
-                    self.assertEqual(caption_result[0], "Fallback generated caption")
+                    self.assertEqual(caption_result[0], "Fallback generated caption (AI-generated)")
                 
                 asyncio.run(test_recovery())
                 
@@ -753,7 +753,7 @@ class TestWebInterfaceEndToEnd(EndToEndTestBase):
         self.assertEqual(len(pending_images), 1)
         
         image = pending_images[0]
-        self.assertEqual(image.generated_caption, "Web interface test caption")
+        self.assertEqual(image.generated_caption, "Web interface test caption (AI-generated)")
         
         # Test review operation (review form submission)
         success = self.db_manager.review_image(

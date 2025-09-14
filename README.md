@@ -349,6 +349,7 @@ This project is licensed under the GNU Affero General Public License v3.0 - see 
 - **Security Community**: For best practices and standards
 - **MySQL/MariaDB**: For high-performance database capabilities
 - **Redis**: For lightning-fast session management
+- **@altbot@fuzzies.wtf**: For proving AI captions work
 
 ## 📞 Support
 

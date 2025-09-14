@@ -47,7 +47,7 @@
     font-weight: 600 !important;
     z-index: 10000 !important;
     transition: top 0.3s ease !important;
-    border: 2px solid white !important;
+    border: none !important;
 }
 
 .skip-to-content:focus {
@@ -1562,24 +1562,7 @@ small {
     }
 }
 
-/* Skip to content link for accessibility */
-.skip-to-content {
-    position: absolute;
-    top: -40px;
-    left: 6px;
-    background: var(--primary-color);
-    color: white;
-    padding: 8px;
-    text-decoration: none;
-    border-radius: var(--border-radius);
-    z-index: 9999;
-    font-weight: 600;
-}
 
-.skip-to-content:focus {
-    top: 6px;
-    color: white;
-}
 
 /* Focus styles for accessibility */
 .navbar-brand:focus {

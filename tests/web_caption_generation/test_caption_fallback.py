@@ -176,7 +176,7 @@ class TestOllamaCaptionGeneratorFallback(unittest.TestCase):
                 # Configure the mock to fail on first attempt and succeed on fallback
                 self.generator._try_generate_caption.side_effect = [
                     None,  # Primary attempt fails
-                    ("Fallback caption", {"overall_score": 80, "quality_level": "good", "needs_review": False})  # Fallback succeeds
+                    ("Fallback caption (AI-generated)", {"overall_score": 80, "quality_level": "good", "needs_review": False})  # Fallback succeeds
                 ]
                 
                 # Run the test
@@ -184,7 +184,7 @@ class TestOllamaCaptionGeneratorFallback(unittest.TestCase):
                 
                 # Verify the result
                 self.assertIsNotNone(result)
-                self.assertEqual(result[0], "Fallback caption")
+                self.assertEqual(result[0], "Fallback caption (AI-generated)")
                 
                 # Verify that _try_generate_caption was called twice
                 self.assertEqual(self.generator._try_generate_caption.call_count, 2)
@@ -203,8 +203,8 @@ class TestOllamaCaptionGeneratorFallback(unittest.TestCase):
             with patch("base64.b64encode", MagicMock(return_value=b"test_image_data")):
                 # Configure the mock to return low quality caption first, then good quality
                 self.generator._try_generate_caption.side_effect = [
-                    ("Low quality caption", {"overall_score": 30, "quality_level": "poor", "needs_review": True}),  # Low quality
-                    ("Better caption", {"overall_score": 80, "quality_level": "good", "needs_review": False})  # Good quality
+                    ("Low quality caption (AI-generated)", {"overall_score": 30, "quality_level": "poor", "needs_review": True}),  # Low quality
+                    ("Better caption (AI-generated)", {"overall_score": 80, "quality_level": "good", "needs_review": False})  # Good quality
                 ]
                 
                 # Mock should_use_fallback to return True for the first result
@@ -217,7 +217,7 @@ class TestOllamaCaptionGeneratorFallback(unittest.TestCase):
                 
                 # Verify the result
                 self.assertIsNotNone(result)
-                self.assertEqual(result[0], "Better caption")
+                self.assertEqual(result[0], "Better caption (AI-generated)")
                 
                 # Verify that _try_generate_caption was called twice
                 self.assertEqual(self.generator._try_generate_caption.call_count, 2)

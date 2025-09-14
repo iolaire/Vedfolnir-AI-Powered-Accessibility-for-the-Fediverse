@@ -217,7 +217,7 @@ class TestPlatformAwareCaptionAdapter(unittest.TestCase):
         
         # Mock caption generator
         self.adapter.caption_generator = Mock()
-        self.adapter.caption_generator.generate_caption = AsyncMock(return_value=('Test caption', None))
+        self.adapter.caption_generator.generate_caption = AsyncMock(return_value=('Test caption (AI-generated)', None))
         
         mock_db_post = Mock()
         mock_db_post.id = 1
@@ -269,7 +269,7 @@ class TestPlatformAwareCaptionAdapter(unittest.TestCase):
         
         # Mock caption generator
         self.adapter.caption_generator = Mock()
-        self.adapter.caption_generator.generate_caption = AsyncMock(return_value='Test caption')
+        self.adapter.caption_generator.generate_caption = AsyncMock(return_value='Test caption (AI-generated)')
         
         # Enable reprocessing
         settings = CaptionGenerationSettings(reprocess_existing=True)

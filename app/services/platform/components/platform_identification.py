@@ -93,34 +93,35 @@ def identify_user_platform(
         try:
             user_platforms_dict = redis_platform_manager.get_user_platforms(user_id)
             current_platform_dict = redis_platform_manager.get_default_platform(user_id)
-            
+
             print(f"DEBUG: Redis returned {len(user_platforms_dict) if user_platforms_dict else 0} platforms for user {user_id}")
             print(f"DEBUG: Current platform dict: {current_platform_dict}")
-            
-            if current_platform_dict:
+
+            # CRITICAL FIX: Validate that Redis platform data belongs to current user
+            if current_platform_dict and current_platform_dict.get('user_id') == user_id:
                 # Convert dict platforms to objects for template compatibility
                 result.user_platforms = [PlatformObj(p) for p in user_platforms_dict] if user_platforms_dict else []
                 result.current_platform = PlatformObj(current_platform_dict)
                 result.platform_connection_id = current_platform_dict['id']
                 result.source = 'redis'
-                
+
                 # Get platform statistics if requested
                 if include_stats:
                     try:
                         result.platform_stats = redis_platform_manager.get_platform_stats(
-                            user_id, 
+                            user_id,
                             current_platform_dict['id']
                         )
                     except Exception as stats_error:
                         logger.warning(f"Failed to get platform stats from Redis: {stats_error}")
                         result.platform_stats = {}
-                
+
                 print(f"DEBUG: Found platform from Redis: {result.current_platform.name} (ID: {result.platform_connection_id})")
             else:
-                print(f"DEBUG: No current platform found in Redis for user {user_id}")
-                # Fall back to database
+                print(f"DEBUG: Invalid platform data in Redis for user {user_id}, falling back to database")
+                # Platform data is invalid or belongs to different user, fall back to database
                 result = _identify_platform_from_database(user_id, db_manager, include_stats, redis_platform_manager)
-                
+
         except Exception as redis_error:
             print(f"DEBUG: Redis platform cache failed: {redis_error}")
             logger.warning(f"Redis platform cache failed, falling back to database: {redis_error}")
@@ -160,9 +161,11 @@ def _identify_platform_from_database(
     
     session = db_manager.get_session()
     try:
-        # Get user's platform connections using role-based filtering
-        platforms_query = session.query(PlatformConnection).filter_by(is_active=True)
-        platforms_query = filter_platforms_for_user(platforms_query)
+        # Get user's platform connections - always filter by user_id for platform selection
+        platforms_query = session.query(PlatformConnection).filter_by(
+            user_id=user_id,
+            is_active=True
+        )
         user_platforms = platforms_query.order_by(
             PlatformConnection.is_default.desc(), 
             PlatformConnection.name
@@ -179,8 +182,15 @@ def _identify_platform_from_database(
         
         # Set result data
         result.user_platforms = user_platforms
-        result.current_platform = current_platform
-        result.platform_connection_id = current_platform.id if current_platform else None
+
+        # CRITICAL FIX: Verify that the current platform belongs to the current user
+        if current_platform and current_platform.user_id != user_id:
+            logger.warning(f"Platform {current_platform.id} belongs to user {current_platform.user_id}, not current user {user_id}. Resetting platform selection.")
+            current_platform = None
+            result.platform_connection_id = None
+        else:
+            result.current_platform = current_platform
+            result.platform_connection_id = current_platform.id if current_platform else None
         
         # Get platform statistics if requested and we have a current platform
         if include_stats and current_platform:

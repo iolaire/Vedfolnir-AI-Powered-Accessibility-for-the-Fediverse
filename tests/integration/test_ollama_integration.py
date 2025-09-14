@@ -12,7 +12,7 @@ from dataclasses import dataclass
 # Add parent directory to path to import modules
 sys.path.insert(0, os.path.abspath(os.path.join(os.path.dirname(__file__), '..')))
 
-from ollama_caption_generator import OllamaCaptionGenerator
+from app.utils.processing.ollama_caption_generator import OllamaCaptionGenerator
 from config import OllamaConfig, RetryConfig
 
 class TestOllamaIntegration(unittest.TestCase):
@@ -113,8 +113,8 @@ class TestOllamaIntegration(unittest.TestCase):
             # Call generate_caption
             caption = await self.caption_generator.generate_caption(test_image_path)
             
-            # Verify the caption was generated
-            self.assertEqual(caption, "This is a test caption")
+            # Verify the caption was generated with AI-generated suffix
+            self.assertEqual(caption, "This is a test caption (AI-generated)")
             
             # Verify the API call
             mock_post.assert_called_once()
@@ -159,8 +159,8 @@ class TestOllamaIntegration(unittest.TestCase):
             # Call generate_caption
             caption = await self.caption_generator.generate_caption(test_image_path)
             
-            # Verify the caption was generated
-            self.assertEqual(caption, "This is a test caption after retry")
+            # Verify the caption was generated with AI-generated suffix
+            self.assertEqual(caption, "This is a test caption after retry (AI-generated)")
             
             # Verify the API was called twice (once for the error, once for success)
             self.assertEqual(mock_post.call_count, 2)

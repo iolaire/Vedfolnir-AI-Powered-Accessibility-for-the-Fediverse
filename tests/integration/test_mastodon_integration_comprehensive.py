@@ -302,7 +302,7 @@ class TestMastodonWorkflowIntegration(unittest.TestCase):
                         mock_image_processor_class.return_value = mock_image_processor
                         
                         mock_caption_generator = Mock()
-                        mock_caption_generator.generate_caption = Mock(return_value="Generated alt text")
+                        mock_caption_generator.generate_caption = Mock(return_value="Generated alt text (AI-generated)")
                         mock_caption_generator_class.return_value = mock_caption_generator
                         
                         mock_db_manager = Mock()
