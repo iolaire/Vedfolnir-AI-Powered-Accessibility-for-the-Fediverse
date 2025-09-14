@@ -37,8 +37,8 @@ venv.bak/
 .env.backup.*
 .env.*.deprecated
 
-# Storage directories
-storage/
+# Storage directories (data storage, not service code)
+/storage/
 logs/
 
 # Database files
