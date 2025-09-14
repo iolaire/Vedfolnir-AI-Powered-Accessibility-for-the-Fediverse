@@ -165,7 +165,7 @@
                                             <i class="bi bi-eye"></i>
                                         </button>
                                         {% if job.status == 'completed' %}
-                                        <a href="{{ url_for('review') }}?job_id={{ job.task_id }}"
+                                        <a href="{{ url_for('static.review') }}?job_id={{ job.task_id }}"
                                             class="btn btn-outline-primary" title="Review Results">
                                             <i class="bi bi-eye-fill"></i>
                                         </a>

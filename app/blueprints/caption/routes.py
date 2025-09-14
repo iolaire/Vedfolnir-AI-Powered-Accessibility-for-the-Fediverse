@@ -21,6 +21,36 @@ def generation():
         
         caption_service = WebCaptionGenerationService(db_manager)
         active_task = caption_service.get_active_task_for_user(current_user.id)
+
+        # Get task history using the same approach as admin job history
+        task_history = []
+        try:
+            with db_manager.get_session() as session:
+                from models import CaptionGenerationTask
+
+                # Get task history for the user
+                tasks = session.query(CaptionGenerationTask)\
+                             .filter(CaptionGenerationTask.user_id == current_user.id)\
+                             .order_by(CaptionGenerationTask.created_at.desc())\
+                             .limit(10)\
+                             .all()
+
+                for task in tasks:
+                    task_info = {
+                        'task_id': task.id,
+                        'status': task.status.value if hasattr(task.status, 'value') else str(task.status),
+                        'created_at': task.created_at.isoformat() if task.created_at else None,
+                        'completed_at': task.completed_at.isoformat() if task.completed_at else None,
+                        'progress_percent': task.progress_percent or 0,
+                        'current_step': task.current_step,
+                        'error_message': task.error_message
+                    }
+                    task_history.append(task_info)
+
+                current_app.logger.info(f"Found {len(task_history)} tasks for user {current_user.id}")
+        except Exception as e:
+            current_app.logger.error(f"Error getting task history: {str(e)}")
+            task_history = []
         
         # Handle both dictionary and object cases for active_task data
         if active_task and isinstance(active_task, dict):
@@ -114,7 +144,8 @@ def generation():
         return render_template('caption_generation.html',
                              form=form,
                              active_task=active_task,
-                             active_platform=template_platform)
+                             active_platform=template_platform,
+                             task_history=task_history)
                              
     except Exception as e:
         current_app.logger.error(f"Error loading caption generation: {str(e)}")
