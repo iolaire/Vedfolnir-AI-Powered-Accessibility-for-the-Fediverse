@@ -1,0 +1,10 @@
+User-agent: *
+Disallow: /login
+Disallow: /register
+Disallow: /account
+Disallow: /dashboard
+Disallow: /admin
+Disallow: /search?
+Disallow: /images
+Disallow: /static
+Disallow: /user-management

@@ -1555,9 +1555,9 @@ class DatabaseManager:
                     # No platform context - filter by user if available
                     if user_id:
                         # Filter posts by user_id
-                        post_query = session.query(Post).filter(Post.user_id == str(user_id))
+                        post_query = session.query(Post).filter(Post.user_id == user_id)
                         # Filter images by joining with posts and filtering by user_id
-                        image_query = session.query(Image).join(Post).filter(Post.user_id == str(user_id))
+                        image_query = session.query(Image).join(Post).filter(Post.user_id == user_id)
                     else:
                         # Fallback to global stats if no user context
                         post_query = session.query(Post)
@@ -1588,19 +1588,19 @@ class DatabaseManager:
                             'total_posts': post_query.count(),
                             'total_images': image_query.count(),
                             'pending_review': session.query(Image).join(Post).filter(
-                                Post.user_id == str(user_id),
+                                Post.user_id == user_id,
                                 Image.status == ProcessingStatus.PENDING
                             ).count(),
                             'approved': session.query(Image).join(Post).filter(
-                                Post.user_id == str(user_id),
+                                Post.user_id == user_id,
                                 Image.status == ProcessingStatus.APPROVED
                             ).count(),
                             'posted': session.query(Image).join(Post).filter(
-                                Post.user_id == str(user_id),
+                                Post.user_id == user_id,
                                 Image.status == ProcessingStatus.POSTED
                             ).count(),
                             'rejected': session.query(Image).join(Post).filter(
-                                Post.user_id == str(user_id),
+                                Post.user_id == user_id,
                                 Image.status == ProcessingStatus.REJECTED
                             ).count(),
                         }

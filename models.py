@@ -112,7 +112,7 @@ class Post(Base):
     
     id = Column(Integer, primary_key=True, autoincrement=True)
     post_id = Column(String(500), nullable=False, index=True)
-    user_id = Column(String(200), nullable=False)
+    user_id = Column(Integer, ForeignKey("users.id", ondelete="CASCADE"), nullable=False)
     post_url = Column(String(500), nullable=False)
     post_content = Column(Text)
     created_at = Column(DateTime, default=datetime.utcnow)
@@ -124,6 +124,7 @@ class Post(Base):
     instance_url = Column(String(500))  # For backward compatibility
     
     # Relationships
+    user = relationship("User")
     images = relationship("Image", back_populates="post", cascade="all, delete-orphan")
     platform_connection = relationship("PlatformConnection")
     
@@ -735,7 +736,7 @@ class ProcessingRun(Base):
     )
     
     id = Column(Integer, primary_key=True, autoincrement=True)
-    user_id = Column(String(200), nullable=False)
+    user_id = Column(Integer, ForeignKey("users.id", ondelete="CASCADE"), nullable=False)
     batch_id = Column(String(200), nullable=True)  # To group runs that are part of the same batch
     started_at = Column(DateTime, default=datetime.utcnow)
     completed_at = Column(DateTime)
@@ -758,6 +759,7 @@ class ProcessingRun(Base):
     retry_stats_json = Column(Text)  # JSON serialized detailed retry statistics
     
     # Relationships
+    user = relationship("User")
     platform_connection = relationship("PlatformConnection")
     
     def validate_platform_consistency(self):

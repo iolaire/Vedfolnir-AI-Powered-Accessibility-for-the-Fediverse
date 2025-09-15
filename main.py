@@ -178,9 +178,14 @@ class Vedfolnir:
         self.current_run = self._create_processing_run(user_id, batch_id)
         
         try:
+            # Determine which user's posts to fetch
+            # If we have a platform connection, use the username from the platform connection
+            # Otherwise, use the user_id parameter
+            posts_user_id = platform_connection.username if platform_connection and platform_connection.username else user_id
+            
             # Get user's posts
-            logger.info(f"Fetching posts for user: {user_id}")
-            posts = await ap_client.get_user_posts(user_id, self.config.max_posts_per_run)
+            logger.info(f"Fetching posts for user: {posts_user_id}")
+            posts = await ap_client.get_user_posts(posts_user_id, self.config.max_posts_per_run)
             
             if not posts:
                 logger.warning(f"No posts found for user {user_id}")

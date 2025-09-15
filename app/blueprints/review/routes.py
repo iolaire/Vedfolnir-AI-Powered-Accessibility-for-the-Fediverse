@@ -92,7 +92,42 @@ def review_single(image_id):
                 # Handle form submission
                 caption = form.caption.data.strip()
                 image.generated_caption = caption
-                image.status = ProcessingStatus.APPROVED
+                
+                # Post the caption to the platform
+                try:
+                    # Get the platform connection
+                    platform_connection = session.query(PlatformConnection).filter_by(
+                        id=image.platform_connection_id
+                    ).first()
+                    
+                    if platform_connection:
+                        # Import ActivityPub client
+                        from app.services.activitypub.components.activitypub_client import ActivityPubClient
+                        import asyncio
+                        
+                        # Create client and post caption
+                        ap_client = ActivityPubClient(platform_connection)
+                        
+                        # Use the image_post_id from the image record to update the caption
+                        success = asyncio.run(ap_client.update_media_caption(
+                            image.image_post_id, 
+                            caption
+                        ))
+                        
+                        if success:
+                            image.status = ProcessingStatus.POSTED
+                            current_app.logger.info(f"Successfully posted caption for image {image.id}")
+                        else:
+                            image.status = ProcessingStatus.APPROVED
+                            current_app.logger.warning(f"Failed to post caption for image {image.id}, marked as approved")
+                    else:
+                        image.status = ProcessingStatus.APPROVED
+                        current_app.logger.error(f"Platform connection not found for image {image.id}")
+                        
+                except Exception as e:
+                    current_app.logger.error(f"Error posting caption for image {image.id}: {e}")
+                    image.status = ProcessingStatus.APPROVED
+                
                 session.commit()
                 return redirect(url_for('review.review_list'))
             else:

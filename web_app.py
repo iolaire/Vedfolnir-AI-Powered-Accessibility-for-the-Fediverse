@@ -905,7 +905,7 @@ def inject_role_context():
                 with db_manager.get_session() as db_session:
                     from models import Image, Post
                     pending_review_count = db_session.query(Image).join(Post).filter(
-                        Post.user_id == str(user_id),
+                        Post.user_id == user_id,
                         Image.status == 'pending'
                     ).count()
         
