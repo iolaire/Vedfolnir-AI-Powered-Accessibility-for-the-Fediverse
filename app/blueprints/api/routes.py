@@ -583,8 +583,21 @@ def csp_report():
             'remote_addr': request.remote_addr
         }
         
-        # Log the CSP violation
-        current_app.logger.warning(f"CSP violation detected: {json.dumps(violation_info, indent=2)}")
+        # Filter out Safari false positives for inline scripts with nonces
+        is_safari_false_positive = (
+            'Safari' in violation_info.get('user_agent', '') and
+            violation_info.get('violated_directive') == 'script-src-elem' and
+            violation_info.get('blocked_uri') == 'inline' and
+            "'unsafe-inline'" in violation_info.get('original_policy', '') and
+            "'nonce-" in violation_info.get('original_policy', '')
+        )
+        
+        if is_safari_false_positive:
+            # Log as debug instead of warning for Safari false positives
+            current_app.logger.debug(f"Safari CSP false positive (filtered): {violation_info.get('document_uri')} - {violation_info.get('violated_directive')}")
+        else:
+            # Log genuine CSP violations
+            current_app.logger.warning(f"CSP violation detected: {json.dumps(violation_info, indent=2)}")
         
         # For development, you might want to store these in the database for analysis
         # For now, we'll just log them

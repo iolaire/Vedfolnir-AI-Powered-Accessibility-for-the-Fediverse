@@ -286,7 +286,7 @@ class SecurityMiddleware:
         csp_nonce = getattr(g, 'csp_nonce', 'default-nonce')
         
         # Check if we're in development mode - also allow CSP override for testing
-        is_development = os.environ.get('FLASK_ENV') == 'development' or os.environ.get('FLASK_DEBUG') == '1' or os.environ.get('CSP_PERMISSIVE') == '1' or True
+        is_development = os.environ.get('FLASK_ENV') == 'development' or os.environ.get('FLASK_DEBUG') == '1' or os.environ.get('CSP_PERMISSIVE') == '1'
         
         # Check if CSP strict mode is enabled
         csp_strict_mode = os.environ.get('CSP_STRICT_MODE') == '1'
@@ -320,6 +320,7 @@ class SecurityMiddleware:
             csp_policy = (
                 f"default-src 'self' *; "
                 f"script-src 'self' 'nonce-{csp_nonce}' 'unsafe-inline' 'unsafe-eval' https://cdn.jsdelivr.net https://cdnjs.cloudflare.com https://cdn.socket.io https://unpkg.com *; "
+                f"script-src-elem 'self' 'nonce-{csp_nonce}' 'unsafe-inline' https://cdn.jsdelivr.net https://cdnjs.cloudflare.com https://cdn.socket.io https://unpkg.com *; "
                 f"style-src 'self' 'unsafe-inline' https://fonts.googleapis.com https://cdn.jsdelivr.net https://fonts.gstatic.com *; "
                 f"style-src-elem 'self' 'unsafe-inline' https://fonts.googleapis.com https://cdn.jsdelivr.net https://fonts.gstatic.com *; "
                 f"style-src-attr 'unsafe-inline'; "
@@ -341,12 +342,13 @@ class SecurityMiddleware:
             csp_policy = (
                 f"default-src 'self'; "
                 f"script-src 'self' 'nonce-{csp_nonce}' 'unsafe-inline' 'unsafe-eval' https://cdn.jsdelivr.net https://cdn.socket.io https://cdnjs.cloudflare.com https://unpkg.com; "
+                f"script-src-elem 'self' 'nonce-{csp_nonce}' 'unsafe-inline' https://cdn.jsdelivr.net https://cdn.socket.io https://cdnjs.cloudflare.com https://unpkg.com; "
                 f"style-src 'self' 'nonce-{csp_nonce}' 'unsafe-inline' https://fonts.googleapis.com https://cdn.jsdelivr.net https://fonts.gstatic.com; "
                 f"style-src-elem 'self' 'nonce-{csp_nonce}' 'unsafe-inline' https://fonts.googleapis.com https://cdn.jsdelivr.net https://fonts.gstatic.com; "
                 f"style-src-attr 'unsafe-inline'; "
                 f"img-src 'self' data: https: blob:; "
                 f"font-src 'self' https://fonts.gstatic.com https://cdn.jsdelivr.net data:; "
-                f"connect-src 'self' wss: ws: https://cdn.jsdelivr.net https://cdn.socket.io https://cdnjs.cloudflare.com wss://localhost:5000 ws://localhost:5000; "
+                f"connect-src 'self' wss: ws: https://cdn.jsdelivr.net https://cdn.socket.io https://cdnjs.cloudflare.com wss://vedfolnir.org ws://vedfolnir.org; "
                 f"frame-ancestors 'self'; "
                 f"base-uri 'self'; "
                 f"form-action 'self'; "

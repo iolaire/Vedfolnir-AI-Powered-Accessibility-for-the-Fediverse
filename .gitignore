@@ -181,3 +181,4 @@ claude/
 start_gunicorn.sh
 com.vedfolnir.gunicorn.plist
 com.vedfolnir.ipalias.plist
+config/

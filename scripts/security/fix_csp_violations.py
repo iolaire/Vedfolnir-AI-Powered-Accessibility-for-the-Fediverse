@@ -144,8 +144,8 @@ def add_csp_scripts_to_base_template():
         # Find the closing </body> tag and add scripts before it
         script_includes = '''
     <!-- CSP-Compliant Scripts -->
-    <link rel="stylesheet" href="{{ url_for('static', filename='css/csp-compliant-styles.css') }}?v=1.0.0">
-    <script src="{{ url_for('static', filename='js/csp-compliant-handlers.js') }}?v=1.0.0" nonce="{{ g.csp_nonce if g.csp_nonce else '' }}"></script>
+    <link rel="stylesheet" href="{{ url_for('static', filename='css/csp-compliant-styles.css') }}?v=1.0.1">
+    <script src="{{ url_for('static', filename='js/csp-compliant-handlers.js') }}?v=1.0.1" nonce="{{ g.csp_nonce if g.csp_nonce else '' }}"></script>
 </body>'''
         
         content = content.replace('</body>', script_includes)

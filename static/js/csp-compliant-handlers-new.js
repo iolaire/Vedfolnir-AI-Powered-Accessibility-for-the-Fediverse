@@ -62,9 +62,8 @@ function setupFormChangeHandlers() {
             this.form.submit();
         });
     });
-}
-
-function setupPlatformManagementHandlers() {
+}f
+unction setupPlatformManagementHandlers() {
     // Switch platform buttons
     document.querySelectorAll('[data-action="switch-platform"]').forEach(button => {
         button.addEventListener('click', function() {
@@ -181,9 +180,8 @@ function setupAdminJobHandlers() {
 function setupErrorPageHandlers() {
     // Error page specific handlers are already covered by generic handlers
     // using data-action attributes
-}
-
-// Utility functions (these should already exist in your codebase)
+}// 
+Utility functions (these should already exist in your codebase)
 function copyToClipboard(text) {
     if (navigator.clipboard && window.isSecureContext) {
         navigator.clipboard.writeText(text).then(() => {
@@ -266,36 +264,4 @@ function toggleEditMode() {
 function loadJobDetails(jobId) {
     console.log('Load job details:', jobId);
     // Implement your job details loading logic
-}
-
-// Resource loading error handling (CSP-compliant)
-document.addEventListener('DOMContentLoaded', function() {
-    setupResourceErrorHandling();
-});
-
-function setupResourceErrorHandling() {
-    // Handle logo loading errors
-    const logoElements = document.querySelectorAll('.logo-fallback');
-    logoElements.forEach(logo => {
-        logo.addEventListener('error', function() {
-            this.style.display = 'none';
-            console.warn('Logo failed to load');
-        });
-    });
-    
-    // Handle CSS loading errors
-    const cssLinks = document.querySelectorAll('link[rel="stylesheet"]');
-    cssLinks.forEach(link => {
-        link.addEventListener('error', function() {
-            console.warn(`CSS failed to load: ${this.href}`);
-        });
-    });
-    
-    // Handle script loading errors
-    const scripts = document.querySelectorAll('script[src]');
-    scripts.forEach(script => {
-        script.addEventListener('error', function() {
-            console.warn(`Script failed to load: ${this.src}`);
-        });
-    });
 }

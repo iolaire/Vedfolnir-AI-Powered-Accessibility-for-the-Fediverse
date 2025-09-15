@@ -593,7 +593,7 @@
     {% block scripts %}{% endblock %}
 
     <!-- CSP-Compliant Scripts -->
-    <link rel="stylesheet" href="{{ url_for('static', filename='css/csp-compliant-styles.css') }}?v=1.0.0">
-    <script src="{{ url_for('static', filename='js/csp-compliant-handlers.js') }}?v=1.0.0" nonce="{{ g.csp_nonce if g.csp_nonce else '' }}"></script>
+    <link rel="stylesheet" href="{{ url_for('static', filename='css/csp-compliant-styles.css') }}?v=1.0.1">
+    <script src="{{ url_for('static', filename='js/csp-compliant-handlers.js') }}?v=1.0.1" nonce="{{ g.csp_nonce if g.csp_nonce else '' }}"></script>
 </body>
 </html>

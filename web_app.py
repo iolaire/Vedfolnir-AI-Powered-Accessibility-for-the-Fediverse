@@ -950,7 +950,14 @@ try:
         async_mode = 'threading'
     
     socketio = SocketIO(app, 
-                       cors_allowed_origins=["http://localhost:5000", "http://127.0.0.1:5000"], 
+                       cors_allowed_origins=[
+                           "http://localhost:5000", 
+                           "http://127.0.0.1:5000",
+                           "http://127.0.0.1:8000",
+                           "http://38.23.47.127",
+                           "https://vedfolnir.org",
+                           "https://www.vedfolnir.org"
+                       ], 
                        async_mode=async_mode,
                        logger=False,  # Disable to prevent WSGI errors
                        engineio_logger=False,  # Disable to prevent WSGI errors
