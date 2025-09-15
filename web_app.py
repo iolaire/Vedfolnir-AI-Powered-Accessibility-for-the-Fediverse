@@ -12,7 +12,12 @@ from flask_cors import CORS
 from sqlalchemy.exc import SQLAlchemyError
 
 # Initialize Flask app
+from werkzeug.middleware.proxy_fix import ProxyFix
+
 app = Flask(__name__)
+app.wsgi_app = ProxyFix(app.wsgi_app, x_for=1, x_proto=1, x_host=1)
+
+# app = Flask(__name__)
 app.config['SECRET_KEY'] = os.getenv('FLASK_SECRET_KEY', 'dev-key-change-in-production')
 
 # Configure static file caching and delivery
