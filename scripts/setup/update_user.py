@@ -246,14 +246,29 @@ def update_user(db_manager, users):
         return False
 
 def delete_user(db_manager, users):
-    """Delete a user (with confirmation)"""
+    """Delete a user (with confirmation) - redirects to comprehensive deletion script"""
     if not users:
         print("No users to delete.")
         return False
     
     print("\n🗑️  Delete User")
     print("-" * 15)
-    print("⚠️  WARNING: This will permanently delete the user!")
+    print("⚠️  WARNING: This will permanently delete the user and ALL their data!")
+    print("📝 For comprehensive user deletion, please use:")
+    print("   python3 scripts/setup/delete_user.py")
+    print("\nThis script provides:")
+    print("  • Complete data deletion (posts, images, sessions, etc.)")
+    print("  • Dry-run preview")
+    print("  • Safety confirmations")
+    print("  • Detailed deletion summary")
+    
+    use_comprehensive = input("\nWould you like to use the comprehensive deletion tool? (Y/n): ").strip().lower()
+    if use_comprehensive != 'n':
+        print("\n🔄 Please run: python3 scripts/setup/delete_user.py")
+        return False
+    
+    print("\n⚠️  BASIC DELETION (USER RECORD ONLY)")
+    print("This will only delete the user record, not their data!")
     
     # Select user to delete
     while True:
@@ -268,9 +283,10 @@ def delete_user(db_manager, users):
             print("Please enter a valid number.")
     
     print(f"\nUser to delete: {user.username} ({user.email}) - {user.role.value}")
+    print("⚠️  This will NOT delete their posts, images, or other data!")
     
     # Confirmation
-    confirm = input("Type 'DELETE' to confirm deletion: ").strip()
+    confirm = input("Type 'DELETE' to confirm basic deletion: ").strip()
     if confirm != "DELETE":
         print("Deletion cancelled.")
         return False
@@ -280,7 +296,9 @@ def delete_user(db_manager, users):
             user = session.merge(user)  # Reattach to session
             session.delete(user)
             session.commit()
-            print(f"✅ Successfully deleted user '{user.username}'!")
+            print(f"✅ Successfully deleted user record for '{user.username}'!")
+            print("⚠️  User data (posts, images, etc.) was NOT deleted.")
+            print("   Use scripts/maintenance/delete_user_data.py to clean up orphaned data.")
             return True
             
     except Exception as e:
