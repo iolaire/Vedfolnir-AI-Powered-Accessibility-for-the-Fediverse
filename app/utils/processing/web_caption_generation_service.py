@@ -42,7 +42,7 @@ class WebCaptionGenerationService:
         
         # Background task management
         self._background_tasks = set()
-        self._shutdown_event = asyncio.Event()
+        self._shutdown_event = None  # Lazy-initialized when needed
         
     async def start_caption_generation(
         self, 
@@ -371,6 +371,10 @@ class WebCaptionGenerationService:
         logger.info("Background caption generation processor started")
         
         try:
+            # Initialize shutdown event if not already done
+            if self._shutdown_event is None:
+                self._shutdown_event = asyncio.Event()
+            
             while not self._shutdown_event.is_set():
                 try:
                     # Get next task from queue
@@ -530,7 +534,8 @@ class WebCaptionGenerationService:
         logger.info("Shutting down caption generation service")
         
         # Signal shutdown
-        self._shutdown_event.set()
+        if self._shutdown_event is not None:
+            self._shutdown_event.set()
         
         # Cancel all background tasks
         for task in self._background_tasks:
@@ -564,7 +569,7 @@ class WebCaptionGenerationService:
                 'queue_stats': queue_stats,
                 'active_progress_sessions': len(active_sessions),
                 'background_processors': background_tasks_count,
-                'service_status': 'running' if not self._shutdown_event.is_set() else 'shutting_down'
+                'service_status': 'running' if self._shutdown_event is None or not self._shutdown_event.is_set() else 'shutting_down'
             }
             
         except Exception as e:
