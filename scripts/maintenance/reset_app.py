@@ -319,13 +319,276 @@ class AppResetManager:
         
         return True
     
+    def delete_all_user_data(self, dry_run=False):
+        """Delete all user data (posts, images, sessions, platforms, etc.) for all users"""
+        if not self.config:
+            logger.error("Cannot delete user data without valid configuration")
+            return False
+        
+        logger.info("🗑️  Deleting all user data (sessions, images, platforms, etc.)")
+        
+        results = {
+            'users_processed': 0,
+            'posts': 0,
+            'images': 0,
+            'image_files': 0,
+            'processing_runs': 0,
+            'platform_connections': 0,
+            'caption_tasks': 0,
+            'caption_settings': 0,
+            'user_sessions_db': 0,
+            'user_sessions_redis': 0,
+            'job_audit_logs': 0,
+            'gdpr_audit_logs': 0,
+            'storage_events': 0,
+            'storage_overrides': 0,
+            'directories_removed': 0
+        }
+        
+        if dry_run:
+            logger.info("DRY RUN - Would delete all user data")
+            # Preview what would be deleted
+            try:
+                with self.db_manager.get_session() as session:
+                    from models import User, Post, Image, ProcessingRun, PlatformConnection, UserSession
+                    from models import CaptionGenerationTask, CaptionGenerationUserSettings, JobAuditLog
+                    from models import GDPRAuditLog, StorageEventLog, StorageOverride
+                    
+                    users = session.query(User).all()
+                    results['users_processed'] = len(users)
+                    results['posts'] = session.query(Post).count()
+                    results['images'] = session.query(Image).count()
+                    results['processing_runs'] = session.query(ProcessingRun).count()
+                    results['platform_connections'] = session.query(PlatformConnection).count()
+                    results['caption_tasks'] = session.query(CaptionGenerationTask).count()
+                    results['caption_settings'] = session.query(CaptionGenerationUserSettings).count()
+                    results['user_sessions_db'] = session.query(UserSession).count()
+                    results['job_audit_logs'] = session.query(JobAuditLog).count()
+                    results['gdpr_audit_logs'] = session.query(GDPRAuditLog).count()
+                    results['storage_events'] = session.query(StorageEventLog).count()
+                    results['storage_overrides'] = session.query(StorageOverride).count()
+                    
+                    # Count image files
+                    images = session.query(Image).all()
+                    for image in images:
+                        if image.local_path and os.path.exists(image.local_path):
+                            results['image_files'] += 1
+                    
+                    # Count user directories
+                    for user in users:
+                        user_dirs = [
+                            f"storage/images/user_{user.id}",
+                            f"storage/temp/user_{user.id}",
+                            f"storage/backups/user_{user.id}"
+                        ]
+                        for dir_path in user_dirs:
+                            if os.path.exists(dir_path):
+                                results['directories_removed'] += 1
+                    
+                    # Count Redis sessions
+                    if self.redis_client:
+                        try:
+                            session_keys = self.redis_client.keys("vedfolnir:session:*")
+                            results['user_sessions_redis'] = len(session_keys)
+                        except Exception as e:
+                            logger.warning(f"Could not count Redis sessions: {e}")
+                    
+                    self._print_deletion_summary(results, dry_run=True)
+                    return True
+            except Exception as e:
+                logger.error(f"❌ Failed to preview user data deletion: {e}")
+                return False
+        
+        try:
+            with self.db_manager.get_session() as session:
+                from models import User, Post, Image, ProcessingRun, PlatformConnection, UserSession
+                from models import CaptionGenerationTask, CaptionGenerationUserSettings, JobAuditLog
+                from models import GDPRAuditLog, StorageEventLog, StorageOverride
+                
+                # Get all users
+                users = session.query(User).all()
+                results['users_processed'] = len(users)
+                
+                logger.info(f"Processing {len(users)} users...")
+                
+                # Delete data for each user
+                for user in users:
+                    logger.info(f"Deleting data for user: {user.username} (ID: {user.id})")
+                    
+                    # Delete posts and images
+                    user_posts = session.query(Post).filter_by(user_id=user.id).all()
+                    results['posts'] += len(user_posts)
+                    
+                    # Get images for this user
+                    user_platforms = session.query(PlatformConnection).filter_by(user_id=user.id).all()
+                    platform_ids = [p.id for p in user_platforms]
+                    
+                    user_images = []
+                    if user_posts:
+                        post_ids = [post.id for post in user_posts]
+                        post_images = session.query(Image).filter(Image.post_id.in_(post_ids)).all()
+                        user_images.extend(post_images)
+                    
+                    if platform_ids:
+                        platform_images = session.query(Image).filter(Image.platform_connection_id.in_(platform_ids)).all()
+                        existing_image_ids = {img.id for img in user_images}
+                        for img in platform_images:
+                            if img.id not in existing_image_ids:
+                                user_images.append(img)
+                    
+                    results['images'] += len(user_images)
+                    
+                    # Delete image files
+                    for image in user_images:
+                        if image.local_path and os.path.exists(image.local_path):
+                            try:
+                                os.remove(image.local_path)
+                                results['image_files'] += 1
+                            except Exception as e:
+                                logger.error(f"Error deleting image file {image.local_path}: {e}")
+                    
+                    # Delete database records
+                    for image in user_images:
+                        session.delete(image)
+                    for post in user_posts:
+                        session.delete(post)
+                    
+                    # Delete processing runs
+                    user_runs = session.query(ProcessingRun).filter_by(user_id=user.id).all()
+                    results['processing_runs'] += len(user_runs)
+                    for run in user_runs:
+                        session.delete(run)
+                    
+                    # Delete platform connections
+                    results['platform_connections'] += len(user_platforms)
+                    for platform in user_platforms:
+                        session.delete(platform)
+                    
+                    # Delete caption data
+                    user_tasks = session.query(CaptionGenerationTask).filter_by(user_id=user.id).all()
+                    user_settings = session.query(CaptionGenerationUserSettings).filter_by(user_id=user.id).all()
+                    results['caption_tasks'] += len(user_tasks)
+                    results['caption_settings'] += len(user_settings)
+                    for task in user_tasks:
+                        session.delete(task)
+                    for setting in user_settings:
+                        session.delete(setting)
+                    
+                    # Delete user sessions
+                    user_sessions = session.query(UserSession).filter_by(user_id=user.id).all()
+                    results['user_sessions_db'] += len(user_sessions)
+                    for user_session in user_sessions:
+                        session.delete(user_session)
+                    
+                    # Delete audit logs
+                    job_logs = session.query(JobAuditLog).filter_by(user_id=user.id).all()
+                    gdpr_logs = session.query(GDPRAuditLog).filter_by(user_id=user.id).all()
+                    results['job_audit_logs'] += len(job_logs)
+                    results['gdpr_audit_logs'] += len(gdpr_logs)
+                    for log in job_logs:
+                        session.delete(log)
+                    for log in gdpr_logs:
+                        session.delete(log)
+                    
+                    # Delete storage data
+                    storage_events = session.query(StorageEventLog).filter_by(user_id=user.id).all()
+                    storage_overrides = session.query(StorageOverride).filter_by(admin_user_id=user.id).all()
+                    results['storage_events'] += len(storage_events)
+                    results['storage_overrides'] += len(storage_overrides)
+                    for event in storage_events:
+                        session.delete(event)
+                    for override in storage_overrides:
+                        session.delete(override)
+                    
+                    # Delete user directories
+                    user_dirs = [
+                        f"storage/images/user_{user.id}",
+                        f"storage/temp/user_{user.id}",
+                        f"storage/backups/user_{user.id}"
+                    ]
+                    for dir_path in user_dirs:
+                        if os.path.exists(dir_path):
+                            try:
+                                shutil.rmtree(dir_path)
+                                results['directories_removed'] += 1
+                            except Exception as e:
+                                logger.error(f"Error deleting directory {dir_path}: {e}")
+                
+                # Clear all Redis sessions
+                if self.redis_client:
+                    try:
+                        session_keys = self.redis_client.keys("vedfolnir:session:*")
+                        if session_keys:
+                            deleted_count = self.redis_client.delete(*session_keys)
+                            results['user_sessions_redis'] = deleted_count
+                        
+                        # Clear platform cache
+                        platform_keys = self.redis_client.keys("user_platforms:*")
+                        if platform_keys:
+                            self.redis_client.delete(*platform_keys)
+                        
+                        platform_individual_keys = self.redis_client.keys("platform:*")
+                        if platform_individual_keys:
+                            self.redis_client.delete(*platform_individual_keys)
+                        
+                        platform_stats_keys = self.redis_client.keys("platform_stats:*")
+                        if platform_stats_keys:
+                            self.redis_client.delete(*platform_stats_keys)
+                        
+                        other_keys = self.redis_client.keys("vedfolnir:*")
+                        if other_keys:
+                            self.redis_client.delete(*other_keys)
+                        
+                    except Exception as e:
+                        logger.error(f"Error clearing Redis data: {e}")
+                
+                session.commit()
+                
+                self._print_deletion_summary(results, dry_run=False)
+                logger.info("✅ All user data deleted successfully")
+                return True
+                
+        except Exception as e:
+            logger.error(f"❌ Failed to delete user data: {e}")
+            return False
+    
+    def _print_deletion_summary(self, results, dry_run=False):
+        """Print deletion summary"""
+        total_items = sum(v for k, v in results.items() if k != 'users_processed')
+        
+        logger.info(f"\n{'=' * 60}")
+        logger.info(f"{'DRY RUN SUMMARY' if dry_run else 'DELETION SUMMARY'}")
+        logger.info(f"{'=' * 60}")
+        logger.info(f"Users Processed: {results['users_processed']}")
+        logger.info(f"Posts: {results['posts']}")
+        logger.info(f"Images (DB): {results['images']}")
+        logger.info(f"Image Files: {results['image_files']}")
+        logger.info(f"Processing Runs: {results['processing_runs']}")
+        logger.info(f"Platform Connections: {results['platform_connections']}")
+        logger.info(f"Caption Tasks: {results['caption_tasks']}")
+        logger.info(f"Caption Settings: {results['caption_settings']}")
+        logger.info(f"DB Sessions: {results['user_sessions_db']}")
+        logger.info(f"Redis Sessions: {results['user_sessions_redis']}")
+        logger.info(f"Job Audit Logs: {results['job_audit_logs']}")
+        logger.info(f"GDPR Audit Logs: {results['gdpr_audit_logs']}")
+        logger.info(f"Storage Events: {results['storage_events']}")
+        logger.info(f"Storage Overrides: {results['storage_overrides']}")
+        logger.info(f"User Directories: {results['directories_removed']}")
+        logger.info(f"{'.' * 40}")
+        logger.info(f"Total Items: {total_items}")
+        logger.info(f"{'=' * 60}")
+
     def reset_complete(self, dry_run=False):
         """Complete application reset - database, storage, and environment"""
         logger.info("🔄 Performing complete application reset")
         
         success = True
         
-        # Reset database
+        # Delete all user data first (sessions, images, platforms, etc.)
+        if not self.delete_all_user_data(dry_run):
+            success = False
+        
+        # Reset database (this will recreate tables and initialize system configs)
         if not self.reset_database_only(dry_run):
             success = False
         
@@ -513,8 +776,10 @@ Examples:
   %(prog)s --reset-db                  # Reset database only (keep files)
   %(prog)s --reset-storage --dry-run   # Preview storage reset
   %(prog)s --reset-storage             # Reset storage only (keep database)
-  %(prog)s --reset-complete --dry-run  # Preview complete reset
-  %(prog)s --reset-complete            # Complete reset (database + storage)
+  %(prog)s --delete-all-user-data --dry-run # Preview deletion of all user data (keep DB structure)
+  %(prog)s --delete-all-user-data      # Delete all user data (keep database structure)
+  %(prog)s --reset-complete --dry-run  # Preview complete reset (ALL user data + database + storage)
+  %(prog)s --reset-complete            # Complete reset (ALL user data + database + storage)
   %(prog)s --reset-user user123        # Reset data for specific user
         """
     )
@@ -531,8 +796,10 @@ Examples:
                        help='Reset database only (keep image files)')
     parser.add_argument('--reset-storage', action='store_true',
                        help='Reset storage files only (keep database)')
+    parser.add_argument('--delete-all-user-data', action='store_true',
+                       help='Delete all user data (sessions, images, platforms, etc.) but keep database structure')
     parser.add_argument('--reset-complete', action='store_true',
-                       help='Complete reset - database and storage (DESTRUCTIVE)')
+                       help='Complete reset - ALL user data, database and storage (DESTRUCTIVE)')
     parser.add_argument('--reset-user', type=str, metavar='USER_ID',
                        help='Reset data for specific user')
     parser.add_argument('--force', action='store_true',
@@ -553,11 +820,15 @@ Examples:
         return 0
     
     # Confirmation for destructive operations
-    destructive_ops = [args.reset_db, args.reset_storage, args.reset_complete, args.clear_redis]
+    destructive_ops = [args.reset_db, args.reset_storage, args.reset_complete, args.clear_redis, args.delete_all_user_data]
     if any(destructive_ops) and not args.dry_run and not args.force:
         print("\n⚠️  WARNING: This operation will permanently delete data!")
         if args.clear_redis:
             print("Redis cache clearing will remove all sessions and platform cache data.")
+        if args.delete_all_user_data:
+            print("User data deletion will remove ALL posts, images, sessions, platforms, and user files.")
+        if args.reset_complete:
+            print("Complete reset will delete ALL user data AND reset the entire database structure.")
         print("Make sure you have backups if needed.")
         response = input("Are you sure you want to continue? (type 'yes' to confirm): ")
         if response.lower() != 'yes':
@@ -572,6 +843,9 @@ Examples:
     
     if args.clear_redis:
         success &= reset_manager.clear_redis_cache(dry_run=args.dry_run)
+    
+    if args.delete_all_user_data:
+        success &= reset_manager.delete_all_user_data(dry_run=args.dry_run)
     
     if args.reset_db:
         success &= reset_manager.reset_database_only(dry_run=args.dry_run)

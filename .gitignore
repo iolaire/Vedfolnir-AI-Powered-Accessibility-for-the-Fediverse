@@ -149,6 +149,8 @@ tests/scripts/.last_created_user.txt
 # Person setup file
 scripts/setup/generate_env_secrets_ILM.py
 
+#production setup file
+scripts/setup/recreate_env_from_current_production.py
 #promptz.dev kiro specs for Amazon Q Developer
 .amazonq/
 
