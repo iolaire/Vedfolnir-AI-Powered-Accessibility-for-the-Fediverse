@@ -111,6 +111,9 @@
     <!-- Skip to content link for accessibility -->
     <a href="#page-content" class="skip-to-content">Skip to main content</a>
     
+    <!-- Development Banner -->
+    {% include 'includes/development_banner.html' %}
+    
     <nav class="navbar navbar-expand-lg navbar-dark bg-dark">
         <div class="container">
             <a class="navbar-brand d-flex align-items-center" href="{{ url_for('main.landing') }}" aria-label="Vedfolnir - Go to landing page">
@@ -293,7 +296,7 @@
     <script src="{{ url_for('static', filename='js/progress-bar-utils.js', v='1.0.0') }}" nonce="{{ g.csp_nonce if g.csp_nonce else '' }}"></script>
     <!-- WebSocket Transport Optimizer -->
     <script src="{{ url_for('static', filename='js/websocket-transport-optimizer.js', v='1.0.0') }}" nonce="{{ g.csp_nonce if g.csp_nonce else '' }}"></script>
-    <script src="{{ url_for('static', filename='js/websocket-bundle.js', v='1.0.0') }}" nonce="{{ g.csp_nonce if g.csp_nonce else '' }}"></script>
+    <script src="{{ url_for('static', filename='js/websocket-bundle.js', v='1.0.1') }}" nonce="{{ g.csp_nonce if g.csp_nonce else '' }}"></script>
     
     <!-- Unified Notification System Scripts -->
     <!-- Unified Notification System -->

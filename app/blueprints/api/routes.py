@@ -68,6 +68,97 @@ def update_caption(image_id):
         current_app.logger.error(f"Unexpected error updating caption: {str(e)}")
         return internal_error("Failed to update caption", str(e))
 
+@api_bp.route('/approve_and_post/<int:image_id>', methods=['POST'])
+@login_required
+def approve_and_post(image_id):
+    """Approve and post caption to platform"""
+    try:
+        data = request.get_json()
+        if not data or 'caption' not in data:
+            return jsonify({'success': False, 'error': 'Caption required'}), 400
+        
+        unified_session_manager = getattr(current_app, 'unified_session_manager', None)
+        if not unified_session_manager:
+            return jsonify({'success': False, 'error': 'Session manager not available'}), 500
+
+        with unified_session_manager.get_db_session() as session:
+            # Get image with user filtering
+            from models import Image, PlatformConnection, ProcessingStatus
+            
+            query = session.query(Image).filter_by(id=image_id)
+
+            # Filter by user's platforms (applies to all users including admins)
+            user_platforms = session.query(PlatformConnection).filter_by(
+                user_id=current_user.id, is_active=True
+            ).all()
+            platform_ids = [p.id for p in user_platforms]
+            if platform_ids:
+                query = query.filter(Image.platform_connection_id.in_(platform_ids))
+            else:
+                return jsonify({'success': False, 'error': 'No platforms found for user'}), 403
+
+            image = query.first()
+            if not image:
+                return jsonify({'success': False, 'error': 'Image not found or access denied'}), 404
+                
+            caption = data['caption'].strip()
+            image.generated_caption = caption
+            
+            # Post the caption to the platform
+            posted = False
+            try:
+                # Get the platform connection
+                platform_connection = session.query(PlatformConnection).filter_by(
+                    id=image.platform_connection_id
+                ).first()
+                
+                if platform_connection:
+                    # Import ActivityPub client
+                    from app.services.activitypub.components.activitypub_client import ActivityPubClient
+                    import asyncio
+                    
+                    # Create client and post caption
+                    ap_client = ActivityPubClient(platform_connection)
+                    
+                    # Use the image_post_id from the image record to update the caption
+                    success = asyncio.run(ap_client.update_media_caption(
+                        image.image_post_id, 
+                        caption
+                    ))
+                    
+                    if success:
+                        image.status = ProcessingStatus.POSTED
+                        posted = True
+                        current_app.logger.info(f"Successfully posted caption for image {image.id}")
+                    else:
+                        image.status = ProcessingStatus.APPROVED
+                        current_app.logger.warning(f"Failed to post caption for image {image.id}, marked as approved")
+                else:
+                    image.status = ProcessingStatus.APPROVED
+                    current_app.logger.error(f"Platform connection not found for image {image.id}")
+                    
+            except Exception as e:
+                current_app.logger.error(f"Error posting caption for image {image.id}: {e}")
+                image.status = ProcessingStatus.APPROVED
+            
+            session.commit()
+            
+            return jsonify({
+                'success': True, 
+                'message': 'Caption approved and posted successfully' if posted else 'Caption approved successfully',
+                'posted': posted
+            })
+            
+    except (KeyError, ValueError) as e:
+        current_app.logger.error(f"Invalid request data for approve and post: {str(e)}")
+        return validation_error("Invalid request data", str(e))
+    except AttributeError as e:
+        current_app.logger.error(f"Configuration error in approve and post: {str(e)}")
+        return configuration_error("Service configuration error", str(e))
+    except Exception as e:
+        current_app.logger.error(f"Unexpected error in approve and post: {str(e)}")
+        return internal_error("Failed to approve and post caption", str(e))
+
 @api_bp.route('/regenerate_caption/<int:image_id>', methods=['POST'])
 @login_required
 def regenerate_caption(image_id):

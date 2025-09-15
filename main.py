@@ -94,8 +94,11 @@ class Vedfolnir:
                                 logger.error(f"User '{user_id}' not found in database")
                                 continue
                             
+                            # Store the actual user ID (integer) for database operations
+                            actual_user_id = user.id
+                            
                             # Get user's platform connections
-                            platform_connections = db_manager.get_user_platform_connections(user.id, active_only=True)
+                            platform_connections = db_manager.get_user_platform_connections(actual_user_id, active_only=True)
                             if not platform_connections:
                                 logger.warning(f"No active platform connections found for user '{user_id}'")
                                 continue
@@ -154,7 +157,7 @@ class Vedfolnir:
         """Process a single user's posts
         
         Args:
-            user_id: The ID of the user to process
+            user_id: The username of the user to process
             ap_client: ActivityPub client instance
             image_processor: Image processor instance
             caption_generator: Caption generator instance (can be None if --no-ollama is set)
@@ -163,19 +166,23 @@ class Vedfolnir:
         """
         logger.info(f"Processing user: {user_id}")
         
-        # Set platform context for database operations
-        if platform_connection:
-            # Get user from database to get user ID
-            with self.db.get_session() as session:
-                from models import User
-                user = session.query(User).filter_by(username=user_id).first()
-                if user:
-                    # Set platform context on the database manager
+        # Get user from database to get actual user ID (integer)
+        actual_user_id = None
+        with self.db.get_session() as session:
+            from models import User
+            user = session.query(User).filter_by(username=user_id).first()
+            if user:
+                actual_user_id = user.id
+                # Set platform context on the database manager
+                if platform_connection:
                     self.db.set_platform_context(user.id, platform_connection.id)
                     logger.info(f"Set platform context for user {user_id} on platform {platform_connection.name}")
+            else:
+                logger.error(f"User '{user_id}' not found in database")
+                return
         
-        # Create processing run record for this user
-        self.current_run = self._create_processing_run(user_id, batch_id)
+        # Create processing run record for this user using actual user ID
+        self.current_run = self._create_processing_run(actual_user_id, batch_id)
         
         try:
             # Determine which user's posts to fetch
@@ -195,7 +202,7 @@ class Vedfolnir:
             # Process each post
             user_posts_count = 0
             for post in posts:
-                await self._process_post(post, ap_client, image_processor, caption_generator)
+                await self._process_post(post, ap_client, image_processor, caption_generator, actual_user_id)
                 self.stats['posts_processed'] += 1
                 user_posts_count += 1
             
@@ -210,11 +217,11 @@ class Vedfolnir:
             self.stats['errors'] += 1
             self._complete_processing_run(error=str(e))
     
-    def _create_processing_run(self, user_id: str, batch_id: str = None) -> ProcessingRun:
+    def _create_processing_run(self, user_id: int, batch_id: str = None) -> ProcessingRun:
         """Create a new processing run record
         
         Args:
-            user_id: The ID of the user being processed
+            user_id: The integer ID of the user being processed
             batch_id: Optional batch ID to group runs that are part of the same batch
         """
         session = self.db.get_session()
@@ -275,18 +282,17 @@ class Vedfolnir:
             session.close()
     
     async def _process_post(self, post: Dict[str, Any], ap_client: ActivityPubClient, 
-                          image_processor: ImageProcessor, caption_generator):
+                          image_processor: ImageProcessor, caption_generator, actual_user_id: int):
         """Process a single post for alt text generation"""
         try:
             post_id = post.get('id', 'unknown')
-            user_id = post.get('attributedTo', '').split('/')[-1]
             
             logger.info(f"Processing post: {post_id}")
             
-            # Save post to database
+            # Save post to database using the actual user ID (integer)
             db_post = self.db.get_or_create_post(
                 post_id=post_id,
-                user_id=user_id,
+                user_id=actual_user_id,
                 post_url=post_id,
                 post_content=post.get('content', '')
             )

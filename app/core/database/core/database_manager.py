@@ -998,13 +998,13 @@ class DatabaseManager:
             logger.debug("No platform context set for data injection")
             return data
     
-    def get_or_create_post(self, post_id: str, user_id: str, post_url: str, post_content: str = None):
+    def get_or_create_post(self, post_id: str, user_id: int, post_url: str, post_content: str = None):
         """
         Get existing post or create new one with platform validation.
         
         Args:
             post_id: Platform-specific post ID
-            user_id: User ID who owns the post
+            user_id: Integer user ID who owns the post
             post_url: URL of the post
             post_content: Optional post content
             
@@ -1019,8 +1019,8 @@ class DatabaseManager:
         if not post_id or not post_id.strip():
             raise PlatformValidationError("Post ID cannot be empty")
         
-        if not user_id or not user_id.strip():
-            raise PlatformValidationError("User ID cannot be empty")
+        if not user_id or not isinstance(user_id, int):
+            raise PlatformValidationError("User ID must be a valid integer")
         
         if not post_url or not post_url.strip():
             raise PlatformValidationError("Post URL cannot be empty")
@@ -1048,7 +1048,7 @@ class DatabaseManager:
                 # Inject platform data when creating
                 post_data = {
                     'post_id': post_id.strip(),
-                    'user_id': user_id.strip(),
+                    'user_id': user_id,  # Already an integer
                     'post_url': post_url,
                     'post_content': post_content.strip() if post_content else None
                 }

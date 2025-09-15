@@ -913,12 +913,15 @@ document.addEventListener('DOMContentLoaded', function() {
     
     // Initialize WebSocket client
     window.VedfolnirWS = new VedfolnirWebSocket({
-        autoConnect: true,
+        autoConnect: false,  // Don't auto-connect, we'll check authentication first
         enableDebugMode: false
     });
     
-    // Connect WebSocket
-    window.VedfolnirWS.connect().then(() => {
+    // Only connect WebSocket if user is authenticated
+    if (document.body.dataset.authenticated === 'true') {
+        console.log('User is authenticated, connecting WebSocket...');
+        // Connect WebSocket
+        window.VedfolnirWS.connect().then(() => {
         console.log('✅ WebSocket bundle initialization completed');
         
         // Initialize keep-alive manager
@@ -927,9 +930,12 @@ document.addEventListener('DOMContentLoaded', function() {
             console.log('✅ WebSocket keep-alive initialized');
         }
         
-    }).catch((error) => {
-        console.error('❌ WebSocket bundle initialization failed:', error);
-    });
+        }).catch((error) => {
+            console.error('❌ WebSocket bundle initialization failed:', error);
+        });
+    } else {
+        console.log('User not authenticated, skipping WebSocket connection');
+    }
 });
 
 // Global function to initialize WebSocket after login

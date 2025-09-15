@@ -391,14 +391,13 @@ document.addEventListener('DOMContentLoaded', function() {
             approvePostBtn.innerHTML = '<span class="spinner-border spinner-border-sm" role="status" aria-hidden="true"></span> Posting...';
             
             try {
-                const response = await window.csrfHandler.secureFetch(`/api/update_caption/${imageId}`, {
+                const response = await window.csrfHandler.secureFetch(`/api/approve_and_post/${imageId}`, {
                     method: 'POST',
                     headers: {
                         'Content-Type': 'application/json'
                     },
                     body: JSON.stringify({
-                        caption: caption,
-                        action: 'approve'
+                        caption: caption
                     })
                 });
                 
@@ -437,10 +436,10 @@ document.addEventListener('DOMContentLoaded', function() {
                         window.location.href = '/review';
                     }, 2000);
                 } else {
-                    alert(`Error: ${result.error || 'Failed to update caption'}`);
+                    alert(`Error: ${result.error || 'Failed to approve and post caption'}`);
                 }
             } catch (error) {
-                console.error('Error updating caption:', error);
+                console.error('Error approving and posting caption:', error);
                 alert('Error: Failed to connect to server');
             } finally {
                 // Reset button state

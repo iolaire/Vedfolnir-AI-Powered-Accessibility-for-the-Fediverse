@@ -1084,12 +1084,12 @@ document.addEventListener('DOMContentLoaded', function() {
             const userElements = document.querySelectorAll('[data-user-id], .user-authenticated, .admin-authenticated');
             const logoutLinks = document.querySelectorAll('a[href*="logout"]');
             
-            if (userElements.length > 0 || logoutLinks.length > 0) {
-                console.log('User appears to be authenticated, connecting WebSocket...');
+            // Only connect WebSocket if user is authenticated (same check as session sync)
+            if (document.body.dataset.authenticated === 'true') {
+                console.log('User is authenticated, connecting WebSocket...');
                 window.VedfolnirWS.connect();
             } else {
-                console.log('User authentication status unclear, attempting connection anyway...');
-                window.VedfolnirWS.connect();
+                console.log('User not authenticated, skipping WebSocket connection');
             }
         }
         
