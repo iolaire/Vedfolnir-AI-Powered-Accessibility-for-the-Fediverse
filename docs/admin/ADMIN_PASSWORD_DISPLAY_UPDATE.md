@@ -27,7 +27,7 @@ Updated the ILM Quick Setup script (`scripts/setup/generate_env_secrets_ILM.py`)
    • Admin user: admin (iolaire@iolaire.net)
    • Admin password: P@ssw0rd1234567890abcdef
    • Reviewer user: iolaire (iolaire@usa.net)
-   • Reviewer password: g9bDFB9JzgEaVZx
+   • Reviewer password: user123
    • Database: MySQL with ILM defaults
    • Redis: Configured with session management
    • WebSocket: Development-optimized settings
@@ -39,7 +39,7 @@ Updated the ILM Quick Setup script (`scripts/setup/generate_env_secrets_ILM.py`)
 
 🔑 Login Credentials:
    Admin: admin / P@ssw0rd1234567890abcdef
-   Reviewer: iolaire / g9bDFB9JzgEaVZx
+   Reviewer: iolaire / user123
 ```
 
 ## Benefits

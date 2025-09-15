@@ -20,7 +20,7 @@ from urllib.parse import urljoin
 
 # Test credentials
 TEST_USERNAME = "iolaire@usa.net"
-TEST_PASSWORD = "g9bDFB9JzgEaVZx"
+TEST_PASSWORD = "user123"
 BASE_URL = "http://127.0.0.1:5000"
 
 class PlatformSessionTester:

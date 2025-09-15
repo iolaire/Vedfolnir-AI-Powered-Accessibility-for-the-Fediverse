@@ -114,7 +114,7 @@ def test_iolaire_login():
     try:
         login_data = {
             'username_or_email': 'iolaire',
-            'password': 'g9bDFB9JzgEaVZx'
+            'password': 'user123'
         }
         response = session.post(f"{base_url}/login", data=login_data, allow_redirects=False)
         

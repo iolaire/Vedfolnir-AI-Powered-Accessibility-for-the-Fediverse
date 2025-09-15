@@ -26,7 +26,7 @@ def test_csp_compliance():
     
     login_data = {
         'username_or_email': 'admin',
-        'password': 'a[.meG#15n)@H-_<y]5d8TS%',
+        'password': 'admin123',
         'csrf_token': csrf_token
     }
     

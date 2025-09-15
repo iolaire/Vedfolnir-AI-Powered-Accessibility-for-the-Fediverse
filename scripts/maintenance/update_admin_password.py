@@ -23,7 +23,7 @@ def update_admin_password():
         config = Config()
         db_manager = DatabaseManager(config)
         
-        new_password = "a[.meG#15n)@H-_<y]5d8TS%"
+        new_password = "admin123"
         
         print("Updating admin password...")
         

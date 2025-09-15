@@ -116,7 +116,7 @@ def test_login_step_by_step():
         
         user_data = {
             'username_or_email': 'iolaire',
-            'password': 'g9bDFB9JzgEaVZx',  # From our test
+            'password': 'user123',  # From our test
             'csrf_token': fresh_csrf
         }
         

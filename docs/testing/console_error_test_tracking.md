@@ -43,7 +43,7 @@ Based on the documentation in `tests/playwright/0830_17_52_README.md`, the Conso
 Before running tests, we need to verify:
 1. ✅ Vedfolnir web application is running on `http://127.0.0.1:5000`
 2. ✅ Admin credentials: `admin / )z0p>14_S9>}samLqf0t?{!Y`
-3. ✅ User credentials: `iolaire@usa.net / g9bDFB9JzgEaVZx`
+3. ✅ User credentials: `iolaire@usa.net / user123`
 4. ✅ Playwright dependencies installed
 5. ✅ Test files exist in `tests/playwright/`
 

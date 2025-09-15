@@ -66,7 +66,7 @@ def test_user_authentication():
             
             # Test iolaire user
             iolaire_user = db_session.query(User).filter_by(username='iolaire').first()
-            if iolaire_user and iolaire_user.check_password('g9bDFB9JzgEaVZx'):
+            if iolaire_user and iolaire_user.check_password('user123'):
                 print(f"✅ Iolaire user authenticated: {iolaire_user.username} (ID: {iolaire_user.id})")
                 
                 # Create session for iolaire user

@@ -133,7 +133,7 @@ class MigrationValidationTools:
         # Test data
         self._test_credentials = {
             'admin': {'username': 'admin', 'password': ')z0p>14_S9>}samLqf0t?{!Y'},
-            'user': {'username': 'iolaire@usa.net', 'password': 'g9bDFB9JzgEaVZx'}
+            'user': {'username': 'iolaire@usa.net', 'password': 'user123'}
         }
         
         self.logger.info(f"Migration validation tools initialized for {self.project_root}")

@@ -200,7 +200,7 @@ def main():
         },
         {
             'username': 'iolaire',
-            'password': 'g9bDFB9JzgEaVZx',
+            'password': 'user123',
             'user_type': 'Regular User'
         }
     ]

@@ -19,7 +19,7 @@ def test_platform_switch():
     # First, try to login
     login_data = {
         'username': 'iolaire',  # User who owns platform ID 2
-        'password': 'g9bDFB9JzgEaVZx'  # Correct password
+        'password': 'user123'  # Correct password
     }
     
     session = requests.Session()

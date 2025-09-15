@@ -32,7 +32,7 @@ def create_authenticated_session(base_url="http://127.0.0.1:8000", username="adm
     print(f"Found CSRF token: {csrf_token[:20]}...")
     
     # Use provided password
-    password = "a[.meG#15n)@H-_<y]5d8TS%"
+    password = "admin123"
     
     # Login
     login_data = {

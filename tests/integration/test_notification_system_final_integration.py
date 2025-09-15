@@ -787,7 +787,7 @@ class TestNotificationSystemWebAppIntegration(unittest.TestCase):
         
         self.user_credentials = {
             'email': 'iolaire@usa.net',
-            'password': 'g9bDFB9JzgEaVZx'
+            'password': 'user123'
         }
     
     def test_web_app_notification_endpoints(self):

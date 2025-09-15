@@ -33,7 +33,7 @@ def test_admin_access():
     print("\n2. Attempting login...")
     login_data = {
         'username_or_email': 'admin',
-        'password': 'a[.meG#15n)@H-_<y]5d8TS%',
+        'password': 'admin123',
         'csrf_token': csrf_token
     }
     

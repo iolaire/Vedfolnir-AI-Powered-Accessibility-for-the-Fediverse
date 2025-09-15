@@ -216,7 +216,7 @@ After successful integration, remove:
 
 ### Post-Integration Testing
 1. **Admin User Login**: username: `admin`, password: `5OIkH4M:%iaP7QbdU9wj2Sfj`
-2. **Regular User Login**: username: `iolaire`, password: `g9bDFB9JzgEaVZx`
+2. **Regular User Login**: username: `iolaire`, password: `user123`
 3. **Session Persistence**: Test browser restart, session timeout
 4. **Platform Switching**: Test switching between platforms
 5. **Cross-tab Sync**: Test multiple browser tabs

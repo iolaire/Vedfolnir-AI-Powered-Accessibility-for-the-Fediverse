@@ -17,7 +17,7 @@ from urllib.parse import urljoin
 
 # Test credentials
 TEST_USERNAME = "iolaire"
-TEST_PASSWORD = "g9bDFB9JzgEaVZx"
+TEST_PASSWORD = "user123"
 BASE_URL = "http://localhost:5000"
 
 class PlatformSessionDebugger:

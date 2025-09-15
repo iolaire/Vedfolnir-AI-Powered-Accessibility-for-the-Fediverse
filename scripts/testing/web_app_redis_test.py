@@ -124,7 +124,7 @@ LOGIN_TEMPLATE = """
     
     <h3>Test Credentials:</h3>
     <p><strong>Admin:</strong> username: admin, password: 5OIkH4M:%iaP7QbdU9wj2Sfj</p>
-    <p><strong>User:</strong> username: iolaire, password: g9bDFB9JzgEaVZx</p>
+    <p><strong>User:</strong> username: iolaire, password: user123</p>
 </body>
 </html>
 """

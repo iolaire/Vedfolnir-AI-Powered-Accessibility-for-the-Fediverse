@@ -29,7 +29,7 @@ def test_dashboard_with_browser():
             
             # Fill login form
             print("2. Filling login form...")
-            password = "jUrwov-8pozry-sorrar"
+            password = "user2123"
             
             page.fill('input[name="username_or_email"]', 'does')
             page.fill('input[name="password"]', password)

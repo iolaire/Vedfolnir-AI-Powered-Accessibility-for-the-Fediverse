@@ -45,7 +45,7 @@ The login system is working perfectly on the backend:
 ### Regular User:
 - **Username**: `iolaire`  
 - **Email**: `iolaire@usa.net`
-- **Password**: `g9bDFB9JzgEaVZx`
+- **Password**: `user123`
 
 ## 🧪 Manual Testing Steps
 
