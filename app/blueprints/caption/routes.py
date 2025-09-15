@@ -240,12 +240,20 @@ def cancel_generation(task_id):
         db_manager = current_app.config.get('db_manager')
         if not db_manager:
             current_app.logger.error("Database manager not found in app config")
-            return redirect(url_for('main.index'))
+            return error_response('Database manager not available', 500)
         
         caption_service = WebCaptionGenerationService(db_manager)
-        success = caption_service.cancel_task(task_id)
+        
+        # Validate that the task belongs to the current user
+        task_status = caption_service.get_task_status(task_id, current_user.id)
+        if not task_status:
+            return error_response('Task not found or access denied', 404)
+        
+        # Use the correct method name
+        success = caption_service.cancel_generation(task_id, current_user.id)
         
         if success:
+            current_app.logger.info(f"User {current_user.id} cancelled task {task_id}")
             return success_response(message='Task cancelled successfully')
         else:
             return error_response('Failed to cancel task', 500)
