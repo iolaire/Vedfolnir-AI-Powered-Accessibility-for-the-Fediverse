@@ -28,7 +28,7 @@
                     <label for="bulkActionSelect" class="form-label">
                         <strong>Select Action:</strong>
                     </label>
-                    <select class="form-select" id="bulkActionSelect" onchange="handleBulkActionChange()">
+                    <select class="form-select" id="bulkActionSelect" data-action="handle-bulk-action-change">
                         <option value="">Choose an action...</option>
                         <optgroup label="Job Control">
                             <option value="pause">Pause Selected Jobs</option>
@@ -108,13 +108,13 @@
                                     <div class="col-md-6">
                                         <h6>Quick Notes:</h6>
                                         <div class="btn-group-vertical w-100" role="group">
-                                            <button type="button" class="btn btn-sm btn-outline-secondary" onclick="addBulkQuickNote('Bulk review completed')">
+                                            <button type="button" class="btn btn-sm btn-outline-secondary" data-action="add-bulk-quick-note" data-note="Bulk review completed">
                                                 Bulk Review Completed
                                             </button>
-                                            <button type="button" class="btn btn-sm btn-outline-secondary" onclick="addBulkQuickNote('Priority processing required')">
+                                            <button type="button" class="btn btn-sm btn-outline-secondary" data-action="add-bulk-quick-note" data-note="Priority processing required">
                                                 Priority Processing Required
                                             </button>
-                                            <button type="button" class="btn btn-sm btn-outline-secondary" onclick="addBulkQuickNote('Quality check needed')">
+                                            <button type="button" class="btn btn-sm btn-outline-secondary" data-action="add-bulk-quick-note" data-note="Quality check needed">
                                                 Quality Check Needed
                                             </button>
                                         </div>
@@ -122,13 +122,13 @@
                                     <div class="col-md-6">
                                         <h6>Tags:</h6>
                                         <div class="d-flex flex-wrap gap-1">
-                                            <button type="button" class="btn btn-sm btn-outline-secondary" onclick="addBulkTag('#bulk-action')">
+                                            <button type="button" class="btn btn-sm btn-outline-secondary" data-action="add-bulk-tag" data-tag="#bulk-action">
                                                 #bulk-action
                                             </button>
-                                            <button type="button" class="btn btn-sm btn-outline-secondary" onclick="addBulkTag('#admin-review')">
+                                            <button type="button" class="btn btn-sm btn-outline-secondary" data-action="add-bulk-tag" data-tag="#admin-review">
                                                 #admin-review
                                             </button>
-                                            <button type="button" class="btn btn-sm btn-outline-secondary" onclick="addBulkTag('#priority')">
+                                            <button type="button" class="btn btn-sm btn-outline-secondary" data-action="add-bulk-tag" data-tag="#priority">
                                                 #priority
                                             </button>
                                         </div>
@@ -285,11 +285,11 @@
             <div class="modal-footer">
                 <div class="d-flex justify-content-between w-100">
                     <div>
-                        <button type="button" class="btn btn-outline-secondary" id="selectAllJobsBtn" onclick="selectAllJobs()">
+                        <button type="button" class="btn btn-outline-secondary" id="selectAllJobsBtn" data-action="select-all-jobs">
                             <i class="fas fa-check-square"></i>
                             Select All
                         </button>
-                        <button type="button" class="btn btn-outline-secondary" id="clearSelectionBtn" onclick="clearJobSelection()">
+                        <button type="button" class="btn btn-outline-secondary" id="clearSelectionBtn" data-action="clear-job-selection">
                             <i class="fas fa-square"></i>
                             Clear Selection
                         </button>
@@ -299,7 +299,7 @@
                             <i class="fas fa-times"></i>
                             Cancel
                         </button>
-                        <button type="button" class="btn btn-primary" id="executeBulkActionBtn" onclick="executeBulkAction()" disabled>
+                        <button type="button" class="btn btn-primary" id="executeBulkActionBtn" data-action="execute-bulk-action" disabled>
                             <i class="fas fa-play"></i>
                             Execute Action
                         </button>

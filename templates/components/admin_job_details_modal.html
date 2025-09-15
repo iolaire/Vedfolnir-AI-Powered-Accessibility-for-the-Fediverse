@@ -219,7 +219,7 @@ function renderJobDetails(job) {
                             <dt class="col-sm-4">Task ID:</dt>
                             <dd class="col-sm-8">
                                 <code class="small">${job.task_id}</code>
-                                <button class="btn btn-sm btn-outline-secondary ms-1" onclick="copyToClipboard('${job.task_id}')" title="Copy Task ID">
+                                <button class="btn btn-sm btn-outline-secondary ms-1" data-action="copy-clipboard" data-copy-text="${job.task_id}" title="Copy Task ID">
                                     <i class="fas fa-copy"></i>
                                 </button>
                             </dd>
@@ -500,7 +500,7 @@ function showJobDetailsError(message) {
             <strong>Error:</strong> ${message}
         </div>
         <div class="text-center">
-            <button class="btn btn-primary" onclick="loadJobDetails('${currentJobId}')">
+            <button class="btn btn-primary" data-action="load-job-details" data-job-id="${currentJobId}">
                 <i class="fas fa-redo"></i>
                 Retry
             </button>

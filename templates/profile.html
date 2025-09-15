@@ -207,7 +207,7 @@
                                 </div>
                                 {% if not session.is_current %}
                                 <button class="btn btn-outline-danger btn-sm"
-                                    onclick="terminateSession('{{ session.session_id }}')">
+                                    data-action="terminateSession" data-params="'{{ session.session_id }}'">
                                     <i class="bi bi-x-circle"></i>
                                 </button>
                                 {% endif %}
@@ -296,7 +296,7 @@
                                     <div class="d-flex gap-2">
                                         {% if not active_platform or platform.id != active_platform.id %}
                                         <button class="btn btn-outline-primary btn-sm flex-fill"
-                                            onclick="switchPlatform({{ platform.id }})">
+                                            data-action="switchPlatform" data-params="{{ platform.id }}">
                                             <i class="bi bi-arrow-right-circle me-1"></i>Switch
                                         </button>
                                         {% else %}
@@ -305,7 +305,7 @@
                                         </button>
                                         {% endif %}
                                         <button class="btn btn-outline-secondary btn-sm"
-                                            onclick="testPlatform({{ platform.id }})">
+                                            data-action="testPlatform" data-params="{{ platform.id }}">
                                             <i class="bi bi-wifi"></i>
                                         </button>
                                     </div>

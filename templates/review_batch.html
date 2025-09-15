@@ -97,7 +97,7 @@
         <form method="GET" class="row align-items-end">
             <div class="col-md-2">
                 <label for="status" class="form-label">Status Filter:</label>
-                <select name="status" id="status" class="form-select" onchange="this.form.submit()">
+                <select name="status" id="status" class="form-select" data-auto-submit="true">
                     <option value="">All Statuses</option>
                     {% for status in processing_statuses %}
                     <option value="{{ status.value }}" {{ 'selected' if status_filter == status.value else '' }}>
@@ -108,7 +108,7 @@
             </div>
             <div class="col-md-2">
                 <label for="sort_by" class="form-label">Sort By:</label>
-                <select name="sort_by" id="sort_by" class="form-select" onchange="this.form.submit()">
+                <select name="sort_by" id="sort_by" class="form-select" data-auto-submit="true">
                     <option value="created_at" {{ 'selected' if sort_by == 'created_at' else '' }}>Created Date</option>
                     <option value="updated_at" {{ 'selected' if sort_by == 'updated_at' else '' }}>Updated Date</option>
                     <option value="caption_quality_score" {{ 'selected' if sort_by == 'caption_quality_score' else '' }}>Quality Score</option>
@@ -116,14 +116,14 @@
             </div>
             <div class="col-md-2">
                 <label for="sort_order" class="form-label">Order:</label>
-                <select name="sort_order" id="sort_order" class="form-select" onchange="this.form.submit()">
+                <select name="sort_order" id="sort_order" class="form-select" data-auto-submit="true">
                     <option value="desc" {{ 'selected' if sort_order == 'desc' else '' }}>Descending</option>
                     <option value="asc" {{ 'selected' if sort_order == 'asc' else '' }}>Ascending</option>
                 </select>
             </div>
             <div class="col-md-3">
                 <label for="per_page" class="form-label">Per Page:</label>
-                <select name="per_page" id="per_page" class="form-select" onchange="this.form.submit()">
+                <select name="per_page" id="per_page" class="form-select" data-auto-submit="true">
                     <option value="10" {{ 'selected' if batch_data.per_page == 10 else '' }}>10</option>
                     <option value="20" {{ 'selected' if batch_data.per_page == 20 else '' }}>20</option>
                     <option value="50" {{ 'selected' if batch_data.per_page == 50 else '' }}>50</option>

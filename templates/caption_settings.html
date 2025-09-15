@@ -204,11 +204,11 @@
                         </div>
                         
                         <div class="d-flex justify-content-between">
-                            <button type="button" class="btn btn-outline-secondary" onclick="resetToDefaults()">
+                            <button type="button" class="btn btn-outline-secondary" data-action="resetToDefaults">
                                 <i class="bi bi-arrow-counterclockwise"></i> Reset to Defaults
                             </button>
                             <div>
-                                <button type="button" class="btn btn-outline-primary me-2" onclick="validateSettings()">
+                                <button type="button" class="btn btn-outline-primary me-2" data-action="validateSettings">
                                     <i class="bi bi-check-circle"></i> Validate Settings
                                 </button>
                                 {{ form.submit(class="btn btn-primary") }}

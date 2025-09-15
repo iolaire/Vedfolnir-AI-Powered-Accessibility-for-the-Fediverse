@@ -83,7 +83,7 @@
                                 data-progress-width="{{ active_task.progress_percent or 0 }}%"
                                 aria-valuenow="{{ active_task.progress_percent or 0 }}" aria-valuemin="0"
                                 aria-valuemax="100"
-                                style="--progress-width: {{ active_task.progress_percent or 0 }}%;">
+                                style="--progress-width: {{ active_task.progress_percent or 0 }}%;" class="progress-custom" class="progress-custom">
                                 <span id="progress-text">{{ active_task.progress_percent or 0 }}%</span>
                             </div>
                         </div>
@@ -111,7 +111,7 @@
                     <div>
                         {% if active_task.status.value in ['queued', 'running'] %}
                         <button type="button" class="btn btn-danger btn-sm"
-                            onclick="cancelTask('{{ active_task.task_id }}')">
+                            data-action="cancel-task" data-task-id="{{ active_task.task_id }}">
                             <i class="bi bi-x-circle"></i> Cancel
                         </button>
                         {% endif %}
@@ -215,11 +215,11 @@
             <div class="card-header d-flex justify-content-between align-items-center">
                 <h5><i class="bi bi-clock-history"></i> Task History</h5>
                 <div class="btn-group btn-group-sm" role="group">
-                    <button type="button" class="btn btn-outline-secondary" onclick="filterTasks('all')"
+                    <button type="button" class="btn btn-outline-secondary" data-action="filter-tasks" data-filter="all"
                         id="filter-all">All</button>
-                    <button type="button" class="btn btn-outline-secondary" onclick="filterTasks('completed')"
+                    <button type="button" class="btn btn-outline-secondary" data-action="filter-tasks" data-filter="completed"
                         id="filter-completed">Completed</button>
-                    <button type="button" class="btn btn-outline-secondary" onclick="filterTasks('failed')"
+                    <button type="button" class="btn btn-outline-secondary" data-action="filter-tasks" data-filter="failed"
                         id="filter-failed">Failed</button>
                 </div>
             </div>
@@ -227,7 +227,7 @@
                 {% if task_history %}
                 <div class="task-history">
                     {% for task in task_history %}
-                    <div class="task-item clickable" data-status="{{ task.status }}" data-task-id="{{ task.task_id }}" title="Click to view task details" style="cursor: pointer;">
+                    <div class="task-item clickable" data-status="{{ task.status }}" data-task-id="{{ task.task_id }}" title="Click to view task details" class="cursor-pointer">
                         <div class="d-flex justify-content-between align-items-start">
                             <div>
                                 <strong>{{ task.task_id[:8] }}...</strong>
@@ -237,7 +237,7 @@
                                 </span>
                                 {% if task.status == 'failed' %}
                                 <button type="button" class="btn btn-sm btn-outline-primary ms-2"
-                                    onclick="retryTask('{{ task.task_id }}')" title="Retry this task">
+                                    data-action="retry-task" data-task-id="{{ task.task_id }}" title="Retry this task">
                                     <i class="bi bi-arrow-clockwise"></i>
                                 </button>
                                 {% endif %}
@@ -272,7 +272,7 @@
                                         task.error_message|length > 100 %}...{% endif %}</span>
                                 </small>
                                 <button type="button" class="btn btn-sm btn-link p-0 ms-1"
-                                    onclick="showErrorDetails('{{ task.task_id }}')" title="Show error details">
+                                    data-action="show-error-details" data-task-id="{{ task.task_id }}" title="Show error details">
                                     <i class="bi bi-info-circle"></i>
                                 </button>
                             </div>
@@ -309,7 +309,7 @@
             <div class="modal-footer">
                 <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Close</button>
                 {% if active_task and active_task.task_id %}
-                <button type="button" class="btn btn-danger" onclick="cancelGeneration('{{ active_task.task_id }}')">
+                <button type="button" class="btn btn-danger" data-action="cancel-generation" data-task-id="{{ active_task.task_id }}">
                     Cancel Task
                 </button>
                 {% endif %}

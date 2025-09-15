@@ -288,8 +288,34 @@ class SecurityMiddleware:
         # Check if we're in development mode - also allow CSP override for testing
         is_development = os.environ.get('FLASK_ENV') == 'development' or os.environ.get('FLASK_DEBUG') == '1' or os.environ.get('CSP_PERMISSIVE') == '1' or True
         
-        # Build CSP policy based on environment
-        if is_development:
+        # Check if CSP strict mode is enabled
+        csp_strict_mode = os.environ.get('CSP_STRICT_MODE') == '1'
+        
+        # Build CSP policy based on environment and strict mode
+        if csp_strict_mode:
+            # Strict CSP - no unsafe-inline for script-src-attr
+            csp_policy = (
+                f"default-src 'self'; "
+                f"script-src 'self' 'nonce-{csp_nonce}' https://cdn.jsdelivr.net https://cdn.socket.io https://cdnjs.cloudflare.com https://unpkg.com; "
+                f"script-src-attr 'none'; "  # Block all inline script attributes
+                f"style-src 'self' 'nonce-{csp_nonce}' 'unsafe-inline' https://fonts.googleapis.com https://cdn.jsdelivr.net https://fonts.gstatic.com; "
+                f"style-src-elem 'self' 'nonce-{csp_nonce}' 'unsafe-inline' https://fonts.googleapis.com https://cdn.jsdelivr.net https://fonts.gstatic.com; "
+                f"style-src-attr 'unsafe-inline'; "
+                f"img-src 'self' data: https: blob:; "
+                f"font-src 'self' https://fonts.gstatic.com https://cdn.jsdelivr.net data:; "
+                f"connect-src 'self' wss: ws: https://cdn.jsdelivr.net https://cdn.socket.io https://cdnjs.cloudflare.com ws://localhost:5000 wss://localhost:5000; "
+                f"frame-ancestors 'self'; "
+                f"base-uri 'self'; "
+                f"form-action 'self'; "
+                f"object-src 'none'; "
+                f"media-src 'self' data: blob: https:; "
+                f"worker-src 'self' blob:; "
+                f"child-src 'self'; "
+                f"frame-src 'self'; "
+                f"report-uri /api/csp-report; "
+                f"upgrade-insecure-requests"
+            )
+        elif is_development:
             # Development CSP - more permissive for local development
             csp_policy = (
                 f"default-src 'self' *; "

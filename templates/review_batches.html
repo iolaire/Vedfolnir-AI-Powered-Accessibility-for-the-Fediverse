@@ -24,7 +24,7 @@
         <form method="GET" class="row align-items-end">
             <div class="col-md-3">
                 <label for="days_back" class="form-label">Show batches from last:</label>
-                <select name="days_back" id="days_back" class="form-select" onchange="this.form.submit()">
+                <select name="days_back" id="days_back" class="form-select" data-auto-submit="true">
                     <option value="1" {{ 'selected' if days_back == 1 else '' }}>1 day</option>
                     <option value="3" {{ 'selected' if days_back == 3 else '' }}>3 days</option>
                     <option value="7" {{ 'selected' if days_back == 7 else '' }}>7 days</option>

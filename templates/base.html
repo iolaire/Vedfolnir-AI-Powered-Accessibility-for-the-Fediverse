@@ -46,27 +46,27 @@
     <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&display=swap" rel="stylesheet">
     
     <!-- Bootstrap and icons with fallback -->
-    <link href="{{ url_for('static', filename='css/bootstrap-fallback.css', v='1.0.0') }}" rel="stylesheet" onerror="console.warn('Bootstrap fallback CSS failed to load')">
-    <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/css/bootstrap.min.css" rel="stylesheet" onerror="this.remove()">
-    <link href="https://cdn.jsdelivr.net/npm/bootstrap-icons@1.10.0/font/bootstrap-icons.css" rel="stylesheet" onerror="this.remove()">
+    <link href="{{ url_for('static', filename='css/bootstrap-fallback.css', v='1.0.0') }}" rel="stylesheet">
+    <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/css/bootstrap.min.css" rel="stylesheet">
+    <link href="https://cdn.jsdelivr.net/npm/bootstrap-icons@1.10.0/font/bootstrap-icons.css" rel="stylesheet">
     
     <!-- CSS Variables (must be loaded first) -->
-    <link href="{{ url_for('static', filename='css/css-variables.css', v='1.0.0') }}" rel="stylesheet" onerror="console.warn('CSS variables failed to load')">
+    <link href="{{ url_for('static', filename='css/css-variables.css', v='1.0.0') }}" rel="stylesheet">
     
     <!-- Utilities (foundational classes) -->
-    <link href="{{ url_for('static', filename='css/utilities.css', v='1.0.0') }}" rel="stylesheet" onerror="console.warn('Utilities CSS failed to load')">
+    <link href="{{ url_for('static', filename='css/utilities.css', v='1.0.0') }}" rel="stylesheet">
     
     <!-- Custom styles -->
-    <link href="{{ url_for('static', filename='css/style.css', v='1.0.0') }}" rel="stylesheet" onerror="console.warn('Main style CSS failed to load')">
-    <link href="{{ url_for('static', filename='css/components.css', v='1.0.0') }}" rel="stylesheet" onerror="console.warn('Components CSS failed to load')">
-    <link href="{{ url_for('static', filename='css/security-extracted.css', v='1.0.0') }}" rel="stylesheet" onerror="console.warn('Security CSS failed to load')">
-    <link href="{{ url_for('static', filename='css/platform_styles.css', v='1.0.0') }}" rel="stylesheet" onerror="console.warn('Platform styles CSS failed to load')">
-    <link href="{{ url_for('static', filename='css/fixes.css', v='1.0.0') }}" rel="stylesheet" onerror="console.warn('Fixes CSS failed to load')">
+    <link href="{{ url_for('static', filename='css/style.css', v='1.0.0') }}" rel="stylesheet">
+    <link href="{{ url_for('static', filename='css/components.css', v='1.0.0') }}" rel="stylesheet">
+    <link href="{{ url_for('static', filename='css/security-extracted.css', v='1.0.0') }}" rel="stylesheet">
+    <link href="{{ url_for('static', filename='css/platform_styles.css', v='1.0.0') }}" rel="stylesheet">
+    <link href="{{ url_for('static', filename='css/fixes.css', v='1.0.0') }}" rel="stylesheet">
     
     <!-- Unified Notification System Styles -->
-    <link href="{{ url_for('static', filename='css/unified-notifications.css', v='1.0.0') }}" rel="stylesheet" onerror="console.warn('Unified notifications CSS failed to load')">
-    <link href="{{ url_for('static', filename='css/notification-ui.css', v='1.0.0') }}" rel="stylesheet" onerror="console.warn('Notification UI CSS failed to load')">
-    <link href="{{ url_for('static', filename='css/legacy-notification-fallback.css', v='1.0.0') }}" rel="stylesheet" onerror="console.warn('Legacy notification fallback CSS failed to load')">
+    <link href="{{ url_for('static', filename='css/unified-notifications.css', v='1.0.0') }}" rel="stylesheet">
+    <link href="{{ url_for('static', filename='css/notification-ui.css', v='1.0.0') }}" rel="stylesheet">
+    <link href="{{ url_for('static', filename='css/legacy-notification-fallback.css', v='1.0.0') }}" rel="stylesheet">
     
     <!-- Session Management Styles -->
     <style nonce="{{ g.csp_nonce if g.csp_nonce else '' }}">
@@ -119,7 +119,7 @@
                      class="navbar-logo me-2"
                      height="32"
                      width="32"
-                     onerror="this.style.display='none'"
+                     class="logo-fallback"
                      role="img">
                 <span class="navbar-brand-text">Vedfolnir</span>
             </a>
@@ -170,7 +170,7 @@
                                 {% for platform in user_platforms %}
                                     {% if platform.id != active_platform.id %}
                                     <li>
-                                        <a class="dropdown-item platform-switch-item" href="#" onclick="quickSwitchPlatform({ platform.id }, '{ platform.name }')">
+                                        <a class="dropdown-item platform-switch-item" href="#" data-action="quickSwitchPlatform" data-params="{ platform.id }, '{ platform.name }'">
                                             <i class="bi bi-{{ 'mastodon' if platform.platform_type == 'mastodon' else 'image' }}"></i>
                                             {{ platform.name }}
                                             {% if platform.is_default %}
@@ -254,10 +254,10 @@
                                 </a></li>
                                 {% endif %}
                                 <li><hr class="dropdown-divider"></li>
-                                <li><a class="dropdown-item" href="{{ url_for('static.logout_all') }}" onclick="handleLogout(event)">
+                                <li><a class="dropdown-item" href="{{ url_for('static.logout_all') }}" data-action="handleLogout" data-params="event">
                                     <i class="bi bi-box-arrow-right me-2"></i>Logout
                                 </a></li>
-                                <li><a class="dropdown-item" href="{{ url_for('static.logout_all') }}" onclick="handleLogoutAll(event)">
+                                <li><a class="dropdown-item" href="{{ url_for('static.logout_all') }}" data-action="handleLogoutAll" data-params="event">
                                     <i class="bi bi-power me-2"></i>Logout All Devices
                                 </a></li>
                             </ul>
@@ -287,24 +287,24 @@
         {% block content %}{% endblock %}
     </div>
 
-    <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.1.3/dist/js/bootstrap.bundle.min.js" onerror="console.warn('Bootstrap JS failed to load from CDN')"></script>
+    <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.1.3/dist/js/bootstrap.bundle.min.js" nonce="{{ g.csp_nonce if g.csp_nonce else '' }}"></script>
     <script src="https://cdnjs.cloudflare.com/ajax/libs/socket.io/4.7.2/socket.io.js" crossorigin="anonymous"></script>
-    <script src="{{ url_for('static', filename='js/csrf-handler.js', v='1.0.0') }}" onerror="console.warn('CSRF handler failed to load')"></script>
-    <script src="{{ url_for('static', filename='js/progress-bar-utils.js', v='1.0.0') }}" onerror="console.warn('Progress bar utils failed to load')"></script>
+    <script src="{{ url_for('static', filename='js/csrf-handler.js', v='1.0.0') }}" nonce="{{ g.csp_nonce if g.csp_nonce else '' }}"></script>
+    <script src="{{ url_for('static', filename='js/progress-bar-utils.js', v='1.0.0') }}" nonce="{{ g.csp_nonce if g.csp_nonce else '' }}"></script>
     <!-- WebSocket Transport Optimizer -->
-    <script src="{{ url_for('static', filename='js/websocket-transport-optimizer.js', v='1.0.0') }}" onerror="console.warn('WebSocket transport optimizer failed to load')"></script>
-    <script src="{{ url_for('static', filename='js/websocket-bundle.js', v='1.0.0') }}" onerror="console.warn('WebSocket bundle failed to load')"></script>
+    <script src="{{ url_for('static', filename='js/websocket-transport-optimizer.js', v='1.0.0') }}" nonce="{{ g.csp_nonce if g.csp_nonce else '' }}"></script>
+    <script src="{{ url_for('static', filename='js/websocket-bundle.js', v='1.0.0') }}" nonce="{{ g.csp_nonce if g.csp_nonce else '' }}"></script>
     
     <!-- Unified Notification System Scripts -->
     <!-- Unified Notification System -->
-    <script src="{{ url_for('static', filename='js/notification-ui-renderer.js', v='1.0.0') }}" onerror="console.warn('Notification UI renderer failed to load - notifications may not work')"></script>
-    <script src="{{ url_for('static', filename='js/page_notification_integrator.js', v='1.0.0') }}" onerror="console.warn('Page notification integrator failed to load')"></script>
+    <script src="{{ url_for('static', filename='js/notification-ui-renderer.js', v='1.0.0') }}" nonce="{{ g.csp_nonce if g.csp_nonce else '' }}"></script>
+    <script src="{{ url_for('static', filename='js/page_notification_integrator.js', v='1.0.0') }}" nonce="{{ g.csp_nonce if g.csp_nonce else '' }}"></script>
     
-    <script src="{{ url_for('static', filename='js/app.js', v='1.0.0') }}" onerror="console.warn('App.js failed to load')"></script>
-    <script src="{{ url_for('static', filename='js/error_handler.js', v='1.0.0') }}" onerror="console.warn('Error handler failed to load')"></script>
-    <script src="{{ url_for('static', filename='js/session-sync.js', v='1.0.0') }}" onerror="console.warn('Session sync failed to load')"></script>
-    <script src="{{ url_for('static', filename='js/navigation.js', v='1.0.0') }}" onerror="console.warn('Navigation failed to load')"></script>
-    <script src="{{ url_for('static', filename='js/platform_context_refresh.js', v='1.0.0') }}" onerror="console.warn('Platform context refresh failed to load')"></script>
+    <script src="{{ url_for('static', filename='js/app.js', v='1.0.0') }}" nonce="{{ g.csp_nonce if g.csp_nonce else '' }}"></script>
+    <script src="{{ url_for('static', filename='js/error_handler.js', v='1.0.0') }}" nonce="{{ g.csp_nonce if g.csp_nonce else '' }}"></script>
+    <script src="{{ url_for('static', filename='js/session-sync.js', v='1.0.0') }}" nonce="{{ g.csp_nonce if g.csp_nonce else '' }}"></script>
+    <script src="{{ url_for('static', filename='js/navigation.js', v='1.0.0') }}" nonce="{{ g.csp_nonce if g.csp_nonce else '' }}"></script>
+    <script src="{{ url_for('static', filename='js/platform_context_refresh.js', v='1.0.0') }}" nonce="{{ g.csp_nonce if g.csp_nonce else '' }}"></script>
     
     <!-- Session Management JavaScript -->
     <script nonce="{{ g.csp_nonce if g.csp_nonce else '' }}">
@@ -591,5 +591,9 @@
     </script>
     
     {% block scripts %}{% endblock %}
+
+    <!-- CSP-Compliant Scripts -->
+    <link rel="stylesheet" href="{{ url_for('static', filename='css/csp-compliant-styles.css') }}?v=1.0.0">
+    <script src="{{ url_for('static', filename='js/csp-compliant-handlers.js') }}?v=1.0.0" nonce="{{ g.csp_nonce if g.csp_nonce else '' }}"></script>
 </body>
 </html>

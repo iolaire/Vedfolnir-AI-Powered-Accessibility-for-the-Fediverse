@@ -93,7 +93,7 @@
             </div>
             {% if user_platforms|length > 1 %}
             <div class="platform-switch">
-                <select id="platform-switcher" class="form-select form-select-sm" onchange="switchPlatform(this.value)">
+                <select id="platform-switcher" class="form-select form-select-sm" data-action="switch-platform-select">
                     {% for platform in user_platforms %}
                     <option value="{{ platform.id }}" {{ 'selected' if platform.id == current_platform.id }}>
                         {{ platform.name }} ({{ platform.platform_type }})
