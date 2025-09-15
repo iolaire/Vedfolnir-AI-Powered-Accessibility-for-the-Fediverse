@@ -121,22 +121,56 @@ class AdminManagementService:
     
     def _log_admin_action(self, session: Session, admin_user_id: int, action: str, 
                          task_id: Optional[str] = None, details: Optional[str] = None):
-        """Log administrative action for audit trail"""
-        try:
-            audit_log = JobAuditLog(
-                task_id=task_id,
-                user_id=None,  # Admin actions don't have a target user in this context
-                admin_user_id=admin_user_id,
-                action=action,
-                details=details,
-                timestamp=datetime.now(timezone.utc),
-                ip_address=None,  # Could be passed from request context
-                user_agent=None   # Could be passed from request context
-            )
-            session.add(audit_log)
-            logger.info(f"Admin action logged: {sanitize_for_log(action)} by user {sanitize_for_log(str(admin_user_id))}")
-        except Exception as e:
-            logger.error(f"Failed to log admin action: {sanitize_for_log(str(e))}")
+        """Log administrative action for audit trail with retry logic"""
+        max_retries = 3
+        retry_count = 0
+        
+        while retry_count < max_retries:
+            try:
+                audit_log = JobAuditLog(
+                    task_id=task_id,
+                    user_id=None,  # Admin actions don't have a target user in this context
+                    admin_user_id=admin_user_id,
+                    action=action,
+                    details=details,
+                    timestamp=datetime.now(timezone.utc),
+                    ip_address=None,  # Could be passed from request context
+                    user_agent=None   # Could be passed from request context
+                )
+                session.add(audit_log)
+                session.flush()  # Force the insert to happen immediately
+                logger.info(f"Admin action logged: {sanitize_for_log(action)} by user {sanitize_for_log(str(admin_user_id))}")
+                return  # Success, exit the retry loop
+                
+            except SQLAlchemyError as e:
+                retry_count += 1
+                error_msg = str(e)
+                
+                # Check if it's the specific MySQL concurrency error
+                if "1020" in error_msg and "Record has changed since last read" in error_msg:
+                    if retry_count < max_retries:
+                        logger.warning(f"MySQL concurrency error logging admin action, retrying ({retry_count}/{max_retries}): {sanitize_for_log(error_msg)}")
+                        session.rollback()
+                        # Small delay before retry
+                        import time
+                        time.sleep(0.1 * retry_count)  # Exponential backoff
+                        continue
+                    else:
+                        logger.error(f"Failed to log admin action after {max_retries} retries due to MySQL concurrency error: {sanitize_for_log(error_msg)}")
+                        # Don't raise the exception - audit logging failure shouldn't break the main operation
+                        return
+                elif "1452" in error_msg and "foreign key constraint fails" in error_msg:
+                    # Foreign key constraint error - likely invalid task_id
+                    logger.warning(f"Foreign key constraint error logging admin action (invalid task_id?): {sanitize_for_log(error_msg)}")
+                    return
+                else:
+                    # Different error, don't retry
+                    logger.error(f"Failed to log admin action: {sanitize_for_log(error_msg)}")
+                    return
+                    
+            except Exception as e:
+                logger.error(f"Unexpected error logging admin action: {sanitize_for_log(str(e))}")
+                return
     
     def get_system_overview(self, admin_user_id: int) -> SystemOverview:
         """
@@ -306,10 +340,18 @@ class AdminManagementService:
             success = self.task_queue_manager.cancel_task_as_admin(task_id, admin_user_id, reason)
             
             # Log admin action regardless of success/failure
+            # Note: Audit logging errors are handled gracefully and won't affect the main operation
             action_details = f"reason={reason}, success={success}"
             self._log_admin_action(session, admin_user_id, "cancel_job_as_admin", 
                                  task_id=task_id, details=action_details)
-            session.commit()
+            
+            # Commit the session (audit logging errors are handled internally)
+            try:
+                session.commit()
+            except SQLAlchemyError as audit_error:
+                # If audit logging fails, log the error but don't fail the main operation
+                logger.error(f"Audit logging failed for job cancellation, but job was cancelled successfully: {sanitize_for_log(str(audit_error))}")
+                session.rollback()
             
             if success:
                 logger.info(f"Admin {sanitize_for_log(str(admin_user_id))} cancelled job {sanitize_for_log(task_id)}")
@@ -320,8 +362,15 @@ class AdminManagementService:
             
         except SQLAlchemyError as e:
             session.rollback()
-            logger.error(f"Database error cancelling job as admin: {sanitize_for_log(str(e))}")
-            raise
+            # Only raise if it's not an audit logging error
+            error_msg = str(e)
+            if "job_audit_log" not in error_msg:
+                logger.error(f"Database error cancelling job as admin: {sanitize_for_log(error_msg)}")
+                raise
+            else:
+                # Audit logging error - log but don't raise
+                logger.error(f"Audit logging error during job cancellation: {sanitize_for_log(error_msg)}")
+                return False
         finally:
             session.close()
     

@@ -165,10 +165,10 @@
     </h1>
     <div class="btn-toolbar mb-2 mb-md-0">
         <div class="btn-group me-2">
-            <button type="button" class="btn btn-sm btn-outline-secondary" onclick="refreshJobData()">
+            <button type="button" class="btn btn-sm btn-outline-secondary" data-action="refresh-jobs">
                 <i class="bi bi-arrow-clockwise"></i> Refresh
             </button>
-            <button type="button" class="btn btn-sm btn-outline-primary" onclick="toggleAutoRefresh()">
+            <button type="button" class="btn btn-sm btn-outline-primary" data-action="toggle-auto-refresh">
                 <i class="bi bi-play-circle" id="autoRefreshIcon"></i>
                 <span id="autoRefreshText">Start Auto-refresh</span>
             </button>
@@ -298,26 +298,26 @@
                     <div class="job-actions">
                         {% if job.status in ['running', 'queued'] %}
                         <button class="btn btn-outline-danger btn-sm"
-                            onclick="adminCancelJob('{{ job.task_id }}', '{{ job.username }}')"
+                            data-action="admin-cancel-job" data-task-id="{{ job.task_id }}" data-username="{{ job.username }}"
                             title="Cancel Job (Admin Action)">
                             <i class="bi bi-stop-circle"></i> Cancel
                         </button>
                         <button class="btn btn-outline-warning btn-sm"
-                            onclick="setPriority('{{ job.task_id }}', 'high')" title="Set High Priority">
+                            data-action="set-priority" data-task-id="{{ job.task_id }}" data-priority="high" title="Set High Priority">
                             <i class="bi bi-arrow-up-circle"></i> Priority
                         </button>
                         {% endif %}
                         {% if job.status == 'failed' %}
-                        <button class="btn btn-outline-success btn-sm" onclick="adminRestartJob('{{ job.task_id }}')"
+                        <button class="btn btn-outline-success btn-sm" data-action="admin-restart-job" data-task-id="{{ job.task_id }}"
                             title="Restart Job (Admin Action)">
                             <i class="bi bi-arrow-clockwise"></i> Restart
                         </button>
                         {% endif %}
-                        <button class="btn btn-outline-info btn-sm" onclick="viewJobDetails('{{ job.task_id }}', true)"
+                        <button class="btn btn-outline-info btn-sm" data-action="view-job-details" data-task-id="{{ job.task_id }}" data-is-admin="true"
                             title="View Details">
                             <i class="bi bi-eye"></i> Details
                         </button>
-                        <button class="btn btn-outline-secondary btn-sm" onclick="addAdminNotes('{{ job.task_id }}')"
+                        <button class="btn btn-outline-secondary btn-sm" data-action="add-admin-notes" data-task-id="{{ job.task_id }}"
                             title="Add Admin Notes">
                             <i class="bi bi-sticky"></i> Notes
                         </button>
@@ -397,13 +397,13 @@
                 <div class="col-md-4">
                     <div class="job-actions">
                         {% if job.status in ['running', 'queued'] %}
-                        <button class="btn btn-outline-danger btn-sm" onclick="personalCancelJob('{{ job.task_id }}')"
+                        <button class="btn btn-outline-danger btn-sm" data-action="personal-cancel-job" data-task-id="{{ job.task_id }}"
                             title="Cancel Your Job">
                             <i class="bi bi-stop-circle"></i> Cancel
                         </button>
                         {% endif %}
                         {% if job.status == 'failed' %}
-                        <button class="btn btn-outline-success btn-sm" onclick="personalRetryJob('{{ job.task_id }}')"
+                        <button class="btn btn-outline-success btn-sm" data-action="personal-retry-job" data-task-id="{{ job.task_id }}"
                             title="Retry Your Job">
                             <i class="bi bi-arrow-clockwise"></i> Retry
                         </button>
@@ -414,7 +414,7 @@
                             <i class="bi bi-eye-fill"></i> Review
                         </a>
                         {% endif %}
-                        <button class="btn btn-outline-info btn-sm" onclick="viewJobDetails('{{ job.task_id }}', false)"
+                        <button class="btn btn-outline-info btn-sm" data-action="view-job-details" data-task-id="{{ job.task_id }}" data-is-admin="false"
                             title="View Details">
                             <i class="bi bi-eye"></i> Details
                         </button>
@@ -470,6 +470,9 @@
                     // Refresh job data without full page reload
                     window.location.reload();
                 };
+
+                // Set up CSP-compliant event listeners for all buttons
+                setupJobActionEventListeners();
             });
 
             function handleAdminModeChange(adminMode) {
@@ -502,7 +505,7 @@
                     return;
                 }
 
-                // Call admin cancel API
+                // Call admin cancel API (correct endpoint)
                 fetch(`/admin/api/jobs/${taskId}/cancel`, {
                     method: 'POST',
                     headers: {
@@ -534,10 +537,11 @@
                     return;
                 }
 
-                // Call personal cancel API
-                fetch(`/api/cancel_task/${taskId}`, {
+                // Call personal cancel API (correct endpoint)
+                fetch(`/caption/api/cancel/${taskId}`, {
                     method: 'POST',
                     headers: {
+                        'Content-Type': 'application/json',
                         'X-CSRFToken': document.querySelector('meta[name="csrf-token"]').getAttribute('content')
                     }
                 })
@@ -641,6 +645,64 @@
                 document.getElementById('personalActiveJobs').textContent = stats.personal_active || 0;
                 document.getElementById('adminManagedJobs').textContent = stats.admin_managed || 0;
                 document.getElementById('queuedJobs').textContent = stats.queued || 0;
+            }
+
+            function setupJobActionEventListeners() {
+                // Set up event delegation for all job action buttons
+                document.addEventListener('click', function(event) {
+                    const button = event.target.closest('[data-action]');
+                    if (!button) return;
+
+                    const action = button.getAttribute('data-action');
+                    const taskId = button.getAttribute('data-task-id');
+                    const username = button.getAttribute('data-username');
+                    const priority = button.getAttribute('data-priority');
+                    const isAdmin = button.getAttribute('data-is-admin');
+
+                    switch (action) {
+                        case 'refresh-jobs':
+                            refreshJobData();
+                            break;
+                        case 'toggle-auto-refresh':
+                            toggleAutoRefresh();
+                            break;
+                        case 'admin-cancel-job':
+                            if (taskId && username) {
+                                adminCancelJob(taskId, username);
+                            }
+                            break;
+                        case 'personal-cancel-job':
+                            if (taskId) {
+                                personalCancelJob(taskId);
+                            }
+                            break;
+                        case 'admin-restart-job':
+                            if (taskId) {
+                                adminRestartJob(taskId);
+                            }
+                            break;
+                        case 'personal-retry-job':
+                            if (taskId) {
+                                personalRetryJob(taskId);
+                            }
+                            break;
+                        case 'set-priority':
+                            if (taskId && priority) {
+                                setPriority(taskId, priority);
+                            }
+                            break;
+                        case 'view-job-details':
+                            if (taskId) {
+                                viewJobDetails(taskId, isAdmin === 'true');
+                            }
+                            break;
+                        case 'add-admin-notes':
+                            if (taskId) {
+                                addAdminNotes(taskId);
+                            }
+                            break;
+                    }
+                });
             }
 
             // System maintenance functions

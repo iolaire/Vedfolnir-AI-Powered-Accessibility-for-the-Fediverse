@@ -95,19 +95,8 @@ class WebCaptionGenerationService:
             # Start background processing if not already running
             self._ensure_background_processor()
             
-            # Trigger immediate processing of the task in a separate thread
-            import threading
-            def process_in_thread():
-                import asyncio
-                loop = asyncio.new_event_loop()
-                asyncio.set_event_loop(loop)
-                try:
-                    loop.run_until_complete(self._process_next_task_immediately())
-                finally:
-                    loop.close()
-            
-            thread = threading.Thread(target=process_in_thread, daemon=True)
-            thread.start()
+            # Note: Task processing will be handled by background processor
+            # Removed problematic threading code that was causing event loop conflicts
             
             logger.info(f"Started caption generation task {sanitize_for_log(task_id)} for user {sanitize_for_log(str(user_id))}")
             return task_id
@@ -122,20 +111,97 @@ class WebCaptionGenerationService:
         platform_connection_id: int,
         settings: Optional[CaptionGenerationSettings] = None
     ) -> str:
-        """Synchronous wrapper for start_caption_generation"""
+        """Synchronous version of caption generation startup"""
         try:
-            loop = asyncio.new_event_loop()
-            asyncio.set_event_loop(loop)
-            try:
-                return loop.run_until_complete(
-                    self.start_caption_generation(user_id, platform_connection_id, settings)
-                )
-            finally:
-                loop.close()
+            # Check if user already has an active task first
+            active_task = self.task_queue_manager.get_user_active_task(user_id)
+            if active_task:
+                raise ValueError(f"User {user_id} already has an active caption generation task: {active_task.id}")
+            
+            # Validate user and platform access (synchronous version)
+            self._validate_user_platform_access_sync(user_id, platform_connection_id)
+            
+            # Get or create settings (synchronous version)
+            if settings is None:
+                settings = self._get_user_settings_sync(user_id, platform_connection_id)
+            
+            # Create task
+            task = CaptionGenerationTask(
+                user_id=user_id,
+                platform_connection_id=platform_connection_id,
+                status=TaskStatus.QUEUED
+            )
+            task.settings = settings
+            
+            # Enqueue the task
+            task_id = self.task_queue_manager.enqueue_task(task)
+            
+            logger.info(f"Started caption generation task {sanitize_for_log(task_id)} for user {sanitize_for_log(str(user_id))}")
+            return task_id
+            
         except Exception as e:
             logger.error(f"Error in sync caption generation: {e}")
             raise
     
+    def _validate_user_platform_access_sync(self, user_id: int, platform_connection_id: int):
+        """
+        Synchronous version of user platform access validation
+        
+        Args:
+            user_id: The user ID
+            platform_connection_id: The platform connection ID
+            
+        Raises:
+            ValueError: If validation fails
+        """
+        session = self.db_manager.get_session()
+        try:
+            # Check if user exists and is active
+            user = session.query(User).filter_by(id=user_id, is_active=True).first()
+            if not user:
+                raise ValueError(f"User {user_id} not found or inactive")
+            
+            # Check if platform connection exists and belongs to user
+            platform_connection = session.query(PlatformConnection).filter_by(
+                id=platform_connection_id,
+                user_id=user_id,
+                is_active=True
+            ).first()
+            
+            if not platform_connection:
+                raise ValueError(f"Platform connection {platform_connection_id} not found or not accessible to user {user_id}")
+            
+        finally:
+            session.close()
+    
+    def _get_user_settings_sync(self, user_id: int, platform_connection_id: int) -> CaptionGenerationSettings:
+        """
+        Synchronous version of getting user's caption generation settings
+        
+        Args:
+            user_id: The user ID
+            platform_connection_id: The platform connection ID
+            
+        Returns:
+            CaptionGenerationSettings: User settings or defaults
+        """
+        session = self.db_manager.get_session()
+        try:
+            # Try to get user's custom settings
+            user_settings = session.query(CaptionGenerationUserSettings).filter_by(
+                user_id=user_id,
+                platform_connection_id=platform_connection_id
+            ).first()
+            
+            if user_settings:
+                return user_settings.to_settings_dataclass()
+            else:
+                # Return default settings
+                return CaptionGenerationSettings()
+                
+        finally:
+            session.close()
+
     async def _check_storage_limits_before_generation(self) -> None:
         """
         Check storage limits before caption generation and handle automatic re-enabling.
@@ -785,19 +851,8 @@ class WebCaptionGenerationService:
             # Start background processing if not already running
             self._ensure_background_processor()
             
-            # Trigger immediate processing of the task in a separate thread
-            import threading
-            def process_in_thread():
-                import asyncio
-                loop = asyncio.new_event_loop()
-                asyncio.set_event_loop(loop)
-                try:
-                    loop.run_until_complete(self._process_next_task_immediately())
-                finally:
-                    loop.close()
-            
-            thread = threading.Thread(target=process_in_thread, daemon=True)
-            thread.start()
+            # Note: Task processing will be handled by background processor
+            # Removed problematic threading code that was causing event loop conflicts
             
             logger.info(f"Retried task {sanitize_for_log(original_task_id)} as new task {sanitize_for_log(task_id)} for user {sanitize_for_log(str(user_id))}")
             return task_id

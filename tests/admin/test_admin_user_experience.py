@@ -234,7 +234,7 @@ class TestAdminUserExperience(unittest.TestCase):
             mock_service_instance.cancel_task.return_value = {'success': True}
             
             # Test personal job cancellation
-            response = self.client.post(f'/api/cancel_task/{self.admin_personal_job.id}')
+            response = self.client.post(f'/caption/api/cancel/{self.admin_personal_job.id}')
             
             # Should succeed (mocked)
             self.assertEqual(response.status_code, 200)

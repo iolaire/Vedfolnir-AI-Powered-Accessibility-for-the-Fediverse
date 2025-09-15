@@ -369,14 +369,14 @@ function renderAdminJobActions(job) {
     if (['running', 'queued'].includes(job.status)) {
         actions.push(`
             <button class="btn btn-outline-danger btn-sm" 
-                    onclick="adminCancelJob('${job.task_id}', '${job.username}')"
+                    data-action="admin-cancel-job" data-task-id="${job.task_id}" data-username="${job.username}"
                     title="Cancel Job (Admin Action)">
                 <i class="bi bi-stop-circle"></i> Cancel
             </button>
         `);
         actions.push(`
             <button class="btn btn-outline-warning btn-sm" 
-                    onclick="setPriority('${job.task_id}', 'high')"
+                    data-action="set-priority" data-task-id="${job.task_id}" data-priority="high"
                     title="Set High Priority">
                 <i class="bi bi-arrow-up-circle"></i> Priority
             </button>
@@ -386,7 +386,7 @@ function renderAdminJobActions(job) {
     if (job.status === 'failed') {
         actions.push(`
             <button class="btn btn-outline-success btn-sm" 
-                    onclick="adminRestartJob('${job.task_id}')"
+                    data-action="admin-restart-job" data-task-id="${job.task_id}"
                     title="Restart Job (Admin Action)">
                 <i class="bi bi-arrow-clockwise"></i> Restart
             </button>
@@ -395,7 +395,7 @@ function renderAdminJobActions(job) {
     
     actions.push(`
         <button class="btn btn-outline-info btn-sm" 
-                onclick="viewJobDetails('${job.task_id}', true)"
+                data-action="view-job-details" data-task-id="${job.task_id}" data-is-admin="true"
                 title="View Details">
             <i class="bi bi-eye"></i> Details
         </button>
@@ -403,7 +403,7 @@ function renderAdminJobActions(job) {
     
     actions.push(`
         <button class="btn btn-outline-secondary btn-sm" 
-                onclick="addAdminNotes('${job.task_id}')"
+                data-action="add-admin-notes" data-task-id="${job.task_id}"
                 title="Add Admin Notes">
             <i class="bi bi-sticky"></i> Notes
         </button>
@@ -421,7 +421,7 @@ function renderPersonalJobActions(job) {
     if (['running', 'queued'].includes(job.status)) {
         actions.push(`
             <button class="btn btn-outline-danger btn-sm" 
-                    onclick="personalCancelJob('${job.task_id}')"
+                    data-action="personal-cancel-job" data-task-id="${job.task_id}"
                     title="Cancel Your Job">
                 <i class="bi bi-stop-circle"></i> Cancel
             </button>
@@ -431,7 +431,7 @@ function renderPersonalJobActions(job) {
     if (job.status === 'failed') {
         actions.push(`
             <button class="btn btn-outline-success btn-sm" 
-                    onclick="personalRetryJob('${job.task_id}')"
+                    data-action="personal-retry-job" data-task-id="${job.task_id}"
                     title="Retry Your Job">
                 <i class="bi bi-arrow-clockwise"></i> Retry
             </button>
@@ -449,7 +449,7 @@ function renderPersonalJobActions(job) {
     
     actions.push(`
         <button class="btn btn-outline-info btn-sm" 
-                onclick="viewJobDetails('${job.task_id}', false)"
+                data-action="view-job-details" data-task-id="${job.task_id}" data-is-admin="false"
                 title="View Details">
             <i class="bi bi-eye"></i> Details
         </button>
