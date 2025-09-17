@@ -1,0 +1,789 @@
+<!-- Copyright (C) 2025 iolaire mcfadden. -->
+<!-- This program is free software: you can redistribute it and/or modify it under the terms of the GNU Affero General Public License as published by the Free Software Foundation, either version 3 of the License, or (at your option) any later version. -->
+<!-- THE SOFTWARE IS PROVIDED "AS IS", WITHOUT WARRANTY OF ANY KIND, EXPRESS OR IMPLIED, INCLUDING BUT NOT LIMITED TO THE WARRANTIES OF MERCHANTABILITY, FITNESS FOR A PARTICULAR PURPOSE AND NONINFRINGEMENT. IN NO EVENT SHALL THE AUTHORS OR COPYRIGHT HOLDERS BE LIABLE FOR ANY CLAIM, DAMAGES OR OTHER LIABILITY, WHETHER IN AN ACTION OF CONTRACT, TORT OR OTHERWISE, ARISING FROM, OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE SOFTWARE. -->
+
+{% extends "base_admin.html" %}
+
+{% block title %}RQ Task Management - Admin Dashboard{% endblock %}
+
+{% block extra_head %}
+<style nonce="{{ g.csp_nonce if g.csp_nonce else '' }}">
+    .task-card {
+        transition: all 0.3s ease;
+        border-left: 4px solid #dee2e6;
+    }
+    .task-card:hover {
+        transform: translateY(-2px);
+        box-shadow: 0 4px 8px rgba(0,0,0,0.1);
+    }
+    .task-card.status-queued { border-left-color: #6c757d; }
+    .task-card.status-running { border-left-color: #007bff; }
+    .task-card.status-completed { border-left-color: #28a745; }
+    .task-card.status-failed { border-left-color: #dc3545; }
+    .task-card.status-cancelled { border-left-color: #ffc107; }
+    
+    .priority-badge.urgent { background-color: #dc3545; }
+    .priority-badge.high { background-color: #fd7e14; }
+    .priority-badge.normal { background-color: #007bff; }
+    .priority-badge.low { background-color: #6c757d; }
+    
+    .task-actions .btn {
+        margin-right: 0.25rem;
+        margin-bottom: 0.25rem;
+    }
+    
+    .task-details-modal .modal-dialog {
+        max-width: 800px;
+    }
+    
+    .task-timeline {
+        position: relative;
+        padding-left: 2rem;
+    }
+    
+    .task-timeline::before {
+        content: '';
+        position: absolute;
+        left: 0.5rem;
+        top: 0;
+        bottom: 0;
+        width: 2px;
+        background: #dee2e6;
+    }
+    
+    .timeline-item {
+        position: relative;
+        margin-bottom: 1rem;
+    }
+    
+    .timeline-item::before {
+        content: '';
+        position: absolute;
+        left: -1.5rem;
+        top: 0.25rem;
+        width: 0.75rem;
+        height: 0.75rem;
+        border-radius: 50%;
+        background: #007bff;
+        border: 2px solid #fff;
+        box-shadow: 0 0 0 2px #dee2e6;
+    }
+    
+    .filter-section {
+        background: #f8f9fa;
+        border-radius: 0.375rem;
+        padding: 1rem;
+        margin-bottom: 1rem;
+    }
+    
+    .pagination-info {
+        color: #6c757d;
+        font-size: 0.875rem;
+    }
+</style>
+{% endblock %}
+
+{% block content %}
+<div class="d-flex justify-content-between flex-wrap flex-md-nowrap align-items-center pt-3 pb-2 mb-3 border-bottom">
+    <h1 class="h2">
+        <i class="bi bi-kanban"></i> RQ Task Management
+    </h1>
+    <div class="btn-toolbar mb-2 mb-md-0">
+        <div class="btn-group me-2">
+            <button type="button" class="btn btn-sm btn-outline-secondary" onclick="refreshTasks()">
+                <i class="bi bi-arrow-clockwise"></i> Refresh
+            </button>
+            <button type="button" class="btn btn-sm btn-outline-primary" onclick="toggleAutoRefresh()">
+                <i class="bi bi-play-circle" id="autoRefreshIcon"></i> <span id="autoRefreshText">Start Auto-refresh</span>
+            </button>
+        </div>
+    </div>
+</div>
+
+<!-- Filters Section -->
+<div class="filter-section">
+    <div class="row">
+        <div class="col-md-3">
+            <label for="statusFilter" class="form-label">Status</label>
+            <select class="form-select form-select-sm" id="statusFilter" onchange="applyFilters()">
+                <option value="">All Statuses</option>
+                <option value="queued">Queued</option>
+                <option value="running">Running</option>
+                <option value="completed">Completed</option>
+                <option value="failed">Failed</option>
+                <option value="cancelled">Cancelled</option>
+            </select>
+        </div>
+        <div class="col-md-3">
+            <label for="priorityFilter" class="form-label">Priority</label>
+            <select class="form-select form-select-sm" id="priorityFilter" onchange="applyFilters()">
+                <option value="">All Priorities</option>
+                <option value="urgent">Urgent</option>
+                <option value="high">High</option>
+                <option value="normal">Normal</option>
+                <option value="low">Low</option>
+            </select>
+        </div>
+        <div class="col-md-3">
+            <label for="userFilter" class="form-label">User ID</label>
+            <input type="number" class="form-control form-control-sm" id="userFilter" placeholder="Filter by user ID" onchange="applyFilters()">
+        </div>
+        <div class="col-md-3">
+            <label for="limitFilter" class="form-label">Results per page</label>
+            <select class="form-select form-select-sm" id="limitFilter" onchange="applyFilters()">
+                <option value="25">25</option>
+                <option value="50" selected>50</option>
+                <option value="100">100</option>
+            </select>
+        </div>
+    </div>
+</div>
+
+<!-- Tasks Container -->
+<div id="tasksContainer">
+    <div class="text-center py-4">
+        <div class="spinner-border" role="status">
+            <span class="visually-hidden">Loading tasks...</span>
+        </div>
+        <p class="mt-2">Loading tasks...</p>
+    </div>
+</div>
+
+<!-- Pagination -->
+<div class="d-flex justify-content-between align-items-center mt-4">
+    <div class="pagination-info" id="paginationInfo">
+        <!-- Pagination info will be inserted here -->
+    </div>
+    <nav aria-label="Task pagination">
+        <ul class="pagination pagination-sm" id="paginationControls">
+            <!-- Pagination controls will be inserted here -->
+        </ul>
+    </nav>
+</div>
+
+<!-- Task Details Modal -->
+<div class="modal fade task-details-modal" id="taskDetailsModal" tabindex="-1" aria-labelledby="taskDetailsModalLabel" aria-hidden="true">
+    <div class="modal-dialog modal-lg">
+        <div class="modal-content">
+            <div class="modal-header">
+                <h5 class="modal-title" id="taskDetailsModalLabel">Task Details</h5>
+                <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
+            </div>
+            <div class="modal-body" id="taskDetailsContent">
+                <!-- Task details will be loaded here -->
+            </div>
+            <div class="modal-footer">
+                <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Close</button>
+                <div id="taskDetailsActions">
+                    <!-- Action buttons will be added here based on task status -->
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+
+<!-- Confirmation Modal -->
+<div class="modal fade" id="confirmationModal" tabindex="-1" aria-labelledby="confirmationModalLabel" aria-hidden="true">
+    <div class="modal-dialog">
+        <div class="modal-content">
+            <div class="modal-header">
+                <h5 class="modal-title" id="confirmationModalLabel">Confirm Action</h5>
+                <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
+            </div>
+            <div class="modal-body" id="confirmationModalBody">
+                <!-- Confirmation message will be inserted here -->
+            </div>
+            <div class="modal-footer">
+                <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Cancel</button>
+                <button type="button" class="btn btn-primary" id="confirmActionBtn">Confirm</button>
+            </div>
+        </div>
+    </div>
+</div>
+
+<!-- Alerts Container -->
+<div id="alertsContainer" class="position-fixed top-0 end-0 p-3" style="z-index: 1050;">
+    <!-- Alerts will be inserted here -->
+</div>
+
+{% endblock %}
+
+{% block extra_js %}
+<script nonce="{{ g.csp_nonce if g.csp_nonce else '' }}">
+    let currentPage = 0;
+    let currentFilters = {};
+    let autoRefreshInterval = null;
+    let isAutoRefreshActive = false;
+
+    // Initialize page
+    document.addEventListener('DOMContentLoaded', function() {
+        loadTasks();
+    });
+
+    function loadTasks() {
+        const params = new URLSearchParams({
+            offset: currentPage * getCurrentLimit(),
+            limit: getCurrentLimit(),
+            ...currentFilters
+        });
+
+        fetch(`/admin/api/rq/tasks?${params}`)
+            .then(response => response.json())
+            .then(data => {
+                if (data.success) {
+                    displayTasks(data.data.tasks);
+                    updatePagination(data.data.pagination);
+                } else {
+                    showAlert('Error loading tasks: ' + data.error, 'danger');
+                }
+            })
+            .catch(error => {
+                console.error('Error loading tasks:', error);
+                showAlert('Failed to load tasks', 'danger');
+            });
+    }
+
+    function displayTasks(tasks) {
+        const container = document.getElementById('tasksContainer');
+        
+        if (tasks.length === 0) {
+            container.innerHTML = `
+                <div class="text-center py-5">
+                    <i class="bi bi-inbox" style="font-size: 3rem; color: #6c757d;"></i>
+                    <h4 class="mt-3 text-muted">No tasks found</h4>
+                    <p class="text-muted">No tasks match the current filters.</p>
+                </div>
+            `;
+            return;
+        }
+
+        const tasksHtml = tasks.map(task => createTaskCard(task)).join('');
+        container.innerHTML = `<div class="row">${tasksHtml}</div>`;
+    }
+
+    function createTaskCard(task) {
+        const statusClass = `status-${task.status}`;
+        const priorityClass = task.priority || 'normal';
+        const duration = task.duration_seconds ? formatDuration(task.duration_seconds) : 
+                        task.current_duration_seconds ? formatDuration(task.current_duration_seconds) + ' (ongoing)' : 'N/A';
+
+        return `
+            <div class="col-md-6 col-lg-4 mb-3">
+                <div class="card task-card ${statusClass}" data-task-id="${task.task_id}">
+                    <div class="card-header d-flex justify-content-between align-items-center">
+                        <div>
+                            <span class="badge priority-badge ${priorityClass}">${task.priority.toUpperCase()}</span>
+                            <span class="badge bg-${getStatusColor(task.status)}">${task.status.toUpperCase()}</span>
+                        </div>
+                        <small class="text-muted">${formatTime(task.created_at)}</small>
+                    </div>
+                    <div class="card-body">
+                        <h6 class="card-title">
+                            <code class="small">${task.task_id.substring(0, 12)}...</code>
+                        </h6>
+                        <p class="card-text">
+                            <strong>User:</strong> ${task.username}<br>
+                            <strong>Progress:</strong> ${task.progress_percentage}%<br>
+                            <strong>Step:</strong> ${task.current_step}<br>
+                            <strong>Duration:</strong> ${duration}
+                        </p>
+                        
+                        ${task.error_message ? `
+                            <div class="alert alert-danger alert-sm">
+                                <small><strong>Error:</strong> ${escapeHtml(task.error_message)}</small>
+                            </div>
+                        ` : ''}
+                        
+                        <div class="task-actions">
+                            <button class="btn btn-outline-info btn-sm" onclick="viewTaskDetails('${task.task_id}')">
+                                <i class="bi bi-eye"></i> Details
+                            </button>
+                            
+                            ${task.status === 'queued' || task.status === 'running' ? `
+                                <button class="btn btn-outline-danger btn-sm" onclick="cancelTask('${task.task_id}')">
+                                    <i class="bi bi-stop-circle"></i> Cancel
+                                </button>
+                            ` : ''}
+                            
+                            ${task.status === 'failed' || task.status === 'cancelled' ? `
+                                <button class="btn btn-outline-success btn-sm" onclick="retryTask('${task.task_id}')">
+                                    <i class="bi bi-arrow-clockwise"></i> Retry
+                                </button>
+                            ` : ''}
+                            
+                            ${task.status === 'queued' || task.status === 'running' ? `
+                                <button class="btn btn-outline-warning btn-sm" onclick="changePriority('${task.task_id}', '${task.priority}')">
+                                    <i class="bi bi-arrow-up-circle"></i> Priority
+                                </button>
+                            ` : ''}
+                        </div>
+                    </div>
+                </div>
+            </div>
+        `;
+    }
+
+    function getStatusColor(status) {
+        const colors = {
+            'queued': 'secondary',
+            'running': 'primary',
+            'completed': 'success',
+            'failed': 'danger',
+            'cancelled': 'warning'
+        };
+        return colors[status] || 'secondary';
+    }
+
+    function viewTaskDetails(taskId) {
+        fetch(`/admin/api/rq/tasks/${taskId}`)
+            .then(response => response.json())
+            .then(data => {
+                if (data.success) {
+                    displayTaskDetails(data.data);
+                } else {
+                    showAlert('Error loading task details: ' + data.error, 'danger');
+                }
+            })
+            .catch(error => {
+                console.error('Error loading task details:', error);
+                showAlert('Failed to load task details', 'danger');
+            });
+    }
+
+    function displayTaskDetails(task) {
+        const modal = document.getElementById('taskDetailsModal');
+        const content = document.getElementById('taskDetailsContent');
+        const actions = document.getElementById('taskDetailsActions');
+
+        // Build timeline
+        const timeline = [];
+        if (task.timestamps.created_at) {
+            timeline.push({ time: task.timestamps.created_at, event: 'Task Created', icon: 'plus-circle' });
+        }
+        if (task.timestamps.started_at) {
+            timeline.push({ time: task.timestamps.started_at, event: 'Processing Started', icon: 'play-circle' });
+        }
+        if (task.timestamps.completed_at) {
+            const event = task.status === 'completed' ? 'Task Completed' : 
+                         task.status === 'failed' ? 'Task Failed' : 'Task Cancelled';
+            timeline.push({ time: task.timestamps.completed_at, event: event, icon: 'check-circle' });
+        }
+
+        content.innerHTML = `
+            <div class="row">
+                <div class="col-md-6">
+                    <h6>Basic Information</h6>
+                    <table class="table table-sm">
+                        <tr><td><strong>Task ID:</strong></td><td><code>${task.task_id}</code></td></tr>
+                        <tr><td><strong>Status:</strong></td><td><span class="badge bg-${getStatusColor(task.status)}">${task.status.toUpperCase()}</span></td></tr>
+                        <tr><td><strong>Priority:</strong></td><td><span class="badge priority-badge ${task.priority}">${task.priority.toUpperCase()}</span></td></tr>
+                        <tr><td><strong>User:</strong></td><td>${task.user.username} (${task.user.email})</td></tr>
+                        <tr><td><strong>Duration:</strong></td><td>${task.duration_seconds ? formatDuration(task.duration_seconds) : task.current_duration_seconds ? formatDuration(task.current_duration_seconds) + ' (ongoing)' : 'N/A'}</td></tr>
+                    </table>
+
+                    <h6>Progress</h6>
+                    <div class="progress mb-2">
+                        <div class="progress-bar" role="progressbar" style="width: ${task.progress.percentage}%">
+                            ${task.progress.percentage}%
+                        </div>
+                    </div>
+                    <p><strong>Current Step:</strong> ${task.progress.current_step}</p>
+                    <p><strong>Images:</strong> ${task.progress.images_processed} / ${task.progress.total_images}</p>
+                </div>
+                
+                <div class="col-md-6">
+                    <h6>Timeline</h6>
+                    <div class="task-timeline">
+                        ${timeline.map(item => `
+                            <div class="timeline-item">
+                                <strong>${item.event}</strong><br>
+                                <small class="text-muted">${formatDateTime(item.time)}</small>
+                            </div>
+                        `).join('')}
+                    </div>
+                </div>
+            </div>
+
+            ${task.platform ? `
+                <h6>Platform Information</h6>
+                <p><strong>Platform:</strong> ${task.platform.name} (${task.platform.type})</p>
+            ` : ''}
+
+            ${Object.keys(task.settings).length > 0 ? `
+                <h6>Settings</h6>
+                <pre class="bg-light p-2 rounded"><code>${JSON.stringify(task.settings, null, 2)}</code></pre>
+            ` : ''}
+
+            ${task.error_info ? `
+                <h6>Error Information</h6>
+                <div class="alert alert-danger">
+                    <strong>Message:</strong> ${escapeHtml(task.error_info.message)}<br>
+                    ${task.error_info.details ? `<strong>Details:</strong> ${escapeHtml(task.error_info.details)}` : ''}
+                </div>
+            ` : ''}
+
+            ${task.admin_info.admin_notes ? `
+                <h6>Admin Notes</h6>
+                <div class="alert alert-info">
+                    ${escapeHtml(task.admin_info.admin_notes)}
+                </div>
+            ` : ''}
+
+            <div class="mt-3">
+                <h6>Admin Notes</h6>
+                <textarea class="form-control" id="taskAdminNotes" rows="3" placeholder="Add admin notes...">${task.admin_info.admin_notes || ''}</textarea>
+                <button class="btn btn-sm btn-outline-primary mt-2" onclick="updateTaskNotes('${task.task_id}')">
+                    <i class="bi bi-save"></i> Save Notes
+                </button>
+            </div>
+        `;
+
+        // Build action buttons
+        let actionButtons = '';
+        if (task.status === 'queued' || task.status === 'running') {
+            actionButtons += `
+                <button class="btn btn-outline-danger" onclick="cancelTask('${task.task_id}')">
+                    <i class="bi bi-stop-circle"></i> Cancel Task
+                </button>
+                <button class="btn btn-outline-warning" onclick="changePriority('${task.task_id}', '${task.priority}')">
+                    <i class="bi bi-arrow-up-circle"></i> Change Priority
+                </button>
+            `;
+        }
+        if (task.status === 'failed' || task.status === 'cancelled') {
+            actionButtons += `
+                <button class="btn btn-outline-success" onclick="retryTask('${task.task_id}')">
+                    <i class="bi bi-arrow-clockwise"></i> Retry Task
+                </button>
+            `;
+        }
+
+        actions.innerHTML = actionButtons;
+
+        // Show modal
+        const bsModal = new bootstrap.Modal(modal);
+        bsModal.show();
+    }
+
+    function cancelTask(taskId) {
+        const reason = prompt('Enter reason for cancellation:');
+        if (!reason) return;
+
+        showConfirmation(
+            'Cancel Task',
+            `Are you sure you want to cancel this task?\n\nReason: ${reason}`,
+            () => {
+                fetch(`/admin/api/rq/tasks/${taskId}/cancel`, {
+                    method: 'POST',
+                    headers: {
+                        'Content-Type': 'application/json',
+                        'X-CSRFToken': getCSRFToken()
+                    },
+                    body: JSON.stringify({ reason: reason })
+                })
+                .then(response => response.json())
+                .then(data => {
+                    if (data.success) {
+                        showAlert('Task cancelled successfully', 'success');
+                        loadTasks();
+                        // Close task details modal if open
+                        const modal = bootstrap.Modal.getInstance(document.getElementById('taskDetailsModal'));
+                        if (modal) modal.hide();
+                    } else {
+                        showAlert('Error cancelling task: ' + data.error, 'danger');
+                    }
+                })
+                .catch(error => {
+                    console.error('Error cancelling task:', error);
+                    showAlert('Failed to cancel task', 'danger');
+                });
+            }
+        );
+    }
+
+    function retryTask(taskId) {
+        showConfirmation(
+            'Retry Task',
+            'Are you sure you want to retry this task? It will be queued for processing again.',
+            () => {
+                fetch(`/admin/api/rq/tasks/${taskId}/retry`, {
+                    method: 'POST',
+                    headers: {
+                        'Content-Type': 'application/json',
+                        'X-CSRFToken': getCSRFToken()
+                    }
+                })
+                .then(response => response.json())
+                .then(data => {
+                    if (data.success) {
+                        showAlert('Task queued for retry', 'success');
+                        loadTasks();
+                        // Close task details modal if open
+                        const modal = bootstrap.Modal.getInstance(document.getElementById('taskDetailsModal'));
+                        if (modal) modal.hide();
+                    } else {
+                        showAlert('Error retrying task: ' + data.error, 'danger');
+                    }
+                })
+                .catch(error => {
+                    console.error('Error retrying task:', error);
+                    showAlert('Failed to retry task', 'danger');
+                });
+            }
+        );
+    }
+
+    function changePriority(taskId, currentPriority) {
+        const priorities = ['urgent', 'high', 'normal', 'low'];
+        const priorityOptions = priorities.map(p => 
+            `<option value="${p}" ${p === currentPriority ? 'selected' : ''}>${p.toUpperCase()}</option>`
+        ).join('');
+
+        const selectHtml = `
+            <select class="form-select" id="newPrioritySelect">
+                ${priorityOptions}
+            </select>
+        `;
+
+        showConfirmation(
+            'Change Task Priority',
+            `Select new priority for this task:\n${selectHtml}`,
+            () => {
+                const newPriority = document.getElementById('newPrioritySelect').value;
+                
+                fetch(`/admin/api/rq/tasks/${taskId}/priority`, {
+                    method: 'PUT',
+                    headers: {
+                        'Content-Type': 'application/json',
+                        'X-CSRFToken': getCSRFToken()
+                    },
+                    body: JSON.stringify({ priority: newPriority })
+                })
+                .then(response => response.json())
+                .then(data => {
+                    if (data.success) {
+                        showAlert(`Task priority updated to ${newPriority}`, 'success');
+                        loadTasks();
+                        // Close task details modal if open
+                        const modal = bootstrap.Modal.getInstance(document.getElementById('taskDetailsModal'));
+                        if (modal) modal.hide();
+                    } else {
+                        showAlert('Error updating priority: ' + data.error, 'danger');
+                    }
+                })
+                .catch(error => {
+                    console.error('Error updating priority:', error);
+                    showAlert('Failed to update priority', 'danger');
+                });
+            }
+        );
+    }
+
+    function updateTaskNotes(taskId) {
+        const notes = document.getElementById('taskAdminNotes').value;
+
+        fetch(`/admin/api/rq/tasks/${taskId}/notes`, {
+            method: 'PUT',
+            headers: {
+                'Content-Type': 'application/json',
+                'X-CSRFToken': getCSRFToken()
+            },
+            body: JSON.stringify({ notes: notes })
+        })
+        .then(response => response.json())
+        .then(data => {
+            if (data.success) {
+                showAlert('Notes updated successfully', 'success');
+            } else {
+                showAlert('Error updating notes: ' + data.error, 'danger');
+            }
+        })
+        .catch(error => {
+            console.error('Error updating notes:', error);
+            showAlert('Failed to update notes', 'danger');
+        });
+    }
+
+    function applyFilters() {
+        currentFilters = {};
+        currentPage = 0;
+
+        const status = document.getElementById('statusFilter').value;
+        const priority = document.getElementById('priorityFilter').value;
+        const userId = document.getElementById('userFilter').value;
+
+        if (status) currentFilters.status = status;
+        if (priority) currentFilters.priority = priority;
+        if (userId) currentFilters.user_id = userId;
+
+        loadTasks();
+    }
+
+    function refreshTasks() {
+        loadTasks();
+    }
+
+    function toggleAutoRefresh() {
+        if (isAutoRefreshActive) {
+            stopAutoRefresh();
+        } else {
+            startAutoRefresh();
+        }
+    }
+
+    function startAutoRefresh() {
+        autoRefreshInterval = setInterval(loadTasks, 10000); // 10 seconds
+        isAutoRefreshActive = true;
+        document.getElementById('autoRefreshIcon').className = 'bi bi-pause-circle';
+        document.getElementById('autoRefreshText').textContent = 'Stop Auto-refresh';
+    }
+
+    function stopAutoRefresh() {
+        if (autoRefreshInterval) {
+            clearInterval(autoRefreshInterval);
+            autoRefreshInterval = null;
+        }
+        isAutoRefreshActive = false;
+        document.getElementById('autoRefreshIcon').className = 'bi bi-play-circle';
+        document.getElementById('autoRefreshText').textContent = 'Start Auto-refresh';
+    }
+
+    function getCurrentLimit() {
+        return parseInt(document.getElementById('limitFilter').value);
+    }
+
+    function updatePagination(pagination) {
+        const info = document.getElementById('paginationInfo');
+        const controls = document.getElementById('paginationControls');
+
+        const start = pagination.offset + 1;
+        const end = Math.min(pagination.offset + pagination.limit, pagination.total);
+
+        info.textContent = `Showing ${start}-${end} of ${pagination.total} tasks`;
+
+        // Build pagination controls
+        const totalPages = Math.ceil(pagination.total / pagination.limit);
+        const currentPageNum = Math.floor(pagination.offset / pagination.limit);
+
+        let paginationHtml = '';
+
+        // Previous button
+        if (currentPageNum > 0) {
+            paginationHtml += `
+                <li class="page-item">
+                    <a class="page-link" href="#" onclick="goToPage(${currentPageNum - 1})">Previous</a>
+                </li>
+            `;
+        }
+
+        // Page numbers
+        const startPage = Math.max(0, currentPageNum - 2);
+        const endPage = Math.min(totalPages - 1, currentPageNum + 2);
+
+        for (let i = startPage; i <= endPage; i++) {
+            paginationHtml += `
+                <li class="page-item ${i === currentPageNum ? 'active' : ''}">
+                    <a class="page-link" href="#" onclick="goToPage(${i})">${i + 1}</a>
+                </li>
+            `;
+        }
+
+        // Next button
+        if (currentPageNum < totalPages - 1) {
+            paginationHtml += `
+                <li class="page-item">
+                    <a class="page-link" href="#" onclick="goToPage(${currentPageNum + 1})">Next</a>
+                </li>
+            `;
+        }
+
+        controls.innerHTML = paginationHtml;
+    }
+
+    function goToPage(page) {
+        currentPage = page;
+        loadTasks();
+    }
+
+    function showConfirmation(title, message, onConfirm) {
+        const modal = document.getElementById('confirmationModal');
+        const titleEl = document.getElementById('confirmationModalLabel');
+        const bodyEl = document.getElementById('confirmationModalBody');
+        const confirmBtn = document.getElementById('confirmActionBtn');
+
+        titleEl.textContent = title;
+        bodyEl.innerHTML = message;
+
+        // Remove existing event listeners
+        const newConfirmBtn = confirmBtn.cloneNode(true);
+        confirmBtn.parentNode.replaceChild(newConfirmBtn, confirmBtn);
+
+        // Add new event listener
+        newConfirmBtn.addEventListener('click', () => {
+            onConfirm();
+            bootstrap.Modal.getInstance(modal).hide();
+        });
+
+        const bsModal = new bootstrap.Modal(modal);
+        bsModal.show();
+    }
+
+    function showAlert(message, type = 'info') {
+        const alertsContainer = document.getElementById('alertsContainer');
+        const alertId = 'alert-' + Date.now();
+
+        const alertHtml = `
+            <div id="${alertId}" class="alert alert-${type} alert-dismissible fade show" role="alert">
+                ${message}
+                <button type="button" class="btn-close" data-bs-dismiss="alert" aria-label="Close"></button>
+            </div>
+        `;
+
+        alertsContainer.insertAdjacentHTML('beforeend', alertHtml);
+
+        // Auto-dismiss after 5 seconds
+        setTimeout(() => {
+            const alert = document.getElementById(alertId);
+            if (alert) {
+                alert.remove();
+            }
+        }, 5000);
+    }
+
+    function formatTime(isoString) {
+        if (!isoString) return 'N/A';
+        const date = new Date(isoString);
+        return date.toLocaleTimeString();
+    }
+
+    function formatDateTime(isoString) {
+        if (!isoString) return 'N/A';
+        const date = new Date(isoString);
+        return date.toLocaleString();
+    }
+
+    function formatDuration(seconds) {
+        const hours = Math.floor(seconds / 3600);
+        const minutes = Math.floor((seconds % 3600) / 60);
+        const secs = Math.floor(seconds % 60);
+
+        if (hours > 0) {
+            return `${hours}h ${minutes}m ${secs}s`;
+        } else if (minutes > 0) {
+            return `${minutes}m ${secs}s`;
+        } else {
+            return `${secs}s`;
+        }
+    }
+
+    function escapeHtml(text) {
+        const div = document.createElement('div');
+        div.textContent = text;
+        return div.innerHTML;
+    }
+
+    function getCSRFToken() {
+        return document.querySelector('meta[name=csrf-token]').getAttribute('content');
+    }
+</script>
+{% endblock %}

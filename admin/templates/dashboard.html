@@ -122,6 +122,99 @@
     </div>
 </div>
 
+<!-- RQ Queue Statistics -->
+<div class="row mb-4">
+    <div class="col-12">
+        <div class="card">
+            <div class="card-header d-flex justify-content-between align-items-center">
+                <h5 class="mb-0">
+                    <i class="bi bi-diagram-3"></i> RQ Queue Statistics
+                </h5>
+                <div class="btn-group btn-group-sm">
+                    <button type="button" class="btn btn-outline-secondary" onclick="refreshRQStats()">
+                        <i class="bi bi-arrow-clockwise"></i>
+                    </button>
+                    <a href="{{ url_for('admin.rq_monitoring_dashboard') }}" class="btn btn-outline-primary">
+                        <i class="bi bi-eye"></i> Full Monitoring
+                    </a>
+                    <a href="{{ url_for('admin.rq_task_management') }}" class="btn btn-outline-secondary">
+                        <i class="bi bi-kanban"></i> Task Management
+                    </a>
+                </div>
+            </div>
+            <div class="card-body">
+                {% if rq_health.redis_available %}
+                <div class="row">
+                    <div class="col-md-2">
+                        <div class="text-center">
+                            <div class="h4 text-success" id="rqRedisStatus">
+                                <i class="bi bi-check-circle"></i> Connected
+                            </div>
+                            <small class="text-muted">Redis Status</small>
+                        </div>
+                    </div>
+                    <div class="col-md-2">
+                        <div class="text-center">
+                            <div class="h4 text-primary" id="rqTotalPending">{{ rq_stats.total_pending or 0 }}</div>
+                            <small class="text-muted">Total Pending</small>
+                        </div>
+                    </div>
+                    <div class="col-md-2">
+                        <div class="text-center">
+                            <div class="h4 text-warning" id="rqUrgentPending">
+                                {{ rq_stats.queues.urgent.pending if rq_stats.queues and 'urgent' in rq_stats.queues else 0 }}
+                            </div>
+                            <small class="text-muted">Urgent Queue</small>
+                        </div>
+                    </div>
+                    <div class="col-md-2">
+                        <div class="text-center">
+                            <div class="h4 text-info" id="rqHighPending">
+                                {{ rq_stats.queues.high.pending if rq_stats.queues and 'high' in rq_stats.queues else 0 }}
+                            </div>
+                            <small class="text-muted">High Queue</small>
+                        </div>
+                    </div>
+                    <div class="col-md-2">
+                        <div class="text-center">
+                            <div class="h4 text-secondary" id="rqNormalPending">
+                                {{ rq_stats.queues.normal.pending if rq_stats.queues and 'normal' in rq_stats.queues else 0 }}
+                            </div>
+                            <small class="text-muted">Normal Queue</small>
+                        </div>
+                    </div>
+                    <div class="col-md-2">
+                        <div class="text-center">
+                            <div class="h4 text-danger" id="rqTotalFailed">{{ rq_stats.total_failed or 0 }}</div>
+                            <small class="text-muted">Total Failed</small>
+                        </div>
+                    </div>
+                </div>
+                {% else %}
+                <div class="alert alert-warning" role="alert">
+                    <i class="bi bi-exclamation-triangle"></i>
+                    <strong>RQ System Status:</strong>
+                    {% if rq_health.fallback_mode %}
+                        Redis unavailable - Database fallback mode active
+                    {% else %}
+                        RQ system not initialized
+                    {% endif %}
+                    <div class="mt-2">
+                        <small>
+                            Database Tasks: 
+                            Queued: {{ rq_stats.db_queued or 0 }}, 
+                            Running: {{ rq_stats.db_running or 0 }}, 
+                            Completed: {{ rq_stats.db_completed or 0 }}, 
+                            Failed: {{ rq_stats.db_failed or 0 }}
+                        </small>
+                    </div>
+                </div>
+                {% endif %}
+            </div>
+        </div>
+    </div>
+</div>
+
 <!-- Active Jobs Management -->
 <div class="row mb-4">
     <div class="col-12">

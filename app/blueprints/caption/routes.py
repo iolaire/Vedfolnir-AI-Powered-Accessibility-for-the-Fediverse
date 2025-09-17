@@ -11,14 +11,18 @@ caption_bp = Blueprint('caption', __name__, url_prefix='/caption')
 def generation():
     """Caption generation page"""
     try:
-        from app.utils.processing.web_caption_generation_service import WebCaptionGenerationService
+        from app.services.task.web.rq_web_caption_service import RQWebCaptionService
         
         db_manager = current_app.config.get('db_manager')
         if not db_manager:
             current_app.logger.error("Database manager not found in app config")
             return redirect(url_for('main.index'))
         
-        caption_service = WebCaptionGenerationService(db_manager)
+        # Get RQ queue manager if available
+        rq_queue_manager = getattr(current_app, 'rq_queue_manager', None)
+        
+        # Create RQ-aware caption service
+        caption_service = RQWebCaptionService(db_manager, rq_queue_manager)
         active_task = caption_service.get_active_task_for_user(current_user.id)
 
         # Get task history using the same approach as admin job history
@@ -154,16 +158,22 @@ def generation():
 @login_required
 @require_platform_context
 def start_generation():
-    """Start caption generation process"""
+    """Start caption generation process with RQ support"""
     try:
-        from app.utils.processing.web_caption_generation_service import WebCaptionGenerationService
+        # Import RQ-aware service
+        from app.services.task.web.rq_web_caption_service import RQWebCaptionService
+        from app.services.task.rq.rq_config import TaskPriority
         
         db_manager = current_app.config.get('db_manager')
         if not db_manager:
             current_app.logger.error("Database manager not found in app config")
             return redirect(url_for('main.index'))
         
-        caption_service = WebCaptionGenerationService(db_manager)
+        # Get RQ queue manager if available
+        rq_queue_manager = getattr(current_app, 'rq_queue_manager', None)
+        
+        # Create RQ-aware caption service
+        caption_service = RQWebCaptionService(db_manager, rq_queue_manager)
         
         # Platform context is now available in g.session_context
         platform_connection_id = g.session_context.get('platform_connection_id')
@@ -182,11 +192,15 @@ def start_generation():
             reprocess_existing=get_form_int('reprocess_existing', 0) == 1
         )
         
-        # Use synchronous execution to avoid event loop issues
+        # Determine task priority based on user role
+        priority = TaskPriority.HIGH if current_user.role.name == 'ADMIN' else TaskPriority.NORMAL
+        
+        # Use RQ-aware synchronous execution
         task_id = caption_service.start_caption_generation_sync(
             current_user.id,
             platform_connection_id,
-            settings=settings
+            settings=settings,
+            priority=priority
         )
         
         if task_id:
@@ -203,16 +217,20 @@ def start_generation():
 @caption_bp.route('/api/status/<task_id>')
 @login_required
 def get_status(task_id):
-    """Get caption generation task status"""
+    """Get caption generation task status with RQ support"""
     try:
-        from app.utils.processing.web_caption_generation_service import WebCaptionGenerationService
+        from app.services.task.web.rq_web_caption_service import RQWebCaptionService
         
         db_manager = current_app.config.get('db_manager')
         if not db_manager:
             current_app.logger.error("Database manager not found in app config")
             return redirect(url_for('main.index'))
         
-        caption_service = WebCaptionGenerationService(db_manager)
+        # Get RQ queue manager if available
+        rq_queue_manager = getattr(current_app, 'rq_queue_manager', None)
+        
+        # Create RQ-aware caption service
+        caption_service = RQWebCaptionService(db_manager, rq_queue_manager)
         status = caption_service.get_task_status(task_id, current_user.id)
         
         if status:
@@ -233,16 +251,20 @@ def get_status(task_id):
 @caption_bp.route('/api/cancel/<task_id>', methods=['POST'])
 @login_required
 def cancel_generation(task_id):
-    """Cancel caption generation task"""
+    """Cancel caption generation task with RQ support"""
     try:
-        from app.utils.processing.web_caption_generation_service import WebCaptionGenerationService
+        from app.services.task.web.rq_web_caption_service import RQWebCaptionService
         
         db_manager = current_app.config.get('db_manager')
         if not db_manager:
             current_app.logger.error("Database manager not found in app config")
             return error_response('Database manager not available', 500)
         
-        caption_service = WebCaptionGenerationService(db_manager)
+        # Get RQ queue manager if available
+        rq_queue_manager = getattr(current_app, 'rq_queue_manager', None)
+        
+        # Create RQ-aware caption service
+        caption_service = RQWebCaptionService(db_manager, rq_queue_manager)
         
         # Validate that the task belongs to the current user
         task_status = caption_service.get_task_status(task_id, current_user.id)

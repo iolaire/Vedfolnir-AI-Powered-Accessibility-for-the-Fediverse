@@ -237,12 +237,82 @@ function refreshDashboard() {
         refreshDashboardStats(),
         refreshSystemMetrics(),
         refreshActiveJobs(),
-        refreshAlerts()
+        refreshAlerts(),
+        refreshRQStats()
     ]).then(() => {
         console.log('Dashboard refresh complete');
     }).catch(error => {
         console.error('Dashboard refresh failed:', error);
         showNotification('Failed to refresh dashboard', 'error');
+    });
+}
+
+/**
+ * Refresh RQ queue statistics
+ */
+async function refreshRQStats() {
+    try {
+        console.log('Fetching RQ statistics...');
+        const response = await fetch('/admin/api/rq/queue-stats');
+        console.log('RQ stats response status:', response.status);
+        
+        if (!response.ok) {
+            throw new Error(`HTTP ${response.status}: ${response.statusText}`);
+        }
+        
+        const data = await response.json();
+        console.log('RQ stats data:', data);
+
+        if (data.success) {
+            updateRQStats(data.data);
+        } else {
+            console.error('RQ stats API returned error:', data.error);
+            // Don't throw error for RQ stats failure - it's optional
+        }
+    } catch (error) {
+        console.error('Failed to refresh RQ statistics:', error);
+        // Don't show notification for RQ stats failure - it's optional
+    }
+}
+
+/**
+ * Update RQ statistics display
+ */
+function updateRQStats(stats) {
+    // Update Redis status
+    const redisStatusElement = document.getElementById('rqRedisStatus');
+    if (redisStatusElement) {
+        if (stats.redis_available && !stats.fallback_mode) {
+            redisStatusElement.innerHTML = '<i class="bi bi-check-circle"></i> Connected';
+            redisStatusElement.className = 'h4 text-success';
+        } else if (stats.redis_available && stats.fallback_mode) {
+            redisStatusElement.innerHTML = '<i class="bi bi-exclamation-triangle"></i> Degraded';
+            redisStatusElement.className = 'h4 text-warning';
+        } else {
+            redisStatusElement.innerHTML = '<i class="bi bi-x-circle"></i> Disconnected';
+            redisStatusElement.className = 'h4 text-danger';
+        }
+    }
+    
+    // Update total pending
+    const totalPendingElement = document.getElementById('rqTotalPending');
+    if (totalPendingElement) {
+        totalPendingElement.textContent = stats.total_pending || 0;
+    }
+    
+    // Update individual queue stats
+    const queueElements = {
+        'rqUrgentPending': stats.queues?.urgent?.pending || 0,
+        'rqHighPending': stats.queues?.high?.pending || 0,
+        'rqNormalPending': stats.queues?.normal?.pending || 0,
+        'rqTotalFailed': stats.total_failed || 0
+    };
+    
+    Object.entries(queueElements).forEach(([id, value]) => {
+        const element = document.getElementById(id);
+        if (element) {
+            element.textContent = value;
+        }
     });
 }
 

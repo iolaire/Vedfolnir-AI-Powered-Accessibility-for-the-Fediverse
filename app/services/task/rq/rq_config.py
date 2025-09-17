@@ -61,6 +61,7 @@ class WorkerConfig:
     """Configuration for RQ workers"""
     worker_id: str
     queues: List[str]  # Priority order
+    worker_type: str  # integrated, external
     concurrency: int
     memory_limit: int  # MB
     timeout: int  # seconds
@@ -147,6 +148,7 @@ class RQConfig:
             configs['integrated_urgent_high'] = WorkerConfig(
                 worker_id='integrated_urgent_high',
                 queues=['urgent', 'high'],
+                worker_type='integrated',
                 concurrency=2,
                 memory_limit=self.worker_memory_limit,
                 timeout=self.worker_timeout,
@@ -156,6 +158,7 @@ class RQConfig:
             configs['integrated_normal'] = WorkerConfig(
                 worker_id='integrated_normal',
                 queues=['normal'],
+                worker_type='integrated',
                 concurrency=2,
                 memory_limit=self.worker_memory_limit,
                 timeout=self.worker_timeout,
@@ -167,6 +170,7 @@ class RQConfig:
             configs['external_low'] = WorkerConfig(
                 worker_id='external_low',
                 queues=['low'],
+                worker_type='external',
                 concurrency=3,
                 memory_limit=self.worker_memory_limit * 2,
                 timeout=self.worker_timeout * 2,

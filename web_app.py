@@ -134,6 +134,29 @@ except Exception as e:
 from app.core.blueprints import register_blueprints
 register_blueprints(app)
 
+# Initialize RQ workers with Gunicorn integration (Flask 2.2+ compatible)
+try:
+    from app.services.task.rq.gunicorn_integration import initialize_rq_workers
+    
+    # Use Flask's record_once for one-time initialization per application instance
+    @app.record_once
+    def init_rq_workers(state):
+        """Initialize RQ workers once per application instance"""
+        app_instance = state.app
+        with app_instance.app_context():
+            rq_integration = initialize_rq_workers(app_instance, db_manager)
+            if rq_integration:
+                app_instance.rq_integration = rq_integration
+                print("✅ RQ workers initialized successfully with Gunicorn")
+            else:
+                print("⚠️  RQ worker initialization failed")
+                app_instance.rq_integration = None
+    
+    print("✅ RQ Gunicorn integration configured successfully")
+except Exception as e:
+    print(f"⚠️  Failed to configure RQ Gunicorn integration: {e}")
+    app.rq_integration = None
+
 # Register performance monitoring blueprint
 try:
     from app.services.performance.components.performance_monitoring_dashboard import register_performance_monitoring

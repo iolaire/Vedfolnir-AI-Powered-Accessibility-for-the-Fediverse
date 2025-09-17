@@ -1,0 +1,629 @@
+<!-- Copyright (C) 2025 iolaire mcfadden. -->
+<!-- This program is free software: you can redistribute it and/or modify it under the terms of the GNU Affero General Public License as published by the Free Software Foundation, either version 3 of the License, or (at your option) any later version. -->
+<!-- THE SOFTWARE IS PROVIDED "AS IS", WITHOUT WARRANTY OF ANY KIND, EXPRESS OR IMPLIED, INCLUDING BUT NOT LIMITED TO THE WARRANTIES OF MERCHANTABILITY, FITNESS FOR A PARTICULAR PURPOSE AND NONINFRINGEMENT. IN NO EVENT SHALL THE AUTHORS OR COPYRIGHT HOLDERS BE LIABLE FOR ANY CLAIM, DAMAGES OR OTHER LIABILITY, WHETHER IN AN ACTION OF CONTRACT, TORT OR OTHERWISE, ARISING FROM, OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE SOFTWARE. -->
+
+{% extends "base_admin.html" %}
+
+{% block title %}RQ Queue Monitoring - Admin Dashboard{% endblock %}
+
+{% block extra_head %}
+<style nonce="{{ g.csp_nonce if g.csp_nonce else '' }}">
+    .queue-card {
+        transition: all 0.3s ease;
+    }
+    .queue-card:hover {
+        transform: translateY(-2px);
+        box-shadow: 0 4px 8px rgba(0,0,0,0.1);
+    }
+    .metric-value {
+        font-size: 2rem;
+        font-weight: bold;
+    }
+    .metric-label {
+        font-size: 0.9rem;
+        color: #6c757d;
+    }
+    .status-indicator {
+        width: 12px;
+        height: 12px;
+        border-radius: 50%;
+        display: inline-block;
+        margin-right: 8px;
+    }
+    .status-healthy { background-color: #28a745; }
+    .status-warning { background-color: #ffc107; }
+    .status-error { background-color: #dc3545; }
+    .status-unknown { background-color: #6c757d; }
+    .performance-chart {
+        height: 200px;
+    }
+    .queue-actions {
+        margin-top: 1rem;
+    }
+    .queue-actions .btn {
+        margin-right: 0.5rem;
+        margin-bottom: 0.5rem;
+    }
+</style>
+{% endblock %}
+
+{% block content %}
+<div class="d-flex justify-content-between flex-wrap flex-md-nowrap align-items-center pt-3 pb-2 mb-3 border-bottom">
+    <h1 class="h2">
+        <i class="bi bi-diagram-3"></i> RQ Queue Monitoring
+        <span class="real-time-indicator" id="connectionStatus" title="Real-time updates active"></span>
+    </h1>
+    <div class="btn-toolbar mb-2 mb-md-0">
+        <div class="btn-group me-2">
+            <button type="button" class="btn btn-sm btn-outline-secondary" onclick="refreshDashboard()">
+                <i class="bi bi-arrow-clockwise"></i> Refresh
+            </button>
+            <button type="button" class="btn btn-sm btn-outline-primary" onclick="toggleAutoRefresh()">
+                <i class="bi bi-play-circle" id="autoRefreshIcon"></i> <span id="autoRefreshText">Start Auto-refresh</span>
+            </button>
+            <button type="button" class="btn btn-sm btn-outline-info" onclick="forceHealthCheck()">
+                <i class="bi bi-heart-pulse"></i> Health Check
+            </button>
+            <a href="{{ url_for('admin.rq_task_management') }}" class="btn btn-sm btn-outline-primary">
+                <i class="bi bi-kanban"></i> Task Management
+            </a>
+        </div>
+    </div>
+</div>
+
+{% if error %}
+<div class="alert alert-danger" role="alert">
+    <i class="bi bi-exclamation-triangle"></i> {{ error }}
+</div>
+{% else %}
+
+<!-- System Status Overview -->
+<div class="row mb-4">
+    <div class="col-md-3">
+        <div class="card text-white" id="redisStatusCard">
+            <div class="card-header d-flex justify-content-between align-items-center">
+                <span>Redis Status</span>
+                <i class="bi bi-database"></i>
+            </div>
+            <div class="card-body">
+                <h4 class="card-title" id="redisStatus">
+                    {% if health_status.redis_available %}
+                        <span class="status-indicator status-healthy"></span>Connected
+                    {% else %}
+                        <span class="status-indicator status-error"></span>Disconnected
+                    {% endif %}
+                </h4>
+                <p class="card-text">
+                    <small id="redisDetails">
+                        {% if health_status.fallback_mode %}
+                            Fallback mode active
+                        {% else %}
+                            Normal operation
+                        {% endif %}
+                    </small>
+                </p>
+            </div>
+        </div>
+    </div>
+    
+    <div class="col-md-3">
+        <div class="card text-white bg-info">
+            <div class="card-header d-flex justify-content-between align-items-center">
+                <span>Total Pending</span>
+                <i class="bi bi-clock"></i>
+            </div>
+            <div class="card-body">
+                <h4 class="card-title" id="totalPending">{{ queue_stats.total_pending or 0 }}</h4>
+                <p class="card-text">
+                    <small>Across all queues</small>
+                </p>
+            </div>
+        </div>
+    </div>
+    
+    <div class="col-md-3">
+        <div class="card text-white bg-success">
+            <div class="card-header d-flex justify-content-between align-items-center">
+                <span>Success Rate</span>
+                <i class="bi bi-check-circle"></i>
+            </div>
+            <div class="card-body">
+                <h4 class="card-title" id="successRate">{{ performance_metrics.success_rate or 0 }}%</h4>
+                <p class="card-text">
+                    <small>Last 24 hours</small>
+                </p>
+            </div>
+        </div>
+    </div>
+    
+    <div class="col-md-3">
+        <div class="card text-white bg-warning">
+            <div class="card-header d-flex justify-content-between align-items-center">
+                <span>Avg Processing</span>
+                <i class="bi bi-speedometer2"></i>
+            </div>
+            <div class="card-body">
+                <h4 class="card-title" id="avgProcessing">{{ performance_metrics.avg_processing_time or 0 }}s</h4>
+                <p class="card-text">
+                    <small>Per task</small>
+                </p>
+            </div>
+        </div>
+    </div>
+</div>
+
+<!-- Queue Statistics -->
+<div class="row mb-4">
+    <div class="col-12">
+        <div class="card">
+            <div class="card-header d-flex justify-content-between align-items-center">
+                <h5 class="mb-0">
+                    <i class="bi bi-list-ul"></i> Queue Statistics by Priority
+                </h5>
+                <div class="btn-group btn-group-sm">
+                    <button type="button" class="btn btn-outline-secondary" onclick="refreshQueueStats()">
+                        <i class="bi bi-arrow-clockwise"></i>
+                    </button>
+                    <button type="button" class="btn btn-outline-warning" onclick="cleanupCompletedJobs()">
+                        <i class="bi bi-trash"></i> Cleanup
+                    </button>
+                </div>
+            </div>
+            <div class="card-body">
+                <div class="row" id="queueStatsContainer">
+                    {% for priority in ['urgent', 'high', 'normal', 'low'] %}
+                    <div class="col-md-3 mb-3">
+                        <div class="card queue-card border-left-{{ 'danger' if priority == 'urgent' else 'warning' if priority == 'high' else 'primary' if priority == 'normal' else 'secondary' }}">
+                            <div class="card-body">
+                                <div class="d-flex justify-content-between align-items-center mb-2">
+                                    <h6 class="card-title text-uppercase">{{ priority }}</h6>
+                                    <i class="bi bi-{{ 'exclamation-triangle' if priority == 'urgent' else 'arrow-up' if priority == 'high' else 'dash' if priority == 'normal' else 'arrow-down' }}"></i>
+                                </div>
+                                
+                                <div class="row text-center">
+                                    <div class="col-6">
+                                        <div class="metric-value text-primary" id="{{ priority }}Pending">
+                                            {{ queue_stats.queues[priority].pending if queue_stats.queues and priority in queue_stats.queues else 0 }}
+                                        </div>
+                                        <div class="metric-label">Pending</div>
+                                    </div>
+                                    <div class="col-6">
+                                        <div class="metric-value text-success" id="{{ priority }}Finished">
+                                            {{ queue_stats.queues[priority].finished if queue_stats.queues and priority in queue_stats.queues else 0 }}
+                                        </div>
+                                        <div class="metric-label">Finished</div>
+                                    </div>
+                                </div>
+                                
+                                <div class="row text-center mt-2">
+                                    <div class="col-6">
+                                        <div class="metric-value text-info" id="{{ priority }}Started">
+                                            {{ queue_stats.queues[priority].started if queue_stats.queues and priority in queue_stats.queues else 0 }}
+                                        </div>
+                                        <div class="metric-label">Processing</div>
+                                    </div>
+                                    <div class="col-6">
+                                        <div class="metric-value text-danger" id="{{ priority }}Failed">
+                                            {{ queue_stats.queues[priority].failed if queue_stats.queues and priority in queue_stats.queues else 0 }}
+                                        </div>
+                                        <div class="metric-label">Failed</div>
+                                    </div>
+                                </div>
+                                
+                                <div class="queue-actions">
+                                    <button class="btn btn-sm btn-outline-warning" onclick="pauseQueue('{{ priority }}')">
+                                        <i class="bi bi-pause"></i> Pause
+                                    </button>
+                                    <button class="btn btn-sm btn-outline-success" onclick="resumeQueue('{{ priority }}')">
+                                        <i class="bi bi-play"></i> Resume
+                                    </button>
+                                    <button class="btn btn-sm btn-outline-danger" onclick="clearQueue('{{ priority }}')">
+                                        <i class="bi bi-trash"></i> Clear
+                                    </button>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                    {% endfor %}
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+
+<!-- Performance Metrics -->
+<div class="row mb-4">
+    <div class="col-md-8">
+        <div class="card">
+            <div class="card-header">
+                <h5 class="mb-0">
+                    <i class="bi bi-graph-up"></i> Performance Metrics (24h)
+                </h5>
+            </div>
+            <div class="card-body">
+                <div class="row">
+                    <div class="col-md-4 text-center">
+                        <div class="metric-value text-success">{{ performance_metrics.completed_tasks_24h or 0 }}</div>
+                        <div class="metric-label">Completed Tasks</div>
+                    </div>
+                    <div class="col-md-4 text-center">
+                        <div class="metric-value text-danger">{{ performance_metrics.failed_tasks_24h or 0 }}</div>
+                        <div class="metric-label">Failed Tasks</div>
+                    </div>
+                    <div class="col-md-4 text-center">
+                        <div class="metric-value text-info">{{ performance_metrics.total_tasks_24h or 0 }}</div>
+                        <div class="metric-label">Total Tasks</div>
+                    </div>
+                </div>
+                
+                <hr>
+                
+                <div class="row">
+                    <div class="col-md-4 text-center">
+                        <div class="metric-value text-primary">{{ performance_metrics.min_processing_time or 0 }}s</div>
+                        <div class="metric-label">Min Processing Time</div>
+                    </div>
+                    <div class="col-md-4 text-center">
+                        <div class="metric-value text-warning">{{ performance_metrics.avg_processing_time or 0 }}s</div>
+                        <div class="metric-label">Avg Processing Time</div>
+                    </div>
+                    <div class="col-md-4 text-center">
+                        <div class="metric-value text-danger">{{ performance_metrics.max_processing_time or 0 }}s</div>
+                        <div class="metric-label">Max Processing Time</div>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+    
+    <div class="col-md-4">
+        <div class="card">
+            <div class="card-header">
+                <h5 class="mb-0">
+                    <i class="bi bi-heart-pulse"></i> System Health
+                </h5>
+            </div>
+            <div class="card-body">
+                <div class="mb-3">
+                    <div class="d-flex justify-content-between align-items-center">
+                        <span>Queues Initialized</span>
+                        <span class="badge bg-{{ 'success' if health_status.queues_initialized else 'danger' }}">
+                            {{ 'Yes' if health_status.queues_initialized else 'No' }}
+                        </span>
+                    </div>
+                </div>
+                
+                <div class="mb-3">
+                    <div class="d-flex justify-content-between align-items-center">
+                        <span>User Tracker</span>
+                        <span class="badge bg-{{ 'success' if health_status.user_tracker_active else 'warning' }}">
+                            {{ 'Active' if health_status.user_tracker_active else 'Inactive' }}
+                        </span>
+                    </div>
+                </div>
+                
+                <div class="mb-3">
+                    <div class="d-flex justify-content-between align-items-center">
+                        <span>Health Monitor</span>
+                        <span class="badge bg-{{ 'success' if health_status.health_monitor_active else 'warning' }}">
+                            {{ 'Active' if health_status.health_monitor_active else 'Inactive' }}
+                        </span>
+                    </div>
+                </div>
+                
+                <div class="mb-3">
+                    <div class="d-flex justify-content-between align-items-center">
+                        <span>Fallback Mode</span>
+                        <span class="badge bg-{{ 'warning' if health_status.fallback_mode else 'success' }}">
+                            {{ 'Active' if health_status.fallback_mode else 'Inactive' }}
+                        </span>
+                    </div>
+                </div>
+                
+                <div class="d-grid">
+                    <button class="btn btn-outline-primary btn-sm" onclick="forceHealthCheck()">
+                        <i class="bi bi-arrow-clockwise"></i> Refresh Health Status
+                    </button>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+
+<!-- Database Fallback Statistics -->
+{% if queue_stats.fallback_mode %}
+<div class="row mb-4">
+    <div class="col-12">
+        <div class="card border-warning">
+            <div class="card-header bg-warning text-dark">
+                <h5 class="mb-0">
+                    <i class="bi bi-exclamation-triangle"></i> Database Fallback Mode Active
+                </h5>
+            </div>
+            <div class="card-body">
+                <p class="mb-3">Redis is unavailable. Tasks are being processed using database fallback mode.</p>
+                
+                <div class="row">
+                    <div class="col-md-3 text-center">
+                        <div class="metric-value text-secondary">{{ queue_stats.db_queued or 0 }}</div>
+                        <div class="metric-label">DB Queued</div>
+                    </div>
+                    <div class="col-md-3 text-center">
+                        <div class="metric-value text-primary">{{ queue_stats.db_running or 0 }}</div>
+                        <div class="metric-label">DB Running</div>
+                    </div>
+                    <div class="col-md-3 text-center">
+                        <div class="metric-value text-success">{{ queue_stats.db_completed or 0 }}</div>
+                        <div class="metric-label">DB Completed</div>
+                    </div>
+                    <div class="col-md-3 text-center">
+                        <div class="metric-value text-danger">{{ queue_stats.db_failed or 0 }}</div>
+                        <div class="metric-label">DB Failed</div>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+{% endif %}
+
+{% endif %}
+
+<!-- Alerts Container -->
+<div id="alertsContainer"></div>
+
+{% endblock %}
+
+{% block extra_js %}
+<script nonce="{{ g.csp_nonce if g.csp_nonce else '' }}">
+    let autoRefreshInterval = null;
+    let isAutoRefreshActive = false;
+
+    // Initialize dashboard
+    document.addEventListener('DOMContentLoaded', function() {
+        updateConnectionStatus();
+        
+        // Set initial Redis status card color
+        updateRedisStatusCard();
+    });
+
+    function refreshDashboard() {
+        console.log('Refreshing RQ dashboard...');
+        refreshQueueStats();
+        refreshPerformanceMetrics();
+        refreshHealthStatus();
+    }
+
+    function refreshQueueStats() {
+        fetch('/admin/api/rq/queue-stats')
+            .then(response => response.json())
+            .then(data => {
+                if (data.success) {
+                    updateQueueStats(data.data);
+                } else {
+                    showAlert('Error fetching queue stats: ' + data.error, 'danger');
+                }
+            })
+            .catch(error => {
+                console.error('Error fetching queue stats:', error);
+                showAlert('Failed to fetch queue statistics', 'danger');
+            });
+    }
+
+    function refreshPerformanceMetrics() {
+        fetch('/admin/api/rq/performance-metrics')
+            .then(response => response.json())
+            .then(data => {
+                if (data.success) {
+                    updatePerformanceMetrics(data.data);
+                } else {
+                    showAlert('Error fetching performance metrics: ' + data.error, 'warning');
+                }
+            })
+            .catch(error => {
+                console.error('Error fetching performance metrics:', error);
+            });
+    }
+
+    function refreshHealthStatus() {
+        fetch('/admin/api/rq/health-check')
+            .then(response => response.json())
+            .then(data => {
+                if (data.success) {
+                    updateHealthStatus(data.data);
+                } else {
+                    showAlert('Error checking health: ' + data.error, 'warning');
+                }
+            })
+            .catch(error => {
+                console.error('Error checking health:', error);
+            });
+    }
+
+    function updateQueueStats(stats) {
+        // Update total pending
+        document.getElementById('totalPending').textContent = stats.total_pending || 0;
+        
+        // Update individual queue stats
+        const priorities = ['urgent', 'high', 'normal', 'low'];
+        priorities.forEach(priority => {
+            if (stats.queues && stats.queues[priority]) {
+                const queueStats = stats.queues[priority];
+                document.getElementById(priority + 'Pending').textContent = queueStats.pending || 0;
+                document.getElementById(priority + 'Finished').textContent = queueStats.finished || 0;
+                document.getElementById(priority + 'Started').textContent = queueStats.started || 0;
+                document.getElementById(priority + 'Failed').textContent = queueStats.failed || 0;
+            }
+        });
+        
+        // Update Redis status
+        if (stats.health) {
+            updateRedisStatusCard(stats.health.redis_available, stats.health.fallback_mode);
+        }
+    }
+
+    function updatePerformanceMetrics(metrics) {
+        document.getElementById('successRate').textContent = (metrics.success_rate || 0) + '%';
+        document.getElementById('avgProcessing').textContent = (metrics.avg_processing_time || 0) + 's';
+    }
+
+    function updateHealthStatus(health) {
+        updateRedisStatusCard(health.redis_available, health.fallback_mode);
+    }
+
+    function updateRedisStatusCard(redisAvailable = null, fallbackMode = null) {
+        const card = document.getElementById('redisStatusCard');
+        const status = document.getElementById('redisStatus');
+        const details = document.getElementById('redisDetails');
+        
+        if (redisAvailable === null) {
+            // Use initial values from template
+            redisAvailable = {{ 'true' if health_status.redis_available else 'false' }};
+            fallbackMode = {{ 'true' if health_status.fallback_mode else 'false' }};
+        }
+        
+        // Update card color and content
+        card.className = 'card text-white';
+        if (redisAvailable && !fallbackMode) {
+            card.classList.add('bg-success');
+            status.innerHTML = '<span class="status-indicator status-healthy"></span>Connected';
+            details.textContent = 'Normal operation';
+        } else if (redisAvailable && fallbackMode) {
+            card.classList.add('bg-warning');
+            status.innerHTML = '<span class="status-indicator status-warning"></span>Degraded';
+            details.textContent = 'Fallback mode active';
+        } else {
+            card.classList.add('bg-danger');
+            status.innerHTML = '<span class="status-indicator status-error"></span>Disconnected';
+            details.textContent = 'Database fallback only';
+        }
+    }
+
+    function toggleAutoRefresh() {
+        if (isAutoRefreshActive) {
+            stopAutoRefresh();
+        } else {
+            startAutoRefresh();
+        }
+    }
+
+    function startAutoRefresh() {
+        autoRefreshInterval = setInterval(refreshDashboard, 10000); // 10 seconds
+        isAutoRefreshActive = true;
+        document.getElementById('autoRefreshIcon').className = 'bi bi-pause-circle';
+        document.getElementById('autoRefreshText').textContent = 'Stop Auto-refresh';
+        updateConnectionStatus(true);
+    }
+
+    function stopAutoRefresh() {
+        if (autoRefreshInterval) {
+            clearInterval(autoRefreshInterval);
+            autoRefreshInterval = null;
+        }
+        isAutoRefreshActive = false;
+        document.getElementById('autoRefreshIcon').className = 'bi bi-play-circle';
+        document.getElementById('autoRefreshText').textContent = 'Start Auto-refresh';
+        updateConnectionStatus(false);
+    }
+
+    function updateConnectionStatus(active = null) {
+        const indicator = document.getElementById('connectionStatus');
+        if (active === null) {
+            active = isAutoRefreshActive;
+        }
+        
+        if (active) {
+            indicator.className = 'real-time-indicator active';
+            indicator.title = 'Real-time updates active';
+        } else {
+            indicator.className = 'real-time-indicator';
+            indicator.title = 'Real-time updates inactive';
+        }
+    }
+
+    function forceHealthCheck() {
+        refreshHealthStatus();
+        showAlert('Health check initiated', 'info');
+    }
+
+    // Queue management functions
+    function pauseQueue(queueName) {
+        if (!confirm(`Are you sure you want to pause the ${queueName} queue?`)) {
+            return;
+        }
+        
+        queueAction('pause_queue', queueName);
+    }
+
+    function resumeQueue(queueName) {
+        queueAction('resume_queue', queueName);
+    }
+
+    function clearQueue(queueName) {
+        if (!confirm(`Are you sure you want to clear all jobs from the ${queueName} queue? This action cannot be undone.`)) {
+            return;
+        }
+        
+        queueAction('clear_queue', queueName);
+    }
+
+    function cleanupCompletedJobs() {
+        queueAction('cleanup_completed');
+    }
+
+    function queueAction(action, queueName = null) {
+        const payload = { action: action };
+        if (queueName) {
+            payload.queue_name = queueName;
+        }
+        
+        fetch('/admin/api/rq/queue-management', {
+            method: 'POST',
+            headers: {
+                'Content-Type': 'application/json',
+                'X-CSRFToken': document.querySelector('meta[name=csrf-token]').getAttribute('content')
+            },
+            body: JSON.stringify(payload)
+        })
+        .then(response => response.json())
+        .then(data => {
+            if (data.success) {
+                showAlert(data.message, 'success');
+                if (data.note) {
+                    showAlert(data.note, 'info');
+                }
+                // Refresh stats after action
+                setTimeout(refreshQueueStats, 1000);
+            } else {
+                showAlert('Error: ' + data.error, 'danger');
+            }
+        })
+        .catch(error => {
+            console.error('Error performing queue action:', error);
+            showAlert('Failed to perform queue action', 'danger');
+        });
+    }
+
+    function showAlert(message, type = 'info') {
+        const alertsContainer = document.getElementById('alertsContainer');
+        const alertId = 'alert-' + Date.now();
+        
+        const alertHtml = `
+            <div id="${alertId}" class="alert alert-${type} alert-dismissible fade show" role="alert">
+                ${message}
+                <button type="button" class="btn-close" data-bs-dismiss="alert" aria-label="Close"></button>
+            </div>
+        `;
+        
+        alertsContainer.insertAdjacentHTML('beforeend', alertHtml);
+        
+        // Auto-dismiss after 5 seconds
+        setTimeout(() => {
+            const alert = document.getElementById(alertId);
+            if (alert) {
+                alert.remove();
+            }
+        }, 5000);
+    }
+</script>
+{% endblock %}

@@ -1,0 +1,304 @@
+<!-- Copyright (C) 2025 iolaire mcfadden. -->
+<!-- This program is free software: you can redistribute it and/or modify it under the terms of the GNU Affero General Public License as published by the Free Software Foundation, either version 3 of the License, or (at your option) any later version. -->
+<!-- THE SOFTWARE IS PROVIDED "AS IS", WITHOUT WARRANTY OF ANY KIND, EXPRESS OR IMPLIED, INCLUDING BUT NOT LIMITED TO THE WARRANTIES OF MERCHANTABILITY, FITNESS FOR A PARTICULAR PURPOSE AND NONINFRINGEMENT. IN NO EVENT SHALL THE AUTHORS OR COPYRIGHT HOLDERS BE LIABLE FOR ANY CLAIM, DAMAGES OR OTHER LIABILITY, WHETHER IN AN ACTION OF CONTRACT, TORT OR OTHERWISE, ARISING FROM, OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE SOFTWARE. -->
+
+{% extends "base_admin.html" %}
+
+{% block title %}RQ System Dashboard{% endblock %}
+
+{% block content %}
+<div class="container-fluid">
+    <div class="row">
+        <div class="col-12">
+            <h1>Redis Queue (RQ) System Dashboard</h1>
+            <p class="text-muted">Monitor and manage the Redis Queue system for task processing</p>
+        </div>
+    </div>
+
+    <!-- System Status Overview -->
+    <div class="row mb-4">
+        <div class="col-md-3">
+            <div class="card">
+                <div class="card-body">
+                    <h5 class="card-title">RQ Status</h5>
+                    {% if system_status.rq_available %}
+                        {% if system_status.rq_healthy %}
+                            <span class="badge badge-success">Healthy</span>
+                        {% else %}
+                            <span class="badge badge-warning">Unhealthy</span>
+                        {% endif %}
+                    {% else %}
+                        <span class="badge badge-danger">Unavailable</span>
+                    {% endif %}
+                </div>
+            </div>
+        </div>
+        <div class="col-md-3">
+            <div class="card">
+                <div class="card-body">
+                    <h5 class="card-title">Processing Mode</h5>
+                    {% if system_status.fallback_mode %}
+                        <span class="badge badge-warning">Database Fallback</span>
+                    {% else %}
+                        <span class="badge badge-success">RQ Processing</span>
+                    {% endif %}
+                </div>
+            </div>
+        </div>
+        <div class="col-md-3">
+            <div class="card">
+                <div class="card-body">
+                    <h5 class="card-title">Total Pending</h5>
+                    <h3>{{ system_status.queue_stats.total_pending or 0 }}</h3>
+                </div>
+            </div>
+        </div>
+        <div class="col-md-3">
+            <div class="card">
+                <div class="card-body">
+                    <h5 class="card-title">Total Failed</h5>
+                    <h3>{{ system_status.queue_stats.total_failed or 0 }}</h3>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Queue Statistics -->
+    {% if system_status.queue_stats.queues %}
+    <div class="row mb-4">
+        <div class="col-12">
+            <div class="card">
+                <div class="card-header">
+                    <h5>Queue Statistics</h5>
+                </div>
+                <div class="card-body">
+                    <div class="table-responsive">
+                        <table class="table table-striped">
+                            <thead>
+                                <tr>
+                                    <th>Queue</th>
+                                    <th>Pending</th>
+                                    <th>Failed</th>
+                                    <th>Finished</th>
+                                    <th>Started</th>
+                                </tr>
+                            </thead>
+                            <tbody>
+                                {% for queue_name, stats in system_status.queue_stats.queues.items() %}
+                                <tr>
+                                    <td><strong>{{ queue_name.title() }}</strong></td>
+                                    <td>{{ stats.pending or 0 }}</td>
+                                    <td>{{ stats.failed or 0 }}</td>
+                                    <td>{{ stats.finished or 0 }}</td>
+                                    <td>{{ stats.started or 0 }}</td>
+                                </tr>
+                                {% endfor %}
+                            </tbody>
+                        </table>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+    {% endif %}
+
+    <!-- Database Statistics -->
+    {% if system_status.database_stats %}
+    <div class="row mb-4">
+        <div class="col-12">
+            <div class="card">
+                <div class="card-header">
+                    <h5>Database Task Statistics</h5>
+                </div>
+                <div class="card-body">
+                    <div class="row">
+                        {% for status, count in system_status.database_stats.items() %}
+                        {% if not status.startswith('db_') %}
+                        <div class="col-md-2">
+                            <div class="text-center">
+                                <h4>{{ count }}</h4>
+                                <p class="text-muted">{{ status.title() }}</p>
+                            </div>
+                        </div>
+                        {% endif %}
+                        {% endfor %}
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+    {% endif %}
+
+    <!-- Management Actions -->
+    <div class="row mb-4">
+        <div class="col-12">
+            <div class="card">
+                <div class="card-header">
+                    <h5>Management Actions</h5>
+                </div>
+                <div class="card-body">
+                    <div class="btn-group" role="group">
+                        <button type="button" class="btn btn-primary" onclick="refreshStatus()">
+                            <i class="fas fa-sync"></i> Refresh Status
+                        </button>
+                        {% if system_status.rq_available %}
+                        <button type="button" class="btn btn-info" onclick="forceHealthCheck()">
+                            <i class="fas fa-heartbeat"></i> Health Check
+                        </button>
+                        <button type="button" class="btn btn-warning" onclick="migrateTasks()">
+                            <i class="fas fa-exchange-alt"></i> Migrate Tasks to RQ
+                        </button>
+                        <button type="button" class="btn btn-secondary" onclick="validateMigration()">
+                            <i class="fas fa-check-circle"></i> Validate Migration
+                        </button>
+                        <button type="button" class="btn btn-outline-danger" onclick="cleanupJobs()">
+                            <i class="fas fa-trash"></i> Cleanup Completed Jobs
+                        </button>
+                        {% endif %}
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Migration Statistics -->
+    {% if system_status.migration_stats %}
+    <div class="row mb-4">
+        <div class="col-12">
+            <div class="card">
+                <div class="card-header">
+                    <h5>Migration Statistics</h5>
+                </div>
+                <div class="card-body">
+                    <div class="row">
+                        <div class="col-md-3">
+                            <h5>{{ system_status.migration_stats.total_tasks or 0 }}</h5>
+                            <p class="text-muted">Total Tasks</p>
+                        </div>
+                        <div class="col-md-3">
+                            <h5>{{ system_status.migration_stats.migrated_tasks or 0 }}</h5>
+                            <p class="text-muted">Migrated Tasks</p>
+                        </div>
+                        <div class="col-md-3">
+                            <h5>{{ system_status.migration_stats.failed_migrations or 0 }}</h5>
+                            <p class="text-muted">Failed Migrations</p>
+                        </div>
+                        <div class="col-md-3">
+                            <h5>{{ system_status.migration_stats.validation_errors or 0 }}</h5>
+                            <p class="text-muted">Validation Errors</p>
+                        </div>
+                    </div>
+                    {% if system_status.migration_stats.last_migration_time %}
+                    <p class="text-muted mt-2">
+                        Last migration: {{ system_status.migration_stats.last_migration_time }}
+                    </p>
+                    {% endif %}
+                </div>
+            </div>
+        </div>
+    </div>
+    {% endif %}
+</div>
+
+<script>
+function refreshStatus() {
+    location.reload();
+}
+
+function forceHealthCheck() {
+    if (confirm('Force immediate health check?')) {
+        fetch('/admin/rq/api/health-check', {
+            method: 'POST',
+            headers: {
+                'Content-Type': 'application/json',
+                'X-CSRFToken': '{{ csrf_token() }}'
+            }
+        })
+        .then(response => response.json())
+        .then(data => {
+            if (data.success) {
+                alert('Health check completed successfully');
+                location.reload();
+            } else {
+                alert('Health check failed: ' + data.message);
+            }
+        })
+        .catch(error => {
+            alert('Error performing health check: ' + error);
+        });
+    }
+}
+
+function migrateTasks() {
+    if (confirm('Migrate database tasks to RQ? This may take some time.')) {
+        fetch('/admin/rq/api/migrate-tasks', {
+            method: 'POST',
+            headers: {
+                'Content-Type': 'application/json',
+                'X-CSRFToken': '{{ csrf_token() }}'
+            }
+        })
+        .then(response => response.json())
+        .then(data => {
+            if (data.success) {
+                alert('Task migration completed successfully');
+                location.reload();
+            } else {
+                alert('Task migration failed: ' + data.message);
+            }
+        })
+        .catch(error => {
+            alert('Error migrating tasks: ' + error);
+        });
+    }
+}
+
+function validateMigration() {
+    if (confirm('Validate migration integrity?')) {
+        fetch('/admin/rq/api/validate-migration', {
+            method: 'POST',
+            headers: {
+                'Content-Type': 'application/json',
+                'X-CSRFToken': '{{ csrf_token() }}'
+            }
+        })
+        .then(response => response.json())
+        .then(data => {
+            if (data.success) {
+                alert('Migration validation completed successfully');
+                location.reload();
+            } else {
+                alert('Migration validation failed: ' + data.message);
+            }
+        })
+        .catch(error => {
+            alert('Error validating migration: ' + error);
+        });
+    }
+}
+
+function cleanupJobs() {
+    if (confirm('Cleanup completed RQ jobs?')) {
+        fetch('/admin/rq/api/cleanup', {
+            method: 'POST',
+            headers: {
+                'Content-Type': 'application/json',
+                'X-CSRFToken': '{{ csrf_token() }}'
+            }
+        })
+        .then(response => response.json())
+        .then(data => {
+            if (data.success) {
+                alert('Job cleanup completed successfully');
+                location.reload();
+            } else {
+                alert('Job cleanup failed: ' + data.message);
+            }
+        })
+        .catch(error => {
+            alert('Error cleaning up jobs: ' + error);
+        });
+    }
+}
+</script>
+{% endblock %}

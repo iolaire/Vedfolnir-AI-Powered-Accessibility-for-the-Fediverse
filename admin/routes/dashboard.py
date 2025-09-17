@@ -112,13 +112,51 @@ def register_routes(bp):
                 'error': str(e)
             }
         
+        # Get RQ queue statistics
+        try:
+            rq_manager = getattr(current_app, 'rq_queue_manager', None)
+            if rq_manager:
+                rq_stats = rq_manager.get_queue_stats()
+                rq_health = rq_manager.get_health_status()
+            else:
+                rq_stats = {
+                    'redis_available': False,
+                    'fallback_mode': True,
+                    'total_pending': 0,
+                    'total_failed': 0,
+                    'queues': {}
+                }
+                rq_health = {
+                    'redis_available': False,
+                    'fallback_mode': True,
+                    'queues_initialized': False
+                }
+        except Exception as e:
+            current_app.logger.error(f"Error getting RQ statistics: {e}")
+            rq_stats = {
+                'redis_available': False,
+                'fallback_mode': True,
+                'total_pending': 0,
+                'total_failed': 0,
+                'queues': {},
+                'error': str(e)
+            }
+            rq_health = {
+                'redis_available': False,
+                'fallback_mode': True,
+                'queues_initialized': False,
+                'error': str(e)
+            }
+        
         return render_template('dashboard.html', 
                              stats=stats,
                              health_status=health_status,
                              app_version=version.__version__,
                              storage_data=storage_data,
                              storage_gauge=storage_gauge,
-                             storage_actions=storage_actions)
+                             storage_actions=storage_actions,
+                             rq_stats=rq_stats,
+                             rq_health=rq_health)
     
     @bp.route('/configuration')
     @login_required
