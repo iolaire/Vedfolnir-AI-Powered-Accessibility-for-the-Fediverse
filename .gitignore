@@ -156,6 +156,8 @@ scripts/setup/recreate_env_from_current_production.py
 
 #Amazon Q Developer prompt logs
 .q/
+.q/chat_history/
+.q
 .q/chat_history
 
 #playwright tests
