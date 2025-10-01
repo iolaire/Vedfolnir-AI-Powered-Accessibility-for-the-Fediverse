@@ -1,0 +1,251 @@
+# Copyright (C) 2025 iolaire mcfadden.
+# This program is free software: you can redistribute it and/or modify it under the terms of the GNU Affero General Public License as published by the Free Software Foundation, either version 3 of the License, or (at your option) any later version.
+# THE SOFTWARE IS PROVIDED "AS IS", WITHOUT WARRANTY OF ANY KIND, EXPRESS OR IMPLIED, INCLUDING BUT NOT LIMITED TO THE WARRANTIES OF MERCHANTABILITY, FITNESS FOR A PARTICULAR PURPOSE AND NONINFRINGEMENT. IN NO EVENT SHALL THE AUTHORS OR COPYRIGHT HOLDERS BE LIABLE FOR ANY CLAIM, DAMAGES OR OTHER LIABILITY, WHETHER IN AN ACTION OF CONTRACT, TORT OR OTHERWISE, ARISING FROM, OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE SOFTWARE.
+
+# Docker Compose configuration for HashiCorp Vault integration
+# This extends the main docker-compose.yml with Vault services
+
+version: '3.8'
+
+services:
+  # HashiCorp Vault for secrets management
+  vault:
+    image: vault:latest
+    container_name: vedfolnir_vault
+    restart: unless-stopped
+    cap_add:
+      - IPC_LOCK
+    environment:
+      VAULT_DEV_ROOT_TOKEN_ID: ${VAULT_ROOT_TOKEN:-dev-root-token}
+      VAULT_DEV_LISTEN_ADDRESS: 0.0.0.0:8200
+      VAULT_LOCAL_CONFIG: |
+        {
+          "backend": {"file": {"path": "/vault/data"}},
+          "listener": [{"tcp": {"address": "0.0.0.0:8200", "tls_disable": true}}],
+          "default_lease_ttl": "168h",
+          "max_lease_ttl": "720h",
+          "ui": true
+        }
+    volumes:
+      - vault_data:/vault/data
+      - vault_logs:/vault/logs
+      - vault_config:/vault/config
+      - vault_secrets:/vault/secrets
+      - ./vault/vault.hcl:/vault/config/vault.hcl:ro
+      - ./vault/init-vault.sh:/vault/init-vault.sh:ro
+    ports:
+      - "8200:8200"  # Vault API
+    networks:
+      - vedfolnir_internal
+      - vedfolnir_vault
+    healthcheck:
+      test: ["CMD", "vault", "status"]
+      interval: 30s
+      timeout: 10s
+      retries: 5
+      start_period: 60s
+    command: >
+      sh -c "
+        vault server -config=/vault/config/vault.hcl &
+        sleep 10 &&
+        export VAULT_ADDR=http://localhost:8200 &&
+        /vault/init-vault.sh &&
+        wait
+      "
+
+  # Vault initialization and secret management service
+  vault-init:
+    image: vault:latest
+    container_name: vedfolnir_vault_init
+    restart: "no"
+    environment:
+      VAULT_ADDR: http://vault:8200
+      MYSQL_ROOT_PASSWORD: ${MYSQL_ROOT_PASSWORD}
+      REDIS_PASSWORD: ${REDIS_PASSWORD}
+    volumes:
+      - vault_data:/vault/data
+      - vault_secrets:/vault/secrets
+      - ./vault/init-vault.sh:/vault/init-vault.sh:ro
+      - ./vault/vault-client.py:/vault/vault-client.py:ro
+    networks:
+      - vedfolnir_vault
+    depends_on:
+      vault:
+        condition: service_healthy
+      mysql:
+        condition: service_healthy
+    command: >
+      sh -c "
+        apk add --no-cache python3 py3-pip jq curl &&
+        pip3 install requests cryptography &&
+        export VAULT_ADDR=http://vault:8200 &&
+        /vault/init-vault.sh
+      "
+
+  # Secret rotation service
+  vault-rotation:
+    build:
+      context: .
+      dockerfile: Dockerfile.vault-rotation
+    container_name: vedfolnir_vault_rotation
+    restart: unless-stopped
+    environment:
+      VAULT_ADDR: http://vault:8200
+      VAULT_TOKEN_FILE: /vault/data/vedfolnir-token.txt
+      ROTATION_CONFIG_FILE: /vault/config/rotation-config.json
+      ROTATION_WEBHOOK_URL: ${ROTATION_WEBHOOK_URL:-}
+    volumes:
+      - vault_data:/vault/data
+      - vault_secrets:/vault/secrets
+      - vault_config:/vault/config
+      - ./vault/secret-rotation.py:/app/secret-rotation.py:ro
+      - ./vault/vault-client.py:/app/vault-client.py:ro
+      - ./vault/docker-secrets-integration.py:/app/docker-secrets-integration.py:ro
+    networks:
+      - vedfolnir_vault
+    depends_on:
+      vault-init:
+        condition: service_completed_successfully
+    command: >
+      sh -c "
+        echo 'Starting secret rotation daemon...' &&
+        python /app/secret-rotation.py --daemon
+      "
+
+  # Docker secrets integration service
+  vault-secrets:
+    build:
+      context: .
+      dockerfile: Dockerfile.vault-secrets
+    container_name: vedfolnir_vault_secrets
+    restart: unless-stopped
+    environment:
+      VAULT_ADDR: http://vault:8200
+      VAULT_TOKEN_FILE: /vault/data/vedfolnir-token.txt
+    volumes:
+      - vault_data:/vault/data
+      - vault_secrets:/vault/secrets
+      - ./vault/docker-secrets-integration.py:/app/docker-secrets-integration.py:ro
+      - ./vault/vault-client.py:/app/vault-client.py:ro
+    networks:
+      - vedfolnir_vault
+    depends_on:
+      vault-init:
+        condition: service_completed_successfully
+    command: >
+      sh -c "
+        echo 'Syncing secrets from Vault...' &&
+        python /app/docker-secrets-integration.py --sync &&
+        echo 'Starting secrets sync daemon...' &&
+        while true; do
+          sleep 300
+          python /app/docker-secrets-integration.py --sync
+        done
+      "
+
+# Extend existing services to use Vault secrets
+  vedfolnir:
+    environment:
+      # Use Vault for secrets instead of environment variables
+      VAULT_ADDR: http://vault:8200
+      VAULT_TOKEN_FILE: /run/secrets/vault_token
+      USE_VAULT_SECRETS: "true"
+      
+      # Database connection will be dynamically generated
+      DATABASE_URL_FILE: /run/secrets/database_url
+      
+      # Redis connection with Vault password
+      REDIS_URL_FILE: /run/secrets/redis_url
+      
+      # Application secrets from Vault
+      FLASK_SECRET_KEY_FILE: /run/secrets/flask_secret_key
+      PLATFORM_ENCRYPTION_KEY_FILE: /run/secrets/platform_encryption_key
+    secrets:
+      - vault_token
+      - database_url
+      - redis_url
+      - flask_secret_key
+      - platform_encryption_key
+    volumes:
+      - vault_secrets:/vault/secrets:ro
+    depends_on:
+      vault-secrets:
+        condition: service_started
+    networks:
+      - vedfolnir_vault
+
+  mysql:
+    environment:
+      # Root password for Vault database engine
+      MYSQL_ROOT_PASSWORD_FILE: /run/secrets/mysql_root_password
+    secrets:
+      - mysql_root_password
+    networks:
+      - vedfolnir_vault
+
+  redis:
+    environment:
+      # Redis password from Vault
+      REDIS_PASSWORD_FILE: /run/secrets/redis_password
+    secrets:
+      - redis_password
+    command: >
+      sh -c "
+        REDIS_PASSWORD=$$(cat /run/secrets/redis_password) &&
+        redis-server --requirepass $$REDIS_PASSWORD
+      "
+    networks:
+      - vedfolnir_vault
+
+# Docker secrets configuration
+secrets:
+  vault_token:
+    file: ./data/vault/vedfolnir-token.txt
+  database_url:
+    file: ./data/vault/secrets/database_url.txt
+  redis_url:
+    file: ./data/vault/secrets/redis_url.txt
+  flask_secret_key:
+    file: ./data/vault/secrets/flask_secret_key.txt
+  platform_encryption_key:
+    file: ./data/vault/secrets/platform_encryption_key.txt
+  mysql_root_password:
+    file: ./secrets/mysql_root_password.txt
+  redis_password:
+    file: ./data/vault/secrets/redis_password.txt
+
+# Additional volumes for Vault
+volumes:
+  vault_data:
+    driver: local
+    driver_opts:
+      type: none
+      o: bind
+      device: ./data/vault
+  vault_logs:
+    driver: local
+    driver_opts:
+      type: none
+      o: bind
+      device: ./logs/vault
+  vault_config:
+    driver: local
+    driver_opts:
+      type: none
+      o: bind
+      device: ./config/vault
+  vault_secrets:
+    driver: local
+    driver_opts:
+      type: none
+      o: bind
+      device: ./data/vault/secrets
+
+# Additional networks for Vault
+networks:
+  vedfolnir_vault:
+    driver: bridge
+    internal: false
+    ipam:
+      config:
+        - subnet: 172.20.0.0/16

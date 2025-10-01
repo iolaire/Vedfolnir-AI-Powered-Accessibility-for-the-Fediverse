@@ -1,0 +1,55 @@
+# Copyright (C) 2025 iolaire mcfadden.
+# This program is free software: you can redistribute it and/or modify it under the terms of the GNU Affero General Public License as published by the Free Software Foundation, either version 3 of the License, or (at your option) any later version.
+# THE SOFTWARE IS PROVIDED "AS IS", WITHOUT WARRANTY OF ANY KIND, EXPRESS OR IMPLIED, INCLUDING BUT NOT LIMITED TO THE WARRANTIES OF MERCHANTABILITY, FITNESS FOR A PARTICULAR PURPOSE AND NONINFRINGEMENT. IN NO EVENT SHALL THE AUTHORS OR COPYRIGHT HOLDERS BE LIABLE FOR ANY CLAIM, DAMAGES OR OTHER LIABILITY, WHETHER IN AN ACTION OF CONTRACT, TORT OR OTHERWISE, ARISING FROM, OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE SOFTWARE.
+
+[Unit]
+Description=Vedfolnir Auto-Scaling Service
+Documentation=https://github.com/your-org/vedfolnir
+After=docker.service
+Requires=docker.service
+PartOf=vedfolnir.target
+
+[Service]
+Type=simple
+User=vedfolnir
+Group=vedfolnir
+WorkingDirectory=/opt/vedfolnir
+Environment=PROMETHEUS_URL=http://localhost:9090
+Environment=COMPOSE_FILE=docker-compose.yml
+Environment=SCALING_FILE=docker-compose.scaling.yml
+Environment=LOG_FILE=./logs/auto-scaling.log
+Environment=DRY_RUN=false
+ExecStart=/bin/bash -c 'while true; do ./scripts/docker/auto-scaling.sh check; sleep 120; done'
+ExecReload=/bin/kill -HUP $MAINPID
+Restart=always
+RestartSec=10
+StandardOutput=journal
+StandardError=journal
+SyslogIdentifier=vedfolnir-autoscaler
+
+# Security settings
+NoNewPrivileges=true
+PrivateTmp=true
+ProtectSystem=strict
+ProtectHome=true
+ReadWritePaths=/opt/vedfolnir/logs /opt/vedfolnir/data
+ProtectKernelTunables=true
+ProtectKernelModules=true
+ProtectControlGroups=true
+RestrictRealtime=true
+RestrictSUIDSGID=true
+LockPersonality=true
+MemoryDenyWriteExecute=true
+RestrictNamespaces=true
+SystemCallFilter=@system-service
+SystemCallErrorNumber=EPERM
+
+# Resource limits
+LimitNOFILE=65536
+LimitNPROC=4096
+MemoryMax=256M
+CPUQuota=50%
+
+[Install]
+WantedBy=multi-user.target
+Also=vedfolnir.target

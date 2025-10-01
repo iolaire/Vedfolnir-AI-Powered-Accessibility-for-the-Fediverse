@@ -1,0 +1,33 @@
+# Copyright (C) 2025 iolaire mcfadden.
+# This program is free software: you can redistribute it and/or modify it under the terms of the GNU Affero General Public License as published by the Free Software Foundation, either version 3 of the License, or (at your option) any later version.
+# THE SOFTWARE IS PROVIDED "AS IS", WITHOUT WARRANTY OF ANY KIND, EXPRESS OR IMPLIED, INCLUDING BUT NOT LIMITED TO THE WARRANTIES OF MERCHANTABILITY, FITNESS FOR A PARTICULAR PURPOSE AND NONINFRINGEMENT. IN NO EVENT SHALL THE AUTHORS OR COPYRIGHT HOLDERS BE LIABLE FOR ANY CLAIM, DAMAGES OR OTHER LIABILITY, WHETHER IN AN ACTION OF CONTRACT, TORT OR OTHERWISE, ARISING FROM, OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE SOFTWARE.
+
+# Dockerfile for Vault Secret Rotation Service
+FROM python:3.12-slim
+
+# Install system dependencies
+RUN apt-get update && apt-get install -y \
+    curl \
+    jq \
+    && rm -rf /var/lib/apt/lists/*
+
+# Install Python dependencies
+RUN pip install --no-cache-dir \
+    requests \
+    cryptography
+
+# Create app directory
+WORKDIR /app
+
+# Create non-root user
+RUN groupadd -r vault && useradd -r -g vault vault
+RUN chown -R vault:vault /app
+
+USER vault
+
+# Health check
+HEALTHCHECK --interval=60s --timeout=10s --start-period=30s --retries=3 \
+    CMD python -c "import sys; sys.path.append('/app'); from vault_client import VaultClient; client = VaultClient(); health = client.health_check(); exit(0 if health.get('sealed', True) == False else 1)"
+
+# Default command will be overridden by docker-compose
+CMD ["python", "/app/secret-rotation.py", "--daemon"]

@@ -11,13 +11,25 @@ from flask_login import LoginManager
 from flask_cors import CORS
 from sqlalchemy.exc import SQLAlchemyError
 
+# Initialize container-aware logging first
+try:
+    from app.utils.logging.container_logger import setup_container_logging
+    app_logger = setup_container_logging('vedfolnir.web_app')
+    print("✅ Container logging initialized successfully")
+except Exception as e:
+    print(f"⚠️  Container logging initialization failed: {e}")
+    import logging
+    app_logger = logging.getLogger('vedfolnir.web_app')
+
 # Initialize Flask app
 from werkzeug.middleware.proxy_fix import ProxyFix
 
 app = Flask(__name__)
 app.wsgi_app = ProxyFix(app.wsgi_app, x_for=1, x_proto=1, x_host=1)
 
-# app = Flask(__name__)
+# Configure Flask logging to use container logger
+app.logger = app_logger
+
 app.config['SECRET_KEY'] = os.getenv('FLASK_SECRET_KEY', 'dev-key-change-in-production')
 
 # Configure static file caching and delivery
@@ -164,6 +176,14 @@ try:
     print("✅ Performance monitoring blueprint registered successfully")
 except Exception as e:
     print(f"⚠️  Performance monitoring blueprint registration failed: {e}")
+
+# Register container metrics (for Docker environment)
+try:
+    from app.services.monitoring.container.container_metrics import register_container_metrics
+    register_container_metrics(app)
+    print("✅ Container metrics endpoints registered successfully")
+except Exception as e:
+    print(f"⚠️  Container metrics registration failed: {e}")
 
 # Register session state API
 

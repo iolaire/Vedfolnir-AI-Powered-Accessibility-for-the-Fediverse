@@ -72,15 +72,25 @@ class GunicornRQIntegration:
         
         try:
             with self._lock:
+                # Container environment detection
+                is_container = os.path.exists('/.dockerenv') or os.getenv('CONTAINER_ENV') == 'true'
+                if is_container:
+                    logger.info("Detected container environment - adjusting RQ configuration")
+                
                 # Initialize production configuration
                 try:
                     self.config = load_rq_config()
                     logger.info(f"Loaded RQ configuration for {self.config.environment.value} environment")
+                    
+                    # Container-specific adjustments
+                    if is_container:
+                        self._adjust_config_for_container()
+                        
                 except Exception as e:
                     logger.error(f"Failed to load RQ configuration: {sanitize_for_log(str(e))}")
                     return False
                 
-                # Initialize Redis connection
+                # Initialize Redis connection with container-aware settings
                 self.redis_connection = self._create_redis_connection()
                 if not self.redis_connection:
                     logger.error("Failed to create Redis connection")
@@ -107,8 +117,19 @@ class GunicornRQIntegration:
                 # Register shutdown handlers
                 self._register_shutdown_handlers()
                 
-                # Start workers with delay to allow app to fully initialize
-                if self.startup_delay > 0:
+                # Container-aware worker startup
+                if is_container:
+                    # In containers, use longer startup delay to ensure all services are ready
+                    container_startup_delay = max(self.startup_delay, 15)
+                    logger.info(f"Container environment: delaying RQ worker startup by {container_startup_delay} seconds")
+                    startup_thread = threading.Thread(
+                        target=self._delayed_worker_startup,
+                        args=(container_startup_delay,),
+                        daemon=True,
+                        name="RQWorkerStartup"
+                    )
+                    startup_thread.start()
+                elif self.startup_delay > 0:
                     logger.info(f"Delaying RQ worker startup by {self.startup_delay} seconds")
                     startup_thread = threading.Thread(
                         target=self._delayed_worker_startup,
@@ -145,16 +166,88 @@ class GunicornRQIntegration:
             logger.error(f"Failed to create Redis connection: {sanitize_for_log(str(e))}")
             return None
     
-    def _delayed_worker_startup(self) -> None:
+    def _adjust_config_for_container(self) -> None:
+        """Adjust RQ configuration for container environment"""
+        try:
+            # Adjust worker counts based on container resources
+            memory_limit = os.getenv('MEMORY_LIMIT', '2g')
+            if memory_limit.endswith('g'):
+                memory_gb = int(memory_limit[:-1])
+            elif memory_limit.endswith('m'):
+                memory_gb = int(memory_limit[:-1]) / 1024
+            else:
+                memory_gb = 2  # Default
+            
+            # Reduce worker count in low-memory containers
+            if memory_gb < 1:
+                max_workers = 1
+            elif memory_gb < 2:
+                max_workers = 2
+            else:
+                max_workers = 3
+            
+            # Adjust queue configurations
+            for queue_config in self.config.queue_configs:
+                if queue_config.worker_count > max_workers:
+                    logger.info(f"Reducing {queue_config.name} workers from {queue_config.worker_count} to {max_workers} for container")
+                    queue_config.worker_count = max_workers
+            
+            # Adjust timeouts for container environment
+            self.config.worker_config.job_timeout = min(self.config.worker_config.job_timeout, 300)  # Max 5 minutes
+            self.config.worker_config.result_ttl = min(self.config.worker_config.result_ttl, 3600)   # Max 1 hour
+            
+            logger.info("RQ configuration adjusted for container environment")
+            
+        except Exception as e:
+            logger.error(f"Error adjusting RQ config for container: {sanitize_for_log(str(e))}")
+    
+    def _delayed_worker_startup(self, delay: Optional[int] = None) -> None:
         """Start workers after delay"""
         try:
-            time.sleep(self.startup_delay)
+            startup_delay = delay or self.startup_delay
+            
+            # Container-aware startup checks
+            is_container = os.path.exists('/.dockerenv') or os.getenv('CONTAINER_ENV') == 'true'
+            if is_container:
+                logger.info("Container startup: performing dependency checks before starting RQ workers")
+                self._wait_for_container_dependencies()
+            
+            time.sleep(startup_delay)
             
             if not self._shutdown_requested:
                 self._start_workers()
                 
         except Exception as e:
             logger.error(f"Error in delayed worker startup: {sanitize_for_log(str(e))}")
+    
+    def _wait_for_container_dependencies(self) -> None:
+        """Wait for container dependencies to be ready"""
+        try:
+            # Wait for database
+            max_wait = 60  # seconds
+            wait_time = 0
+            
+            while wait_time < max_wait:
+                try:
+                    with self.db_manager.get_session() as session:
+                        session.execute('SELECT 1')
+                    logger.info("Database connection verified for RQ workers")
+                    break
+                except Exception:
+                    time.sleep(2)
+                    wait_time += 2
+                    if wait_time >= max_wait:
+                        logger.warning("Database connection timeout - starting RQ workers anyway")
+            
+            # Test Redis connection
+            try:
+                self.redis_connection.ping()
+                logger.info("Redis connection verified for RQ workers")
+            except Exception as e:
+                logger.warning(f"Redis connection issue: {e} - RQ workers may have issues")
+            
+        except Exception as e:
+            logger.error(f"Error waiting for container dependencies: {sanitize_for_log(str(e))}")
     
     def _start_workers(self) -> None:
         """Start RQ workers based on configuration"""

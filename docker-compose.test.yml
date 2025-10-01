@@ -1,0 +1,268 @@
+# Copyright (C) 2025 iolaire mcfadden.
+# This program is free software: you can redistribute it and/or modify it under the terms of the GNU Affero General Public License as published by the Free Software Foundation, either version 3 of the License, or (at your option) any later version.
+# THE SOFTWARE IS PROVIDED "AS IS", WITHOUT WARRANTY OF ANY KIND, EXPRESS OR IMPLIED, INCLUDING BUT NOT LIMITED TO THE WARRANTIES OF MERCHANTABILITY, FITNESS FOR A PARTICULAR PURPOSE AND NONINFRINGEMENT. IN NO EVENT SHALL THE AUTHORS OR COPYRIGHT HOLDERS BE LIABLE FOR ANY CLAIM, DAMAGES OR OTHER LIABILITY, WHETHER IN AN ACTION OF CONTRACT, TORT OR OTHERWISE, ARISING FROM, OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE SOFTWARE.
+
+version: '3.8'
+
+services:
+  # Test Database - Isolated MySQL instance
+  mysql-test:
+    image: mysql:8.0
+    container_name: vedfolnir_mysql_test
+    environment:
+      - MYSQL_ROOT_PASSWORD=test_root_password
+      - MYSQL_DATABASE=vedfolnir_test
+      - MYSQL_USER=vedfolnir_test
+      - MYSQL_PASSWORD=test_password
+      - MYSQL_CHARSET=utf8mb4
+      - MYSQL_COLLATION=utf8mb4_unicode_ci
+    volumes:
+      - ./config/mysql/development.cnf:/etc/mysql/conf.d/test.cnf:ro
+    networks:
+      - vedfolnir_test
+    restart: "no"
+    healthcheck:
+      test: ["CMD", "mysqladmin", "ping", "-h", "localhost", "-u", "vedfolnir_test", "-ptest_password"]
+      interval: 10s
+      timeout: 5s
+      retries: 5
+      start_period: 30s
+    # Use tmpfs for faster test database
+    tmpfs:
+      - /var/lib/mysql:size=512M
+    deploy:
+      resources:
+        limits:
+          cpus: '1.0'
+          memory: 512M
+        reservations:
+          cpus: '0.25'
+          memory: 256M
+
+  # Test Redis - Isolated Redis instance
+  redis-test:
+    image: redis:7-alpine
+    container_name: vedfolnir_redis_test
+    networks:
+      - vedfolnir_test
+    restart: "no"
+    healthcheck:
+      test: ["CMD", "redis-cli", "ping"]
+      interval: 10s
+      timeout: 5s
+      retries: 3
+      start_period: 10s
+    # Use tmpfs for faster test Redis
+    tmpfs:
+      - /data:size=128M
+    deploy:
+      resources:
+        limits:
+          cpus: '0.5'
+          memory: 128M
+        reservations:
+          cpus: '0.1'
+          memory: 64M
+
+  # Unit Test Runner
+  unit-test-runner:
+    build:
+      context: .
+      dockerfile: Dockerfile
+      target: development
+    container_name: vedfolnir_unit_test_runner
+    volumes:
+      - .:/app
+      - ./test-results:/app/test-results
+    environment:
+      - TESTING=true
+      - FLASK_ENV=testing
+      - LOG_LEVEL=DEBUG
+      - DATABASE_URL=mysql+pymysql://vedfolnir_test:test_password@mysql-test:3306/vedfolnir_test?charset=utf8mb4
+      - REDIS_URL=redis://redis-test:6379/0
+      - PYTHONPATH=/app
+      - COVERAGE_FILE=/app/test-results/.coverage
+    depends_on:
+      mysql-test:
+        condition: service_healthy
+      redis-test:
+        condition: service_healthy
+    networks:
+      - vedfolnir_test
+    profiles:
+      - unit-tests
+    command: ["python", "-m", "pytest", "tests/unit/", "-v", "--cov=app", "--cov-report=html:/app/test-results/coverage", "--cov-report=xml:/app/test-results/coverage.xml", "--junit-xml=/app/test-results/junit.xml"]
+
+  # Integration Test Runner
+  integration-test-runner:
+    build:
+      context: .
+      dockerfile: Dockerfile
+      target: development
+    container_name: vedfolnir_integration_test_runner
+    volumes:
+      - .:/app
+      - ./test-results:/app/test-results
+    environment:
+      - TESTING=true
+      - FLASK_ENV=testing
+      - LOG_LEVEL=DEBUG
+      - DATABASE_URL=mysql+pymysql://vedfolnir_test:test_password@mysql-test:3306/vedfolnir_test?charset=utf8mb4
+      - REDIS_URL=redis://redis-test:6379/1
+      - OLLAMA_URL=http://host.docker.internal:11434
+      - PYTHONPATH=/app
+    depends_on:
+      mysql-test:
+        condition: service_healthy
+      redis-test:
+        condition: service_healthy
+    networks:
+      - vedfolnir_test
+    profiles:
+      - integration-tests
+    command: ["python", "-m", "pytest", "tests/integration/", "-v", "--junit-xml=/app/test-results/integration-junit.xml"]
+
+  # Performance Test Runner
+  performance-test-runner:
+    build:
+      context: .
+      dockerfile: Dockerfile
+      target: development
+    container_name: vedfolnir_performance_test_runner
+    volumes:
+      - .:/app
+      - ./test-results:/app/test-results
+    environment:
+      - TESTING=true
+      - FLASK_ENV=testing
+      - DATABASE_URL=mysql+pymysql://vedfolnir_test:test_password@mysql-test:3306/vedfolnir_test?charset=utf8mb4
+      - REDIS_URL=redis://redis-test:6379/2
+      - PYTHONPATH=/app
+    depends_on:
+      mysql-test:
+        condition: service_healthy
+      redis-test:
+        condition: service_healthy
+      test-app:
+        condition: service_healthy
+    networks:
+      - vedfolnir_test
+    profiles:
+      - performance-tests
+    command: ["locust", "-f", "tests/performance/locustfile.py", "--host=http://test-app:5000", "--users=10", "--spawn-rate=2", "--run-time=2m", "--html=/app/test-results/performance-report.html", "--headless"]
+
+  # Test Application Instance
+  test-app:
+    build:
+      context: .
+      dockerfile: Dockerfile
+      target: development
+    container_name: vedfolnir_test_app
+    volumes:
+      - .:/app
+      - ./test-results:/app/test-results
+    environment:
+      - TESTING=true
+      - FLASK_ENV=testing
+      - LOG_LEVEL=DEBUG
+      - DATABASE_URL=mysql+pymysql://vedfolnir_test:test_password@mysql-test:3306/vedfolnir_test?charset=utf8mb4
+      - REDIS_URL=redis://redis-test:6379/3
+      - OLLAMA_URL=http://host.docker.internal:11434
+      - PYTHONPATH=/app
+      - RQ_ENABLE_INTEGRATED_WORKERS=false
+      - SECURITY_CSRF_ENABLED=false  # Disabled for testing
+      - SECURITY_RATE_LIMITING_ENABLED=false
+    depends_on:
+      mysql-test:
+        condition: service_healthy
+      redis-test:
+        condition: service_healthy
+    networks:
+      - vedfolnir_test
+    profiles:
+      - test-app
+    healthcheck:
+      test: ["CMD", "curl", "-f", "http://localhost:5000/health"]
+      interval: 10s
+      timeout: 5s
+      retries: 3
+      start_period: 30s
+    command: ["python", "web_app.py"]
+
+  # Security Test Runner
+  security-test-runner:
+    build:
+      context: .
+      dockerfile: Dockerfile
+      target: development
+    container_name: vedfolnir_security_test_runner
+    volumes:
+      - .:/app
+      - ./test-results:/app/test-results
+    environment:
+      - TESTING=true
+      - PYTHONPATH=/app
+    networks:
+      - vedfolnir_test
+    profiles:
+      - security-tests
+    command: |
+      bash -c "
+        echo 'Running security tests...' &&
+        bandit -r . -f json -o /app/test-results/bandit-report.json || true &&
+        safety check --json --output /app/test-results/safety-report.json || true &&
+        python -m pytest tests/security/ -v --junit-xml=/app/test-results/security-junit.xml
+      "
+
+  # Load Test Database with Sample Data
+  test-data-loader:
+    build:
+      context: .
+      dockerfile: Dockerfile
+      target: development
+    container_name: vedfolnir_test_data_loader
+    volumes:
+      - .:/app
+    environment:
+      - TESTING=true
+      - DATABASE_URL=mysql+pymysql://vedfolnir_test:test_password@mysql-test:3306/vedfolnir_test?charset=utf8mb4
+      - REDIS_URL=redis://redis-test:6379/4
+      - PYTHONPATH=/app
+    depends_on:
+      mysql-test:
+        condition: service_healthy
+      redis-test:
+        condition: service_healthy
+    networks:
+      - vedfolnir_test
+    profiles:
+      - test-data
+    command: ["python", "scripts/testing/load_test_data.py"]
+
+  # Test Results Collector
+  test-results-collector:
+    image: alpine:latest
+    container_name: vedfolnir_test_results_collector
+    volumes:
+      - ./test-results:/results
+    networks:
+      - vedfolnir_test
+    profiles:
+      - collect-results
+    command: |
+      sh -c "
+        echo 'Collecting test results...' &&
+        find /results -name '*.xml' -o -name '*.html' -o -name '*.json' | sort &&
+        echo 'Test results collection completed'
+      "
+
+volumes:
+  test_mysql_data:
+    driver: local
+  test_redis_data:
+    driver: local
+
+networks:
+  vedfolnir_test:
+    driver: bridge
+    internal: false  # Allow external access for Ollama API

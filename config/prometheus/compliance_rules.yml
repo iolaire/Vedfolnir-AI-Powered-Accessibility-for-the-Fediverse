@@ -1,0 +1,239 @@
+# Copyright (C) 2025 iolaire mcfadden.
+# This program is free software: you can redistribute it and/or modify it under the terms of the GNU Affero General Public License as published by the Free Software Foundation, either version 3 of the License, or (at your option) any later version.
+# THE SOFTWARE IS PROVIDED "AS IS", WITHOUT WARRANTY OF ANY KIND, EXPRESS OR IMPLIED, INCLUDING BUT NOT LIMITED TO THE WARRANTIES OF MERCHANTABILITY, FITNESS FOR A PARTICULAR PURPOSE AND NONINFRINGEMENT. IN NO EVENT SHALL THE AUTHORS OR COPYRIGHT HOLDERS BE LIABLE FOR ANY CLAIM, DAMAGES OR OTHER LIABILITY, WHETHER IN AN ACTION OF CONTRACT, TORT OR OTHERWISE, ARISING FROM, OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE SOFTWARE.
+
+# Prometheus Alert Rules for Compliance and Audit Framework
+# Defines alerting rules for compliance monitoring and security events
+
+groups:
+  - name: compliance.rules
+    rules:
+      # GDPR Compliance Alerts
+      - alert: GDPRRequestOverdue
+        expr: compliance_gdpr_request_processing_time_hours > 720  # 30 days
+        for: 1h
+        labels:
+          severity: critical
+          category: gdpr
+        annotations:
+          summary: "GDPR request processing time exceeded legal limit"
+          description: "GDPR request {{ $labels.request_id }} has been processing for {{ $value }} hours, exceeding the 30-day legal limit."
+      
+      - alert: GDPRRequestBacklog
+        expr: compliance_gdpr_requests_pending > 10
+        for: 30m
+        labels:
+          severity: warning
+          category: gdpr
+        annotations:
+          summary: "High number of pending GDPR requests"
+          description: "There are {{ $value }} pending GDPR requests. Consider reviewing processing capacity."
+      
+      - alert: GDPRComplianceScoreLow
+        expr: compliance_gdpr_compliance_score < 95
+        for: 15m
+        labels:
+          severity: warning
+          category: gdpr
+        annotations:
+          summary: "GDPR compliance score below threshold"
+          description: "GDPR compliance score is {{ $value }}%, below the required 95% threshold."
+      
+      # Audit and Security Alerts
+      - alert: HighSecurityEventRate
+        expr: rate(compliance_audit_events_total{event_type="security_event"}[5m]) > 0.1
+        for: 5m
+        labels:
+          severity: critical
+          category: security
+        annotations:
+          summary: "High rate of security events detected"
+          description: "Security events are occurring at a rate of {{ $value }} per second over the last 5 minutes."
+      
+      - alert: FailedAuthenticationSpike
+        expr: rate(compliance_audit_events_total{event_type="user_authentication",outcome="FAILURE"}[5m]) > 0.5
+        for: 2m
+        labels:
+          severity: warning
+          category: security
+        annotations:
+          summary: "Spike in failed authentication attempts"
+          description: "Failed authentication attempts are occurring at {{ $value }} per second, indicating possible brute force attack."
+      
+      - alert: PrivilegeEscalationDetected
+        expr: increase(compliance_audit_events_total{event_type="privilege_escalation"}[1h]) > 0
+        for: 0m
+        labels:
+          severity: critical
+          category: security
+        annotations:
+          summary: "Privilege escalation event detected"
+          description: "{{ $value }} privilege escalation events detected in the last hour."
+      
+      - alert: UnauthorizedDataAccess
+        expr: rate(compliance_audit_events_total{event_type="data_access",outcome="FAILURE"}[10m]) > 0.1
+        for: 5m
+        labels:
+          severity: high
+          category: security
+        annotations:
+          summary: "Unauthorized data access attempts detected"
+          description: "Unauthorized data access attempts at rate of {{ $value }} per second over 10 minutes."
+      
+      # Data Lifecycle Alerts
+      - alert: DataRetentionPolicyViolation
+        expr: compliance_retention_policy_violations > 0
+        for: 1h
+        labels:
+          severity: warning
+          category: retention
+        annotations:
+          summary: "Data retention policy violations detected"
+          description: "{{ $value }} data retention policy violations detected. Review data lifecycle management."
+      
+      - alert: DataLifecycleExecutionFailed
+        expr: compliance_retention_execution_failures > 0
+        for: 30m
+        labels:
+          severity: warning
+          category: retention
+        annotations:
+          summary: "Data lifecycle policy execution failures"
+          description: "{{ $value }} data lifecycle policy executions have failed. Check system logs."
+      
+      - alert: HighDataVolumeRetention
+        expr: compliance_retention_affected_records > 10000
+        for: 1h
+        labels:
+          severity: info
+          category: retention
+        annotations:
+          summary: "Large volume of data affected by retention policies"
+          description: "{{ $value }} records affected by retention policies. Monitor system performance."
+      
+      # Audit Trail Integrity Alerts
+      - alert: AuditLogIntegrityFailure
+        expr: compliance_audit_integrity_failures > 0
+        for: 0m
+        labels:
+          severity: critical
+          category: audit
+        annotations:
+          summary: "Audit log integrity failure detected"
+          description: "{{ $value }} audit log integrity failures detected. Possible tampering or corruption."
+      
+      - alert: AuditLogVolumeHigh
+        expr: rate(compliance_audit_events_total[1h]) > 100
+        for: 30m
+        labels:
+          severity: info
+          category: audit
+        annotations:
+          summary: "High volume of audit events"
+          description: "Audit events occurring at {{ $value }} per second. Monitor system performance and storage."
+      
+      - alert: AuditLogStorageLow
+        expr: compliance_audit_storage_usage_percent > 85
+        for: 15m
+        labels:
+          severity: warning
+          category: audit
+        annotations:
+          summary: "Audit log storage usage high"
+          description: "Audit log storage is {{ $value }}% full. Consider archiving or expanding storage."
+      
+      # Compliance Reporting Alerts
+      - alert: ComplianceReportGenerationFailed
+        expr: compliance_report_generation_failures > 0
+        for: 1h
+        labels:
+          severity: warning
+          category: reporting
+        annotations:
+          summary: "Compliance report generation failures"
+          description: "{{ $value }} compliance report generation failures in the last hour."
+      
+      - alert: ComplianceReportGenerationSlow
+        expr: compliance_report_generation_duration_seconds > 600  # 10 minutes
+        for: 0m
+        labels:
+          severity: warning
+          category: reporting
+        annotations:
+          summary: "Compliance report generation taking too long"
+          description: "Compliance report generation took {{ $value }} seconds, exceeding 10-minute threshold."
+      
+      # Container Compliance Alerts
+      - alert: UnauthorizedContainerAccess
+        expr: rate(compliance_audit_events_total{event_type="container_event",outcome="FAILURE"}[5m]) > 0.1
+        for: 5m
+        labels:
+          severity: high
+          category: container_security
+        annotations:
+          summary: "Unauthorized container access attempts"
+          description: "Unauthorized container access attempts at {{ $value }} per second over 5 minutes."
+      
+      - alert: ContainerPrivilegeEscalation
+        expr: increase(compliance_audit_events_total{event_type="container_event",action=~".*privilege.*"}[1h]) > 0
+        for: 0m
+        labels:
+          severity: critical
+          category: container_security
+        annotations:
+          summary: "Container privilege escalation detected"
+          description: "{{ $value }} container privilege escalation events in the last hour."
+      
+      # System Health Alerts
+      - alert: ComplianceServiceDown
+        expr: up{job="vedfolnir-compliance"} == 0
+        for: 5m
+        labels:
+          severity: critical
+          category: system
+        annotations:
+          summary: "Compliance service is down"
+          description: "Compliance service has been down for more than 5 minutes."
+      
+      - alert: AuditLoggerDown
+        expr: compliance_audit_logger_status == 0
+        for: 2m
+        labels:
+          severity: critical
+          category: system
+        annotations:
+          summary: "Audit logger is not functioning"
+          description: "Audit logger has been non-functional for more than 2 minutes."
+
+  - name: compliance.recording.rules
+    rules:
+      # Recording rules for compliance metrics aggregation
+      - record: compliance:gdpr_request_processing_time_p95
+        expr: histogram_quantile(0.95, compliance_gdpr_request_processing_time_seconds_bucket)
+      
+      - record: compliance:audit_events_rate_5m
+        expr: rate(compliance_audit_events_total[5m])
+      
+      - record: compliance:security_events_rate_1h
+        expr: rate(compliance_audit_events_total{event_type="security_event"}[1h])
+      
+      - record: compliance:failed_auth_rate_15m
+        expr: rate(compliance_audit_events_total{event_type="user_authentication",outcome="FAILURE"}[15m])
+      
+      - record: compliance:data_access_success_rate_1h
+        expr: |
+          rate(compliance_audit_events_total{event_type="data_access",outcome="SUCCESS"}[1h]) /
+          rate(compliance_audit_events_total{event_type="data_access"}[1h])
+      
+      - record: compliance:retention_policy_compliance_rate
+        expr: |
+          (compliance_retention_total_records - compliance_retention_policy_violations) /
+          compliance_retention_total_records * 100
+      
+      - record: compliance:overall_compliance_score
+        expr: |
+          (
+            compliance_gdpr_compliance_score * 0.4 +
+            compliance:retention_policy_compliance_rate * 0.3 +
+            (100 - compliance_security_events_rate_1h * 100) * 0.3
+          )

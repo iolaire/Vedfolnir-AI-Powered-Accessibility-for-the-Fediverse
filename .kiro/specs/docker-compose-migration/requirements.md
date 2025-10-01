@@ -39,8 +39,9 @@ This specification defines the requirements for migrating Vedfolnir from macOS h
 1. WHEN replacing launchd services THEN the system SHALL use Docker Compose service definitions with proper restart policies
 2. WHEN configuring MySQL THEN the system SHALL use a MySQL container instead of Homebrew MySQL installation
 3. WHEN configuring Redis THEN the system SHALL use a Redis container instead of Homebrew Redis installation
-4. WHEN setting up Gunicorn THEN the system SHALL run Gunicorn within the application container instead of as a macOS service
-5. IF Nginx is used THEN the system SHALL provide it as a separate container service
+4. WHEN accessing Ollama THEN the system SHALL connect to an external Ollama API service (not managed by this project) running on the host system
+5. WHEN setting up Gunicorn THEN the system SHALL run Gunicorn within the application container instead of as a macOS service
+6. IF Nginx is used THEN the system SHALL provide it as a separate container service
 
 ### Requirement 4: Environment and Configuration Management
 
@@ -52,10 +53,11 @@ This specification defines the requirements for migrating Vedfolnir from macOS h
 2. WHEN containers start THEN the system SHALL properly load all required environment variables
 3. WHEN configuring database connections THEN the system SHALL use container networking instead of localhost connections
 4. WHEN setting up Redis connections THEN the system SHALL use container service names for Redis connectivity
-5. IF encryption keys are required THEN the system SHALL maintain the same security standards for credential encryption
-6. WHEN configuring container networking THEN the system SHALL use internal Docker networks for service-to-service communication
-7. WHEN exposing services THEN the system SHALL only expose necessary ports to the host system
-8. WHEN accessing services externally THEN the system SHALL provide secure proxy configuration through Nginx
+5. WHEN configuring Ollama connections THEN the system SHALL use host.docker.internal networking to access the external Ollama API service (assumed to be pre-configured on the host system)
+6. IF encryption keys are required THEN the system SHALL maintain the same security standards for credential encryption
+7. WHEN configuring container networking THEN the system SHALL use internal Docker networks for service-to-service communication
+8. WHEN exposing services THEN the system SHALL only expose necessary ports to the host system
+9. WHEN accessing services externally THEN the system SHALL provide secure proxy configuration through Nginx
 
 ### Requirement 5: Data Persistence and Volume Management
 

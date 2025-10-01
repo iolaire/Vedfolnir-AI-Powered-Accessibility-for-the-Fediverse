@@ -305,8 +305,15 @@ class OllamaConfig:
     
     @classmethod
     def from_env(cls):
+        # Default URL based on deployment environment
+        default_url = "http://localhost:11434"
+        
+        # Check if running in Docker container - use external Ollama on host
+        if os.getenv("DOCKER_DEPLOYMENT", "false").lower() == "true":
+            default_url = "http://host.docker.internal:11434"
+        
         return cls(
-            url=os.getenv("OLLAMA_URL", "http://localhost:11434"),
+            url=os.getenv("OLLAMA_URL", default_url),
             model_name=os.getenv("OLLAMA_MODEL", "llava:7b"),
             timeout=float(os.getenv("OLLAMA_TIMEOUT", "60.0")),
             context_size=int(os.getenv("OLLAMA_MODEL_CONTEXT", "4096")),
@@ -374,11 +381,20 @@ class StorageConfig:
     
     @classmethod
     def from_env(cls):
+        # Default database URL based on deployment environment
+        default_database_url = "mysql+pymysql://vedfolnir_user:vedfolnir_password@localhost/vedfolnir?charset=utf8mb4"
+        
+        # Check if running in Docker container
+        if os.getenv("DOCKER_DEPLOYMENT", "false").lower() == "true":
+            # Use container networking for MySQL
+            mysql_password = os.getenv("MYSQL_PASSWORD", "vedfolnir_password")
+            default_database_url = f"mysql+pymysql://vedfolnir:{mysql_password}@mysql:3306/vedfolnir?charset=utf8mb4"
+        
         return cls(
             base_dir=os.getenv("STORAGE_BASE_DIR", "storage"),
             images_dir=os.getenv("STORAGE_IMAGES_DIR", "storage/images"),
             logs_dir=os.getenv("LOGS_DIR", "logs"),
-            database_url=os.getenv("DATABASE_URL", "mysql+pymysql://vedfolnir_user:vedfolnir_password@localhost/vedfolnir?charset=utf8mb4")
+            database_url=os.getenv("DATABASE_URL", default_database_url)
         )
 
 @dataclass
@@ -414,9 +430,23 @@ class RedisConfig:
     @classmethod
     def from_env(cls):
         """Create a RedisConfig from environment variables"""
+        # Default values based on deployment environment
+        default_url = "redis://localhost:6379/0"
+        default_host = "localhost"
+        
+        # Check if running in Docker container
+        if os.getenv("DOCKER_DEPLOYMENT", "false").lower() == "true":
+            default_host = "redis"
+            # Build Redis URL with password if provided
+            redis_password = os.getenv("REDIS_PASSWORD")
+            if redis_password:
+                default_url = f"redis://:{redis_password}@redis:6379/0"
+            else:
+                default_url = "redis://redis:6379/0"
+        
         return cls(
-            url=os.getenv("REDIS_URL", "redis://localhost:6379/0"),
-            host=os.getenv("REDIS_HOST", "localhost"),
+            url=os.getenv("REDIS_URL", default_url),
+            host=os.getenv("REDIS_HOST", default_host),
             port=int(os.getenv("REDIS_PORT", "6379")),
             db=int(os.getenv("REDIS_DB", "0")),
             password=os.getenv("REDIS_PASSWORD") or None,

@@ -1,0 +1,330 @@
+# Copyright (C) 2025 iolaire mcfadden.
+# This program is free software: you can redistribute it and/or modify it under the terms of the GNU Affero General Public License as published by the Free Software Foundation, either version 3 of the License, or (at your option) any later version.
+# THE SOFTWARE IS PROVIDED "AS IS", WITHOUT WARRANTY OF ANY KIND, EXPRESS OR IMPLIED, INCLUDING BUT NOT LIMITED TO THE WARRANTIES OF MERCHANTABILITY, FITNESS FOR A PARTICULAR PURPOSE AND NONINFRINGEMENT. IN NO EVENT SHALL THE AUTHORS OR COPYRIGHT HOLDERS BE LIABLE FOR ANY CLAIM, DAMAGES OR OTHER LIABILITY, WHETHER IN AN ACTION OF CONTRACT, TORT OR OTHERWISE, ARISING FROM, OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE SOFTWARE.
+
+# Docker Compose scaling configuration for Vedfolnir
+# Usage: docker-compose -f docker-compose.yml -f docker-compose.scaling.yml up --scale vedfolnir=3
+
+services:
+  # Vedfolnir Application - Horizontal Scaling Configuration
+  vedfolnir:
+    # Enhanced resource configuration for scaling
+    deploy:
+      update_config:
+        parallelism: 1
+        delay: 30s
+        failure_action: rollback
+        monitor: 60s
+        max_failure_ratio: 0.3
+        order: start-first
+      rollback_config:
+        parallelism: 1
+        delay: 10s
+        failure_action: pause
+        monitor: 60s
+        max_failure_ratio: 0.3
+        order: stop-first
+      restart_policy:
+        condition: on-failure
+        delay: 5s
+        max_attempts: 3
+        window: 120s
+      resources:
+        limits:
+          cpus: '2.0'
+          memory: 2G
+          pids: 1000
+        reservations:
+          cpus: '1.0'
+          memory: 1G
+      labels:
+        - "com.vedfolnir.service=application"
+        - "com.vedfolnir.scaling=enabled"
+        - "com.vedfolnir.autoscale.min=2"
+        - "com.vedfolnir.autoscale.max=5"
+        - "com.vedfolnir.autoscale.target_cpu=70"
+        - "com.vedfolnir.autoscale.target_memory=80"
+
+  # MySQL Database - Enhanced Resource Management
+  mysql:
+    # Enhanced resource configuration
+    deploy:
+      restart_policy:
+        condition: on-failure
+        delay: 10s
+        max_attempts: 3
+        window: 120s
+      resources:
+        limits:
+          cpus: '4.0'
+          memory: 8G
+          pids: 2000
+        reservations:
+          cpus: '2.0'
+          memory: 4G
+      labels:
+        - "com.vedfolnir.service=database"
+        - "com.vedfolnir.scaling=disabled"
+        - "com.vedfolnir.critical=true"
+
+  # Redis Cache - Enhanced Resource Management
+  redis:
+    # Enhanced resource configuration
+    deploy:
+      restart_policy:
+        condition: on-failure
+        delay: 5s
+        max_attempts: 3
+        window: 120s
+      resources:
+        limits:
+          cpus: '2.0'
+          memory: 2G
+          pids: 500
+        reservations:
+          cpus: '1.0'
+          memory: 1G
+      labels:
+        - "com.vedfolnir.service=cache"
+        - "com.vedfolnir.scaling=disabled"
+        - "com.vedfolnir.critical=true"
+
+  # Nginx Load Balancer - Scaling Configuration
+  nginx:
+    # Enhanced resource configuration for scaling
+    deploy:
+      update_config:
+        parallelism: 1
+        delay: 10s
+        failure_action: rollback
+        monitor: 30s
+        max_failure_ratio: 0.5
+        order: start-first
+      restart_policy:
+        condition: on-failure
+        delay: 5s
+        max_attempts: 3
+        window: 120s
+      resources:
+        limits:
+          cpus: '1.0'
+          memory: 1G
+          pids: 500
+        reservations:
+          cpus: '0.5'
+          memory: 512M
+      labels:
+        - "com.vedfolnir.service=proxy"
+        - "com.vedfolnir.scaling=enabled"
+        - "com.vedfolnir.autoscale.min=2"
+        - "com.vedfolnir.autoscale.max=4"
+
+  # Prometheus - Enhanced Resource Management
+  prometheus:
+    deploy:
+      restart_policy:
+        condition: on-failure
+        delay: 10s
+        max_attempts: 3
+        window: 120s
+      resources:
+        limits:
+          cpus: '2.0'
+          memory: 4G
+          pids: 1000
+        reservations:
+          cpus: '1.0'
+          memory: 2G
+      labels:
+        - "com.vedfolnir.service=monitoring"
+        - "com.vedfolnir.scaling=disabled"
+        - "com.vedfolnir.critical=true"
+
+  # Grafana - Enhanced Resource Management
+  grafana:
+    deploy:
+      restart_policy:
+        condition: on-failure
+        delay: 10s
+        max_attempts: 3
+        window: 120s
+      resources:
+        limits:
+          cpus: '1.0'
+          memory: 2G
+          pids: 500
+        reservations:
+          cpus: '0.5'
+          memory: 1G
+      labels:
+        - "com.vedfolnir.service=dashboard"
+        - "com.vedfolnir.scaling=disabled"
+
+  # Loki - Enhanced Resource Management
+  loki:
+    deploy:
+      restart_policy:
+        condition: on-failure
+        delay: 10s
+        max_attempts: 3
+        window: 120s
+      resources:
+        limits:
+          cpus: '2.0'
+          memory: 2G
+          pids: 500
+        reservations:
+          cpus: '1.0'
+          memory: 1G
+      labels:
+        - "com.vedfolnir.service=logging"
+        - "com.vedfolnir.scaling=disabled"
+
+  # Vault - Enhanced Resource Management
+  vault:
+    deploy:
+      restart_policy:
+        condition: on-failure
+        delay: 10s
+        max_attempts: 3
+        window: 120s
+      resources:
+        limits:
+          cpus: '1.0'
+          memory: 1G
+          pids: 200
+        reservations:
+          cpus: '0.5'
+          memory: 512M
+      labels:
+        - "com.vedfolnir.service=secrets"
+        - "com.vedfolnir.scaling=disabled"
+        - "com.vedfolnir.critical=true"
+
+  # MySQL Exporter - Resource Management
+  mysql-exporter:
+    deploy:
+      replicas: 1
+      restart_policy:
+        condition: on-failure
+        delay: 5s
+        max_attempts: 3
+        window: 60s
+      resources:
+        limits:
+          cpus: '0.5'
+          memory: 512M
+          pids: 100
+        reservations:
+          cpus: '0.1'
+          memory: 256M
+      labels:
+        - "com.vedfolnir.service=exporter"
+        - "com.vedfolnir.scaling=disabled"
+
+  # Redis Exporter - Resource Management
+  redis-exporter:
+    deploy:
+      replicas: 1
+      restart_policy:
+        condition: on-failure
+        delay: 5s
+        max_attempts: 3
+        window: 60s
+      resources:
+        limits:
+          cpus: '0.5'
+          memory: 512M
+          pids: 100
+        reservations:
+          cpus: '0.1'
+          memory: 256M
+      labels:
+        - "com.vedfolnir.service=exporter"
+        - "com.vedfolnir.scaling=disabled"
+
+  # Nginx Exporter - Resource Management
+  nginx-exporter:
+    deploy:
+      replicas: 1
+      restart_policy:
+        condition: on-failure
+        delay: 5s
+        max_attempts: 3
+        window: 60s
+      resources:
+        limits:
+          cpus: '0.5'
+          memory: 512M
+          pids: 100
+        reservations:
+          cpus: '0.1'
+          memory: 256M
+      labels:
+        - "com.vedfolnir.service=exporter"
+        - "com.vedfolnir.scaling=disabled"
+
+  # Node Exporter - Resource Management
+  node-exporter:
+    deploy:
+      replicas: 1
+      restart_policy:
+        condition: on-failure
+        delay: 5s
+        max_attempts: 3
+        window: 60s
+      resources:
+        limits:
+          cpus: '0.5'
+          memory: 512M
+          pids: 100
+        reservations:
+          cpus: '0.1'
+          memory: 256M
+      labels:
+        - "com.vedfolnir.service=exporter"
+        - "com.vedfolnir.scaling=disabled"
+
+  # cAdvisor - Resource Management
+  cadvisor:
+    deploy:
+      replicas: 1
+      restart_policy:
+        condition: on-failure
+        delay: 5s
+        max_attempts: 3
+        window: 60s
+      resources:
+        limits:
+          cpus: '1.0'
+          memory: 1G
+          pids: 200
+        reservations:
+          cpus: '0.2'
+          memory: 512M
+      labels:
+        - "com.vedfolnir.service=monitoring"
+        - "com.vedfolnir.scaling=disabled"
+
+# Global resource constraints
+x-resource-defaults: &resource-defaults
+  deploy:
+    resources:
+      limits:
+        pids: 1000
+      reservations:
+        memory: 128M
+
+# Scaling constraints
+x-scaling-constraints: &scaling-constraints
+  deploy:
+    placement:
+      max_replicas_per_node: 3
+    update_config:
+      failure_action: rollback
+      monitor: 60s
+    restart_policy:
+      condition: on-failure
+      delay: 5s
+      max_attempts: 3
+      window: 120s

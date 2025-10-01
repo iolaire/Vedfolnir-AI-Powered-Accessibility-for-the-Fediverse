@@ -1,0 +1,261 @@
+# Copyright (C) 2025 iolaire mcfadden.
+# This program is free software: you can redistribute it and/or modify it under the terms of the GNU Affero General Public License as published by the Free Software Foundation, either version 3 of the License, or (at your option) any later version.
+# THE SOFTWARE IS PROVIDED "AS IS", WITHOUT WARRANTY OF ANY KIND, EXPRESS OR IMPLIED, INCLUDING BUT NOT LIMITED TO THE WARRANTIES OF MERCHANTABILITY, FITNESS FOR A PARTICULAR PURPOSE AND NONINFRINGEMENT. IN NO EVENT SHALL THE AUTHORS OR COPYRIGHT HOLDERS BE LIABLE FOR ANY CLAIM, DAMAGES OR OTHER LIABILITY, WHETHER IN AN ACTION OF CONTRACT, TORT OR OTHERWISE, ARISING FROM, OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE SOFTWARE.
+
+version: '3.8'
+
+services:
+  # Main Vedfolnir Application - Development Configuration
+  vedfolnir:
+    build:
+      context: .
+      dockerfile: Dockerfile
+      target: development
+    container_name: vedfolnir_dev
+    ports:
+      - "5000:5000"    # Flask application
+      - "5678:5678"    # Python debugger (debugpy)
+      - "9229:9229"    # Node.js debugger (if needed)
+    volumes:
+      # Hot reloading - mount source code
+      - .:/app
+      - /app/node_modules  # Exclude node_modules from mount
+      - /app/__pycache__   # Exclude Python cache
+      - /app/.pytest_cache # Exclude pytest cache
+      # Development-specific mounts
+      - ./logs:/app/logs
+      - ./storage:/app/storage
+      - ./config:/app/config
+    environment:
+      # Development environment variables
+      - FLASK_ENV=development
+      - FLASK_DEBUG=true
+      - LOG_LEVEL=DEBUG
+      - PYTHONPATH=/app
+      - PYTHONDONTWRITEBYTECODE=1
+      - PYTHONUNBUFFERED=1
+      
+      # Database connections
+      - DATABASE_URL=mysql+pymysql://vedfolnir:${MYSQL_PASSWORD:-dev_password}@mysql:3306/vedfolnir_dev?charset=utf8mb4
+      - REDIS_URL=redis://redis:6379/1  # Use DB 1 for development
+      
+      # External services
+      - OLLAMA_URL=http://host.docker.internal:11434
+      
+      # Development-specific settings
+      - TESTING=false
+      - HOT_RELOAD=true
+      - AUTO_RELOAD=true
+      - PROFILING_ENABLED=true
+      
+      # Security (relaxed for development)
+      - SECURITY_CSRF_ENABLED=true
+      - SECURITY_RATE_LIMITING_ENABLED=false
+      - SESSION_COOKIE_SECURE=false
+      
+      # Debugging
+      - ENABLE_DEBUGGER=true
+      - REMOTE_DEBUGGING=true
+      - PROFILER_ENABLED=true
+    depends_on:
+      mysql:
+        condition: service_healthy
+      redis:
+        condition: service_healthy
+    networks:
+      - vedfolnir_internal
+      - vedfolnir_external
+    restart: unless-stopped
+    healthcheck:
+      test: ["CMD", "curl", "-f", "http://localhost:5000/health"]
+      interval: 30s
+      timeout: 10s
+      retries: 3
+      start_period: 60s
+    # Development resource limits (generous)
+    deploy:
+      resources:
+        limits:
+          cpus: '4.0'
+          memory: 4G
+        reservations:
+          cpus: '1.0'
+          memory: 1G
+
+  # MySQL Database - Development Configuration
+  mysql:
+    image: mysql:8.0
+    container_name: vedfolnir_mysql_dev
+    ports:
+      - "3306:3306"  # Expose for external tools
+    environment:
+      - MYSQL_ROOT_PASSWORD=${MYSQL_ROOT_PASSWORD:-dev_root_password}
+      - MYSQL_DATABASE=vedfolnir_dev
+      - MYSQL_USER=vedfolnir
+      - MYSQL_PASSWORD=${MYSQL_PASSWORD:-dev_password}
+      - MYSQL_CHARSET=utf8mb4
+      - MYSQL_COLLATION=utf8mb4_unicode_ci
+    volumes:
+      - mysql_dev_data:/var/lib/mysql
+      - ./config/mysql:/etc/mysql/conf.d
+      - ./docker/mysql/dev-init:/docker-entrypoint-initdb.d
+      - ./logs/mysql:/var/log/mysql
+    networks:
+      - vedfolnir_internal
+    restart: unless-stopped
+    healthcheck:
+      test: ["CMD", "mysqladmin", "ping", "-h", "localhost", "-u", "vedfolnir", "-p${MYSQL_PASSWORD:-dev_password}"]
+      interval: 30s
+      timeout: 10s
+      retries: 5
+      start_period: 60s
+    # Development resource limits
+    deploy:
+      resources:
+        limits:
+          cpus: '2.0'
+          memory: 2G
+        reservations:
+          cpus: '0.5'
+          memory: 512M
+
+  # Redis - Development Configuration
+  redis:
+    image: redis:7-alpine
+    container_name: vedfolnir_redis_dev
+    ports:
+      - "6379:6379"  # Expose for external tools
+    volumes:
+      - redis_dev_data:/data
+      - ./config/redis/redis.conf:/usr/local/etc/redis/redis.conf
+      - ./logs/redis:/var/log/redis
+    networks:
+      - vedfolnir_internal
+    restart: unless-stopped
+    healthcheck:
+      test: ["CMD", "redis-cli", "ping"]
+      interval: 30s
+      timeout: 10s
+      retries: 3
+      start_period: 30s
+    # Development resource limits
+    deploy:
+      resources:
+        limits:
+          cpus: '1.0'
+          memory: 512M
+        reservations:
+          cpus: '0.25'
+          memory: 128M
+
+  # Development Tools and Services
+  
+  # MailHog for email testing
+  mailhog:
+    image: mailhog/mailhog
+    container_name: vedfolnir_mailhog_dev
+    ports:
+      - "1025:1025"  # SMTP
+      - "8025:8025"  # Web UI
+    networks:
+      - vedfolnir_internal
+    restart: unless-stopped
+
+  # Redis Commander for Redis management
+  redis-commander:
+    image: rediscommander/redis-commander:latest
+    container_name: vedfolnir_redis_commander_dev
+    ports:
+      - "8081:8081"
+    environment:
+      - REDIS_HOSTS=local:redis:6379
+    networks:
+      - vedfolnir_internal
+    depends_on:
+      - redis
+    restart: unless-stopped
+
+  # phpMyAdmin for MySQL management
+  phpmyadmin:
+    image: phpmyadmin/phpmyadmin
+    container_name: vedfolnir_phpmyadmin_dev
+    ports:
+      - "8080:80"
+    environment:
+      - PMA_HOST=mysql
+      - PMA_USER=vedfolnir
+      - PMA_PASSWORD=${MYSQL_PASSWORD:-dev_password}
+      - UPLOAD_LIMIT=1G
+    networks:
+      - vedfolnir_internal
+    depends_on:
+      - mysql
+    restart: unless-stopped
+
+  # Test Runner Container
+  test-runner:
+    build:
+      context: .
+      dockerfile: Dockerfile
+      target: development
+    container_name: vedfolnir_test_runner
+    volumes:
+      - .:/app
+      - ./test-results:/app/test-results
+    environment:
+      - TESTING=true
+      - FLASK_ENV=testing
+      - DATABASE_URL=mysql+pymysql://vedfolnir:${MYSQL_PASSWORD:-dev_password}@mysql:3306/vedfolnir_test?charset=utf8mb4
+      - REDIS_URL=redis://redis:6379/2  # Use DB 2 for testing
+      - PYTHONPATH=/app
+    depends_on:
+      mysql:
+        condition: service_healthy
+      redis:
+        condition: service_healthy
+    networks:
+      - vedfolnir_internal
+    profiles:
+      - testing
+    command: ["python", "-m", "pytest", "-v", "--cov=app", "--cov-report=html:/app/test-results/coverage"]
+
+  # Nginx - Development Configuration (Optional)
+  nginx:
+    image: nginx:alpine
+    container_name: vedfolnir_nginx_dev
+    ports:
+      - "80:80"
+      - "443:443"
+    volumes:
+      - ./config/nginx/dev.conf:/etc/nginx/conf.d/default.conf
+      - ./ssl:/etc/nginx/ssl
+      - ./logs/nginx:/var/log/nginx
+      - ./static:/var/www/static
+    depends_on:
+      - vedfolnir
+    networks:
+      - vedfolnir_external
+      - vedfolnir_internal
+    restart: unless-stopped
+    profiles:
+      - nginx
+
+volumes:
+  mysql_dev_data:
+    driver: local
+  redis_dev_data:
+    driver: local
+
+networks:
+  vedfolnir_internal:
+    driver: bridge
+    internal: false  # Allow external access in development
+  vedfolnir_external:
+    driver: bridge
+
+# Development-specific secrets (less secure for convenience)
+secrets:
+  flask_secret_key:
+    file: ./secrets/flask_secret_key.txt
+  mysql_password:
+    file: ./secrets/mysql_password.txt

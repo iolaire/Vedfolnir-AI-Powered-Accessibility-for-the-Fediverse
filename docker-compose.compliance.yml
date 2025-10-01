@@ -1,0 +1,325 @@
+# Copyright (C) 2025 iolaire mcfadden.
+# This program is free software: you can redistribute it and/or modify it under the terms of the GNU Affero General Public License as published by the Free Software Foundation, either version 3 of the License, or (at your option) any later version.
+# THE SOFTWARE IS PROVIDED "AS IS", WITHOUT WARRANTY OF ANY KIND, EXPRESS OR IMPLIED, INCLUDING BUT NOT LIMITED TO THE WARRANTIES OF MERCHANTABILITY, FITNESS FOR A PARTICULAR PURPOSE AND NONINFRINGEMENT. IN NO EVENT SHALL THE AUTHORS OR COPYRIGHT HOLDERS BE LIABLE FOR ANY CLAIM, DAMAGES OR OTHER LIABILITY, WHETHER IN AN ACTION OF CONTRACT, TORT OR OTHERWISE, ARISING FROM, OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE SOFTWARE.
+
+# Docker Compose configuration for Compliance and Audit Framework
+# This extends the main docker-compose.yml with compliance-specific services
+
+version: '3.8'
+
+services:
+  # Compliance Service (integrated with main application)
+  vedfolnir:
+    environment:
+      # Compliance framework configuration
+      - COMPLIANCE_ENABLED=true
+      - AUDIT_LOGGING_ENABLED=true
+      - GDPR_COMPLIANCE_ENABLED=true
+      - DATA_LIFECYCLE_ENABLED=true
+      - COMPLIANCE_REPORTING_ENABLED=true
+      
+      # Audit logging configuration
+      - AUDIT_LOG_LEVEL=INFO
+      - AUDIT_ASYNC_LOGGING=true
+      - AUDIT_HASH_CHAIN_ENABLED=true
+      - AUDIT_TAMPER_DETECTION=true
+      
+      # GDPR configuration
+      - GDPR_AUTO_PROCESSING=false
+      - GDPR_MAX_PROCESSING_DAYS=30
+      - GDPR_EXPORT_FORMAT=json
+      - GDPR_INCLUDE_IMAGES=true
+      
+      # Data lifecycle configuration
+      - DATA_LIFECYCLE_AUTO_EXECUTION=true
+      - DATA_LIFECYCLE_SCHEDULE=0 2 * * *
+      
+      # Compliance reporting configuration
+      - COMPLIANCE_REPORTS_AUTO_GENERATION=true
+      - COMPLIANCE_REPORTS_RETENTION_DAYS=2555
+    
+    volumes:
+      # Compliance-specific volume mounts
+      - ./config/compliance:/app/config/compliance:ro
+      - ./logs/audit:/app/logs/audit
+      - ./storage/gdpr_exports:/app/storage/gdpr_exports
+      - ./storage/compliance_reports:/app/storage/compliance_reports
+      - ./storage/archives:/app/storage/archives
+    
+    depends_on:
+      - mysql
+      - redis
+      - vault
+      - loki
+    
+    networks:
+      - vedfolnir_internal
+      - vedfolnir_monitoring
+
+  # Audit Log Aggregator (Loki)
+  loki:
+    image: grafana/loki:latest
+    container_name: vedfolnir_loki
+    restart: unless-stopped
+    
+    ports:
+      - "3100:3100"
+    
+    volumes:
+      - ./config/loki:/etc/loki:ro
+      - ./data/loki:/loki
+      - ./logs:/var/log/vedfolnir:ro
+    
+    command: -config.file=/etc/loki/loki.yml
+    
+    networks:
+      - vedfolnir_internal
+      - vedfolnir_monitoring
+    
+    healthcheck:
+      test: ["CMD", "wget", "--no-verbose", "--tries=1", "--spider", "http://localhost:3100/ready"]
+      interval: 30s
+      timeout: 10s
+      retries: 3
+      start_period: 40s
+    
+    logging:
+      driver: "json-file"
+      options:
+        max-size: "10m"
+        max-file: "3"
+
+  # Compliance Dashboard (Grafana with compliance dashboards)
+  grafana:
+    image: grafana/grafana:latest
+    container_name: vedfolnir_grafana
+    restart: unless-stopped
+    
+    ports:
+      - "3000:3000"
+    
+    environment:
+      - GF_SECURITY_ADMIN_PASSWORD=${GRAFANA_ADMIN_PASSWORD:-admin}
+      - GF_USERS_ALLOW_SIGN_UP=false
+      - GF_INSTALL_PLUGINS=grafana-piechart-panel,grafana-worldmap-panel
+      - GF_FEATURE_TOGGLES_ENABLE=ngalert
+    
+    volumes:
+      - ./config/grafana:/etc/grafana:ro
+      - ./data/grafana:/var/lib/grafana
+      - ./config/grafana/dashboards:/var/lib/grafana/dashboards:ro
+      - ./config/grafana/provisioning:/etc/grafana/provisioning:ro
+    
+    depends_on:
+      - prometheus
+      - loki
+    
+    networks:
+      - vedfolnir_monitoring
+      - vedfolnir_external
+    
+    healthcheck:
+      test: ["CMD", "curl", "-f", "http://localhost:3000/api/health"]
+      interval: 30s
+      timeout: 10s
+      retries: 3
+      start_period: 60s
+    
+    logging:
+      driver: "json-file"
+      options:
+        max-size: "10m"
+        max-file: "3"
+
+  # Metrics Collection (Prometheus with compliance metrics)
+  prometheus:
+    image: prom/prometheus:latest
+    container_name: vedfolnir_prometheus
+    restart: unless-stopped
+    
+    ports:
+      - "9090:9090"
+    
+    volumes:
+      - ./config/prometheus:/etc/prometheus:ro
+      - ./data/prometheus:/prometheus
+    
+    command:
+      - '--config.file=/etc/prometheus/prometheus.yml'
+      - '--storage.tsdb.path=/prometheus'
+      - '--web.console.libraries=/etc/prometheus/console_libraries'
+      - '--web.console.templates=/etc/prometheus/consoles'
+      - '--storage.tsdb.retention.time=90d'
+      - '--web.enable-lifecycle'
+      - '--web.enable-admin-api'
+    
+    networks:
+      - vedfolnir_internal
+      - vedfolnir_monitoring
+    
+    healthcheck:
+      test: ["CMD", "wget", "--no-verbose", "--tries=1", "--spider", "http://localhost:9090/-/healthy"]
+      interval: 30s
+      timeout: 10s
+      retries: 3
+      start_period: 40s
+    
+    logging:
+      driver: "json-file"
+      options:
+        max-size: "10m"
+        max-file: "3"
+
+  # Secrets Management (HashiCorp Vault)
+  vault:
+    image: vault:latest
+    container_name: vedfolnir_vault
+    restart: unless-stopped
+    
+    ports:
+      - "8200:8200"
+    
+    environment:
+      - VAULT_DEV_ROOT_TOKEN_ID=${VAULT_ROOT_TOKEN}
+      - VAULT_DEV_LISTEN_ADDRESS=0.0.0.0:8200
+      - VAULT_LOCAL_CONFIG={"storage":{"file":{"path":"/vault/data"}},"listener":{"tcp":{"address":"0.0.0.0:8200","tls_disable":true}},"default_lease_ttl":"168h","max_lease_ttl":"720h","ui":true}
+    
+    volumes:
+      - ./data/vault:/vault/data
+      - ./config/vault:/vault/config:ro
+      - ./logs/vault:/vault/logs
+    
+    cap_add:
+      - IPC_LOCK
+    
+    networks:
+      - vedfolnir_internal
+    
+    healthcheck:
+      test: ["CMD", "vault", "status"]
+      interval: 30s
+      timeout: 10s
+      retries: 3
+      start_period: 60s
+    
+    logging:
+      driver: "json-file"
+      options:
+        max-size: "10m"
+        max-file: "3"
+
+  # Compliance Report Scheduler (cron-like service)
+  compliance-scheduler:
+    image: python:3.12-slim
+    container_name: vedfolnir_compliance_scheduler
+    restart: unless-stopped
+    
+    environment:
+      - PYTHONPATH=/app
+      - DATABASE_URL=mysql+pymysql://vedfolnir:${MYSQL_PASSWORD}@mysql:3306/vedfolnir?charset=utf8mb4
+      - REDIS_URL=redis://redis:6379/0
+      - COMPLIANCE_ENABLED=true
+    
+    volumes:
+      - .:/app:ro
+      - ./storage/compliance_reports:/app/storage/compliance_reports
+      - ./storage/archives:/app/storage/archives
+      - ./logs/compliance:/app/logs/compliance
+      - ./config/compliance:/app/config/compliance:ro
+    
+    working_dir: /app
+    
+    command: >
+      sh -c "
+        pip install -r requirements.txt &&
+        python -c '
+        import time
+        import schedule
+        from app.services.compliance.compliance_service import ComplianceService
+        from config import Config
+        from app.core.database.core.database_manager import DatabaseManager
+        
+        config = Config()
+        db_manager = DatabaseManager(config)
+        compliance_service = ComplianceService(db_manager)
+        
+        def run_daily_reports():
+            print(\"Running daily compliance reports...\")
+            compliance_service.generate_audit_summary_report()
+        
+        def run_weekly_reports():
+            print(\"Running weekly GDPR compliance reports...\")
+            compliance_service.generate_gdpr_compliance_report()
+        
+        def run_monthly_reports():
+            print(\"Running monthly comprehensive reports...\")
+            compliance_service.generate_comprehensive_report()
+        
+        def run_lifecycle_policies():
+            print(\"Executing data lifecycle policies...\")
+            compliance_service.execute_data_lifecycle_policies()
+        
+        # Schedule jobs
+        schedule.every().day.at(\"06:00\").do(run_daily_reports)
+        schedule.every().monday.at(\"08:00\").do(run_weekly_reports)
+        schedule.every().month.do(run_monthly_reports)
+        schedule.every().day.at(\"02:00\").do(run_lifecycle_policies)
+        
+        print(\"Compliance scheduler started\")
+        while True:
+            schedule.run_pending()
+            time.sleep(60)
+        '
+      "
+    
+    depends_on:
+      - mysql
+      - redis
+      - vault
+    
+    networks:
+      - vedfolnir_internal
+    
+    logging:
+      driver: "json-file"
+      options:
+        max-size: "10m"
+        max-file: "3"
+
+# Networks
+networks:
+  vedfolnir_internal:
+    driver: bridge
+    internal: true
+  
+  vedfolnir_monitoring:
+    driver: bridge
+    internal: true
+  
+  vedfolnir_external:
+    driver: bridge
+
+# Volumes for persistent data
+volumes:
+  vault_data:
+    driver: local
+  
+  prometheus_data:
+    driver: local
+  
+  grafana_data:
+    driver: local
+  
+  loki_data:
+    driver: local
+
+# Secrets for sensitive configuration
+secrets:
+  vault_root_token:
+    file: ./secrets/vault_root_token.txt
+  
+  grafana_admin_password:
+    file: ./secrets/grafana_admin_password.txt
+  
+  audit_encryption_key:
+    file: ./secrets/audit_encryption_key.txt

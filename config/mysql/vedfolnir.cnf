@@ -1,0 +1,147 @@
+# Copyright (C) 2025 iolaire mcfadden.
+# This program is free software: you can redistribute it and/or modify it under the terms of the GNU Affero General Public License as published by the Free Software Foundation, either version 3 of the License, or (at your option) any later version.
+# THE SOFTWARE IS PROVIDED "AS IS", WITHOUT WARRANTY OF ANY KIND, EXPRESS OR IMPLIED, INCLUDING BUT NOT LIMITED TO THE WARRANTIES OF MERCHANTABILITY, FITNESS FOR A PARTICULAR PURPOSE AND NONINFRINGEMENT. IN NO EVENT SHALL THE AUTHORS OR COPYRIGHT HOLDERS BE LIABLE FOR ANY CLAIM, DAMAGES OR OTHER LIABILITY, WHETHER IN AN ACTION OF CONTRACT, TORT OR OTHERWISE, ARISING FROM, OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE SOFTWARE.
+
+# MySQL configuration for Vedfolnir Docker container
+# Optimized for containerized deployment with performance and security
+
+[mysqld]
+# Basic settings
+user = mysql
+pid-file = /var/run/mysqld/mysqld.pid
+socket = /var/run/mysqld/mysqld.sock
+port = 3306
+basedir = /usr
+datadir = /var/lib/mysql
+tmpdir = /tmp
+lc-messages-dir = /usr/share/mysql
+
+# Character set and collation
+character-set-server = utf8mb4
+collation-server = utf8mb4_unicode_ci
+init-connect = 'SET NAMES utf8mb4'
+
+# Storage engine
+default-storage-engine = InnoDB
+
+# Connection settings
+max_connections = 200
+max_connect_errors = 100000
+max_allowed_packet = 64M
+interactive_timeout = 28800
+wait_timeout = 28800
+
+# Buffer pool settings (optimized for containerized deployment)
+# Dynamically sized based on container memory limits (50% of 4G limit = 2G)
+innodb_buffer_pool_size = 2G
+innodb_buffer_pool_instances = 8
+innodb_buffer_pool_chunk_size = 128M
+innodb_buffer_pool_load_at_startup = 1
+innodb_buffer_pool_dump_at_shutdown = 1
+
+# InnoDB settings
+innodb_file_per_table = 1
+innodb_flush_log_at_trx_commit = 2
+innodb_log_buffer_size = 64M
+innodb_log_file_size = 512M
+innodb_log_files_in_group = 2
+innodb_flush_method = O_DIRECT
+innodb_io_capacity = 1000
+innodb_io_capacity_max = 2000
+
+# Query cache (disabled in MySQL 8.0, but keeping for compatibility)
+# query_cache_type = 0
+# query_cache_size = 0
+
+# Temporary tables
+tmp_table_size = 256M
+max_heap_table_size = 256M
+
+# MyISAM settings (for system tables)
+key_buffer_size = 128M
+myisam_sort_buffer_size = 128M
+
+# Thread settings
+thread_cache_size = 50
+thread_stack = 256K
+
+# Sorting and grouping
+sort_buffer_size = 4M
+read_buffer_size = 2M
+read_rnd_buffer_size = 8M
+join_buffer_size = 4M
+
+# Binary logging (for replication and point-in-time recovery)
+log-bin = mysql-bin
+binlog_format = ROW
+binlog_row_image = FULL
+expire_logs_days = 7
+max_binlog_size = 1G
+
+# Error logging
+log-error = /var/log/mysql/error.log
+log_error_verbosity = 2
+
+# Slow query logging
+slow_query_log = 1
+slow_query_log_file = /var/log/mysql/slow.log
+long_query_time = 2
+log_queries_not_using_indexes = 1
+log_slow_admin_statements = 1
+
+# General query logging (disabled by default for performance)
+general_log = 0
+general_log_file = /var/log/mysql/general.log
+
+# Security settings
+skip-name-resolve
+local-infile = 0
+skip-symbolic-links
+secure-file-priv = /var/lib/mysql-files/
+# Disable LOAD DATA LOCAL INFILE for security
+local-infile = 0
+# Validate passwords
+validate_password.policy = MEDIUM
+validate_password.length = 8
+
+# SSL settings (enable for production)
+# ssl-ca = /etc/mysql/ssl/ca.pem
+# ssl-cert = /etc/mysql/ssl/server-cert.pem
+# ssl-key = /etc/mysql/ssl/server-key.pem
+# require_secure_transport = ON
+
+# Performance schema
+performance_schema = ON
+performance_schema_max_table_instances = 12500
+performance_schema_max_table_handles = 4000
+
+# Information schema
+information_schema_stats_expiry = 86400
+
+# Optimizer settings
+optimizer_switch = 'index_merge=on,index_merge_union=on,index_merge_sort_union=on,index_merge_intersection=on,engine_condition_pushdown=on,index_condition_pushdown=on,mrr=on,mrr_cost_based=on,block_nested_loop=on,batched_key_access=off,materialization=on,semijoin=on,loosescan=on,firstmatch=on,duplicateweedout=on,subquery_materialization_cost_based=on,use_index_extensions=on,condition_fanout_filter=on,derived_merge=on,use_invisible_indexes=off,skip_scan=on,hash_join=on'
+
+# Table definition cache
+table_definition_cache = 4000
+table_open_cache = 4000
+table_open_cache_instances = 16
+
+# Metadata locks
+metadata_locks_hash_instances = 8
+
+[mysql]
+default-character-set = utf8mb4
+
+[client]
+default-character-set = utf8mb4
+port = 3306
+socket = /var/run/mysqld/mysqld.sock
+
+[mysqldump]
+quick
+quote-names
+max_allowed_packet = 64M
+default-character-set = utf8mb4
+
+[mysqlhotcopy]
+interactive-timeout

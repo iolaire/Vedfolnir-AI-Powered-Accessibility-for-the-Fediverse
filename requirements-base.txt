@@ -1,0 +1,66 @@
+# Copyright (C) 2025 iolaire mcfadden.
+# This program is free software: you can redistribute it and/or modify it under the terms of the GNU Affero General Public License as published by the Free Software Foundation, either version 3 of the License, or (at your option) any later version.
+# THE SOFTWARE IS PROVIDED "AS IS", WITHOUT WARRANTY OF ANY KIND, EXPRESS OR IMPLIED, INCLUDING BUT NOT LIMITED TO THE WARRANTIES OF MERCHANTABILITY, FITNESS FOR A PARTICULAR PURPOSE AND NONINFRINGEMENT. IN NO EVENT SHALL THE AUTHORS OR COPYRIGHT HOLDERS BE LIABLE FOR ANY CLAIM, DAMAGES OR OTHER LIABILITY, WHETHER IN AN ACTION OF CONTRACT, TORT OR OTHERWISE, ARISING FROM, OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE SOFTWARE.
+
+# Base requirements for Vedfolnir - optimized for Debian Linux containers
+# These are the core dependencies required for both development and production
+
+# Core Web Framework
+requests>=2.31.0
+flask>=2.3.0
+flask-socketio>=5.3.0
+flask-cors>=4.0.0
+flask-sqlalchemy>=3.0.0
+flask-migrate>=4.0.0
+flask-wtf>=1.1.0
+flask-login>=0.6.2
+flask-mailing>=0.2.0
+wtforms>=3.0.0
+email_validator>=2.0.0
+
+# Database and ORM
+sqlalchemy>=2.0.0
+alembic>=1.12.0
+pymysql>=1.1.0
+
+# Session and Queue Management
+redis>=5.0.0
+rq>=1.16.0
+rq-dashboard>=0.7.0
+rq-scheduler>=0.13.0
+
+# Image Processing (Debian-optimized)
+Pillow>=10.0.0
+pillow-heif>=0.13.0
+pillow-avif-plugin>=1.4.0
+
+# AI/ML Dependencies (Container-optimized)
+torch>=2.0.0
+transformers>=4.30.0
+httpx>=0.24.0
+
+# Security and Encryption
+cryptography>=41.0.2
+python-jose>=3.3.0
+
+# Utilities
+python-multipart>=0.0.6
+python-dotenv>=1.0.0
+python-dateutil>=2.8.0
+click>=8.1.0
+cachetools>=5.3.0
+psutil>=5.9.0
+bleach>=6.0.0
+
+# Text Processing
+nltk>=3.8.1
+language-tool-python>=2.7.1
+
+# Async Support
+asyncio>=3.4.3
+aiofiles>=23.1.0
+
+# Production Server (Container-optimized)
+gunicorn>=23.0.0
+eventlet>=0.33.0
+setproctitle>=1.3.0

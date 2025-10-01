@@ -1,0 +1,141 @@
+# Copyright (C) 2025 iolaire mcfadden.
+# This program is free software: you can redistribute it and/or modify it under the terms of the GNU Affero General Public License as published by the Free Software Foundation, either version 3 of the License, or (at your option) any later version.
+# THE SOFTWARE IS PROVIDED "AS IS", WITHOUT WARRANTY OF ANY KIND, EXPRESS OR IMPLIED, INCLUDING BUT NOT LIMITED TO THE WARRANTIES OF MERCHANTABILITY, FITNESS FOR A PARTICULAR PURPOSE AND NONINFRINGEMENT. IN NO EVENT SHALL THE AUTHORS OR COPYRIGHT HOLDERS BE LIABLE FOR ANY CLAIM, DAMAGES OR OTHER LIABILITY, WHETHER IN AN ACTION OF CONTRACT, TORT OR OTHERWISE, ARISING FROM, OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE SOFTWARE.
+
+# Loki Configuration for Compliance Log Aggregation
+# Centralized logging configuration for audit and compliance logs
+
+auth_enabled: false
+
+server:
+  http_listen_port: 3100
+  grpc_listen_port: 9096
+  log_level: info
+
+common:
+  path_prefix: /loki
+  storage:
+    filesystem:
+      chunks_directory: /loki/chunks
+      rules_directory: /loki/rules
+  replication_factor: 1
+  ring:
+    instance_addr: 127.0.0.1
+    kvstore:
+      store: inmemory
+
+query_range:
+  results_cache:
+    cache:
+      embedded_cache:
+        enabled: true
+        max_size_mb: 100
+
+schema_config:
+  configs:
+    - from: 2020-10-24
+      store: boltdb-shipper
+      object_store: filesystem
+      schema: v11
+      index:
+        prefix: index_
+        period: 24h
+
+ruler:
+  alertmanager_url: http://localhost:9093
+
+# Ingester configuration for log ingestion
+ingester:
+  wal:
+    enabled: true
+    dir: /loki/wal
+  lifecycler:
+    address: 127.0.0.1
+    ring:
+      kvstore:
+        store: inmemory
+      replication_factor: 1
+    final_sleep: 0s
+  chunk_idle_period: 1h
+  max_chunk_age: 1h
+  chunk_target_size: 1048576
+  chunk_retain_period: 30s
+  max_transfer_retries: 0
+
+# Storage configuration
+storage_config:
+  boltdb_shipper:
+    active_index_directory: /loki/boltdb-shipper-active
+    cache_location: /loki/boltdb-shipper-cache
+    cache_ttl: 24h
+    shared_store: filesystem
+  filesystem:
+    directory: /loki/chunks
+
+# Compactor for log retention and cleanup
+compactor:
+  working_directory: /loki/boltdb-shipper-compactor
+  shared_store: filesystem
+  compaction_interval: 10m
+  retention_enabled: true
+  retention_delete_delay: 2h
+  retention_delete_worker_count: 150
+
+# Limits configuration for performance and compliance
+limits_config:
+  # Ingestion limits
+  ingestion_rate_mb: 4
+  ingestion_burst_size_mb: 6
+  max_streams_per_user: 10000
+  max_line_size: 256000
+  
+  # Query limits
+  max_query_parallelism: 32
+  max_query_series: 500
+  max_query_lookback: 0s
+  
+  # Retention policies for compliance
+  retention_period: 2555d  # 7 years for compliance
+  
+  # Per-tenant limits
+  per_stream_rate_limit: 3MB
+  per_stream_rate_limit_burst: 15MB
+  
+  # Cardinality limits
+  max_global_streams_per_user: 5000
+  max_chunks_per_query: 2000000
+  max_query_length: 721h  # ~30 days
+  
+  # Reject old samples
+  reject_old_samples: true
+  reject_old_samples_max_age: 168h  # 1 week
+  
+  # Creation grace period
+  creation_grace_period: 10m
+
+# Frontend configuration for query performance
+frontend:
+  max_outstanding_per_tenant: 256
+  compress_responses: true
+  downstream_url: http://127.0.0.1:3100
+
+# Query frontend worker
+frontend_worker:
+  frontend_address: 127.0.0.1:9095
+
+# Table manager for index management
+table_manager:
+  retention_deletes_enabled: true
+  retention_period: 2555d  # 7 years for compliance
+
+# Analytics configuration
+analytics:
+  reporting_enabled: false
+
+# Tracing configuration
+tracing:
+  enabled: false
+
+# Memberlist configuration for clustering (single node setup)
+memberlist:
+  join_members: []

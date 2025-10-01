@@ -23,8 +23,8 @@ graph TB
             REDIS[(Redis 7<br/>Session & Queue)]
         end
         
-        subgraph "AI Layer"
-            OLLAMA[Ollama Container<br/>LLaVA Model]
+        subgraph "External AI Layer"
+            OLLAMA[Ollama Service<br/>Host System<br/>LLaVA Model]
         end
         
         subgraph "Proxy Layer"
@@ -56,7 +56,7 @@ graph TB
     NGINX --> APP
     APP --> MYSQL
     APP --> REDIS
-    APP --> OLLAMA
+    APP -.-> OLLAMA
     APP --> VAULT
     WORKER --> REDIS
     
@@ -83,8 +83,7 @@ graph TB
 graph TD
     subgraph "Internal Network (vedfolnir_internal)"
         A[MySQL Container] --> B[Redis Container]
-        B --> C[Ollama Container]
-        C --> D[Vedfolnir App Container]
+        B --> D[Vedfolnir App Container]
         D --> E[Nginx Container]
         
         F[Vault Container] --> D
@@ -102,16 +101,22 @@ graph TD
         L[Monitoring] --> G
     end
     
+    subgraph "Host System (External)"
+        O[Ollama API Service<br/>Pre-configured<br/>Not managed by project]
+    end
+    
+    D -.-> O
+    
     subgraph "Health Monitoring"
         M[Health Checks] --> A
         M --> B
-        M --> C
         M --> D
         M --> E
         M --> F
         M --> G
         M --> H
         M --> I
+        M -.-> O
     end
 ```
 
@@ -207,18 +212,21 @@ CMD ["gunicorn", "--config", "gunicorn.conf.py", "web_app:app"]
 - `./data/redis:/data` - Redis data persistence
 - `./config/redis/redis.conf:/usr/local/etc/redis/redis.conf` - Configuration
 
-### 4. Ollama Container
+### 4. Ollama API Integration (External Service)
 
-**Image:** `ollama/ollama:latest`
+**Deployment:** External service (not managed by this project)
 
-**Configuration:**
-- LLaVA model for image captioning
-- GPU support (if available)
-- Model persistence
-- API endpoint exposure
+**Integration Requirements:**
+- External Ollama service assumed to be running on host system at localhost:11434
+- Application connects via host.docker.internal:11434 from containers
+- API endpoint must be accessible for LLaVA model image captioning
+- No configuration or management of Ollama service by this project
 
-**Volume Mounts:**
-- `./data/ollama:/root/.ollama` - Model data persistence
+**Benefits of External Integration:**
+- Separation of concerns - AI service managed independently
+- No container orchestration complexity for GPU-intensive workloads
+- Ollama service can be shared across multiple applications
+- Simplified Docker Compose architecture
 
 ### 5. Nginx Reverse Proxy Container
 
@@ -326,7 +334,6 @@ vedfolnir-docker/
 ├── data/
 │   ├── mysql/
 │   ├── redis/
-│   ├── ollama/
 │   ├── prometheus/
 │   ├── grafana/
 │   ├── loki/
@@ -361,7 +368,8 @@ environment:
   # Database connections use container networking
   - DATABASE_URL=mysql+pymysql://vedfolnir:${MYSQL_PASSWORD}@mysql:3306/vedfolnir?charset=utf8mb4
   - REDIS_URL=redis://redis:6379/0
-  - OLLAMA_URL=http://ollama:11434
+  # Ollama runs on host system, accessed via host.docker.internal
+  - OLLAMA_URL=http://host.docker.internal:11434
   
   # Application configuration
   - FLASK_ENV=${FLASK_ENV:-production}
@@ -727,8 +735,8 @@ with db_manager.get_session() as session:
 # Test Redis connectivity
 docker-compose exec redis redis-cli ping
 
-# Test Ollama connectivity
-curl -f http://localhost:11434/api/version
+# Test external Ollama API connectivity from container
+docker-compose exec vedfolnir curl -f http://host.docker.internal:11434/api/version
 
 echo "Migration validation complete"
 ```

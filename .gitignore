@@ -185,4 +185,41 @@ claude/
 start_gunicorn.sh
 com.vedfolnir.gunicorn.plist
 com.vedfolnir.ipalias.plist
-config/
+
+# Docker-specific ignores
+# Keep config/ directory structure but ignore sensitive files
+config/*/secrets/
+config/*/*.key
+config/*/*.pem
+config/*/*.crt
+
+# Docker secrets (keep structure, ignore content)
+secrets/*.txt
+!secrets/.gitkeep
+
+# Docker volumes and data
+data/
+docker-data/
+
+# Docker environment files
+.env.docker.local
+.env.production
+.env.staging
+
+# Docker logs
+logs/docker/
+logs/containers/
+
+# SSL certificates for Docker
+ssl/certs/*.crt
+ssl/keys/*.key
+ssl/private/
+
+# Backup directories
+storage/backups/*/
+backups/
+
+# Docker Compose overrides
+docker-compose.override.yml
+docker-compose.local.yml
+docker-compose.*.local.yml

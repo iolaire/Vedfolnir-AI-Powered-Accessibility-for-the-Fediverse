@@ -1,0 +1,644 @@
+# Copyright (C) 2025 iolaire mcfadden.
+# This program is free software: you can redistribute it and/or modify it under the terms of the GNU Affero General Public License as published by the Free Software Foundation, either version 3 of the License, or (at your option) any later version.
+# THE SOFTWARE IS PROVIDED "AS IS", WITHOUT WARRANTY OF ANY KIND, EXPRESS OR IMPLIED, INCLUDING BUT NOT LIMITED TO THE WARRANTIES OF MERCHANTABILITY, FITNESS FOR A PARTICULAR PURPOSE AND NONINFRINGEMENT. IN NO EVENT SHALL THE AUTHORS OR COPYRIGHT HOLDERS BE LIABLE FOR ANY CLAIM, DAMAGES OR OTHER LIABILITY, WHETHER IN AN ACTION OF CONTRACT, TORT OR OTHERWISE, ARISING FROM, OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE SOFTWARE.
+
+# Docker networks for security isolation
+networks:
+  vedfolnir_internal:
+    driver: bridge
+    internal: true
+    ipam:
+      config:
+        - subnet: 172.20.0.0/16
+  
+  vedfolnir_monitoring:
+    driver: bridge
+    internal: true
+    ipam:
+      config:
+        - subnet: 172.21.0.0/16
+  
+  vedfolnir_external:
+    driver: bridge
+    ipam:
+      config:
+        - subnet: 172.22.0.0/16
+
+# Note: Using bind mounts instead of named volumes for external host access
+# All persistent data is stored in ./data/ directory for easy backup and management
+
+# Docker secrets for sensitive data
+secrets:
+  flask_secret_key:
+    file: ./secrets/flask_secret_key.txt
+  platform_encryption_key:
+    file: ./secrets/platform_encryption_key.txt
+  mysql_root_password:
+    file: ./secrets/mysql_root_password.txt
+  mysql_password:
+    file: ./secrets/mysql_password.txt
+  redis_password:
+    file: ./secrets/redis_password.txt
+  vault_token:
+    file: ./secrets/vault_token.txt
+
+services:
+  # MySQL Database Service
+  mysql:
+    image: mysql:8.0
+    container_name: vedfolnir_mysql
+    restart: unless-stopped
+    environment:
+      MYSQL_ROOT_PASSWORD_FILE: /run/secrets/mysql_root_password
+      MYSQL_DATABASE: vedfolnir
+      MYSQL_USER: vedfolnir
+      MYSQL_PASSWORD_FILE: /run/secrets/mysql_password
+      MYSQL_CHARSET: utf8mb4
+      MYSQL_COLLATION: utf8mb4_unicode_ci
+    secrets:
+      - mysql_root_password
+      - mysql_password
+    volumes:
+      # Data persistence (bind mount for external access)
+      - ./data/mysql:/var/lib/mysql
+      # Configuration
+      - ./config/mysql:/etc/mysql/conf.d:ro
+      # Initialization scripts
+      - ./docker/mysql/init:/docker-entrypoint-initdb.d:ro
+      # Management scripts
+      - ./docker/scripts:/scripts:ro
+      # Backups
+      - ./storage/backups/mysql:/backups
+      # Logs
+      - ./logs/mysql:/var/log/mysql
+    networks:
+      - vedfolnir_internal
+    # MySQL port not exposed to host for security (internal network only)
+    # Uncomment the following line only for development/debugging:
+    # ports:
+    #   - "127.0.0.1:3306:3306"
+    healthcheck:
+      test: ["CMD", "/scripts/mysql-health-check.sh", "basic"]
+      interval: 30s
+      timeout: 15s
+      retries: 5
+      start_period: 60s
+    deploy:
+      resources:
+        limits:
+          cpus: '2.0'
+          memory: 4G
+        reservations:
+          cpus: '1.0'
+          memory: 2G
+
+  # Redis Cache and Session Storage
+  redis:
+    image: redis:7-alpine
+    container_name: vedfolnir_redis
+    restart: unless-stopped
+    command: >
+      redis-server /usr/local/etc/redis/redis.conf 
+      --requirepass ${REDIS_PASSWORD}
+      --maxmemory 1gb
+      --maxmemory-policy volatile-lru
+      --save 900 1 300 10 60 10000 30 100000
+      --appendonly yes
+      --appendfsync everysec
+    environment:
+      REDIS_PASSWORD_FILE: /run/secrets/redis_password
+      # Redis-specific environment variables
+      REDIS_MAXMEMORY: 1gb
+      REDIS_MAXMEMORY_POLICY: volatile-lru
+      REDIS_SAVE_POLICY: "900 1 300 10 60 10000 30 100000"
+      REDIS_AOF_ENABLED: "yes"
+      REDIS_AOF_FSYNC: everysec
+    secrets:
+      - redis_password
+    volumes:
+      # Data persistence (bind mount for external access)
+      - ./data/redis:/data:rw,Z
+      # Configuration
+      - ./config/redis/redis.conf:/usr/local/etc/redis/redis.conf:ro,Z
+      # Backups directory
+      - ./storage/backups/redis:/backups:rw,Z
+      # Logs directory for Redis logs
+      - ./logs/redis:/var/log/redis:rw,Z
+      # Health check scripts
+      - ./docker/scripts:/scripts:ro
+    networks:
+      - vedfolnir_internal
+    # Redis port not exposed to host for security (internal network only)
+    # Uncomment the following line only for development/debugging:
+    # ports:
+    #   - "127.0.0.1:6379:6379"
+    healthcheck:
+      test: ["CMD", "/scripts/redis-health-check.sh"]
+      interval: 30s
+      timeout: 10s
+      retries: 5
+      start_period: 10s
+    deploy:
+      resources:
+        limits:
+          cpus: '1.0'
+          memory: 1G
+        reservations:
+          cpus: '0.5'
+          memory: 512M
+    # Logging configuration for Redis
+    logging:
+      driver: "json-file"
+      options:
+        max-size: "10m"
+        max-file: "3"
+        labels: "service=redis"
+    # Security options
+    security_opt:
+      - no-new-privileges:true
+    # User namespace remapping for security
+    user: "999:999"  # Redis user in Alpine image
+
+  # Note: Ollama service runs externally on host system
+  # External Ollama API service is accessed via host.docker.internal:11434
+  # This service is not managed by this Docker Compose configuration
+
+  # HashiCorp Vault for Secrets Management
+  vault:
+    image: vault:latest
+    container_name: vedfolnir_vault
+    restart: unless-stopped
+    environment:
+      VAULT_DEV_ROOT_TOKEN_ID: ${VAULT_ROOT_TOKEN}
+      VAULT_DEV_LISTEN_ADDRESS: 0.0.0.0:8200
+      VAULT_LOCAL_CONFIG: |
+        {
+          "backend": {"file": {"path": "/vault/data"}},
+          "listener": {"tcp": {"address": "0.0.0.0:8200", "tls_disable": true}},
+          "default_lease_ttl": "168h",
+          "max_lease_ttl": "720h",
+          "ui": true
+        }
+    cap_add:
+      - IPC_LOCK
+    volumes:
+      # Data persistence (bind mount for external access)
+      - ./data/vault:/vault/data
+      # Configuration
+      - ./config/vault:/vault/config:ro
+      # Logs
+      - ./logs/vault:/vault/logs
+      # Secrets
+      - ./secrets:/vault/secrets
+    networks:
+      - vedfolnir_internal
+    # Vault port not exposed to host for security (internal network only)
+    # Uncomment the following line only for development/debugging:
+    # ports:
+    #   - "127.0.0.1:8200:8200"
+    healthcheck:
+      test: ["CMD", "vault", "status"]
+      interval: 30s
+      timeout: 10s
+      retries: 3
+      start_period: 30s
+    deploy:
+      resources:
+        limits:
+          cpus: '1.0'
+          memory: 512M
+        reservations:
+          cpus: '0.5'
+          memory: 256M
+
+  # Vedfolnir Application
+  vedfolnir:
+    build:
+      context: .
+      dockerfile: Dockerfile
+      target: production
+    container_name: vedfolnir_app
+    restart: unless-stopped
+    environment:
+      # Database connections use container networking
+      DATABASE_URL: mysql+pymysql://vedfolnir:${MYSQL_PASSWORD}@mysql:3306/vedfolnir?charset=utf8mb4
+      REDIS_URL: redis://:${REDIS_PASSWORD}@redis:6379/0
+      OLLAMA_URL: http://host.docker.internal:11434
+      DOCKER_DEPLOYMENT: "true"
+      
+      # Application configuration
+      FLASK_ENV: ${FLASK_ENV:-production}
+      FLASK_SECRET_KEY_FILE: /run/secrets/flask_secret_key
+      PLATFORM_ENCRYPTION_KEY_FILE: /run/secrets/platform_encryption_key
+      
+      # RQ Configuration (integrated workers)
+      RQ_ENABLE_INTEGRATED_WORKERS: "true"
+      RQ_ENABLE_EXTERNAL_WORKERS: "false"
+      
+      # Observability configuration
+      PROMETHEUS_URL: http://prometheus:9090
+      LOKI_URL: http://loki:3100
+      GRAFANA_URL: http://grafana:3000
+      
+      # Vault configuration
+      VAULT_ADDR: http://vault:8200
+      VAULT_TOKEN_FILE: /run/secrets/vault_token
+      
+      # Resource limits
+      MEMORY_LIMIT: 2g
+      CPU_LIMIT: 2
+    secrets:
+      - flask_secret_key
+      - platform_encryption_key
+      - vault_token
+    volumes:
+      # Application storage
+      - ./storage:/app/storage
+      # Configuration
+      - ./config/app:/app/config:ro
+      # Logs
+      - ./logs/app:/app/logs
+      # Backups
+      - ./storage/backups/app:/app/backups
+      # Health check scripts
+      - ./docker/scripts:/scripts:ro
+    networks:
+      - vedfolnir_internal
+      - vedfolnir_external
+    # Application port not exposed directly to host (accessed via Nginx proxy)
+    # Uncomment the following line only for development/debugging:
+    # ports:
+    #   - "127.0.0.1:5000:5000"
+    depends_on:
+      mysql:
+        condition: service_healthy
+      redis:
+        condition: service_healthy
+      vault:
+        condition: service_started
+      # Note: External Ollama service dependency removed
+      # Ollama runs on host system and is accessed via host.docker.internal
+    healthcheck:
+      test: ["CMD", "/scripts/vedfolnir-health-check.sh", "endpoint"]
+      interval: 30s
+      timeout: 15s
+      retries: 5
+      start_period: 60s
+    deploy:
+      resources:
+        limits:
+          cpus: '2.0'
+          memory: 2G
+        reservations:
+          cpus: '1.0'
+          memory: 1G
+    logging:
+      driver: "json-file"
+      options:
+        max-size: "10m"
+        max-file: "3"
+
+  # Nginx Reverse Proxy
+  nginx:
+    image: nginx:alpine
+    container_name: vedfolnir_nginx
+    restart: unless-stopped
+    volumes:
+      # Main Nginx configuration
+      - ./config/nginx/nginx.conf:/etc/nginx/nginx.conf:ro
+      # Server configurations
+      - ./config/nginx/default.conf:/etc/nginx/conf.d/default.conf:ro
+      - ./config/nginx/nginx_status.conf:/etc/nginx/conf.d/nginx_status.conf:ro
+      # SSL certificates
+      - ./ssl/certs:/etc/nginx/ssl/certs:ro
+      - ./ssl/keys:/etc/nginx/ssl/keys:ro
+      # Static files from application
+      - ./static:/app/static:ro
+      - ./admin/static:/app/admin/static:ro
+      # Logs
+      - ./logs/nginx:/var/log/nginx
+    networks:
+      - vedfolnir_external
+      - vedfolnir_internal
+    ports:
+      - "80:80"
+      - "443:443"
+      - "8080:8080"  # Status endpoint for monitoring
+    depends_on:
+      - vedfolnir
+    healthcheck:
+      test: ["CMD", "nginx", "-t"]
+      interval: 30s
+      timeout: 10s
+      retries: 3
+      start_period: 40s
+    environment:
+      - TZ=UTC
+    labels:
+      - "traefik.enable=false"
+      - "com.vedfolnir.service=nginx"
+      - "com.vedfolnir.description=Reverse proxy and load balancer"
+    deploy:
+      resources:
+        limits:
+          cpus: '1.0'
+          memory: 512M
+        reservations:
+          cpus: '0.5'
+          memory: 256M
+      restart_policy:
+        condition: on-failure
+        delay: 5s
+        max_attempts: 3
+        window: 120s
+    logging:
+      driver: "json-file"
+      options:
+        max-size: "10m"
+        max-file: "3"
+        labels: "service=nginx"
+    security_opt:
+      - no-new-privileges:true
+
+  # Prometheus Metrics Collection
+  prometheus:
+    image: prom/prometheus:latest
+    container_name: vedfolnir_prometheus
+    restart: unless-stopped
+    command:
+      - '--config.file=/etc/prometheus/prometheus.yml'
+      - '--storage.tsdb.path=/prometheus'
+      - '--web.console.libraries=/etc/prometheus/console_libraries'
+      - '--web.console.templates=/etc/prometheus/consoles'
+      - '--storage.tsdb.retention.time=200h'
+      - '--web.enable-lifecycle'
+    volumes:
+      # Configuration
+      - ./config/prometheus:/etc/prometheus:ro
+      # Data persistence (bind mount for external access)
+      - ./data/prometheus:/prometheus
+      # Rules
+      - ./config/prometheus/rules:/etc/prometheus/rules:ro
+      # Health check scripts
+      - ./docker/scripts:/scripts:ro
+    networks:
+      - vedfolnir_monitoring
+      - vedfolnir_internal
+    # Prometheus port not exposed to host for security (internal network only)
+    # Uncomment the following line only for development/debugging:
+    # ports:
+    #   - "127.0.0.1:9090:9090"
+    healthcheck:
+      test: ["CMD", "/scripts/prometheus-health-check.sh", "basic"]
+      interval: 30s
+      timeout: 10s
+      retries: 3
+      start_period: 30s
+    deploy:
+      resources:
+        limits:
+          cpus: '2.0'
+          memory: 2G
+        reservations:
+          cpus: '1.0'
+          memory: 1G
+
+  # Grafana Monitoring Dashboard
+  grafana:
+    image: grafana/grafana:latest
+    container_name: vedfolnir_grafana
+    restart: unless-stopped
+    environment:
+      GF_SECURITY_ADMIN_PASSWORD: ${GRAFANA_ADMIN_PASSWORD:-admin}
+      GF_SECURITY_SECRET_KEY: ${GRAFANA_SECRET_KEY}
+      GF_USERS_ALLOW_SIGN_UP: "false"
+      GF_INSTALL_PLUGINS: grafana-piechart-panel
+    volumes:
+      # Data persistence (bind mount for external access)
+      - ./data/grafana:/var/lib/grafana
+      # Configuration
+      - ./config/grafana/grafana.ini:/etc/grafana/grafana.ini:ro
+      - ./config/grafana/provisioning:/etc/grafana/provisioning:ro
+      # Dashboards
+      - ./config/grafana/dashboards:/etc/grafana/dashboards:ro
+      # Health check scripts
+      - ./docker/scripts:/scripts:ro
+    networks:
+      - vedfolnir_monitoring
+      - vedfolnir_external
+    ports:
+      - "3000:3000"
+    depends_on:
+      - prometheus
+    healthcheck:
+      test: ["CMD", "/scripts/grafana-health-check.sh", "basic"]
+      interval: 30s
+      timeout: 10s
+      retries: 3
+      start_period: 30s
+    deploy:
+      resources:
+        limits:
+          cpus: '1.0'
+          memory: 1G
+        reservations:
+          cpus: '0.5'
+          memory: 512M
+
+  # Loki Log Aggregation
+  loki:
+    image: grafana/loki:latest
+    container_name: vedfolnir_loki
+    restart: unless-stopped
+    command: -config.file=/etc/loki/local-config.yaml
+    volumes:
+      # Configuration
+      - ./config/loki/loki.yml:/etc/loki/local-config.yaml:ro
+      # Data persistence (bind mount for external access)
+      - ./data/loki:/loki
+      # Health check scripts
+      - ./docker/scripts:/scripts:ro
+    networks:
+      - vedfolnir_monitoring
+    # Loki port not exposed to host for security (internal network only)
+    # Uncomment the following line only for development/debugging:
+    # ports:
+    #   - "127.0.0.1:3100:3100"
+    healthcheck:
+      test: ["CMD", "/scripts/loki-health-check.sh", "basic"]
+      interval: 30s
+      timeout: 10s
+      retries: 3
+      start_period: 30s
+    deploy:
+      resources:
+        limits:
+          cpus: '1.0'
+          memory: 1G
+        reservations:
+          cpus: '0.5'
+          memory: 512M
+
+  # Metrics Exporters
+  mysql-exporter:
+    image: prom/mysqld-exporter:latest
+    container_name: vedfolnir_mysql_exporter
+    restart: unless-stopped
+    environment:
+      DATA_SOURCE_NAME: exporter:${MYSQL_EXPORTER_PASSWORD}@(mysql:3306)/
+      COLLECT_GLOBAL_STATUS: "true"
+      COLLECT_GLOBAL_VARIABLES: "true"
+      COLLECT_SLAVE_STATUS: "true"
+      COLLECT_INFO_SCHEMA_INNODB_METRICS: "true"
+      COLLECT_INFO_SCHEMA_INNODB_TABLESPACES: "true"
+      COLLECT_INFO_SCHEMA_INNODB_CMP: "true"
+      COLLECT_INFO_SCHEMA_INNODB_CMPMEM: "true"
+      COLLECT_INFO_SCHEMA_PROCESSLIST: "true"
+      COLLECT_INFO_SCHEMA_TABLES: "true"
+      COLLECT_INFO_SCHEMA_TABLESTATS: "true"
+      COLLECT_INFO_SCHEMA_USERSTATS: "true"
+      COLLECT_INFO_SCHEMA_CLIENTSTATS: "true"
+      COLLECT_PERF_SCHEMA_TABLELOCKS: "true"
+      COLLECT_PERF_SCHEMA_FILE_EVENTS: "true"
+      COLLECT_PERF_SCHEMA_EVENTSWAITS: "true"
+      COLLECT_PERF_SCHEMA_INDEXIOWAITS: "true"
+      COLLECT_PERF_SCHEMA_TABLEIOWAITS: "true"
+      COLLECT_AUTO_INCREMENT_COLUMNS: "true"
+      COLLECT_BINLOG_SIZE: "true"
+    networks:
+      - vedfolnir_monitoring
+      - vedfolnir_internal
+    depends_on:
+      - mysql
+    healthcheck:
+      test: ["CMD", "wget", "--no-verbose", "--tries=1", "--spider", "http://localhost:9104/metrics"]
+      interval: 30s
+      timeout: 10s
+      retries: 3
+    deploy:
+      resources:
+        limits:
+          cpus: '0.5'
+          memory: 256M
+        reservations:
+          cpus: '0.1'
+          memory: 128M
+
+  redis-exporter:
+    image: oliver006/redis_exporter:latest
+    container_name: vedfolnir_redis_exporter
+    restart: unless-stopped
+    environment:
+      REDIS_ADDR: redis://redis:6379
+      REDIS_PASSWORD: ${REDIS_PASSWORD}
+      REDIS_EXPORTER_LOG_FORMAT: txt
+      REDIS_EXPORTER_DEBUG: "false"
+      REDIS_EXPORTER_CHECK_KEYS: vedfolnir:*
+      REDIS_EXPORTER_CHECK_SINGLE_KEYS: vedfolnir:session:count,vedfolnir:queue:default
+      REDIS_EXPORTER_CONNECTION_TIMEOUT: 15s
+      REDIS_EXPORTER_WEB_LISTEN_ADDRESS: :9121
+      REDIS_EXPORTER_WEB_TELEMETRY_PATH: /metrics
+      REDIS_EXPORTER_NAMESPACE: redis
+    networks:
+      - vedfolnir_monitoring
+      - vedfolnir_internal
+    depends_on:
+      - redis
+    healthcheck:
+      test: ["CMD", "wget", "--no-verbose", "--tries=1", "--spider", "http://localhost:9121/metrics"]
+      interval: 30s
+      timeout: 10s
+      retries: 3
+    deploy:
+      resources:
+        limits:
+          cpus: '0.5'
+          memory: 256M
+        reservations:
+          cpus: '0.1'
+          memory: 128M
+
+  nginx-exporter:
+    image: nginx/nginx-prometheus-exporter:latest
+    container_name: vedfolnir_nginx_exporter
+    restart: unless-stopped
+    command:
+      - '-nginx.scrape-uri=http://nginx:8080/nginx_status'
+      - '-web.listen-address=:9113'
+      - '-web.telemetry-path=/metrics'
+    networks:
+      - vedfolnir_monitoring
+      - vedfolnir_external
+    depends_on:
+      - nginx
+    healthcheck:
+      test: ["CMD", "wget", "--no-verbose", "--tries=1", "--spider", "http://localhost:9113/metrics"]
+      interval: 30s
+      timeout: 10s
+      retries: 3
+    deploy:
+      resources:
+        limits:
+          cpus: '0.5'
+          memory: 256M
+        reservations:
+          cpus: '0.1'
+          memory: 128M
+
+  node-exporter:
+    image: prom/node-exporter:latest
+    container_name: vedfolnir_node_exporter
+    restart: unless-stopped
+    command:
+      - '--path.procfs=/host/proc'
+      - '--path.rootfs=/rootfs'
+      - '--path.sysfs=/host/sys'
+      - '--collector.filesystem.mount-points-exclude=^/(sys|proc|dev|host|etc)($$|/)'
+    volumes:
+      - /proc:/host/proc:ro
+      - /sys:/host/sys:ro
+      - /:/rootfs:ro
+    networks:
+      - vedfolnir_monitoring
+    healthcheck:
+      test: ["CMD", "wget", "--no-verbose", "--tries=1", "--spider", "http://localhost:9100/metrics"]
+      interval: 30s
+      timeout: 10s
+      retries: 3
+    deploy:
+      resources:
+        limits:
+          cpus: '0.5'
+          memory: 256M
+        reservations:
+          cpus: '0.1'
+          memory: 128M
+
+  cadvisor:
+    image: gcr.io/cadvisor/cadvisor:latest
+    container_name: vedfolnir_cadvisor
+    restart: unless-stopped
+    volumes:
+      - /:/rootfs:ro
+      - /var/run:/var/run:ro
+      - /sys:/sys:ro
+      - /var/lib/docker/:/var/lib/docker:ro
+      - /dev/disk/:/dev/disk:ro
+    privileged: true
+    devices:
+      - /dev/kmsg
+    networks:
+      - vedfolnir_monitoring
+    healthcheck:
+      test: ["CMD", "wget", "--no-verbose", "--tries=1", "--spider", "http://localhost:8080/healthz"]
+      interval: 30s
+      timeout: 10s
+      retries: 3
+    deploy:
+      resources:
+        limits:
+          cpus: '0.5'
+          memory: 512M
+        reservations:
+          cpus: '0.2'
+          memory: 256M

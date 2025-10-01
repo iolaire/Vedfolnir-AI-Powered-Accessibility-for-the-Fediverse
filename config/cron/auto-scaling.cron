@@ -1,0 +1,34 @@
+# Copyright (C) 2025 iolaire mcfadden.
+# This program is free software: you can redistribute it and/or modify it under the terms of the GNU Affero General Public License as published by the Free Software Foundation, either version 3 of the License, or (at your option) any later version.
+# THE SOFTWARE IS PROVIDED "AS IS", WITHOUT WARRANTY OF ANY KIND, EXPRESS OR IMPLIED, INCLUDING BUT NOT LIMITED TO THE WARRANTIES OF MERCHANTABILITY, FITNESS FOR A PARTICULAR PURPOSE AND NONINFRINGEMENT. IN NO EVENT SHALL THE AUTHORS OR COPYRIGHT HOLDERS BE LIABLE FOR ANY CLAIM, DAMAGES OR OTHER LIABILITY, WHETHER IN AN ACTION OF CONTRACT, TORT OR OTHERWISE, ARISING FROM, OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE SOFTWARE.
+
+# Vedfolnir Auto-Scaling Cron Jobs
+# To install: crontab -l > current_cron && cat config/cron/auto-scaling.cron >> current_cron && crontab current_cron
+
+# Environment variables for cron jobs
+SHELL=/bin/bash
+PATH=/usr/local/bin:/usr/bin:/bin
+PROMETHEUS_URL=http://localhost:9090
+COMPOSE_FILE=/path/to/vedfolnir/docker-compose.yml
+SCALING_FILE=/path/to/vedfolnir/docker-compose.scaling.yml
+WEBHOOK_URL=https://your-webhook-url.com/notifications
+
+# Auto-scaling check every 2 minutes
+*/2 * * * * cd /path/to/vedfolnir && ./scripts/docker/auto-scaling.sh check >> ./logs/auto-scaling.log 2>&1
+
+# Generate scaling report every hour
+0 * * * * cd /path/to/vedfolnir && ./scripts/docker/auto-scaling.sh report > ./logs/scaling-report-$(date +\%Y\%m\%d-\%H).log 2>&1
+
+# Health check every 5 minutes
+*/5 * * * * cd /path/to/vedfolnir && ./scripts/docker/auto-scaling.sh health >> ./logs/auto-scaling-health.log 2>&1
+
+# Weekly scaling state reset (Sunday at 2 AM)
+0 2 * * 0 cd /path/to/vedfolnir && ./scripts/docker/auto-scaling.sh reset >> ./logs/auto-scaling.log 2>&1
+
+# Daily resource management test (at 3 AM)
+0 3 * * * cd /path/to/vedfolnir && ./scripts/docker/test-resource-management.sh metrics >> ./logs/resource-test-$(date +\%Y\%m\%d).log 2>&1
+
+# Log rotation for auto-scaling logs (daily at 4 AM)
+0 4 * * * find /path/to/vedfolnir/logs -name "auto-scaling*.log" -mtime +7 -delete
+0 4 * * * find /path/to/vedfolnir/logs -name "scaling-report*.log" -mtime +30 -delete
+0 4 * * * find /path/to/vedfolnir/logs -name "resource-test*.log" -mtime +14 -delete

@@ -1,0 +1,225 @@
+# Copyright (C) 2025 iolaire mcfadden.
+# This program is free software: you can redistribute it and/or modify it under the terms of the GNU Affero General Public License as published by the Free Software Foundation, either version 3 of the License, or (at your option) any later version.
+# THE SOFTWARE IS PROVIDED "AS IS", WITHOUT WARRANTY OF ANY KIND, EXPRESS OR IMPLIED, INCLUDING BUT NOT LIMITED TO THE WARRANTIES OF MERCHANTABILITY, FITNESS FOR A PARTICULAR PURPOSE AND NONINFRINGEMENT. IN NO EVENT SHALL THE AUTHORS OR COPYRIGHT HOLDERS BE LIABLE FOR ANY CLAIM, DAMAGES OR OTHER LIABILITY, WHETHER IN AN ACTION OF CONTRACT, TORT OR OTHERWISE, ARISING FROM, OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE SOFTWARE.
+
+# Resource management and scaling alert rules for Vedfolnir
+groups:
+  - name: resource_management
+    rules:
+      # Container Resource Utilization Alerts
+      - alert: ContainerCPUThrottling
+        expr: rate(container_cpu_cfs_throttled_seconds_total[5m]) > 0.1
+        for: 2m
+        labels:
+          severity: warning
+        annotations:
+          summary: "Container CPU throttling detected"
+          description: "Container {{ $labels.name }} is being CPU throttled at {{ $value }} seconds per second."
+
+      - alert: ContainerMemoryPressure
+        expr: (container_memory_usage_bytes / container_spec_memory_limit_bytes) > 0.85
+        for: 3m
+        labels:
+          severity: warning
+        annotations:
+          summary: "Container memory pressure"
+          description: "Container {{ $labels.name }} is using {{ $value | humanizePercentage }} of memory limit."
+
+      - alert: ContainerMemoryNearLimit
+        expr: (container_memory_usage_bytes / container_spec_memory_limit_bytes) > 0.95
+        for: 1m
+        labels:
+          severity: critical
+        annotations:
+          summary: "Container memory near limit"
+          description: "Container {{ $labels.name }} is using {{ $value | humanizePercentage }} of memory limit."
+
+      - alert: ContainerOOMKilled
+        expr: increase(container_oom_kills_total[5m]) > 0
+        for: 0m
+        labels:
+          severity: critical
+        annotations:
+          summary: "Container OOM killed"
+          description: "Container {{ $labels.name }} has been OOM killed {{ $value }} times in the last 5 minutes."
+
+      # Application Scaling Triggers
+      - alert: VedfolnirHighCPUUsage
+        expr: avg(rate(container_cpu_usage_seconds_total{name=~"vedfolnir.*"}[5m])) > 0.7
+        for: 5m
+        labels:
+          severity: warning
+          scaling_action: scale_up
+        annotations:
+          summary: "Vedfolnir high CPU usage - scale up recommended"
+          description: "Average CPU usage across Vedfolnir containers is {{ $value | humanizePercentage }}."
+
+      - alert: VedfolnirHighMemoryUsage
+        expr: avg(container_memory_usage_bytes{name=~"vedfolnir.*"} / container_spec_memory_limit_bytes{name=~"vedfolnir.*"}) > 0.8
+        for: 5m
+        labels:
+          severity: warning
+          scaling_action: scale_up
+        annotations:
+          summary: "Vedfolnir high memory usage - scale up recommended"
+          description: "Average memory usage across Vedfolnir containers is {{ $value | humanizePercentage }}."
+
+      - alert: VedfolnirLowResourceUsage
+        expr: avg(rate(container_cpu_usage_seconds_total{name=~"vedfolnir.*"}[10m])) < 0.2 and count(container_cpu_usage_seconds_total{name=~"vedfolnir.*"}) > 2
+        for: 15m
+        labels:
+          severity: info
+          scaling_action: scale_down
+        annotations:
+          summary: "Vedfolnir low resource usage - scale down possible"
+          description: "Average CPU usage across {{ $labels.instance_count }} Vedfolnir containers is {{ $value | humanizePercentage }}."
+
+      # Queue-based Scaling Triggers
+      - alert: HighQueueDepthScaleUp
+        expr: rq_jobs_in_queue > 50
+        for: 5m
+        labels:
+          severity: warning
+          scaling_action: scale_up
+        annotations:
+          summary: "High queue depth - scale up recommended"
+          description: "RQ queue has {{ $value }} jobs pending, consider scaling up workers."
+
+      - alert: QueueProcessingBacklog
+        expr: rq_jobs_in_queue > 100 and rate(rq_jobs_finished_total[5m]) < 0.5
+        for: 10m
+        labels:
+          severity: critical
+          scaling_action: scale_up_urgent
+        annotations:
+          summary: "Queue processing backlog - urgent scaling needed"
+          description: "{{ $value }} jobs queued with slow processing rate."
+
+      # Response Time Scaling Triggers
+      - alert: HighResponseTimeScaleUp
+        expr: histogram_quantile(0.95, rate(flask_http_request_duration_seconds_bucket[5m])) > 3
+        for: 5m
+        labels:
+          severity: warning
+          scaling_action: scale_up
+        annotations:
+          summary: "High response time - scale up recommended"
+          description: "95th percentile response time is {{ $value }} seconds."
+
+      # Database Resource Alerts
+      - alert: MySQLHighConnectionUsage
+        expr: mysql_global_status_threads_connected / mysql_global_variables_max_connections > 0.8
+        for: 3m
+        labels:
+          severity: warning
+        annotations:
+          summary: "MySQL high connection usage"
+          description: "MySQL is using {{ $value | humanizePercentage }} of available connections."
+
+      - alert: MySQLInnoDBBufferPoolLow
+        expr: mysql_global_status_innodb_buffer_pool_pages_free / mysql_global_status_innodb_buffer_pool_pages_total < 0.1
+        for: 5m
+        labels:
+          severity: warning
+        annotations:
+          summary: "MySQL InnoDB buffer pool low"
+          description: "InnoDB buffer pool has only {{ $value | humanizePercentage }} free pages."
+
+      # Redis Resource Alerts
+      - alert: RedisMemoryFragmentation
+        expr: redis_memory_fragmentation_ratio > 1.5
+        for: 5m
+        labels:
+          severity: warning
+        annotations:
+          summary: "Redis memory fragmentation high"
+          description: "Redis memory fragmentation ratio is {{ $value }}."
+
+      - alert: RedisKeyspaceHitRateLow
+        expr: redis_keyspace_hits_total / (redis_keyspace_hits_total + redis_keyspace_misses_total) < 0.8
+        for: 10m
+        labels:
+          severity: warning
+        annotations:
+          summary: "Redis keyspace hit rate low"
+          description: "Redis keyspace hit rate is {{ $value | humanizePercentage }}."
+
+      # System Resource Alerts
+      - alert: SystemLoadHigh
+        expr: node_load1 / count(node_cpu_seconds_total{mode="idle"}) > 0.8
+        for: 5m
+        labels:
+          severity: warning
+        annotations:
+          summary: "System load high"
+          description: "System load is {{ $value }} on {{ $labels.instance }}."
+
+      - alert: SystemSwapUsageHigh
+        expr: (node_memory_SwapTotal_bytes - node_memory_SwapFree_bytes) / node_memory_SwapTotal_bytes > 0.5
+        for: 5m
+        labels:
+          severity: warning
+        annotations:
+          summary: "System swap usage high"
+          description: "Swap usage is {{ $value | humanizePercentage }} on {{ $labels.instance }}."
+
+      # Network Resource Alerts
+      - alert: NetworkReceiveErrorsHigh
+        expr: rate(node_network_receive_errs_total[5m]) > 10
+        for: 5m
+        labels:
+          severity: warning
+        annotations:
+          summary: "Network receive errors high"
+          description: "Network interface {{ $labels.device }} has {{ $value }} receive errors per second."
+
+      - alert: NetworkTransmitErrorsHigh
+        expr: rate(node_network_transmit_errs_total[5m]) > 10
+        for: 5m
+        labels:
+          severity: warning
+        annotations:
+          summary: "Network transmit errors high"
+          description: "Network interface {{ $labels.device }} has {{ $value }} transmit errors per second."
+
+  - name: scaling_recommendations
+    rules:
+      # Scaling recommendation recording rules
+      - record: vedfolnir:cpu_usage_avg
+        expr: avg(rate(container_cpu_usage_seconds_total{name=~"vedfolnir.*"}[5m]))
+
+      - record: vedfolnir:memory_usage_avg
+        expr: avg(container_memory_usage_bytes{name=~"vedfolnir.*"} / container_spec_memory_limit_bytes{name=~"vedfolnir.*"})
+
+      - record: vedfolnir:instance_count
+        expr: count(container_cpu_usage_seconds_total{name=~"vedfolnir.*"})
+
+      - record: vedfolnir:queue_depth
+        expr: rq_jobs_in_queue
+
+      - record: vedfolnir:response_time_p95
+        expr: histogram_quantile(0.95, rate(flask_http_request_duration_seconds_bucket[5m]))
+
+      - record: vedfolnir:error_rate
+        expr: rate(flask_http_request_exceptions_total[5m])
+
+      # Scaling decision rules
+      - record: vedfolnir:scale_up_score
+        expr: |
+          (
+            (vedfolnir:cpu_usage_avg > 0.7) * 3 +
+            (vedfolnir:memory_usage_avg > 0.8) * 3 +
+            (vedfolnir:queue_depth > 50) * 2 +
+            (vedfolnir:response_time_p95 > 3) * 2 +
+            (vedfolnir:error_rate > 0.05) * 4
+          )
+
+      - record: vedfolnir:scale_down_score
+        expr: |
+          (
+            (vedfolnir:cpu_usage_avg < 0.2) * 2 +
+            (vedfolnir:memory_usage_avg < 0.4) * 2 +
+            (vedfolnir:queue_depth < 10) * 1 +
+            (vedfolnir:response_time_p95 < 1) * 1 +
+            (vedfolnir:instance_count > 2) * 1
+          )

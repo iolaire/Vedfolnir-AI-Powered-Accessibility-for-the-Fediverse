@@ -1,0 +1,297 @@
+# Copyright (C) 2025 iolaire mcfadden.
+# This program is free software: you can redistribute it and/or modify it under the terms of the GNU Affero General Public License as published by the Free Software Foundation, either version 3 of the License, or (at your option) any later version.
+# THE SOFTWARE IS PROVIDED "AS IS", WITHOUT WARRANTY OF ANY KIND, EXPRESS OR IMPLIED, INCLUDING BUT NOT LIMITED TO THE WARRANTIES OF MERCHANTABILITY, FITNESS FOR A PARTICULAR PURPOSE AND NONINFRINGEMENT. IN NO EVENT SHALL THE AUTHORS OR COPYRIGHT HOLDERS BE LIABLE FOR ANY CLAIM, DAMAGES OR OTHER LIABILITY, WHETHER IN AN ACTION OF CONTRACT, TORT OR OTHERWISE, ARISING FROM, OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE SOFTWARE.
+
+# Comprehensive Audit Logging Configuration
+# This configuration defines audit logging settings for the compliance framework
+
+audit_logging:
+  enabled: true
+  log_level: "INFO"
+  
+  # Audit log destinations
+  destinations:
+    - type: "file"
+      path: "/app/logs/audit/audit.log"
+      rotation:
+        max_size: "100MB"
+        backup_count: 10
+        compress: true
+    
+    - type: "syslog"
+      facility: "local0"
+      address: "localhost"
+      port: 514
+    
+    - type: "database"
+      table: "audit_events"
+      batch_size: 100
+      flush_interval: 30
+  
+  # Events to log (empty list means log all events)
+  events:
+    - "user_authentication"
+    - "user_authorization"
+    - "data_access"
+    - "data_modification"
+    - "data_deletion"
+    - "data_export"
+    - "configuration_change"
+    - "privilege_escalation"
+    - "system_administration"
+    - "security_event"
+    - "gdpr_request"
+    - "backup_operation"
+    - "container_event"
+    - "network_event"
+    - "error_event"
+  
+  # Audit trail integrity
+  hash_chain:
+    enabled: true
+    algorithm: "sha256"
+    verify_on_startup: true
+  
+  # Performance settings
+  async_logging: true
+  queue_size: 10000
+  worker_threads: 2
+  
+  # Retention settings
+  retention:
+    days: 2555  # 7 years for compliance
+    archive_after_days: 365
+    compress_archives: true
+    archive_location: "/app/storage/archives/audit_logs"
+  
+  # Security settings
+  tamper_detection: true
+  encryption:
+    enabled: false  # Enable for highly sensitive environments
+    key_file: "/run/secrets/audit_encryption_key"
+  
+  # Alert settings
+  alerts:
+    enabled: true
+    security_events: true
+    failed_authentications:
+      threshold: 5
+      window_minutes: 15
+    privilege_escalations: true
+    configuration_changes: true
+  
+  # Compliance settings
+  gdpr_compliance: true
+  immutable_logs: true
+  log_anonymization: false  # Keep full logs for security analysis
+
+# GDPR Compliance Configuration
+gdpr_compliance:
+  enabled: true
+  
+  # Data subject rights
+  rights:
+    access: true          # Article 15 - Right of access
+    rectification: true   # Article 16 - Right to rectification
+    erasure: true         # Article 17 - Right to erasure
+    portability: true     # Article 20 - Right to data portability
+    restriction: true     # Article 18 - Right to restrict processing
+    objection: true       # Article 21 - Right to object
+  
+  # Request processing
+  processing:
+    auto_processing: false  # Require manual review
+    max_processing_days: 30
+    notification_days: 7    # Days before deadline to notify
+    verification_required: true
+  
+  # Data export settings
+  export:
+    format: "json"
+    include_metadata: true
+    include_images: true
+    compression: true
+    encryption: false
+    export_path: "/app/storage/gdpr_exports"
+  
+  # Data deletion settings
+  deletion:
+    soft_delete: false      # Hard delete for GDPR compliance
+    verification_required: true
+    backup_before_delete: true
+    anonymization_option: true
+  
+  # Consent management
+  consent:
+    tracking_enabled: true
+    granular_consent: true
+    consent_renewal_days: 365
+    withdrawal_processing_days: 7
+
+# Data Lifecycle Management Configuration
+data_lifecycle:
+  enabled: true
+  auto_execution: true
+  execution_schedule: "0 2 * * *"  # Daily at 2 AM
+  
+  # Default retention policies (can be overridden in database)
+  retention_policies:
+    user_data:
+      retention_days: 2555      # 7 years
+      action: "archive"
+      archive_location: "/app/storage/archives/user_data"
+      compression_enabled: true
+      notification_days: 90
+    
+    audit_logs:
+      retention_days: 2555      # 7 years
+      action: "archive"
+      archive_location: "/app/storage/archives/audit_logs"
+      compression_enabled: true
+      notification_days: 180
+    
+    session_data:
+      retention_days: 90        # 3 months
+      action: "delete"
+      notification_days: 7
+    
+    processing_logs:
+      retention_days: 365       # 1 year
+      action: "compress"
+      compression_enabled: true
+      notification_days: 30
+    
+    system_logs:
+      retention_days: 365       # 1 year
+      action: "compress"
+      compression_enabled: true
+      notification_days: 30
+    
+    backup_data:
+      retention_days: 1095      # 3 years
+      action: "delete"
+      notification_days: 60
+    
+    temp_data:
+      retention_days: 7         # 1 week
+      action: "delete"
+      notification_days: 1
+    
+    compliance_reports:
+      retention_days: 2555      # 7 years
+      action: "archive"
+      archive_location: "/app/storage/archives/compliance_reports"
+      compression_enabled: true
+      notification_days: 180
+  
+  # Archive settings
+  archive:
+    base_path: "/app/storage/archives"
+    compression: "gzip"
+    verification: true
+    encryption: false
+  
+  # Notification settings
+  notifications:
+    enabled: true
+    admin_email: "admin@vedfolnir.local"
+    warning_days: [30, 7, 1]  # Days before expiration to send warnings
+
+# Compliance Reporting Configuration
+compliance_reporting:
+  enabled: true
+  auto_generation: true
+  
+  # Report generation schedule
+  schedules:
+    daily_summary:
+      enabled: true
+      schedule: "0 6 * * *"     # Daily at 6 AM
+      report_types: ["audit_summary"]
+      format: "html"
+    
+    weekly_gdpr:
+      enabled: true
+      schedule: "0 8 * * 1"     # Weekly on Monday at 8 AM
+      report_types: ["gdpr_compliance"]
+      format: "html"
+    
+    monthly_comprehensive:
+      enabled: true
+      schedule: "0 9 1 * *"     # Monthly on 1st at 9 AM
+      report_types: ["comprehensive"]
+      format: ["html", "json"]
+    
+    quarterly_audit:
+      enabled: true
+      schedule: "0 10 1 1,4,7,10 *"  # Quarterly
+      report_types: ["audit_summary", "security_events"]
+      format: ["html", "pdf"]
+  
+  # Report settings
+  reports:
+    retention_days: 2555        # 7 years
+    output_path: "/app/storage/compliance_reports"
+    include_charts: true
+    include_recommendations: true
+    
+  # Distribution settings
+  distribution:
+    enabled: false              # Enable for automatic distribution
+    admin_email: "admin@vedfolnir.local"
+    compliance_email: "compliance@vedfolnir.local"
+    security_email: "security@vedfolnir.local"
+
+# Container-specific compliance settings
+container_compliance:
+  enabled: true
+  
+  # Container audit events
+  events:
+    container_start: true
+    container_stop: true
+    container_restart: true
+    image_pull: true
+    volume_mount: true
+    network_change: true
+    resource_limit_change: true
+  
+  # Security monitoring
+  security:
+    privileged_containers: true
+    root_access: true
+    host_network: true
+    sensitive_mounts: true
+  
+  # Resource monitoring
+  resources:
+    cpu_usage_threshold: 80
+    memory_usage_threshold: 80
+    disk_usage_threshold: 85
+    network_anomalies: true
+
+# Integration settings
+integrations:
+  # Prometheus metrics
+  prometheus:
+    enabled: true
+    metrics_port: 9090
+    custom_metrics:
+      - "compliance_audit_events_total"
+      - "compliance_gdpr_requests_total"
+      - "compliance_retention_actions_total"
+      - "compliance_report_generation_duration"
+  
+  # Grafana dashboards
+  grafana:
+    enabled: true
+    dashboard_provisioning: true
+    alert_rules: true
+  
+  # External SIEM integration
+  siem:
+    enabled: false
+    endpoint: "https://siem.example.com/api/events"
+    api_key_file: "/run/secrets/siem_api_key"
+    batch_size: 100
+    flush_interval: 60

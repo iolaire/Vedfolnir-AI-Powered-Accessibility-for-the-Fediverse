@@ -1,0 +1,46 @@
+{
+  "secrets": {
+    "flask": {
+      "rotation_interval_days": 90,
+      "type": "flask_secret",
+      "notify_before_days": 7,
+      "description": "Flask application secret key"
+    },
+    "platform": {
+      "rotation_interval_days": 90,
+      "type": "encryption_key",
+      "notify_before_days": 7,
+      "description": "Platform credential encryption key"
+    },
+    "redis": {
+      "rotation_interval_days": 30,
+      "type": "password",
+      "notify_before_days": 3,
+      "description": "Redis authentication password"
+    }
+  },
+  "database_credentials": {
+    "rotation_interval_hours": 24,
+    "notify_before_hours": 2,
+    "description": "Dynamic MySQL database credentials"
+  },
+  "notification": {
+    "enabled": true,
+    "webhook_url": null,
+    "email_enabled": false,
+    "slack_webhook": null,
+    "teams_webhook": null
+  },
+  "automation": {
+    "auto_rotate_enabled": true,
+    "check_interval_minutes": 60,
+    "backup_before_rotation": true,
+    "verify_after_rotation": true
+  },
+  "security": {
+    "require_manual_approval": false,
+    "audit_all_operations": true,
+    "encrypt_rotation_logs": true,
+    "retention_days": 90
+  }
+}
