@@ -1,12 +1,18 @@
 # Python
 __pycache__/
+*/__pycache__/
+**/__pycache__/
 *.py[cod]
 *$py.class
 *.so
 .Python
 build/
+*/build/
+**/build/
 develop-eggs/
 dist/
+*/dist/
+**/dist/
 downloads/
 eggs/
 .eggs/
@@ -17,9 +23,14 @@ sdist/
 var/
 wheels/
 *.egg-info/
+*/*.egg-info/
+**/*.egg-info/
 .installed.cfg
 *.egg
 MANIFEST
+.mypy_cache/
+.dmypy.json
+dmypy.json
 
 # Virtual environments
 venv/
@@ -90,12 +101,22 @@ Thumbs.db
 
 
 
-# Test coverage
+# Test coverage and artifacts
 .coverage
 .pytest_cache/
+*/.pytest_cache/
+**/.pytest_cache/
 coverage.xml
 *.cover
 .hypothesis/
+.tox/
+.nox/
+htmlcov/
+.coverage.*
+coverage/
+test-results/
+allure-results/
+allure-report/
 
 # Jupyter Notebook
 .ipynb_checkpoints
@@ -107,11 +128,29 @@ coverage.xml
 # Keep alembic.ini but ignore version files if they contain sensitive data
 # migrations/versions/*.py  # Uncomment if versions contain sensitive data
 
-# Node.js (if using any frontend build tools)
+# Node.js and frontend build tools
 node_modules/
+*/node_modules/
+**/node_modules/
 npm-debug.log*
 yarn-debug.log*
 yarn-error.log*
+package-lock.json
+yarn.lock
+.npm/
+.yarn/
+.pnp.*
+.yarn-integrity
+
+# Frontend build outputs
+build/
+dist/
+out/
+.next/
+.nuxt/
+.cache/
+.parcel-cache/
+.vite/
 
 # SSL certificates
 *.pem
@@ -132,6 +171,33 @@ htmlcov/
 # Documentation build
 docs/_build/
 docs/summary/
+_build/
+*/_build/
+**/_build/
+site/
+*/site/
+**/site/
+
+# Additional build and library directories
+target/
+*/target/
+**/target/
+.gradle/
+gradle/
+gradlew
+gradlew.bat
+.mvn/
+mvnw
+mvnw.cmd
+vendor/
+*/vendor/
+**/vendor/
+Pods/
+*/Pods/
+**/Pods/
+.bundle/
+*/bundle/
+**/bundle/
 
 # Database migrations
 migrations/
@@ -160,12 +226,26 @@ scripts/setup/recreate_env_from_current_production.py
 .q
 .q/chat_history
 
-#playwright tests
-tests/playwright
-.aider*
-tests/admin/playwright
+# Playwright and browser testing
+tests/playwright/node_modules/
+*/playwright-report/
+**/playwright-report/
 test-results/
+*/test-results/
+**/test-results/
+playwright/.cache/
+.playwright/
 playwright-report/
+allure-results/
+allure-report/
+screenshots/
+videos/
+traces/
+
+# AI development tools
+.aider*
+*/.aider*
+**/.aider*
 
 #GEMINI.md
 GEMINI.md
