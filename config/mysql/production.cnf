@@ -2,89 +2,92 @@
 # This program is free software: you can redistribute it and/or modify it under the terms of the GNU Affero General Public License as published by the Free Software Foundation, either version 3 of the License, or (at your option) any later version.
 # THE SOFTWARE IS PROVIDED "AS IS", WITHOUT WARRANTY OF ANY KIND, EXPRESS OR IMPLIED, INCLUDING BUT NOT LIMITED TO THE WARRANTIES OF MERCHANTABILITY, FITNESS FOR A PARTICULAR PURPOSE AND NONINFRINGEMENT. IN NO EVENT SHALL THE AUTHORS OR COPYRIGHT HOLDERS BE LIABLE FOR ANY CLAIM, DAMAGES OR OTHER LIABILITY, WHETHER IN AN ACTION OF CONTRACT, TORT OR OTHERWISE, ARISING FROM, OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE SOFTWARE.
 
-# MySQL Production Configuration for Vedfolnir
+# MariaDB Production Configuration for Vedfolnir Docker container
+# Optimized for production performance, security, and reliability
 
 [mysqld]
 # Basic settings
-default-authentication-plugin=mysql_native_password
-character-set-server=utf8mb4
-collation-server=utf8mb4_unicode_ci
-default-time-zone='+00:00'
+user = mysql
+port = 3306
+datadir = /var/lib/mysql
 
-# Strict SQL mode for production
-sql_mode=STRICT_TRANS_TABLES,NO_ZERO_DATE,NO_ZERO_IN_DATE,ERROR_FOR_DIVISION_BY_ZERO,NO_AUTO_CREATE_USER,NO_ENGINE_SUBSTITUTION
+# Character set and collation
+character-set-server = utf8mb4
+collation-server = utf8mb4_unicode_ci
 
-# Connection settings (optimized for production)
-max_connections=200
-max_connect_errors=100000
-connect_timeout=30
-wait_timeout=600
-interactive_timeout=600
-net_read_timeout=30
-net_write_timeout=60
+# Storage engine
+default-storage-engine = InnoDB
 
-# Memory settings (optimized for production)
-innodb_buffer_pool_size=2G
-innodb_buffer_pool_instances=8
-innodb_log_file_size=256M
-innodb_log_buffer_size=32M
-key_buffer_size=128M
-table_open_cache=2000
-table_definition_cache=1400
-sort_buffer_size=4M
-read_buffer_size=2M
-read_rnd_buffer_size=4M
-myisam_sort_buffer_size=128M
-thread_cache_size=50
-query_cache_size=0
-query_cache_type=0
-
-# Logging (production level)
-general_log=0
-log_error=/var/log/mysql/error.log
-slow_query_log=1
-slow_query_log_file=/var/log/mysql/slow.log
-long_query_time=1
-log_queries_not_using_indexes=1
-log_slow_admin_statements=1
-
-# Binary logging for replication and point-in-time recovery
-log-bin=mysql-bin
-binlog_format=ROW
-expire_logs_days=7
-max_binlog_size=100M
-sync_binlog=1
+# Connection settings (production optimized)
+max_connections = 500
+max_allowed_packet = 64M
+interactive_timeout = 600
+wait_timeout = 600
+connect_timeout = 10
 
 # InnoDB settings (production optimized)
-innodb_file_per_table=1
-innodb_flush_log_at_trx_commit=1
-innodb_flush_method=O_DIRECT
-innodb_lock_wait_timeout=120
-innodb_io_capacity=200
-innodb_io_capacity_max=2000
-innodb_read_io_threads=8
-innodb_write_io_threads=8
-innodb_thread_concurrency=0
-innodb_autoinc_lock_mode=2
+innodb_buffer_pool_size = 2G
+innodb_buffer_pool_instances = 8
+innodb_file_per_table = 1
+innodb_flush_log_at_trx_commit = 1
+innodb_log_buffer_size = 64M
+innodb_log_file_size = 512M
+innodb_flush_method = O_DIRECT
+innodb_io_capacity = 2000
+innodb_io_capacity_max = 4000
 
-# Performance optimizations
-tmp_table_size=64M
-max_heap_table_size=64M
-join_buffer_size=4M
-bulk_insert_buffer_size=16M
+# Query cache (disabled for production performance)
+query_cache_type = 0
+query_cache_size = 0
+
+# Binary logging (production)
+log-bin = mysql-bin
+binlog_format = ROW
+expire_logs_days = 30
+sync_binlog = 1
+
+# Error logging
+log-error = /var/log/mysql/error.log
+log_error_verbosity = 2
+
+# Slow query logging
+slow_query_log = 1
+slow_query_log_file = /var/log/mysql/slow.log
+long_query_time = 1
+
+# General query logging (disabled for production)
+general_log = 0
 
 # Security settings
-local_infile=0
-skip_show_database
-skip_symbolic_links
+skip-name-resolve
+local-infile = 0
 
-# Replication settings (if needed)
-server-id=1
-gtid_mode=ON
-enforce_gtid_consistency=ON
+# Performance optimizations
+tmp_table_size = 256M
+max_heap_table_size = 256M
+sort_buffer_size = 4M
+read_buffer_size = 2M
+read_rnd_buffer_size = 8M
+join_buffer_size = 4M
+
+# Thread settings
+thread_cache_size = 100
+thread_stack = 256K
+
+# Table settings
+table_definition_cache = 8000
+table_open_cache = 8000
+table_open_cache_instances = 16
+
+# MariaDB specific optimizations
+innodb_adaptive_hash_index = 1
+innodb_change_buffering = all
+innodb_old_blocks_time = 1000
+innodb_read_io_threads = 8
+innodb_write_io_threads = 8
 
 [mysql]
-default-character-set=utf8mb4
+default-character-set = utf8mb4
 
 [client]
-default-character-set=utf8mb4
+default-character-set = utf8mb4

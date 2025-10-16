@@ -359,6 +359,33 @@ class CaptionGenerationUI {
     }
     
     startProgressPolling() {
+        // Use AdaptivePollingManager if available
+        if (window.adaptivePollingManager && this.currentTaskId) {
+            console.log('Using AdaptivePollingManager for progress polling');
+            
+            window.adaptivePollingManager.startPolling(this.currentTaskId, {
+                type: 'caption_generation',
+                priority: 1, // High priority for active task
+                callback: (status) => {
+                    this.updateProgressFromStatus(status);
+                    
+                    // Check if task is completed
+                    if (status.status === 'completed') {
+                        this.handleTaskCompletion(status);
+                    } else if (status.status === 'failed') {
+                        this.handleTaskError(status);
+                    } else if (status.status === 'cancelled') {
+                        this.handleTaskCancellation(status);
+                    }
+                }
+            });
+            
+            return;
+        }
+        
+        // Fallback to traditional polling
+        console.log('Using traditional polling (AdaptivePollingManager not available)');
+        
         // Clear any existing interval
         if (this.progressPollingInterval) {
             clearInterval(this.progressPollingInterval);
@@ -410,6 +437,27 @@ class CaptionGenerationUI {
     }
     
     startBackupPolling() {
+        // Use AdaptivePollingManager for backup polling if available
+        if (window.adaptivePollingManager && this.currentTaskId) {
+            console.log('Using AdaptivePollingManager for backup polling');
+            
+            window.adaptivePollingManager.startPolling(this.currentTaskId, {
+                type: 'caption_generation',
+                priority: 3, // Low priority for backup polling
+                callback: (status) => {
+                    // Only update if WebSocket is not connected
+                    if (!this.websocketConnected) {
+                        this.updateProgressFromStatus(status);
+                    }
+                }
+            });
+            
+            return;
+        }
+        
+        // Fallback to traditional backup polling
+        console.log('Using traditional backup polling');
+        
         // Lighter polling when WebSocket is available (every 10 seconds as backup)
         if (this.progressPollingInterval) {
             clearInterval(this.progressPollingInterval);
@@ -652,10 +700,17 @@ class CaptionGenerationUI {
     }
     
     stopProgressPolling() {
+        // Stop AdaptivePollingManager polling if available
+        if (window.adaptivePollingManager && this.currentTaskId) {
+            window.adaptivePollingManager.stopPolling(this.currentTaskId);
+            console.log('Stopped adaptive polling for task:', this.currentTaskId);
+        }
+        
+        // Also stop traditional polling as fallback
         if (this.progressPollingInterval) {
             clearInterval(this.progressPollingInterval);
             this.progressPollingInterval = null;
-            console.log('Stopped progress polling');
+            console.log('Stopped traditional progress polling');
         }
     }
     

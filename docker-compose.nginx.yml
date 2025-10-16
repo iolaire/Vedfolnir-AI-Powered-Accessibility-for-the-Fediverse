@@ -4,7 +4,6 @@
 
 # Nginx reverse proxy service for Vedfolnir Docker Compose deployment
 
-version: '3.8'
 
 services:
   nginx:

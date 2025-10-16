@@ -59,8 +59,8 @@ bandit>=1.7.5
 safety>=2.3.0
 
 # Container Development
-docker>=6.1.0
-docker-compose>=1.29.0
+# docker>=6.1.0  # Removed due to PyYAML conflicts
+# docker-compose>=1.29.0  # Removed due to PyYAML conflicts
 
 # Hot Reloading and File Watching
 watchfiles>=0.19.0

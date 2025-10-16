@@ -5,8 +5,6 @@
 # Docker Compose configuration for Compliance and Audit Framework
 # This extends the main docker-compose.yml with compliance-specific services
 
-version: '3.8'
-
 services:
   # Compliance Service (integrated with main application)
   vedfolnir:

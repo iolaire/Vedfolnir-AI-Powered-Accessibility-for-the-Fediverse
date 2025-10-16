@@ -43,12 +43,18 @@ secrets:
     file: ./secrets/vault_token.txt
 
 services:
-  # MySQL Database Service
+  # MariaDB Database Service
   mysql:
-    image: mysql:8.0
+    image: mariadb:10.11
     container_name: vedfolnir_mysql
     restart: unless-stopped
     environment:
+      # MariaDB environment variables
+      MARIADB_ROOT_PASSWORD_FILE: /run/secrets/mysql_root_password
+      MARIADB_DATABASE: vedfolnir
+      MARIADB_USER: vedfolnir
+      MARIADB_PASSWORD_FILE: /run/secrets/mysql_password
+      # Legacy MySQL compatibility
       MYSQL_ROOT_PASSWORD_FILE: /run/secrets/mysql_root_password
       MYSQL_DATABASE: vedfolnir
       MYSQL_USER: vedfolnir
@@ -62,7 +68,7 @@ services:
       # Data persistence (bind mount for external access)
       - ./data/mysql:/var/lib/mysql
       # Configuration
-      - ./config/mysql:/etc/mysql/conf.d:ro
+      - ./config/mysql/mariadb.cnf:/etc/mysql/conf.d/mariadb.cnf:ro
       # Initialization scripts
       - ./docker/mysql/init:/docker-entrypoint-initdb.d:ro
       # Management scripts
@@ -73,12 +79,12 @@ services:
       - ./logs/mysql:/var/log/mysql
     networks:
       - vedfolnir_internal
-    # MySQL port not exposed to host for security (internal network only)
+    # MariaDB port not exposed to host for security (internal network only)
     # Uncomment the following line only for development/debugging:
     # ports:
     #   - "127.0.0.1:3306:3306"
     healthcheck:
-      test: ["CMD", "/scripts/mysql-health-check.sh", "basic"]
+      test: ["CMD", "healthcheck.sh", "--connect", "--innodb_initialized"]
       interval: 30s
       timeout: 15s
       retries: 5

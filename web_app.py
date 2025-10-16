@@ -6,7 +6,7 @@ load_dotenv()
 
 import os
 from datetime import datetime
-from flask import Flask
+from flask import Flask, current_app
 from flask_login import LoginManager
 from flask_cors import CORS
 from sqlalchemy.exc import SQLAlchemyError

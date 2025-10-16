@@ -97,12 +97,12 @@ general_log_file = /var/log/mysql/general.log
 skip-name-resolve
 local-infile = 0
 skip-symbolic-links
-secure-file-priv = /var/lib/mysql-files/
+# secure-file-priv = /var/lib/mysql-files/  # Disabled for MariaDB compatibility
 # Disable LOAD DATA LOCAL INFILE for security
 local-infile = 0
-# Validate passwords
-validate_password.policy = MEDIUM
-validate_password.length = 8
+# Password validation (MariaDB uses different plugin)
+# validate_password_policy = MEDIUM
+# validate_password_length = 8
 
 # SSL settings (enable for production)
 # ssl-ca = /etc/mysql/ssl/ca.pem
@@ -115,11 +115,11 @@ performance_schema = ON
 performance_schema_max_table_instances = 12500
 performance_schema_max_table_handles = 4000
 
-# Information schema
-information_schema_stats_expiry = 86400
+# Information schema (MySQL 8.0 specific, not needed in MariaDB)
+# information_schema_stats_expiry = 86400
 
-# Optimizer settings
-optimizer_switch = 'index_merge=on,index_merge_union=on,index_merge_sort_union=on,index_merge_intersection=on,engine_condition_pushdown=on,index_condition_pushdown=on,mrr=on,mrr_cost_based=on,block_nested_loop=on,batched_key_access=off,materialization=on,semijoin=on,loosescan=on,firstmatch=on,duplicateweedout=on,subquery_materialization_cost_based=on,use_index_extensions=on,condition_fanout_filter=on,derived_merge=on,use_invisible_indexes=off,skip_scan=on,hash_join=on'
+# MariaDB Optimizer settings (use defaults for compatibility)
+# optimizer_switch settings removed - using MariaDB defaults
 
 # Table definition cache
 table_definition_cache = 4000

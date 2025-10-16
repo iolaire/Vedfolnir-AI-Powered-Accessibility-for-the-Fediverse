@@ -217,8 +217,28 @@ def start_generation():
 @caption_bp.route('/api/status/<task_id>')
 @login_required
 def get_status(task_id):
-    """Get caption generation task status with RQ support"""
+    """Get caption generation task status with Docker synchronization support"""
     try:
+        # Try Docker task manager first for enhanced synchronization
+        docker_task_manager = getattr(current_app, 'docker_task_manager', None)
+        if docker_task_manager:
+            status_info = docker_task_manager.get_task_status_detailed(task_id)
+            if status_info:
+                # Verify user has access to this task
+                if current_user.role.value != 'admin' and status_info.get('user_id') != current_user.id:
+                    return error_response('Task not found', 404)
+                
+                return jsonify({
+                    'success': True,
+                    'status': status_info.get('status'),
+                    'progress': status_info.get('progress_percent', 0),
+                    'current_step': status_info.get('current_step', ''),
+                    'message': status_info.get('error_message') or 'Processing...',
+                    'synchronized': True,
+                    'container_id': status_info.get('container_id')
+                })
+        
+        # Fallback to RQ-based service
         from app.services.task.web.rq_web_caption_service import RQWebCaptionService
         
         db_manager = current_app.config.get('db_manager')
@@ -239,7 +259,8 @@ def get_status(task_id):
                 'status': status.get('status'),
                 'progress': status.get('progress_percent', 0),
                 'current_step': status.get('current_step'),
-                'message': status.get('error_message') or 'Processing...'
+                'message': status.get('error_message') or 'Processing...',
+                'synchronized': False
             })
         else:
             return error_response('Task not found', 404)

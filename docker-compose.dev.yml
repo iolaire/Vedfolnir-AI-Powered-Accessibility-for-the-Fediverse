@@ -2,7 +2,6 @@
 # This program is free software: you can redistribute it and/or modify it under the terms of the GNU Affero General Public License as published by the Free Software Foundation, either version 3 of the License, or (at your option) any later version.
 # THE SOFTWARE IS PROVIDED "AS IS", WITHOUT WARRANTY OF ANY KIND, EXPRESS OR IMPLIED, INCLUDING BUT NOT LIMITED TO THE WARRANTIES OF MERCHANTABILITY, FITNESS FOR A PARTICULAR PURPOSE AND NONINFRINGEMENT. IN NO EVENT SHALL THE AUTHORS OR COPYRIGHT HOLDERS BE LIABLE FOR ANY CLAIM, DAMAGES OR OTHER LIABILITY, WHETHER IN AN ACTION OF CONTRACT, TORT OR OTHERWISE, ARISING FROM, OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE SOFTWARE.
 
-version: '3.8'
 
 services:
   # Main Vedfolnir Application - Development Configuration
@@ -73,6 +72,8 @@ services:
       retries: 3
       start_period: 60s
     # Development resource limits (generous)
+    # Override the default command to run without debugger for now
+    command: ["python", "web_app.py"]
     deploy:
       resources:
         limits:
@@ -82,13 +83,20 @@ services:
           cpus: '1.0'
           memory: 1G
 
-  # MySQL Database - Development Configuration
+  # MariaDB Database - Development Configuration
   mysql:
-    image: mysql:8.0
+    image: mariadb:10.11
+    platform: linux/amd64
     container_name: vedfolnir_mysql_dev
     ports:
       - "3306:3306"  # Expose for external tools
     environment:
+      # MariaDB environment variables
+      - MARIADB_ROOT_PASSWORD=${MYSQL_ROOT_PASSWORD:-dev_root_password}
+      - MARIADB_DATABASE=vedfolnir_dev
+      - MARIADB_USER=vedfolnir
+      - MARIADB_PASSWORD=${MYSQL_PASSWORD:-dev_password}
+      # Legacy MySQL compatibility
       - MYSQL_ROOT_PASSWORD=${MYSQL_ROOT_PASSWORD:-dev_root_password}
       - MYSQL_DATABASE=vedfolnir_dev
       - MYSQL_USER=vedfolnir
@@ -97,14 +105,14 @@ services:
       - MYSQL_COLLATION=utf8mb4_unicode_ci
     volumes:
       - mysql_dev_data:/var/lib/mysql
-      - ./config/mysql:/etc/mysql/conf.d
+      - ./config/mysql/mariadb.cnf:/etc/mysql/conf.d/mariadb.cnf:ro
       - ./docker/mysql/dev-init:/docker-entrypoint-initdb.d
       - ./logs/mysql:/var/log/mysql
     networks:
       - vedfolnir_internal
     restart: unless-stopped
     healthcheck:
-      test: ["CMD", "mysqladmin", "ping", "-h", "localhost", "-u", "vedfolnir", "-p${MYSQL_PASSWORD:-dev_password}"]
+      test: ["CMD", "healthcheck.sh", "--connect", "--innodb_initialized"]
       interval: 30s
       timeout: 10s
       retries: 5
@@ -153,6 +161,7 @@ services:
   # MailHog for email testing
   mailhog:
     image: mailhog/mailhog
+    platform: linux/amd64
     container_name: vedfolnir_mailhog_dev
     ports:
       - "1025:1025"  # SMTP
@@ -164,6 +173,7 @@ services:
   # Redis Commander for Redis management
   redis-commander:
     image: rediscommander/redis-commander:latest
+    platform: linux/amd64
     container_name: vedfolnir_redis_commander_dev
     ports:
       - "8081:8081"
@@ -178,6 +188,7 @@ services:
   # phpMyAdmin for MySQL management
   phpmyadmin:
     image: phpmyadmin/phpmyadmin
+    platform: linux/amd64
     container_name: vedfolnir_phpmyadmin_dev
     ports:
       - "8080:80"

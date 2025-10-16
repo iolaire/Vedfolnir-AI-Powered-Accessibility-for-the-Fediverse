@@ -1,458 +1,458 @@
-# Docker Compose Deployment Guide
+# Vedfolnir Docker Deployment Guide
 
 ## Overview
 
-This guide provides comprehensive instructions for deploying Vedfolnir using Docker Compose. The containerized deployment offers improved portability, scalability, and deployment consistency compared to the previous macOS-specific setup.
+Vedfolnir uses a comprehensive Docker setup with multiple environment configurations for development, production, and testing. This guide covers all aspects of the Docker deployment including email configuration, environment management, and service orchestration.
 
-## Prerequisites
+## 📧 Email Configuration Across Environments
 
-### System Requirements
-- Docker Engine 20.10+ 
-- Docker Compose 2.0+
-- 8GB RAM minimum (16GB recommended)
-- 50GB available disk space
-- Linux/macOS/Windows with WSL2
+### Current Email Setup
 
-### External Dependencies
-- **Ollama Service**: Must be running on host system at `localhost:11434`
-  - Install Ollama: https://ollama.ai/download
-  - Pull LLaVA model: `ollama pull llava:7b`
-  - Verify: `curl http://localhost:11434/api/version`
+Your email configuration is handled differently across environments:
 
-### Network Requirements
-- Ports 80, 443 (Nginx)
-- Port 3000 (Grafana dashboard)
-- Internal container networking for services
+#### **Development Environment**
+- **Service**: MailHog container (local email testing)
+- **Configuration**: Uses `.env.development`
+- **SMTP**: `mailhog:1025` (internal container network)
+- **Web UI**: http://localhost:8025
+- **Benefits**: No external dependencies, visual email testing
 
-## Quick Start
+#### **Production Environment** 
+- **Service**: Mailtrap (your existing configuration)
+- **Configuration**: Uses `.env.production` → falls back to `.env`
+- **SMTP**: `sandbox.smtp.mailtrap.io:587`
+- **Credentials**: Your existing Mailtrap account
+- **Benefits**: Real email delivery testing
 
-### 1. Clone and Setup
+#### **Test Environment**
+- **Service**: Mailtrap (same as production)
+- **Configuration**: Uses `.env.test` → falls back to `.env`
+- **SMTP**: Same as production but isolated database
+
+### Email Configuration Files
+
+Your existing `.env` file contains:
 ```bash
-# Clone repository
-git clone <repository-url>
-cd vedfolnir
-
-# Create required directories
-mkdir -p data/{mysql,redis,prometheus,grafana,loki,vault}
-mkdir -p logs/{app,nginx,mysql,vault,audit}
-mkdir -p storage/{images,backups,temp}
-mkdir -p secrets
+# Email Configuration (sandbox defaults)
+MAIL_SERVER=sandbox.smtp.mailtrap.io
+MAIL_PORT=587
+MAIL_USE_TLS=false
+MAIL_USERNAME=24cc1476b47de6
+MAIL_PASSWORD=7be97c03d858ab
+MAIL_DEFAULT_SENDER=iolaire@vedfolnir.org
 ```
 
-### 2. Configure Secrets
-```bash
-# Generate secure secrets
-openssl rand -base64 32 > secrets/flask_secret_key.txt
-openssl rand -base64 32 > secrets/platform_encryption_key.txt
-openssl rand -base64 32 > secrets/mysql_root_password.txt
-openssl rand -base64 32 > secrets/mysql_password.txt
-openssl rand -base64 32 > secrets/redis_password.txt
-openssl rand -base64 32 > secrets/vault_root_token.txt
-openssl rand -base64 32 > secrets/vault_token.txt
+**✅ This configuration will be used for production and test environments automatically.**
 
-# Set proper permissions
-chmod 600 secrets/*
+## 🐳 Docker Architecture
+
+### Service Overview
+
+| Service | Purpose | Networks | Ports (Dev) | Ports (Prod) |
+|---------|---------|----------|-------------|--------------|
+| **vedfolnir** | Main application | internal, external | 5000, 5678 | - |
+| **mysql** | MariaDB database | internal | 3306 | - |
+| **redis** | Session & cache | internal | 6379 | - |
+| **nginx** | Reverse proxy | external, internal | 80, 443 | 80, 443 |
+| **vault** | Secrets management | internal | - | - |
+| **prometheus** | Metrics collection | monitoring, internal | - | - |
+| **grafana** | Monitoring dashboard | monitoring, external | - | 3000 |
+| **loki** | Log aggregation | monitoring | - | - |
+
+### Development-Only Services
+
+| Service | Purpose | Port | Access |
+|---------|---------|------|--------|
+| **mailhog** | Email testing | 8025 | http://localhost:8025 |
+| **phpmyadmin** | MySQL management | 8080 | http://localhost:8080 |
+| **redis-commander** | Redis management | 8081 | http://localhost:8081 |
+
+## 🚀 Quick Start Commands
+
+### Development Environment
+```bash
+# Start development environment
+docker-compose -f docker-compose.dev.yml up -d
+
+# View logs
+docker-compose -f docker-compose.dev.yml logs -f vedfolnir
+
+# Stop development environment
+docker-compose -f docker-compose.dev.yml down
 ```
 
-### 3. Environment Configuration
+### Production Environment
 ```bash
-# Copy environment template
-cp .env.example .env.docker
+# Start production environment
+docker-compose -f docker-compose.prod.yml up -d
 
-# Edit configuration
-nano .env.docker
+# View logs
+docker-compose -f docker-compose.prod.yml logs -f
+
+# Stop production environment
+docker-compose -f docker-compose.prod.yml down
 ```
 
-Required environment variables:
+### Test Environment
 ```bash
-# Database Configuration
-DATABASE_URL=mysql+pymysql://vedfolnir:$(cat secrets/mysql_password.txt)@mysql:3306/vedfolnir?charset=utf8mb4
-MYSQL_ROOT_PASSWORD_FILE=/run/secrets/mysql_root_password
-MYSQL_PASSWORD_FILE=/run/secrets/mysql_password
+# Run unit tests
+docker-compose -f docker-compose.test.yml --profile unit-tests up --abort-on-container-exit
 
-# Redis Configuration
-REDIS_URL=redis://:$(cat secrets/redis_password.txt)@redis:6379/0
-REDIS_PASSWORD_FILE=/run/secrets/redis_password
+# Run integration tests
+docker-compose -f docker-compose.test.yml --profile integration-tests up --abort-on-container-exit
 
-# Application Configuration
-FLASK_SECRET_KEY_FILE=/run/secrets/flask_secret_key
-PLATFORM_ENCRYPTION_KEY_FILE=/run/secrets/platform_encryption_key
-
-# External Ollama API
-OLLAMA_URL=http://host.docker.internal:11434
-
-# Security
-FLASK_ENV=production
-SECURITY_CSRF_ENABLED=true
-SECURITY_RATE_LIMITING_ENABLED=true
-
-# Observability
-PROMETHEUS_URL=http://prometheus:9090
-GRAFANA_URL=http://grafana:3000
-LOKI_URL=http://loki:3100
+# Run performance tests
+docker-compose -f docker-compose.test.yml --profile performance-tests up --abort-on-container-exit
 ```
 
-### 4. Deploy Services
-```bash
-# Start all services
-docker-compose up -d
+## 📁 Environment File Structure
 
-# Verify deployment
-docker-compose ps
-docker-compose logs -f vedfolnir
-```
+### Environment File Priority
+Docker Compose loads environment files in this order:
+1. **Environment-specific file** (`.env.development`, `.env.production`)
+2. **Default file** (`.env`) - as fallback
+3. **Docker Compose environment section** - overrides files
+4. **System environment variables** - highest priority
 
-### 5. Initial Setup
-```bash
-# Wait for services to be ready
-./scripts/wait-for-services.sh
+### Current Environment Files
 
-# Initialize database
-docker-compose exec vedfolnir python scripts/setup/initialize_database.py
+#### `.env` (Default/Fallback)
+- Contains your Mailtrap email configuration
+- Used as fallback for all environments
+- Contains development defaults
 
-# Create admin user
-docker-compose exec vedfolnir python scripts/setup/create_admin_user.py
+#### `.env.development` (Development)
+- MailHog email configuration (`MAIL_SERVER=mailhog`)
+- Development database settings
+- Debug and profiling enabled
+- Relaxed security settings
 
-# Verify deployment
-curl -f http://localhost/health
-```
+#### `.env.production` (Production)
+- References your `.env` email settings via variables
+- Production database settings
+- Strict security settings
+- Performance optimizations
 
-## Detailed Configuration
+## 🔧 Detailed Service Configuration
 
-### Service Architecture
+### Vedfolnir Application
 
-The Docker Compose deployment includes:
-
-- **vedfolnir**: Main application container (Flask + RQ workers)
-- **mysql**: Database service (MySQL 8.0)
-- **redis**: Session storage and queue backend (Redis 7)
-- **nginx**: Reverse proxy with SSL termination
-- **vault**: Secrets management (HashiCorp Vault)
-- **prometheus**: Metrics collection
-- **grafana**: Monitoring dashboards
-- **loki**: Log aggregation
-
-### Volume Mounts
-
+#### Development Configuration
 ```yaml
-# Application data
-./storage:/app/storage          # Images, backups, temp files
-./logs:/app/logs               # Application logs
-./config:/app/config           # Configuration files
-
-# Database persistence
-./data/mysql:/var/lib/mysql    # MySQL data
-./data/redis:/data             # Redis data
-
-# Monitoring data
-./data/prometheus:/prometheus   # Metrics data
-./data/grafana:/var/lib/grafana # Dashboards
-./data/loki:/loki              # Log data
-
-# Security
-./data/vault:/vault/data       # Vault data
-./secrets:/run/secrets         # Secret files
+services:
+  vedfolnir:
+    build:
+      target: development
+    ports:
+      - "5000:5000"    # Flask application
+      - "5678:5678"    # Python debugger
+    volumes:
+      - .:/app         # Hot reloading
+    environment:
+      - FLASK_ENV=development
+      - FLASK_DEBUG=true
+      - MAIL_SERVER=mailhog  # Uses MailHog
 ```
 
-### Network Configuration
-
+#### Production Configuration
 ```yaml
-networks:
-  vedfolnir_internal:
-    driver: bridge
-    internal: true
-  vedfolnir_monitoring:
-    driver: bridge
-    internal: true
-  vedfolnir_external:
-    driver: bridge
+services:
+  vedfolnir:
+    build:
+      target: production
+    # No direct port exposure (via nginx)
+    environment:
+      - FLASK_ENV=production
+      - FLASK_DEBUG=false
+      - MAIL_SERVER=${MAIL_SERVER}  # Uses your Mailtrap config
 ```
 
-**Security Features:**
-- Internal networks for service communication
-- Only Nginx and Grafana exposed to host
-- Database and Redis isolated from external access
+### Database Services
 
-### Resource Limits
+#### MariaDB (MySQL)
+- **Development**: Exposed on port 3306 for external tools
+- **Production**: Internal network only for security
+- **Volumes**: Persistent data storage
+- **Health checks**: Automatic service dependency management
 
-```yaml
-# Application container
-vedfolnir:
-  deploy:
-    resources:
-      limits:
-        cpus: '2.0'
-        memory: 2G
-      reservations:
-        cpus: '1.0'
-        memory: 1G
+#### Redis
+- **Development**: Exposed on port 6379 for external tools
+- **Production**: Internal network only for security
+- **Configuration**: Session storage and caching
+- **Persistence**: AOF and RDB snapshots
 
-# Database container
-mysql:
-  deploy:
-    resources:
-      limits:
-        cpus: '2.0'
-        memory: 4G
-      reservations:
-        cpus: '1.0'
-        memory: 2G
-```
+### Monitoring Stack
 
-## Development vs Production
+#### Prometheus
+- Metrics collection from all services
+- Custom application metrics
+- Resource usage monitoring
+- Alert rule configuration
 
-### Development Configuration
-```bash
-# Use development compose file
-docker-compose -f docker-compose.yml -f docker-compose.dev.yml up -d
+#### Grafana
+- Visual dashboards for metrics
+- Real-time monitoring
+- Custom dashboard provisioning
+- Alert notifications
 
-# Features:
-# - Hot reloading enabled
-# - Debug mode active
-# - Direct port access for debugging
-# - Development tools included
-```
-
-### Production Configuration
-```bash
-# Use production compose file
-docker-compose -f docker-compose.yml -f docker-compose.prod.yml up -d
-
-# Features:
-# - Optimized resource limits
-# - Security hardening
-# - SSL/TLS termination
-# - Monitoring and alerting
-```
-
-## SSL/TLS Configuration
-
-### Self-Signed Certificates (Development)
-```bash
-# Generate certificates
-mkdir -p ssl/{certs,keys}
-openssl req -x509 -nodes -days 365 -newkey rsa:2048 \
-  -keyout ssl/keys/vedfolnir.key \
-  -out ssl/certs/vedfolnir.crt \
-  -subj "/C=US/ST=State/L=City/O=Organization/CN=localhost"
-```
-
-### Production Certificates
-```bash
-# Using Let's Encrypt with certbot
-certbot certonly --standalone -d your-domain.com
-cp /etc/letsencrypt/live/your-domain.com/fullchain.pem ssl/certs/
-cp /etc/letsencrypt/live/your-domain.com/privkey.pem ssl/keys/
-```
-
-## Backup and Recovery
-
-### Automated Backup
-```bash
-# Run backup script
-./scripts/backup/create_backup.sh
-
-# Backup includes:
-# - MySQL database dump
-# - Redis data snapshot
-# - Application storage
-# - Configuration files
-# - Vault secrets (encrypted)
-```
-
-### Manual Backup
-```bash
-# Database backup
-docker-compose exec mysql mysqldump \
-  --single-transaction \
-  --routines \
-  --triggers \
-  --all-databases | gzip > backup_$(date +%Y%m%d).sql.gz
-
-# Redis backup
-docker-compose exec redis redis-cli BGSAVE
-docker cp vedfolnir_redis:/data/dump.rdb ./backup_redis_$(date +%Y%m%d).rdb
-
-# Application data
-tar -czf backup_storage_$(date +%Y%m%d).tar.gz storage/
-```
-
-### Disaster Recovery
-```bash
-# Restore from backup
-./scripts/backup/restore_backup.sh /path/to/backup
-
-# Manual restore process:
-# 1. Stop services
-docker-compose down
-
-# 2. Restore database
-gunzip < backup_20250101.sql.gz | docker-compose exec -T mysql mysql
-
-# 3. Restore Redis
-docker cp backup_redis_20250101.rdb vedfolnir_redis:/data/dump.rdb
-
-# 4. Restore application data
-tar -xzf backup_storage_20250101.tar.gz
-
-# 5. Start services
-docker-compose up -d
-```
-
-## Monitoring and Observability
-
-### Grafana Dashboards
-Access: http://localhost:3000
-- Default credentials: admin/admin (change on first login)
-- Pre-configured dashboards for all services
-- Real-time metrics and alerting
-
-### Prometheus Metrics
-Access: http://localhost:9090 (internal)
-- Application performance metrics
-- Container resource usage
-- Database and Redis metrics
-- Custom business metrics
-
-### Log Aggregation
-- Centralized logging with Loki
-- Structured JSON logs
-- Real-time log streaming
+#### Loki
+- Centralized log aggregation
+- Structured logging support
 - Log retention policies
+- Integration with Grafana
 
-### Health Checks
-```bash
-# Check all services
-docker-compose ps
+## 🔐 Security Configuration
 
-# Application health
-curl -f http://localhost/health
-
-# Database connectivity
-docker-compose exec vedfolnir python -c "
-from config import Config
-from app.core.database.core.database_manager import DatabaseManager
-config = Config()
-db_manager = DatabaseManager(config)
-with db_manager.get_session() as session:
-    result = session.execute('SELECT 1').scalar()
-    print(f'Database OK: {result}')
-"
-
-# Redis connectivity
-docker-compose exec redis redis-cli ping
-
-# Ollama API connectivity
-docker-compose exec vedfolnir curl -f http://host.docker.internal:11434/api/version
-```
-
-## Security Configuration
+### Network Isolation
+- **vedfolnir_internal**: Secure internal communication
+- **vedfolnir_external**: Public-facing services
+- **vedfolnir_monitoring**: Monitoring services isolation
 
 ### Secrets Management
-- HashiCorp Vault for secure secret storage
-- Docker secrets for sensitive environment variables
-- Automatic secret rotation capabilities
-- Encrypted credential storage
-
-### Network Security
-- Multi-tier network isolation
-- Internal container networking
-- SSL/TLS termination at Nginx
-- Rate limiting and DDoS protection
-
-### Access Controls
-- Role-based access control (RBAC)
-- CSRF protection enabled
-- Input validation and sanitization
-- Audit logging for all actions
-
-### Compliance Features
-- GDPR compliance with data anonymization
-- Immutable audit logs
-- Data retention policies
-- Automated compliance reporting
-
-## Performance Optimization
-
-### Container Optimization
-- Multi-stage Docker builds
-- Minimal base images (python:3.12-slim)
-- Layer caching optimization
-- Resource limit configuration
-
-### Database Performance
-- Connection pooling (20 connections, 30 overflow)
-- MySQL performance tuning
-- Optimized indexes and queries
-- Regular maintenance procedures
-
-### Caching Strategy
-- Redis session caching
-- Static file caching via Nginx
-- Application-level caching
-- CDN integration support
-
-## Scaling Configuration
-
-### Horizontal Scaling
 ```yaml
-# Scale application containers
-vedfolnir:
-  deploy:
-    replicas: 3
-    update_config:
-      parallelism: 1
-      delay: 10s
-      failure_action: rollback
+secrets:
+  flask_secret_key:
+    file: ./secrets/flask_secret_key.txt
+  mysql_password:
+    file: ./secrets/mysql_password.txt
+  redis_password:
+    file: ./secrets/redis_password.txt
 ```
 
-### Load Balancing
-- Nginx upstream configuration
-- Session affinity with Redis
-- Health check integration
-- Automatic failover
+### Production Security Features
+- No direct port exposure for internal services
+- Docker secrets for sensitive data
+- Non-root user execution
+- Security options and capabilities
 
-### Auto-scaling
+## 📊 Monitoring and Observability
+
+### Available Dashboards
+- **Grafana**: http://localhost:3000 (production)
+- **Prometheus**: Internal network only
+- **Application metrics**: Built-in Flask metrics
+
+### Log Management
+- **Structured logging**: JSON format in production
+- **Log rotation**: Automatic size-based rotation
+- **Centralized logs**: Loki aggregation
+- **Retention policies**: Configurable retention periods
+
+## 🧪 Testing Framework
+
+### Test Profiles
 ```bash
-# Enable auto-scaling based on CPU usage
-docker service update --replicas-max-per-node 2 vedfolnir_vedfolnir
+# Unit tests
+docker-compose -f docker-compose.test.yml --profile unit-tests up
+
+# Integration tests  
+docker-compose -f docker-compose.test.yml --profile integration-tests up
+
+# Performance tests
+docker-compose -f docker-compose.test.yml --profile performance-tests up
+
+# Security tests
+docker-compose -f docker-compose.test.yml --profile security-tests up
 ```
 
-## Maintenance Procedures
+### Test Database
+- Isolated MariaDB instance
+- Temporary data (tmpfs for speed)
+- Separate Redis instance
+- Clean state for each test run
 
-### Regular Maintenance
+## 🔄 Development Workflow
+
+### Hot Reloading Setup
 ```bash
-# Update containers
-docker-compose pull
-docker-compose up -d
+# Start development environment
+docker-compose -f docker-compose.dev.yml up -d
 
-# Clean up unused resources
-docker system prune -f
+# View application logs
+docker-compose -f docker-compose.dev.yml logs -f vedfolnir
 
-# Rotate logs
-docker-compose exec vedfolnir logrotate /etc/logrotate.conf
-
-# Update SSL certificates
-certbot renew
-docker-compose restart nginx
+# Access development tools
+open http://localhost:5000      # Application
+open http://localhost:8025      # MailHog (email testing)
+open http://localhost:8080      # phpMyAdmin (database)
+open http://localhost:8081      # Redis Commander
 ```
 
-### Database Maintenance
+### Debugging
 ```bash
-# Optimize database
-docker-compose exec mysql mysqlcheck --optimize --all-databases
+# Enable debugger (modify docker-compose.dev.yml)
+command: ["python", "-m", "debugpy", "--listen", "0.0.0.0:5678", "--wait-for-client", "web_app.py"]
 
-# Update statistics
-docker-compose exec mysql mysqlcheck --analyze --all-databases
-
-# Check for corruption
-docker-compose exec mysql mysqlcheck --check --all-databases
+# Connect debugger to localhost:5678
 ```
 
-### Security Updates
+## 🚀 Production Deployment
+
+### Prerequisites
+1. **Secrets Setup**:
+   ```bash
+   mkdir -p secrets
+   echo "your-flask-secret" > secrets/flask_secret_key.txt
+   echo "your-mysql-password" > secrets/mysql_password.txt
+   echo "your-redis-password" > secrets/redis_password.txt
+   ```
+
+2. **SSL Certificates**:
+   ```bash
+   mkdir -p ssl/certs ssl/keys
+   # Place your SSL certificates in ssl/ directory
+   ```
+
+3. **Configuration**:
+   ```bash
+   # Update .env.production with your domain
+   BASE_URL=https://your-domain.com
+   ```
+
+### Production Startup
 ```bash
-# Update base images
-docker-compose build --pull --no-cache
+# Start all production services
+docker-compose -f docker-compose.prod.yml up -d
+
+# Verify services are healthy
+docker-compose -f docker-compose.prod.yml ps
+
+# View logs
+docker-compose -f docker-compose.prod.yml logs -f
+```
+
+### Production Monitoring
+- **Application**: https://your-domain.com
+- **Grafana**: https://your-domain.com:3000
+- **Health checks**: Built-in service health monitoring
+
+## 🔧 Maintenance Commands
+
+### Database Management
+```bash
+# Backup database
+docker-compose -f docker-compose.prod.yml exec mysql mysqldump -u root -p vedfolnir > backup.sql
+
+# Restore database
+docker-compose -f docker-compose.prod.yml exec -T mysql mysql -u root -p vedfolnir < backup.sql
+```
+
+### Log Management
+```bash
+# View application logs
+docker-compose logs -f vedfolnir
+
+# View all service logs
+docker-compose logs -f
+
+# Clear logs
+docker-compose down && docker system prune -f
+```
+
+### Updates and Scaling
+```bash
+# Update application
+docker-compose -f docker-compose.prod.yml build vedfolnir
+docker-compose -f docker-compose.prod.yml up -d vedfolnir
+
+# Scale application (production)
+docker-compose -f docker-compose.prod.yml up -d --scale vedfolnir=3
+```
+
+## 🐛 Troubleshooting
+
+### Common Issues
+
+#### Email Not Working
+1. **Development**: Check MailHog is running at http://localhost:8025
+2. **Production**: Verify Mailtrap credentials in `.env`
+3. **Check logs**: `docker-compose logs -f vedfolnir`
+
+#### Database Connection Issues
+1. **Check service health**: `docker-compose ps`
+2. **Verify credentials**: Check environment files
+3. **Network connectivity**: Ensure services are on same network
+
+#### Performance Issues
+1. **Check resource usage**: `docker stats`
+2. **Review logs**: Look for memory/CPU warnings
+3. **Monitor metrics**: Use Grafana dashboards
+
+### Debug Commands
+```bash
+# Enter application container
+docker-compose exec vedfolnir bash
+
+# Check service health
+docker-compose ps
+
+# View resource usage
+docker stats
+
+# Check networks
+docker network ls
+docker network inspect vedfolnir_vedfolnir_internal
+```
+
+## 📋 Environment Variables Reference
+
+### Email Configuration
+| Variable | Development | Production | Description |
+|----------|-------------|------------|-------------|
+| `MAIL_SERVER` | `mailhog` | `sandbox.smtp.mailtrap.io` | SMTP server |
+| `MAIL_PORT` | `1025` | `587` | SMTP port |
+| `MAIL_USE_TLS` | `false` | `false` | TLS encryption |
+| `MAIL_USERNAME` | `` | `24cc1476b47de6` | SMTP username |
+| `MAIL_PASSWORD` | `` | `7be97c03d858ab` | SMTP password |
+
+### Database Configuration
+| Variable | Development | Production | Description |
+|----------|-------------|------------|-------------|
+| `DATABASE_URL` | `mysql://vedfolnir:dev_password@mysql:3306/vedfolnir_dev` | `mysql://vedfolnir:${MYSQL_PASSWORD}@mysql:3306/vedfolnir` | Database connection |
+| `DB_POOL_SIZE` | `10` | `20` | Connection pool size |
+| `DB_MAX_OVERFLOW` | `20` | `30` | Max overflow connections |
+
+### Security Configuration
+| Variable | Development | Production | Description |
+|----------|-------------|------------|-------------|
+| `SECURITY_CSRF_ENABLED` | `true` | `true` | CSRF protection |
+| `SECURITY_RATE_LIMITING_ENABLED` | `false` | `true` | Rate limiting |
+| `SESSION_COOKIE_SECURE` | `false` | `true` | Secure cookies |
+
+## 🎯 Best Practices
+
+### Development
+- Use MailHog for email testing
+- Enable debug mode and profiling
+- Mount source code for hot reloading
+- Use exposed ports for external tools
+
+### Production
+- Use Docker secrets for sensitive data
+- Enable all security features
+- Use internal networks only
+- Implement proper SSL/TLS
+- Monitor resource usage
+- Set up automated backups
+
+### Testing
+- Use isolated test databases
+- Implement comprehensive test coverage
+- Use tmpfs for faster test execution
+- Clean up test data between runs
+
+## 📞 Support
+
+For issues with the Docker setup:
+1. Check service logs: `docker-compose logs -f [service]`
+2. Verify environment configuration
+3. Check network connectivity
+4. Review resource usage
+5. Consult troubleshooting section above
+
+---
+
+**Note**: Your existing email configuration in `.env` will automatically be used for production and test environments, while development uses the local MailHog container f
 
 # Scan for vulnerabilities
 docker run --rm -v /var/run/docker.sock:/var/run/docker.sock \

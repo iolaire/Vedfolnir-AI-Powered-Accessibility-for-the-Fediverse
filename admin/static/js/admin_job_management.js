@@ -584,15 +584,42 @@ function formatDateTime(dateString) {
  */
 function toggleAutoRefresh() {
     if (adminJobManagement.autoRefreshActive) {
+        // Stop adaptive polling if available
+        if (window.adaptivePollingManager) {
+            window.adaptivePollingManager.stopPolling('admin-job-refresh');
+            console.log('Stopped adaptive polling for admin job refresh');
+        }
+        
+        // Stop traditional polling
         clearInterval(adminJobManagement.autoRefreshInterval);
         adminJobManagement.autoRefreshActive = false;
         document.getElementById('autoRefreshIcon').className = 'bi bi-play-circle';
         document.getElementById('autoRefreshText').textContent = 'Start Auto-refresh';
     } else {
-        adminJobManagement.autoRefreshInterval = setInterval(refreshJobData, 30000); // 30 seconds
-        adminJobManagement.autoRefreshActive = true;
-        document.getElementById('autoRefreshIcon').className = 'bi bi-pause-circle';
-        document.getElementById('autoRefreshText').textContent = 'Stop Auto-refresh';
+        // Use adaptive polling if available
+        if (window.adaptivePollingManager) {
+            console.log('Using AdaptivePollingManager for admin job refresh');
+            
+            window.adaptivePollingManager.startPolling('admin-job-refresh', {
+                type: 'admin_job_management',
+                priority: 2, // Medium priority
+                callback: (status) => {
+                    // Refresh job data
+                    refreshJobData();
+                }
+            });
+            
+            adminJobManagement.autoRefreshActive = true;
+            document.getElementById('autoRefreshIcon').className = 'bi bi-pause-circle';
+            document.getElementById('autoRefreshText').textContent = 'Stop Auto-refresh (Adaptive)';
+        } else {
+            // Fallback to traditional polling
+            console.log('Using traditional polling for admin job refresh');
+            adminJobManagement.autoRefreshInterval = setInterval(refreshJobData, 30000); // 30 seconds
+            adminJobManagement.autoRefreshActive = true;
+            document.getElementById('autoRefreshIcon').className = 'bi bi-pause-circle';
+            document.getElementById('autoRefreshText').textContent = 'Stop Auto-refresh';
+        }
     }
 }
 

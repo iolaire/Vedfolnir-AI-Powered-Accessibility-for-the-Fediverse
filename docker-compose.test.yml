@@ -2,14 +2,19 @@
 # This program is free software: you can redistribute it and/or modify it under the terms of the GNU Affero General Public License as published by the Free Software Foundation, either version 3 of the License, or (at your option) any later version.
 # THE SOFTWARE IS PROVIDED "AS IS", WITHOUT WARRANTY OF ANY KIND, EXPRESS OR IMPLIED, INCLUDING BUT NOT LIMITED TO THE WARRANTIES OF MERCHANTABILITY, FITNESS FOR A PARTICULAR PURPOSE AND NONINFRINGEMENT. IN NO EVENT SHALL THE AUTHORS OR COPYRIGHT HOLDERS BE LIABLE FOR ANY CLAIM, DAMAGES OR OTHER LIABILITY, WHETHER IN AN ACTION OF CONTRACT, TORT OR OTHERWISE, ARISING FROM, OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE SOFTWARE.
 
-version: '3.8'
-
 services:
-  # Test Database - Isolated MySQL instance
+  # Test Database - Isolated MariaDB instance
   mysql-test:
-    image: mysql:8.0
+    image: mariadb:10.11
+    platform: linux/amd64
     container_name: vedfolnir_mysql_test
     environment:
+      # MariaDB environment variables
+      - MARIADB_ROOT_PASSWORD=test_root_password
+      - MARIADB_DATABASE=vedfolnir_test
+      - MARIADB_USER=vedfolnir_test
+      - MARIADB_PASSWORD=test_password
+      # Legacy MySQL compatibility
       - MYSQL_ROOT_PASSWORD=test_root_password
       - MYSQL_DATABASE=vedfolnir_test
       - MYSQL_USER=vedfolnir_test
@@ -17,12 +22,12 @@ services:
       - MYSQL_CHARSET=utf8mb4
       - MYSQL_COLLATION=utf8mb4_unicode_ci
     volumes:
-      - ./config/mysql/development.cnf:/etc/mysql/conf.d/test.cnf:ro
+      - ./config/mysql/mariadb.cnf:/etc/mysql/conf.d/mariadb.cnf:ro
     networks:
       - vedfolnir_test
     restart: "no"
     healthcheck:
-      test: ["CMD", "mysqladmin", "ping", "-h", "localhost", "-u", "vedfolnir_test", "-ptest_password"]
+      test: ["CMD", "healthcheck.sh", "--connect", "--innodb_initialized"]
       interval: 10s
       timeout: 5s
       retries: 5

@@ -10,7 +10,7 @@ from typing import Optional, List, Dict, Any, Tuple
 from sqlalchemy import create_engine, event, and_, or_, func, text
 from sqlalchemy.orm import sessionmaker, scoped_session
 from sqlalchemy.exc import SQLAlchemyError
-from sqlalchemy.pool import QueuePool
+from sqlalchemy.pool import QueuePool, NullPool
 from models import Base, Post, Image, ProcessingRun, ProcessingStatus, UserRole, User, PlatformConnection
 from config import Config
 from app.services.platform.core.platform_context import PlatformContextManager, PlatformContextError
@@ -50,15 +50,17 @@ class DatabaseManager:
         # Comprehensive MySQL connection validation
         self._validate_mysql_connection_params(config.storage.database_url)
         
-        # Configure SQLAlchemy engine with MySQL-optimized settings
+        # Configure SQLAlchemy engine with thread-safe settings
+        from sqlalchemy.pool import NullPool
         engine_kwargs = {
             'echo': False,
             'pool_pre_ping': True,
             'pool_recycle': db_config.pool_recycle,
-            'poolclass': QueuePool,
-            'pool_size': db_config.pool_size,
-            'max_overflow': db_config.max_overflow,
-            'pool_timeout': db_config.pool_timeout,
+            'poolclass': NullPool,  # Use NullPool to avoid threading issues
+            # Remove pool-specific settings since NullPool doesn't use them
+            # 'pool_size': db_config.pool_size,
+            # 'max_overflow': db_config.max_overflow,
+            # 'pool_timeout': db_config.pool_timeout,
             'connect_args': {
                 'charset': 'utf8mb4',
                 'use_unicode': True,
@@ -78,8 +80,13 @@ class DatabaseManager:
         if db_config.query_logging:
             self._setup_query_logging()
         
-        # Use sessionmaker for MySQL connection management
-        self.SessionFactory = sessionmaker(bind=self.engine)
+        # Use regular sessionmaker with thread-safe configuration
+        self.SessionFactory = sessionmaker(
+            bind=self.engine,
+            autoflush=False,  # Prevent automatic flushing
+            autocommit=False,  # Explicit transaction control
+            expire_on_commit=False  # Keep objects accessible after commit
+        )
         
         # Initialize platform context manager
         self._context_manager = None

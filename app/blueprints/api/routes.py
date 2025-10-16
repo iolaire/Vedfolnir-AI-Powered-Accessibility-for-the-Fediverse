@@ -12,10 +12,12 @@ api_bp = Blueprint('api', __name__, url_prefix='/api')
 # Import additional API route modules
 from .page_notification_routes import page_notification_bp
 from .websocket_client_config_routes import websocket_client_config_bp
+from .docker_task_status_routes import docker_task_status_bp
 
 # Register sub-blueprints
 api_bp.register_blueprint(page_notification_bp)
 api_bp.register_blueprint(websocket_client_config_bp)
+api_bp.register_blueprint(docker_task_status_bp)
 
 @api_bp.route('/session/state', methods=['GET'])
 def get_session_state():

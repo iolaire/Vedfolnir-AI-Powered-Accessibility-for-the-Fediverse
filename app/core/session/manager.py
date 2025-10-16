@@ -83,17 +83,37 @@ class UnifiedSessionManager:
     
     @contextmanager
     def get_db_session(self):
-        """Get database session with proper cleanup"""
-        session = self.SessionLocal()
+        """Get database session with proper cleanup and thread safety"""
+        session = None
         try:
+            # Create a new session with thread-safe configuration
+            if self.db_manager:
+                # Use the database manager's session factory but with thread-safe handling
+                session = self.db_manager.SessionFactory()
+            else:
+                # Fallback to direct session creation
+                session = self.SessionLocal()
+            
             yield session
-            session.commit()
+            
+            # Only commit if there are pending changes
+            if session.dirty or session.new or session.deleted:
+                session.commit()
+                
         except Exception as e:
-            session.rollback()
+            if session:
+                try:
+                    session.rollback()
+                except Exception as rollback_error:
+                    logger.error(f"Error during rollback: {rollback_error}")
             logger.error(f"Database session error: {e}")
             raise
         finally:
-            session.close()
+            if session:
+                try:
+                    session.close()
+                except Exception as close_error:
+                    logger.error(f"Error closing session: {close_error}")
     
     def get_session(self, session_id: str) -> Optional[dict]:
         """Get session data by ID"""

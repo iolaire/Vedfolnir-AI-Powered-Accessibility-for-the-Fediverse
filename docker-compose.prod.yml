@@ -2,7 +2,6 @@
 # This program is free software: you can redistribute it and/or modify it under the terms of the GNU Affero General Public License as published by the Free Software Foundation, either version 3 of the License, or (at your option) any later version.
 # THE SOFTWARE IS PROVIDED "AS IS", WITHOUT WARRANTY OF ANY KIND, EXPRESS OR IMPLIED, INCLUDING BUT NOT LIMITED TO THE WARRANTIES OF MERCHANTABILITY, FITNESS FOR A PARTICULAR PURPOSE AND NONINFRINGEMENT. IN NO EVENT SHALL THE AUTHORS OR COPYRIGHT HOLDERS BE LIABLE FOR ANY CLAIM, DAMAGES OR OTHER LIABILITY, WHETHER IN AN ACTION OF CONTRACT, TORT OR OTHERWISE, ARISING FROM, OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE SOFTWARE.
 
-version: '3.8'
 
 services:
   # Main Vedfolnir Application - Production Configuration
@@ -108,12 +107,19 @@ services:
         max-file: "5"
         labels: "service=vedfolnir,environment=production"
 
-  # MySQL Database - Production Configuration
+  # MariaDB Database - Production Configuration
   mysql:
-    image: mysql:8.0
+    image: mariadb:10.11
+    platform: linux/amd64
     container_name: vedfolnir_mysql_prod
     # No port exposure for security
     environment:
+      # MariaDB environment variables
+      - MARIADB_ROOT_PASSWORD_FILE=/run/secrets/mysql_root_password
+      - MARIADB_DATABASE=vedfolnir
+      - MARIADB_USER=vedfolnir
+      - MARIADB_PASSWORD_FILE=/run/secrets/mysql_password
+      # Legacy MySQL compatibility
       - MYSQL_ROOT_PASSWORD_FILE=/run/secrets/mysql_root_password
       - MYSQL_DATABASE=vedfolnir
       - MYSQL_USER=vedfolnir
@@ -132,7 +138,7 @@ services:
       - vedfolnir_internal
     restart: always
     healthcheck:
-      test: ["CMD", "mysqladmin", "ping", "-h", "localhost", "-u", "vedfolnir", "-p$$(cat /run/secrets/mysql_password)"]
+      test: ["CMD", "healthcheck.sh", "--connect", "--innodb_initialized"]
       interval: 30s
       timeout: 10s
       retries: 5

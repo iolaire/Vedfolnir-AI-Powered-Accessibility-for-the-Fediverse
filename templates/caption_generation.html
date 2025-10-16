@@ -332,7 +332,7 @@ document.addEventListener('DOMContentLoaded', function() {
 
 function showTaskDetails(taskId) {
     // Find the task data from the task history
-    const taskData = {{ task_history|tojson }};
+    const taskData = {{ task_historytojson }};
     const task = taskData.find(t => t.task_id === taskId);
 
     if (!task) {

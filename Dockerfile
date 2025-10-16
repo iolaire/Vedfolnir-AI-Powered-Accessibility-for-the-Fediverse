@@ -72,7 +72,7 @@ RUN apt-get update && apt-get install -y \
     && apt-get clean
 
 # Copy requirements first for better caching
-COPY requirements.txt requirements-development.txt ./
+COPY requirements*.txt ./
 
 # Install Python dependencies with development packages
 RUN pip install --no-cache-dir -r requirements.txt \
@@ -135,7 +135,7 @@ CMD ["python", "-m", "debugpy", "--listen", "0.0.0.0:5678", "--wait-for-client",
 FROM base as production
 
 # Copy requirements first for better caching
-COPY requirements.txt requirements-production.txt ./
+COPY requirements*.txt ./
 
 # Install Python dependencies (production only)
 RUN pip install --no-cache-dir -r requirements.txt \
