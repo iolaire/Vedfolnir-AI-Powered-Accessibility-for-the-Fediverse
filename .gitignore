@@ -3,6 +3,7 @@ __pycache__/
 */__pycache__/
 **/__pycache__/
 *.py[cod]
+*.pyc
 *$py.class
 *.so
 .Python
@@ -51,6 +52,14 @@ venv.bak/
 # Storage directories (data storage, not service code)
 /storage/
 logs/
+
+# Ollama model storage and cache
+.ollama/
+*/ollama/
+**/ollama/
+storage/ollama/
+*/storage/ollama/
+**/storage/ollama/
 
 # Database files
 *.db
@@ -142,6 +151,14 @@ yarn.lock
 .pnp.*
 .yarn-integrity
 
+# Python package directories (installed packages)
+site-packages/
+*/site-packages/
+**/site-packages/
+lib/python*/
+*/lib/python*/
+**/lib/python*/
+
 # Frontend build outputs
 build/
 dist/
@@ -199,6 +216,74 @@ Pods/
 */bundle/
 **/bundle/
 
+# External libraries and dependencies
+lib/
+libs/
+*/lib/
+*/libs/
+**/lib/
+**/libs/
+third-party/
+*/third-party/
+**/third-party/
+third_party/
+*/third_party/
+**/third_party/
+external/
+*/external/
+**/external/
+dependencies/
+*/dependencies/
+**/dependencies/
+
+# Package managers and installers
+pip-wheel-metadata/
+*.egg-info/
+*/*.egg-info/
+**/*.egg-info/
+.installed.cfg
+*.egg
+MANIFEST
+.Python
+pyvenv.cfg
+
+# Conda environments
+conda-meta/
+*/conda-meta/
+**/conda-meta/
+
+# Ruby gems
+.gem/
+*/gem/
+**/gem/
+gems/
+*/gems/
+**/gems/
+
+# Go modules
+go.sum
+go.mod
+*/go.sum
+*/go.mod
+**/go.sum
+**/go.mod
+
+# Rust dependencies
+Cargo.lock
+*/Cargo.lock
+**/Cargo.lock
+target/
+*/target/
+**/target/
+
+# Java dependencies
+.m2/
+*/.m2/
+**/.m2/
+.gradle/
+*/.gradle/
+**/.gradle/
+
 # Database migrations
 migrations/
 
@@ -246,6 +331,65 @@ traces/
 .aider*
 */.aider*
 **/.aider*
+
+# AI/ML model files and caches
+*.bin
+*.safetensors
+*.onnx
+*.pb
+*.h5
+*.hdf5
+*.pkl
+*.pickle
+*.joblib
+*.model
+*.weights
+models/
+*/models/
+**/models/
+checkpoints/
+*/checkpoints/
+**/checkpoints/
+.transformers_cache/
+*/.transformers_cache/
+**/.transformers_cache/
+.cache/huggingface/
+*/.cache/huggingface/
+**/.cache/huggingface/
+.torch/
+*/.torch/
+**/.torch/
+
+# Large data files
+*.tar.gz
+*.zip
+*.rar
+*.7z
+*.bz2
+*.xz
+*.gz
+*.tgz
+*.tar
+*.iso
+*.dmg
+*.img
+
+# Downloaded content and caches
+downloads/
+*/downloads/
+**/downloads/
+.cache/
+*/.cache/
+**/.cache/
+.tmp/
+*/.tmp/
+**/.tmp/
+temp/
+*/temp/
+**/temp/
+tmp/
+*/tmp/
+**/tmp/
 
 #GEMINI.md
 GEMINI.md
@@ -303,3 +447,43 @@ backups/
 docker-compose.override.yml
 docker-compose.local.yml
 docker-compose.*.local.yml
+
+# Package manager lock files (optional - uncomment if you want to ignore them)
+# package-lock.json
+# yarn.lock
+# Pipfile.lock
+# poetry.lock
+# requirements.lock
+
+# IDE and editor specific files
+*.swp
+*.swo
+*~
+.vscode/settings.json
+.vscode/launch.json
+.vscode/tasks.json
+.vscode/.ropeproject
+.idea/
+*.sublime-project
+*.sublime-workspace
+
+# OS generated files
+.DS_Store
+.DS_Store?
+._*
+.Spotlight-V100
+.Trashes
+ehthumbs.db
+Thumbs.db
+desktop.ini
+
+# Temporary and backup files
+*.tmp
+*.temp
+*.bak
+*.backup
+*.old
+*.orig
+*~
+.#*
+#*#
